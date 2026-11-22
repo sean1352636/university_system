@@ -28,6 +28,7 @@ from education_system.systems.university.domains.learners.interfaces.gui.alumni.
 from education_system.systems.university.domains.learners.interfaces.gui.alumni.reunions import ReunionsMixin
 from education_system.systems.university.domains.learners.interfaces.gui.alumni.gamification import GamificationMixin
 from education_system.systems.university.domains.learners.interfaces.gui.alumni.notifications import NotificationsMixin
+from education_system.systems.university.domains.learners.interfaces.gui.alumni.alumni_office_records import AlumniOfficeRecordsMixin
 
 # Import internationalization (i18n) for multi-language support
 try:
@@ -43,22 +44,31 @@ except ImportError:
 
 # Alumni service functions
 from education_system.systems.university.domains.learners.interfaces.gui.alumni._service_imports import (
-    init_alumni_db, register_alumni, view_alumni, update_alumni,
-    view_events, create_enhanced_event, event_check_in_system,
-    record_donation, view_donations, setup_mentorship, view_mentorships,
-    search_alumni_directory, view_connection_requests, manage_business_directory,
-    create_newsletter, manage_alumni_forum, post_job_opportunity, view_job_board,
-    schedule_career_counseling, view_fundraising_campaigns, create_fundraising_campaign,
-    view_engagement_leaderboard, view_my_badges, manage_photo_gallery,
-    manage_class_reunions, manage_regional_chapters, setup_alumni_directory,
-    generate_alumni_report, set_auth, setup_alumni_permissions,
-    smart_mentorship_matching, generate_engagement_recommendations,
-    create_alumni_story, view_alumni_stories, get_connection,
+    init_alumni_db,
+    view_events,
+    create_enhanced_event,
+    event_check_in_system,
+    view_connection_requests,
+    manage_business_directory,
+    manage_alumni_forum,
+    post_job_opportunity,
+    view_job_board,
+    schedule_career_counseling,
+    view_engagement_leaderboard,
+    view_my_badges,
+    manage_photo_gallery,
+    manage_class_reunions,
+    generate_alumni_report,
+    set_auth,
+    setup_alumni_permissions,
+    generate_engagement_recommendations,
+    get_connection,
 )
 
 
 
 class AlumniGUIApp(
+    AlumniOfficeRecordsMixin,       # first: its screens replace older ones of the same name
     DashboardMixin,
     AlumniCRUDMixin,
     DirectoryMixin,
@@ -88,26 +98,29 @@ class AlumniGUIApp(
         self.root.geometry("1400x900")
         self.root.configure(bg='#f0f0f0')
 
-        # Set authentication
+        # Who is signed in. There is no fallback user: without a sign-in the
+        # window only says so (it used to pretend to be an all-powerful admin).
         self.auth = auth
-        if self.auth and hasattr(self.auth, 'current_user'):
-            self.current_user = self.auth.current_user
-        else:
-            # Fallback to mock authentication for demo
-            self.current_user = {
-                'id': 1,
-                'username': 'admin',
-                'first_name': 'Administrator',
-                'permissions': ['manage_alumni', 'view_alumni', 'manage_events', 'send_newsletters', 'admin']
-            }
-
-        # Initialize database and permissions
-        try:
+        self.current_user = getattr(auth, "current_user", None) if auth else None
+        self.who = None
+        if self.current_user:
+            # Applies the alumni-office schema once (no tables are created here).
             init_alumni_db()
-            setup_alumni_permissions()
-        except sqlite3.Error as e:
-            messagebox.showerror(_t("alumni.errors.database_error", default="Database Error"),
-                               _t("alumni.errors.database_init_failed", default="Failed to initialize database: {error}").format(error=e))
+            from education_system.systems.university.application.alumni import (
+                access as alumni_access,
+            )
+            from education_system.systems.university.infrastructure.ui import record_screens as common
+            self.who = common.call(self.root, alumni_access.from_user, self.current_user,
+                                   write=True, quiet=True)
+        if self.who is None or not (self.who.is_staff_role or self.who.alumni_id or
+                                    self.who.is_student):
+            message = ("Sign in to use the alumni system." if not self.current_user else
+                       "The alumni system is for graduates, current students (mentoring) and "
+                       "alumni office staff. Ask the alumni office if you need a role.")
+            ttk.Label(self.root, text=message, padding=40, font=("Arial", 12),
+                      wraplength=700, justify="center").pack(expand=True)
+            self.status_bar = None
+            return
 
         # Set authentication for backend functions
         try:
@@ -117,7 +130,7 @@ class AlumniGUIApp(
             pass
 
         self.create_widgets()
-        self.show_dashboard()
+        self.show_home()
         self._photo_file_paths: list[str] = []
         self._event_lookup: dict[str, int] = {}
         self._photo_storage_dir = Path(paths.UNIVERSITY_DATA_DIR) / "alumni_photos"
@@ -128,24 +141,6 @@ class AlumniGUIApp(
         if self.current_user and isinstance(self.current_user, dict):
             return str(self.current_user.get('username') or self.current_user.get('id') or 'gui_user')
         return 'gui_user'
-
-    def _format_alumni_row(self, row):
-        """Format alumni row tuple for treeview display."""
-        if not isinstance(row, dict):
-            row = dict(row)
-        full_name = " ".join(filter(None, [row.get('first_name'), row.get('middle_name'), row.get('last_name')])).strip()
-        if not full_name:
-            full_name = row.get('full_name') or row.get('alumni_id', '')
-        status = 'Active' if row.get('privacy_level', 1) else 'Hidden'
-        return (
-            row.get('alumni_id') or row.get('student_id'),
-            full_name,
-            row.get('graduation_year') or '',
-            row.get('degree_earned') or row.get('course') or '',
-            row.get('current_employer') or '',
-            row.get('email_address') or row.get('email') or '',
-            status
-        )
 
     def _get_db_connection(self):
         """Return a central database connection with row access."""
@@ -166,8 +161,9 @@ class AlumniGUIApp(
     def create_navigation_menu(self, parent):
         """Create the navigation menu with categorized buttons and scrollbar"""
         # Add dashboard button at the top
-        dashboard_btn = ttk.Button(parent, text=_t("alumni.dashboard", default="Dashboard"), command=self.show_dashboard)
-        dashboard_btn.pack(fill=tk.X, pady=(0, 10))
+        home_text = (_t("alumni.dashboard", default="Dashboard") if self.who.is_staff_role
+                     else "Home")
+        ttk.Button(parent, text=home_text, command=self.show_home).pack(fill=tk.X, pady=(0, 10))
 
         # "Return to Homescreen" is only meaningful when this app was opened
         # from a parent menu (staff Toplevel). For a logged-in alumnus it would
@@ -194,69 +190,7 @@ class AlumniGUIApp(
         canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
         canvas.configure(yscrollcommand=scrollbar.set)
 
-        # Menu categories with their functions
-        menu_categories = {
-            "📋 " + _t("alumni.nav.categories.alumni_management", default="Alumni Management"): [
-                (_t("alumni.nav.items.register_new_alumni", default="Register New Alumni"), self.show_register_alumni, 'manage_alumni'),
-                (_t("alumni.nav.items.view_alumni_records", default="View Alumni Records"), self.show_view_alumni, 'view_alumni'),
-                (_t("alumni.nav.items.update_alumni_record", default="Update Alumni Record"), self.show_update_alumni, 'manage_alumni'),
-                (_t("alumni.nav.items.alumni_directory", default="Alumni Directory"), self.show_alumni_directory, 'access_alumni_directory')
-            ],
-            "🌐 " + _t("alumni.nav.categories.networking", default="Networking"): [
-                (_t("alumni.nav.items.directory_search", default="Alumni Directory Search"), self.show_directory_search, 'access_alumni_directory'),
-                (_t("alumni.nav.items.connection_requests", default="Connection Requests"), self.show_connections, 'access_alumni_directory'),
-                (_t("alumni.nav.items.business_directory", default="Business Directory"), self.show_business_directory, 'access_alumni_directory'),
-                (_t("alumni.nav.items.regional_chapters", default="Regional Chapters"), self.show_regional_chapters, None)
-            ],
-            "💬 " + _t("alumni.nav.categories.communication", default="Communication"): [
-                (_t("alumni.nav.items.create_newsletter", default="Create Newsletter"), self.show_create_newsletter, 'send_newsletters'),
-                (_t("alumni.nav.items.alumni_forum", default="Alumni Forum"), self.show_forum, 'access_alumni_directory'),
-                (_t("alumni.nav.items.create_story", default="Create Story"), self.show_create_story, None),
-                (_t("alumni.nav.items.alumni_stories", default="Alumni Stories"), self.show_stories, None),
-                (_t("alumni.nav.items.search_forum_posts", default="Search Forum Posts"), self.show_search_forum_posts, None),
-                (_t("alumni.nav.items.my_forum_posts", default="My Forum Posts"), self.show_my_forum_posts, None),
-                (_t("alumni.nav.items.moderate_forum", default="Moderate Forum"), self.show_moderate_forum_posts, 'moderate_forum'),
-                (_t("alumni.nav.items.photo_gallery", default="Photo Gallery"), self.show_photo_gallery, None)
-            ],
-            "🎉 " + _t("alumni.nav.categories.events", default="Events"): [
-                (_t("alumni.nav.items.create_event", default="Create Event"), self.show_create_event, 'manage_events_advanced'),
-                (_t("alumni.nav.items.view_events", default="View Events"), self.show_view_events, 'view_events'),
-                (_t("alumni.nav.items.event_checkin", default="Event Check-in"), self.show_event_checkin, 'manage_events_advanced'),
-                (_t("alumni.nav.items.class_reunions", default="Class Reunions"), self.show_class_reunions, 'manage_social_features')
-            ],
-            "💼 " + _t("alumni.nav.categories.career_services", default="Career Services"): [
-                (_t("alumni.nav.items.job_board", default="Job Board"), self.show_job_board, 'view_job_board'),
-                (_t("alumni.nav.items.post_job", default="Post Job"), self.show_post_job, 'post_jobs'),
-                (_t("alumni.nav.items.career_counseling", default="Career Counseling"), self.show_career_counseling, 'schedule_career_counseling')
-            ],
-            "💰 " + _t("alumni.nav.categories.fundraising", default="Fundraising"): [
-                (_t("alumni.nav.items.record_donation", default="Record Donation"), self.show_record_donation, 'make_donation'),
-                (_t("alumni.nav.items.view_donations", default="View Donations"), self.show_view_donations, 'view_donations'),
-                (_t("alumni.nav.items.donor_recognition", default="Donor Recognition"), self.show_donor_recognition, 'manage_campaigns'),
-                (_t("alumni.nav.items.fundraising_campaigns", default="Fundraising Campaigns"), self.show_campaigns, 'manage_campaigns')
-            ],
-            "👥 " + _t("alumni.nav.categories.mentorship", default="Mentorship"): [
-                (_t("alumni.nav.items.setup_mentorship", default="Setup Mentorship"), self.show_setup_mentorship, 'manage_mentorships'),
-                (_t("alumni.nav.items.view_mentorships", default="View Mentorships"), self.show_view_mentorships, 'view_mentorships'),
-                (_t("alumni.nav.items.smart_matching", default="Smart Matching"), self.show_smart_matching, 'manage_ai_features')
-            ],
-            "🏆 " + _t("alumni.nav.categories.engagement", default="Engagement"): [
-                (_t("alumni.nav.items.leaderboard", default="Leaderboard"), self.show_leaderboard, None),
-                (_t("alumni.nav.items.my_badges", default="My Badges"), self.show_my_badges, None),
-                (_t("alumni.nav.items.recommendations", default="Recommendations"), self.show_recommendations, None)
-            ],
-            "⚙️ " + _t("alumni.nav.categories.settings_reports", default="Settings & Reports"): [
-                (_t("alumni.nav.items.directory_settings", default="Directory Settings"), self.show_directory_settings, None),
-                (_t("alumni.nav.items.generate_reports", default="Generate Reports"), self.show_generate_reports, 'generate_reports'),
-                (_t("alumni.nav.items.system_analytics", default="System Analytics"), self.show_analytics, 'view_analytics')
-            ],
-            "🔗 " + _t("alumni.nav.categories.integration_services", default="Integration Services"): [
-                (_t("alumni.nav.items.email_manager", default="Email Manager"), self.open_email_manager_gui, None),
-                (_t("alumni.nav.items.finance_system", default="Finance System"), self.open_finance_gui, None),
-                (_t("alumni.nav.items.student_validation", default="Student Validation"), self.show_student_validation, None),
-                (_t("alumni.nav.items.finance_status_check", default="Finance Status Check"), self.show_finance_check, None)
-            ]
-        }
+        menu_categories = self._menu_for_role()
 
         # Create category sections with buttons
         for category, items in menu_categories.items():
@@ -269,10 +203,9 @@ class AlumniGUIApp(
             separator.pack(fill=tk.X, pady=(0, 5), padx=5)
 
             # Add category buttons
-            for item_name, item_command, permission in items:
-                if permission is None or self.has_permission(permission):
-                    btn = ttk.Button(scrollable_frame, text=item_name, command=item_command)
-                    btn.pack(fill=tk.X, pady=2, padx=10)
+            for item_name, item_command in items:
+                ttk.Button(scrollable_frame, text=item_name, command=item_command).pack(
+                    fill=tk.X, pady=2, padx=10)
 
         # Pack the canvas and scrollbar
         canvas.pack(side="left", fill="both", expand=True)
@@ -341,12 +274,125 @@ class AlumniGUIApp(
         # Create status bar
         self.create_status_bar()
 
+    # ── what each person can open ──────────────────────────────────────
+    def show_home(self):
+        """Office staff land on the dashboard, alumni on their profile,
+        students on their mentoring."""
+        if self.who.is_staff_role:
+            self.show_dashboard()
+        elif self.who.alumni_id:
+            self.show_my_profile()
+        else:
+            self.show_my_mentoring()
+
+    def _community(self, name):
+        """Screens from ``alumni_office_community`` (loaded when first used)."""
+        def open_screen():
+            try:
+                from education_system.systems.university.domains.learners.interfaces.gui.alumni import (  # noqa: E501
+                    alumni_office_community as screens,
+                )
+                getattr(screens, name)(self)
+            except (ImportError, AttributeError):
+                self.clear_content()
+                ttk.Label(self.content_frame, text="This screen is not available yet.",
+                          padding=30).pack()
+        return open_screen
+
+    def show_my_mentoring(self):
+        self._community("show_my_mentoring")()
+
+    def _menu_for_role(self):
+        """Menu sections for the signed-in person. Every rule re-checks
+        permissions, so this decides what is shown, not what is allowed."""
+        who = self.who
+        office = who.is_office
+        sections = {}
+
+        def add(title, items):
+            items = [(label, cmd) for label, cmd, allowed in items if allowed]
+            if items:
+                sections.setdefault(title, []).extend(items)
+
+        add("👤 My alumni account", [
+            ("My profile", self.show_my_profile, who.alumni_id),
+            ("Privacy & directory listing", self.show_privacy, who.alumni_id),
+            ("Keep in touch", self.show_keep_in_touch, who.alumni_id),
+            ("My data", self.show_my_data, who.alumni_id),
+            ("My giving", self._community("show_my_giving"), who.alumni_id),
+            ("My chapters", self._community("show_my_chapters"), who.alumni_id),
+            ("Mentoring", self._community("show_my_mentoring"),
+             who.alumni_id or who.is_student),
+        ])
+        add("📋 Alumni office", [
+            ("Alumni records", self.show_alumni_records, office),
+            ("Data requests", self.show_data_requests, office),
+            ("Newsletters", self.show_newsletters, office),
+            ("Roles & audit", self.show_roles_audit, office),
+        ])
+        add("🌐 Directory & networking", [
+            ("Alumni directory", self.show_directory, who.alumni_id or who.is_staff_role),
+            ("Connection requests", self.show_connections, who.alumni_id),
+            ("Business directory", self.show_business_directory,
+             office or (who.alumni_id and self.has_permission('access_alumni_directory'))),
+        ])
+        add("💰 Giving", [("Gifts, Gift Aid & pledges", self._community("show_giving"),
+                          who.is_fundraiser)])
+        add("🏘 Chapters", [("Regional chapters", self._community("show_chapters"), office)])
+        add("👥 Mentoring", [("Mentors, matches & concerns", self._community("show_mentoring"),
+                             who.is_coordinator)])
+        add("🛡 Moderation", [("Reports, stories & photos", self._community("show_moderation"),
+                              who.is_moderator)])
+        self._add_community_features(add, office, bool(who.alumni_id))
+        add("⚙️ Reports & integration", [
+            ("Generate reports", self.show_generate_reports, office),
+            ("System analytics", self.show_analytics, office),
+            ("Email manager", self.open_email_manager_gui, office),
+            ("Finance system", self.open_finance_gui, office),
+            ("Student validation", self.show_student_validation, office),
+            ("Finance status check", self.show_finance_check, office),
+        ])
+        return sections
+
+    def _add_community_features(self, add, office, alumnus):
+        """The existing community screens, for alumni (as their permissions
+        allow) and the office."""
+        member = office or alumnus
+        perm = self.has_permission
+        add("💬 Community", [
+            ("Alumni forum", self.show_forum, member),
+            ("Search forum posts", self.show_search_forum_posts, member),
+            ("My forum posts", self.show_my_forum_posts, alumnus),
+            ("Alumni stories", self.show_stories, member),
+            ("Photo gallery", self.show_photo_gallery, member),
+        ])
+        add("🎉 Events", [
+            ("View events", self.show_view_events, member),
+            ("Create event", self.show_create_event, office),
+            ("Event check-in", self.show_event_checkin, office),
+            ("Class reunions", self.show_class_reunions, office or (
+                alumnus and perm('manage_social_features'))),
+        ])
+        add("💼 Careers", [
+            ("Job board", self.show_job_board, office or (alumnus and perm('view_job_board'))),
+            ("Post a job", self.show_post_job, office or (alumnus and perm('post_jobs'))),
+            ("Career counselling", self.show_career_counseling,
+             office or (alumnus and perm('schedule_career_counseling'))),
+        ])
+        add("🏆 Engagement", [
+            ("Leaderboard", self.show_leaderboard, member),
+            ("My badges", self.show_my_badges, alumnus),
+            ("Recommendations", self.show_recommendations, alumnus),
+        ])
+
     def has_permission(self, permission):
         """Check if current user has permission"""
         # An empty/blank permission name is a caller bug, not an all-access
         # pass — treat it as a denial rather than granting everything.
         if not permission:
             return False
+        if getattr(self, "who", None) is not None and self.who.is_office:
+            return True
         perms = (self.current_user or {}).get('permissions', [])
         return permission in perms or 'admin' in perms
 

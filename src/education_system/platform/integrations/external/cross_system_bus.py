@@ -188,6 +188,17 @@ KNOWN_EVENTS = KNOWN_EVENTS | frozenset({
     EVENT_POST16_APPLICATION_STATUS_CHANGED,
 })
 
+# ── The sixth form -> university UCAS link ──
+# The university records its UCAS decisions and enrolments in its own tables
+# and publishes these; the sixth form applies them to its own rows.
+EVENT_UCAS_DECISION_RECORDED       = "ucas.decision.recorded"
+EVENT_UNIVERSITY_STUDENT_ENROLLED  = "university.student.enrolled"
+
+KNOWN_EVENTS = KNOWN_EVENTS | frozenset({
+    EVENT_UCAS_DECISION_RECORDED,
+    EVENT_UNIVERSITY_STUDENT_ENROLLED,
+})
+
 
 # ---------------------------------------------------------------------------
 # In-process subscriber registry

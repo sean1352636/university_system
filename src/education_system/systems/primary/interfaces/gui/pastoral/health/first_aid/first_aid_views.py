@@ -6,7 +6,10 @@ import functools
 import logging
 import tkinter as tk
 from tkinter import messagebox, ttk
+from types import SimpleNamespace
 from typing import Any, Callable
+
+from education_system.systems.primary.interfaces.gui import kit
 
 from education_system.systems.primary.domain.pastoral.health.first_aid import (
     first_aid as data,
@@ -53,7 +56,7 @@ def _incident_dialog(host, title: str,
     dlg = tk.Toplevel(host.root)
     dlg.title(title)
     dlg.transient(host.root)
-    dlg.geometry("560x760")
+    dlg.geometry("600x700")
     dlg.update_idletasks()
     try:
         dlg.wait_visibility()
@@ -62,8 +65,7 @@ def _incident_dialog(host, title: str,
         logger.debug("grab_set skipped", exc_info=True)
 
     initial = initial or {}
-    frm = ttk.Frame(dlg, padding=12)
-    frm.pack(fill="both", expand=True)
+    frm, footer = kit.scrolled_form(dlg)
 
     pupil_var    = tk.StringVar(value=str(initial.get("pupil_id") or ""))
     date_var     = tk.StringVar(value=str(initial.get("incident_date") or ""))
@@ -86,9 +88,9 @@ def _incident_dialog(host, title: str,
     riddor_var   = tk.BooleanVar(value=bool(initial.get("riddor_reportable")))
 
     rows: list[tuple[str, tk.Widget]] = [
-        ("Pupil ID:",     ttk.Entry(frm, textvariable=pupil_var, width=14)),
-        ("Date:",         ttk.Entry(frm, textvariable=date_var, width=14)),
-        ("Time:",         ttk.Entry(frm, textvariable=time_var, width=8)),
+        ("Pupil:",        kit.PupilPicker(frm, pupil_var)),
+        ("Date:",         kit.DateField(frm, date_var)),
+        ("Time:",         kit.TimeField(frm, time_var)),
         ("Location:",     ttk.Entry(frm, textvariable=loc_var, width=28)),
         ("Injury type:",  ttk.Combobox(frm, textvariable=injury_var,
                                           values=list(INJURY_TYPES),
@@ -97,13 +99,12 @@ def _incident_dialog(host, title: str,
                                           values=list(SEVERITIES),
                                           state="readonly", width=14)),
         ("Body part:",    ttk.Entry(frm, textvariable=body_var, width=22)),
-        ("Treated by:",   ttk.Entry(frm, textvariable=treated_var, width=28)),
+        ("Treated by:",   kit.StaffPicker(frm, treated_var, by="name")),
         ("Outcome:",      ttk.Combobox(frm, textvariable=outcome_var,
                                           values=list(OUTCOMES),
                                           state="readonly", width=24)),
         ("Parent contacted:", ttk.Checkbutton(frm, variable=pc_var)),
-        ("Parent contact time:", ttk.Entry(frm, textvariable=pct_var,
-                                              width=8)),
+        ("Parent contact time:", kit.TimeField(frm, pct_var)),
         ("Hospital referral:", ttk.Checkbutton(frm, variable=hosp_var)),
         ("Accident book #:", ttk.Entry(frm, textvariable=abr_var, width=14)),
         ("RIDDOR reportable:", ttk.Checkbutton(frm, variable=riddor_var)),
@@ -152,23 +153,31 @@ def _incident_dialog(host, title: str,
             result[k] = w.get("1.0", "end").strip()
         dlg.destroy()
 
-    btns = ttk.Frame(frm)
-    btns.grid(row=len(rows) + len(text_fields), column=0,
-                columnspan=2, sticky="e", pady=(12, 0))
-    ttk.Button(btns, text="Cancel",
+    ttk.Button(footer, text="Cancel",
                  command=dlg.destroy).pack(side="right", padx=4)
-    ttk.Button(btns, text="Save", command=_save).pack(side="right")
+    ttk.Button(footer, text="Save", command=_save).pack(side="right")
     dlg.wait_window()
     return result
+
+
+def _ctx(host, parent):
+    """What the helpers below need from *host*, with dialogs parented to
+    the window the page is drawn in (the main window or a pop-out)."""
+    status = getattr(host, "status_var", None)
+    return SimpleNamespace(root=parent.winfo_toplevel(),
+                           status_var=status if status is not None else tk.StringVar())
 
 
 @_safe_view
 def open_first_aid(host) -> None:
     logger.debug("GUI: open_first_aid")
-    host._clear_content()
-    root = host.content_frame
-    ttk.Label(root, text="First Aid",
-                font=("", 16, "bold")).pack(anchor="w", pady=(0, 8))
+    kit.show_page(host, "First Aid", lambda parent: _draw_first_aid(parent, host))
+
+
+@_safe_view
+def _draw_first_aid(root, host) -> None:
+    host = _ctx(host, root)
+    kit.page_heading(root, "First Aid")
 
     summary_var = tk.StringVar()
     ttk.Label(root, textvariable=summary_var,
@@ -178,9 +187,8 @@ def open_first_aid(host) -> None:
     bar.pack(fill="x", pady=(0, 6))
     ttk.Label(bar, text="Severity:").pack(side="left", padx=(0, 4))
     sev_var = tk.StringVar(value="")
-    ttk.Combobox(bar, textvariable=sev_var,
-                   values=["", *SEVERITIES], state="readonly",
-                   width=10).pack(side="left", padx=(0, 6))
+    kit.ChoiceField(bar, sev_var, choices=SEVERITIES, blank=True,
+                    width=10).pack(side="left", padx=(0, 6))
     riddor_var = tk.BooleanVar(value=False)
     ttk.Checkbutton(bar, text="RIDDOR only",
                        variable=riddor_var).pack(side="left", padx=4)

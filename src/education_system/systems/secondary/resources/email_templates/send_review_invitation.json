@@ -1,0 +1,36 @@
+{
+  "name": "send_review_invitation",
+  "description": "An invitation to a SEND review meeting (SEN support review or EHC plan annual review), sent to contacts with parental responsibility.",
+  "subject": "Invitation to {pupil_name}'s {review_type}",
+  "body": [
+    "Dear {recipient_name},",
+    "",
+    "We would like to invite you to {pupil_name}'s {review_type}.",
+    "",
+    "When: {when}",
+    "Where: {where}",
+    "",
+    "{note}",
+    "",
+    "At the meeting we will look at how {pupil_name} is getting on, the support in place and what we should all work on next. Your views, and {pupil_name}'s, matter - please bring anything you would like to share.",
+    "",
+    "Please let the school office know whether you can attend.",
+    "",
+    "Best wishes,",
+    "{sender_name}",
+    "{school_name}"
+  ],
+  "placeholders": {
+    "recipient_name": "The contact's name",
+    "pupil_name": "The pupil's preferred first name and surname",
+    "review_type": "SEN support review / annual review (ehcp)",
+    "when": "The date and time of the meeting",
+    "where": "Where the meeting is",
+    "note": "An optional message",
+    "sender_name": "The member of staff sending it",
+    "school_name": "The school's name"
+  },
+  "defaults": {
+    "school_name": "Secondary School"
+  }
+}

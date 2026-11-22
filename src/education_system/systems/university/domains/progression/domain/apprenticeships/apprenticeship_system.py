@@ -9,9 +9,14 @@ write actions are stamped with that identity in the log.
 
 Persistence: rows live in the canonical `student_records.db` tables
 shared with the rest of the system — `students`, `employers`,
-`apprenticeships`, and `applications`. Two module-needed columns
-(`students.gpa`, `employers.address`) are added via `ALTER TABLE` if
-not already present. The legacy local `apprenticeships.db` file and
+`apprenticeships`, and `applications`, with foreign keys enforced.
+`employers.address` is added via `ALTER TABLE` if not already present;
+`students` is read-only here (Student Records owns it).
+
+File > Import from Apprenticeships System copies the apprenticeships
+system's employers in through the read-only ``ApprenticeshipsGateway``
+and then offers a validated vacancies CSV (that system holds no
+vacancies). Apprentices themselves are not copied. The legacy local `apprenticeships.db` file and
 the older module-private `apprenticeship_*` tables are removed on
 startup so no data is duplicated.
 
@@ -25,7 +30,7 @@ import sqlite3
 import sys
 import tkinter as tk
 from datetime import datetime
-from tkinter import ttk, messagebox, simpledialog
+from tkinter import ttk, messagebox, simpledialog, filedialog
 
 
 # When the main GUI launches us as a subprocess, the child Python is
@@ -114,7 +119,7 @@ class StudentTab(ttk.Frame):
         form_frame.pack(fill="x", padx=10, pady=5)
 
         labels = ["Student ID:", "First Name:", "Last Name:", "Email:",
-                  "Course:", "Year of Study:", "GPA:"]
+                  "Course:", "Year of Study:"]
         self.entries = {}
         for i, label in enumerate(labels):
             ttk.Label(form_frame, text=label).grid(row=i // 2, column=(i % 2) * 2,
@@ -148,10 +153,10 @@ class StudentTab(ttk.Frame):
         tree_frame = ttk.Frame(self)
         tree_frame.pack(fill="both", expand=True, padx=10, pady=5)
 
-        columns = ("id", "student_id", "first_name", "last_name", "email", "course", "year", "gpa")
+        columns = ("id", "student_id", "first_name", "last_name", "email", "course", "year")
         self.tree = ttk.Treeview(tree_frame, columns=columns, show="headings", height=12)
-        headings = ["ID", "Student ID", "First Name", "Last Name", "Email", "Course", "Year", "GPA"]
-        widths = [40, 90, 100, 100, 180, 120, 50, 50]
+        headings = ["ID", "Student ID", "First Name", "Last Name", "Email", "Course", "Year"]
+        widths = [40, 90, 100, 100, 180, 120, 50]
         for col, head, w in zip(columns, headings, widths):
             self.tree.heading(col, text=head)
             self.tree.column(col, width=w, anchor="w")
@@ -171,10 +176,9 @@ class StudentTab(ttk.Frame):
                 "email": self.entries["email"].get().strip(),
                 "course": self.entries["course"].get().strip(),
                 "year_of_study": int(self.entries["year_of_study"].get()) if self.entries["year_of_study"].get() else 0,
-                "gpa": float(self.entries["gpa"].get()) if self.entries["gpa"].get() else None,
             }
         except ValueError:
-            messagebox.showerror("Invalid Input", "Year must be an integer and GPA must be a number.")
+            messagebox.showerror("Invalid Input", "Year must be an integer.", parent=self)
             return None
 
     def clear_form(self):
@@ -199,10 +203,10 @@ class StudentTab(ttk.Frame):
         try:
             row = self.db.fetch_one(
                 """SELECT e.company_name FROM applications a
-                   JOIN apprenticeships ap ON a.apprenticeship_id = ap.apprenticeship_id
+                   JOIN apprenticeships ap ON a.apprenticeship_id = ap.id
                    JOIN employers e ON ap.employer_id = e.employer_id
                    WHERE a.student_id = ?
-                   ORDER BY a.application_id DESC LIMIT 1""",
+                   ORDER BY a.id DESC LIMIT 1""",
                 (student_id,),
             )
             if row:
@@ -235,7 +239,7 @@ class StudentTab(ttk.Frame):
         if not selected:
             return
         values = self.tree.item(selected[0])["values"]
-        keys = ["student_id", "first_name", "last_name", "email", "course", "year_of_study", "gpa"]
+        keys = ["student_id", "first_name", "last_name", "email", "course", "year_of_study"]
         for key, val in zip(keys, values[1:]):
             self.entries[key].delete(0, tk.END)
             self.entries[key].insert(0, str(val) if val is not None else "")
@@ -250,13 +254,13 @@ class StudentTab(ttk.Frame):
         # values[1:] code (which expects the seven editable fields after
         # the id) still maps correctly.
         if search:
-            query = """SELECT student_id, student_id, first_name, last_name, email_address, course, year_of_study, gpa
+            query = """SELECT student_id, student_id, first_name, last_name, email_address, course, year_of_study
                        FROM students WHERE student_id LIKE ? OR first_name LIKE ? OR last_name LIKE ?
                        OR email_address LIKE ? OR course LIKE ? ORDER BY last_name"""
             params = tuple([f"%{search}%"] * 5)
         else:
             query = ("SELECT student_id, student_id, first_name, last_name, "
-                     "email_address, course, year_of_study, gpa "
+                     "email_address, course, year_of_study "
                      "FROM students ORDER BY last_name")
             params = ()
         for row in self.db.fetch_all(query, params):
@@ -697,8 +701,13 @@ class ApplicationTab(ttk.Frame):
             messagebox.showinfo("Success", "Application submitted.")
             self.clear_form()
             self.refresh()
-        except sqlite3.IntegrityError:
-            messagebox.showerror("Error", "This student has already applied to this apprenticeship.")
+        except sqlite3.IntegrityError as e:
+            if "UNIQUE" in str(e).upper():
+                messagebox.showerror("Error", "This student has already applied to this apprenticeship.",
+                                     parent=self)
+            else:
+                messagebox.showerror("Error", "That student or apprenticeship no longer exists. "
+                                     "Refresh and try again.", parent=self)
 
     def update_status(self):
         selected = self.tree.selection()
@@ -812,7 +821,13 @@ class DashboardTab(ttk.Frame):
             self.open_tree.column(col, width=w, anchor="w")
         self.open_tree.pack(fill="both", expand=True)
 
-        ttk.Button(self, text="Refresh Dashboard", command=self.refresh).pack(pady=5)
+        btns = ttk.Frame(self)
+        btns.pack(pady=5)
+        ttk.Button(btns, text="Refresh Dashboard", command=self.refresh).pack(side="left", padx=4)
+        # The File menu only exists when the app owns its window; this
+        # button gives the embedded (workspace tab) mode the same import.
+        self.import_button = ttk.Button(btns, text="Import from Apprenticeships System")
+        self.import_button.pack(side="left", padx=4)
 
     def refresh(self):
         for w in self.stats_frame.winfo_children():
@@ -918,14 +933,14 @@ class ApprenticeshipApp(tk.Tk):
         style = ttk.Style()
 
         # Menu bar — only on Tk/Toplevel hosts (Frames don't accept
-        # ``config(menu=…)``). The "Load Sample Data" / "About"
-        # actions remain available via toolbar buttons inside the
-        # tabs themselves.
+        # ``config(menu=…)``). The import is also on the Dashboard tab's
+        # button bar, so embedded mode keeps it.
         if self._owns_root:
             menubar = tk.Menu(self)
             self.config(menu=menubar)
             file_menu = tk.Menu(menubar, tearoff=0)
-            file_menu.add_command(label="Load Sample Data", command=self.load_sample_data)
+            file_menu.add_command(label="Import from Apprenticeships System",
+                                  command=self.import_from_apprenticeships)
             file_menu.add_separator()
             file_menu.add_command(label="Exit", command=self.quit_app)
             menubar.add_cascade(label="File", menu=file_menu)
@@ -943,6 +958,7 @@ class ApprenticeshipApp(tk.Tk):
         self.apprenticeship_tab = ApprenticeshipTab(self.notebook, self.db)
         self.application_tab = ApplicationTab(self.notebook, self.db)
 
+        self.dashboard_tab.import_button.configure(command=self.import_from_apprenticeships)
         self.notebook.add(self.dashboard_tab, text="Dashboard")
         self.notebook.add(self.student_tab, text="Students")
         self.notebook.add(self.employer_tab, text="Employers")
@@ -968,63 +984,100 @@ class ApprenticeshipApp(tk.Tk):
             tabs[idx].refresh()
         self.status_var.set(f"Viewing: {self.notebook.tab(idx, 'text')}")
 
-    def load_sample_data(self):
-        if not messagebox.askyesno("Load Sample Data",
-                                   "This will add sample students, employers, and apprenticeships. Continue?"):
+    def _dialog_parent(self):
+        return self if self._owns_root else self._host
+
+    def import_from_apprenticeships(self):
+        """Bring in the apprenticeships system's employers (read-only, via
+        the gateway), then optionally a validated vacancies CSV."""
+        from education_system.systems.university.domains.progression.domain.apprenticeships.apprenticeship_service import (
+            ApprenticeshipService,
+        )
+        from education_system.systems.university.domains.progression.domain.apprenticeships.apprenticeships_gateway import (
+            ApprenticeshipsGateway,
+            ApprenticeshipsGatewayError,
+        )
+        parent = self._dialog_parent()
+        if not messagebox.askyesno(
+                "Import from Apprenticeships System",
+                "Employers are read from the apprenticeships system (it stays the owner; "
+                "nothing there is changed) and added to, or updated in, the employer list.\n\n"
+                "That system holds no vacancies, so you can then choose a CSV of vacancies "
+                "to add. Apprentices are not copied — they are linked to university "
+                "students through Student Records.\n\nContinue?", parent=parent):
+            return
+        svc = ApprenticeshipService(self.db)
+        programmes = []
+        try:
+            result = svc.import_from_gateway(ApprenticeshipsGateway())
+        except ApprenticeshipsGatewayError as e:
+            messagebox.showwarning(
+                "Apprenticeships System",
+                f"The apprenticeships system's data could not be read:\n{e}\n\n"
+                "You can still import vacancies from a CSV.", parent=parent)
+        except sqlite3.Error as e:
+            logger.exception("Employer import failed")
+            messagebox.showerror("Import failed", f"Employers could not be imported: {e}",
+                                 parent=parent)
+            return
+        else:
+            programmes = result["programmes"]
+            skipped = result["employers_skipped"]
+            lines = [f"Employers read: {result['employers_read']}",
+                     f"Added: {result['employers_created']}",
+                     f"Updated: {result['employers_updated']}"]
+            if skipped:
+                lines.append("Not imported (ended): " + ", ".join(skipped))
+            lines.append(f"Open programmes available for vacancies: {len(programmes)}")
+            logger.info("Imported employers from apprenticeships system user=%s %s",
+                        self.user_display, result)
+            messagebox.showinfo("Employers imported", "\n".join(lines), parent=parent)
+        self._refresh_tabs()
+
+        refs = ", ".join(sorted({p.reference for p in programmes if p.reference})[:12])
+        if not messagebox.askyesno(
+                "Import vacancies",
+                "Add vacancies from a CSV file?\n\nColumns: "
+                + ", ".join(ApprenticeshipService.VACANCY_COLUMNS)
+                + ".\nRequired: employer (an employer in the list), and title + "
+                "duration_months or a programme_reference"
+                + (f" ({refs})" if refs else "") + ".\nNothing is added unless every "
+                "row is valid.", parent=parent):
+            return
+        path = filedialog.askopenfilename(
+            parent=parent, title="Vacancies CSV",
+            filetypes=[("CSV files", "*.csv"), ("All files", "*.*")])
+        if not path:
             return
         try:
-            # Sample employers
-            employers = [
-                ("TechCorp Ltd", "Sarah Johnson", "sarah@techcorp.com", "020-7946-0123", "Technology", "London"),
-                ("BuildRight Construction", "Mike Davies", "mike@buildright.co.uk", "0191-555-0199", "Construction", "Newcastle"),
-                ("HealthFirst NHS Trust", "Dr. Emma Wilson", "e.wilson@nhs.uk", "0113-555-0100", "Healthcare", "Leeds"),
-                ("Finance Solutions", "James Brown", "jbrown@finsol.com", "0161-555-0150", "Finance", "Manchester"),
-            ]
-            for emp in employers:
-                try:
-                    self.db.execute("""INSERT INTO employers (company_name, contact_person, contact_email, contact_phone, industry, address)
-                                       VALUES (?, ?, ?, ?, ?, ?)""", emp)
-                except sqlite3.IntegrityError:
-                    pass
+            outcome = svc.import_vacancies_csv(path, programmes)
+        except (OSError, UnicodeDecodeError, sqlite3.Error) as e:
+            messagebox.showerror("Import failed", f"The file could not be imported: {e}",
+                                 parent=parent)
+            return
+        if outcome["errors"]:
+            shown = outcome["errors"][:15]
+            more = len(outcome["errors"]) - len(shown)
+            messagebox.showerror(
+                "Vacancies not imported",
+                "Nothing was added. Fix these and try again:\n\n" + "\n".join(shown)
+                + (f"\n…and {more} more" if more > 0 else ""), parent=parent)
+            return
+        logger.info("Imported %s vacancies from %s user=%s", outcome["added"], path,
+                    self.user_display)
+        text = f"Vacancies added: {outcome['added']}"
+        if outcome["skipped"]:
+            text += "\n\nSkipped:\n" + "\n".join(outcome["skipped"][:15])
+        messagebox.showinfo("Vacancies imported", text, parent=parent)
+        self._refresh_tabs()
 
-            # Sample students
-            students = [
-                ("S2024001", "Alice", "Smith", "alice.s@uni.ac.uk", "Computer Science", 2, 3.8),
-                ("S2024002", "Bob", "Taylor", "bob.t@uni.ac.uk", "Civil Engineering", 3, 3.5),
-                ("S2024003", "Chloe", "Patel", "chloe.p@uni.ac.uk", "Nursing", 2, 3.9),
-                ("S2024004", "David", "Khan", "david.k@uni.ac.uk", "Accounting", 1, 3.6),
-                ("S2024005", "Emma", "Walsh", "emma.w@uni.ac.uk", "Computer Science", 3, 3.7),
-            ]
-            for stu in students:
-                try:
-                    self.db.execute("""INSERT INTO students (student_id, first_name, last_name, email_address, course, year_of_study, gpa)
-                                       VALUES (?, ?, ?, ?, ?, ?, ?)""", stu)
-                except sqlite3.IntegrityError:
-                    pass
-
-            # Sample apprenticeships
-            apprenticeships = [
-                ("Software Developer Apprentice", 1, "Build web applications using modern frameworks.",
-                 12, 22000, "London", "Computer Science", 2, 3, "Open"),
-                ("Site Engineer Trainee", 2, "Hands-on experience on construction projects.",
-                 18, 20000, "Newcastle", "Civil Engineering", 2, 2, "Open"),
-                ("Healthcare Assistant Apprentice", 3, "Clinical placement working with experienced nurses.",
-                 24, 19500, "Leeds", "Nursing", 1, 4, "Open"),
-                ("Junior Financial Analyst", 4, "Support financial reporting and analysis.",
-                 12, 23000, "Manchester", "Accounting", 2, 2, "Open"),
-            ]
-            for app in apprenticeships:
-                self.db.execute("""INSERT INTO apprenticeships (title, employer_id, description, duration_months,
-                                   salary, location, required_course, min_year, positions_available, status)
-                                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""", app)
-
-            messagebox.showinfo("Success", "Sample data loaded.")
-            self.dashboard_tab.refresh()
-            self.student_tab.refresh()
-            self.employer_tab.refresh()
-            self.apprenticeship_tab.refresh()
-        except Exception as e:
-            messagebox.showerror("Error", f"Failed to load sample data: {e}")
+    def _refresh_tabs(self):
+        for tab in (self.dashboard_tab, self.student_tab, self.employer_tab,
+                    self.apprenticeship_tab, self.application_tab):
+            try:
+                tab.refresh()
+            except Exception:
+                logger.debug("Tab refresh after import failed", exc_info=True)
 
     def show_about(self):
         messagebox.showinfo(

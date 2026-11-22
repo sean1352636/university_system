@@ -12,99 +12,104 @@ from education_system.systems.university.infrastructure.database.db import get_c
 
 from education_system.systems.university.infrastructure.shared_context import get_auth
 
+MEAT_PRODUCTS = {}
+PRODUCT_CATEGORIES = ['Beef', 'Pork', 'Chicken', 'Lamb', 'Seafood', 'Deli']
+
 try:
     from education_system.systems.university.plugins.campus_commerce.domain.butcher.services.butcher_core import (
-        init_butcher_db, MEAT_PRODUCTS, PRODUCT_CATEGORIES
+        init_butcher_db as _core_init_butcher_db
     )
     BUTCHER_CORE_AVAILABLE = True
 except ImportError:
     BUTCHER_CORE_AVAILABLE = False
-    MEAT_PRODUCTS = {}
-    PRODUCT_CATEGORIES = ['Beef', 'Pork', 'Chicken', 'Lamb', 'Seafood', 'Deli']
+    _core_init_butcher_db = None
 
-    def init_butcher_db():
-        """Fallback database initialization"""
-        try:
-            with transaction() as conn:
-                # Products now use unified 'products' table with source_type='butcher'
 
-                # Orders now use unified 'orders' table with source_type='butcher'
+def init_butcher_db():
+    """Create the CLI's butcher tables, plus the core's when it is available."""
+    try:
+        if _core_init_butcher_db is not None:
+            _core_init_butcher_db()
+        with transaction() as conn:
+            # Products now use unified 'products' table with source_type='butcher'
 
-                # Order items now use unified 'order_items' table with source_type='butcher'
+            # Orders now use unified 'orders' table with source_type='butcher'
 
-                # Inventory adjustments table
-                conn.execute('''
-                    CREATE TABLE IF NOT EXISTS butcher_inventory_adjustments (
-                        adjustment_id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        product_id INTEGER NOT NULL,
-                        quantity_change REAL NOT NULL,
-                        reason TEXT NOT NULL,
-                        adjusted_by TEXT NOT NULL,
-                        adjustment_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                        notes TEXT,
-                        FOREIGN KEY (product_id) REFERENCES products(product_id)
-                    )
-                ''')
+            # Order items now use unified 'order_items' table with source_type='butcher'
 
-                # Stock alerts table
-                conn.execute('''
-                    CREATE TABLE IF NOT EXISTS butcher_stock_alerts (
-                        alert_id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        product_id INTEGER NOT NULL,
-                        alert_type TEXT NOT NULL,
-                        alert_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                        resolved BOOLEAN DEFAULT 0,
-                        resolved_date TIMESTAMP,
-                        FOREIGN KEY (product_id) REFERENCES products(product_id)
-                    )
-                ''')
+            # Inventory adjustments table
+            conn.execute('''
+                CREATE TABLE IF NOT EXISTS butcher_inventory_adjustments (
+                    adjustment_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    product_id INTEGER NOT NULL,
+                    quantity_change REAL NOT NULL,
+                    reason TEXT NOT NULL,
+                    adjusted_by TEXT NOT NULL,
+                    adjustment_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    notes TEXT,
+                    FOREIGN KEY (product_id) REFERENCES products(product_id)
+                )
+            ''')
 
-                # Expiry tracking table
-                conn.execute('''
-                    CREATE TABLE IF NOT EXISTS butcher_product_expiry (
-                        expiry_id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        product_id INTEGER NOT NULL,
-                        batch_number TEXT,
-                        quantity_kg REAL NOT NULL,
-                        expiry_date DATE NOT NULL,
-                        received_date DATE DEFAULT CURRENT_DATE,
-                        status TEXT DEFAULT 'active',
-                        FOREIGN KEY (product_id) REFERENCES products(product_id)
-                    )
-                ''')
+            # Stock alerts table
+            conn.execute('''
+                CREATE TABLE IF NOT EXISTS butcher_stock_alerts (
+                    alert_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    product_id INTEGER NOT NULL,
+                    alert_type TEXT NOT NULL,
+                    alert_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    resolved BOOLEAN DEFAULT 0,
+                    resolved_date TIMESTAMP,
+                    FOREIGN KEY (product_id) REFERENCES products(product_id)
+                )
+            ''')
 
-                # Initialize sample products if table is empty
-                cursor = conn.execute("SELECT COUNT(*) FROM products WHERE source_type = 'butcher'")
-                if cursor.fetchone()[0] == 0:
-                    sample_products = [
-                        ('Ribeye Steak', 'Beef', 24.99, 15.0, 'Premium ribeye steak', 'Prime Meats Ltd'),
-                        ('Sirloin Steak', 'Beef', 19.99, 20.0, 'Quality sirloin steak', 'Prime Meats Ltd'),
-                        ('Beef Mince', 'Beef', 8.99, 30.0, 'Lean beef mince', 'Prime Meats Ltd'),
-                        ('Pork Chops', 'Pork', 12.99, 18.0, 'Thick cut pork chops', 'Farm Fresh Pork'),
-                        ('Pork Sausages', 'Pork', 7.99, 25.0, 'Traditional pork sausages', 'Farm Fresh Pork'),
-                        ('Chicken Breast', 'Chicken', 10.99, 22.0, 'Free-range chicken breast', 'Valley Poultry'),
-                        ('Whole Chicken', 'Chicken', 6.99, 15.0, 'Free-range whole chicken', 'Valley Poultry'),
-                        ('Lamb Chops', 'Lamb', 18.99, 12.0, 'Premium lamb chops', 'Highland Lamb'),
-                        ('Leg of Lamb', 'Lamb', 16.99, 10.0, 'Whole leg of lamb', 'Highland Lamb'),
-                        ('Salmon Fillet', 'Seafood', 22.99, 8.0, 'Fresh Atlantic salmon', 'Ocean Fresh'),
-                        ('Cod Fillet', 'Seafood', 16.99, 10.0, 'Fresh cod fillet', 'Ocean Fresh'),
-                        ('Bacon Rashers', 'Deli', 9.99, 20.0, 'Smoked bacon rashers', 'Deli Masters'),
-                        ('Ham Slices', 'Deli', 11.99, 15.0, 'Honey roast ham', 'Deli Masters'),
-                    ]
+            # Expiry tracking table
+            conn.execute('''
+                CREATE TABLE IF NOT EXISTS butcher_product_expiry (
+                    expiry_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    product_id INTEGER NOT NULL,
+                    batch_number TEXT,
+                    quantity_kg REAL NOT NULL,
+                    expiry_date DATE NOT NULL,
+                    received_date DATE DEFAULT CURRENT_DATE,
+                    status TEXT DEFAULT 'active',
+                    FOREIGN KEY (product_id) REFERENCES products(product_id)
+                )
+            ''')
 
-                    for product in sample_products:
-                        conn.execute('''
-                            INSERT INTO products
-                            (source_type, name, category, price_per_unit, stock_quantity, description, supplier)
-                            VALUES ('butcher', ?, ?, ?, ?, ?, ?)
-                        ''', product)
+            # Initialize sample products if table is empty
+            cursor = conn.execute("SELECT COUNT(*) FROM products WHERE source_type = 'butcher'")
+            if cursor.fetchone()[0] == 0:
+                sample_products = [
+                    ('Ribeye Steak', 'Beef', 24.99, 15.0, 'Premium ribeye steak', 'Prime Meats Ltd'),
+                    ('Sirloin Steak', 'Beef', 19.99, 20.0, 'Quality sirloin steak', 'Prime Meats Ltd'),
+                    ('Beef Mince', 'Beef', 8.99, 30.0, 'Lean beef mince', 'Prime Meats Ltd'),
+                    ('Pork Chops', 'Pork', 12.99, 18.0, 'Thick cut pork chops', 'Farm Fresh Pork'),
+                    ('Pork Sausages', 'Pork', 7.99, 25.0, 'Traditional pork sausages', 'Farm Fresh Pork'),
+                    ('Chicken Breast', 'Chicken', 10.99, 22.0, 'Free-range chicken breast', 'Valley Poultry'),
+                    ('Whole Chicken', 'Chicken', 6.99, 15.0, 'Free-range whole chicken', 'Valley Poultry'),
+                    ('Lamb Chops', 'Lamb', 18.99, 12.0, 'Premium lamb chops', 'Highland Lamb'),
+                    ('Leg of Lamb', 'Lamb', 16.99, 10.0, 'Whole leg of lamb', 'Highland Lamb'),
+                    ('Salmon Fillet', 'Seafood', 22.99, 8.0, 'Fresh Atlantic salmon', 'Ocean Fresh'),
+                    ('Cod Fillet', 'Seafood', 16.99, 10.0, 'Fresh cod fillet', 'Ocean Fresh'),
+                    ('Bacon Rashers', 'Deli', 9.99, 20.0, 'Smoked bacon rashers', 'Deli Masters'),
+                    ('Ham Slices', 'Deli', 11.99, 15.0, 'Honey roast ham', 'Deli Masters'),
+                ]
 
-                    logger.info("Initialized butcher shop with sample products")
+                for product in sample_products:
+                    conn.execute('''
+                        INSERT INTO products
+                        (source_type, name, category, price_per_unit, stock_quantity, description, supplier)
+                        VALUES ('butcher', ?, ?, ?, ?, ?, ?)
+                    ''', product)
 
-            return True
-        except Exception as e:
-            logging.error(f"Database initialization error: {e}")
-            return False
+                logger.info("Initialized butcher shop with sample products")
+
+        return True
+    except Exception as e:
+        logging.error(f"Database initialization error: {e}")
+        return False
 
 try:
     from education_system.systems.university.infrastructure.email.email_service import send_email

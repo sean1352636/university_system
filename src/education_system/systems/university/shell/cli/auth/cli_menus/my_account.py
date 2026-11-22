@@ -87,9 +87,10 @@ def display_my_account_menu(auth):
 
             print("\n2-Factor Authentication Settings:")
             print("=================================")
-            print(f"2FA Status: {'Enabled' if user_details['two_fa_enabled'] else 'Disabled'}")
+            two_fa_on = auth.is_two_fa_enabled(user['id'])
+            print(f"2FA Status: {'Enabled' if two_fa_on else 'Disabled'}")
 
-            if user_details['two_fa_enabled']:
+            if two_fa_on:
                 print("\n1. Disable 2FA")
                 print("2. Regenerate Recovery Codes")
                 print("3. Back")

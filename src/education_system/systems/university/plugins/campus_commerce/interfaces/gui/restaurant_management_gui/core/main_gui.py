@@ -381,8 +381,17 @@ class RestaurantManagementGUI:
         # Create side panel buttons
         self.create_side_panel_buttons()
 
-        # Show Menu section by default
-        self.show_section('menu')
+        # Show the first section this person may open
+        allowed = self._refresh_section_access()
+        for section_id in self.nav_buttons:
+            if section_id in allowed:
+                self.show_section(section_id)
+                return
+        ttk.Label(
+            self.content_area,
+            text="You don't have access to any restaurant sections. "
+                 "Ask a restaurant manager or an administrator.",
+        ).pack(pady=40)
 
     def create_menu_bar(self):
         """Create the application menu bar"""
@@ -453,6 +462,7 @@ class RestaurantManagementGUI:
             ('staff', '👔  Staff', 'staff'),
             ('inventory', '📦  Inventory', 'inventory'),
             ('reports', '📊  Reports', 'reports'),
+            ('users', '🔑  User Access', 'users'),
         ]
 
         self.nav_buttons = {}
@@ -470,7 +480,7 @@ class RestaurantManagementGUI:
         """Create all content frames (hidden initially)"""
         # Create frames for each section
         sections = ['menu', 'place_order', 'orders', 'refunds', 'customers',
-                   'tables', 'staff', 'inventory', 'reports']
+                   'tables', 'staff', 'inventory', 'reports', 'users']
 
         for section in sections:
             frame = ttk.Frame(self.content_area)
@@ -486,11 +496,32 @@ class RestaurantManagementGUI:
         self.create_staff_tab(self.content_frames['staff'])
         self.create_inventory_tab(self.content_frames['inventory'])
         self.create_reports_tab(self.content_frames['reports'])
+        self.create_user_access_tab(self.content_frames['users'])
+
+    def _refresh_section_access(self):
+        """Grey out the sections this person may not open; return those they may."""
+        allowed = allowed_restaurant_sections(self.auth)
+        for section_id, btn in self.nav_buttons.items():
+            btn.state(['!disabled'] if section_id in allowed else ['disabled'])
+        return allowed
 
     def show_section(self, section_id):
         """Show the selected section and hide others"""
         if not self.content_frames:
             return
+
+        # Checked on every open, so a change to someone's access applies straight away.
+        if section_id not in self._refresh_section_access():
+            messagebox.showinfo(
+                _t("restaurant.window_title"),
+                "You don't have access to this section. "
+                "Ask a restaurant manager or an administrator.",
+                parent=self.root,
+            )
+            return
+
+        if section_id == 'users':
+            self.refresh_user_access()
 
         # Hide all frames
         for frame in self.content_frames.values():
@@ -541,6 +572,10 @@ class RestaurantManagementGUI:
     # dynamic method placeholders will be patched below
 
 # Import and attach methods from other modules
+from education_system.systems.university.plugins.campus_commerce.domain.services.restaurant.operations.user_access import (
+    allowed_sections as allowed_restaurant_sections,
+)
+from education_system.systems.university.plugins.campus_commerce.interfaces.gui.restaurant_management_gui.staff import user_access_gui
 from education_system.systems.university.plugins.campus_commerce.interfaces.gui.restaurant_management_gui.core.tabs import create_menu_tab, create_place_order_tab, create_orders_tab, create_refunds_tab, create_customers_tab, create_tables_tab, create_staff_tab, create_inventory_tab, create_reports_tab
 from education_system.systems.university.plugins.campus_commerce.interfaces.gui.restaurant_management_gui.menu.menu_management import view_menu_items, add_menu_item_dialog, update_menu_item_dialog, show_menu_analytics, generate_menu_analytics_text
 from education_system.systems.university.plugins.campus_commerce.interfaces.gui.restaurant_management_gui.orders.order_management import view_orders_gui, update_order_status_dialog, process_payment_dialog, show_order_analytics, generate_order_analytics
@@ -570,6 +605,12 @@ RestaurantManagementGUI.create_tables_tab = create_tables_tab
 RestaurantManagementGUI.create_staff_tab = create_staff_tab
 RestaurantManagementGUI.create_inventory_tab = create_inventory_tab
 RestaurantManagementGUI.create_reports_tab = create_reports_tab
+RestaurantManagementGUI.create_user_access_tab = user_access_gui.create_user_access_tab
+RestaurantManagementGUI.refresh_user_access = user_access_gui.refresh_user_access
+RestaurantManagementGUI.user_access_grant = user_access_gui.user_access_grant
+RestaurantManagementGUI.user_access_change_role = user_access_gui.user_access_change_role
+RestaurantManagementGUI.user_access_remove = user_access_gui.user_access_remove
+RestaurantManagementGUI.user_access_history = user_access_gui.user_access_history
 RestaurantManagementGUI.view_menu_items = view_menu_items
 RestaurantManagementGUI.add_menu_item_dialog = add_menu_item_dialog
 RestaurantManagementGUI.update_menu_item_dialog = update_menu_item_dialog

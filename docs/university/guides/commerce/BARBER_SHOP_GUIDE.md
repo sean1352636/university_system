@@ -330,5 +330,5 @@ Access the audit log via **Analytics** → **View Audit Log**.
 ---
 
 **Last Updated**: February 2026
-**Module**: `university_system/modules/domain/barber/`
+**Module**: `src/education_system/systems/university/plugins/campus_commerce/domain/barber/`
 **Support**: barber@university.edu | (555) 123-HAIR

@@ -1,0 +1,35 @@
+{
+  "name": "parents_evening_invitation",
+  "description": "Invitation to a parents' evening, one per family address (all their children in the year group named).",
+  "subject": "Parents' evening: {event_name} on {event_date}",
+  "body": [
+    "Dear {recipient_name},",
+    "",
+    "You are invited to {event_name} to talk with the teachers of {pupil_names}.",
+    "",
+    "Date: {event_date}",
+    "Time: {times}",
+    "Where: {venue}",
+    "Appointments last {slot_minutes} minutes.",
+    "",
+    "{booking_info}",
+    "",
+    "{note}",
+    "",
+    "Yours sincerely,",
+    "{school_name}"
+  ],
+  "placeholders": {
+    "recipient_name": "The contact's name",
+    "pupil_names": "The contact's children in the year group (first names)",
+    "event_name": "The evening's name",
+    "event_date": "The date",
+    "times": "Start and end times",
+    "venue": "Where (room, or online with the link)",
+    "slot_minutes": "Appointment length",
+    "booking_info": "How and when to book",
+    "note": "An optional extra message",
+    "school_name": "The school's name"
+  },
+  "defaults": {"school_name": "Secondary School", "note": ""}
+}

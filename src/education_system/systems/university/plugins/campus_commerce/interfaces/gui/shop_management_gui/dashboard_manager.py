@@ -721,7 +721,7 @@ def get_sales_summary_data(self, start_date, end_date):
     try:
         # Get a DB connection
         if hasattr(self, "get_connection") and callable(getattr(self, "get_connection")):
-            conn = self.get_connection()
+            conn = get_connection()
         elif "get_connection" in globals() and callable(globals()["get_connection"]):
             conn = globals()["get_connection"]()
         else:

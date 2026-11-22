@@ -456,5 +456,5 @@ The AI Detector and Academic Integrity system provides advanced tools for detect
 ---
 
 **Last Updated**: February 2026
-**Module**: `university_system/modules/domain/academics/gui/ai_detector/main.py`
+**Module**: `src/education_system/systems/university/domains/integrity/interfaces/gui/ai_detector/main.py`
 **Support**: integrity@university.edu | (555) 123-INTG

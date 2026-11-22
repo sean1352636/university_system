@@ -21,20 +21,19 @@ Solutions to common issues with the Primary School Management System.
 
 **Symptom**: You see a message such as "Account locked" or "Too many failed login attempts" when trying to log in.
 
-**Cause**: The system locks an account after 5 consecutive failed login attempts (`MAX_LOGIN_ATTEMPTS = 5` in `core/defaults.py`). The lockout lasts 15 minutes (`LOCKOUT_DURATION = 15`).
+**Cause**: The system locks an account after 3 consecutive failed login attempts (`MAX_LOGIN_ATTEMPTS = 3` in `src/education_system/platform/identity/auth/defaults.py`). The lockout lasts 15 minutes (`LOCKOUT_DURATION_MINUTES = 15`).
 
 **Solution**:
 
 1. Wait 15 minutes for the lockout to expire automatically, or
-2. Have an administrator unlock the account through the **Users** module, or
+2. Have an administrator unlock the account through **System → User Accounts**, or
 3. If no other admin account is available, reset the lock directly in the shared auth database:
 
 ```bash
-source venv/bin/activate
 python -c "
 import sqlite3
-conn = sqlite3.connect('education_system/shared/data/db_files/auth.db')
-conn.execute(\"UPDATE users SET failed_attempts = 0, locked = 0 WHERE username = 'primary_admin'\")
+conn = sqlite3.connect('var/data/platform/db_files/auth.db')
+conn.execute(\"UPDATE users SET failed_login_attempts = 0, locked_until = NULL WHERE username = 'admin3'\")
 conn.commit()
 conn.close()
 print('Account unlocked.')
@@ -43,7 +42,7 @@ print('Account unlocked.')
 
 ### Forgotten Default Password
 
-The default credentials seeded on first run are:
+The default credentials, seeded only when `EDU_DEV_SEED=true`, are:
 
 | Role | Username | Password |
 |------|----------|----------|
@@ -53,7 +52,7 @@ The default credentials seeded on first run are:
 | Student | `student3` | `student1234` |
 | Parent | `parent3` | `parent1234` |
 
-If these have been changed and forgotten, an administrator must reset the password through the Users module or directly in the shared auth database using the password hashing utility in `shared/auth/`.
+If these have been changed and forgotten, an administrator must reset the password through **System → User Accounts** or directly in the shared auth database using the password hashing utility in `src/education_system/platform/identity/auth/`.
 
 ### MFA Issues
 
@@ -63,19 +62,16 @@ If these have been changed and forgotten, an administrator must reset the passwo
 
 - Ensure the device clock is accurate. TOTP codes are time-based and a drift of more than 30 seconds will cause failures.
 - If MFA recovery is needed, use one of the recovery codes generated during MFA setup.
-- An administrator can disable MFA for the account through the user management interface or by updating the user record in the shared auth database (`education_system/shared/data/db_files/auth.db`).
+- An administrator can disable MFA for the account with `MFAService.disable_mfa` or by updating its `mfa_secrets` row in the shared auth database (`var/data/platform/db_files/auth.db`).
 - Check the `mfa_secrets` and `mfa_recovery_codes` tables in the auth database for the account state.
 
 ### Session Timeout
 
-**Symptom**: You are logged out unexpectedly.
+**Symptom**: A session token is rejected as expired.
 
-**Cause**: Sessions expire after 30 minutes of inactivity by default (`SESSION_TIMEOUT = 30` in `core/defaults.py`).
+**Cause**: Sessions expire 30 minutes after they are created by default (`SESSION_TIMEOUT_MINUTES` in `src/education_system/platform/identity/auth/defaults.py`).
 
-**Solution**: The session timeout is configured in `primary_school/core/defaults.py`. To adjust:
-
-1. Modify the `SESSION_TIMEOUT` value in `core/defaults.py`, or
-2. Set the appropriate environment variable if one is supported by your deployment.
+**Solution**: Set the `EDU_SESSION_TIMEOUT` environment variable to the number of minutes you want.
 
 ---
 
@@ -98,14 +94,14 @@ If these have been changed and forgotten, an administrator must reset the passwo
 
 ```bash
 # Find processes using the database file
-lsof education_system/primary_school/data/db_files/primary_school.db
+lsof var/data/primary/primary.db
 ```
 
-3. If a stale lock exists (e.g., after a crash), remove the WAL and SHM files if present:
+3. If a stale lock exists (e.g., after a crash), remove any leftover WAL and SHM files:
 
 ```bash
-rm -f education_system/primary_school/data/db_files/primary_school.db-wal
-rm -f education_system/primary_school/data/db_files/primary_school.db-shm
+rm -f var/data/primary/primary.db-wal
+rm -f var/data/primary/primary.db-shm
 ```
 
 4. Restart the application.
@@ -119,13 +115,11 @@ rm -f education_system/primary_school/data/db_files/primary_school.db-shm
 **Solution**: The system creates the database automatically on first run. Ensure the data directories exist:
 
 ```bash
-# The application creates these automatically, but you can do it manually:
-mkdir -p education_system/primary_school/data/db_files
-mkdir -p education_system/primary_school/data/config
-mkdir -p education_system/primary_school/logs
+# The application creates this automatically, but you can do it manually:
+mkdir -p var/data/primary
 ```
 
-Then restart the application. The schema initialization and default data seeding will recreate the database.
+Then restart the application. Each module recreates its tables when first used.
 
 ### Schema Migration Issues
 
@@ -138,15 +132,15 @@ Then restart the application. The schema initialization and default data seeding
 1. Back up the existing database:
 
 ```bash
-cp education_system/primary_school/data/db_files/primary_school.db \
-   education_system/primary_school/data/db_files/primary_school.db.backup
+mkdir -p var/backups/primary
+cp var/data/primary/primary.db var/backups/primary/primary.db.backup
 ```
 
-2. If the application includes migration scripts, run them. Otherwise, the simplest approach for development environments is to delete the database and let it be recreated:
+2. Primary modules add missing tables and some columns from their own `init_db()`; these tables are not managed by Alembic. If a schema still does not match, the simplest approach for development environments is to delete the database and let it be recreated:
 
 ```bash
-rm education_system/primary_school/data/db_files/primary_school.db
-# Restart the application -- schema and seed data will be recreated
+rm var/data/primary/primary.db
+# Restart the application -- the tables will be recreated
 ```
 
 **Warning**: Deleting the database destroys all data. Only do this in development or after making a backup.
@@ -157,19 +151,18 @@ To manually back up the database:
 
 ```bash
 # Backup
-cp education_system/primary_school/data/db_files/primary_school.db \
-   education_system/primary_school/data/db_files/primary_school_$(date +%Y%m%d_%H%M%S).db
+mkdir -p var/backups/primary
+cp var/data/primary/primary.db var/backups/primary/primary_$(date +%Y%m%d_%H%M%S).db
 
 # Restore from backup
-cp education_system/primary_school/data/db_files/primary_school_20260310_120000.db \
-   education_system/primary_school/data/db_files/primary_school.db
+cp var/backups/primary/primary_20260310_120000.db var/data/primary/primary.db
 ```
 
 Remember to also back up the shared auth database if needed:
 
 ```bash
-cp education_system/shared/data/db_files/auth.db \
-   education_system/shared/data/db_files/auth_$(date +%Y%m%d_%H%M%S).db
+mkdir -p var/backups/platform
+cp var/data/platform/db_files/auth.db var/backups/platform/auth_$(date +%Y%m%d_%H%M%S).db
 ```
 
 ---
@@ -214,7 +207,7 @@ xvfb-run python -m education_system --primary --gui
 **Solutions**:
 
 - Wait for the operation to complete. Database operations on large datasets may take time.
-- Check `primary_school/logs/app.log` for errors that may indicate an infinite loop or deadlock.
+- Check the console for errors that may indicate an infinite loop or deadlock.
 - If the application is completely stuck, terminate the process and restart.
 
 ### Sidebar Modules Not Loading
@@ -223,12 +216,12 @@ xvfb-run python -m education_system --primary --gui
 
 **Solutions**:
 
-- Check the console and log file for import errors. A syntax error or missing dependency in one module can prevent it from loading.
-- Verify that the `modules/domain/__init__.py` files correctly list all module registrations.
+- Check the console for import errors. A syntax error or missing dependency in one module can prevent it from loading.
+- Verify that the module has an entry in `NAV_CATEGORIES` in `src/education_system/systems/primary/gui_main.py`.
 - Run a quick import check:
 
 ```bash
-python -c "from education_system.primary_school.modules.domain import *"
+python -c "import education_system.systems.primary.gui_main"
 ```
 
 Any import errors will be printed to the console.
@@ -294,7 +287,7 @@ export LANG=en_GB.UTF-8
 1. Add pupils via the **Pupils** module.
 2. Create subjects via the **Subjects** module.
 3. Assign pupils to classes via the **Classes** module.
-4. Return to **Assessment** to record levels (Emerging, Developing, Expected, Greater Depth).
+4. Return to **Assessment** to record grades (BLW, WTS, EXS, GDS).
 
 ### SATs Module Has No Data
 
@@ -318,28 +311,22 @@ export LANG=en_GB.UTF-8
 
 ### Check the Log Files
 
-The primary log file is located at:
-
-```
-primary_school/logs/app.log
-```
+The Primary School writes no log file of its own; the launcher logs to the console.
 
 Log entries follow the format:
 
 ```
-2026-03-10 10:15:32,123 - module.name - INFO - Message text
+2026-03-10 10:15:32 - Message text
 ```
 
-- **INFO**: Normal operations (logged to file only).
-- **WARNING**: Potential issues (logged to file and console).
+- **INFO**: Normal operations (hidden unless verbose).
+- **WARNING**: Potential issues (shown on the console).
 - **ERROR**: Failures that need attention.
 
-To increase log verbosity, modify the logging level in `core/logs.py` or set it programmatically:
+To increase log verbosity, start with `--verbose`, or set `EDU_VERBOSE=1`:
 
-```python
-from education_system.primary_school.core.logs import configure_logging
-import logging
-configure_logging(level=logging.DEBUG)
+```bash
+python -m education_system --primary --gui --verbose
 ```
 
 ### Verify the Python Environment
@@ -359,7 +346,7 @@ python -c "import sqlite3; print('sqlite3 OK')"
 Use the SQLite command-line tool to inspect the database:
 
 ```bash
-sqlite3 education_system/primary_school/data/db_files/primary_school.db
+sqlite3 var/data/primary/primary.db
 
 # List all tables
 .tables
@@ -377,68 +364,18 @@ SELECT COUNT(*) FROM pupils;
 For the shared auth database:
 
 ```bash
-sqlite3 education_system/shared/data/db_files/auth.db
+sqlite3 var/data/platform/db_files/auth.db
 
 .tables
-SELECT username, locked, failed_attempts FROM users;
+SELECT username, locked_until, failed_login_attempts FROM users;
 .quit
 ```
 
-### Check the Exception Hierarchy
+### Check the Exceptions
 
-The system uses a structured exception hierarchy rooted at `SchoolSystemError`. Key exception classes defined in `primary_school/core/exceptions.py`:
+The Primary School has no system-wide exception hierarchy. Domain modules raise `ValidationError` for invalid input, using their own class or the one in `src/education_system/systems/primary/domain/learners/pupils/pupils.py`. Screens and CLI handlers catch it and show its message. Anything else is logged with a traceback and shown as a general error.
 
-| Exception | Category | Purpose |
-|-----------|----------|---------|
-| `SchoolSystemError` | Base | Base exception for all system errors |
-| `ValidationError` | Base | Input validation failures |
-| `PupilError` | Academics | Pupil record errors |
-| `SubjectError` | Academics | Subject management errors |
-| `ClassError` | Academics | Class group errors |
-| `AssessmentError` | Academics | Assessment recording errors |
-| `AttendanceError` | Academics | Attendance tracking errors |
-| `TimetableError` | Academics | Timetable scheduling errors |
-| `HomeworkError` | Academics | Homework management errors |
-| `SATsError` | Academics | SATs tracking errors |
-| `PhonicsError` | Academics | Phonics screening errors |
-| `ReadingRecordError` | Academics | Reading record errors |
-| `ProgressError` | Academics | Progress tracking errors |
-| `BehaviourError` | Pastoral | Behaviour incident errors |
-| `RewardsError` | Pastoral | Rewards management errors |
-| `SafeguardingError` | Pastoral | Safeguarding concern errors |
-| `SENDError` | Pastoral | SEND tracking errors |
-| `PastoralError` | Pastoral | Pastoral care errors |
-| `StaffError` | Staff | Staff record errors |
-| `HRError` | Staff | HR management errors |
-| `CPDError` | Staff | CPD record errors |
-| `CoverError` | Staff | Cover allocation errors |
-| `UserManagementError` | Admin | User account errors |
-| `SettingsError` | Admin | Settings configuration errors |
-| `AdmissionsError` | Admin | Admissions processing errors |
-| `FinanceError` | Admin | Financial management errors |
-| `AuditError` | Admin | Audit log errors |
-| `PolicyError` | Admin | Policy management errors |
-| `DocumentError` | Admin | Document management errors |
-| `ClubsError` | Pupil Life | Club management errors |
-| `MealsError` | Pupil Life | Meal management errors |
-| `TransportError` | Pupil Life | Transport arrangement errors |
-| `TripsError` | Pupil Life | Trip management errors |
-| `LibraryError` | Pupil Life | Library management errors |
-| `MedicalError` | Pupil Life | Medical record errors |
-| `ClassGroupError` | Pupil Life | Class group errors |
-| `ConsentError` | Pupil Life | Consent tracking errors |
-| `EmailError` | Communication | Email delivery errors |
-| `NotificationError` | Communication | Notification errors |
-| `AnnouncementError` | Communication | Announcement errors |
-| `CalendarError` | Communication | Calendar management errors |
-| `ParentsEveningError` | Communication | Parents evening errors |
-| `CommunicationLogError` | Communication | Communication log errors |
-| `RoomBookingError` | Facilities | Room booking errors |
-| `AssetError` | Facilities | Asset tracking errors |
-| `VisitorError` | Facilities | Visitor management errors |
-| `IncidentError` | Facilities | Incident reporting errors |
-
-When debugging, catch `SchoolSystemError` to handle all application-level errors, or catch specific subclasses for targeted handling.
+When debugging, look for that traceback on the console.
 
 ### Reset to a Clean State
 
@@ -446,12 +383,9 @@ If all else fails and you are in a development environment, you can reset the sy
 
 ```bash
 # Remove the primary school database (destroys all data)
-rm -f education_system/primary_school/data/db_files/primary_school.db
+rm -f var/data/primary/primary.db
 
-# Remove log files
-rm -f education_system/primary_school/logs/app.log
-
-# Restart the application -- database and defaults will be recreated
+# Restart the application -- the tables will be recreated
 python -m education_system --primary --gui
 ```
 
@@ -459,5 +393,4 @@ python -m education_system --primary --gui
 
 ---
 
-**Last Updated**: March 2026
-**Version**: 1.0.0
+**Last Updated**: October 2026

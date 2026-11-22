@@ -6,6 +6,7 @@ import logging
 
 from education_system.platform.identity.auth.defaults import SESSION_TIMEOUT_MINUTES, MAX_SESSIONS_PER_USER
 from education_system.platform.identity.auth.db import connect
+from education_system.platform.identity.auth.policy import policy_int
 
 logger = logging.getLogger(__name__)
 
@@ -27,10 +28,12 @@ class SessionManager:
         room for the new one.
         """
         token = secrets.token_urlsafe(32)
-        expires_at = datetime.utcnow() + timedelta(minutes=SESSION_TIMEOUT_MINUTES)
 
         conn = self._conn()
         try:
+            # The administrator's sign-in policy (auth_settings), else EDU_SESSION_TIMEOUT / 30.
+            expires_at = datetime.utcnow() + timedelta(minutes=policy_int(
+                conn, "session_timeout_minutes", SESSION_TIMEOUT_MINUTES))
             # Evict expired sessions first
             conn.execute(
                 "DELETE FROM sessions WHERE user_id = ? AND (expires_at < ? OR is_active = 0)",

@@ -4,6 +4,10 @@ Headline-metric layer. This module owns no schema: each metric is a
 read-only roll-up over an existing domain module (students, attendance,
 behaviour, fees, bursaries, UCAS, apprenticeships, exam entries, …).
 
+Since the gap build the snapshot also carries the 16-18 measure tiles
+(retention, achievement, L3 VA, English & maths progress, attendance,
+condition of funding) from ``governance/compliance/measures``.
+
 The CLI and GUI both call :func:`snapshot` and render the resulting
 :class:`Tile` list. Each tile carries a label, a formatted value, and
 a short hint string for context.
@@ -153,7 +157,7 @@ def kpi_recent_behaviour(window_days: int) -> Tile:
 
 def kpi_outstanding_fees() -> Tile:
     def _go():
-        from education_system.systems.sixth_form.domain.finance.fees import fees
+        from education_system.systems.sixth_form.domains.finance.domain.fees import fees
         views = fees.list_views()
         outstanding = sum(max(0.0, getattr(v, "balance", 0.0) or 0.0)
                           for v in views)
@@ -164,7 +168,7 @@ def kpi_outstanding_fees() -> Tile:
 
 def kpi_bursaries_submitted() -> Tile:
     def _go():
-        from education_system.systems.sixth_form.domain.finance.bursaries import bursaries
+        from education_system.systems.sixth_form.domains.finance.domain.bursaries import bursaries
         apps = bursaries.list_applications()
         pending = sum(1 for a in apps if a.status in ("Submitted", "Under review",
                                                        "Approved"))
@@ -261,6 +265,47 @@ def kpi_attendance_at_risk(window_days: int, threshold: float) -> Tile:
                 f"Below {threshold:.0f}% in {window_days}d")
 
 
+# ── 16-18 measures tiles ───────────────────────────────────────────
+#
+# Retention, achievement, value added, English & maths progress,
+# year-to-date attendance and condition-of-funding compliance come from
+# governance/compliance/measures, computed once per snapshot. They
+# approximate the DfE methodology (see that module), which the hint says.
+
+def _measure_tile(report, key: str, label: str, hint: str) -> Tile:
+    m = report.get(key) if report is not None else None
+    if m is None or m.value is None:
+        return Tile(label, "—", hint)
+    extra = f" · {m.basis}" if m.basis else ""
+    if key == "l3va" and any("PLACEHOLDER" in n for n in m.notes):
+        hint = "Placeholder benchmarks — replace"
+    return Tile(label, m.display, hint + extra)
+
+
+def measure_tiles(report) -> list[Tile]:
+    return [
+        _measure_tile(report, "retention", "Retention",
+                      "Core aim retained (DfE approx.)"),
+        _measure_tile(report, "achievement", "Achievement rate",
+                      "Aims achieved (DfE approx.)"),
+        _measure_tile(report, "l3va", "Level 3 VA",
+                      "Grades vs expected"),
+        _measure_tile(report, "em_progress", "Eng & maths progress",
+                      "Grades gained, no 4 at 16"),
+        _measure_tile(report, "attendance", "Attendance (year)",
+                      "Census basis, year to date"),
+        _measure_tile(report, "cof", "CoF compliance",
+                      "English & maths condition"),
+    ]
+
+
+def _measures_report():
+    from education_system.systems.sixth_form.domain.governance.compliance.measures import (
+        measures,
+    )
+    return measures.compute_all()
+
+
 # ── Snapshot ───────────────────────────────────────────────────────
 
 DEFAULT_WINDOW_DAYS = 30
@@ -288,6 +333,7 @@ def snapshot(*,
         kpi_destinations_missing(),
         kpi_exam_entries(),
     ]
+    tiles.extend(measure_tiles(_safe(_measures_report)))
     return Snapshot(
         generated_at=_dt.datetime.now().strftime("%Y-%m-%d %H:%M"),
         window_days=window_days,

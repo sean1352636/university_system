@@ -27,8 +27,10 @@ def display_communication_hub_menu(auth):
     """Display the unified communication hub CLI menu with all options"""
     from education_system.systems.university.infrastructure.email.config import config
     from education_system.systems.university.infrastructure.email.admin import CommunicationDashboard
-    from education_system.systems.university.services.communication.communication_manager import CommunicationManager
+    from education_system.systems.university.infrastructure.communication.communication_manager import CommunicationManager
     from education_system.systems.university.infrastructure.logs import LOG_MANAGEMENT_AVAILABLE
+    from education_system.systems.university.infrastructure.email import permissions
+    from education_system.systems.university.shell.cli import email_delivery_menu
 
     # Initialize dashboard for advanced features
     dashboard = CommunicationDashboard(auth=auth)
@@ -53,6 +55,9 @@ def display_communication_hub_menu(auth):
 
     print("\n🌐 Cross-System:")
     print(f"{'C.  Cross-System Messages':<25}")
+
+    print("\n📬 E-mail Delivery:")
+    print(f"{'E.  Delivery, outbox & my e-mail preferences':<50}")
 
     print("\n📊 Reports & Analytics:")
     print(f"{'16. Email Reports':<25}", end="")
@@ -90,8 +95,7 @@ def display_communication_hub_menu(auth):
                     body = input("Enter message body: ").strip()
 
                     comm_mgr = CommunicationManager()
-                    # No sender kwarg: email_queue has no sender column, so
-                    # CommunicationManager.queue_email() takes recipient/content only.
+                    # Goes through the university outbox (see CommunicationManager).
                     email_id = comm_mgr.queue_email(
                         to_address=to_address,
                         subject=subject,
@@ -165,9 +169,11 @@ def display_communication_hub_menu(auth):
                 from education_system.systems.university.infrastructure.email.admin import display_announcements_menu
                 display_announcements_menu(dashboard)
             elif choice == '7':
-                # Send Batch Announcement
-                from education_system.systems.university.infrastructure.email.email_service import send_batch_email_form
-                send_batch_email_form()
+                # Send Batch Announcement – an audited bulk send with unsubscribe
+                if not permissions.can_send_bulk(auth):
+                    print(f"❌ {permissions.DENIED_BULK}")
+                    continue
+                email_delivery_menu.send_bulk(auth)
             elif choice == '8':
                 # Chat Rooms
                 from education_system.systems.university.infrastructure.email.admin import display_chat_rooms_menu
@@ -178,10 +184,16 @@ def display_communication_hub_menu(auth):
                 display_preferences_menu(dashboard)
             elif choice == '10':
                 # Configure Email Settings
+                if not permissions.is_email_admin(auth):
+                    print(f"❌ {permissions.DENIED}")
+                    continue
                 from education_system.systems.university.infrastructure.email.config import configure_email_settings
                 configure_email_settings()
             elif choice == '11':
                 # Test Email Configuration
+                if not permissions.is_email_admin(auth):
+                    print(f"❌ {permissions.DENIED}")
+                    continue
                 from education_system.systems.university.infrastructure.email.email_service import send_email
                 recipient = input("Enter test recipient email (or press Enter to use your email): ").strip()
                 if not recipient and auth.current_user:
@@ -197,26 +209,24 @@ def display_communication_hub_menu(auth):
                     print("❌ No recipient email provided.")
             elif choice == '12':
                 # Manage Email Templates
+                if not permissions.is_email_admin(auth):
+                    print(f"❌ {permissions.DENIED}")
+                    continue
                 from education_system.systems.university.infrastructure.email.templates import template_management_menu
                 template_management_menu()
             elif choice == '13':
                 # Schedule Emails
+                if not permissions.is_email_admin(auth):
+                    print(f"❌ {permissions.DENIED}")
+                    continue
                 from education_system.systems.university.infrastructure.email.email_service import schedule_email_form
                 schedule_email_form()
             elif choice == '14':
-                # View Email Queue Status
-                from education_system.systems.university.infrastructure.email.email_service import email_queue, get_stored_emails
-                if config.get('database_only_mode', True):
-                    emails_data = get_stored_emails(limit=1)
-                    print(f"\n📊 Stored emails in database: {emails_data['total_count']}")
-                    if emails_data['total_count'] > 0:
-                        print("Recent stored emails:")
-                        recent_emails = get_stored_emails(limit=5)
-                        for email in recent_emails['emails']:
-                            print(f"  - To: {email['recipient_email']}, Subject: {email['subject'][:50]}...")
-                else:
-                    queue_size = email_queue.qsize()
-                    print(f"\n📊 Current email queue size: {queue_size}")
+                # View Email Queue Status – the outbox
+                if not permissions.is_email_admin(auth):
+                    print(f"❌ {permissions.DENIED}")
+                    continue
+                email_delivery_menu.show_status(auth)
                 input("\nPress Enter to continue...")
             elif choice == '15':
                 # View Stored Emails
@@ -262,6 +272,8 @@ def display_communication_hub_menu(auth):
                     break
                 else:
                     print("❌ Invalid choice.")
+            elif choice.upper() == 'E':
+                email_delivery_menu.run(auth)
             elif choice.upper() == 'C':
                 # Cross-System Messages — links the per-system Email Manager
                 # to the shared inter-system messaging CLI.

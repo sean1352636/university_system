@@ -156,6 +156,18 @@ def _has_ehcp(handover: HandoverRequest) -> int:
     return int("ehcp" in haystack or "education, health and care" in haystack)
 
 
+def _age_band(date_of_birth: str) -> str:
+    """The learner type for an age: 19 or over on 31 August is an adult."""
+    try:
+        dob = date.fromisoformat(str(date_of_birth)[:10])
+    except ValueError:
+        return "16-18 Study Programme"
+    today = date.today()
+    cutoff = date(today.year if today.month > 8 else today.year - 1, 8, 31)
+    age = cutoff.year - dob.year - ((cutoff.month, cutoff.day) < (dob.month, dob.day))
+    return "19+ Adult Learner" if age >= 19 else "16-18 Study Programme"
+
+
 # ---------------------------------------------------------------------------
 # The adapter
 # ---------------------------------------------------------------------------
@@ -261,10 +273,14 @@ class FeCollegeAdapter(PhaseAdapter):
             student_id = next_student_id(used)
 
             # A learner arriving from apprenticeships is on the Apprentice
-            # study programme; everyone else defaults by age band.
-            learner_type = ("Apprentice"
-                            if handover.source_system == "apprenticeships"
-                            else "16-18 Study Programme")
+            # study programme, one from adult education is a 19+ adult
+            # learner; everyone else defaults by age band.
+            learner_type = {"apprenticeships": "Apprentice",
+                            "adult_education": "19+ Adult Learner"}.get(
+                handover.source_system, "16-18 Study Programme")
+            if handover.source_system == "training_provider":
+                # Short-course learners are any age: band them by it.
+                learner_type = _age_band(identity["date_of_birth"])
 
             conn.execute(
                 """INSERT INTO students
@@ -413,6 +429,42 @@ class FeCollegeAdapter(PhaseAdapter):
                     local_student_id, destination_system or "(unspecified)")
         return ExportResult(record=record,
                             local_student_id=str(local_student_id))
+
+    def receive_training_result(self, local_student_id: str,
+                                result: dict[str, Any]) -> str | None:
+        """A short course the college sent the learner on, from the training
+        provider (``platform.cross_system.training_provider_requests``).
+
+        A certificate goes onto the learner's prior attainment (it can be a
+        licence to practise a course needs) and their notes; any other
+        outcome goes onto their notes. Returns a line for the sender's log.
+        """
+        init_db()
+        when = result.get("issued_on") or result.get("on") or date.today().isoformat()
+        course = result.get("course") or "short course"
+        if result.get("kind") == "certificate":
+            level = f" ({result['level']})" if result.get("level") else ""
+            expires = f", expires {result['expires_on']}" if result.get("expires_on") else ""
+            line = (f"{course}{level} - certificate {result.get('cert_no') or ''} "
+                    f"issued {when}{expires} (training provider)")
+        else:
+            line = f"{course}: {result.get('outcome') or 'update'} {when} (training provider)"
+        with transaction() as conn:
+            row = conn.execute("SELECT prior_attainment, notes FROM students "
+                               "WHERE student_id = ?", (local_student_id,)).fetchone()
+            if row is None:
+                logger.warning("receive_training_result: no FE learner %s", local_student_id)
+                return None
+            prior = row["prior_attainment"] or ""
+            if result.get("kind") == "certificate" and line not in prior:
+                prior = f"{prior}\n{line}".strip()
+            notes = row["notes"] or ""
+            if line not in notes:
+                notes = f"{notes}\n{line}".strip()
+            conn.execute("UPDATE students SET prior_attainment = ?, notes = ?, "
+                         "updated_at = datetime('now') WHERE student_id = ?",
+                         (prior, notes, local_student_id))
+        return line
 
     def close_enrolment(self, local_student_id: str,
                         reason: str, **details: Any) -> None:

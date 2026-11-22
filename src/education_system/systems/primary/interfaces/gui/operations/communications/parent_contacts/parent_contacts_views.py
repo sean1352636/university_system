@@ -4,12 +4,14 @@ from __future__ import annotations
 
 import logging
 import tkinter as tk
-from tkinter import messagebox, ttk
+from tkinter import simpledialog, ttk
 from typing import Callable
 from education_system.systems.primary.domain.operations.communications.parent_contacts import parent_contacts
 from education_system.systems.primary.domain.operations.communications.parent_contacts import parent_contacts as data
 from education_system.systems.primary.domain import _pupils_bridge as student_data
-from education_system.platform import branding
+from education_system.platform.delivery.gui.parented_dialogs import make_toplevel, messagebox
+from education_system.systems.primary.interfaces.gui import kit
+from education_system.systems.primary.domain import access
 from education_system.systems.primary.domain.operations.communications.parent_contacts.parent_contacts import (
     Contact,
     DEFAULT_LANGUAGE,
@@ -27,14 +29,47 @@ WIN_GEOMETRY = "1400x900"
 WIN_MINSIZE = (1200, 800)
 
 
+_TITLES = ("Mr", "Mrs", "Ms", "Miss", "Mx", "Dr")
+
+
 def open_directory(parent=None) -> None:
     data.init_db()
-    master = getattr(parent, "root", parent)
-    win = tk.Toplevel(master) if master is not None else tk.Tk()
-    win.title(f"Parent Contacts — {branding.SYSTEM_NAME}")
-    win.geometry(WIN_GEOMETRY)
-    win.minsize(*WIN_MINSIZE)
-    ContactsDirectory(win)
+    kit.show_page(parent, "Parent Contacts",
+                  lambda frame: _draw_directory(frame, parent))
+
+
+def _draw_directory(frame: ttk.Frame, host=None) -> None:
+    kit.page_heading(frame, "Parent Contacts",
+                     "Parents, carers and emergency contacts for every pupil.")
+    ContactsDirectory(frame, auth=getattr(host, "auth", None))
+
+
+def _ask_pupil(parent: tk.Misc, title: str, prompt: str) -> str | None:
+    """A small modal pupil picker; returns the chosen pupil id or None."""
+    win = make_toplevel(parent.winfo_toplevel())
+    win.title(title)
+    win.after_idle(win.grab_set)
+    frm = ttk.Frame(win, padding=12)
+    frm.pack(fill="both", expand=True)
+    ttk.Label(frm, text=prompt, justify="left", wraplength=460).pack(anchor="w",
+                                                                      pady=(0, 6))
+    var = tk.StringVar()
+    kit.PupilPicker(frm, var).pack(anchor="w")
+    result: dict = {"value": None}
+
+    def ok() -> None:
+        if not var.get():
+            messagebox.showerror(title, "Pick a pupil.", parent=win)
+            return
+        result["value"] = var.get()
+        win.destroy()
+
+    bar = ttk.Frame(frm)
+    bar.pack(fill="x", pady=(12, 0))
+    ttk.Button(bar, text="OK", command=ok).pack(side="right", padx=4)
+    ttk.Button(bar, text="Cancel", command=win.destroy).pack(side="right")
+    win.wait_window()
+    return result["value"]
 
 
 def _student_options() -> list[tuple[str, str]]:
@@ -48,8 +83,9 @@ def _name_lookup() -> dict[str, str]:
 
 
 class ContactsDirectory:
-    def __init__(self, root: tk.Misc) -> None:
+    def __init__(self, root: tk.Misc, auth=None) -> None:
         self.root = root
+        self.auth = auth
         self._build()
         self.refresh()
 
@@ -61,14 +97,16 @@ class ContactsDirectory:
         self.q_e.pack(side="left", padx=(2, 10))
         self.q_e.bind("<Return>", lambda _e: self.refresh())
 
-        ttk.Label(bar, text="Student ID:").pack(side="left")
-        self.f_student = ttk.Entry(bar, width=12)
+        ttk.Label(bar, text="Pupil:").pack(side="left")
+        self.v_student = tk.StringVar()
+        self.f_student = kit.PupilPicker(bar, self.v_student, width=34)
+        self.f_student.bind_change(lambda _v: self.refresh())
         self.f_student.pack(side="left", padx=(2, 10))
 
         ttk.Label(bar, text="Relationship:").pack(side="left")
-        self.f_rel = ttk.Combobox(bar, values=("",) + RELATIONSHIPS,
-                                     state="readonly", width=16)
-        self.f_rel.current(0)
+        self.v_rel = tk.StringVar()
+        self.f_rel = kit.ChoiceField(bar, self.v_rel, choices=RELATIONSHIPS, blank=True,
+                                     width=16, on_change=lambda _v: self.refresh())
         self.f_rel.pack(side="left", padx=(2, 10))
 
         self.f_primary = tk.BooleanVar(value=False)
@@ -137,13 +175,41 @@ class ContactsDirectory:
                     command=self._make_primary).pack(side="left", padx=4)
         ttk.Button(bar, text="Delete",
                     command=self._delete_selected).pack(side="left", padx=4)
+        if self.auth is not None and access.from_auth(self.auth).is_admin:
+            ttk.Button(bar, text="Link Parent Login",
+                       command=self._link_parent_login).pack(side="left", padx=4)
         ttk.Button(bar, text="Refresh",
                     command=self.refresh).pack(side="right")
 
+    def _link_parent_login(self) -> None:
+        """Admin only: tie a parent's login to their child, by exact values."""
+        from education_system.platform.cross_system.own_record_access import OwnRecordError
+        from education_system.systems.primary.domain.learners.own_records import own_records
+
+        username = simpledialog.askstring(
+            "Link Parent Login", "Parent login username:",
+            parent=self.root.winfo_toplevel())
+        if not username:
+            return
+        try:
+            linked = own_records.linked_children_of(self.auth, username)
+            now = ", ".join(f"{c.pupil_id} {c.name}" for c in linked) or "no children"
+            pupil_id = _ask_pupil(
+                self.root, "Link Parent Login",
+                f"{username} is linked to: {now}.\n\nPupil to link:")
+            if not pupil_id:
+                return
+            child = own_records.link_parent_login(self.auth, username, pupil_id)
+        except (OwnRecordError, ValueError) as refused:
+            messagebox.showerror("Link Parent Login", str(refused), parent=self.root)
+            return
+        messagebox.showinfo("Link Parent Login",
+                            f"{username} is now linked to {child.name}.", parent=self.root)
+
     def _clear(self) -> None:
         self.q_e.delete(0, "end")
-        self.f_student.delete(0, "end")
-        self.f_rel.current(0)
+        self.v_student.set("")
+        self.v_rel.set("")
         self.f_primary.set(False)
         self.f_emerg.set(False)
         self.f_comms.set(False)
@@ -158,7 +224,7 @@ class ContactsDirectory:
                 rows = data.search_contacts(q)
             else:
                 rows = data.list_contacts(
-                    student_id=self.f_student.get().strip() or None,
+                    student_id=self.v_student.get().strip() or None,
                     relationship=self.f_rel.get() or None,
                     primary_only=self.f_primary.get(),
                     emergency_only=self.f_emerg.get(),
@@ -293,15 +359,14 @@ class ContactDialog:
                  on_save: Callable[[], None]) -> None:
         self.existing = existing
         self.on_save = on_save
-        self.win = tk.Toplevel(parent)
+        self.win = make_toplevel(parent.winfo_toplevel())
         self.win.title("Edit Contact" if existing else "New Contact")
-        self.win.transient(parent)
+        self.win.geometry("700x680")
         self.win.after_idle(self.win.grab_set)
         self._build()
 
     def _build(self) -> None:
-        form = ttk.Frame(self.win)
-        form.pack(fill="both", expand=True, padx=12, pady=12)
+        form, footer = kit.scrolled_form(self.win)
         r = 0
 
         ttk.Label(form, text="Student:").grid(row=r, column=0,
@@ -315,30 +380,25 @@ class ContactDialog:
                             f"{names.get(self._student_id, '?')}"
                        ).grid(row=r, column=1, sticky="w", padx=6)
         else:
-            opts = _student_options()
-            self._student_ids = [s for s, _ in opts]
-            self.student_cb = ttk.Combobox(
-                form, values=[l for _, l in opts],
-                state="readonly", width=40)
-            if opts:
-                self.student_cb.current(0)
+            self.student_var = tk.StringVar()
+            self.student_cb = kit.PupilPicker(form, self.student_var)
             self.student_cb.grid(row=r, column=1, sticky="w", padx=6)
         r += 1
 
         ttk.Label(form, text="Relationship:").grid(row=r, column=0,
                                                      sticky="e", pady=3)
-        self.rel_cb = ttk.Combobox(form, values=RELATIONSHIPS,
-                                      state="readonly", width=18)
-        self.rel_cb.set(self.existing.relationship if self.existing
-                          else DEFAULT_RELATIONSHIP)
+        self.rel_cb = kit.ChoiceField(
+            form, tk.StringVar(value=self.existing.relationship if self.existing
+                               else DEFAULT_RELATIONSHIP),
+            choices=RELATIONSHIPS, width=18)
         self.rel_cb.grid(row=r, column=1, sticky="w", padx=6)
         r += 1
 
         ttk.Label(form, text="Title:").grid(row=r, column=0,
                                               sticky="e", pady=3)
-        self.title_e = ttk.Entry(form, width=10)
-        if self.existing and self.existing.title:
-            self.title_e.insert(0, self.existing.title)
+        self.title_e = kit.ChoiceField(
+            form, tk.StringVar(value=(self.existing.title or "") if self.existing else ""),
+            choices=_TITLES, blank=True, editable=True, width=8)
         self.title_e.grid(row=r, column=1, sticky="w", padx=6)
         r += 1
 
@@ -392,21 +452,19 @@ class ContactDialog:
 
         ttk.Label(form, text="Preferred method:").grid(row=r, column=0,
                                                           sticky="e", pady=3)
-        self.method_cb = ttk.Combobox(form,
-                                          values=PREFERRED_CONTACT_METHODS,
-                                          state="readonly", width=18)
-        self.method_cb.set(self.existing.preferred_method
-                              if self.existing
-                              else DEFAULT_PREFERRED_METHOD)
+        self.method_cb = kit.ChoiceField(
+            form, tk.StringVar(value=self.existing.preferred_method if self.existing
+                               else DEFAULT_PREFERRED_METHOD),
+            choices=PREFERRED_CONTACT_METHODS, width=18)
         self.method_cb.grid(row=r, column=1, sticky="w", padx=6)
         r += 1
 
         ttk.Label(form, text="Language:").grid(row=r, column=0,
                                                   sticky="e", pady=3)
-        self.lang_cb = ttk.Combobox(form, values=LANGUAGES,
-                                       state="readonly", width=14)
-        self.lang_cb.set(self.existing.preferred_language
-                            if self.existing else DEFAULT_LANGUAGE)
+        self.lang_cb = kit.ChoiceField(
+            form, tk.StringVar(value=self.existing.preferred_language if self.existing
+                               else DEFAULT_LANGUAGE),
+            choices=LANGUAGES, width=14)
         self.lang_cb.grid(row=r, column=1, sticky="w", padx=6)
         r += 1
 
@@ -453,19 +511,16 @@ class ContactDialog:
         self.notes_text.grid(row=r, column=1, sticky="w", padx=6)
         r += 1
 
-        bar = ttk.Frame(form)
-        bar.grid(row=r, column=0, columnspan=2, pady=(12, 0))
-        ttk.Button(bar, text="Save", command=self._save).pack(side="left")
-        ttk.Button(bar, text="Cancel",
-                    command=self.win.destroy).pack(side="left", padx=8)
+        ttk.Button(footer, text="Cancel",
+                    command=self.win.destroy).pack(side="right", padx=(6, 0))
+        ttk.Button(footer, text="Save", command=self._save).pack(side="right")
 
     def _save(self) -> None:
         if self.student_cb is not None:
-            idx = self.student_cb.current()
-            if idx < 0:
-                messagebox.showerror("Validation", "Pick a student.")
+            sid = self.student_var.get()
+            if not sid:
+                messagebox.showerror("Validation", "Pick a student.", parent=self.win)
                 return
-            sid = self._student_ids[idx]
         else:
             sid = self._student_id
         payload = {

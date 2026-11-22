@@ -21,45 +21,51 @@ The University Management System uses a structured exception hierarchy to handle
 ```
 Exception (Python built-in)
 │
-└── UniversitySystemException (Base exception)
-    │
-    ├── DatabaseException
-    │   ├── ConnectionException
-    │   ├── QueryException
-    │   ├── TransactionException
-    │   └── IntegrityException
-    │
-    ├── AuthenticationException
-    │   ├── InvalidCredentialsException
-    │   ├── AccountLockedException
-    │   ├── SessionExpiredException
-    │   └── PasswordExpiredException
-    │
-    ├── AuthorizationException
-    │   ├── InsufficientPermissionsException
-    │   └── ResourceAccessDeniedException
-    │
-    ├── ValidationException
-    │   ├── InvalidInputException
-    │   ├── MissingRequiredFieldException
-    │   ├── InvalidFormatException
-    │   └── DataConstraintException
-    │
-    ├── ResourceException
-    │   ├── ResourceNotFoundException
-    │   ├── ResourceAlreadyExistsException
-    │   └── ResourceUnavailableException
-    │
-    ├── BusinessLogicException
-    │   ├── EnrollmentException
-    │   ├── GradingException
-    │   ├── PaymentException
-    │   └── SchedulingException
-    │
-    └── SystemException
-        ├── ConfigurationException
-        ├── ServiceUnavailableException
-        └── InternalErrorException
+└── UniversitySystemError (base)
+    ├── DatabaseError
+    │   ├── DatabaseConnectionError
+    │   ├── QueryError
+    │   ├── TransactionError
+    │   └── IntegrityError
+    ├── AuthenticationError
+    │   ├── InvalidCredentialsError
+    │   ├── SessionExpiredError
+    │   ├── PermissionDeniedError
+    │   └── MFARequiredError
+    ├── ValidationError
+    │   ├── InvalidInputError
+    │   ├── MissingFieldError
+    │   └── FormatError
+    ├── StudentError
+    │   ├── StudentNotFoundError
+    │   ├── DuplicateStudentError
+    │   └── StudentEnrollmentError
+    ├── CourseError
+    │   ├── CourseNotFoundError
+    │   ├── CourseFullError
+    │   └── PrerequisiteError
+    ├── EnrollmentError
+    │   ├── AlreadyEnrolledError
+    │   ├── EnrollmentClosedError
+    │   └── CapacityExceededError
+    ├── GradeError
+    │   ├── InvalidGradeError
+    │   └── GradeNotFoundError
+    ├── FinanceError
+    │   ├── PaymentError
+    │   ├── InsufficientFundsError
+    │   └── TransactionFailedError
+    ├── EmailError
+    │   ├── EmailDeliveryError
+    │   ├── TemplateError
+    │   └── AttachmentError
+    ├── FileError
+    │   ├── UniversityFileNotFoundError
+    │   ├── FileUploadError
+    │   └── FileValidationError
+    └── ConfigurationError
+        ├── MissingConfigError
+        └── InvalidConfigError
 ```
 
 ## Core Principles
@@ -68,7 +74,7 @@ Exception (Python built-in)
 
 **DO:**
 ```python
-raise ResourceNotFoundException(f"Course {course_id} not found")
+raise CourseNotFoundError(course_id)
 ```
 
 **DON'T:**
@@ -84,12 +90,12 @@ try:
     authenticate(username, password)
 except Exception as e:
     logger.error(f"Authentication failed for {username}: {e}")
-    raise AuthenticationException("Invalid credentials")
+    raise AuthenticationError("Invalid credentials")
 ```
 
 **DON'T:**
 ```python
-raise AuthenticationException(f"Password hash mismatch: {hash_details}")  # Exposes internals
+raise AuthenticationError(f"Password hash mismatch: {hash_details}")  # Exposes internals
 ```
 
 ### 3. Log Before Raising
@@ -101,7 +107,7 @@ try:
     result = database_operation()
 except sqlite3.IntegrityError as e:
     logger.error(f"Database integrity error: {e}", exc_info=True)
-    raise IntegrityException("Data constraint violation")
+    raise IntegrityError("Data constraint violation")
 ```
 
 ### 4. Catch Specific Exceptions
@@ -110,9 +116,9 @@ except sqlite3.IntegrityError as e:
 ```python
 try:
     process_payment()
-except PaymentException as e:
+except PaymentError as e:
     handle_payment_error(e)
-except DatabaseException as e:
+except DatabaseError as e:
     handle_database_error(e)
 ```
 
@@ -126,34 +132,47 @@ except Exception as e:  # Too broad
 
 ## Exception Types
 
+The classes are defined in `src/education_system/platform/kernel/exceptions.py` and re-exported by `education_system.systems.university.infrastructure.exceptions`.
+
 ### Base Exception
 
 ```python
-# infrastructure/exceptions.py
-
-class UniversitySystemException(Exception):
+class UniversitySystemError(Exception):
     """
     Base exception for all university system errors.
 
-    All custom exceptions should inherit from this class.
+    All custom exceptions in the system should inherit from this class.
+    This allows for catching all system-specific errors with a single
+    except clause if needed.
 
     Attributes:
-        message: Error message
-        code: Error code for API responses
-        details: Additional error details
+        message: Human-readable error message
+        code: Optional error code for programmatic handling
+        details: Optional dict with additional error context
     """
 
-    def __init__(self, message: str, code: str = None, details: dict = None):
+    def __init__(
+        self,
+        message: str,
+        code: Optional[str] = None,
+        details: Optional[dict[str, Any]] = None
+    ):
         self.message = message
-        self.code = code or self.__class__.__name__
+        self.code = code
         self.details = details or {}
         super().__init__(self.message)
 
-    def to_dict(self) -> dict:
-        """Convert exception to dictionary for API responses."""
+    def __str__(self) -> str:
+        if self.code:
+            return f"[{self.code}] {self.message}"
+        return self.message
+
+    def to_dict(self) -> dict[str, Any]:
+        """Convert exception to dict for logging/API responses."""
         return {
-            'error': self.code,
+            'error_type': self.__class__.__name__,
             'message': self.message,
+            'code': self.code,
             'details': self.details
         }
 ```
@@ -161,163 +180,210 @@ class UniversitySystemException(Exception):
 ### Database Exceptions
 
 ```python
-class DatabaseException(UniversitySystemException):
-    """Base exception for database errors."""
+class DatabaseError(UniversitySystemError):
+    """Base exception for database-related errors."""
     pass
 
 
-class ConnectionException(DatabaseException):
-    """Database connection errors."""
-    pass
+class DatabaseConnectionError(DatabaseError):
+    """Database connection failed or was lost."""
+    def __init__(self, message: str = "Database connection failed", **kwargs: Any) -> None:
+        kwargs.pop('code', None)  # Avoid conflict with explicit code parameter
+        super().__init__(message, code="DB_CONNECTION_ERROR", **kwargs)
 
 
-class QueryException(DatabaseException):
-    """Database query errors."""
-    pass
+class QueryError(DatabaseError):
+    """Database query execution failed."""
+    def __init__(self, message: str, query: Optional[str] = None, **kwargs: Any) -> None:
+        kwargs.pop('code', None)  # Avoid conflict with explicit code parameter
+        details = kwargs.get('details', {})
+        if query:
+            details['query'] = query
+        kwargs['details'] = details
+        super().__init__(message, code="DB_QUERY_ERROR", **kwargs)
 
 
-class TransactionException(DatabaseException):
-    """Transaction-related errors."""
-    pass
+class TransactionError(DatabaseError):
+    """Database transaction failed."""
+    def __init__(self, message: str = "Transaction failed", **kwargs: Any) -> None:
+        kwargs.pop('code', None)  # Avoid conflict with explicit code parameter
+        super().__init__(message, code="DB_TRANSACTION_ERROR", **kwargs)
 
 
-class IntegrityException(DatabaseException):
-    """Data integrity constraint violations."""
-    pass
+class IntegrityError(DatabaseError):
+    """Database integrity constraint violated."""
+    def __init__(self, message: str = "Integrity constraint violated", **kwargs: Any) -> None:
+        kwargs.pop('code', None)  # Avoid conflict with explicit code parameter
+        super().__init__(message, code="DB_INTEGRITY_ERROR", **kwargs)
 ```
 
 ### Authentication Exceptions
 
 ```python
-class AuthenticationException(UniversitySystemException):
-    """Base exception for authentication errors."""
+class AuthenticationError(UniversitySystemError):
+    """Base exception for authentication-related errors."""
     pass
 
 
-class InvalidCredentialsException(AuthenticationException):
+class InvalidCredentialsError(AuthenticationError):
     """Invalid username or password."""
-    pass
+    def __init__(self, message: str = "Invalid credentials", **kwargs: Any) -> None:
+        kwargs.pop('code', None)  # Avoid conflict with explicit code parameter
+        super().__init__(message, code="AUTH_INVALID_CREDENTIALS", **kwargs)
 
 
-class AccountLockedException(AuthenticationException):
-    """Account is locked due to failed login attempts."""
-
-    def __init__(self, locked_until: datetime):
-        self.locked_until = locked_until
-        message = f"Account is locked until {locked_until.strftime('%Y-%m-%d %H:%M:%S')}"
-        super().__init__(message, details={'locked_until': locked_until.isoformat()})
+class SessionExpiredError(AuthenticationError):
+    """User session has expired."""
+    def __init__(self, message: str = "Session expired", **kwargs: Any) -> None:
+        kwargs.pop('code', None)  # Avoid conflict with explicit code parameter
+        super().__init__(message, code="AUTH_SESSION_EXPIRED", **kwargs)
 
 
-class SessionExpiredException(AuthenticationException):
-    """Session has expired."""
-    pass
-```
-
-### Authorization Exceptions
-
-```python
-class AuthorizationException(UniversitySystemException):
-    """Base exception for authorization errors."""
-    pass
+class PermissionDeniedError(AuthenticationError):
+    """User lacks permission for the requested operation."""
+    def __init__(self, message: str = "Permission denied", resource: Optional[str] = None, **kwargs: Any) -> None:
+        kwargs.pop('code', None)  # Avoid conflict with explicit code parameter
+        details = kwargs.get('details', {})
+        if resource:
+            details['resource'] = resource
+        kwargs['details'] = details
+        super().__init__(message, code="AUTH_PERMISSION_DENIED", **kwargs)
 
 
-class InsufficientPermissionsException(AuthorizationException):
-    """User lacks required permissions."""
-
-    def __init__(self, permission: str):
-        self.permission = permission
-        message = f"Insufficient permissions: {permission} required"
-        super().__init__(message, details={'required_permission': permission})
-
-
-class ResourceAccessDeniedException(AuthorizationException):
-    """Access to specific resource denied."""
-    pass
+class MFARequiredError(AuthenticationError):
+    """Multi-factor authentication required."""
+    def __init__(self, message: str = "MFA required", **kwargs: Any) -> None:
+        kwargs.pop('code', None)  # Avoid conflict with explicit code parameter
+        super().__init__(message, code="AUTH_MFA_REQUIRED", **kwargs)
 ```
 
 ### Validation Exceptions
 
 ```python
-class ValidationException(UniversitySystemException):
+class ValidationError(UniversitySystemError):
     """Base exception for validation errors."""
     pass
 
 
-class InvalidInputException(ValidationException):
-    """Invalid input data."""
+class InvalidInputError(ValidationError):
+    """Input data is invalid."""
+    def __init__(self, message: str, field: Optional[str] = None, **kwargs: Any) -> None:
+        details = kwargs.get('details', {})
+        if field:
+            details['field'] = field
+        kwargs['details'] = details
+        kwargs.pop('code', None)  # Avoid conflict with explicit code parameter
+        super().__init__(message, code="VALIDATION_INVALID_INPUT", **kwargs)
 
-    def __init__(self, field: str, reason: str):
-        self.field = field
-        self.reason = reason
-        message = f"Invalid input for {field}: {reason}"
-        super().__init__(message, details={'field': field, 'reason': reason})
 
-
-class MissingRequiredFieldException(ValidationException):
+class MissingFieldError(ValidationError):
     """Required field is missing."""
-
-    def __init__(self, field: str):
-        self.field = field
+    def __init__(self, field: str, **kwargs: Any) -> None:
         message = f"Required field missing: {field}"
-        super().__init__(message, details={'field': field})
+        kwargs['details'] = kwargs.get('details', {})
+        kwargs['details']['field'] = field
+        kwargs.pop('code', None)  # Avoid conflict with explicit code parameter
+        super().__init__(message, code="VALIDATION_MISSING_FIELD", **kwargs)
+
+
+class FormatError(ValidationError):
+    """Data format is incorrect."""
+    def __init__(self, message: str, expected_format: Optional[str] = None, **kwargs: Any) -> None:
+        details = kwargs.get('details', {})
+        if expected_format:
+            details['expected_format'] = expected_format
+        kwargs['details'] = details
+        kwargs.pop('code', None)  # Avoid conflict with explicit code parameter
+        super().__init__(message, code="VALIDATION_FORMAT_ERROR", **kwargs)
 ```
 
-### Resource Exceptions
+### Student and Course Exceptions
 
 ```python
-class ResourceException(UniversitySystemException):
-    """Base exception for resource-related errors."""
-    pass
+class StudentNotFoundError(StudentError):
+    """Student not found in system."""
+    def __init__(self, student_id: Optional[str] = None, **kwargs: Any) -> None:
+        message = f"Student not found: {student_id}" if student_id else "Student not found"
+        if student_id:
+            kwargs['details'] = kwargs.get('details', {})
+            kwargs['details']['student_id'] = student_id
+        kwargs.pop('code', None)  # Avoid conflict with explicit code parameter
+        super().__init__(message, code="STUDENT_NOT_FOUND", **kwargs)
 
 
-class ResourceNotFoundException(ResourceException):
-    """Requested resource not found."""
-
-    def __init__(self, resource_type: str, resource_id: Any):
-        self.resource_type = resource_type
-        self.resource_id = resource_id
-        message = f"{resource_type} not found: {resource_id}"
-        super().__init__(
-            message,
-            details={'resource_type': resource_type, 'resource_id': str(resource_id)}
-        )
+class DuplicateStudentError(StudentError):
+    """Student already exists in system."""
+    def __init__(self, identifier: str, **kwargs: Any) -> None:
+        message = f"Student already exists: {identifier}"
+        kwargs['details'] = kwargs.get('details', {})
+        kwargs['details']['identifier'] = identifier
+        kwargs.pop('code', None)  # Avoid conflict with explicit code parameter
+        super().__init__(message, code="STUDENT_DUPLICATE", **kwargs)
 
 
-class ResourceAlreadyExistsException(ResourceException):
-    """Resource already exists."""
+class CourseNotFoundError(CourseError):
+    """Course not found in system."""
+    def __init__(self, course_id: Optional[str] = None, **kwargs: Any) -> None:
+        message = f"Course not found: {course_id}" if course_id else "Course not found"
+        if course_id:
+            kwargs['details'] = kwargs.get('details', {})
+            kwargs['details']['course_id'] = course_id
+        kwargs.pop('code', None)  # Avoid conflict with explicit code parameter
+        super().__init__(message, code="COURSE_NOT_FOUND", **kwargs)
 
-    def __init__(self, resource_type: str, identifier: str):
-        message = f"{resource_type} already exists: {identifier}"
-        super().__init__(message, details={'resource_type': resource_type, 'identifier': identifier})
+
+class CourseFullError(CourseError):
+    """Course has reached maximum capacity."""
+    def __init__(self, course_id: Optional[str] = None, **kwargs: Any) -> None:
+        message = f"Course is full: {course_id}" if course_id else "Course is full"
+        kwargs.pop('code', None)  # Avoid conflict with explicit code parameter
+        super().__init__(message, code="COURSE_FULL", **kwargs)
+
+
+class PrerequisiteError(CourseError):
+    """Course prerequisites not met."""
+    def __init__(self, course_id: str, missing_prereqs: Optional[list[str]] = None, **kwargs: Any) -> None:
+        message = f"Prerequisites not met for course: {course_id}"
+        details = kwargs.get('details', {})
+        details['course_id'] = course_id
+        if missing_prereqs:
+            details['missing_prerequisites'] = missing_prereqs
+        kwargs['details'] = details
+        kwargs.pop('code', None)  # Avoid conflict with explicit code parameter
+        super().__init__(message, code="COURSE_PREREQUISITE_ERROR", **kwargs)
 ```
 
-### Business Logic Exceptions
+### Enrollment, Grade and Finance Exceptions
 
 ```python
-class BusinessLogicException(UniversitySystemException):
-    """Base exception for business logic errors."""
+class EnrollmentError(UniversitySystemError):
+    """Base exception for enrollment-related errors."""
     pass
 
 
-class EnrollmentException(BusinessLogicException):
-    """Enrollment-related errors."""
+class AlreadyEnrolledError(EnrollmentError):
+    """Student is already enrolled in the course."""
+    def __init__(self, student_id: str, course_id: str, **kwargs: Any) -> None:
+        message = f"Student {student_id} already enrolled in course {course_id}"
+        kwargs.pop('code', None)  # Avoid conflict with explicit code parameter
+        super().__init__(message, code="ENROLLMENT_ALREADY_ENROLLED", **kwargs)
+
+
+class CapacityExceededError(EnrollmentError):
+    """Maximum enrollment capacity exceeded."""
     pass
 
 
-class GradingException(BusinessLogicException):
-    """Grading-related errors."""
+class GradeError(UniversitySystemError):
+    """Base exception for grade-related errors."""
     pass
 
 
-class PaymentException(BusinessLogicException):
-    """Payment processing errors."""
-
-    def __init__(self, message: str, transaction_id: str = None):
-        super().__init__(
-            message,
-            details={'transaction_id': transaction_id} if transaction_id else {}
-        )
+class PaymentError(FinanceError):
+    """Payment processing failed."""
+    pass
 ```
+
 
 ## Usage Guidelines
 
@@ -326,7 +392,7 @@ class PaymentException(BusinessLogicException):
 #### In Service Layer
 
 ```python
-from infrastructure.exceptions import ResourceNotFoundException, ValidationException
+from education_system.systems.university.infrastructure.exceptions import CourseError, CourseNotFoundError, MissingFieldError
 
 class CourseService:
     def get_course(self, course_id: int) -> dict:
@@ -340,12 +406,12 @@ class CourseService:
             Course information
 
         Raises:
-            ResourceNotFoundException: If course not found
+            CourseNotFoundError: If course not found
         """
         course = self.repository.find_by_id(course_id)
 
         if not course:
-            raise ResourceNotFoundException('Course', course_id)
+            raise CourseNotFoundError(course_id)
 
         return course
 
@@ -360,18 +426,18 @@ class CourseService:
             Created course
 
         Raises:
-            MissingRequiredFieldException: If required fields missing
-            ResourceAlreadyExistsException: If course code exists
+            MissingFieldError: If required fields missing
+            CourseError: If course code exists
         """
         # Validate required fields
         required = ['code', 'name', 'credits']
         for field in required:
             if field not in course_data:
-                raise MissingRequiredFieldException(field)
+                raise MissingFieldError(field)
 
         # Check if course exists
         if self.repository.exists_by_code(course_data['code']):
-            raise ResourceAlreadyExistsException('Course', course_data['code'])
+            raise CourseError(f"Course already exists: {course_data['code']}")
 
         return self.repository.create(course_data)
 ```
@@ -379,7 +445,8 @@ class CourseService:
 #### In Database Layer
 
 ```python
-from infrastructure.exceptions import DatabaseException, QueryException, TransactionException
+from education_system.systems.university.infrastructure.database.db import get_connection
+from education_system.systems.university.infrastructure.exceptions import QueryError
 
 class CourseRepository:
     def find_by_id(self, course_id: int) -> Optional[dict]:
@@ -393,22 +460,21 @@ class CourseRepository:
             Course dict if found, None otherwise
 
         Raises:
-            QueryException: If database query fails
+            QueryError: If database query fails
         """
         try:
-            db = DatabaseManager()
-            conn = db.get_connection()
+            conn = get_connection()
             cursor = conn.cursor()
 
             cursor.execute("SELECT * FROM courses WHERE id = ?", (course_id,))
             result = cursor.fetchone()
 
-            db.close()
+            conn.close()
             return result
 
         except sqlite3.Error as e:
             logger.error(f"Database error retrieving course {course_id}: {e}", exc_info=True)
-            raise QueryException(f"Failed to retrieve course: {e}")
+            raise QueryError(f"Failed to retrieve course: {e}")
 ```
 
 ### 2. Catching Exceptions
@@ -416,10 +482,9 @@ class CourseRepository:
 #### In Controllers
 
 ```python
-from infrastructure.exceptions import (
-    ResourceNotFoundException,
-    ValidationException,
-    AuthorizationException
+from education_system.systems.university.infrastructure.exceptions import (
+    CourseNotFoundError,
+    PermissionDeniedError,
 )
 
 class CourseController:
@@ -432,8 +497,8 @@ class CourseController:
         """
         try:
             # Check permission
-            if not has_permission(user_id, 'courses.view'):
-                raise InsufficientPermissionsException('courses.view')
+            if not self.auth.has_permission('courses.view'):
+                raise PermissionDeniedError(resource='courses.view')
 
             # Get course
             course = self.service.get_course(course_id)
@@ -443,14 +508,14 @@ class CourseController:
                 'data': course
             }
 
-        except ResourceNotFoundException as e:
+        except CourseNotFoundError as e:
             return {
                 'success': False,
                 'error': e.to_dict(),
                 'status_code': 404
             }
 
-        except AuthorizationException as e:
+        except PermissionDeniedError as e:
             return {
                 'success': False,
                 'error': e.to_dict(),
@@ -481,10 +546,10 @@ def enroll_student_cli():
         enrollment_service.enroll(student_id, course_id)
         print("Enrollment successful!")
 
-    except ResourceNotFoundException as e:
+    except (StudentNotFoundError, CourseNotFoundError) as e:
         print(f"Error: {e.message}")
 
-    except EnrollmentException as e:
+    except EnrollmentError as e:
         print(f"Enrollment error: {e.message}")
         if e.details:
             print(f"Details: {e.details}")
@@ -514,12 +579,12 @@ def handle_create_course(self):
         course = self.service.create_course(course_data)
         messagebox.showinfo("Success", f"Course {course['code']} created successfully!")
 
-    except MissingRequiredFieldException as e:
+    except MissingFieldError as e:
         messagebox.showerror("Missing Field", e.message)
         # Highlight the missing field
-        self.highlight_field(e.field)
+        self.highlight_field(e.details['field'])
 
-    except ResourceAlreadyExistsException as e:
+    except CourseError as e:
         messagebox.showerror("Duplicate Course", e.message)
 
     except ValueError as e:
@@ -607,7 +672,7 @@ except Exception as e:
         exc_info=True,
         extra={'user_id': user_id}
     )
-    raise SystemException("Internal system error")
+    raise UniversitySystemError("Internal system error")
 ```
 
 ### What to Log
@@ -634,11 +699,11 @@ except Exception as e:
 {
     "success": false,
     "error": {
-        "code": "RESOURCE_NOT_FOUND",
-        "message": "Course not found",
+        "error_type": "CourseNotFoundError",
+        "message": "Course not found: 12345",
+        "code": "COURSE_NOT_FOUND",
         "details": {
-            "resource_type": "Course",
-            "resource_id": "12345"
+            "course_id": "12345"
         }
     },
     "timestamp": "2025-01-19T10:30:45.123Z",
@@ -652,14 +717,16 @@ Map exceptions to appropriate HTTP status codes:
 
 ```python
 EXCEPTION_STATUS_CODES = {
-    ResourceNotFoundException: 404,
-    ResourceAlreadyExistsException: 409,
-    ValidationException: 400,
-    AuthenticationException: 401,
-    AuthorizationException: 403,
-    BusinessLogicException: 422,
-    DatabaseException: 500,
-    SystemException: 500,
+    StudentNotFoundError: 404,
+    CourseNotFoundError: 404,
+    DuplicateStudentError: 409,
+    AlreadyEnrolledError: 409,
+    ValidationError: 400,
+    AuthenticationError: 401,
+    PermissionDeniedError: 403,
+    EnrollmentError: 422,
+    DatabaseError: 500,
+    UniversitySystemError: 500,
 }
 ```
 
@@ -671,7 +738,7 @@ from datetime import datetime
 
 app = Flask(__name__)
 
-@app.errorhandler(UniversitySystemException)
+@app.errorhandler(UniversitySystemError)
 def handle_university_exception(error):
     """Handle university system exceptions."""
     response = {
@@ -717,7 +784,7 @@ Preserve exception context with chaining:
 try:
     result = database_operation()
 except sqlite3.Error as e:
-    raise QueryException("Database query failed") from e
+    raise QueryError("Database query failed") from e
 ```
 
 ### 2. Context Managers
@@ -736,7 +803,7 @@ def transaction():
         conn.commit()
     except Exception as e:
         conn.rollback()
-        raise TransactionException("Transaction failed") from e
+        raise TransactionError("Transaction failed") from e
     finally:
         conn.close()
 ```
@@ -748,7 +815,7 @@ Add context to exceptions:
 ```python
 try:
     process_enrollment(student_id, course_id)
-except EnrollmentException as e:
+except EnrollmentError as e:
     e.details['student_id'] = student_id
     e.details['course_id'] = course_id
     raise
@@ -761,7 +828,7 @@ Handle non-critical errors gracefully:
 ```python
 try:
     send_notification_email(user_email, message)
-except EmailException as e:
+except EmailError as e:
     # Log but don't fail the operation
     logger.warning(f"Failed to send notification: {e}")
     # Continue with operation
@@ -775,14 +842,14 @@ Write tests for exception paths:
 import pytest
 
 def test_course_not_found():
-    """Test ResourceNotFoundException is raised for missing course."""
+    """Test CourseNotFoundError is raised for missing course."""
     service = CourseService()
 
-    with pytest.raises(ResourceNotFoundException) as exc_info:
+    with pytest.raises(CourseNotFoundError) as exc_info:
         service.get_course(99999)
 
-    assert exc_info.value.resource_type == 'Course'
-    assert exc_info.value.resource_id == 99999
+    assert exc_info.value.code == 'COURSE_NOT_FOUND'
+    assert exc_info.value.details['course_id'] == 99999
 ```
 
 ## Examples
@@ -802,44 +869,41 @@ class EnrollmentService:
             enrolled_by: User performing enrollment
 
         Raises:
-            ResourceNotFoundException: If student or course not found
-            AuthorizationException: If insufficient permissions
-            EnrollmentException: If enrollment rules violated
-            DatabaseException: If database operation fails
+            StudentNotFoundError, CourseNotFoundError: If student or course not found
+            PermissionDeniedError: If insufficient permissions
+            EnrollmentError: If enrollment rules violated
+            DatabaseError: If database operation fails
         """
         try:
             # Check permissions
-            if not has_permission(enrolled_by, 'enrollments.create'):
-                raise InsufficientPermissionsException('enrollments.create')
+            if not self.auth.has_permission('enrollments.create'):
+                raise PermissionDeniedError(resource='enrollments.create')
 
             # Validate student exists
             student = self.student_repo.find_by_id(student_id)
             if not student:
-                raise ResourceNotFoundException('Student', student_id)
+                raise StudentNotFoundError(student_id)
 
             # Validate course exists
             course = self.course_repo.find_by_id(course_id)
             if not course:
-                raise ResourceNotFoundException('Course', course_id)
+                raise CourseNotFoundError(course_id)
 
             # Check if already enrolled
             if self.enrollment_repo.exists(student_id, course_id):
-                raise ResourceAlreadyExistsException(
-                    'Enrollment',
-                    f"student_{student_id}_course_{course_id}"
-                )
+                raise AlreadyEnrolledError(str(student_id), str(course_id))
 
             # Check course capacity
             current_enrollment = self.enrollment_repo.count_by_course(course_id)
             if current_enrollment >= course['capacity']:
-                raise EnrollmentException(
+                raise CapacityExceededError(
                     "Course is full",
                     details={'capacity': course['capacity'], 'enrolled': current_enrollment}
                 )
 
             # Check prerequisites
             if not self.check_prerequisites(student_id, course['prerequisites']):
-                raise EnrollmentException(
+                raise EnrollmentError(
                     "Prerequisites not met",
                     details={'prerequisites': course['prerequisites']}
                 )
@@ -855,7 +919,7 @@ class EnrollmentService:
 
             return enrollment
 
-        except (ResourceNotFoundException, AuthorizationException, EnrollmentException):
+        except (StudentNotFoundError, CourseNotFoundError, PermissionDeniedError, EnrollmentError):
             # Re-raise known exceptions
             raise
 
@@ -865,7 +929,7 @@ class EnrollmentService:
                 f"Unexpected error enrolling student {student_id} in course {course_id}: {e}",
                 exc_info=True
             )
-            raise SystemException("Enrollment system error")
+            raise UniversitySystemError("Enrollment system error")
 
 
 # Controller layer
@@ -877,7 +941,7 @@ class EnrollmentController:
             course_id = request_data.get('course_id')
 
             if not student_id or not course_id:
-                raise MissingRequiredFieldException('student_id or course_id')
+                raise MissingFieldError('student_id or course_id')
 
             enrollment = self.service.enroll_student(student_id, course_id, user_id)
 
@@ -887,28 +951,28 @@ class EnrollmentController:
                 'message': 'Enrollment successful'
             }
 
-        except MissingRequiredFieldException as e:
+        except MissingFieldError as e:
             return {
                 'success': False,
                 'error': e.to_dict(),
                 'status_code': 400
             }
 
-        except ResourceNotFoundException as e:
+        except (StudentNotFoundError, CourseNotFoundError) as e:
             return {
                 'success': False,
                 'error': e.to_dict(),
                 'status_code': 404
             }
 
-        except AuthorizationException as e:
+        except PermissionDeniedError as e:
             return {
                 'success': False,
                 'error': e.to_dict(),
                 'status_code': 403
             }
 
-        except EnrollmentException as e:
+        except EnrollmentError as e:
             return {
                 'success': False,
                 'error': e.to_dict(),

@@ -43,8 +43,11 @@ logger = logging.getLogger(__name__)
 
 DB_PATH = paths.PRIMARY_TRIPS_DB
 
-YEAR_GROUPS: tuple[str, ...] = ("Year 12", "Year 13", "Both", "Open")
-DEFAULT_YEAR_GROUP: str = "Both"
+YEAR_GROUPS: tuple[str, ...] = (
+    "Whole School", "Reception", "Year 1", "Year 2", "Year 3", "Year 4",
+    "Year 5", "Year 6", "KS1", "KS2", "Mixed",
+)
+DEFAULT_YEAR_GROUP: str = "Whole School"
 
 TRIP_STATUSES: tuple[str, ...] = (
     "Planning", "Open for Booking", "Closed for Booking",
@@ -65,7 +68,7 @@ ACTIVE_BOOKING_STATUSES: tuple[str, ...] = (
 
 PAYMENT_METHODS: tuple[str, ...] = (
     "Cash", "Card", "Bank Transfer", "Cheque",
-    "Online Portal", "Bursary", "Voucher",
+    "Online Portal", "Pupil Premium", "Voucher",
     "Adjustment", "Other",
 )
 DEFAULT_METHOD: str = "Card"
@@ -90,7 +93,7 @@ CREATE TABLE IF NOT EXISTS trips (
     destination    TEXT,
     start_date     TEXT NOT NULL,
     end_date       TEXT,
-    year_group     TEXT NOT NULL DEFAULT 'Both',
+    year_group     TEXT NOT NULL DEFAULT 'Whole School',
     cost_per_place REAL NOT NULL DEFAULT 0,
     deposit        REAL NOT NULL DEFAULT 0,
     capacity       INTEGER,
@@ -120,7 +123,7 @@ CREATE TABLE IF NOT EXISTS trip_bookings (
     updated_at     TEXT DEFAULT (datetime('now')),
     UNIQUE (trip_id, student_id),
     FOREIGN KEY (trip_id) REFERENCES trips(trip_id) ON DELETE CASCADE,
-    FOREIGN KEY (student_id) REFERENCES students(student_id)
+    FOREIGN KEY (student_id) REFERENCES pupils(pupil_id)
         ON DELETE CASCADE
 );
 
@@ -960,7 +963,7 @@ def list_booking_views(
                                 status=status, active_only=active_only)
     if not bookings:
         return []
-        from education_system.systems.primary.domain import _pupils_bridge as _students
+    from education_system.systems.primary.domain import _pupils_bridge as _students
     names = {s.student_id: s.full_name
               for s in _students.list_students()}
     trips_map: dict[int, Trip] = {}

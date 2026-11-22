@@ -31,8 +31,8 @@ def mock_database():
     mock_conn.cursor.return_value = mock_cursor
     mock_conn.close = MagicMock()
 
-    with patch('education_system.systems.university.services.analytics.analytics_dashboard_core.transaction') as mock_trans, \
-         patch('education_system.systems.university.services.analytics.analytics_dashboard_core.get_connection') as mock_get_conn:
+    with patch('education_system.systems.university.shared.analytics.analytics_dashboard_core.transaction') as mock_trans, \
+         patch('education_system.systems.university.shared.analytics.analytics_dashboard_core.get_connection') as mock_get_conn:
         mock_trans.return_value.__enter__.return_value = mock_conn
         mock_trans.return_value.__exit__.return_value = None
         mock_get_conn.return_value = mock_conn
@@ -44,7 +44,7 @@ class TestAnalyticsModelManager:
 
     def test_register_model_creates_entry(self):
         """Test registering a new analytics model"""
-        from education_system.systems.university.services.analytics.analytics_dashboard_core import \
+        from education_system.systems.university.shared.analytics.analytics_dashboard_core import \
             AnalyticsModelManager
 
         with mock_database() as (mock_conn, mock_cursor):
@@ -61,7 +61,7 @@ class TestAnalyticsModelManager:
 
     def test_register_model_with_minimal_parameters(self):
         """Test registering model with only required parameters"""
-        from education_system.systems.university.services.analytics.analytics_dashboard_core import \
+        from education_system.systems.university.shared.analytics.analytics_dashboard_core import \
             AnalyticsModelManager
 
         with mock_database():
@@ -74,10 +74,10 @@ class TestAnalyticsModelManager:
 
     def test_register_model_error_handling(self):
         """Test error handling in model registration"""
-        from education_system.systems.university.services.analytics.analytics_dashboard_core import \
+        from education_system.systems.university.shared.analytics.analytics_dashboard_core import \
             AnalyticsModelManager
 
-        with patch('education_system.systems.university.services.analytics.analytics_dashboard_core.transaction') as mock_trans:
+        with patch('education_system.systems.university.shared.analytics.analytics_dashboard_core.transaction') as mock_trans:
             mock_trans.return_value.__enter__.side_effect = Exception("Database error")
 
             with pytest.raises(Exception) as exc_info:
@@ -94,7 +94,7 @@ class TestRetentionPredictionManager:
 
     def test_create_prediction_with_low_risk(self):
         """Test creating retention prediction with low risk"""
-        from education_system.systems.university.services.analytics.analytics_dashboard_core import \
+        from education_system.systems.university.shared.analytics.analytics_dashboard_core import \
             RetentionPredictionManager
 
         with mock_database() as (mock_conn, mock_cursor):
@@ -112,7 +112,7 @@ class TestRetentionPredictionManager:
 
     def test_create_prediction_with_medium_risk(self):
         """Test creating retention prediction with medium risk"""
-        from education_system.systems.university.services.analytics.analytics_dashboard_core import \
+        from education_system.systems.university.shared.analytics.analytics_dashboard_core import \
             RetentionPredictionManager
 
         with mock_database() as (mock_conn, mock_cursor):
@@ -129,7 +129,7 @@ class TestRetentionPredictionManager:
 
     def test_create_prediction_with_high_risk(self):
         """Test creating retention prediction with high risk"""
-        from education_system.systems.university.services.analytics.analytics_dashboard_core import \
+        from education_system.systems.university.shared.analytics.analytics_dashboard_core import \
             RetentionPredictionManager
 
         with mock_database() as (mock_conn, mock_cursor):
@@ -146,7 +146,7 @@ class TestRetentionPredictionManager:
 
     def test_create_prediction_with_critical_risk(self):
         """Test creating retention prediction with critical risk"""
-        from education_system.systems.university.services.analytics.analytics_dashboard_core import \
+        from education_system.systems.university.shared.analytics.analytics_dashboard_core import \
             RetentionPredictionManager
 
         with mock_database() as (mock_conn, mock_cursor):
@@ -163,7 +163,7 @@ class TestRetentionPredictionManager:
 
     def test_get_at_risk_students(self):
         """Test retrieving at-risk students"""
-        from education_system.systems.university.services.analytics.analytics_dashboard_core import \
+        from education_system.systems.university.shared.analytics.analytics_dashboard_core import \
             RetentionPredictionManager
 
         with mock_database() as (mock_conn, mock_cursor):
@@ -183,7 +183,7 @@ class TestGraduationForecastManager:
 
     def test_create_forecast(self):
         """Test creating graduation forecast"""
-        from education_system.systems.university.services.analytics.analytics_dashboard_core import \
+        from education_system.systems.university.shared.analytics.analytics_dashboard_core import \
             GraduationForecastManager
 
         with mock_database() as (mock_conn, mock_cursor):
@@ -201,7 +201,7 @@ class TestGraduationForecastManager:
 
     def test_create_forecast_with_optional_parameters(self):
         """Test creating forecast with optional parameters"""
-        from education_system.systems.university.services.analytics.analytics_dashboard_core import \
+        from education_system.systems.university.shared.analytics.analytics_dashboard_core import \
             GraduationForecastManager
 
         with mock_database():
@@ -224,7 +224,7 @@ class TestCourseDemandPredictionManager:
 
     def test_create_prediction(self):
         """Test creating course demand prediction"""
-        from education_system.systems.university.services.analytics.analytics_dashboard_core import \
+        from education_system.systems.university.shared.analytics.analytics_dashboard_core import \
             CourseDemandPredictionManager
 
         with mock_database() as (mock_conn, mock_cursor):
@@ -240,7 +240,7 @@ class TestCourseDemandPredictionManager:
 
     def test_update_actual_enrollment(self):
         """Test updating prediction with actual enrollment"""
-        from education_system.systems.university.services.analytics.analytics_dashboard_core import \
+        from education_system.systems.university.shared.analytics.analytics_dashboard_core import \
             CourseDemandPredictionManager
 
         with mock_database() as (mock_conn, mock_cursor):
@@ -254,7 +254,7 @@ class TestCourseDemandPredictionManager:
 
     def test_create_prediction_with_factors(self):
         """Test creating prediction with contributing factors"""
-        from education_system.systems.university.services.analytics.analytics_dashboard_core import \
+        from education_system.systems.university.shared.analytics.analytics_dashboard_core import \
             CourseDemandPredictionManager
 
         with mock_database():
@@ -275,7 +275,7 @@ class TestEnrollmentProjectionManager:
 
     def test_create_projection(self):
         """Test creating enrollment projection"""
-        from education_system.systems.university.services.analytics.analytics_dashboard_core import \
+        from education_system.systems.university.shared.analytics.analytics_dashboard_core import \
             EnrollmentProjectionManager
 
         with mock_database() as (mock_conn, mock_cursor):
@@ -291,7 +291,7 @@ class TestEnrollmentProjectionManager:
 
     def test_create_projection_calculates_total(self):
         """Test projection calculates total enrollment"""
-        from education_system.systems.university.services.analytics.analytics_dashboard_core import \
+        from education_system.systems.university.shared.analytics.analytics_dashboard_core import \
             EnrollmentProjectionManager
 
         with mock_database() as (mock_conn, mock_cursor):
@@ -308,7 +308,7 @@ class TestEnrollmentProjectionManager:
 
     def test_create_projection_with_scenario(self):
         """Test creating projection with scenario"""
-        from education_system.systems.university.services.analytics.analytics_dashboard_core import \
+        from education_system.systems.university.shared.analytics.analytics_dashboard_core import \
             EnrollmentProjectionManager
 
         with mock_database():
@@ -329,7 +329,7 @@ class TestKPIManager:
 
     def test_record_kpi(self):
         """Test recording KPI metric"""
-        from education_system.systems.university.services.analytics.analytics_dashboard_core import KPIManager
+        from education_system.systems.university.shared.analytics.analytics_dashboard_core import KPIManager
 
         with mock_database() as (mock_conn, mock_cursor):
             kpi_id = KPIManager.record_kpi(
@@ -344,7 +344,7 @@ class TestKPIManager:
 
     def test_record_kpi_with_trend(self):
         """Test recording KPI with trend information"""
-        from education_system.systems.university.services.analytics.analytics_dashboard_core import KPIManager
+        from education_system.systems.university.shared.analytics.analytics_dashboard_core import KPIManager
 
         with mock_database():
             kpi_id = KPIManager.record_kpi(
@@ -360,7 +360,7 @@ class TestKPIManager:
 
     def test_get_kpis_by_category(self):
         """Test retrieving KPIs by category"""
-        from education_system.systems.university.services.analytics.analytics_dashboard_core import KPIManager
+        from education_system.systems.university.shared.analytics.analytics_dashboard_core import KPIManager
 
         with mock_database() as (mock_conn, mock_cursor):
             mock_cursor.fetchall.return_value = [
@@ -379,7 +379,7 @@ class TestDashboardManager:
 
     def test_create_dashboard(self):
         """Test creating analytics dashboard"""
-        from education_system.systems.university.services.analytics.analytics_dashboard_core import \
+        from education_system.systems.university.shared.analytics.analytics_dashboard_core import \
             DashboardManager
 
         with mock_database() as (mock_conn, mock_cursor):
@@ -395,7 +395,7 @@ class TestDashboardManager:
 
     def test_create_dashboard_with_config(self):
         """Test creating dashboard with layout configuration"""
-        from education_system.systems.university.services.analytics.analytics_dashboard_core import \
+        from education_system.systems.university.shared.analytics.analytics_dashboard_core import \
             DashboardManager
 
         with mock_database():
@@ -412,7 +412,7 @@ class TestDashboardManager:
 
     def test_add_widget(self):
         """Test adding widget to dashboard"""
-        from education_system.systems.university.services.analytics.analytics_dashboard_core import \
+        from education_system.systems.university.shared.analytics.analytics_dashboard_core import \
             DashboardManager
 
         with mock_database() as (mock_conn, mock_cursor):
@@ -429,7 +429,7 @@ class TestDashboardManager:
 
     def test_add_widget_with_position(self):
         """Test adding widget with position and size"""
-        from education_system.systems.university.services.analytics.analytics_dashboard_core import \
+        from education_system.systems.university.shared.analytics.analytics_dashboard_core import \
             DashboardManager
 
         with mock_database():
@@ -453,7 +453,7 @@ class TestReportSchedulerManager:
 
     def test_create_scheduled_report(self):
         """Test creating scheduled report"""
-        from education_system.systems.university.services.analytics.analytics_dashboard_core import \
+        from education_system.systems.university.shared.analytics.analytics_dashboard_core import \
             ReportSchedulerManager
 
         with mock_database() as (mock_conn, mock_cursor):
@@ -469,7 +469,7 @@ class TestReportSchedulerManager:
 
     def test_create_scheduled_report_with_config(self):
         """Test creating scheduled report with configuration"""
-        from education_system.systems.university.services.analytics.analytics_dashboard_core import \
+        from education_system.systems.university.shared.analytics.analytics_dashboard_core import \
             ReportSchedulerManager
 
         with mock_database():
@@ -489,7 +489,7 @@ class TestDataSnapshotManager:
 
     def test_create_snapshot(self):
         """Test creating data snapshot"""
-        from education_system.systems.university.services.analytics.analytics_dashboard_core import \
+        from education_system.systems.university.shared.analytics.analytics_dashboard_core import \
             DataSnapshotManager
 
         with mock_database() as (mock_conn, mock_cursor):
@@ -509,7 +509,7 @@ class TestDataSnapshotManager:
 
     def test_create_snapshot_serializes_json(self):
         """Test snapshot properly serializes data to JSON"""
-        from education_system.systems.university.services.analytics.analytics_dashboard_core import \
+        from education_system.systems.university.shared.analytics.analytics_dashboard_core import \
             DataSnapshotManager
 
         with mock_database() as (mock_conn, mock_cursor):
@@ -537,7 +537,7 @@ class TestCLIFunctions:
 
     def test_display_predictive_analytics_menu_exists(self):
         """Test CLI menu function is defined"""
-        from education_system.systems.university.services.analytics.analytics_dashboard_core import \
+        from education_system.systems.university.shared.analytics.analytics_dashboard_core import \
             display_predictive_analytics_menu
 
         assert callable(display_predictive_analytics_menu)
@@ -546,7 +546,7 @@ class TestCLIFunctions:
     @patch('builtins.print')
     def test_display_predictive_analytics_menu_exits(self, mock_print, mock_input):
         """Test CLI menu exits properly"""
-        from education_system.systems.university.services.analytics.analytics_dashboard_core import \
+        from education_system.systems.university.shared.analytics.analytics_dashboard_core import \
             display_predictive_analytics_menu
 
         display_predictive_analytics_menu(None)
@@ -560,7 +560,7 @@ class TestGUILauncher:
 
     def test_launch_predictive_analytics_gui_exists(self):
         """Test GUI launcher function is defined"""
-        from education_system.systems.university.services.analytics.analytics_dashboard_core import \
+        from education_system.systems.university.shared.analytics.analytics_dashboard_core import \
             launch_predictive_analytics_gui
 
         assert callable(launch_predictive_analytics_gui)
@@ -571,7 +571,7 @@ class TestModuleExports:
 
     def test_all_exports_defined(self):
         """Test all items in __all__ are defined"""
-        from education_system.systems.university.services.analytics import analytics_dashboard_core
+        from education_system.systems.university.shared.analytics import analytics_dashboard_core
 
         for export_name in analytics_dashboard_core.__all__:
             assert hasattr(analytics_dashboard_core, export_name), \
@@ -579,7 +579,7 @@ class TestModuleExports:
 
     def test_manager_classes_exported(self):
         """Test all manager classes are in __all__"""
-        from education_system.systems.university.services.analytics import analytics_dashboard_core
+        from education_system.systems.university.shared.analytics import analytics_dashboard_core
 
         manager_classes = [
             'AnalyticsModelManager',
@@ -602,10 +602,10 @@ class TestErrorHandling:
 
     def test_managers_handle_database_errors(self):
         """Test managers properly handle and wrap database errors"""
-        from education_system.systems.university.services.analytics.analytics_dashboard_core import \
+        from education_system.systems.university.shared.analytics.analytics_dashboard_core import \
             AnalyticsModelManager
 
-        with patch('education_system.systems.university.services.analytics.analytics_dashboard_core.transaction') as mock_trans:
+        with patch('education_system.systems.university.shared.analytics.analytics_dashboard_core.transaction') as mock_trans:
             mock_trans.return_value.__enter__.side_effect = Exception("Connection failed")
 
             with pytest.raises(Exception) as exc_info:

@@ -23,7 +23,7 @@ import sqlite3
 import sys
 import tkinter as tk
 from datetime import datetime
-from tkinter import messagebox, scrolledtext, ttk
+from tkinter import messagebox, scrolledtext, simpledialog, ttk
 import uuid
 
 logger = logging.getLogger(__name__)
@@ -260,8 +260,52 @@ def _ensure_schema(conn):
     try:
         conn.execute(_COMPLAINTS_SCHEMA)
         conn.commit()
+        # OIA procedure columns + complaint_events (stage, deadline, handler...).
+        _procedure().ensure(conn)
     except sqlite3.Error:
         logger.exception("Failed to ensure complaints schema")
+
+
+def _procedure():
+    """The complaints procedure (OIA stages); imported lazily like the rest."""
+    from education_system.systems.university.application.complaints import procedure
+    return procedure
+
+
+def run_procedure(action, created_by="complaints"):
+    """Run ``action(conn)`` from the complaints procedure in one transaction,
+    then queue the e-mails it returned in the university outbox.
+
+    Raises ValueError / PermissionError with a message fit to show.
+    """
+    conn = _connect()
+    if conn is None:
+        raise ValueError("The complaints database is not available")
+    try:
+        _procedure().ensure(conn)
+        result = action(conn)
+        conn.commit()
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
+    emails = result.get("emails") if isinstance(result, dict) else result
+    if emails and isinstance(emails, list):
+        _procedure().send_emails(emails, created_by=created_by)
+    return result
+
+
+def query_procedure(action):
+    """Read-only ``action(conn)`` (listings, history, statistics)."""
+    conn = _connect()
+    if conn is None:
+        return None
+    try:
+        _ensure_schema(conn)
+        return action(conn)
+    finally:
+        conn.close()
 
 
 def load_complaints():
@@ -271,25 +315,14 @@ def load_complaints():
         return []
     _ensure_schema(conn)
     try:
-        rows = conn.execute(
-            "SELECT id, name, user_id, email, category, priority, subject, "
-            "       description, status, response, submitted, updated "
-            "FROM complaints ORDER BY submitted DESC"
-        ).fetchall()
-    except sqlite3.Error:
+        rows = _procedure().listing(conn)
+    except (sqlite3.Error, ValueError):
         logger.exception("Failed to load complaints")
         rows = []
     conn.close()
     logger.debug("Loaded %d complaints", len(rows))
-    return [
-        {
-            'id': r[0], 'name': r[1], 'user_id': r[2], 'email': r[3],
-            'category': r[4], 'priority': r[5], 'subject': r[6],
-            'description': r[7], 'status': r[8], 'response': r[9],
-            'submitted': r[10], 'updated': r[11],
-        }
-        for r in rows
-    ]
+    # Every column plus the procedure's stage label, days left and overdue flag.
+    return rows
 
 
 def insert_complaint(complaint, submitted_by=None):
@@ -314,6 +347,12 @@ def insert_complaint(complaint, submitted_by=None):
             ),
         )
         conn.commit()
+        try:
+            # Stage 1 (early resolution) with its deadline, and the audit trail.
+            _procedure().start(conn, complaint['id'], actor=submitted_by or 'portal')
+            conn.commit()
+        except Exception:
+            logger.exception("Could not start the procedure for complaint %s", complaint['id'])
         logger.info("Inserted complaint id=%s category=%s priority=%s by=%s",
                     complaint['id'], complaint.get('category'),
                     complaint.get('priority'), submitted_by)
@@ -785,6 +824,16 @@ class ViewTab(ttk.Frame):
         ttk.Button(search_frame, text="Search", style="Submit.TButton",
                    command=self.search).pack(side="left")
 
+        # The complainant's own actions in the OIA procedure.
+        own_frame = ttk.Frame(container)
+        own_frame.pack(fill="x", pady=(0, 5))
+        for label, command in (("My Complaints", self.show_mine),
+                               ("Request Next Stage", self.request_next_stage),
+                               ("Accept Outcome && Close", self.accept_outcome),
+                               ("Withdraw Complaint", self.withdraw)):
+            ttk.Button(own_frame, text=label.replace("&&", "&"),
+                       command=command).pack(side="left", padx=(0, 6))
+
         self.result_text = scrolledtext.ScrolledText(container, height=20,
                                                      font=("Consolas", 10),
                                                      wrap="word", bg="white")
@@ -838,13 +887,97 @@ Description    :
 Submitted      : {complaint['submitted']}
 Last Updated   : {complaint['updated']}
 """
+            info += procedure_section(complaint)
             self.result_text.insert("1.0", info)
+            self._current = complaint
         else:
             self.result_text.insert("1.0",
                                     f"\n  No complaint found with ID: {cid}\n\n"
                                     f"  Please verify your tracking ID and try again.")
 
         self.result_text.config(state="disabled")
+
+    # --- the complainant's procedure actions -------------------------
+    def _selected_own(self):
+        complaint = getattr(self, "_current", None)
+        if not complaint:
+            messagebox.showwarning("Track Complaint",
+                                   "Search for your complaint by its tracking ID first.",
+                                   parent=self)
+        return complaint
+
+    def _act(self, action, done):
+        actor = _actor(self.app)
+        try:
+            run_procedure(lambda conn: action(conn, actor))
+        except (ValueError, PermissionError) as exc:
+            messagebox.showerror("Complaint", str(exc), parent=self)
+            return
+        except Exception:
+            logger.exception("Complaint procedure action failed")
+            messagebox.showerror("Complaint", "Could not save the change. Please try again.",
+                                 parent=self)
+            return
+        messagebox.showinfo("Complaint", done, parent=self)
+        self.app.complaints = load_complaints()
+        self.search()
+
+    def show_mine(self):
+        actor = _actor(self.app)
+        rows = query_procedure(lambda conn: _procedure().own(conn, actor)) or []
+        self.result_text.config(state="normal")
+        self.result_text.delete("1.0", "end")
+        if not rows:
+            self.result_text.insert("1.0", "\n  You have not submitted any complaints from this "
+                                           "account.")
+        for c in rows:
+            due = c.get("escalation_due") if c.get("can_escalate") else c.get("stage_due")
+            self.result_text.insert(
+                "end", f"{c['id']}  {c['stage_label']:<32} {c['status']:<12} "
+                       f"{('due ' + due) if due else '':<16} {c['subject'][:50]}\n")
+        self.result_text.config(state="disabled")
+
+    def request_next_stage(self):
+        complaint = self._selected_own()
+        if not complaint:
+            return
+        reason = simpledialog.askstring(
+            "Request Next Stage",
+            "Why are you not satisfied with the outcome?", parent=self)
+        if reason:
+            cid = complaint["id"]
+            self._act(lambda conn, actor: _procedure().escalate(conn, cid, actor, reason),
+                      "Your complaint has moved to the next stage.")
+
+    def accept_outcome(self):
+        complaint = self._selected_own()
+        if complaint and messagebox.askyesno(
+                "Accept Outcome", "Accept the outcome and close your complaint? You will not "
+                "be able to escalate it afterwards.", parent=self):
+            cid = complaint["id"]
+            self._act(lambda conn, actor: _procedure().finalise(conn, cid, actor,
+                                                                student_accepted=True),
+                      "Your complaint is closed.")
+
+    def withdraw(self):
+        complaint = self._selected_own()
+        if not complaint:
+            return
+        reason = simpledialog.askstring("Withdraw Complaint", "Reason for withdrawing:",
+                                        parent=self)
+        if reason:
+            cid = complaint["id"]
+            self._act(lambda conn, actor: _procedure().record_outcome(
+                conn, cid, actor, "withdrawn", reason), "Your complaint has been withdrawn.")
+
+
+def _actor(app):
+    return _procedure().actor_from_user(app.current_user)
+
+
+def procedure_section(complaint):
+    """The OIA stage, deadline, handler and outcome lines of the Track view."""
+    return _procedure().procedure_text(complaint)
 
 
 # ---------- Admin Tab ----------
@@ -881,16 +1014,38 @@ class AdminTab(ttk.Frame):
         filter_combo.pack(side="left", padx=5)
         filter_combo.bind("<<ComboboxSelected>>", lambda e: self.refresh())
         ttk.Button(filter_frame, text="🔄 Refresh", command=self.refresh).pack(side="left", padx=5)
+        ttk.Label(filter_frame, text="Stage:").pack(side="left", padx=(15, 5))
+        self.stage_var = tk.StringVar(value="All")
+        stage_combo = ttk.Combobox(
+            filter_frame, textvariable=self.stage_var, state="readonly", width=30,
+            values=["All", "Overdue"] + [_procedure().STAGE_LABELS[s]
+                                         for s in _procedure().STAGES])
+        stage_combo.pack(side="left", padx=5)
+        stage_combo.bind("<<ComboboxSelected>>", lambda e: self.refresh())
+
+        # OIA procedure actions — packed before the expanding table.
+        procedure_frame = ttk.Frame(container)
+        procedure_frame.pack(fill="x", pady=(5, 0))
+        for label, command in (("Assign", self.assign), ("Advance Stage", self.advance_stage),
+                               ("Record Outcome", self.record_outcome),
+                               ("Close Complaint", self.close_complaint),
+                               ("Issue COP Letter", self.issue_cop),
+                               ("History", self.show_history),
+                               ("Statistics", self.show_statistics),
+                               ("Send Due Reminders", self.send_reminders)):
+            ttk.Button(procedure_frame, text=label, command=command).pack(side="left", padx=5)
 
         # Treeview
         tree_frame = ttk.Frame(container)
         tree_frame.pack(fill="both", expand=True, pady=10)
 
-        columns = ("ID", "Name", "Category", "Priority", "Subject", "Status", "Date")
+        columns = ("ID", "Name", "Category", "Priority", "Subject", "Status", "Stage", "Due",
+                   "Handler", "Date")
         self.tree = ttk.Treeview(tree_frame, columns=columns, show="headings", height=12, style="Complaints.Treeview")
 
         widths = {"ID": 90, "Name": 140, "Category": 130, "Priority": 80,
-                  "Subject": 200, "Status": 100, "Date": 130}
+                  "Subject": 200, "Status": 100, "Stage": 190, "Due": 100, "Handler": 110,
+                  "Date": 130}
         for col in columns:
             self.tree.heading(col, text=col)
             self.tree.column(col, width=widths[col], anchor="w")
@@ -915,6 +1070,7 @@ class AdminTab(ttk.Frame):
         self.tree.tag_configure("In Progress", background="#dbeafe")
         self.tree.tag_configure("Resolved", background="#d1fae5")
         self.tree.tag_configure("Rejected", background="#fee2e2")
+        self.tree.tag_configure("Overdue", background="#fca5a5")
 
     def refresh(self):
         if not self.authenticated:
@@ -955,14 +1111,131 @@ class AdminTab(ttk.Frame):
             self.tree.delete(item)
 
         filter_status = self.filter_var.get()
+        stage_filter = self.stage_var.get()
         for c in complaints:
             if filter_status != "All" and c["status"] != filter_status:
                 continue
+            if stage_filter == "Overdue" and not c.get("overdue"):
+                continue
+            if stage_filter not in ("All", "Overdue") and c.get("stage_label") != stage_filter:
+                continue
+            due = c.get("escalation_due") if c.get("can_escalate") else c.get("stage_due")
             self.tree.insert("", "end", values=(
                 c["id"], c["name"], c["category"], c["priority"],
                 c["subject"][:40] + ("..." if len(c["subject"]) > 40 else ""),
-                c["status"], c["submitted"]
-            ), tags=(c["status"],))
+                c["status"], c.get("stage_label") or "", due or "",
+                c.get("assigned_to") or "", c["submitted"]
+            ), tags=(("Overdue",) if c.get("overdue") else (c["status"],)))
+
+    # --- OIA procedure actions ------------------------------------------
+    def _selected_id(self):
+        selection = self.tree.selection()
+        if not selection:
+            messagebox.showwarning("No Selection", "Please select a complaint first.",
+                                   parent=self)
+            return None
+        return str(self.tree.item(selection[0])["values"][0])
+
+    def _act(self, action, done):
+        actor = _actor(self.app)
+        try:
+            result = run_procedure(lambda conn: action(conn, actor))
+        except (ValueError, PermissionError) as exc:
+            messagebox.showerror("Complaint", str(exc), parent=self)
+            return None
+        except Exception:
+            logger.exception("Complaint procedure action failed")
+            messagebox.showerror("Complaint", "Could not save the change.", parent=self)
+            return None
+        letter = result.get("letter") if isinstance(result, dict) else None
+        messagebox.showinfo("Complaint", done + (f"\n\nCompletion of Procedures letter: "
+                                                 f"{letter}" if letter else ""), parent=self)
+        self.refresh()
+        return result
+
+    def assign(self):
+        cid = self._selected_id()
+        if not cid:
+            return
+        handler = simpledialog.askstring("Assign", "Staff username of the handler:",
+                                         parent=self)
+        if handler:
+            self._act(lambda conn, actor: _procedure().assign(conn, cid, handler, actor),
+                      f"Complaint {cid} assigned to {handler}.")
+
+    def advance_stage(self):
+        cid = self._selected_id()
+        if not cid:
+            return
+        reason = simpledialog.askstring("Advance Stage",
+                                        "Why does this complaint need the next stage?",
+                                        parent=self)
+        if reason:
+            self._act(lambda conn, actor: _procedure().advance(conn, cid, actor, reason),
+                      f"Complaint {cid} moved to the next stage.")
+
+    def record_outcome(self):
+        cid = self._selected_id()
+        if cid:
+            OutcomeDialog(self, cid)
+
+    def close_complaint(self):
+        cid = self._selected_id()
+        if not cid:
+            return
+        accepted = messagebox.askyesnocancel(
+            "Close Complaint", "Has the student accepted the outcome?\n\nYes: close now. "
+            "No: close only if their escalation deadline has passed.", parent=self)
+        if accepted is not None:
+            self._act(lambda conn, actor: _procedure().finalise(
+                conn, cid, actor, student_accepted=bool(accepted)), f"Complaint {cid} closed.")
+
+    def issue_cop(self):
+        cid = self._selected_id()
+        if not cid:
+            return
+        result = self._act(lambda conn, actor: _procedure().issue_cop(conn, cid, actor),
+                           f"Completion of Procedures letter issued for {cid}.")
+        if result:
+            messagebox.showinfo("COP Letter", f"Saved to {result['path']}\nOIA deadline: "
+                                              f"{result['oia_deadline']}", parent=self)
+
+    def show_history(self):
+        cid = self._selected_id()
+        if not cid:
+            return
+        events = query_procedure(lambda conn: _procedure().history(conn, cid)) or []
+        lines = [f"{str(e['created_at'])[:16]}  {e['event_type']:<11} {e['stage'] or '':<17} "
+                 f"{e['actor'] or '-':<12} {e['detail'] or ''}" for e in events]
+        _TextWindow(self, f"Complaint {cid} — history", "\n".join(lines) or "No events yet.")
+
+    def show_statistics(self):
+        frm = simpledialog.askstring("Statistics", "From date (YYYY-MM-DD, blank for all):",
+                                     parent=self)
+        if frm is None:
+            return
+        to = simpledialog.askstring("Statistics", "To date (YYYY-MM-DD, blank for all):",
+                                    parent=self)
+        if to is None:
+            return
+        stats = query_procedure(lambda conn: _procedure().statistics(conn, frm or None,
+                                                                     to or None))
+        if stats is None:
+            messagebox.showerror("Statistics", "The complaints database is not available.",
+                                 parent=self)
+            return
+        _TextWindow(self, "Complaints statistics (OIA)",
+                    "\n".join(_procedure().statistics_lines(stats)))
+
+    def send_reminders(self):
+        try:
+            count = _procedure().run_reminders()
+        except Exception:
+            logger.exception("Complaint reminders failed")
+            messagebox.showerror("Reminders", "Could not send the reminders.", parent=self)
+            return
+        messagebox.showinfo("Reminders", f"{count} deadline reminder(s) sent.", parent=self)
+        self.refresh()
 
     def open_complaint(self, event):
         selection = self.tree.selection()
@@ -997,6 +1270,64 @@ class AdminTab(ttk.Frame):
             self.app.complaints = load_complaints()
             self.refresh()
             messagebox.showinfo("Deleted", "Complaint deleted successfully.")
+
+
+class _TextWindow(tk.Toplevel):
+    """Read-only text (history, statistics), parented to its window."""
+
+    def __init__(self, parent, title, text):
+        super().__init__(parent)
+        self.title(title)
+        self.geometry("820x520")
+        self.transient(parent.winfo_toplevel())
+        box = scrolledtext.ScrolledText(self, wrap="word", font=("Consolas", 10))
+        box.pack(fill="both", expand=True, padx=10, pady=10)
+        box.insert("1.0", text)
+        box.config(state="disabled")
+        ttk.Button(self, text="Close", command=self.destroy).pack(pady=(0, 10))
+
+
+class OutcomeDialog(tk.Toplevel):
+    """Record the current stage's outcome, summary and issues considered."""
+
+    def __init__(self, admin_tab, complaint_id):
+        super().__init__(admin_tab)
+        self.admin_tab = admin_tab
+        self.complaint_id = complaint_id
+        self.title(f"Outcome — complaint {complaint_id}")
+        self.geometry("620x520")
+        self.transient(admin_tab.winfo_toplevel())
+        proc = _procedure()
+        frame = ttk.Frame(self, padding=15)
+        frame.pack(fill="both", expand=True)
+        ttk.Label(frame, text="Outcome:").pack(anchor="w")
+        self._labels = {proc.OUTCOME_LABELS[o]: o for o in proc.OUTCOMES}
+        self.outcome_var = tk.StringVar(value=proc.OUTCOME_LABELS["upheld"])
+        ttk.Combobox(frame, textvariable=self.outcome_var, state="readonly",
+                     values=list(self._labels)).pack(fill="x", pady=(0, 8))
+        ttk.Label(frame, text="Summary of the outcome (sent to the student):").pack(anchor="w")
+        self.summary = scrolledtext.ScrolledText(frame, height=7, wrap="word")
+        self.summary.pack(fill="x", pady=(0, 8))
+        ttk.Label(frame, text="Issues considered (one per line):").pack(anchor="w")
+        self.issues = scrolledtext.ScrolledText(frame, height=6, wrap="word")
+        self.issues.pack(fill="x", pady=(0, 8))
+        buttons = ttk.Frame(frame)
+        buttons.pack(pady=5)
+        ttk.Button(buttons, text="Save Outcome", style="Submit.TButton",
+                   command=self.save).pack(side="left", padx=5)
+        ttk.Button(buttons, text="Cancel", command=self.destroy).pack(side="left", padx=5)
+
+    def save(self):
+        outcome = self._labels[self.outcome_var.get()]
+        summary = self.summary.get("1.0", "end").strip()
+        issues = self.issues.get("1.0", "end").strip()
+        cid = self.complaint_id
+        result = self.admin_tab._act(
+            lambda conn, actor: _procedure().record_outcome(conn, cid, actor, outcome, summary,
+                                                            issues),
+            f"Outcome recorded for complaint {cid}.")
+        if result is not None:
+            self.destroy()
 
 
 # ---------- Complaint Detail Window ----------
@@ -1076,6 +1407,18 @@ Subject: {self.complaint['subject']}"""
             messagebox.showerror("Save Failed",
                                  "Could not save changes to the database.")
             return
+        if status != prev_status:
+            # Resolved / Rejected on an undecided stage records that stage's
+            # outcome in the OIA procedure (with its escalation window).
+            cid = self.complaint["id"]
+            try:
+                run_procedure(lambda conn: _procedure().legacy_status(
+                    conn, cid, _actor(self.app), status, response))
+            except (ValueError, PermissionError) as exc:
+                messagebox.showwarning("Complaints procedure", str(exc), parent=self)
+            except Exception:
+                logger.exception("Procedure update failed for complaint %s", cid)
+            self.app.complaints = load_complaints()
 
         # Notify the submitter if the status changed or a response was
         # added/edited. Best-effort — don't block the admin save flow.

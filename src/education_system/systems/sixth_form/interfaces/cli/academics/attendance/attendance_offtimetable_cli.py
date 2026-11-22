@@ -17,22 +17,23 @@ import logging
 from datetime import date as _date, timedelta as _timedelta
 from typing import Callable
 
-from education_system.systems.sixth_form.domain.academics.attendance import (
-    attendance_activities as activities,
-    attendance_codes as codes,
-    attendance_exams as exams,
-    attendance_placements as placements,
-)
 from education_system.systems.sixth_form.domain.academics.attendance.attendance import (
     ValidationError,
 )
 from education_system.systems.sixth_form.interfaces.cli.academics.attendance.attendance_cli import (
+    lazy_domain,
     _input,
     _pause,
     _pick_from,
     _pick_group,
     _UserAbort,
 )
+
+# Domain modules load on first use (see attendance_cli.lazy_domain).
+activities = lazy_domain("attendance_activities")
+codes = lazy_domain("attendance_codes")
+exams = lazy_domain("attendance_exams")
+placements = lazy_domain("attendance_placements")
 from education_system.systems.sixth_form.domain.academics.timetable.timetable import (
     day_name,
 )

@@ -9,6 +9,22 @@ goes with the application.
 
 The ``push_to_ucas`` action copies a chosen draft (typically the
 Approved one) onto the student's current-cycle UCAS application.
+
+**Two formats.** From 2026 entry UCAS replaced the free-form statement
+with three questions, answered separately (``format = 'three_question'``):
+
+1. Why do you want to study this course or subject?
+2. How have your qualifications and studies helped you to prepare for
+   this course or subject?
+3. What else have you done to prepare outside of education, and why are
+   these experiences useful?
+
+Each answer needs at least :data:`MIN_ANSWER_CHARS` (350) characters; the
+4,000-character and 47-line limits apply to the three together. The
+answers live in ``answer_1..3``; ``body`` holds them composed under their
+questions, so everything that reads ``body`` (the UCAS push, the
+"statement only on the application" check, exports) keeps working.
+Older records keep ``format = 'single'`` and the old rules.
 """
 
 from __future__ import annotations
@@ -29,6 +45,28 @@ DEFAULT_STATUS: str = "Draft"
 # UCAS hard limits.
 MAX_CHARS: int = 4000
 MAX_LINES: int = 47
+
+FORMAT_SINGLE = "single"
+FORMAT_THREE = "three_question"
+FORMATS: tuple[str, ...] = (FORMAT_THREE, FORMAT_SINGLE)
+FORMAT_LABELS: dict[str, str] = {
+    FORMAT_THREE: "Three questions (2026 entry onward)",
+    FORMAT_SINGLE: "Single statement (before 2026 entry)",
+}
+#: First UCAS entry year using the three-question format.
+FIRST_THREE_QUESTION_CYCLE = 2026
+#: UCAS minimum per answer in the three-question format.
+MIN_ANSWER_CHARS: int = 350
+QUESTIONS: tuple[str, str, str] = (
+    "Why do you want to study this course or subject?",
+    "How have your qualifications and studies helped you to prepare for "
+    "this course or subject?",
+    "What else have you done to prepare outside of education, and why are "
+    "these experiences useful?",
+)
+#: Statuses at which a three-question statement must meet the minimums —
+#: a draft can be short while it is being written, not once it is signed off.
+_COMPLETE_STATUSES = ("Approved", "Submitted")
 
 _SCHEMA = """
 CREATE TABLE IF NOT EXISTS personal_statements (
@@ -68,6 +106,18 @@ class PersonalStatement:
     reviewed_at: str | None
     created_at: str
     updated_at: str
+    format: str = FORMAT_SINGLE
+    answer_1: str | None = None
+    answer_2: str | None = None
+    answer_3: str | None = None
+
+    @property
+    def answers(self) -> tuple[str, str, str]:
+        return (self.answer_1 or "", self.answer_2 or "", self.answer_3 or "")
+
+    @property
+    def is_three_question(self) -> bool:
+        return self.format == FORMAT_THREE
 
 
 # ── DB plumbing ────────────────────────────────────────────────────
@@ -91,13 +141,29 @@ def init_db() -> None:
     _students.init_db()
     with _connect() as conn:
         conn.executescript(_SCHEMA)
+        # Three-question format (2026 entry onward). Existing rows take the
+        # default and stay single-format statements.
+        cols = {r["name"] for r in conn.execute(
+            "PRAGMA table_info(personal_statements)")}
+        for col, ddl in (("format", f"TEXT NOT NULL DEFAULT '{FORMAT_SINGLE}'"),
+                         ("answer_1", "TEXT"), ("answer_2", "TEXT"),
+                         ("answer_3", "TEXT")):
+            if col not in cols:
+                conn.execute(
+                    f"ALTER TABLE personal_statements ADD COLUMN {col} {ddl}")
+        conn.commit()
     logger.debug("Personal-statements schema ready at %s", DB_PATH)
 
     _DB_READY = True
 
 
 def _row(r: sqlite3.Row) -> PersonalStatement:
+    keys = r.keys()
     return PersonalStatement(
+        format=r["format"] if "format" in keys and r["format"] else FORMAT_SINGLE,
+        answer_1=r["answer_1"] if "answer_1" in keys else None,
+        answer_2=r["answer_2"] if "answer_2" in keys else None,
+        answer_3=r["answer_3"] if "answer_3" in keys else None,
         statement_id=r["statement_id"], student_id=r["student_id"],
         title=r["title"], body=r["body"],
         word_count=r["word_count"], char_count=r["char_count"],
@@ -128,6 +194,65 @@ def compute_counts(body: str) -> tuple[int, int, int]:
     return word_count, char_count, line_count
 
 
+def compute_three_counts(answers) -> tuple[int, int, int]:
+    """``(words, chars, lines)`` across three answers, as UCAS counts them:
+    the limits apply to the answers together, not to the composed body."""
+    words = chars = lines = 0
+    for a in answers:
+        w, c, l = compute_counts(a or "")
+        words += w
+        chars += c
+        lines += l
+    return words, chars, lines
+
+
+def compose_body(answers) -> str:
+    """The three answers under their questions — what ``body`` stores."""
+    return "\n\n".join(f"{i}. {q}\n{(a or '').strip()}"
+                        for i, (q, a) in enumerate(zip(QUESTIONS, answers), 1))
+
+
+def default_format(cycle_year: int | None = None) -> str:
+    """The format a new statement for *cycle_year* should use."""
+    if cycle_year is None:
+        from education_system.systems.sixth_form.domain.progression.university import (
+            workflow as _wf,
+        )
+        cycle_year = _wf.default_cycle_year()
+    return FORMAT_THREE if int(cycle_year) >= FIRST_THREE_QUESTION_CYCLE else FORMAT_SINGLE
+
+
+def check_answers(answers, *, require_minimum: bool = True) -> list[str]:
+    """Every UCAS rule a set of three answers breaks, as sentences."""
+    issues: list[str] = []
+    _w, chars, lines = compute_three_counts(answers)
+    if require_minimum:
+        for i, a in enumerate(answers, 1):
+            n = len(a or "")
+            if n < MIN_ANSWER_CHARS:
+                issues.append(f"Question {i} has {n} characters — UCAS needs at "
+                              f"least {MIN_ANSWER_CHARS}.")
+    if chars > MAX_CHARS:
+        issues.append(f"The three answers total {chars} characters — the UCAS "
+                      f"limit is {MAX_CHARS}.")
+    if lines > MAX_LINES:
+        issues.append(f"The three answers total {lines} lines — the UCAS limit "
+                      f"is {MAX_LINES}.")
+    return issues
+
+
+def check_statement(statement: "PersonalStatement") -> list[str]:
+    """The rules this statement breaks *for submission* (format-aware)."""
+    if statement.is_three_question:
+        return check_answers(statement.answers, require_minimum=True)
+    issues = []
+    if statement.char_count > MAX_CHARS:
+        issues.append(f"{statement.char_count} characters — the limit is {MAX_CHARS}.")
+    if statement.line_count > MAX_LINES:
+        issues.append(f"{statement.line_count} lines — the limit is {MAX_LINES}.")
+    return issues
+
+
 # ── Validation ────────────────────────────────────────────────────
 
 class ValidationError(ValueError):
@@ -147,26 +272,49 @@ def _validate_payload(data: dict[str, Any]) -> dict[str, Any]:
         raise ValidationError(f"No student with id {sid}")
     out["student_id"] = sid
 
-    body = data.get("body") or ""
-    if not body.strip():
-        raise ValidationError("Body cannot be empty")
-    word_count, char_count, line_count = compute_counts(body)
-    if char_count > MAX_CHARS:
-        raise ValidationError(
-            f"Character count {char_count} exceeds UCAS limit of {MAX_CHARS}")
-    if line_count > MAX_LINES:
-        raise ValidationError(
-            f"Line count {line_count} exceeds UCAS limit of {MAX_LINES}")
-    out["body"] = body
-    out["word_count"] = word_count
-    out["char_count"] = char_count
-    out["line_count"] = line_count
-
     status = (data.get("status") or DEFAULT_STATUS).strip()
     if status not in STATUSES:
         raise ValidationError(
             f"Status must be one of: {', '.join(STATUSES)}")
     out["status"] = status
+
+    answers = tuple((data.get(f"answer_{i}") or "").strip() for i in (1, 2, 3))
+    fmt = (data.get("format") or "").strip() or (
+        FORMAT_THREE if any(a.strip() for a in answers) else FORMAT_SINGLE)
+    if fmt not in FORMATS:
+        raise ValidationError(f"Format must be one of: {', '.join(FORMATS)}")
+    out["format"] = fmt
+
+    if fmt == FORMAT_THREE:
+        if not any(a.strip() for a in answers):
+            raise ValidationError("Answer at least one of the three questions")
+        issues = check_answers(
+            answers, require_minimum=status in _COMPLETE_STATUSES)
+        if issues:
+            if status in _COMPLETE_STATUSES and any("at least" in i for i in issues):
+                issues.append(f"(A statement can only be {status} once every "
+                              "answer meets the minimum.)")
+            raise ValidationError(" ".join(issues))
+        body = compose_body(answers)
+        word_count, char_count, line_count = compute_three_counts(answers)
+        out["answer_1"], out["answer_2"], out["answer_3"] = (
+            a.strip() or None for a in answers)
+    else:
+        body = data.get("body") or ""
+        if not body.strip():
+            raise ValidationError("Body cannot be empty")
+        word_count, char_count, line_count = compute_counts(body)
+        if char_count > MAX_CHARS:
+            raise ValidationError(
+                f"Character count {char_count} exceeds UCAS limit of {MAX_CHARS}")
+        if line_count > MAX_LINES:
+            raise ValidationError(
+                f"Line count {line_count} exceeds UCAS limit of {MAX_LINES}")
+        out["answer_1"] = out["answer_2"] = out["answer_3"] = None
+    out["body"] = body
+    out["word_count"] = word_count
+    out["char_count"] = char_count
+    out["line_count"] = line_count
 
     out["title"]    = (data.get("title") or "").strip() or None
     out["feedback"] = (data.get("feedback") or "").strip() or None
@@ -190,12 +338,14 @@ def create_statement(data: dict[str, Any]) -> PersonalStatement:
             """INSERT INTO personal_statements
                    (student_id, title, body, word_count, char_count,
                     line_count, status, feedback, reviewer, reviewed_at,
+                    format, answer_1, answer_2, answer_3,
                     created_at, updated_at)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
                        datetime('now'), datetime('now'))""",
             (p["student_id"], p["title"], p["body"],
              p["word_count"], p["char_count"], p["line_count"],
-             p["status"], p["feedback"], p["reviewer"], p["reviewed_at"]),
+             p["status"], p["feedback"], p["reviewer"], p["reviewed_at"],
+             p["format"], p["answer_1"], p["answer_2"], p["answer_3"]),
         )
         conn.commit()
         new_id = cur.lastrowid
@@ -256,6 +406,14 @@ def update_statement(statement_id: int, data: dict[str, Any]) -> PersonalStateme
     if existing is None:
         logger.warning("update_statement: unknown id %d", statement_id)
         raise ValidationError(f"No statement with id {statement_id}")
+    fmt = data.get("format", existing.format) or FORMAT_SINGLE
+    if (fmt == FORMAT_THREE and "body" in data
+            and not any(f"answer_{i}" in data for i in (1, 2, 3))):
+        # The composed body is derived from the answers; replacing it
+        # wholesale would leave the answers and the body disagreeing.
+        raise ValidationError(
+            "This statement uses the three-question format — replace its "
+            "answers rather than the body.")
     p = _validate_payload({
         "student_id":  existing.student_id,
         "title":       data.get("title", existing.title),
@@ -264,6 +422,10 @@ def update_statement(statement_id: int, data: dict[str, Any]) -> PersonalStateme
         "feedback":    data.get("feedback", existing.feedback),
         "reviewer":    data.get("reviewer", existing.reviewer),
         "reviewed_at": data.get("reviewed_at", existing.reviewed_at),
+        "format":      fmt,
+        "answer_1":    data.get("answer_1", existing.answer_1),
+        "answer_2":    data.get("answer_2", existing.answer_2),
+        "answer_3":    data.get("answer_3", existing.answer_3),
     })
     with _connect() as conn:
         conn.execute(
@@ -271,11 +433,14 @@ def update_statement(statement_id: int, data: dict[str, Any]) -> PersonalStateme
                    title = ?, body = ?, word_count = ?, char_count = ?,
                    line_count = ?, status = ?, feedback = ?,
                    reviewer = ?, reviewed_at = ?,
+                   format = ?, answer_1 = ?, answer_2 = ?, answer_3 = ?,
                    updated_at = datetime('now')
                WHERE statement_id = ?""",
             (p["title"], p["body"], p["word_count"], p["char_count"],
              p["line_count"], p["status"], p["feedback"],
-             p["reviewer"], p["reviewed_at"], statement_id),
+             p["reviewer"], p["reviewed_at"],
+             p["format"], p["answer_1"], p["answer_2"], p["answer_3"],
+             statement_id),
         )
         conn.commit()
     logger.info(
@@ -351,6 +516,10 @@ def push_to_ucas(
     existing = get_statement(statement_id)
     if existing is None:
         raise ValidationError(f"No statement with id {statement_id}")
+    issues = check_statement(existing)
+    if issues:
+        raise ValidationError(
+            "Not ready for UCAS: " + " ".join(issues))
     from education_system.systems.sixth_form.domain.progression.university import ucas as _ucas
     app = _ucas.get_application_for_student(
         existing.student_id, cycle_year=cycle_year)

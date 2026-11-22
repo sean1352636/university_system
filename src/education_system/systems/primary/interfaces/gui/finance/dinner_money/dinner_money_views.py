@@ -21,6 +21,7 @@ from education_system.systems.primary.domain.learners.pupils import (
 from education_system.systems.primary.domain.learners.pupils.pupils import (
     ValidationError, YEAR_GROUPS,
 )
+from education_system.systems.primary.interfaces.gui import kit
 
 logger = logging.getLogger(__name__)
 
@@ -53,14 +54,17 @@ def _safe_view(func: Callable[..., None]) -> Callable[..., None]:
 @_safe_view
 def open_dinner_money(host) -> None:
     logger.debug("GUI: open_dinner_money")
+    kit.show_page(host, "Dinner Money",
+                  lambda parent: _draw_dinner_money(parent, host))
 
-    win = tk.Toplevel(host.root)
-    win.title("Dinner Money")
-    win.transient(host.root)
-    win.geometry("1180x640")
 
-    nb = ttk.Notebook(win)
-    nb.pack(fill="both", expand=True, padx=10, pady=10)
+def _draw_dinner_money(parent, host) -> None:
+    win = parent.winfo_toplevel()
+    kit.page_heading(parent, "Dinner Money",
+                     "Pupil meal accounts: ledger entries and balances.")
+
+    nb = ttk.Notebook(parent)
+    nb.pack(fill="both", expand=True, pady=(0, 6))
 
     entries_tab = ttk.Frame(nb, padding=10)
     balances_tab = ttk.Frame(nb, padding=10)
@@ -74,9 +78,9 @@ def open_dinner_money(host) -> None:
 
     filt = ttk.Frame(entries_tab)
     filt.pack(fill="x", pady=(6, 6))
-    ttk.Label(filt, text="Pupil ID:").pack(side="left")
+    ttk.Label(filt, text="Pupil:").pack(side="left")
     pupil_var = tk.StringVar()
-    ttk.Entry(filt, textvariable=pupil_var, width=12).pack(
+    kit.PupilPicker(filt, pupil_var, include_off_roll=True, width=34).pack(
         side="left", padx=(4, 10))
     ttk.Label(filt, text="Kind:").pack(side="left")
     kind_var = tk.StringVar(value="All")
@@ -90,12 +94,10 @@ def open_dinner_money(host) -> None:
                  state="readonly", width=10).pack(side="left", padx=(4, 10))
     ttk.Label(filt, text="From:").pack(side="left")
     from_var = tk.StringVar()
-    ttk.Entry(filt, textvariable=from_var, width=12).pack(
-        side="left", padx=(4, 10))
+    kit.DateField(filt, from_var).pack(side="left", padx=(4, 10))
     ttk.Label(filt, text="To:").pack(side="left")
     to_var = tk.StringVar()
-    ttk.Entry(filt, textvariable=to_var, width=12).pack(
-        side="left", padx=(4, 10))
+    kit.DateField(filt, to_var).pack(side="left", padx=(4, 10))
 
     cols = ("entry_id", "date", "pupil_id", "name", "kind", "meal_type",
             "amount", "description")
@@ -204,7 +206,7 @@ def open_dinner_money(host) -> None:
         pid = pupil_var.get().strip()
         if not pid:
             messagebox.showinfo("Dinner Money",
-                                "Enter a pupil ID in the filter first.",
+                                "Choose a pupil in the filter first.",
                                 parent=win)
             return
         _open_statement_dialog(win, pid)
@@ -291,8 +293,9 @@ def open_dinner_money(host) -> None:
     by_year_var.trace_add("write", lambda *_: _refresh_balances())
     owing_var.trace_add("write", lambda *_: _refresh_balances())
 
-    ttk.Button(win, text="Close",
-               command=win.destroy).pack(anchor="e", padx=12, pady=(0, 10))
+    ttk.Button(parent, text="Close",
+               command=lambda: kit.close_page(host, parent)).pack(
+        anchor="e", pady=(0, 4))
 
     def _refresh_all() -> None:
         _refresh_entries()
@@ -321,7 +324,7 @@ def _open_entry_dialog(parent, *, entry_id: int | None,
     dlg = tk.Toplevel(parent)
     dlg.title("Entry" if existing else "New ledger entry")
     dlg.transient(parent)
-    dlg.geometry("500x440")
+    dlg.minsize(560, 380)
     try:
         dlg.wait_visibility()
         dlg.grab_set()
@@ -334,11 +337,11 @@ def _open_entry_dialog(parent, *, entry_id: int | None,
     pupil_var = tk.StringVar(
         value=existing.pupil_id if existing else default_pupil)
     pupil_label = tk.StringVar(value="")
-    ttk.Label(frm, text="Pupil ID *").grid(row=0, column=0, sticky="w", pady=3)
-    ttk.Entry(frm, textvariable=pupil_var, width=14).grid(
-        row=0, column=1, sticky="w", pady=3)
+    ttk.Label(frm, text="Pupil *").grid(row=0, column=0, sticky="w", pady=3)
+    kit.PupilPicker(frm, pupil_var, include_off_roll=existing is not None).grid(
+        row=0, column=1, columnspan=2, sticky="w", pady=3)
     ttk.Label(frm, textvariable=pupil_label, foreground="#666").grid(
-        row=0, column=2, sticky="w", padx=(8, 0))
+        row=9, column=0, columnspan=3, sticky="w", pady=(6, 0))
 
     def _lookup_pupil(*_a) -> None:
         pid = pupil_var.get().strip()
@@ -363,10 +366,10 @@ def _open_entry_dialog(parent, *, entry_id: int | None,
     pupil_var.trace_add("write", _lookup_pupil)
     _lookup_pupil()
 
-    ttk.Label(frm, text="Date (YYYY-MM-DD)").grid(
+    ttk.Label(frm, text="Date").grid(
         row=1, column=0, sticky="w", pady=3)
     date_var = tk.StringVar(value=existing.entry_date if existing else "")
-    ttk.Entry(frm, textvariable=date_var, width=14).grid(
+    kit.DateField(frm, date_var).grid(
         row=1, column=1, sticky="w", pady=3)
     ttk.Label(frm, text="(blank = today)",
               foreground="#888").grid(row=1, column=2, sticky="w", padx=(8, 0))
@@ -391,7 +394,7 @@ def _open_entry_dialog(parent, *, entry_id: int | None,
     if existing:
         amount_default = f"{abs(existing.amount_pence)/100:.2f}"
     amount_var = tk.StringVar(value=amount_default)
-    ttk.Entry(frm, textvariable=amount_var, width=10).grid(
+    kit.NumberField(frm, amount_var, increment=0.01, to=9999, width=10).grid(
         row=4, column=1, sticky="w", pady=3)
     ttk.Label(frm,
               text="(sign flipped automatically for charge)",
@@ -408,8 +411,8 @@ def _open_entry_dialog(parent, *, entry_id: int | None,
     ttk.Label(frm, text="Recorded by").grid(
         row=6, column=0, sticky="w", pady=3)
     by_var = tk.StringVar(value=existing.recorded_by or "" if existing else "")
-    ttk.Entry(frm, textvariable=by_var, width=20).grid(
-        row=6, column=1, sticky="w", pady=3)
+    kit.StaffPicker(frm, by_var, by="name").grid(
+        row=6, column=1, columnspan=2, sticky="w", pady=3)
 
     ttk.Label(frm, text="Notes").grid(row=7, column=0, sticky="w", pady=3)
     notes_var = tk.StringVar(value=existing.notes or "" if existing else "")
@@ -445,7 +448,7 @@ def _open_entry_dialog(parent, *, entry_id: int | None,
         dlg.destroy()
 
     btn_row = ttk.Frame(frm)
-    btn_row.grid(row=8, column=0, columnspan=3, sticky="ew", pady=(14, 0))
+    btn_row.grid(row=10, column=0, columnspan=3, sticky="ew", pady=(14, 0))
     ttk.Button(btn_row, text="Save", command=_save).pack(side="right")
     ttk.Button(btn_row, text="Cancel",
                command=dlg.destroy).pack(side="right", padx=(0, 8))

@@ -14,10 +14,10 @@ from __future__ import annotations
 
 from flask import Blueprint, jsonify, request
 
-from education_system.systems.university.domains.academics.domain.research.external_quality_assurance.services import (
+from education_system.systems.university.domains.quality.domain.external_quality_assurance.services import (
     qa_service as qa,
 )
-from education_system.systems.university.domains.academics.domain.research.external_quality_assurance.services.qa_integrations import (
+from education_system.systems.university.domains.quality.domain.external_quality_assurance.services.qa_integrations import (
     aggregate_qa_across_systems,
 )
 

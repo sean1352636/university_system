@@ -5,6 +5,7 @@ from __future__ import annotations
 import logging
 from datetime import date as _date
 from typing import Any, Callable
+from education_system.systems.sixth_form.domain.governance.user_management import access
 from education_system.systems.sixth_form.domain.staff import staff as data
 from education_system.systems.sixth_form.domain.staff.staff import (
     DEFAULT_DEPARTMENT,
@@ -258,7 +259,42 @@ def _collect_form(existing: Staff | None) -> dict[str, Any]:
     return p
 
 
+def _may_edit() -> bool:
+    # Job role, DSL flag and login link decide what someone can open,
+    # so only HR and administrators may change staff records.
+    if access.current().can(access.HR):
+        return True
+    print("  Only HR and administrators can change staff records.")
+    _pause()
+    return False
+
+
+def link_login(staff_id: str | None = None) -> None:
+    """Set the shared-auth login that belongs to a staff record."""
+    if not _may_edit():
+        return
+    sid = staff_id or _input("Staff ID")
+    existing = data.get_staff(sid) if sid else None
+    if existing is None:
+        print("  No such staff member.")
+        _pause()
+        return
+    current = data.login_username(existing.staff_id) or ""
+    username = _input("Sign-in username ('-' to unlink)", default=current)
+    if username == "-":
+        username = ""
+    try:
+        access.link_staff_login(existing.staff_id, username)
+    except Exception as e:
+        print(f"  Could not link login: {e}")
+    else:
+        print(f"  {existing.full_name} -> {username or '(no login)'}")
+    _pause()
+
+
 def new_staff() -> None:
+    if not _may_edit():
+        return
     print("\n═══ New Staff ═══")
     try:
         payload = _collect_form(None)
@@ -277,6 +313,8 @@ def new_staff() -> None:
 
 
 def edit_staff(staff_id: str | None = None) -> None:
+    if not _may_edit():
+        return
     print("\n═══ Edit Staff ═══")
     try:
         sid = staff_id or _input("Staff ID", allow_empty=False)
@@ -304,6 +342,8 @@ def edit_staff(staff_id: str | None = None) -> None:
 
 
 def mark_left_flow(staff_id: str | None = None) -> None:
+    if not _may_edit():
+        return
     print("\n═══ Mark Staff as Left ═══")
     try:
         sid = staff_id or _input("Staff ID", allow_empty=False)
@@ -332,6 +372,8 @@ def mark_left_flow(staff_id: str | None = None) -> None:
 
 
 def delete_staff_flow(staff_id: str | None = None) -> None:
+    if not _may_edit():
+        return
     print("\n═══ Delete Staff ═══")
     print("  ⚠ This will also clear line-manager links pointing to them.")
     try:
@@ -344,12 +386,39 @@ def delete_staff_flow(staff_id: str | None = None) -> None:
         print(f"  ✗ No staff {sid}")
         _pause()
         return
+    linked = data.linked_record_counts(existing.staff_id)
+    if linked:
+        from education_system.systems.sixth_form.infrastructure.record_links import (
+            describe,
+        )
+        print(f"\n  {existing.staff_id} has linked records that deleting would "
+              f"delete or orphan:\n    {describe(linked)}")
+        if existing.employment_status == "Left":
+            print("  They are already marked as Left; the record is kept.")
+            _pause()
+            return
+        if _input("Mark them as Left instead? Type 'yes'",
+                  default="no").lower() != "yes":
+            print("\n  Cancelled.")
+            return
+        try:
+            data.mark_left(existing.staff_id)
+        except data.ValidationError as e:
+            print(f"\n  ✗ {e}")
+            _pause()
+            return
+        print(f"\n  ✓ Marked {existing.staff_id} as Left — records kept.")
+        _pause()
+        return
     if _input(f"Delete {existing.staff_id} ({existing.full_name})? "
               f"Type 'yes'", default="no").lower() != "yes":
         print("\n  Cancelled.")
         return
-    if data.delete_staff(existing.staff_id):
-        print(f"\n  ✓ Deleted {existing.staff_id}")
+    try:
+        if data.delete_staff(existing.staff_id):
+            print(f"\n  ✓ Deleted {existing.staff_id}")
+    except data.ValidationError as e:
+        print(f"\n  ✗ {e}")
     _pause()
 
 
@@ -427,6 +496,7 @@ _MENU: list[tuple[str, Callable[[], None]]] = [
     ("Edit",               edit_staff),
     ("Mark as Left",       mark_left_flow),
     ("Delete",             delete_staff_flow),
+    ("Link Sign-in",       link_login),
     ("Summary",            summary),
 ]
 

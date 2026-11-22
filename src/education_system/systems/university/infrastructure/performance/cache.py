@@ -273,9 +273,11 @@ def get_course_enrollment_count(course_id: int) -> int:
     with get_connection() as conn:
         cursor = conn.execute("""
             SELECT COUNT(*)
-            FROM enrollments
-            WHERE course_id = ?
-        """, (course_id,))
+            FROM programme_registrations
+            WHERE status = 'registered'
+              AND programme_code = COALESCE(
+                  (SELECT COALESCE(course_code, code) FROM courses WHERE id = ?), ?)
+        """, (course_id, course_id))
 
         result = cursor.fetchone()
         return int(result[0]) if result else 0

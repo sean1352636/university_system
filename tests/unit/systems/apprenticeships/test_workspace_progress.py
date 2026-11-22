@@ -8,11 +8,13 @@ from __future__ import annotations
 
 from datetime import date, timedelta
 
-from education_system.systems.apprenticeships.services import (
+from education_system.systems.apprenticeships.application.learning import (
     assignment_service,
+    review_service,
+)
+from education_system.systems.apprenticeships.application.workspace import (
     calendar_service,
     reporting_service,
-    review_service,
     search_service,
     task_service,
     workload_service,

@@ -908,7 +908,7 @@ class TeachingLoadManager:
                     user_id, academic_year, semester, total_courses,
                     total_credits, total_contact_hours, total_weighted_hours,
                     total_students, release_hours, net_load_credits,
-                    is_overloaded, overload_credits, created_at
+                    is_overloaded, overload_credits, snapshot_date
                 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ''', (
                 user_id, academic_year, semester,

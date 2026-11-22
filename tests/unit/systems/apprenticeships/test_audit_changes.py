@@ -26,14 +26,14 @@ from education_system.systems.apprenticeships.infrastructure.persistence import 
 from education_system.systems.apprenticeships.infrastructure.persistence.repositories import (
     compliance_repository,
 )
-from education_system.systems.apprenticeships.services import (
-    apprentice_service,
-    compliance_service,
-    funding_service,
+from education_system.systems.apprenticeships.application.apprentices import apprentice_service
+from education_system.systems.apprenticeships.application.compliance import compliance_service
+from education_system.systems.apprenticeships.application.funding import funding_service
+from education_system.systems.apprenticeships.application.learning import (
     learning_plan_service,
     training_service,
 )
-from education_system.systems.apprenticeships.services.access import PermissionDenied
+from education_system.systems.apprenticeships.application.security.access import PermissionDenied
 
 
 @dataclass

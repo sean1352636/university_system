@@ -162,6 +162,7 @@ PLATFORM: list[tuple[str, str]] = [
      "notification_prefs_bp"),
     ("education_system.platform.delivery.api.routes.warehouse_routes", "warehouse_bp"),
     ("education_system.platform.delivery.api.routes.webhook_routes", "webhook_bp"),
+    ("education_system.platform.delivery.api.lms_routes", "lms_bp"),
 ]
 
 #: Mount key -> the system's registry key, where the URL segment differs.

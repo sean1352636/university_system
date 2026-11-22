@@ -13,6 +13,7 @@ from tkinter import messagebox, ttk
 from typing import Callable
 from education_system.systems.primary.domain.staff import staff as data
 from education_system.platform import branding
+from education_system.systems.primary.interfaces.gui import kit
 from education_system.systems.primary.domain.staff.staff import (
     DEFAULT_DEPARTMENT,
     DEFAULT_EMPLOYMENT_STATUS,
@@ -32,12 +33,24 @@ WIN_MINSIZE = (1200, 800)
 
 def open_directory(parent=None) -> None:
     data.init_db()
-    master = getattr(parent, "root", parent)
-    win = tk.Toplevel(master) if master is not None else tk.Tk()
-    win.title(f"Staff Directory — {branding.SYSTEM_NAME}")
-    win.geometry(WIN_GEOMETRY)
-    win.minsize(*WIN_MINSIZE)
-    StaffDirectory(win)
+    if parent is None:
+        # Stand-alone use (no main window): a window of its own, as before.
+        win = tk.Tk()
+        win.title(f"Staff Directory — {branding.SYSTEM_NAME}")
+        win.geometry(WIN_GEOMETRY)
+        win.minsize(*WIN_MINSIZE)
+        frame = ttk.Frame(win, padding=10)
+        frame.pack(fill="both", expand=True)
+        _draw_directory(frame)
+        return
+    kit.show_page(parent, "Staff Directory", _draw_directory)
+
+
+def _draw_directory(parent: tk.Misc) -> None:
+    kit.page_heading(parent, "Staff Directory",
+                     "Every member of staff: search, filter by role, department and "
+                     "status, and add, edit or mark leavers.")
+    StaffDirectory(parent)
 
 
 class StaffDirectory:
@@ -48,7 +61,7 @@ class StaffDirectory:
 
     def _build(self) -> None:
         bar = ttk.Frame(self.root)
-        bar.pack(fill="x", padx=10, pady=(10, 4))
+        bar.pack(fill="x", pady=(0, 4))
         ttk.Label(bar, text="Search:").pack(side="left")
         self.q_e = ttk.Entry(bar, width=24)
         self.q_e.pack(side="left", padx=(2, 10))
@@ -89,7 +102,7 @@ class StaffDirectory:
                     command=self._clear).pack(side="left")
 
         table_frame = ttk.Frame(self.root)
-        table_frame.pack(fill="both", expand=True, padx=10, pady=4)
+        table_frame.pack(fill="both", expand=True, pady=4)
         cols = ("id", "name", "role", "department", "status",
                 "email", "phone", "room", "flags")
         self.tree = ttk.Treeview(table_frame, columns=cols, show="headings")
@@ -110,10 +123,10 @@ class StaffDirectory:
 
         self.count_var = tk.StringVar(value="")
         ttk.Label(self.root, textvariable=self.count_var,
-                   anchor="w").pack(fill="x", padx=10)
+                   anchor="w").pack(fill="x")
 
         self.actions_holder = ttk.Frame(self.root)
-        self.actions_holder.pack(fill="x", padx=10, pady=(4, 10))
+        self.actions_holder.pack(fill="x", pady=(4, 0))
         self._build_actions()
 
     def _build_actions(self) -> None:
@@ -161,7 +174,7 @@ class StaffDirectory:
                     active_only=self.f_active.get(),
                 )
         except ValidationError as e:
-            messagebox.showerror("Filter error", str(e))
+            messagebox.showerror("Filter error", str(e), parent=self._top())
             return
         for s in rows:
             flags = "".join([
@@ -183,6 +196,9 @@ class StaffDirectory:
             f"{len(rows)} staff. (Flags column: T=Tutor D=DSL E=Examiner)")
         self._build_actions()
 
+    def _top(self) -> tk.Misc:
+        return self.root.winfo_toplevel()
+
     def _selected_id(self) -> str | None:
         sel = self.tree.selection()
         return sel[0] if sel else None
@@ -190,7 +206,7 @@ class StaffDirectory:
     def _view_selected(self) -> None:
         sid = self._selected_id()
         if sid is None:
-            messagebox.showinfo("View", "Select a staff member first.")
+            messagebox.showinfo("View", "Select a staff member first.", parent=self._top())
             return
         s = data.get_staff(sid)
         if s is None:
@@ -225,25 +241,26 @@ class StaffDirectory:
             lines.append(f"Direct reports ({len(reports)}):")
             for r in reports:
                 lines.append(f"  {r.staff_id}  {r.full_name}  ({r.role})")
-        messagebox.showinfo(f"Staff — {s.staff_id}", "\n".join(lines))
+        messagebox.showinfo(f"Staff — {s.staff_id}", "\n".join(lines), parent=self._top())
 
     def _new(self) -> None:
-        StaffDialog(self.root, existing=None, on_save=self.refresh)
+        StaffDialog(self._top(), existing=None, on_save=self.refresh)
 
     def _edit_selected(self) -> None:
         sid = self._selected_id()
         if sid is None:
-            messagebox.showinfo("Edit", "Select a staff member first.")
+            messagebox.showinfo("Edit", "Select a staff member first.", parent=self._top())
             return
         existing = data.get_staff(sid)
         if existing is None:
             return
-        StaffDialog(self.root, existing=existing, on_save=self.refresh)
+        StaffDialog(self._top(), existing=existing, on_save=self.refresh)
 
     def _mark_left(self) -> None:
         sid = self._selected_id()
         if sid is None:
-            messagebox.showinfo("Mark Left", "Select a staff member first.")
+            messagebox.showinfo("Mark Left", "Select a staff member first.",
+                                parent=self._top())
             return
         s = data.get_staff(sid)
         if s is None:
@@ -251,19 +268,19 @@ class StaffDirectory:
         if not messagebox.askyesno(
                 "Mark Left",
                 f"Mark {s.staff_id} ({s.full_name}) as Left "
-                f"on {_date.today().isoformat()}?"):
+                f"on {_date.today().isoformat()}?", parent=self._top()):
             return
         try:
             data.mark_left(s.staff_id)
         except Exception as e:
-            messagebox.showerror("Mark Left failed", str(e))
+            messagebox.showerror("Mark Left failed", str(e), parent=self._top())
             return
         self.refresh()
 
     def _delete_selected(self) -> None:
         sid = self._selected_id()
         if sid is None:
-            messagebox.showinfo("Delete", "Select a staff member first.")
+            messagebox.showinfo("Delete", "Select a staff member first.", parent=self._top())
             return
         s = data.get_staff(sid)
         if s is None:
@@ -271,12 +288,13 @@ class StaffDirectory:
         if not messagebox.askyesno(
                 "Delete",
                 f"Permanently delete {s.staff_id} ({s.full_name})?\n\n"
-                f"This will clear line-manager links pointing to them."):
+                f"This will clear line-manager links pointing to them.",
+                parent=self._top()):
             return
         try:
             data.delete_staff(s.staff_id)
         except Exception as e:
-            messagebox.showerror("Delete failed", str(e))
+            messagebox.showerror("Delete failed", str(e), parent=self._top())
             return
         self.refresh()
 
@@ -294,8 +312,8 @@ class StaffDialog:
         self._build()
 
     def _build(self) -> None:
-        form = ttk.Frame(self.win)
-        form.pack(fill="both", expand=True, padx=12, pady=12)
+        form, footer = kit.scrolled_form(self.win)
+        self.win.geometry("720x640")
         r = 0
 
         def label(text: str):
@@ -333,27 +351,26 @@ class StaffDialog:
         r += 1
 
         label("Role:")
-        self.role_cb = ttk.Combobox(form, values=ROLES,
-                                       state="readonly", width=30)
-        self.role_cb.set(self.existing.role if self.existing
-                            else DEFAULT_ROLE)
+        self.role_cb = kit.ChoiceField(
+            form, tk.StringVar(value=self.existing.role if self.existing
+                               else DEFAULT_ROLE),
+            choices=ROLES, width=30)
         self.role_cb.grid(row=r, column=1, sticky="w", padx=6)
         r += 1
 
         label("Department:")
-        self.dept_cb = ttk.Combobox(form, values=DEPARTMENTS,
-                                       state="readonly", width=30)
-        self.dept_cb.set(self.existing.department if self.existing
-                            else DEFAULT_DEPARTMENT)
+        self.dept_cb = kit.ChoiceField(
+            form, tk.StringVar(value=self.existing.department if self.existing
+                               else DEFAULT_DEPARTMENT),
+            choices=DEPARTMENTS, width=30)
         self.dept_cb.grid(row=r, column=1, sticky="w", padx=6)
         r += 1
 
         label("Employment status:")
-        self.status_cb = ttk.Combobox(form, values=EMPLOYMENT_STATUSES,
-                                         state="readonly", width=18)
-        self.status_cb.set(self.existing.employment_status
-                              if self.existing
-                              else DEFAULT_EMPLOYMENT_STATUS)
+        self.status_cb = kit.ChoiceField(
+            form, tk.StringVar(value=self.existing.employment_status
+                               if self.existing else DEFAULT_EMPLOYMENT_STATUS),
+            choices=EMPLOYMENT_STATUSES, width=18)
         self.status_cb.grid(row=r, column=1, sticky="w", padx=6)
         r += 1
 
@@ -385,23 +402,26 @@ class StaffDialog:
             self.room_e.insert(0, self.existing.room)
         r += 1
 
-        label("Line manager (staff ID):")
-        self.lm_e = entry()
-        if self.existing and self.existing.line_manager:
-            self.lm_e.insert(0, self.existing.line_manager)
+        label("Line manager:")
+        self.lm_e = kit.StaffPicker(
+            form, tk.StringVar(value=(self.existing.line_manager or "")
+                               if self.existing else ""))
+        self.lm_e.grid(row=r, column=1, sticky="w", padx=6)
         r += 1
 
         label("Start date:")
-        self.start_e = entry(14)
-        self.start_e.insert(0, (self.existing.start_date
-                                  if self.existing
-                                  else _date.today().isoformat()) or "")
+        self.start_e = kit.DateField(
+            form, tk.StringVar(value=(self.existing.start_date
+                                      if self.existing
+                                      else _date.today().isoformat()) or ""))
+        self.start_e.grid(row=r, column=1, sticky="w", padx=6)
         r += 1
 
         label("End date:")
-        self.end_e = entry(14)
-        if self.existing and self.existing.end_date:
-            self.end_e.insert(0, self.existing.end_date)
+        self.end_e = kit.DateField(
+            form, tk.StringVar(value=(self.existing.end_date or "")
+                               if self.existing else ""))
+        self.end_e.grid(row=r, column=1, sticky="w", padx=6)
         r += 1
 
         # Flag checkboxes
@@ -437,11 +457,9 @@ class StaffDialog:
         self.notes_text.grid(row=r, column=1, sticky="w", padx=6)
         r += 1
 
-        bar = ttk.Frame(form)
-        bar.grid(row=r, column=0, columnspan=3, pady=(12, 0))
-        ttk.Button(bar, text="Save", command=self._save).pack(side="left")
-        ttk.Button(bar, text="Cancel",
-                    command=self.win.destroy).pack(side="left", padx=8)
+        ttk.Button(footer, text="Cancel",
+                    command=self.win.destroy).pack(side="right", padx=(8, 0))
+        ttk.Button(footer, text="Save", command=self._save).pack(side="right")
 
     def _save(self) -> None:
         payload = {
@@ -473,11 +491,11 @@ class StaffDialog:
             else:
                 data.create_staff(payload)
         except ValidationError as e:
-            messagebox.showerror("Validation", str(e))
+            messagebox.showerror("Validation", str(e), parent=self.win)
             return
         except Exception as e:
             logger.exception("save staff failed")
-            messagebox.showerror("Save failed", str(e))
+            messagebox.showerror("Save failed", str(e), parent=self.win)
             return
         self.win.destroy()
         self.on_save()

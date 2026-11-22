@@ -1,13 +1,13 @@
 """Funding data layer for Primary School System.
 
 Two related concerns:
- - `FundingStream` records external funding sources (ESFA
-   16-19 block, bursary allocations, high-needs uplift,
-   pupil premium, advanced maths premium, etc.) with the
-   allocated amount and academic year.
+ - `FundingStream` records external funding sources (core
+   budget, Pupil Premium, PE and sport premium, UIFSM,
+   high-needs top-up, etc.) with the allocated amount and
+   academic year.
  - `LearnerAllocation` records per-learner allocations
-   drawn from a stream (band 1/2/3/4/5, high needs element 2,
-   advanced maths uplift, etc.) and tracks committed /
+   drawn from a stream (Pupil Premium, high needs top-up,
+   SEN notional budget, etc.) and tracks committed /
    drawn-down amounts.
 
 The Summary aggregates allocation vs spend per stream so
@@ -28,25 +28,23 @@ from education_system import paths as _paths
 logger = logging.getLogger(__name__)
 
 STREAM_TYPES: tuple[str, ...] = (
-    "16-19 Programme Funding",
-    "16-19 Bursary",
-    "Discretionary Bursary",
-    "Vulnerable Bursary",
-    "High Needs Element 2",
-    "High Needs Element 3",
+    "Core Budget (GAG / LA Budget Share)",
     "Pupil Premium",
-    "Advanced Maths Premium",
-    "Disadvantage Block",
-    "Adult Education Budget",
+    "Early Years Pupil Premium",
+    "Service Pupil Premium",
+    "PE and Sport Premium",
+    "Universal Infant Free School Meals",
+    "Early Years Funding (Reception / Nursery)",
+    "High Needs Top-Up",
+    "Recovery / Tutoring Grant",
+    "Teachers' Pay / Pension Grant",
     "Apprenticeship Levy",
-    "T-Level Capital",
     "Condition Improvement Fund",
-    "Free Meals (16-19)",
-    "Care Leaver Bursary",
+    "Devolved Formula Capital",
     "Other Grant",
     "Other",
 )
-DEFAULT_STREAM_TYPE = "16-19 Programme Funding"
+DEFAULT_STREAM_TYPE = "Core Budget (GAG / LA Budget Share)"
 
 FUNDERS: tuple[str, ...] = (
     "ESFA",
@@ -57,7 +55,7 @@ FUNDERS: tuple[str, ...] = (
     "Internal",
     "Other",
 )
-DEFAULT_FUNDER = "ESFA"
+DEFAULT_FUNDER = "Local Authority"
 
 STREAM_STATUSES: tuple[str, ...] = (
     "Planned",
@@ -71,24 +69,16 @@ STREAM_STATUSES: tuple[str, ...] = (
 DEFAULT_STREAM_STATUS = "Planned"
 
 FUNDING_BANDS: tuple[str, ...] = (
-    "Band 1",
-    "Band 2",
-    "Band 3",
-    "Band 4",
-    "Band 4a",
-    "Band 4b",
-    "Band 5",
-    "High Needs Element 2",
-    "High Needs Element 3",
-    "Advanced Maths Uplift",
-    "Disadvantage Uplift",
-    "Bursary - Vulnerable",
-    "Bursary - Discretionary",
-    "Free Meals",
-    "Care Leaver",
+    "Pupil Premium",
+    "Early Years Pupil Premium",
+    "Service Pupil Premium",
+    "Pupil Premium Plus (Looked After)",
+    "High Needs Top-Up",
+    "SEN Notional Budget",
+    "Universal Infant Free School Meals",
     "Other",
 )
-DEFAULT_FUNDING_BAND = "Band 5"
+DEFAULT_FUNDING_BAND = "Pupil Premium"
 
 ALLOCATION_STATUSES: tuple[str, ...] = (
     "Provisional",

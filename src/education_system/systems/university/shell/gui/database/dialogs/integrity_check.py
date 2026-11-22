@@ -9,6 +9,8 @@ import json
 import threading
 from pathlib import Path
 
+from education_system.platform.delivery.gui.tk_threads import start_thread, ui
+
 from education_system.systems.university.shell.gui.database.config import config, save_config
 from education_system.systems.university.shell.gui.database.shared_imports import logger
 from education_system.systems.university.shell.gui.database.metadata import metadata_manager
@@ -125,6 +127,42 @@ class IntegrityCheckDialog:
         if selected_backups:
             self.run_integrity_check(selected_backups)
 
+    def export_report(self):
+        """Save the results of the last check as a CSV file"""
+        if not self.check_results:
+            messagebox.showinfo(
+                _t('gui.shell.database.dialogs.integrity_check.dialogs.no_results', default="No Results"),
+                _t('gui.shell.database.dialogs.integrity_check.dialogs.run_a_check_first', default="Run an integrity check first"),
+                parent=self.dialog)
+            return
+        path = filedialog.asksaveasfilename(
+            parent=self.dialog, defaultextension=".csv",
+            filetypes=[("CSV files", "*.csv"), ("All files", "*.*")],
+            initialfile=f"backup_integrity_{datetime.datetime.now():%Y%m%d_%H%M%S}.csv")
+        if not path:
+            return
+        import csv
+        try:
+            with open(path, 'w', newline='', encoding='utf-8') as handle:
+                writer = csv.writer(handle)
+                writer.writerow(["Backup", "Passed", "File Exists", "Readable", "DB Valid",
+                                 "Tables Accessible", "Hash Match"])
+                for entry in self.check_results:
+                    results = entry['results']
+                    writer.writerow([
+                        entry['backup']['filename'], "PASS" in entry['status'],
+                        bool(results.get('file_exists')), bool(results.get('file_readable')),
+                        bool(results.get('database_valid')), bool(results.get('tables_accessible')),
+                        bool(results.get('hash_verified'))])
+        except OSError as e:
+            messagebox.showerror(
+                _t('gui.shell.database.dialogs.integrity_check.dialogs.export_error', default="Export Error"),
+                str(e), parent=self.dialog)
+            return
+        messagebox.showinfo(
+            _t('gui.shell.database.dialogs.integrity_check.dialogs.report_saved', default="Report Saved"),
+            path, parent=self.dialog)
+
     def run_integrity_check(self, backups):
         """Run integrity check on list of backups"""
         def check_worker():
@@ -133,9 +171,8 @@ class IntegrityCheckDialog:
                 self.check_results = []
 
                 for i, backup in enumerate(backups):
-                    self.status_label.config(text=f"Checking {backup['filename']}...")
-                    self.progress_var.set((i / total) * 100)
-                    self.dialog.update()
+                    ui(self.dialog, self.status_label.config, text=f"Checking {backup['filename']}...")
+                    ui(self.dialog, self.progress_var.set, (i / total) * 100)
 
                     # Perform validation
                     results = validate_backup(backup['path'])
@@ -159,35 +196,33 @@ class IntegrityCheckDialog:
                         "\u2705" if results.get('hash_verified', False) else "\u274c"
                     )
 
-                    self.results_tree.insert("", "end", values=result_row)
+                    ui(self.dialog, self.results_tree.insert, "", "end", values=result_row)
                     self.check_results.append({
                         'backup': backup,
                         'results': results,
                         'status': status
                     })
 
-                self.progress_var.set(100)
-                self.status_label.config(text=_t('gui.shell.database.dialogs.integrity_check.text.integrity_check_completed', default="Integrity check completed"))
+                ui(self.dialog, self.progress_var.set, 100)
+                ui(self.dialog, self.status_label.config, text=_t('gui.shell.database.dialogs.integrity_check.text.integrity_check_completed', default="Integrity check completed"))
 
                 # Show summary
                 passed = sum(1 for r in self.check_results if "PASS" in r['status'])
                 failed = len(self.check_results) - passed
 
-                messagebox.showinfo(_t('gui.shell.database.dialogs.integrity_check.dialogs.check_complete', default="Check Complete"),
+                ui(self.dialog, messagebox.showinfo, _t('gui.shell.database.dialogs.integrity_check.dialogs.check_complete', default="Check Complete"),
                                    f"Integrity check completed\n\n"
                                    f"Passed: {passed}\n"
                                    f"Failed: {failed}")
 
             except Exception as e:
-                messagebox.showerror(_t('gui.shell.database.dialogs.integrity_check.dialogs.check_error', default="Check Error"), f"Integrity check failed: {e}")
-                self.status_label.config(text=_t('gui.shell.database.dialogs.integrity_check.text.check_failed', default="Check failed"))
+                ui(self.dialog, messagebox.showerror, _t('gui.shell.database.dialogs.integrity_check.dialogs.check_error', default="Check Error"), f"Integrity check failed: {e}")
+                ui(self.dialog, self.status_label.config, text=_t('gui.shell.database.dialogs.integrity_check.text.check_failed', default="Check failed"))
             finally:
-                self.progress_var.set(0)
+                ui(self.dialog, self.progress_var.set, 0)
 
         # Run in separate thread
-        check_thread = threading.Thread(target=check_worker)
-        check_thread.daemon = True
-        check_thread.start()
+        start_thread(self.dialog, check_worker)
 
 
 class AdvancedSettingsDialog:

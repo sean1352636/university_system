@@ -191,11 +191,11 @@ def browse_used_books():
 
     with get_connection() as conn:
         rows = conn.execute("""
-            SELECT tl.*, t.title
+            SELECT tl.*, date(tl.created_at) AS listed_date, t.title
             FROM textbook_listings tl
             JOIN textbooks t ON tl.textbook_id = t.textbook_id
             WHERE tl.status = 'available'
-            ORDER BY tl.listed_date DESC
+            ORDER BY tl.created_at DESC
         """).fetchall()
 
     if not rows:
@@ -230,7 +230,7 @@ def find_used_copies():
             return
 
         rows = conn.execute("""
-            SELECT tl.*, t.title
+            SELECT tl.*, date(tl.created_at) AS listed_date, t.title
             FROM textbook_listings tl
             JOIN textbooks t ON tl.textbook_id = t.textbook_id
             WHERE tl.textbook_id = ? AND tl.status = 'available'
@@ -265,7 +265,7 @@ def buy_used_textbook():
 
     with get_connection() as conn:
         listing = conn.execute("""
-            SELECT tl.*, t.title
+            SELECT tl.*, date(tl.created_at) AS listed_date, t.title
             FROM textbook_listings tl
             JOIN textbooks t ON tl.textbook_id = t.textbook_id
             WHERE tl.listing_id = ?
@@ -412,11 +412,11 @@ def view_my_listings():
 
     with get_connection() as conn:
         rows = conn.execute("""
-            SELECT tl.*, t.title
+            SELECT tl.*, date(tl.created_at) AS listed_date, t.title
             FROM textbook_listings tl
             JOIN textbooks t ON tl.textbook_id = t.textbook_id
             WHERE tl.seller_id = ?
-            ORDER BY tl.listed_date DESC
+            ORDER BY tl.created_at DESC
         """, (user_id,)).fetchall()
 
     if not rows:

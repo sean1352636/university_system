@@ -15,11 +15,9 @@ from functools import partial
 from education_system.systems.apprenticeships import config
 from education_system.systems.apprenticeships.domain.employers.models import EmployerSummary
 from education_system.systems.apprenticeships.interfaces.cli import prompts
-from education_system.systems.apprenticeships.services import (
-    apprentice_service,
-    employer_contact_service,
-)
-from education_system.systems.apprenticeships.services.access import Actor
+from education_system.systems.apprenticeships.application.apprentices import apprentice_service
+from education_system.systems.apprenticeships.application.employers import employer_contact_service
+from education_system.systems.apprenticeships.application.security.access import Actor
 
 logger = logging.getLogger(__name__)
 

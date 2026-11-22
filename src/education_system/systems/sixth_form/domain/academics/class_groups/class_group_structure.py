@@ -233,10 +233,12 @@ def split_group(group_id: int,
     if not keep_source:
         # Empty by construction now; delete_group also clears any
         # membership rows a concurrent write may have added.
-        core.delete_group(source.group_id)
+        # A source group with attendance/registers/assignments is archived
+        # rather than deleted, so that history survives the split.
+        outcome = core.delete_or_archive_group(source.group_id) or "deleted"
         cg_log.group_event(
-            logger, "Deleted source class group #%d (%s) after splitting it",
-            source.group_id, source.group_name,
+            logger, "%s source class group #%d (%s) after splitting it",
+            outcome.capitalize(), source.group_id, source.group_name,
             group_id=source.group_id, actor=actor,
         )
 
@@ -379,11 +381,13 @@ def merge_groups(group_ids: Sequence[int],
 
     if delete_empty:
         for g in sources:
-            if core.delete_group(g.group_id):
+            # Groups with recorded history are archived, not deleted.
+            outcome = core.delete_or_archive_group(g.group_id)
+            if outcome:
                 summary["deleted_sources"].append(g.group_id)
                 cg_log.group_event(
-                    logger, "Deleted merged-away class group #%d (%s)",
-                    g.group_id, g.group_name,
+                    logger, "%s merged-away class group #%d (%s)",
+                    outcome.capitalize(), g.group_id, g.group_name,
                     group_id=g.group_id, actor=actor)
 
     summary["applied"] = True

@@ -308,9 +308,12 @@ def _validate_payload(p: dict[str, Any]) -> dict[str, Any]:
                "cert_received_on", "rtw_meeting_on"):
         v = out.get(k)
         out[k] = ((v or "").strip() or None) if isinstance(v, str) else v
-    for k in ("cover_required", "critical", "parents_informed",
-               "slt_informed", "rtw_required"):
+    for k in ("critical", "parents_informed", "slt_informed",
+               "rtw_required"):
         out[k] = bool(out.get(k))
+    # Cover is needed unless someone says otherwise (matches the column
+    # default); leaving it out used to save False, so no cover was raised.
+    out["cover_required"] = bool(out.get("cover_required", True))
 
     dl = out.get("days_lost")
     if dl in (None, ""):
@@ -393,7 +396,35 @@ def create_absence(payload: dict[str, Any]) -> Absence:
             p["days_lost"], p["status"], p["notes"], now, now,
         ))
         new_id = cur.lastrowid
-    return get_absence(new_id)
+    out = get_absence(new_id)
+    _sync_cover(out)
+    return out
+
+
+def _sync_cover(absence: Absence | None) -> None:
+    """Create / cancel cover requests for the lessons this absence
+    affects (academics.cover). Recording the absence never fails
+    because of cover — problems are logged."""
+    if absence is None:
+        return
+    try:
+        from education_system.systems.sixth_form.domain.academics.cover import (
+            cover as _cover,
+        )
+        if not _cover.same_database(_paths.SIXTH_FORM_STAFF_ABSENCE_DB):
+            return
+        _cover.sync_absence(absence)
+    except Exception:
+        logger.exception("Cover sync failed for staff absence #%s",
+                         absence.absence_id)
+
+
+def cover_requests(absence_id: int) -> list:
+    """The cover requests (academics.cover) this absence created."""
+    from education_system.systems.sixth_form.domain.academics.cover import (
+        cover as _cover,
+    )
+    return _cover.requests_for_absence(absence_id)
 
 
 def update_absence(absence_id: int,
@@ -434,11 +465,26 @@ def update_absence(absence_id: int,
             p["days_lost"], p["status"], p["notes"],
             now, absence_id,
         ))
-    return get_absence(absence_id)
+    out = get_absence(absence_id)
+    _sync_cover(out)
+    return out
 
 
 def delete_absence(absence_id: int) -> bool:
     init_db()
+    # Lessons still waiting for cover because of this absence no longer
+    # need it; finished cover history is kept.
+    try:
+        from education_system.systems.sixth_form.domain.academics.cover import (
+            cover as _cover,
+        )
+        same = _cover.same_database(_paths.SIXTH_FORM_STAFF_ABSENCE_DB)
+        for r in (_cover.requests_for_absence(absence_id) if same else []):
+            if r.is_open:
+                _cover.cancel(r.cover_id)
+    except Exception:
+        logger.exception("Could not stand down cover for absence #%s",
+                         absence_id)
     with _connect() as conn:
         cur = conn.execute(
             "DELETE FROM staff_absences WHERE absence_id=?",

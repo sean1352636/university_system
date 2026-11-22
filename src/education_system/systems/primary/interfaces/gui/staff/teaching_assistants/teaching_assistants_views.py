@@ -17,6 +17,7 @@ from education_system.systems.primary.domain.staff.teaching_assistants.teaching_
 from education_system.systems.primary.domain.learners.pupils.pupils import (
     ValidationError,
 )
+from education_system.systems.primary.interfaces.gui import kit
 
 logger = logging.getLogger(__name__)
 
@@ -49,19 +50,23 @@ def _safe_view(func: Callable[..., None]) -> Callable[..., None]:
 @_safe_view
 def open_teaching_assistants(host) -> None:
     logger.debug("GUI: open_teaching_assistants")
+    kit.show_page(host, "Teaching Assistants",
+                  lambda parent: _draw_teaching_assistants(parent, host))
 
-    win = tk.Toplevel(host.root)
-    win.title("Teaching Assistants")
-    win.transient(host.root)
-    win.geometry("1140x600")
 
-    top = ttk.Frame(win, padding=10)
+def _draw_teaching_assistants(parent, host) -> None:
+    kit.page_heading(parent, "Teaching Assistants",
+                     "Support staff, their classes and hours, and who still needs a "
+                     "DBS check or safeguarding training.")
+    win = parent.winfo_toplevel()
+
+    top = ttk.Frame(parent, padding=(0, 0, 0, 6))
     top.pack(fill="x")
     summary_var = tk.StringVar()
     ttk.Label(top, textvariable=summary_var,
               font=("Segoe UI", 10, "bold")).pack(side="left")
 
-    filt = ttk.Frame(win, padding=(10, 0, 10, 6))
+    filt = ttk.Frame(parent, padding=(0, 0, 0, 6))
     filt.pack(fill="x")
     ttk.Label(filt, text="Role:").pack(side="left")
     role_var = tk.StringVar(value="All")
@@ -84,7 +89,7 @@ def open_teaching_assistants(host) -> None:
 
     cols = ("ta_id", "name", "role", "class", "hours",
             "employment", "dbs", "safeguarding", "active")
-    tree = ttk.Treeview(win, columns=cols, show="headings", height=15)
+    tree = ttk.Treeview(parent, columns=cols, show="headings", height=15)
     for col, label, width, anchor in [
         ("ta_id", "ID", 50, "center"),
         ("name", "Name", 220, "w"),
@@ -100,9 +105,9 @@ def open_teaching_assistants(host) -> None:
         tree.column(col, width=width, anchor=anchor)
     tree.tag_configure("nodbs", background="#fdecea")
     tree.tag_configure("inactive", foreground="#888")
-    tree.pack(fill="both", expand=True, padx=10, pady=(0, 6))
+    tree.pack(fill="both", expand=True, pady=(0, 6))
 
-    btns = ttk.Frame(win, padding=10)
+    btns = ttk.Frame(parent, padding=(0, 4))
     btns.pack(fill="x")
 
     def _refresh() -> None:
@@ -218,7 +223,8 @@ def open_teaching_assistants(host) -> None:
         side="left", padx=(8, 0))
     ttk.Button(btns, text="Refresh", command=_refresh).pack(
         side="left", padx=(8, 0))
-    ttk.Button(btns, text="Close", command=win.destroy).pack(side="right")
+    ttk.Button(btns, text="Close",
+               command=lambda: kit.close_page(host, parent)).pack(side="right")
 
     tree.bind("<Double-Button-1>", lambda _e: _edit())
     for v in (role_var, active_var, dbs_only, sg_only, search_var):
@@ -246,7 +252,7 @@ def _open_form_dialog(parent, *, ta_id: int | None,
     dlg = tk.Toplevel(parent)
     dlg.title("Teaching Assistant" if existing else "New TA")
     dlg.transient(parent)
-    dlg.geometry("540x580")
+    dlg.geometry("600x600")
     try:
         dlg.wait_visibility()
         dlg.grab_set()
@@ -297,10 +303,15 @@ def _open_form_dialog(parent, *, ta_id: int | None,
     _row(4, "Role *", role_var, choices=list(ROLES), readonly=True)
     _row(5, "Employment type *", emp_var,
          choices=list(EMPLOYMENT_TYPES), readonly=True)
-    _row(6, "Assigned class", class_var)
-    _row(7, "Hours per week", hours_var, width=10)
-    _row(8, "Start date (YYYY-MM-DD)", start_var, width=14)
-    _row(9, "End date (YYYY-MM-DD)", end_var, width=14)
+    ttk.Label(frm, text="Assigned class").grid(row=6, column=0, sticky="w", pady=3)
+    kit.ClassPicker(frm, class_var).grid(row=6, column=1, columnspan=2, sticky="w", pady=3)
+    ttk.Label(frm, text="Hours per week").grid(row=7, column=0, sticky="w", pady=3)
+    kit.NumberField(frm, hours_var, from_=0, to=60, increment=0.5).grid(
+        row=7, column=1, columnspan=2, sticky="w", pady=3)
+    ttk.Label(frm, text="Start date").grid(row=8, column=0, sticky="w", pady=3)
+    kit.DateField(frm, start_var).grid(row=8, column=1, columnspan=2, sticky="w", pady=3)
+    ttk.Label(frm, text="End date").grid(row=9, column=0, sticky="w", pady=3)
+    kit.DateField(frm, end_var).grid(row=9, column=1, columnspan=2, sticky="w", pady=3)
 
     ttk.Checkbutton(frm, text="DBS checked",
                     variable=dbs_var).grid(

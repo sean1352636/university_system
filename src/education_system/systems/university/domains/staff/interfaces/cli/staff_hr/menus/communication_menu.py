@@ -3,6 +3,7 @@ Communication Menu - Staff communication and collaboration CLI.
 """
 
 from education_system.systems.university.domains.staff.domain.staff_hr.services import CommunicationManager
+from education_system.systems.university.domains.staff.domain.staff_hr.services.managers import CommitteeManager
 
 
 def display_communication_menu(user_id: str, is_admin: bool = False) -> None:
@@ -66,7 +67,7 @@ def display_communication_menu(user_id: str, is_admin: bool = False) -> None:
         elif choice == '10' and is_admin:
             _manage_committees()
         elif choice == '11' and is_admin:
-            _moderate_announcements()
+            _moderate_announcements(user_id)
         else:
             print("Invalid choice.")
 
@@ -83,14 +84,15 @@ def _view_announcements(user_id: str) -> None:
             priority = a.get('priority', 'normal')
             priority_marker = "[!]" if priority == 'high' else "[!!]" if priority == 'urgent' else ""
             print(f"\n  {priority_marker} {a.get('title')}")
-            print(f"    Posted: {a.get('posted_date', 'N/A')[:10]} by {a.get('author_name', 'N/A')}")
+            print(f"    Posted: {(a.get('post_date') or 'N/A')[:10]} by {a.get('posted_by_name') or a.get('posted_by') or 'N/A'}")
             print(f"    Category: {a.get('category', 'General')}")
             if a.get('content'):
                 content = a.get('content', '')[:100]
                 print(f"    {content}...")
 
         # Mark as read
-        CommunicationManager.mark_announcements_read(user_id)
+        CommunicationManager.mark_announcements_read(
+            user_id, [a['announcement_id'] for a in announcements])
     else:
         print("No announcements.")
 
@@ -113,8 +115,8 @@ def _view_full_announcement(announcement: dict) -> None:
     print("\n" + "=" * 60)
     print(announcement.get('title', 'No Title'))
     print("=" * 60)
-    print(f"\nPosted: {announcement.get('posted_date', 'N/A')}")
-    print(f"By: {announcement.get('author_name', 'N/A')}")
+    print(f"\nPosted: {announcement.get('post_date') or 'N/A'}")
+    print(f"By: {announcement.get('posted_by_name') or announcement.get('posted_by') or 'N/A'}")
     print(f"Category: {announcement.get('category', 'General')}")
     print("\n" + "-" * 60)
     print(announcement.get('content', 'No content'))
@@ -238,8 +240,8 @@ def _view_minutes() -> None:
 
             if minutes:
                 for m in minutes:
-                    print(f"\n  {m.get('meeting_date', 'N/A')} - {m.get('title', 'Meeting')}")
-                    print(f"    Attendees: {m.get('attendee_count', 0)}")
+                    print(f"\n  {m.get('meeting_date', 'N/A')} - {m.get('meeting_title') or 'Meeting'}")
+                    print(f"    Attendees: {m.get('attendees') or 'Not recorded'}")
                     print(f"    Status: {m.get('status', 'draft')}")
                     if m.get('action_items'):
                         print(f"    Action Items: {m.get('action_items')}")
@@ -277,11 +279,10 @@ def _staff_directory() -> None:
 
     if staff:
         for s in staff:
-            name = f"{s.get('first_name', '')} {s.get('last_name', '')}"
-            print(f"\n  {name.strip()}")
-            print(f"    Department: {s.get('department', 'N/A')}")
-            print(f"    Title: {s.get('job_title', 'N/A')}")
-            print(f"    Email: {s.get('email', 'N/A')}")
+            print(f"\n  {s.get('name')}")
+            print(f"    Department: {s.get('department') or 'N/A'}")
+            print(f"    Title: {s.get('job_title') or 'N/A'}")
+            print(f"    Email: {s.get('email') or 'N/A'}")
             if s.get('phone_extension'):
                 print(f"    Ext: {s.get('phone_extension')}")
             if s.get('office_location'):
@@ -310,10 +311,9 @@ def _search_expertise() -> None:
 
     if staff:
         for s in staff:
-            name = f"{s.get('first_name', '')} {s.get('last_name', '')}"
-            print(f"\n  {name.strip()}")
-            print(f"    Department: {s.get('department', 'N/A')}")
-            print(f"    Skills: {s.get('skills', 'N/A')}")
+            print(f"\n  {s.get('name')}")
+            print(f"    Department: {s.get('department') or 'N/A'}")
+            print(f"    Skills: {s.get('skills') or 'N/A'}")
             if s.get('research_areas'):
                 print(f"    Research: {s.get('research_areas')}")
     else:
@@ -334,7 +334,7 @@ def _view_noticeboard() -> None:
         for n in notices:
             category = n.get('category', 'general')
             print(f"\n  [{category.upper()}] {n.get('title')}")
-            print(f"    Posted: {n.get('posted_date', 'N/A')[:10]} by {n.get('author_name', 'N/A')}")
+            print(f"    Posted: {(n.get('post_date') or 'N/A')[:10]} by {n.get('posted_by_name') or n.get('posted_by') or 'N/A'}")
             if n.get('content'):
                 print(f"    {n.get('content')[:80]}...")
     else:
@@ -406,11 +406,13 @@ def _manage_committees() -> None:
                 user_id = input("User ID to add: ").strip()
                 role = input("Role (member/secretary/chair): ").strip() or 'member'
                 CommunicationManager.add_committee_member(
-                    committees[idx]['committee_id'], user_id, role
+                    committees[idx]['committee_id'], user_id, role=role
                 )
                 print("\nMember added.")
         except (ValueError, IndexError):
             print("\nInvalid selection.")
+        except Exception as e:
+            print(f"\nError: {e}")
 
     elif choice == '3':
         committees = CommunicationManager.get_committees()
@@ -422,17 +424,43 @@ def _manage_committees() -> None:
             idx = int(input("\nSelect committee: ").strip()) - 1
             if 0 <= idx < len(committees):
                 user_id = input("User ID to remove: ").strip()
-                CommunicationManager.remove_committee_member(
-                    committees[idx]['committee_id'], user_id
+                if CommunicationManager.remove_committee_member(
+                        committees[idx]['committee_id'], user_id):
+                    print("\nMember removed.")
+                else:
+                    print("\nThat person is not on this committee.")
+        except (ValueError, IndexError):
+            print("\nInvalid selection.")
+
+    elif choice == '4':
+        committees = CommunicationManager.get_committees()
+        print("\nCommittees:")
+        for i, c in enumerate(committees, 1):
+            print(f"  {i}. {c.get('name')}")
+
+        try:
+            idx = int(input("\nSelect committee: ").strip()) - 1
+            if 0 <= idx < len(committees):
+                print("Enter new values (blank keeps the current one).")
+                changes = {
+                    'name': input("Name: ").strip(),
+                    'description': input("Description: ").strip(),
+                    'committee_type': input("Type: ").strip(),
+                    'chair_id': input("Chair (username): ").strip(),
+                    'status': input("Status (active/inactive): ").strip(),
+                }
+                CommitteeManager.update_committee(
+                    committees[idx]['committee_id'],
+                    **{field: value for field, value in changes.items() if value}
                 )
-                print("\nMember removed.")
+                print("\nCommittee updated.")
         except (ValueError, IndexError):
             print("\nInvalid selection.")
 
     input("Press Enter to continue...")
 
 
-def _moderate_announcements() -> None:
+def _moderate_announcements(moderator_id: str) -> None:
     """Admin: Moderate announcements."""
     pending = CommunicationManager.get_pending_announcements()
     print("\n" + "-" * 60)
@@ -461,12 +489,13 @@ def _moderate_announcements() -> None:
 
             action = input("\n(A)pprove or (R)eject? ").strip().upper()
             if action == 'A':
-                CommunicationManager.approve_announcement(announcement['announcement_id'])
+                CommunicationManager.approve_announcement(announcement['announcement_id'],
+                                                          moderated_by=moderator_id)
                 print("\nAnnouncement approved.")
             elif action == 'R':
                 reason = input("Rejection reason: ").strip()
                 CommunicationManager.reject_announcement(
-                    announcement['announcement_id'], reason
+                    announcement['announcement_id'], reason, moderated_by=moderator_id
                 )
                 print("\nAnnouncement rejected.")
     except ValueError:

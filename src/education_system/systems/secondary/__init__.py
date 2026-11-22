@@ -1,6 +1,6 @@
-"""Secondary School management system."""
+"""Secondary School System (Years 7-11)."""
 
-# Re-exported from manifest.py, which is the single source of truth for this
-# system's key, display name and interfaces.
+# manifest.py is the single source of truth for the key, name and interfaces.
 from education_system.systems.secondary.manifest import MANIFEST, SYSTEM_NAME  # noqa: F401
-SYSTEM_SLUG = "secondarysch"
+
+SYSTEM_KEY = MANIFEST.key

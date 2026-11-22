@@ -88,7 +88,7 @@ The Assignment System is a comprehensive module with 19 specialized managers pro
 
 **CLI:**
 ```bash
-python -m education_system --cli
+python -m education_system --university --cli
 # Select: Academic Management → Assignment System
 ```
 
@@ -103,7 +103,7 @@ python -m education_system --cli
 
 **CLI:**
 ```bash
-python -m education_system --cli
+python -m education_system --university --cli
 # Select: Student Portal → My Assignments
 ```
 
@@ -739,7 +739,7 @@ Flagged Sections:
 ## Additional Resources
 
 - **API Documentation**: [Assignment API](../../development/API.md#assignments)
-- **Developer Guide**: [CLAUDE.md](../../../../../CLAUDE.md)
+- **Developer Guide**: [CLAUDE.md](../../../../CLAUDE.md)
 
 ---
 

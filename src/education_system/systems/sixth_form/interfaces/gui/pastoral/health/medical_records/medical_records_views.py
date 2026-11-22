@@ -18,7 +18,9 @@ from __future__ import annotations
 
 import logging
 import tkinter as tk
-from tkinter import messagebox, ttk
+from tkinter import ttk
+from education_system.systems.sixth_form.interfaces.gui._sidebar import SidebarBook
+from education_system.platform.delivery.gui.parented_dialogs import messagebox
 from typing import Any
 
 from education_system.platform import branding
@@ -68,13 +70,18 @@ def open_directory(parent=None) -> None:
     win.geometry(WIN_GEOMETRY)
     win.minsize(*WIN_MINSIZE)
 
-    nb = ttk.Notebook(win)
+    nb = SidebarBook(win)
     nb.pack(fill="both", expand=True, padx=10, pady=10)
 
     StudentsTab(nb, win, flagged_only=False)
     StudentsTab(nb, win, flagged_only=True)
     EpiPenTab(nb, win)
     SummaryTab(nb)
+    # Healthcare plans, administration log and stock (MEDICAL-gated).
+    from education_system.systems.sixth_form.interfaces.gui.pastoral.health.medical_records.care_plans_tabs import (
+        add_care_plan_tabs,
+    )
+    add_care_plan_tabs(nb)
 
 
 # ─────────────────────────────────────────────────────────────────
@@ -221,6 +228,10 @@ class StudentDetailWindow(tk.Toplevel):
         self.conditions_tab = ConditionsSubTab(nb, self)
         self.medications_tab = MedicationsSubTab(nb, self)
         self.allergies_tab = AllergiesSubTab(nb, self)
+        from education_system.systems.sixth_form.interfaces.gui.pastoral.health.medical_records.care_plans_tabs import (
+            add_care_plan_tabs,
+        )
+        add_care_plan_tabs(nb, student_id=student_id)
 
     def notify_change(self) -> None:
         self.profile_tab.refresh()
@@ -466,12 +477,6 @@ class ConditionDialog(tk.Toplevel):
         # queues the grab for the next idle slice of the event loop.
         self.after_idle(self._safe_grab)
 
-    def _safe_grab(self) -> None:
-        try:
-            self.grab_set()
-        except Exception:
-            pass
-
         frm = ttk.Frame(self, padding=12)
         frm.pack(fill="both", expand=True)
         frm.columnconfigure(1, weight=1)
@@ -532,6 +537,12 @@ class ConditionDialog(tk.Toplevel):
                     command=self.destroy).pack(side="right", padx=4)
         ttk.Button(btns, text="Save",
                     command=self._save).pack(side="right", padx=4)
+
+    def _safe_grab(self) -> None:
+        try:
+            self.grab_set()
+        except Exception:
+            pass
 
     def _save(self) -> None:
         payload = {
@@ -688,12 +699,6 @@ class MedicationDialog(tk.Toplevel):
         # queues the grab for the next idle slice of the event loop.
         self.after_idle(self._safe_grab)
 
-    def _safe_grab(self) -> None:
-        try:
-            self.grab_set()
-        except Exception:
-            pass
-
         frm = ttk.Frame(self, padding=12)
         frm.pack(fill="both", expand=True)
         frm.columnconfigure(1, weight=1)
@@ -778,6 +783,12 @@ class MedicationDialog(tk.Toplevel):
                     command=self.destroy).pack(side="right", padx=4)
         ttk.Button(btns, text="Save",
                     command=self._save).pack(side="right", padx=4)
+
+    def _safe_grab(self) -> None:
+        try:
+            self.grab_set()
+        except Exception:
+            pass
 
     def _save(self) -> None:
         payload = {
@@ -936,12 +947,6 @@ class AllergyDialog(tk.Toplevel):
         # queues the grab for the next idle slice of the event loop.
         self.after_idle(self._safe_grab)
 
-    def _safe_grab(self) -> None:
-        try:
-            self.grab_set()
-        except Exception:
-            pass
-
         frm = ttk.Frame(self, padding=12)
         frm.pack(fill="both", expand=True)
         frm.columnconfigure(1, weight=1)
@@ -994,6 +999,12 @@ class AllergyDialog(tk.Toplevel):
                     command=self.destroy).pack(side="right", padx=4)
         ttk.Button(btns, text="Save",
                     command=self._save).pack(side="right", padx=4)
+
+    def _safe_grab(self) -> None:
+        try:
+            self.grab_set()
+        except Exception:
+            pass
 
     def _save(self) -> None:
         payload = {

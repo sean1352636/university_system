@@ -404,5 +404,5 @@ Pending → Reviewed → Interview → Offered → Accepted
 ---
 
 **Last Updated**: February 2026
-**Module**: `university_system/modules/domain/student_jobs/jobs_gui.py`
+**Module**: `src/education_system/systems/university/domains/student_life/interfaces/gui/student_jobs/jobs_gui.py`
 **Support**: studentjobs@university.edu | (555) 123-JOBS

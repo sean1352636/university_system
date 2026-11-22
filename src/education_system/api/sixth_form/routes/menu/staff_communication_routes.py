@@ -33,12 +33,20 @@ def staff_communication_staff_directory():
     return feature_pending("Staff Directory", _SYSTEM, category=_CATEGORY)
 
 
-@staff_communication_menu_bp.route("/open-departments", methods=["GET"])
+@staff_communication_menu_bp.route("/my-area", methods=["GET"])
 @token_required
 @staff_required
-def staff_communication_open_departments():
-    """open_departments"""
-    return feature_pending("open_departments", _SYSTEM, category=_CATEGORY)
+def staff_communication_my_area():
+    """My Area"""
+    return feature_pending("My Area", _SYSTEM, category=_CATEGORY)
+
+
+@staff_communication_menu_bp.route("/departments", methods=["GET"])
+@token_required
+@staff_required
+def staff_communication_departments():
+    """Departments"""
+    return feature_pending("Departments", _SYSTEM, category=_CATEGORY)
 
 
 @staff_communication_menu_bp.route("/staff-hr", methods=["GET"])
@@ -57,6 +65,14 @@ def staff_communication_staff_absence():
     return feature_pending("Staff Absence", _SYSTEM, category=_CATEGORY)
 
 
+@staff_communication_menu_bp.route("/staff-timetables-directed-time", methods=["GET"])
+@token_required
+@staff_required
+def staff_communication_staff_timetables_directed_time():
+    """Staff Timetables & Directed Time"""
+    return feature_pending("Staff Timetables & Directed Time", _SYSTEM, category=_CATEGORY)
+
+
 @staff_communication_menu_bp.route("/staff-wellbeing", methods=["GET"])
 @token_required
 @staff_required
@@ -65,28 +81,44 @@ def staff_communication_staff_wellbeing():
     return feature_pending("Staff Wellbeing", _SYSTEM, category=_CATEGORY)
 
 
-@staff_communication_menu_bp.route("/open-recruitment", methods=["GET"])
+@staff_communication_menu_bp.route("/recruitment", methods=["GET"])
 @token_required
 @staff_required
-def staff_communication_open_recruitment():
-    """open_recruitment"""
-    return feature_pending("open_recruitment", _SYSTEM, category=_CATEGORY)
+def staff_communication_recruitment():
+    """Recruitment"""
+    return feature_pending("Recruitment", _SYSTEM, category=_CATEGORY)
 
 
-@staff_communication_menu_bp.route("/open-appraisals", methods=["GET"])
+@staff_communication_menu_bp.route("/staff-exit-interviews", methods=["GET"])
 @token_required
 @staff_required
-def staff_communication_open_appraisals():
-    """open_appraisals"""
-    return feature_pending("open_appraisals", _SYSTEM, category=_CATEGORY)
+def staff_communication_staff_exit_interviews():
+    """Staff Exit Interviews"""
+    return feature_pending("Staff Exit Interviews", _SYSTEM, category=_CATEGORY)
 
 
-@staff_communication_menu_bp.route("/open-cpd", methods=["GET"])
+@staff_communication_menu_bp.route("/appraisals", methods=["GET"])
 @token_required
 @staff_required
-def staff_communication_open_cpd():
-    """open_cpd"""
-    return feature_pending("open_cpd", _SYSTEM, category=_CATEGORY)
+def staff_communication_appraisals():
+    """Appraisals"""
+    return feature_pending("Appraisals", _SYSTEM, category=_CATEGORY)
+
+
+@staff_communication_menu_bp.route("/cpd", methods=["GET"])
+@token_required
+@staff_required
+def staff_communication_cpd():
+    """CPD"""
+    return feature_pending("CPD", _SYSTEM, category=_CATEGORY)
+
+
+@staff_communication_menu_bp.route("/mandatory-training", methods=["GET"])
+@token_required
+@staff_required
+def staff_communication_mandatory_training():
+    """Mandatory Training"""
+    return feature_pending("Mandatory Training", _SYSTEM, category=_CATEGORY)
 
 
 @staff_communication_menu_bp.route("/dbs-checks", methods=["GET"])
@@ -97,12 +129,20 @@ def staff_communication_dbs_checks():
     return feature_pending("DBS Checks", _SYSTEM, category=_CATEGORY)
 
 
-@staff_communication_menu_bp.route("/open-visitors", methods=["GET"])
+@staff_communication_menu_bp.route("/single-central-record", methods=["GET"])
 @token_required
 @staff_required
-def staff_communication_open_visitors():
-    """open_visitors"""
-    return feature_pending("open_visitors", _SYSTEM, category=_CATEGORY)
+def staff_communication_single_central_record():
+    """Single Central Record"""
+    return feature_pending("Single Central Record", _SYSTEM, category=_CATEGORY)
+
+
+@staff_communication_menu_bp.route("/visitors", methods=["GET"])
+@token_required
+@staff_required
+def staff_communication_visitors():
+    """Visitors"""
+    return feature_pending("Visitors", _SYSTEM, category=_CATEGORY)
 
 
 @staff_communication_menu_bp.route("/parent-contacts", methods=["GET"])
@@ -129,20 +169,20 @@ def staff_communication_notices_bulletins():
     return feature_pending("Notices & Bulletins", _SYSTEM, category=_CATEGORY)
 
 
-@staff_communication_menu_bp.route("/open-announcements", methods=["GET"])
+@staff_communication_menu_bp.route("/announcements", methods=["GET"])
 @token_required
 @staff_required
-def staff_communication_open_announcements():
-    """open_announcements"""
-    return feature_pending("open_announcements", _SYSTEM, category=_CATEGORY)
+def staff_communication_announcements():
+    """Announcements"""
+    return feature_pending("Announcements", _SYSTEM, category=_CATEGORY)
 
 
-@staff_communication_menu_bp.route("/open-notifications", methods=["GET"])
+@staff_communication_menu_bp.route("/notifications", methods=["GET"])
 @token_required
 @staff_required
-def staff_communication_open_notifications():
-    """open_notifications"""
-    return feature_pending("open_notifications", _SYSTEM, category=_CATEGORY)
+def staff_communication_notifications():
+    """Notifications"""
+    return feature_pending("Notifications", _SYSTEM, category=_CATEGORY)
 
 
 @staff_communication_menu_bp.route("/activity-feed", methods=["GET"])
@@ -177,10 +217,10 @@ def staff_communication_document_hub():
     return feature_pending("Document Hub", _SYSTEM, category=_CATEGORY)
 
 
-@staff_communication_menu_bp.route("/open-attachments", methods=["GET"])
+@staff_communication_menu_bp.route("/attachments", methods=["GET"])
 @token_required
 @staff_required
-def staff_communication_open_attachments():
-    """open_attachments"""
-    return feature_pending("open_attachments", _SYSTEM, category=_CATEGORY)
+def staff_communication_attachments():
+    """Attachments"""
+    return feature_pending("Attachments", _SYSTEM, category=_CATEGORY)
 

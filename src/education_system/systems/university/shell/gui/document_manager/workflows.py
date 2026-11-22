@@ -1399,8 +1399,8 @@ class WorkflowManager:
                 # Average completion time
                 cursor.execute('''
                 SELECT AVG(julianday(completed_date) - julianday(
-                    (SELECT MIN(created_date) FROM document_workflow dw2
-                     WHERE dw2.document_id = document_workflow.document_id)
+                    (SELECT MIN(upload_date) FROM documents d
+                     WHERE d.document_id = document_workflow.document_id)
                 ))
                 FROM document_workflow
                 WHERE status = 'completed' AND completed_date IS NOT NULL

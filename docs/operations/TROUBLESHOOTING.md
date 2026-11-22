@@ -8,14 +8,14 @@
 
 #### 1. Import Errors After Refactoring
 
-The codebase was refactored in October 2025 and again in February 2026 (v5.42.x — 54 monolithic files split into packages). All refactored modules maintain backward compatibility via `__init__.py` re-exports. If you still see import errors:
+The codebase has been restructured several times, and most old import paths no longer exist. Find the current location in [PROJECT_STRUCTURE.md](../reference/PROJECT_STRUCTURE.md) or the [layout migration map](LAYOUT_MIGRATION_MAP.md):
 
 ```python
-# Old import (deprecated):
+# Old import (no longer exists):
 from university_system.modules.interfaces.gui.grade_tracking_gui import GradeTrackingApp
 
 # New import (current architecture):
-from university_system.modules.domain.academics.gui.grade_tracking.grade_tracking_app import GradeTrackingApp
+from education_system.systems.university.domains.assessment.interfaces.gui.grade_tracking.grade_tracking_app import GradeTrackingApp
 ```
 
 #### 2. Database Lock Errors
@@ -30,7 +30,7 @@ If you encounter "database is locked" errors:
 #### 3. Email Delivery Issues
 
 If emails aren't being sent:
-- Verify SMTP settings in `.env` or `infrastructure/email/config.py`
+- Verify SMTP settings in `.env` or `src/education_system/systems/university/infrastructure/email/config.py`
 - Check firewall settings and port accessibility (typically port 587 or 465)
 - For Gmail: Enable "App Passwords" instead of using account password
 - Test SMTP connection manually using a Python script
@@ -41,24 +41,24 @@ If emails aren't being sent:
 If you see `ModuleNotFoundError`:
 ```bash
 # Ensure you're running from the project root
-cd /path/to/university_system
+cd /path/to/your/checkout
 
 # Use proper module syntax (not file paths)
-python -m university_system.cli_main
+python -m education_system --university --cli
 
-# Verify Python path includes project root
-export PYTHONPATH="${PYTHONPATH}:$(pwd)"
+# If the project isn't installed, put src/ on the Python path (or use: python run.py)
+export PYTHONPATH="${PYTHONPATH}:$(pwd)/src"
 ```
 
 #### 5. Permission Errors
 
 If you encounter file permission errors:
 ```bash
-# Fix data directory permissions
-chmod -R 755 data/ logs/ backups/
+# Fix runtime directory permissions
+chmod -R 755 var/data/ var/logs/ var/backups/
 
 # Fix ownership (if running as different user)
-chown -R yourusername:yourusername data/ logs/ backups/
+chown -R yourusername:yourusername var/
 ```
 
 #### 6. Tkinter Not Found
@@ -80,7 +80,7 @@ brew install python-tk
 For more help, see:
 - [Troubleshooting Guide](../university/TROUBLESHOOTING.md)
 - [Documentation Index](../university/README.md)
-- [Security Documentation](../../../SECURITY.md)
+- [Security Documentation](../../SECURITY.md)
 
 ---
 

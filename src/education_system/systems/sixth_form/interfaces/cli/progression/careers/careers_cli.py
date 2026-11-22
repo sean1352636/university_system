@@ -610,6 +610,16 @@ _MENU: list[tuple[str, Callable[[], None]]] = [
     ("Summary",              summary),
 ]
 
+# Gatsby coverage, evidence and the employer directory (gatsby_cli),
+# after the original entries so their numbers do not move.
+from education_system.systems.sixth_form.interfaces.cli.progression import (  # noqa: E402
+    _record_menus as _rm,
+)
+from education_system.systems.sixth_form.interfaces.cli.progression.careers import (  # noqa: E402
+    gatsby_cli as _gatsby_cli,
+)
+_MENU += [(label, _rm.guarded(fn)) for label, fn in _gatsby_cli.MENU]
+
 
 def run() -> None:
     while True:

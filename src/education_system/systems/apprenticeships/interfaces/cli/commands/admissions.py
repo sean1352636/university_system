@@ -22,12 +22,10 @@ from education_system.systems.apprenticeships.infrastructure.persistence.reposit
     staff_repository,
 )
 from education_system.systems.apprenticeships.interfaces.cli import prompts
-from education_system.systems.apprenticeships.services import (
-    admissions_service,
-    employer_service,
-    programme_service,
-)
-from education_system.systems.apprenticeships.services.access import Actor
+from education_system.systems.apprenticeships.application.apprentices import admissions_service
+from education_system.systems.apprenticeships.application.employers import employer_service
+from education_system.systems.apprenticeships.application.programmes import programme_service
+from education_system.systems.apprenticeships.application.security.access import Actor
 
 logger = logging.getLogger(__name__)
 

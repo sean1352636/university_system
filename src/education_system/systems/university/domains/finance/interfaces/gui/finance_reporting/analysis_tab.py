@@ -5,6 +5,7 @@ from tkinter.scrolledtext import ScrolledText
 from tkinter import ttk, messagebox, filedialog, scrolledtext
 from tkinter.font import Font
 import threading
+from education_system.platform.delivery.gui.tk_threads import start_thread, ui
 from datetime import datetime, timedelta
 import json
 import webbrowser
@@ -189,27 +190,25 @@ def run_student_lifecycle_analysis(self):
 
             if data:
                 total_students = data.get('summary_stats', {}).get('total_students', 'unknown number of')
-                self.root.after(0, lambda: [
+                ui(self.root, lambda: [
                     self.log_activity(f"Student lifecycle analysis completed - {total_students} students analyzed"),
                     self.update_status("Ready"),
                     self.show_lifecycle_results(data)
                 ])
             else:
-                self.root.after(0, lambda: [
+                ui(self.root, lambda: [
                     self.log_activity("Student lifecycle analysis failed - no data available"),
                     self.update_status("Ready"),
                     messagebox.showinfo(_t('gui.finance.finance_reporting.analysis_tab.dialogs.analysis_complete', default="Analysis Complete"), _t('gui.finance.finance_reporting.analysis_tab.dialogs.no_data_available_for_student_lifecycle_analysis', default="No data available for student lifecycle analysis"))
                 ])
         except Exception as e:
-            self.root.after(0, lambda _e=e: [
+            ui(self.root, lambda _e=e: [
                 self.log_activity(f"Lifecycle analysis error: {_e}"),
                 self.update_status("Error"),
                 messagebox.showerror(_t('gui.finance.finance_reporting.analysis_tab.dialogs.error', default="Error"), f"Student lifecycle analysis failed: {_e}")
             ])
 
-    thread = threading.Thread(target=analysis_in_background)
-    thread.daemon = True
-    thread.start()
+    start_thread(self.root, analysis_in_background)
 
 def show_lifecycle_results(self, lifecycle_data):
     """Show lifecycle analysis results in new window"""
@@ -260,22 +259,20 @@ def run_comparative_analysis(self):
             yoy_data = comparative_analyzer.year_over_year_analysis()
             dept_data = comparative_analyzer.department_comparison()
 
-            self.root.after(0, lambda: [
+            ui(self.root, lambda: [
                 self.log_activity("Comparative analysis completed"),
                 self.update_status("Ready"),
                 self.show_comparative_results(yoy_data, dept_data)
             ])
         except Exception as e:
             error_msg = str(e)
-            self.root.after(0, lambda: [
+            ui(self.root, lambda: [
                 self.log_activity(f"Comparative analysis error: {error_msg}"),
                 self.update_status("Error"),
                 messagebox.showerror(_t('gui.finance.finance_reporting.analysis_tab.dialogs.error', default="Error"), f"Comparative analysis failed: {error_msg}")
             ])
 
-    thread = threading.Thread(target=analysis_in_background)
-    thread.daemon = True
-    thread.start()
+    start_thread(self.root, analysis_in_background)
 
 def show_comparative_results(self, yoy_data, dept_data):
     """Show comparative analysis results in new window"""
@@ -375,22 +372,20 @@ def run_performance_optimization(self):
             conn.commit()
             conn.close()
 
-            self.root.after(0, lambda: [
+            ui(self.root, lambda: [
                 self.log_activity("Performance optimization completed"),
                 self.update_status("Ready"),
                 self.show_optimization_results(optimization_steps, table_info)
             ])
 
         except Exception as e:
-            self.root.after(0, lambda _e=e: [
+            ui(self.root, lambda _e=e: [
                 self.log_activity(f"Performance optimization error: {_e}"),
                 self.update_status("Error"),
                 messagebox.showerror(_t('gui.finance.finance_reporting.analysis_tab.dialogs.error', default="Error"), f"Performance optimization failed: {_e}")
             ])
 
-    thread = threading.Thread(target=optimize_in_background)
-    thread.daemon = True
-    thread.start()
+    start_thread(self.root, optimize_in_background)
 
 def show_optimization_results(self, steps, table_info):
     """Show optimization results in new window"""
@@ -461,22 +456,20 @@ def run_data_quality_assessment(self):
 
             conn.close()
 
-            self.root.after(0, lambda: [
+            ui(self.root, lambda: [
                 self.log_activity("Data quality assessment completed"),
                 self.update_status("Ready"),
                 self.show_data_quality_results(quality_checks)
             ])
 
         except Exception as e:
-            self.root.after(0, lambda _e=e: [
+            ui(self.root, lambda _e=e: [
                 self.log_activity(f"Data quality assessment error: {_e}"),
                 self.update_status("Error"),
                 messagebox.showerror(_t('gui.finance.finance_reporting.analysis_tab.dialogs.error', default="Error"), f"Data quality assessment failed: {_e}")
             ])
 
-    thread = threading.Thread(target=assess_in_background)
-    thread.daemon = True
-    thread.start()
+    start_thread(self.root, assess_in_background)
 
 def show_data_quality_results(self, quality_checks):
     """Show data quality assessment results in new window"""
@@ -670,7 +663,7 @@ def run_selected_analysis(self):
                           f"Available analysis types:\n  {available}")
 
             # Show results in new window
-            self.root.after(0, lambda r=result, at=analysis_type: [
+            ui(self.root, lambda r=result, at=analysis_type: [
                 self.show_analysis_results_window(at, r),
                 self.results_text.delete(1.0, tk.END),
                 self.results_text.insert(tk.END, f"{at} analysis completed. Results shown in new window."),
@@ -679,15 +672,13 @@ def run_selected_analysis(self):
 
         except Exception as e:
             error_msg = str(e)
-            self.root.after(0, lambda err=error_msg, at=analysis_type: [
+            ui(self.root, lambda err=error_msg, at=analysis_type: [
                 self.results_text.delete(1.0, tk.END),
                 self.results_text.insert(tk.END, f"Error in {at} analysis: {err}"),
                 self.log_activity(f"Error in {at} analysis: {err}")
             ])
 
-    thread = threading.Thread(target=run_analysis)
-    thread.daemon = True
-    thread.start()
+    start_thread(self.root, run_analysis)
 
 
 def show_analysis_results_window(self, analysis_type, results):
@@ -779,12 +770,12 @@ def run_yoy_analysis(self):
             yoy_data = cursor.fetchall()
 
             if yoy_data:
-                self.root.after(0, lambda: [
+                ui(self.root, lambda: [
                     self.show_yoy_results(yoy_data),
                     self.update_status("Ready")
                 ])
             else:
-                self.root.after(0, lambda: [
+                ui(self.root, lambda: [
                     messagebox.showinfo(_t('gui.finance.finance_reporting.analysis_tab.dialogs.yoy_analysis', default="YoY Analysis"), _t('gui.finance.finance_reporting.analysis_tab.dialogs.insufficient_data_for_year_over_year_analysis', default="Insufficient data for year-over-year analysis")),
                     self.update_status("Ready")
                 ])
@@ -792,14 +783,12 @@ def run_yoy_analysis(self):
             conn.close()
 
         except Exception as e:
-            self.root.after(0, lambda _e=e: [
+            ui(self.root, lambda _e=e: [
                 messagebox.showerror(_t('gui.finance.finance_reporting.analysis_tab.dialogs.error', default="Error"), f"Year-over-year analysis failed: {_e}"),
                 self.update_status("Error")
             ])
 
-    thread = threading.Thread(target=yoy_in_background)
-    thread.daemon = True
-    thread.start()
+    start_thread(self.root, yoy_in_background)
 
 def show_yoy_results(self, yoy_data):
     """Show year-over-year analysis results"""
@@ -899,12 +888,12 @@ def run_department_comparison(self):
             dept_data = cursor.fetchall()
 
             if dept_data:
-                self.root.after(0, lambda: [
+                ui(self.root, lambda: [
                     self.show_department_results(dept_data),
                     self.update_status("Ready")
                 ])
             else:
-                self.root.after(0, lambda: [
+                ui(self.root, lambda: [
                     messagebox.showinfo(_t('gui.finance.finance_reporting.analysis_tab.dialogs.department_analysis', default="Department Analysis"), _t('gui.finance.finance_reporting.analysis_tab.dialogs.no_department_data_available', default="No department data available")),
                     self.update_status("Ready")
                 ])
@@ -913,14 +902,12 @@ def run_department_comparison(self):
 
         except Exception as e:
             error_msg = str(e)
-            self.root.after(0, lambda msg=error_msg: [
+            ui(self.root, lambda msg=error_msg: [
                 messagebox.showerror(_t('gui.finance.finance_reporting.analysis_tab.dialogs.error', default="Error"), f"Department comparison failed: {msg}"),
                 self.update_status("Error")
             ])
 
-    thread = threading.Thread(target=dept_in_background)
-    thread.daemon = True
-    thread.start()
+    start_thread(self.root, dept_in_background)
 
 def show_department_results(self, dept_data):
     """Show department comparison results"""
@@ -1015,25 +1002,23 @@ def run_benchmarking_analysis(self):
                     'avg_fee': 1850
                 }
 
-                self.root.after(0, lambda: [
+                ui(self.root, lambda: [
                     self.show_benchmarking_results(benchmark_data),
                     self.update_status("Ready")
                 ])
             else:
-                self.root.after(0, lambda: [
+                ui(self.root, lambda: [
                     messagebox.showinfo(_t('gui.finance.finance_reporting.analysis_tab.dialogs.benchmarking', default="Benchmarking"), _t('gui.finance.finance_reporting.analysis_tab.dialogs.insufficient_data_for_benchmarking', default="Insufficient data for benchmarking")),
                     self.update_status("Ready")
                 ])
 
         except Exception as e:
-            self.root.after(0, lambda _e=e: [
+            ui(self.root, lambda _e=e: [
                 messagebox.showerror(_t('gui.finance.finance_reporting.analysis_tab.dialogs.error', default="Error"), f"Benchmarking analysis failed: {_e}"),
                 self.update_status("Error")
             ])
 
-    thread = threading.Thread(target=benchmark_in_background)
-    thread.daemon = True
-    thread.start()
+    start_thread(self.root, benchmark_in_background)
 
 def show_benchmarking_results(self, data):
     """Show peer benchmarking results"""
@@ -1136,22 +1121,20 @@ def run_payment_frequency_analysis(self):
             frequency_data = cursor.fetchall()
             conn.close()
 
-            self.root.after(0, lambda: [
+            ui(self.root, lambda: [
                 self.log_activity("Payment frequency analysis completed"),
                 self.update_status("Ready"),
                 self.show_frequency_analysis_results(frequency_data)
             ])
 
         except Exception as e:
-            self.root.after(0, lambda _e=e: [
+            ui(self.root, lambda _e=e: [
                 self.log_activity(f"Payment frequency analysis error: {_e}"),
                 self.update_status("Error"),
                 messagebox.showerror(_t('gui.finance.finance_reporting.analysis_tab.dialogs.error', default="Error"), f"Payment frequency analysis failed: {_e}")
             ])
 
-    thread = threading.Thread(target=frequency_in_background)
-    thread.daemon = True
-    thread.start()
+    start_thread(self.root, frequency_in_background)
 
 def show_frequency_analysis_results(self, frequency_data):
     """Show payment frequency analysis results"""
@@ -1212,22 +1195,20 @@ def run_fee_structure_analysis(self):
             fee_data = cursor.fetchall()
             conn.close()
 
-            self.root.after(0, lambda: [
+            ui(self.root, lambda: [
                 self.log_activity("Fee structure analysis completed"),
                 self.update_status("Ready"),
                 self.show_fee_structure_results(fee_data)
             ])
 
         except Exception as e:
-            self.root.after(0, lambda _e=e: [
+            ui(self.root, lambda _e=e: [
                 self.log_activity(f"Fee structure analysis error: {_e}"),
                 self.update_status("Error"),
                 messagebox.showerror(_t('gui.finance.finance_reporting.analysis_tab.dialogs.error', default="Error"), f"Fee structure analysis failed: {_e}")
             ])
 
-    thread = threading.Thread(target=fee_analysis_in_background)
-    thread.daemon = True
-    thread.start()
+    start_thread(self.root, fee_analysis_in_background)
 
 def show_fee_structure_results(self, fee_data):
     """Show fee structure analysis results"""
@@ -1298,22 +1279,20 @@ def run_student_retention_analysis(self):
             retention_data = cursor.fetchall()
             conn.close()
 
-            self.root.after(0, lambda: [
+            ui(self.root, lambda: [
                 self.log_activity("Student retention analysis completed"),
                 self.update_status("Ready"),
                 self.show_retention_analysis_results(retention_data)
             ])
 
         except Exception as e:
-            self.root.after(0, lambda _e=e: [
+            ui(self.root, lambda _e=e: [
                 self.log_activity(f"Student retention analysis error: {_e}"),
                 self.update_status("Error"),
                 messagebox.showerror(_t('gui.finance.finance_reporting.analysis_tab.dialogs.error', default="Error"), f"Student retention analysis failed: {_e}")
             ])
 
-    thread = threading.Thread(target=retention_in_background)
-    thread.daemon = True
-    thread.start()
+    start_thread(self.root, retention_in_background)
 
 def show_retention_analysis_results(self, retention_data):
     """Show student retention analysis results"""

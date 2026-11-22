@@ -25,6 +25,14 @@ _SYSTEM = "apprenticeships"
 _CATEGORY = "Assessment"
 
 
+@assessment_menu_bp.route("/epa-documents", methods=["GET"])
+@token_required
+@staff_required
+def assessment_epa_documents():
+    """EPA Documents"""
+    return feature_pending("EPA Documents", _SYSTEM, category=_CATEGORY)
+
+
 @assessment_menu_bp.route("/gateway-checks", methods=["GET"])
 @token_required
 @staff_required
@@ -71,6 +79,22 @@ def assessment_end_point_assessor_resits():
 def assessment_end_point_assessor_results():
     """end_point_assessor.results"""
     return feature_pending("end_point_assessor.results", _SYSTEM, category=_CATEGORY)
+
+
+@assessment_menu_bp.route("/shared-appeals", methods=["GET"])
+@token_required
+@staff_required
+def assessment_shared_appeals():
+    """shared.appeals"""
+    return feature_pending("shared.appeals", _SYSTEM, category=_CATEGORY)
+
+
+@assessment_menu_bp.route("/shared-complaints", methods=["GET"])
+@token_required
+@staff_required
+def assessment_shared_complaints():
+    """shared.complaints"""
+    return feature_pending("shared.complaints", _SYSTEM, category=_CATEGORY)
 
 
 @assessment_menu_bp.route("/staff-portfolios", methods=["GET"])

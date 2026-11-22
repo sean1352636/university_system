@@ -94,7 +94,7 @@ def init_db() -> None:
     except sqlite3.Error:
         logger.exception("Failed to initialise timetable_slots table")
         raise
-    logger.info("Secondary timetable_slots table ready")
+    logger.info("Primary timetable_slots table ready")
     _DB_READY = True
 
 

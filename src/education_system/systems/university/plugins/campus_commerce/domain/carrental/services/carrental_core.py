@@ -455,15 +455,63 @@ class RentalManager:
             return False
 
 class TransactionManager:
-    """Manages payment transactions"""
+    """Manages payment transactions.
+
+    This is the single Finance posting point for car rental: the GUI and
+    both CLIs call ``record_payment`` / ``record_refund`` /
+    ``refund_transaction`` and never post to Finance themselves. The local
+    write always commits first; a Finance posting failure is logged and
+    never rolls the local sale back.
+    """
+
+    FINANCE_SOURCE = 'CarRental'
+
+    @staticmethod
+    def _rental_context(rental_id: int, customer_id: Optional[str]) -> Dict[str, Any]:
+        rental = RentalManager.get_rental(rental_id) or {}
+        return {
+            'rental': rental,
+            'ref': rental.get('rental_number') or str(rental_id),
+            'student_id': customer_id or rental.get('customer_id') or 'EXTERNAL',
+            'vehicle': f"{rental.get('make', '')} {rental.get('model', '')}".strip(),
+        }
 
     @staticmethod
     def record_payment(rental_id: int, customer_id: str, amount: float,
-                      payment_method: str, processed_by: str = None) -> Optional[int]:
-        """Record a payment transaction"""
+                      payment_method: str, processed_by: str = None,
+                      description: str = None) -> Optional[int]:
+        """Record a rental payment locally and post it to Finance.
+
+        ``payment_method='finance_account'`` debits the student's finance
+        account first (that debit is itself the Finance posting); if the
+        debit fails nothing is written locally and ``None`` is returned.
+        Any other method writes the local transaction and then posts the
+        cash-in via ``record_payment_to_finance``.
+        """
         try:
             import random
+            ctx = TransactionManager._rental_context(rental_id, customer_id)
+            student_id = ctx['student_id']
             ref_number = f"PAY-{datetime.now().strftime('%Y%m%d')}-{random.randint(1000, 9999)}"
+
+            if payment_method == 'finance_account':
+                from education_system.systems.university.domains.finance.infrastructure.finance_integration import (
+                    process_student_finance_account_payment,
+                )
+                result = process_student_finance_account_payment(
+                    student_id=student_id,
+                    amount=amount,
+                    description=description or f"Car rental payment - {ctx['ref']}",
+                    transaction_source=TransactionManager.FINANCE_SOURCE,
+                    transaction_ref=ctx['ref'],
+                    processed_by=processed_by or 'System',
+                )
+                if not result.get('success'):
+                    logger.warning(
+                        "Car rental finance-account payment refused for rental %s: %s",
+                        rental_id, result.get('message'),
+                    )
+                    return None
 
             with transaction() as conn:
                 cursor = conn.execute('''
@@ -472,6 +520,7 @@ class TransactionManager:
                      reference_number, status, processed_by)
                     VALUES ('car_rental', ?, 'rental', ?, ?, 'payment', ?, ?, 'completed', ?)
                 ''', (rental_id, customer_id, amount, payment_method, ref_number, processed_by))
+                txn_id = cursor.lastrowid
 
                 # Update rental payment status
                 conn.execute('''
@@ -481,36 +530,64 @@ class TransactionManager:
                     WHERE rental_id = ?
                 ''', (payment_method, rental_id))
 
-                # 8.117.104: unified record_payment() with source_type='carrental'.
+            if payment_method != 'finance_account':
                 try:
-                    from education_system.systems.university.domains.finance.domain.core.unified_payments import (
-                        record_payment as _record_payment,
+                    from education_system.systems.university.domains.finance.infrastructure.finance_integration import (
+                        record_payment_to_finance,
                     )
-                    _record_payment(
-                        student_id=customer_id,
+                    payment_id = record_payment_to_finance(
+                        student_id=student_id,
                         amount=amount,
                         payment_method=payment_method,
-                        source_type='carrental',
-                        source_payment_id=str(rental_id),
-                        payment_type='rental',
-                        reference_type='carrental_rental',
-                        reference_id=str(rental_id),
-                        department='carrental',
-                        description='Car Rental Payment',
+                        transaction_source=TransactionManager.FINANCE_SOURCE,
+                        transaction_ref=ctx['ref'],
+                        notes=f"Car rental: {ctx['vehicle']}",
                         created_by=processed_by,
                     )
-                except Exception as exc:
-                    logger.warning(f"Unified payment mirror failed (carrental): {exc}")
+                    if payment_id:
+                        logger.info(f"Revenue recorded to finance: \u00a3{amount:.2f} for rental {ctx['ref']}")
+                    else:
+                        logger.warning("Finance posting returned no id for car rental %s", rental_id)
+                except Exception:
+                    logger.exception("Finance posting failed for car rental payment (rental %s)", rental_id)
 
-                return cursor.lastrowid
+            return txn_id
         except Exception as e:
             logger.error(f"Failed to record payment: {e}")
             return None
 
     @staticmethod
+    def _post_refund(rental_id: Optional[int], customer_id: Optional[str], amount: float,
+                     reason: str, refund_method: str, refund_ref: str,
+                     processed_by: str = None, original_transaction_id=None) -> Optional[int]:
+        """Post a refund to Finance (unified_refunds + GL). Never raises."""
+        try:
+            from education_system.systems.university.domains.finance.infrastructure.finance_integration import (
+                record_refund_to_finance,
+            )
+            ctx = TransactionManager._rental_context(rental_id, customer_id) if rental_id else {
+                'ref': refund_ref, 'student_id': customer_id or 'EXTERNAL', 'vehicle': ''}
+            return record_refund_to_finance(
+                student_id=ctx['student_id'],
+                refund_amount=amount,
+                original_payment_id=None,
+                refund_reason=reason or 'Car rental refund',
+                refund_type='full',
+                transaction_source='Car Rental',
+                transaction_ref=refund_ref,
+                refund_method=refund_method,
+                requested_by=processed_by,
+                notes=(f"Rental {ctx['ref']}" + (f"; transaction {original_transaction_id}" if original_transaction_id else "")),
+            )
+        except Exception:
+            logger.exception("Finance posting failed for car rental refund %s", refund_ref)
+            return None
+
+    @staticmethod
     def record_refund(rental_id: int, customer_id: str, amount: float,
-                     reason: str, processed_by: str = None) -> Optional[int]:
-        """Record a refund transaction"""
+                     reason: str, processed_by: str = None,
+                     refund_method: str = 'cash') -> Optional[int]:
+        """Record a refund transaction locally and post it to Finance."""
         try:
             import random
             ref_number = f"REF-{datetime.now().strftime('%Y%m%d')}-{random.randint(1000, 9999)}"
@@ -522,11 +599,80 @@ class TransactionManager:
                      reference_number, status, notes, processed_by)
                     VALUES ('car_rental', ?, 'rental', ?, ?, 'refund', 'refund', ?, 'completed', ?, ?)
                 ''', (rental_id, customer_id, amount, ref_number, reason, processed_by))
+                txn_id = cursor.lastrowid
 
-                return cursor.lastrowid
+            TransactionManager._post_refund(
+                rental_id, customer_id, amount, reason, refund_method, ref_number, processed_by,
+            )
+            return txn_id
         except Exception as e:
             logger.error(f"Failed to record refund: {e}")
             return None
+
+    @staticmethod
+    def refund_transaction(transaction_id: int, amount: float, refund_method: str,
+                          customer_id: str = None, processed_by: str = None,
+                          reason: str = None) -> Optional[Dict[str, Any]]:
+        """Refund an existing car-rental payment transaction.
+
+        Marks the local ``transactions`` row refunded, posts the refund to
+        Finance, and for ``refund_method='student_account'`` credits the
+        student's finance account. Returns ``{'refund_ref', 'refund_id',
+        'new_balance'}`` or ``None`` if the local write failed.
+        """
+        refund_ref = f"CARRENTAL-REFUND-{datetime.now().strftime('%Y%m%d%H%M%S')}"
+        try:
+            with transaction() as conn:
+                row = conn.execute(
+                    "SELECT customer_id, reference_id FROM transactions "
+                    "WHERE transaction_id = ? AND source_type = 'car_rental'",
+                    (transaction_id,),
+                ).fetchone()
+                if row:
+                    customer_id = customer_id or row[0]
+                    rental_id = row[1]
+                else:
+                    rental_id = None
+                conn.execute('''
+                    UPDATE transactions
+                    SET status = 'refunded',
+                        reference_number = ?
+                    WHERE transaction_id = ? AND source_type = 'car_rental'
+                ''', (refund_ref, transaction_id))
+        except Exception as e:
+            logger.error(f"Failed to refund car rental transaction {transaction_id}: {e}")
+            return None
+
+        new_balance = None
+        if refund_method == 'student_account' and customer_id:
+            try:
+                from education_system.systems.university.domains.finance.infrastructure.finance_integration import (
+                    top_up_student_finance_account,
+                )
+                credit = top_up_student_finance_account(
+                    student_id=customer_id,
+                    amount=amount,
+                    payment_method='Refund',
+                    processed_by=processed_by or 'System',
+                    description=f'Car rental refund - {refund_ref}',
+                )
+                if credit.get('success'):
+                    new_balance = credit.get('new_balance')
+                else:
+                    logger.warning("Car rental refund %s: student account credit failed: %s",
+                                   refund_ref, credit.get('message'))
+            except Exception:
+                logger.exception("Car rental refund %s: student account credit failed", refund_ref)
+
+        try:
+            rental_id_int = int(rental_id) if rental_id is not None else None
+        except (TypeError, ValueError):
+            rental_id_int = None
+        refund_id = TransactionManager._post_refund(
+            rental_id_int, customer_id, amount, reason, refund_method, refund_ref,
+            processed_by, original_transaction_id=transaction_id,
+        )
+        return {'refund_ref': refund_ref, 'refund_id': refund_id, 'new_balance': new_balance}
 
     @staticmethod
     def get_transactions(rental_id: int = None) -> List[Dict]:

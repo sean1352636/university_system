@@ -2,15 +2,17 @@
 
 Mirrors the categorized structure of `gui_main.py`: a top-level list
 of categories; selecting a category opens a sub-menu of feature
-actions. Every action is a placeholder — real domain wiring goes in
-later.
+actions. Each label is routed in ``_submenu`` to its module's
+``dispatch``; Cross-System entries go to the shared platform menus.
 """
 
 from __future__ import annotations
 
 import logging
 
+from education_system.platform.delivery.cli.cli_helpers import idle_session
 from education_system.systems.primary import SYSTEM_NAME
+from education_system.systems.primary.domain import access
 
 logger = logging.getLogger(__name__)
 
@@ -18,7 +20,7 @@ CATEGORIES: list[tuple[str, list[str]]] = [
     ("Pupil Management", [
         "Pupil Directory", "Add Pupil", "Search Pupils",
         "Pupil Profile", "Admissions", "Year Group Enrolment",
-        "Onboarding", "Bulk Operations", "Leavers",
+        "Onboarding", "Bulk Operations", "Leavers", "Year 6 Transition",
     ]),
     ("Academic Management", [
         "Academic Year", "Calendar", "Year Groups (R–6)", "Classes",
@@ -61,7 +63,10 @@ CATEGORIES: list[tuple[str, list[str]]] = [
         "Data Export", "Custom Export",
     ]),
     ("Cross-System", [
-        "Student Journey", "Promote to Next System",
+        "Student Journey", "Promote to Next System", "Referrals to Alternative Provision",
+        "SEND Service Requests", "Local Authority",
+        "Analytics Dashboard", "Cross-System Calendar", "Central Admin Portal",
+        "GDPR Compliance", "Shared Documents", "Pupil Self-Service", "Certificates",
     ]),
     ("System", [
         "Change Password", "Multi-Factor Authentication",
@@ -73,6 +78,28 @@ CATEGORIES: list[tuple[str, list[str]]] = [
 ]
 
 
+#: Cross-System entries handled by the shared platform terminal menus — the
+#: same screens the GUI's Cross-System category opens.
+_PLATFORM_MENUS: dict[str, tuple[str, str]] = {
+    "Analytics Dashboard": ("education_system.platform.features.analytics.analytics_cli", "run"),
+    "Cross-System Calendar": ("education_system.platform.features.calendar.calendar_cli", "run"),
+    "Central Admin Portal": ("education_system.platform.delivery.portals.admin.admin_cli", "run"),
+    "GDPR Compliance": ("education_system.platform.governance.gdpr.gdpr_cli", "run"),
+    "Shared Documents": ("education_system.platform.features.documents.document_cli", "run"),
+    "Pupil Self-Service": ("education_system.platform.delivery.portals.student.portal_cli", "run"),
+    "Certificates": ("education_system.platform.features.certificates.certificates_cli", "run"),
+}
+
+
+def _platform_menu_kwargs(label: str) -> dict:
+    """Certificates keep their register in the primary database; without a
+    ``db_path`` the service falls back to a throwaway in-memory database."""
+    if label == "Certificates":
+        from education_system import paths
+        return {"db_path": str(paths.PRIMARY_PUPILS_DB)}
+    return {}
+
+
 def _prompt(msg: str) -> str:
     try:
         return input(msg).strip()
@@ -80,7 +107,18 @@ def _prompt(msg: str) -> str:
         return "0"
 
 
+def _logout(auth) -> None:
+    """Sign out and return to login: the L key and the idle timeout both end here."""
+    from education_system import switch as _switch
+    try:
+        auth.logout()
+    except Exception:
+        pass
+    _switch.request_logout("cli")
+
+
 def _submenu(category: str, items: list[str], *, auth=None) -> None:
+    principal = access.current_for(auth)
     while True:
         print(f"\n── {category} ──")
         for i, label in enumerate(items, 1):
@@ -94,14 +132,33 @@ def _submenu(category: str, items: list[str], *, auth=None) -> None:
             continue
         label = items[int(choice) - 1]
         logger.debug("Primary CLI dispatch: %s / %s", category, label)
+        if not principal.can_open(label):
+            logger.warning("Refused %s to user=%s role=%s", label,
+                           principal.username, principal.role)
+            print(f"  {principal.denied_message(label)}")
+            continue
+        if label in access.POLICY.own_labels:
+            from education_system.systems.primary.interfaces.cli.learners.own_records import (
+                own_records_cli,
+            )
+            own_records_cli.dispatch(label, auth=auth)
+            continue
+        if principal.opens_raise_only(label):
+            from education_system.systems.primary.interfaces.cli.safeguarding import safeguarding_cli
+            safeguarding_cli.raise_concern()
+            continue
         try:
             from education_system.systems.primary.interfaces.cli.learners.pupils import pupil_cli
             from education_system.systems.primary.interfaces.cli.learners.pupils.onboarding import onboarding_cli
             from education_system.systems.primary.interfaces.cli.learners.pupils.bulk_operations import bulk_operations_cli
             from education_system.systems.primary.interfaces.cli.learners.pupils.leavers import leavers_cli
+            from education_system.systems.primary.interfaces.cli.learners.pupils.year6_transition import year6_transition_cli
+            from education_system.systems.primary.interfaces.cli.learners.pupils.ap_referrals import ap_referrals_cli
+            from education_system.systems.primary.interfaces.cli.learners.pupils.send_requests import send_requests_cli
+            from education_system.systems.primary.interfaces.cli.learners.pupils.local_authority import local_authority_cli
             from education_system.systems.primary.interfaces.cli.admissions import admissions_cli
             from education_system.systems.primary.interfaces.cli.admissions.enrolment import enrolment_cli
-            from education_system.systems.primary.interfaces.cli.governance.mfa import mfa_cli
+            from education_system.platform.delivery.cli import mfa_setup_cli as mfa_cli
             # Pastoral
             from education_system.systems.primary.interfaces.cli.pastoral.behaviour import behaviour_cli
             from education_system.systems.primary.interfaces.cli.safeguarding import safeguarding_cli
@@ -202,8 +259,11 @@ def _submenu(category: str, items: list[str], *, auth=None) -> None:
             from education_system.systems.primary.interfaces.cli.operations.todo import todo_cli
             from education_system.systems.primary.interfaces.cli.governance.user_management import user_management_cli
             # Shared
+            from education_system.platform.delivery.cli import change_password_cli
             from education_system.systems.primary.interfaces.cli import (
-                change_password_cli, user_accounts_cli, settings_cli, about_cli,
+                user_accounts_cli,
+                settings_cli,
+                about_cli,
             )
             if label == "Multi-Language":
                 from education_system.platform.features.i18n.selector_cli import show_language_selector_cli
@@ -212,10 +272,21 @@ def _submenu(category: str, items: list[str], *, auth=None) -> None:
             from education_system.platform.cross_system import journey_cli
             if journey_cli.dispatch(label, "primary", auth=auth):
                 continue
+            platform_menu = _PLATFORM_MENUS.get(label)
+            if platform_menu is not None:
+                module_name, func = platform_menu
+                import importlib
+                getattr(importlib.import_module(module_name), func)(
+                    auth=auth, **_platform_menu_kwargs(label))
+                continue
             if (pupil_cli.dispatch(label)
                     or onboarding_cli.dispatch(label)
                     or bulk_operations_cli.dispatch(label)
                     or leavers_cli.dispatch(label)
+                    or year6_transition_cli.dispatch(label)
+                    or ap_referrals_cli.dispatch(label)
+                    or send_requests_cli.dispatch(label)
+                    or local_authority_cli.dispatch(label)
                     or admissions_cli.dispatch(label)
                     or enrolment_cli.dispatch(label)
                     or behaviour_cli.dispatch(label)
@@ -280,7 +351,7 @@ def _submenu(category: str, items: list[str], *, auth=None) -> None:
                     or cpd_cli.dispatch(label)
                     or dbs_checks_cli.dispatch(label)
                     or visitors_cli.dispatch(label)
-                    or parent_contacts_cli.dispatch(label)
+                    or parent_contacts_cli.dispatch(label, auth=auth)
                     or parents_evenings_cli.dispatch(label)
                     or announcements_cli.dispatch(label)
                     or notifications_cli.dispatch(label)
@@ -333,10 +404,14 @@ def _main_menu(auth) -> None:
 
     user = auth.current_user or {}
     show_system_switch = is_superadmin(user)
+    principal = access.current_for(auth)
+    categories = principal.visible_menu(CATEGORIES, labels_only=True)
     while True:
         print(f"\n=== {SYSTEM_NAME} ===")
         print(f"Signed in: {user.get('username', '?')}")
-        for i, (cat, _items) in enumerate(CATEGORIES, 1):
+        if principal.notice():
+            print(f"\n{principal.notice()}\n")
+        for i, (cat, _items) in enumerate(categories, 1):
             print(f"  {i:2d}) {cat}")
         print("   G) Switch to GUI")
         if show_system_switch:
@@ -354,11 +429,7 @@ def _main_menu(auth) -> None:
                 return
             continue
         if choice == "l":
-            try:
-                auth.logout()
-            except Exception:
-                pass
-            _switch.request_logout("cli")
+            _logout(auth)
             return
         if choice == "q":
             confirm = _prompt(f"Shut down the {SYSTEM_NAME}? (y/N): ").lower()
@@ -370,15 +441,16 @@ def _main_menu(auth) -> None:
                 pass
             _switch.request_exit()
             return
-        if not choice.isdigit() or not (1 <= int(choice) <= len(CATEGORIES)):
+        if not choice.isdigit() or not (1 <= int(choice) <= len(categories)):
             print("Invalid selection.")
             continue
-        cat, items = CATEGORIES[int(choice) - 1]
+        cat, items = categories[int(choice) - 1]
         _submenu(cat, items, auth=auth)
 
 
 def run_authenticated(auth) -> int:
-    _main_menu(auth)
+    with idle_session(lambda: _logout(auth)):
+        _main_menu(auth)
     return 0
 
 
@@ -392,6 +464,7 @@ def run(user_info=None, role=None, shared_auth=None) -> int:
     cu = shared_auth.current_user or {}
     logger.info("Primary-school CLI starting for user=%s role=%s",
                 cu.get("username"), role)
+    access.set_current(access.from_auth(shared_auth, role))
     return run_authenticated(shared_auth)
 
 

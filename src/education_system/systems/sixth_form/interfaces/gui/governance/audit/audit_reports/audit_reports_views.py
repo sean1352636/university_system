@@ -6,7 +6,9 @@ from education_system.systems.sixth_form.interfaces.gui._ui import grab_when_vie
 import logging
 import tkinter as tk
 from datetime import date as _date, timedelta as _td
-from tkinter import filedialog, messagebox, ttk
+from tkinter import ttk
+from education_system.systems.sixth_form.interfaces.gui._sidebar import SidebarBook
+from education_system.platform.delivery.gui.parented_dialogs import filedialog, messagebox
 from typing import Any
 
 from education_system.platform import branding
@@ -49,7 +51,7 @@ def open_audit_reports_window(parent=None) -> None:
     win.title(f"Audit Reports — {branding.SYSTEM_NAME}")
     win.geometry(WIN_GEOMETRY)
     win.minsize(*WIN_MINSIZE)
-    nb = ttk.Notebook(win)
+    nb = SidebarBook(win)
     nb.pack(fill="both", expand=True, padx=10, pady=10)
     RunTab(nb)
     SavedTab(nb)

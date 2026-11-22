@@ -10,10 +10,10 @@ Tests the course evaluation system including:
 """
 
 import pytest
-from education_system.systems.university.domains.academics.domain.services.evaluation.db_schema import (
+from education_system.systems.university.domains.quality.domain.evaluation.db_schema import (
     initialize_evaluation_database
 )
-from education_system.systems.university.domains.academics.domain.services.evaluation.course_evaluation_core import (
+from education_system.systems.university.domains.quality.domain.evaluation.course_evaluation_core import (
     EvaluationTemplateManager,
     CourseEvaluationManager,
     ResponseManager,

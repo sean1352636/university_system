@@ -29,6 +29,12 @@ _SYSTEM_COLOURS = {
     "primary":    ("#e67e22", "#f39c12"),
     "nursery":    ("#16a085", "#1abc9c"),
     "apprenticeships": ("#c0392b", "#e74c3c"),
+    "fe_college": ("#2c3e50", "#34495e"),
+    "special_education": ("#1d4a3f", "#2c6b5b"),
+    "adult_education": ("#7a4b1e", "#a0652a"),
+    "alternative_provision": ("#4a3a6b", "#65528f"),
+    "training_provider": ("#2f4f6b", "#3f6a8f"),
+    "local_authority": ("#3d5a3a", "#527a4e"),
 }
 
 

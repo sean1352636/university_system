@@ -16,6 +16,7 @@ logger = logging.getLogger(__name__)
 
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 
+from education_system.systems.university.domains.staff.interfaces.gui.staff_hr import _access as _hr
 import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext
 from datetime import datetime
@@ -50,7 +51,7 @@ class CommHubGUI:
 
     def _get_user_id(self):
         """Get user ID from current user dict."""
-        return self.current_user.get('id') or self.current_user.get('username')
+        return _hr.user_key(self)
 
     def create_as_tab(self, notebook: ttk.Notebook):
         """Create as a tab in parent notebook."""
@@ -62,7 +63,8 @@ class CommHubGUI:
         """Create as standalone window."""
         self.window = tk.Toplevel(self.root)
         self.window.title(_t('gui.staff.staff_hr.comm_hub.windows.communication_hub', default="Communication Hub"))
-        self.window.geometry("1200x700")
+        self.window.geometry("1400x900")
+        self.window.minsize(1200, 800)
         self.window.minsize(1000, 600)
 
         bottom_frame = ttk.Frame(self.window)
@@ -86,7 +88,7 @@ class CommHubGUI:
         self._create_forums_tab()
         self._create_polls_tab()
 
-        if self.current_user.get('role') in ['admin', 'Admin', 'administrator', 'staff']:
+        if _hr.can(self, 'operations'):
             self._create_forum_admin_tab()
 
         self._create_search_tab()

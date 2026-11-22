@@ -194,6 +194,20 @@ def init_db() -> None:
                   ON DELETE CASCADE
             )
         """)
+        # Who has completed a survey, kept apart from the answers: no
+        # response id, no time of day and no insertion order (WITHOUT
+        # ROWID, keyed by learner), so an anonymous response cannot be
+        # matched back to the learner who gave it.
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS survey_completions (
+                survey_id INTEGER NOT NULL,
+                respondent_key TEXT NOT NULL,
+                completed_on TEXT NOT NULL,
+                PRIMARY KEY (survey_id, respondent_key),
+                FOREIGN KEY(survey_id) REFERENCES surveys(survey_id)
+                  ON DELETE CASCADE
+            ) WITHOUT ROWID
+        """)
 
 
 def _check_date(label: str, value: str | None) -> None:
@@ -546,17 +560,13 @@ def _validate_answer(q: Question, value: Any) -> Any:
     return str(value).strip()
 
 
-def submit_response(survey_id: int, *,
-                        answers: dict[int, Any],
-                        respondent_name: str | None = None,
-                        respondent_role: str | None = None,
-                        anonymous: bool | None = None,
-                        submitted_on: str | None = None,
-                        notes: str | None = None) -> Response:
-    init_db()
-    s = get_survey(survey_id)
-    if s is None:
-        raise ValidationError(f"No survey with id {survey_id}")
+def _prepare_response(s: Survey, *, answers: dict[int, Any],
+                      respondent_name: str | None,
+                      respondent_role: str | None,
+                      anonymous: bool | None,
+                      submitted_on: str | None,
+                      notes: str | None) -> tuple:
+    """Validate a response to ``s`` and return its INSERT parameters."""
     if s.status != "Open":
         raise ValidationError(
             f"Survey is not Open (current: {s.status})")
@@ -583,23 +593,115 @@ def submit_response(survey_id: int, *,
     now = _dt.datetime.now().isoformat(timespec="seconds")
     answer_json = json.dumps(
         {str(k): v for k, v in validated.items()})
+    return (
+        s.survey_id, when,
+        (respondent_name or "").strip() or None
+        if not anonymous else None,
+        (respondent_role or "").strip() or None,
+        1 if anonymous else 0,
+        answer_json,
+        (notes or "").strip() or None, now,
+    )
+
+
+_INSERT_RESPONSE = """
+    INSERT INTO survey_responses (
+      survey_id, submitted_on, respondent_name,
+      respondent_role, anonymous, answers_json,
+      notes, created_on
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+"""
+
+
+def submit_response(survey_id: int, *,
+                        answers: dict[int, Any],
+                        respondent_name: str | None = None,
+                        respondent_role: str | None = None,
+                        anonymous: bool | None = None,
+                        submitted_on: str | None = None,
+                        notes: str | None = None) -> Response:
+    init_db()
+    s = get_survey(survey_id)
+    if s is None:
+        raise ValidationError(f"No survey with id {survey_id}")
+    params = _prepare_response(
+        s, answers=answers, respondent_name=respondent_name,
+        respondent_role=respondent_role, anonymous=anonymous,
+        submitted_on=submitted_on, notes=notes)
     with _connect() as conn:
-        cur = conn.execute("""
-            INSERT INTO survey_responses (
-              survey_id, submitted_on, respondent_name,
-              respondent_role, anonymous, answers_json,
-              notes, created_on
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-        """, (
-            survey_id, when,
-            (respondent_name or "").strip() or None
-            if not anonymous else None,
-            (respondent_role or "").strip() or None,
-            1 if anonymous else 0,
-            answer_json,
-            (notes or "").strip() or None, now,
-        ))
+        cur = conn.execute(_INSERT_RESPONSE, params)
         new_id = cur.lastrowid
+    return get_response(new_id)
+
+
+# ── Learner surveys (student portal) ─────────────────────────────
+
+#: Audiences a learner is part of.
+LEARNER_AUDIENCES: tuple[str, ...] = ("Students", "Mixed", "Public")
+
+
+def _in_window(s: Survey, today: str) -> bool:
+    return ((not s.open_on or s.open_on <= today)
+            and (not s.close_on or s.close_on >= today))
+
+
+def has_completed(survey_id: int, student_id: str) -> bool:
+    init_db()
+    with _connect() as conn:
+        return conn.execute(
+            "SELECT 1 FROM survey_completions WHERE survey_id=? "
+            "AND respondent_key=?", (int(survey_id), student_id)).fetchone() is not None
+
+
+def open_surveys_for_learner(student_id: str) -> list[tuple[Survey, bool]]:
+    """Open surveys aimed at learners, each with whether this learner
+    has already completed it."""
+    sid = (student_id or "").strip()
+    if not sid:
+        return []
+    today = _dt.date.today().isoformat()
+    out: list[tuple[Survey, bool]] = []
+    for s in list_surveys(open_only=True):
+        if s.audience in LEARNER_AUDIENCES and _in_window(s, today):
+            out.append((s, has_completed(s.survey_id, sid)))
+    return out
+
+
+def submit_learner_response(survey_id: int, student_id: str, *,
+                            answers: dict[int, Any],
+                            respondent_name: str | None = None) -> Response:
+    """One learner answers a survey aimed at them — once only.
+
+    The survey's own anonymity setting decides: anonymous surveys store
+    no name (the learner cannot override it); named ones record the
+    learner's name. Completion is recorded apart from the answers, in
+    the same transaction, so a second attempt is refused.
+    """
+    init_db()
+    sid = (student_id or "").strip()
+    if not sid:
+        raise ValidationError("A learner is required")
+    s = get_survey(int(survey_id))
+    if (s is None or s.audience not in LEARNER_AUDIENCES
+            or not _in_window(s, _dt.date.today().isoformat())):
+        raise ValidationError("That survey is not open to you.")
+    params = _prepare_response(
+        s, answers=answers,
+        respondent_name=None if s.anonymous else (respondent_name or sid),
+        respondent_role="Student", anonymous=s.anonymous,
+        submitted_on=None, notes=None)
+    with _connect() as conn:
+        try:
+            conn.execute(
+                "INSERT INTO survey_completions (survey_id, respondent_key, "
+                "completed_on) VALUES (?, ?, ?)",
+                (s.survey_id, sid, _dt.date.today().isoformat()))
+        except sqlite3.IntegrityError:
+            raise ValidationError("You have already completed this survey.") from None
+        cur = conn.execute(_INSERT_RESPONSE, params)
+        new_id = cur.lastrowid
+    logger.info("Survey #%d completed by a learner (%s)", s.survey_id,
+                "anonymous" if s.anonymous else "named")
     return get_response(new_id)
 
 

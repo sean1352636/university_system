@@ -11,7 +11,7 @@ The system uses a centralized `ThemeManager` (singleton pattern) that manages th
 ### 1. Import the Theme Manager
 
 ```python
-from university_system.modules.shared.gui.theme_config import get_theme_manager
+from education_system.systems.university.shell.gui.theme_config import get_theme_manager
 ```
 
 ### 2. Initialize in Your GUI Class
@@ -98,7 +98,7 @@ theme = self.theme_manager.get_current_theme()
 ```python
 import tkinter as tk
 from tkinter import ttk
-from university_system.modules.shared.gui.theme_config import get_theme_manager
+from education_system.systems.university.shell.gui.theme_config import get_theme_manager
 
 class ExampleGUI:
     def __init__(self, root, auth):
@@ -213,5 +213,5 @@ else:
 ## Support
 
 For questions or issues, check the implementation in:
-- `modules/shared/gui/theme_config.py` - Theme manager
-- `modules/shared/gui/main_gui.py` - Reference implementation
+- `src/education_system/systems/university/shell/gui/theme_config.py` - Theme manager
+- `src/education_system/systems/university/shell/gui/main/main_gui.py` - Reference implementation

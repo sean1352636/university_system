@@ -31,7 +31,7 @@ except ImportError:
 from .widgets import _safe_set_combobox, _safe_entry_insert
 from .authorization import require_student_permission
 from .sync.auth import _purge_user_from_all_chat_rooms
-from education_system.systems.university.domains.academics.domain.services.admissions_selection import (
+from education_system.systems.university.domains.admissions.domain.services.admissions_selection import (
     purge_user_chat_on_cursor,
 )
 
@@ -95,7 +95,7 @@ def delete_student_dialog(self, student_id=None):
         warning_frame = ttk.Frame(main_frame)
         warning_frame.pack(fill=tk.X, pady=(0, 20))
 
-        warning_label = ttk.Label(warning_frame, text="⚠️ " + _t("student.delete_warning"),
+        warning_label = ttk.Label(warning_frame, text="Withdraw this student",
                                  font=('Arial', 16, 'bold'), foreground="red")
         warning_label.pack()
 
@@ -128,8 +128,9 @@ Registration Date: {student[10]}"""
         related_info = f"""{_t("student.module_enrollments")}: {modules_count}
 {_t("student.grade_records")}: {grades_count}
 {_t("student.attendance_records")}: {attendance_count}
-{_t("student.user_account")}: {_t("student.will_be_removed")}
-{_t("student.all_data_deleted")}"""
+Withdrawing keeps all of these and switches off the student's sign-in.
+It can be undone (Registration status > Reinstate).
+Permanent erasure is a separate, dual-control request."""
 
         ttk.Label(related_frame, text=related_info, font=('Courier', 10), foreground="dark red").pack(anchor=tk.W)
 
@@ -137,216 +138,21 @@ Registration Date: {student[10]}"""
         confirm_frame = ttk.LabelFrame(main_frame, text=_t("student.confirmation_required"), padding=15)
         confirm_frame.pack(fill=tk.X, pady=(0, 20))
 
-        ttk.Label(confirm_frame, text=_t("student.cannot_be_undone"),
-                 font=('Arial', 12, 'bold'), foreground="red").pack(pady=(0, 10))
 
         ttk.Label(confirm_frame, text=_t("student.type_to_confirm").replace("{student_id}", str(student_id))).pack(anchor=tk.W)
         confirm_entry = ttk.Entry(confirm_frame, width=30, font=('Arial', 11))
         confirm_entry.pack(pady=(5, 10), fill=tk.X)
 
-        # Additional confirmation checkbox
-        additional_confirm = tk.BooleanVar()
-        ttk.Checkbutton(confirm_frame, text=_t("student.understand_delete"),
-                       variable=additional_confirm).pack(anchor=tk.W)
+        ttk.Label(confirm_frame, text="Reason for withdrawal *").pack(anchor=tk.W)
+        reason_entry = ttk.Entry(confirm_frame, width=50)
+        reason_entry.pack(pady=(2, 6), fill=tk.X)
 
-        # Status label
         status_label = ttk.Label(confirm_frame, text="", foreground="red")
         status_label.pack(pady=(10, 0))
 
         # Close the initial read-only connection before performing destructive work
         if conn:
             conn.close()
-
-        def perform_deletion():
-            """Perform the actual deletion with comprehensive cleanup"""
-            # Validate confirmations
-            entered_id = confirm_entry.get().strip()
-            expected_id = str(student_id).strip()
-            if entered_id != expected_id:
-                status_label.config(text=_t("student.id_mismatch"))
-                return
-
-            if not additional_confirm.get():
-                status_label.config(text=_t("student.check_checkbox"))
-                return
-
-            # Final confirmation dialog
-            if not messagebox.askyesno(_t("student.final_confirm_title"),
-                                     _t("student.final_confirm_msg").replace("{student_id}", str(student_id)),
-                                     icon='warning'):
-                return
-
-            conn = None
-            cursor = None
-            try:
-                # Start deletion process
-                status_label.config(text=_t("student.deleting_record"), foreground="blue")
-                dialog.update()
-
-                if not require_student_permission(self, "delete_any_student", "delete"):
-                    return
-
-                conn = get_db_connection()
-                if not conn:
-                    raise sqlite3.OperationalError("Database connection failed during deletion")
-
-                cursor = conn.cursor()
-
-                deletion_log = []
-
-                # Delete the student + all related rows with FK checks off; the
-                # context manager restores enforcement even if the body raises.
-                with foreign_keys_off(conn):
-                    # Get list of tables that actually exist in the database
-                    cursor.execute("SELECT name FROM sqlite_master WHERE type='table'")
-                    existing_tables = {row[0] if isinstance(row, tuple) else row['name'] for row in cursor.fetchall()}
-
-                    # Delete from related tables first
-                    tables_to_clean = [
-                        ('student_grades', 'student_id'),
-                        ('attendance', 'student_id'),
-                        ('student_modules', 'student_id'),
-                        ('assignment_submissions', 'student_id'),
-                        ('accommodation_requests', 'student_id'),
-                        ('housing_requests', 'student_id'),
-                        ('health_records', 'student_id'),
-                        ('internship_applications', 'student_id'),
-                        ('trip_participants', 'student_id'),
-                        ('loans', 'borrower_id'),
-                        ('student_fees', 'student_id'),
-                        ('support_tickets', 'user_id'),
-                        ('parent_student_relationships', 'student_id'),
-                        # Tier-4 / Student Route sponsor-compliance tables —
-                        # leaving these orphaned is a UKVI data-protection
-                        # issue, not just clutter.
-                        ('visa_records', 'student_id'),
-                        ('cas_records', 'student_id'),
-                        ('visa_engagement_checks', 'student_id'),
-                        ('visa_change_of_circumstance', 'student_id'),
-                        ('right_to_study_checks', 'student_id'),
-                        ('atas_clearances', 'student_id'),
-                        ('visa_expiry_alert_log', 'student_id'),
-                        # Attendance pipeline's UKVI mirror — see 8.117.132.
-                        ('ukvi_engagement_events', 'student_id'),
-                    ]
-
-                    for table_name, column_name in tables_to_clean:
-                        if table_name not in existing_tables:
-                            logger.debug(f"Skipping non-existent table: {table_name}")
-                            continue
-                        try:
-                            # Validate table and column names to prevent SQL injection
-                            validated_table = validate_table_name(table_name, conn=conn)
-                            validated_column = validate_column_name(column_name, table_name=validated_table, conn=conn)
-                            cursor.execute('DELETE FROM [' + validated_table + '] WHERE [' + validated_column + '] = ?', (student_id,))
-                            deleted_count = cursor.rowcount
-                            if deleted_count > 0:
-                                deletion_log.append(f"Deleted {deleted_count} records from {table_name}")
-                        except SQLIdentifierError as e:
-                            logger.warning(f"Invalid table/column name: {e}")
-                        except sqlite3.OperationalError as e:
-                            # Table might not exist
-                            logger.debug(f"Table {table_name} might not exist: {e}")
-
-                    # Fetch user record info before closing connection
-                    cursor.execute('SELECT id, username FROM users WHERE student_id = ?', (student_id,))
-                    user_record = cursor.fetchone()
-                    user_id = user_record[0] if user_record else None
-                    username = user_record[1] if user_record else None
-
-                    # Update course enrollment count before deleting student
-                    cursor.execute('SELECT course FROM students WHERE student_id = ?', (student_id,))
-                    student_course = cursor.fetchone()
-                    if student_course and student_course[0]:
-                        course_code = student_course[0]
-                        cursor.execute('''
-                            UPDATE courses
-                            SET current_enrollment = current_enrollment - 1
-                            WHERE course_code = ? AND current_enrollment > 0
-                        ''', (course_code,))
-                        if cursor.rowcount > 0:
-                            deletion_log.append(f"Updated course enrollment count for {course_code}")
-
-                    # Finally delete the main student record
-                    cursor.execute('DELETE FROM students WHERE student_id = ?', (student_id,))
-                    if cursor.rowcount > 0:
-                        deletion_log.append("Deleted main student record")
-
-                conn.commit()
-                conn.close()
-                conn = None
-
-                # Purge chat-room memberships and any messages this user
-                # sent, BEFORE the user row goes away. Done on a fresh
-                # connection to keep this independent of the main delete tx.
-                if user_id is not None:
-                    try:
-                        _purge_user_from_all_chat_rooms(user_id)
-                        deletion_log.append("Removed user from all chat rooms (and deleted their messages)")
-                    except Exception as e:
-                        deletion_log.append(f"Warning: chat-room purge failed: {e}")
-
-                # Delete user account AFTER closing the connection to avoid DB lock
-                if user_id is not None:
-                    if self.auth:
-                        if self.auth.delete_user(user_id):
-                            deletion_log.append(f"Deleted user account via auth system (username: {username})")
-                            if ACTIVITY_LOGGER_AVAILABLE:
-                                log_activity('delete', 'user', user_id=user_id, details={'username': username, 'student_id': student_id, 'reason': 'Student deletion'})
-                        else:
-                            deletion_log.append(f"Warning: Failed to delete user via auth system for {username}")
-                    else:
-                        # Fallback to direct deletion if auth not available
-                        fallback_conn = get_db_connection()
-                        if fallback_conn:
-                            try:
-                                fb_cursor = fallback_conn.cursor()
-                                fb_cursor.execute('DELETE FROM user_accounts WHERE user_id = ?', (user_id,))
-                                if fb_cursor.rowcount > 0:
-                                    deletion_log.append("Deleted user account")
-                                fb_cursor.execute('DELETE FROM users WHERE id = ?', (user_id,))
-                                if fb_cursor.rowcount > 0:
-                                    deletion_log.append("Deleted user profile")
-                                    if ACTIVITY_LOGGER_AVAILABLE:
-                                        log_activity('delete', 'user', user_id=user_id, details={'username': username, 'student_id': student_id, 'reason': 'Student deletion (fallback)'})
-                                fallback_conn.commit()
-                            finally:
-                                fallback_conn.close()
-
-                # Show deletion summary
-                summary = _t("student.deletion_summary").replace("{student_id}", str(student_id)) + "\n".join(deletion_log)
-                messagebox.showinfo(_t("student.deletion_complete"), summary)
-
-                # Refresh student list and close dialog
-                try:
-                    if hasattr(self, 'view_students'):
-                        self.view_students()
-                    self.refresh_advanced_search()
-                except Exception:
-                    logger.debug("Suppressed exception", exc_info=True)
-
-                try:
-                    if dialog.winfo_exists():
-                        dialog.destroy()
-                except tk.TclError:
-                    pass
-
-            except Exception as e:
-                # FK enforcement is restored by the foreign_keys_off context
-                # manager above, so no manual PRAGMA reset is needed here.
-                if conn:
-                    try:
-                        conn.rollback()
-                    except Exception:
-                        logger.debug("Suppressed exception", exc_info=True)
-                messagebox.showerror(_t("student.deletion_failed"), _t("student.failed_delete_student").replace("{error}", str(e)))
-                try:
-                    status_label.config(text=_t("student.deletion_failed"), foreground="red")
-                except tk.TclError:
-                    pass  # Dialog may already be destroyed
-            finally:
-                if conn:
-                    conn.close()
 
         def perform_deactivation():
             """Soft-delete: flip the student to inactive + Withdrawn.
@@ -370,12 +176,16 @@ Registration Date: {student[10]}"""
                 dialog.update()
                 if not require_student_permission(self, "delete_any_student", "delete"):
                     return
-                from education_system.systems.university.application.student_lifecycle_service import StudentLifecycleService
+                from education_system.systems.university.application.students.lifecycle import StudentLifecycleService
                 actor = str((getattr(self.auth, 'current_user', {}) or {}).get('id', 'unknown'))
+                reason = reason_entry.get().strip()
+                if not reason:
+                    status_label.config(text="Give the reason for the withdrawal.",
+                                        foreground="red")
+                    return
                 StudentLifecycleService().deactivate(
-                    str(student_id), actor_id=actor,
-                    reason="Administrative deactivation from student records",
-                    idempotency_key=f"gui:student:{student_id}:deactivate",
+                    str(student_id), actor_id=actor, reason=reason,
+                    idempotency_key=f"gui:student:{student_id}:deactivate:{secrets.token_urlsafe(12)}",
                 )
                 if ACTIVITY_LOGGER_AVAILABLE:
                     try:
@@ -417,14 +227,8 @@ Registration Date: {student[10]}"""
                     pass
 
         def explain_controlled_purge():
-            messagebox.showinfo(
-                "Controlled purge required",
-                "Permanent erasure is only available through the Information "
-                "Governance purge workflow. It requires a case reference, "
-                "reauthentication, an independent approver, a legal-hold check, "
-                "and an impact preview.",
-                parent=dialog,
-            )
+            from .erasure import request_erasure_dialog
+            request_erasure_dialog(self, dialog, student_id)
 
         # Buttons. Deactivate (soft-delete) is the default and
         # safest action — keeps history, reversible. Permanent
@@ -439,7 +243,7 @@ Registration Date: {student[10]}"""
                     style="Accent.TButton").pack(side=tk.LEFT,
                                                     padx=(0, 10))
         ttk.Button(button_frame,
-                    text="Request controlled purge",
+                    text="Request permanent erasure…",
                     command=explain_controlled_purge).pack(
             side=tk.LEFT, padx=(0, 10))
         ttk.Button(button_frame, text=_t("common.cancel"),

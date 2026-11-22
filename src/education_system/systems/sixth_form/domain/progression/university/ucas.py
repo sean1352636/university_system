@@ -21,6 +21,7 @@ Cascades:
 
 from __future__ import annotations
 
+import json
 import logging
 import re
 import sqlite3
@@ -120,6 +121,54 @@ class Choice:
     final_decision: str | None
     notes: str | None
     updated_at: str
+    #: ``Open`` while the choice is a live application; ``Placed`` once the
+    #: university it names has enrolled the learner on it. Set only by
+    #: :func:`mark_placed` (from the university's ``university.student.enrolled``
+    #: event) — a placed choice is history, never deleted.
+    choice_status: str = "Open"
+    placed_at: str | None = None
+    university_student_id: str | None = None
+    #: The university's own record of its decision, as published on the bus
+    #: (``ucas.decision.recorded``) and applied by
+    #: :func:`apply_university_decision`.
+    reply_by: str | None = None
+    offer_conditions: str | None = None     # JSON list, or None
+    decided_by: str | None = None
+    decided_at: str | None = None
+    decision_ref: int | None = None
+
+    @property
+    def is_placed(self) -> bool:
+        return self.choice_status == CHOICE_PLACED
+
+    @property
+    def conditions(self) -> list | None:
+        if not self.offer_conditions:
+            return None
+        try:
+            value = json.loads(self.offer_conditions)
+        except (TypeError, ValueError):
+            return None
+        return value if isinstance(value, list) else None
+
+
+#: Lifecycle of a choice as an application, separate from the decision on it.
+CHOICE_OPEN = "Open"
+CHOICE_PLACED = "Placed"
+CHOICE_STATUSES: tuple[str, ...] = (CHOICE_OPEN, CHOICE_PLACED)
+
+#: Columns added to ``ucas_choices`` after it first shipped, applied with a
+#: guarded ``ALTER TABLE`` by :func:`init_db`.
+_CHOICE_LINK_COLUMNS: tuple[tuple[str, str], ...] = (
+    ("choice_status", "TEXT NOT NULL DEFAULT 'Open'"),
+    ("placed_at", "TEXT"),
+    ("university_student_id", "TEXT"),
+    ("reply_by", "TEXT"),
+    ("offer_conditions", "TEXT"),
+    ("decided_by", "TEXT"),
+    ("decided_at", "TEXT"),
+    ("decision_ref", "INTEGER"),
+)
 
 
 # ── DB plumbing ────────────────────────────────────────────────────
@@ -143,6 +192,16 @@ def init_db() -> None:
     _students.init_db()
     with _connect() as conn:
         conn.executescript(_SCHEMA)
+        have = {r["name"] for r in conn.execute(
+            "PRAGMA table_info(ucas_choices)")}
+        for name, decl in _CHOICE_LINK_COLUMNS:
+            if name not in have:
+                # db-audit: ignore[DBW001] - names/decls from a module constant
+                conn.execute(
+                    f"ALTER TABLE ucas_choices ADD COLUMN {name} {decl}")
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_choices_status "
+                     "ON ucas_choices(choice_status)")
+        conn.commit()
     logger.debug("UCAS schema ready at %s", DB_PATH)
 
     _DB_READY = True
@@ -167,6 +226,8 @@ def _row_choice(r: sqlite3.Row) -> Choice:
         decision_status=r["decision_status"],
         offer_terms=r["offer_terms"], final_decision=r["final_decision"],
         notes=r["notes"], updated_at=r["updated_at"],
+        **{name: r[name] for name, _decl in _CHOICE_LINK_COLUMNS
+           if name in r.keys() and r[name] is not None},
     )
 
 
@@ -816,3 +877,305 @@ def cycle_summary(cycle_year: int | None = None) -> CycleSummary:
         by_decision_status=by_decision,
         by_final_decision=by_final,
     )
+
+
+# ── The university link ───────────────────────────────────────────
+#
+# A university on this platform reaches these rows only through the sixth
+# form's adapter (reads) and the cross-system bus (its decisions and its
+# enrolments). Nothing below is called by university code directly.
+
+def _students_has_journey(conn: sqlite3.Connection) -> bool:
+    return "journey_id" in {r["name"] for r in conn.execute(
+        "PRAGMA table_info(students)")}
+
+
+def _choice_dict(r: sqlite3.Row, *, journey: bool) -> dict[str, Any]:
+    """One choice as the adapter hands it over: plain data, no dataclass."""
+    keys = r.keys()
+    full = " ".join(p for p in (r["first_name"], r["middle_name"],
+                                r["last_name"]) if p).strip()
+    entry_year = r["entry_year"]
+    cycle_year = r["cycle_year"]
+    final = r["final_decision"] or None
+    conditions = None
+    if "offer_conditions" in keys and r["offer_conditions"]:
+        try:
+            conditions = json.loads(r["offer_conditions"])
+        except (TypeError, ValueError):
+            conditions = None
+
+    def col(name: str, default: Any = None) -> Any:
+        return r[name] if name in keys and r[name] is not None else default
+
+    return {
+        "choice_id": r["choice_id"],
+        "application_id": r["application_id"],
+        "student_id": r["student_id"],
+        "student_name": full,
+        "ucas_personal_id": r["ucas_id"],
+        "university": r["university"],
+        "course_name": r["course_name"],
+        "course_code": r["course_code"],
+        "decision_status": r["decision_status"],
+        "reply_status": final if final in ("Firm", "Insurance") else None,
+        "entry_year": entry_year,
+        # No separate deferral flag is held: an entry year later than the
+        # cycle the application was made in *is* a deferred entry.
+        "deferred": bool(entry_year and cycle_year
+                         and int(entry_year) > int(cycle_year)),
+        "choice_status": col("choice_status", CHOICE_OPEN),
+        "application_status": r["app_status"],
+        # Beyond the contract minimum — what the admissions screens show.
+        "choice_order": r["choice_order"],
+        "offer_terms": r["offer_terms"],
+        "offer_conditions": conditions,
+        "final_decision": final,
+        "choice_notes": r["notes"],
+        "reply_by": col("reply_by"),
+        "decided_by": col("decided_by"),
+        "decided_at": col("decided_at"),
+        "placed_at": col("placed_at"),
+        "university_student_id": col("university_student_id"),
+        "cycle_year": cycle_year,
+        "submitted_at": r["submitted_at"],
+        "app_notes": r["app_notes"],
+        "personal_statement": r["personal_statement"],
+        "student_email": r["email"],
+        "student_dob": r["date_of_birth"],
+        "student_status": r["student_status"] or "Active",
+        "journey_id": r["journey_id"] if journey else None,
+    }
+
+
+def _choice_select(conn: sqlite3.Connection, where: str,
+                   args: list[Any]) -> list[dict[str, Any]]:
+    journey = _students_has_journey(conn)
+    journey_col = ", s.journey_id" if journey else ""
+    # db-audit: ignore[DBW001] - where is built from literals by the callers
+    rows = conn.execute(
+        f"""SELECT c.*, a.cycle_year, a.status AS app_status, a.ucas_id,
+                   a.submitted_at, a.notes AS app_notes,
+                   a.personal_statement,
+                   s.student_id, s.first_name, s.middle_name, s.last_name,
+                   s.email, s.date_of_birth,
+                   s.status AS student_status{journey_col}
+              FROM ucas_choices AS c
+              JOIN ucas_applications AS a
+                   ON a.application_id = c.application_id
+              JOIN students AS s ON s.student_id = a.student_id
+             WHERE {where}
+             ORDER BY a.submitted_at DESC NULLS LAST,
+                      s.last_name, s.first_name, c.choice_order""",
+        args,
+    ).fetchall()
+    return [_choice_dict(r, journey=journey) for r in rows]
+
+
+def choices_for_institution(institution_names: set[str] | None = None, *,
+                            include_placed: bool = False
+                            ) -> list[dict[str, Any]]:
+    """Every choice naming one of *institution_names* (case-insensitive).
+
+    ``None`` means every institution. Placed choices — learners the
+    university has already enrolled — are left out unless asked for: they
+    are history, not applicants.
+    """
+    init_db()
+    clauses = ["1 = 1"]
+    args: list[Any] = []
+    if institution_names is not None:
+        names = sorted({n.strip().lower() for n in institution_names
+                        if n and n.strip()})
+        if not names:
+            return []
+        clauses.append("LOWER(TRIM(c.university)) IN ("
+                       + ",".join("?" * len(names)) + ")")
+        args.extend(names)
+    if not include_placed:
+        clauses.append("COALESCE(c.choice_status, 'Open') <> 'Placed'")
+    with _connect() as conn:
+        return _choice_select(conn, " AND ".join(clauses), args)
+
+
+def choice_detail(choice_id: int) -> dict[str, Any] | None:
+    """One choice in the adapter shape, placed or not."""
+    init_db()
+    with _connect() as conn:
+        rows = _choice_select(conn, "c.choice_id = ?", [int(choice_id)])
+    return rows[0] if rows else None
+
+
+def application_detail(application_id: int) -> dict[str, Any] | None:
+    """The application, its learner and every choice on it, as plain data."""
+    init_db()
+    app = get_application(int(application_id))
+    if app is None:
+        return None
+    from education_system.systems.sixth_form.domain.learners.students import (
+        students as _students,
+    )
+    student = _students.get_student(app.student_id)
+    with _connect() as conn:
+        choices = _choice_select(conn, "c.application_id = ?",
+                                 [int(application_id)])
+    return {
+        "application_id": app.application_id,
+        "student_id": app.student_id,
+        "student_name": student.full_name if student else "",
+        "student_email": student.email if student else None,
+        "student_dob": student.date_of_birth if student else None,
+        "student_known": student is not None,
+        "subjects": list(student.subjects) if student else [],
+        "cycle_year": app.cycle_year,
+        "ucas_personal_id": app.ucas_id,
+        "application_status": app.status,
+        "submitted_at": app.submitted_at,
+        "personal_statement": app.personal_statement,
+        "app_notes": app.notes,
+        "choices": sorted(choices, key=lambda c: c["choice_order"]),
+    }
+
+
+def promote_to_replied(application_id: int) -> bool:
+    """Move a Submitted application to Replied once nothing is awaited.
+
+    Only from Submitted, and only when no choice is still ``Awaiting``.
+    Never walks a settled (Confirmed / Clearing) application back.
+    """
+    application = get_application(int(application_id))
+    if application is None or application.status != "Submitted":
+        return False
+    choices = list_choices(application.application_id)
+    if not choices or any(c.decision_status == "Awaiting" for c in choices):
+        return False
+    update_application(application.application_id, {"status": "Replied"})
+    logger.info("UCAS application #%d -> Replied (all %d choice(s) decided)",
+                application.application_id, len(choices))
+    return True
+
+
+def apply_university_decision(payload: dict[str, Any]
+                              ) -> tuple[Choice | None, bool]:
+    """Apply a ``ucas.decision.recorded`` payload to our own choice row.
+
+    Returns ``(choice, changed)``. Idempotent: the university's decision id
+    (``decision_id``) is stored as ``decision_ref``, and a payload whose id
+    is not newer than the one already applied is a redelivery (or an older
+    decision arriving late) and changes nothing. Without an id the
+    ``decided_at`` timestamps are compared instead. An unknown choice is
+    logged and skipped — it may have been deleted here since.
+    """
+    init_db()
+    try:
+        choice_id = int(payload.get("choice_id"))
+    except (TypeError, ValueError):
+        logger.warning("UCAS decision event without a usable choice_id: %r",
+                       payload.get("choice_id"))
+        return None, False
+    existing = get_choice(choice_id)
+    if existing is None:
+        logger.info("UCAS decision for unknown choice #%d skipped", choice_id)
+        return None, False
+
+    decision = (payload.get("decision_status") or "").strip()
+    if decision not in DECISION_STATUSES:
+        logger.warning("UCAS decision event for choice #%d has unknown "
+                       "status %r; skipped", choice_id, decision)
+        return existing, False
+
+    ref = payload.get("decision_id")
+    try:
+        ref = int(ref) if ref not in (None, "") else None
+    except (TypeError, ValueError):
+        ref = None
+    decided_at = (payload.get("decided_at") or "").strip() or None
+    if ref is not None and existing.decision_ref is not None:
+        if ref <= existing.decision_ref:
+            return existing, False
+    elif (ref is None and decided_at and existing.decided_at
+          and decided_at <= existing.decided_at):
+        return existing, False
+
+    update: dict[str, Any] = {"decision_status": decision}
+    if payload.get("offer_summary") is not None:
+        update["offer_terms"] = payload.get("offer_summary")
+    if payload.get("notes") is not None:
+        update["notes"] = payload.get("notes")
+    # The university made this decision; this is its write landing here.
+    update_choice(choice_id, update, issued_by_university=True)
+
+    conditions = payload.get("conditions")
+    with _connect() as conn:
+        conn.execute(
+            """UPDATE ucas_choices SET reply_by = ?, offer_conditions = ?,
+                      decided_by = ?, decided_at = ?, decision_ref = ?,
+                      updated_at = datetime('now')
+                WHERE choice_id = ?""",
+            ((payload.get("reply_by") or None),
+             json.dumps(conditions) if isinstance(conditions, list) else None,
+             (payload.get("decided_by") or None), decided_at, ref,
+             choice_id))
+        conn.commit()
+    out = get_choice(choice_id)
+    logger.info("Applied university decision #%s to UCAS choice #%d: %s",
+                ref, choice_id, decision)
+    try:
+        promote_to_replied(existing.application_id)
+    except Exception:
+        logger.exception("Could not re-evaluate application #%d after "
+                         "decision on choice #%d", existing.application_id,
+                         choice_id)
+    return out, True
+
+
+def mark_placed(choice_id: int, *, university_student_id: str | None,
+                placed_at: str | None = None) -> tuple[Choice | None, bool]:
+    """Record that the university named on this choice enrolled the learner.
+
+    Replaces the old clear-down, which deleted the choice (and sometimes
+    the application) on enrolment and so erased the record of where the
+    learner went. Idempotent: re-marking with the same student id changes
+    nothing. Returns ``(choice, changed)``; ``(None, False)`` when the
+    choice does not exist.
+    """
+    init_db()
+    existing = get_choice(int(choice_id))
+    if existing is None:
+        return None, False
+    uni_id = (str(university_student_id).strip()
+              if university_student_id else None)
+    if existing.is_placed and (existing.university_student_id or None) == uni_id:
+        return existing, False
+    with _connect() as conn:
+        conn.execute(
+            """UPDATE ucas_choices
+                  SET choice_status = ?, university_student_id = ?,
+                      placed_at = COALESCE(placed_at, ?, datetime('now')),
+                      updated_at = datetime('now')
+                WHERE choice_id = ?""",
+            (CHOICE_PLACED, uni_id, placed_at, int(choice_id)))
+        conn.commit()
+    logger.info("UCAS choice #%d placed (university student %s)",
+                choice_id, uni_id or "unknown")
+    return get_choice(int(choice_id)), True
+
+
+def record_reply(choice_id: int, final_decision: str | None) -> Choice:
+    """Set (or clear) the Firm / Insurance / Declined reply on a choice.
+
+    The reply is recorded by the university that made the offer; the
+    uniqueness of Firm / Insurance across the application is enforced by
+    :func:`update_choice` as for every other write.
+    """
+    return update_choice(int(choice_id),
+                         {"final_decision": (final_decision or "")},
+                         issued_by_university=True)
+
+
+def set_application_status(application_id: int, status: str) -> Application:
+    """Set the application's status (the university's Confirmed / Clearing)."""
+    if status not in APP_STATUSES:
+        raise ValidationError(
+            f"Status must be one of: {', '.join(APP_STATUSES)}")
+    return update_application(int(application_id), {"status": status})

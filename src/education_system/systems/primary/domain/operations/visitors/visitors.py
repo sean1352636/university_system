@@ -213,6 +213,15 @@ def _check_datetime(label: str, value: str | None) -> None:
                 "YYYY-MM-DDTHH:MM")
 
 
+def _as_datetime(value: str) -> _dt.datetime:
+    """Parse an already-validated date or date-time (date = midnight)."""
+    try:
+        return _dt.datetime.fromisoformat(value)
+    except ValueError:
+        return _dt.datetime.combine(_dt.date.fromisoformat(value),
+                                    _dt.time())
+
+
 def _staff_exists(staff_id: str) -> bool:
     with _connect() as conn:
         try:
@@ -273,6 +282,11 @@ def _validate_payload(p: dict[str, Any]) -> dict[str, Any]:
                "signed_out_at"):
         v = out.get(k)
         out[k] = ((v or "").strip() or None) if isinstance(v, str) else v
+    if (out.get("arrived_at") and out.get("signed_out_at")
+            and _as_datetime(out["signed_out_at"])
+            < _as_datetime(out["arrived_at"])):
+        raise ValidationError(
+            "Signed out at cannot be before arrival")
     for k in ("dbs_seen", "photo_id_seen", "induction_given",
                "safeguarding_briefing", "escort_required",
                "safeguarding_concern"):

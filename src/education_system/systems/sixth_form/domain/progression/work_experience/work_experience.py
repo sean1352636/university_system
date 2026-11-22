@@ -12,6 +12,11 @@ Two tables:
 Cascade: deleting an employer is blocked if any placements reference
 it (so we don't silently lose history); deleting a student wipes
 their placements; deleting a placement is a simple row delete.
+
+Health & safety vetting (insurance, risk assessments, visits,
+safeguarding contact) and the T Level placement gate live in
+``vetting.py``; a placement cannot move to In Progress unless the
+employer has liability insurance in force.
 """
 
 from __future__ import annotations
@@ -466,9 +471,22 @@ def delete_employer(employer_id: int) -> bool:
 
 # ── Placement CRUD ────────────────────────────────────────────────
 
+def _check_start_allowed(p: dict[str, Any]) -> None:
+    """A placement may not start (move to In Progress) at an employer with
+    no employer's liability insurance in force — see ``vetting.py``."""
+    from education_system.systems.sixth_form.domain.progression.work_experience import (
+        vetting as _vetting,
+    )
+    problem = _vetting.insurance_problem(p["employer_id"], p["start_date"])
+    if problem:
+        raise ValidationError(f"Cannot start this placement: {problem}")
+
+
 def create_placement(data: dict[str, Any]) -> Placement:
     init_db()
     p = _validate_placement_payload(data)
+    if p["status"] == "In Progress":
+        _check_start_allowed(p)
     with _connect() as conn:
         cur = conn.execute(
             """INSERT INTO we_placements
@@ -596,6 +614,9 @@ def update_placement(placement_id: int, data: dict[str, Any]) -> Placement:
                                             existing.supervisor_email),
         "notes":                 data.get("notes", existing.notes),
     })
+    if p["status"] == "In Progress" and (
+            existing.status != "In Progress" or p["employer_id"] != existing.employer_id):
+        _check_start_allowed(p)
     with _connect() as conn:
         conn.execute(
             """UPDATE we_placements SET

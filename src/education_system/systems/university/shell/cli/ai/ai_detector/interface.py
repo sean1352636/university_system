@@ -1,11 +1,10 @@
-"""CLI interface and initialization functions for the AI Detector."""
+"""The AI Content Detector's CLI menu (staff).
 
-from datetime import datetime
-from education_system.systems.university.infrastructure.database.db import sqlite3
-from education_system.systems.university.infrastructure.ai.ai_detector.core.constants import logger
-from education_system.systems.university.infrastructure.shared_context import get_auth
-from education_system.systems.university.infrastructure.database.db import DatabaseManager
-from education_system.systems.university.infrastructure.ai.ai_detector.detector.main import AIDetector
+The detector runs as the signed-in member of staff; with nobody signed in,
+or a student, the menu refuses. If the detector cannot load, no reading is
+ever made up: the menu says so."""
+
+from education_system.systems.university.shared.ai.ai_detector.core.constants import logger
 
 from education_system.systems.university.shell.cli.ai.ai_detector.basic_operations import (
     analyze_text_interface_safe, view_submission_history_safe,
@@ -28,459 +27,168 @@ from education_system.systems.university.shell.cli.ai.ai_detector.analytics impo
     cluster_similar_submissions_cli, generate_department_comparison_cli,
     show_weekly_trends_cli, export_visualization_pack_cli,
 )
+from education_system.systems.university.shell.cli.ai.ai_detector import review_operations as ops
 
-# Global AI detector instance for CLI functions
+STAFF_ROLES = ("staff", "instructor", "lecturer", "teacher", "faculty", "admin",
+               "administrator", "superadmin")
+
+
+class ConfigurationError(Exception):
+    """The detector could not load."""
+
+
+# The detector for this CLI session (built on first use).
 ai_detector = None
 
-def integrate_ai_detector_with_main():
-    """Initialize the AI detector system for integration with main menu"""
+
+def integrate_ai_detector_with_main(auth=None):
+    """Build the detector once for this session. ``False`` if it cannot load."""
     global ai_detector
     try:
-        # Initialize the AI detector with minimal configuration first
-        ai_detector = AIDetector()
-
-        # CRITICAL FIX: Ensure all required attributes exist
-        if not hasattr(ai_detector, 'detection_threshold'):
-            ai_detector.detection_threshold = 0.7
-
-        if not hasattr(ai_detector, 'style_profiles'):
-            ai_detector.style_profiles = {}
-
-        if not hasattr(ai_detector, 'detection_methods'):
-            ai_detector.detection_methods = {
-                'pattern_matching': True,
-                'statistical_analysis': True,
-                'behavioral_analysis': True,
-                'temporal_analysis': True,
-                'citation_verification': True
-            }
-
-        if not hasattr(ai_detector, 'current_user'):
-            ai_detector.current_user = None
-
-        # Set authentication if available
-        auth = get_auth()
-        if auth:
-            ai_detector.set_auth(auth)
-
-        print("\u2705 AI detector system initialized successfully!")
+        from education_system.systems.university.shared.ai.ai_detector.detector.main import (
+            AIDetector,
+        )
+        ai_detector = AIDetector(auth=auth)
         return True
+    except Exception as exc:
+        logger.error(f"Failed to initialize AI detector: {exc}")
+        ai_detector = create_minimal_ai_detector(exc)
+        return False
 
-    except Exception as e:
-        logger.error(f"Failed to initialize AI detector: {e}")
-        print(f"\u26a0\ufe0f AI detector initialization failed: {e}")
 
-        # Create a minimal fallback AI detector
-        try:
-            ai_detector = create_minimal_ai_detector()
-            print("\u2705 Minimal AI detector created as fallback")
-            return True
-        except Exception as fallback_error:
-            logger.error(f"Even fallback AI detector failed: {fallback_error}")
-            print(f"\u274c Complete AI detector failure: {fallback_error}")
-            return False
+def create_minimal_ai_detector(error=None):
+    """A stand-in that refuses everything plainly: no reading, no data."""
+    reason = f"The AI detector could not load ({error}). " if error else \
+        "The AI detector could not load. "
 
-def create_minimal_ai_detector():
-    """Create a minimal AI detector that won't crash"""
     class MinimalAIDetector:
-        def __init__(self):
-            self.detection_threshold = 0.7
-            self.style_profiles = {}
-            self.detection_methods = {
-                'pattern_matching': True,
-                'statistical_analysis': True,
-                'behavioral_analysis': True,
-                'temporal_analysis': True,
-                'citation_verification': True
-            }
-            self.current_user = None
-            self.auth = None
+        current_user = None
+        component_errors = {"detector": str(error or "not loaded")}
 
         def set_auth(self, auth_obj):
-            self.auth = auth_obj
-            if hasattr(auth_obj, 'current_user'):
-                self.current_user = auth_obj.current_user
+            user = getattr(auth_obj, "current_user", None)
+            self.current_user = user if isinstance(user, dict) else None
 
-        def get_enhanced_statistics(self):
-            return {
-                'total_submissions': 0,
-                'unique_students': 0,
-                'average_ai_score': 0.0,
-                'recent_submissions_7_days': 0,
-                'high_risk_submissions': 0,
-                'detection_threshold': self.detection_threshold,
-                'active_style_profiles': len(self.style_profiles),
-                'active_detection_methods': len(self.detection_methods),
-                'database_status': 'minimal_mode',
-                'generated_at': datetime.now().isoformat(),
-                'mode': 'minimal_fallback'
-            }
-
-        def get_statistics(self):
-            return self.get_enhanced_statistics()
-
-        def list_submissions(self, student_id=None, limit=10, include_text=False):
-            """Safe list submissions that handles database errors"""
-            try:
-                db_manager = DatabaseManager()
-                conn = db_manager.get_connection()
-                if not conn:
-                    return {
-                        'submissions': [],
-                        'total': 0,
-                        'message': 'Database connection failed'
-                    }
-
-                cursor = conn.cursor()
-
-                # Build query with flexible column handling
-                try:
-                    # First, check what columns actually exist
-                    cursor.execute("PRAGMA table_info(ai_detector_submissions)")
-                    columns = {row[1]: row[1] for row in cursor.fetchall()}
-
-                    # Build select statement based on available columns
-                    select_fields = [
-                        'id',
-                        'student_id',
-                        columns.get('title', columns.get('submission_title', "'Untitled' as title")),
-                        'course_code',
-                        'assignment_id',
-                        'submission_date',
-                        'word_count',
-                        'character_count'
-                    ]
-
-                    if include_text:
-                        select_fields.append('submission_text')
-
-                    query = f'''
-                    SELECT {", ".join(select_fields)}
-                    FROM ai_detector_submissions s
-                    LEFT JOIN ai_detector_results r ON s.id = r.submission_id
-                    '''
-
-                    params = []
-                    if student_id:
-                        query += " WHERE s.student_id = ?"
-                        params.append(student_id)
-
-                    query += " ORDER BY s.submission_date DESC LIMIT ?"
-                    params.append(limit)
-
-                    cursor.execute(query, params)
-                    rows = cursor.fetchall()
-
-                    submissions = []
-                    for row in rows:
-                        submission = dict(row) if hasattr(row, 'keys') else {}
-                        submissions.append(submission)
-
-                    conn.close()
-
-                    return {
-                        'submissions': submissions,
-                        'total': len(submissions),
-                        'student_filter': student_id,
-                        'limit': limit
-                    }
-
-                except sqlite3.Error as query_error:
-                    conn.close()
-                    return {
-                        'submissions': [],
-                        'total': 0,
-                        'error': f"Query error: {query_error}",
-                        'message': 'Database schema issue detected'
-                    }
-
-            except sqlite3.Error as e:
-                return {
-                    'submissions': [],
-                    'total': 0,
-                    'error': str(e),
-                    'message': 'Database access failed'
-                }
-
-        def analyze_text(self, text, title=None, student_id=None, course_code=None, assignment_id=None):
-            """Basic text analysis that always works"""
-            import random
-            import time
-            ai_score = random.uniform(0.1, 0.9)  # Random score for demo
-            return {
-                'submission_id': f"demo_{int(time.time())}",
-                'ai_score': ai_score,
-                'confidence': 0.5,
-                'is_ai_generated': ai_score >= self.detection_threshold,
-                'detection_methods': ['basic_pattern_matching'],
-                'text_stats': {
-                    'word_count': len(text.split()),
-                    'char_count': len(text),
-                    'sentence_count': len([s for s in text.split('.') if s.strip()]),
-                },
-                'indicators': [
-                    {'name': 'demo_indicator', 'score': ai_score, 'evidence': 'Demo mode active'}
-                ],
-                'mode': 'minimal_demo'
-            }
-
-        def get_submission_details(self, submission_id):
-            return {'error': 'Not available in minimal mode'}
+        def __getattr__(self, name):
+            def refuse(*_args, **_kwargs):
+                raise ConfigurationError(reason + "Ask an administrator to check it.")
+            return refuse
 
     return MinimalAIDetector()
 
+
+def _role(auth_obj):
+    user = getattr(auth_obj, "current_user", None) or {}
+    return str(user.get("role") or "").lower() if isinstance(user, dict) else ""
+
+
+_MENU = (
+    ("Readings", (
+        ("1", "Take a reading of a text", analyze_text_interface_safe),
+        ("2", "History", view_submission_history_safe),
+        ("3", "Statistics", view_ai_detector_statistics_safe),
+        ("4", "What a reading looks like (fixed example, not stored)", run_ai_detector_demo_safe),
+    )),
+    ("Enhanced detection (informational)", (
+        ("5", "Writing style against a student's earlier work",
+         analyze_writing_style_fingerprint_cli),
+        ("6", "Paraphrasing-tool patterns", detect_paraphrasing_tools_cli),
+        ("7", "Leftover prompt text", analyze_prompt_artifacts_cli),
+        ("8", "Compare drafts", compare_draft_versions_cli),
+        ("9", "Other-language paragraphs", detect_translation_artifacts_cli),
+        ("10", "Against the module level", analyze_knowledge_consistency_cli),
+        ("11", "Pasted / formatting traces", detect_copy_paste_patterns_cli),
+        ("12", "References", analyze_reference_authenticity_cli),
+    )),
+    ("Students", (
+        ("13", "A student's profile", view_student_profile_cli),
+        ("14", "Compare two students", compare_students_cli),
+        ("15", "Integrity summary", generate_student_report_card_cli),
+        ("16", "Flag a student for review", flag_student_for_review_cli),
+        ("17", "Readings over time", view_student_progression_cli),
+        ("18", "A whole module", bulk_student_analysis_cli),
+    )),
+    ("Analytics", (
+        ("19", "Spread of strengths", show_confidence_distribution_cli),
+        ("20", "Frequent words", generate_word_cloud_cli),
+        ("21", "Readings over time", plot_submission_timeline_cli),
+        ("22", "How the indicators relate", show_correlation_matrix_cli),
+        ("23", "Very similar texts", cluster_similar_submissions_cli),
+        ("24", "By module", generate_department_comparison_cli),
+        ("25", "Week by week", show_weekly_trends_cli),
+        ("26", "Export a data pack", export_visualization_pack_cli),
+    )),
+    ("Review and administration", (
+        ("27", "Alerts (no concern / refer / escalate)", ops.alerts_cli),
+        ("28", "Batch readings and scheduled jobs", ops.batch_cli),
+        ("29", "Review-outcome model", ops.model_cli),
+        ("30", "Federated learning (officers)", ops.federated_cli),
+        ("31", "Audit chain", ops.audit_chain_cli),
+        ("32", "Processing queue", ops.realtime_cli),
+        ("33", "Bias report (officers)", ops.bias_cli),
+        ("34", "Review workload forecast", ops.predictive_cli),
+        ("35", "Privacy and retention", ops.privacy_cli),
+        ("36", "Settings", ops.settings_cli),
+        ("37", "Student self-check preview", ops.self_check_preview_cli),
+    )),
+)
+
+
 def display_ai_detector_menu_from_main(auth_obj):
-    """Display AI detector menu with comprehensive error handling"""
+    """The menu, for a signed-in member of staff."""
     global ai_detector
-
-    # Check if user is authenticated
-    if not auth_obj or not auth_obj.current_user:
-        print("You must be logged in to access the AI detector.")
+    if not auth_obj or not getattr(auth_obj, "current_user", None):
+        print("Sign in to use the AI Content Detector.")
         return
-
-    # Initialize AI detector if not already done or if it failed
+    if _role(auth_obj) not in STAFF_ROLES:
+        print("The AI Content Detector is for staff. Your own readings are in Academic "
+              "Integrity.")
+        return
     if ai_detector is None:
-        print("Initializing AI detector...")
-        try:
-            integrate_ai_detector_with_main()
-        except Exception as e:
-            print(f"\u274c AI detector initialization failed: {e}")
-            ai_detector = create_minimal_ai_detector()
-            print("\u2705 Running in minimal mode")
-
-    # Double-check that ai_detector has required attributes
-    if not hasattr(ai_detector, 'detection_threshold'):
-        print("\u26a0\ufe0f AI detector missing critical attributes, recreating...")
-        ai_detector = create_minimal_ai_detector()
-
-    # Ensure the AI detector has the current auth context
-    try:
-        ai_detector.set_auth(auth_obj)
-    except Exception as e:
-        print(f"\u26a0\ufe0f Could not set auth context: {e}")
-
+        print("Loading the AI detector...")
+        if not integrate_ai_detector_with_main(auth_obj):
+            print("The AI detector could not load; no readings can be taken.")
+    ai_detector.set_auth(auth_obj)
+    actions = {key: fn for _title, items in _MENU for key, _label, fn in items}
     while True:
-        print("\nAI Content Detector Menu:")
-        print("=" * 50)
-
-        # Show current mode
+        print("\nAI Content Detector — indicators for review, never a verdict")
+        print("=" * 62)
+        for title, items in _MENU:
+            print(f"\n{title}:")
+            for key, label, _fn in items:
+                print(f" {key:>3}. {label}")
+        print("\n   0. Back")
+        choice = input("\nChoose: ").strip()
+        if choice in ("0", ""):
+            return
+        action = actions.get(choice)
+        if action is None:
+            print("Not a choice.")
+            continue
         try:
-            stats = ai_detector.get_enhanced_statistics()
-            mode = stats.get('mode', 'normal')
-            if mode == 'minimal_fallback':
-                print("\u26a0\ufe0f Running in MINIMAL MODE - limited functionality")
-        except (AttributeError, TypeError, KeyError):
-            print("\u26a0\ufe0f Status check failed - proceeding with caution")
+            action()
+        except (PermissionError, ValueError, ConfigurationError) as exc:
+            print(f"  {exc}")
+        except Exception as exc:
+            logger.exception("AI detector menu action failed")
+            print(f"  That did not work: {exc}")
 
-        print("\n\U0001f4dd Basic Analysis:")
-        print("  1. Analyze text for AI-generated content")
-        print("  2. View submission history")
-        print("  3. View system statistics")
-        print("  4. Demo AI detector")
-
-        print("\n\U0001f52c Enhanced Detection Analysis:")
-        print("  5. Analyze writing style fingerprint")
-        print("  6. Detect paraphrasing tools (Quillbot, etc.)")
-        print("  7. Analyze prompt artifacts (ChatGPT/Claude)")
-        print("  8. Compare draft versions")
-        print("  9. Detect translation artifacts")
-        print(" 10. Analyze knowledge consistency")
-        print(" 11. Detect copy-paste patterns")
-        print(" 12. Analyze reference authenticity")
-
-        print("\n\U0001f465 Student Management:")
-        print(" 13. View student profile")
-        print(" 14. Compare two students")
-        print(" 15. Generate student report card")
-        print(" 16. Flag student for review")
-        print(" 17. View student progression")
-        print(" 18. Bulk student analysis")
-
-        print("\n\U0001f4ca Analytics & Visualization:")
-        print(" 19. Show confidence distribution")
-        print(" 20. Generate word cloud data")
-        print(" 21. Plot submission timeline")
-        print(" 22. Show correlation matrix")
-        print(" 23. Cluster similar submissions")
-        print(" 24. Department comparison")
-        print(" 25. Show weekly trends")
-        print(" 26. Export visualization pack")
-
-        print("\n 0. Return to Main Menu")
-
-        choice = input("\nEnter your choice (0-26): ").strip()
-
-        try:
-            if choice == '1':
-                analyze_text_interface_safe()
-            elif choice == '2':
-                view_submission_history_safe()
-            elif choice == '3':
-                view_ai_detector_statistics_safe()
-            elif choice == '4':
-                run_ai_detector_demo_safe()
-            elif choice == '5':
-                analyze_writing_style_fingerprint_cli()
-            elif choice == '6':
-                detect_paraphrasing_tools_cli()
-            elif choice == '7':
-                analyze_prompt_artifacts_cli()
-            elif choice == '8':
-                compare_draft_versions_cli()
-            elif choice == '9':
-                detect_translation_artifacts_cli()
-            elif choice == '10':
-                analyze_knowledge_consistency_cli()
-            elif choice == '11':
-                detect_copy_paste_patterns_cli()
-            elif choice == '12':
-                analyze_reference_authenticity_cli()
-            elif choice == '13':
-                view_student_profile_cli()
-            elif choice == '14':
-                compare_students_cli()
-            elif choice == '15':
-                generate_student_report_card_cli()
-            elif choice == '16':
-                flag_student_for_review_cli()
-            elif choice == '17':
-                view_student_progression_cli()
-            elif choice == '18':
-                bulk_student_analysis_cli()
-            elif choice == '19':
-                show_confidence_distribution_cli()
-            elif choice == '20':
-                generate_word_cloud_cli()
-            elif choice == '21':
-                plot_submission_timeline_cli()
-            elif choice == '22':
-                show_correlation_matrix_cli()
-            elif choice == '23':
-                cluster_similar_submissions_cli()
-            elif choice == '24':
-                generate_department_comparison_cli()
-            elif choice == '25':
-                show_weekly_trends_cli()
-            elif choice == '26':
-                export_visualization_pack_cli()
-            elif choice == '0':
-                print("Returning to main menu...")
-                break
-            else:
-                print("Invalid choice. Please try again.")
-        except Exception as e:
-            print(f"\u274c Error: {e}")
-            print("Please try again or return to main menu.")
 
 def fix_ai_detector_database_schema():
-    """Fix AI detector database schema by creating proper tables"""
+    """Bring the AI detector tables up to date (the integrity and detector
+    schemas, migrations e2a4c6e8f0b3 / f3b5d7f9a1c4)."""
     try:
-        db_manager = DatabaseManager()
-        conn = db_manager.get_connection()
-        if not conn:
-            return False
-
-        cursor = conn.cursor()
-
-        print("\U0001f527 Fixing AI detector database schema...")
-
-        # Create AI detector submissions table with correct column names
-        cursor.execute('''
-        CREATE TABLE IF NOT EXISTS ai_detector_submissions (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            student_id TEXT NOT NULL,
-            submission_text TEXT NOT NULL,
-            title TEXT,
-            course_code TEXT,
-            assignment_id TEXT,
-            submission_date TEXT NOT NULL,
-            word_count INTEGER,
-            character_count INTEGER,
-            institution_id TEXT
+        from education_system.systems.university.infrastructure.database.db import get_connection
+        from education_system.systems.university.infrastructure.database.schemas import (
+            ai_detector_schema,
         )
-        ''')
-
-        # Create AI detector results table
-        cursor.execute('''
-        CREATE TABLE IF NOT EXISTS ai_detector_results (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            submission_id INTEGER NOT NULL,
-            ai_score REAL NOT NULL,
-            confidence REAL NOT NULL,
-            detailed_results TEXT,
-            created_at TEXT NOT NULL,
-            style_deviation REAL,
-            FOREIGN KEY (submission_id) REFERENCES ai_detector_submissions (id)
-        )
-        ''')
-
-        # Check if we need to migrate old data or add missing columns
-        cursor.execute("PRAGMA table_info(ai_detector_submissions)")
-        existing_columns = [column[1] for column in cursor.fetchall()]
-
-        # Add missing columns if they don't exist
-        required_columns = {
-            'title': 'TEXT',
-            'course_code': 'TEXT',
-            'assignment_id': 'TEXT',
-            'word_count': 'INTEGER',
-            'character_count': 'INTEGER',
-            'institution_id': 'TEXT'
-        }
-
-        for column_name, column_type in required_columns.items():
-            if column_name not in existing_columns:
-                try:
-                    cursor.execute(f'ALTER TABLE ai_detector_submissions ADD COLUMN [{column_name}] {column_type}')
-                    print(f"\u2705 Added column '{column_name}' to ai_detector_submissions table")
-                except sqlite3.Error as e:
-                    print(f"\u26a0\ufe0f Could not add column '{column_name}': {e}")
-
-        # Check if we have the wrong column name and need to rename
-        if 'submission_title' in existing_columns and 'title' not in existing_columns:
-            try:
-                # SQLite doesn't support RENAME COLUMN directly in older versions
-                # So we'll create a new table and copy data
-                cursor.execute('''
-                CREATE TABLE ai_detector_submissions_new (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    student_id TEXT NOT NULL,
-                    submission_text TEXT NOT NULL,
-                    title TEXT,
-                    course_code TEXT,
-                    assignment_id TEXT,
-                    submission_date TEXT NOT NULL,
-                    word_count INTEGER,
-                    character_count INTEGER,
-                    institution_id TEXT
-                )
-                ''')
-
-                # Copy data from old table to new table
-                cursor.execute('''
-                INSERT INTO ai_detector_submissions_new
-                (id, student_id, submission_text, title, course_code, assignment_id,
-                 submission_date, word_count, character_count, institution_id)
-                SELECT id, student_id, submission_text, submission_title, course_code, assignment_id,
-                       submission_date, word_count, character_count, institution_id
-                FROM ai_detector_submissions
-                ''')
-
-                # Drop old table and rename new one
-                cursor.execute('DROP TABLE ai_detector_submissions')
-                cursor.execute('ALTER TABLE ai_detector_submissions_new RENAME TO ai_detector_submissions')
-
-                print("\u2705 Migrated 'submission_title' column to 'title'")
-
-            except sqlite3.Error as e:
-                print(f"\u26a0\ufe0f Could not migrate submission_title column: {e}")
-
-        conn.commit()
-        conn.close()
-
-        print("\u2705 AI detector database schema fix completed!")
+        conn = get_connection(row_factory=False)
+        try:
+            ai_detector_schema.apply_to_connection(conn)
+            conn.commit()
+        finally:
+            conn.close()
         return True
-
-    except sqlite3.Error as e:
-        print(f"\u274c Error fixing AI detector database schema: {e}")
+    except Exception as e:
+        print(f"Error applying the AI detector schema: {e}")
         return False

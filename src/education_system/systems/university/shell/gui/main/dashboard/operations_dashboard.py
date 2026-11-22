@@ -13,14 +13,16 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-def create_operations_tab(parent_frame, service):
+def create_operations_tab(parent_frame, service, auth=None):
     """Create the operational dashboards content with sub-tabs.
 
     Args:
         parent_frame: The ttk.Frame to populate.
         service: DashboardService instance.
+        auth: the signed-in session (its ticket figures cover the tickets
+            that person may see).
     """
-    data = service.get_operational_metrics()
+    data = service.get_operational_metrics(auth)
 
     # Sub-notebook for different operational domains
     notebook = ttk.Notebook(parent_frame)

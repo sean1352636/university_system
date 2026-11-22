@@ -434,7 +434,7 @@ def _print_arr_full(a: Arrangement) -> None:
     print(f"    Fee status       : {a.fee_status}"
           + (f"  £{a.fee_amount:.2f}"
               if a.fee_amount is not None else ""))
-    print(f"    Bursary supported: "
+    print(f"    LA-funded transport: "
           f"{'yes' if a.bursary_supported else 'no'}")
     print(f"    Pass number      : {a.pass_number or '—'}")
     print(f"    Pass expires on  : {a.pass_expires_on or '—'}"
@@ -472,7 +472,7 @@ def arr_unpaid() -> None:
 
 
 def arr_bursary() -> None:
-    print("\n═══ Bursary-Supported ═══")
+    print("\n═══ LA-Funded Transport ═══")
     _print_arrangements(data.list_arrangements(bursary_only=True))
     _pause()
 
@@ -575,7 +575,7 @@ def _collect_arr_form(
                   if is_edit and existing.fee_amount is not None
                   else ""))
     payload["bursary_supported"] = _yes_no(
-        "Bursary supported?",
+        "LA-funded (free home-to-school transport)?",
         default=(existing.bursary_supported
                   if is_edit else False))
     payload["pass_number"] = _input(
@@ -786,7 +786,7 @@ def summary_flow() -> None:
     print(f"  Suspended            : {s.suspended}")
     print(f"  Pending              : {s.pending}")
     print(f"  Unpaid / partial     : {s.unpaid_or_partial}")
-    print(f"  Bursary supported    : {s.bursary_supported}")
+    print(f"  LA-funded            : {s.bursary_supported}")
     print(f"  Pass expired         : {s.pass_expired}")
     print(f"  Distinct students    : {s.distinct_students}")
     print("\n  By mode:")
@@ -824,7 +824,7 @@ _MENU: list[tuple[str, Callable[[], None]]] = [
     ("List all",             arr_list),
     ("List active",          arr_active),
     ("Unpaid / partial",     arr_unpaid),
-    ("Bursary supported",    arr_bursary),
+    ("LA-funded transport",  arr_bursary),
     ("Pass expired",         arr_expired),
     ("Filter",               arr_filter),
     ("Per-student",          arr_per_student),

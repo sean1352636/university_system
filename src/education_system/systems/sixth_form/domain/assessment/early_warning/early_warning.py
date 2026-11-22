@@ -24,7 +24,7 @@ import datetime as _dt
 import logging
 import re
 import sqlite3
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any
 from education_system import paths
 from education_system.systems.sixth_form.domain.assessment.early_warning import (
@@ -191,6 +191,13 @@ class ScanResult:
     created: int
     skipped_duplicates: int
     sources: dict[str, int]     # per-source breakdown of created
+    # One line per scan source that failed — a failed source is not the
+    # same as "no alerts", and callers must say so.
+    errors: list[str] = field(default_factory=list)
+
+    @property
+    def ok(self) -> bool:
+        return not self.errors
 
 
 # ── DB plumbing ────────────────────────────────────────────────────
@@ -751,6 +758,7 @@ def scan(
     by_source: dict[str, int] = {}
     created = 0
     skipped = 0
+    errors: list[str] = []
 
     # ── Attendance ────────────────────────────────────────────────
     try:
@@ -809,8 +817,9 @@ def scan(
             created += 1
             by_source["Attendance Scan"] = (
                 by_source.get("Attendance Scan", 0) + 1)
-    except Exception:
+    except Exception as e:
         logger.exception("Attendance scan failed")
+        errors.append(f"Attendance scan failed: {type(e).__name__}: {e}")
 
     # ── Behaviour ─────────────────────────────────────────────────
     try:
@@ -856,8 +865,9 @@ def scan(
             created += 1
             by_source["Behaviour Scan"] = (
                 by_source.get("Behaviour Scan", 0) + 1)
-    except Exception:
+    except Exception as e:
         logger.exception("Behaviour scan failed")
+        errors.append(f"Behaviour scan failed: {type(e).__name__}: {e}")
 
     # ── Target Setting (Below Target) ─────────────────────────────
     try:
@@ -895,12 +905,13 @@ def scan(
             created += 1
             by_source["Target Scan"] = (
                 by_source.get("Target Scan", 0) + 1)
-    except Exception:
+    except Exception as e:
         logger.exception("Target-setting scan failed")
+        errors.append(f"Target-setting scan failed: {type(e).__name__}: {e}")
 
     return ScanResult(created=created,
                         skipped_duplicates=skipped,
-                        sources=by_source)
+                        sources=by_source, errors=errors)
 
 
 # ── Summary ───────────────────────────────────────────────────────
@@ -944,3 +955,131 @@ def summary() -> Summary:
         distinct_students=len(students),
         aged_over_14_days=aged,
     )
+
+
+# ── Opening an intervention from an alert ─────────────────────────
+
+# Which intervention type answers which kind of alert.
+_ALERT_TO_INTERVENTION: dict[str, str] = {
+    "Attendance": "Attendance",
+    "Punctuality": "Attendance",
+    "Behaviour": "Behaviour",
+    "Academic": "Academic Support",
+    "Engagement": "Re-engagement",
+    "Homework": "Study Skills",
+    "Wellbeing": "SEMH",
+    "UCAS / Careers": "Careers / Aspirations",
+}
+
+
+def _iv():
+    from education_system.systems.sixth_form.domain.assessment.intervention_tracking import (
+        intervention_tracking as _intervention_tracking,
+    )
+    return _intervention_tracking
+
+
+def linked_intervention(alert_id: int) -> Any:
+    """The intervention this alert opened, if it still exists.
+
+    Follows ``linked_intervention_id`` first, then the back-link on the
+    intervention side, so a link survives either half being edited.
+    """
+    alert = get_alert(alert_id)
+    if alert is None:
+        return None
+    iv = _iv()
+    if alert.linked_intervention_id is not None:
+        found = iv.get_intervention(alert.linked_intervention_id)
+        if found is not None:
+            return found
+    linked = iv.interventions_for_alert(alert_id)
+    return linked[0] if linked else None
+
+
+def open_intervention(alert_id: int, *,
+                      title: str | None = None,
+                      intervention_type: str | None = None,
+                      lead_staff: str | None = None,
+                      start_date: str | None = None,
+                      actor: str | None = None) -> tuple[Any, bool]:
+    """Open an intervention for this alert, or return the one it already
+    opened. Returns ``(intervention, created)``.
+
+    Idempotent: asking twice never creates a second intervention. The
+    alert is linked (``linked_intervention_id``), the intervention is
+    back-linked (``early_warning_alert_id``) and an Open alert moves to
+    Acknowledged with the action recorded.
+    """
+    init_db()
+    alert = get_alert(alert_id)
+    if alert is None:
+        raise ValidationError(f"No alert #{alert_id}")
+    iv = _iv()
+    existing = linked_intervention(alert_id)
+    if existing is not None:
+        # Repair whichever half of the link is missing.
+        if alert.linked_intervention_id != existing.intervention_id:
+            update_alert(alert_id, {
+                "linked_intervention_id": existing.intervention_id})
+        if iv.source_alert_id(existing.intervention_id) != alert_id:
+            iv.set_source_alert(existing.intervention_id, alert_id)
+        return existing, False
+    if alert.status in ("Resolved", "Dismissed"):
+        raise ValidationError(
+            f"Alert #{alert_id} is {alert.status} — reopen it before "
+            "starting an intervention")
+
+    itype = intervention_type or _ALERT_TO_INTERVENTION.get(
+        alert.alert_type, iv.DEFAULT_INTERVENTION_TYPE)
+    try:
+        created = iv.create_intervention({
+            "student_id": alert.student_id,
+            "title": title or f"{alert.alert_type}: {alert.title}"[:200],
+            "intervention_type": itype,
+            "lead_staff": lead_staff,
+            "start_date": start_date or _dt.date.today().isoformat(),
+            "status": "Planned",
+            "referral_source": f"Early Warning alert #{alert_id}",
+            "rationale": alert.description or alert.title,
+            "baseline_indicator": (
+                f"{alert.trigger_metric}: {alert.threshold}"
+                if alert.trigger_metric else None),
+        })
+    except iv.ValidationError as e:
+        raise ValidationError(str(e)) from None
+    iv.set_source_alert(created.intervention_id, alert_id)
+
+    note = f"Intervention #{created.intervention_id} opened"
+    payload: dict[str, Any] = {
+        "linked_intervention_id": created.intervention_id,
+        "action_taken": (f"{alert.action_taken}; {note}"
+                         if alert.action_taken else note),
+    }
+    if alert.status == "Open":
+        payload["status"] = "Acknowledged"
+        payload["acknowledged_on"] = _dt.date.today().isoformat()
+        if actor:
+            payload["acknowledged_by"] = actor
+    update_alert(alert_id, payload)
+    logger.info("Alert #%d opened intervention #%d", alert_id,
+                created.intervention_id)
+    return created, True
+
+
+def link_intervention(alert_id: int, intervention_id: int) -> Alert:
+    """Link an alert to an intervention that already exists."""
+    init_db()
+    alert = get_alert(alert_id)
+    if alert is None:
+        raise ValidationError(f"No alert #{alert_id}")
+    iv = _iv()
+    target = iv.get_intervention(intervention_id)
+    if target is None:
+        raise ValidationError(f"No intervention #{intervention_id}")
+    if target.student_id != alert.student_id:
+        raise ValidationError(
+            "That intervention belongs to a different student")
+    iv.set_source_alert(intervention_id, alert_id)
+    return update_alert(alert_id,
+                        {"linked_intervention_id": intervention_id})

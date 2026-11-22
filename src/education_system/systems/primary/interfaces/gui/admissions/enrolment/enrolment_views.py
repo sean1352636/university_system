@@ -14,6 +14,7 @@ from education_system.systems.primary.domain.admissions.enrolment import (
 from education_system.systems.primary.domain.learners.pupils.pupils import (
     ValidationError, YEAR_GROUPS,
 )
+from education_system.systems.primary.interfaces.gui import kit
 
 logger = logging.getLogger(__name__)
 
@@ -46,10 +47,22 @@ def _safe_view(func: Callable[..., None]) -> Callable[..., None]:
 @_safe_view
 def open_enrolment(host) -> None:
     logger.debug("GUI: open_enrolment")
-    host._clear_content()
-    root = host.content_frame
-    ttk.Label(root, text="Year Group Enrolment",
-              font=("", 16, "bold")).pack(anchor="w", pady=(0, 8))
+    kit.show_page(host, "Year Group Enrolment", lambda parent: _draw_enrolment(parent, host))
+
+
+def _owner(host, widget: tk.Misc | None = None) -> tk.Misc:
+    """The page's own window (main window or pop-out), else the main window."""
+    if widget is not None:
+        try:
+            return widget.winfo_toplevel()
+        except tk.TclError:
+            pass
+    return getattr(host, "root", host)
+
+
+def _draw_enrolment(root: ttk.Frame, host) -> None:
+    kit.page_heading(root, "Year Group Enrolment",
+                     "Who is on roll in each year group; move or promote pupils.")
 
     body = ttk.Frame(root)
     body.pack(fill="both", expand=True)
@@ -80,10 +93,11 @@ def open_enrolment(host) -> None:
     ttk.Separator(left, orient="horizontal").pack(fill="x", pady=8)
     ttk.Button(left, text="Promote this year",
                command=lambda: _promote_year_dialog(host, selected_year.get(),
-                                                     on_done=_refresh)).pack(
+                                                     on_done=_refresh,
+                                                     owner=root)).pack(
         fill="x", pady=2)
     ttk.Button(left, text="View leavers",
-               command=lambda: _show_leavers(host)).pack(fill="x", pady=2)
+               command=lambda: _show_leavers(host, owner=root)).pack(fill="x", pady=2)
     ttk.Button(left, text="Refresh",
                command=lambda: _refresh()).pack(fill="x", pady=(8, 0))
 
@@ -114,7 +128,7 @@ def open_enrolment(host) -> None:
             logger.exception("roll_by_year failed")
             messagebox.showerror("Year-group enrolment",
                                  f"Could not load roll:\n\n{e}",
-                                 parent=host.root)
+                                 parent=_owner(host, root))
             return
         total = sum(len(v) for v in roll.values())
         total_var.set(f"Total on roll: {total}")
@@ -130,7 +144,8 @@ def open_enrolment(host) -> None:
             ))
         label = "Reception" if y == "R" else f"Year {y}"
         summary_var.set(f"{label}: {len(roll.get(y, []))} pupil(s)")
-        host.status_var.set(f"Year-group enrolment: {total} on roll")
+        if getattr(host, "status_var", None) is not None:
+            host.status_var.set(f"Year-group enrolment: {total} on roll")
 
     selected_year.trace_add("write", lambda *_: _refresh())
     _refresh()
@@ -140,13 +155,14 @@ def _move_selected_dialog(host, tree: ttk.Treeview, *, on_done=None) -> None:
     sel = tree.focus()
     if not sel:
         messagebox.showinfo("Move pupil",
-                            "Select a pupil first.", parent=host.root)
+                            "Select a pupil first.", parent=_owner(host, tree))
         return
 
-    dlg = tk.Toplevel(host.root)
+    owner = _owner(host, tree)
+    dlg = tk.Toplevel(owner)
     dlg.title(f"Move pupil {sel}")
-    dlg.transient(host.root)
-    dlg.geometry("360x180")
+    dlg.transient(owner)
+    dlg.geometry("460x200")
     dlg.update_idletasks()
     try:
         dlg.wait_visibility()
@@ -163,13 +179,16 @@ def _move_selected_dialog(host, tree: ttk.Treeview, *, on_done=None) -> None:
     row1 = ttk.Frame(frm)
     row1.pack(fill="x", pady=(8, 2))
     ttk.Label(row1, text="New year:").pack(side="left", padx=(0, 6))
-    ttk.Combobox(row1, textvariable=yvar, values=list(YEAR_GROUPS),
-                 state="readonly", width=8).pack(side="left")
+    kit.YearGroupPicker(row1, yvar).pack(side="left")
     row2 = ttk.Frame(frm)
     row2.pack(fill="x", pady=2)
     ttk.Label(row2, text="New class (blank = auto, e.g. 3A → 4A):").pack(
         side="left", padx=(0, 6))
-    ttk.Entry(row2, textvariable=cvar, width=10).pack(side="left")
+    class_picker = kit.ClassPicker(row2, cvar, year_group=yvar.get())
+    class_picker.pack(side="left")
+    # Offer the classes of the year being moved to; blank still means auto.
+    yvar.trace_add("write", lambda *_a: (cvar.set(""),
+                                         class_picker.for_year(yvar.get() or None)))
 
     def _save() -> None:
         try:
@@ -194,11 +213,13 @@ def _move_selected_dialog(host, tree: ttk.Treeview, *, on_done=None) -> None:
     ttk.Button(btns, text="Move", command=_save).pack(side="right")
 
 
-def _promote_year_dialog(host, year: str, *, on_done=None) -> None:
+def _promote_year_dialog(host, year: str, *, on_done=None,
+                         owner: tk.Misc | None = None) -> None:
+    win = _owner(host, owner)
     try:
         preview = data.promote_year(year, dry_run=True)
     except ValidationError as e:
-        messagebox.showerror("Promote year", str(e), parent=host.root)
+        messagebox.showerror("Promote year", str(e), parent=win)
         return
     to_y = preview["to_year"]
     label = "Reception" if year == "R" else f"Year {year}"
@@ -207,50 +228,51 @@ def _promote_year_dialog(host, year: str, *, on_done=None) -> None:
         if not leavers:
             messagebox.showinfo("Promote year",
                                 f"{label} is empty — nothing to do.",
-                                parent=host.root)
+                                parent=win)
             return
         messagebox.showinfo(
             "Promote year",
             f"{label} is the final year. "
             f"{len(leavers)} pupil(s) would become leavers.\n\n"
             "Leavers must be removed manually from the pupil directory.",
-            parent=host.root,
+            parent=win,
         )
         return
     count = preview["count"]
     if count == 0:
         messagebox.showinfo("Promote year",
                             f"No pupils in {label} — nothing to do.",
-                            parent=host.root)
+                            parent=win)
         return
     to_label = "Reception" if to_y == "R" else f"Year {to_y}"
     if not messagebox.askyesno(
             "Promote year",
             f"Move all {count} pupil(s) from {label} to {to_label}?\n"
             f"Classes will be bumped accordingly (e.g. {year}A → {to_y}A).",
-            parent=host.root):
+            parent=win):
         return
     result = data.promote_year(year)
     messagebox.showinfo(
         "Promote year",
         f"Promoted {result['count']} pupil(s) from {label} to {to_label}.",
-        parent=host.root,
+        parent=win,
     )
     if on_done:
         on_done()
 
 
-def _show_leavers(host) -> None:
+def _show_leavers(host, *, owner: tk.Misc | None = None) -> None:
+    win = _owner(host, owner)
     try:
         rows = data.leavers()
     except Exception as e:
         logger.exception("leavers lookup failed")
         messagebox.showerror("Leavers", f"Could not load leavers:\n\n{e}",
-                             parent=host.root)
+                             parent=win)
         return
-    dlg = tk.Toplevel(host.root)
+    dlg = tk.Toplevel(win)
     dlg.title(f"Leavers (Year {data.FINAL_YEAR})")
-    dlg.transient(host.root)
+    dlg.transient(win)
     dlg.geometry("520x360")
     dlg.update_idletasks()
     try:

@@ -26,8 +26,8 @@ This guide covers book management, checkout/return operations, reservations, dig
 The Library Management module provides comprehensive library operations including catalog management, circulation (checkout/return/renewal), reservations, digital resource management, fine processing, and analytics. It integrates with the email system for notifications and the finance system for payment processing.
 
 **Key files:**
-- Services: `modules/domain/academics/services/library/`
-- GUI: `modules/domain/academics/gui/library/`
+- Services: `src/education_system/systems/university/domains/library/domain/library/`
+- GUI: `src/education_system/systems/university/domains/library/interfaces/gui/library/`
 
 ## Getting Started
 

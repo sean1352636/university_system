@@ -995,7 +995,7 @@ def seed_course_modules(cursor: sqlite3.Cursor) -> int:
     named module lists in ``curriculum.SEED_CURRICULA``. Idempotent — the
     builder rebuilds only when a course's 18 rows are missing/partial.
     """
-    from education_system.systems.university.domains.academics.domain.services.admissions_selection import (  # noqa: E501
+    from education_system.systems.university.domains.admissions.domain.services.admissions_selection import (  # noqa: E501
         curriculum,
     )
 

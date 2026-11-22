@@ -574,13 +574,11 @@ The Helpdesk & Student Support System is a comprehensive platform for managing s
 
 ## Additional Resources
 
-- **Student Support Handbook**: `docs/student_support_handbook.pdf`
-- **Crisis Response Guide**: `docs/crisis_response_guide.pdf`
 - **Mental Health Resources**: `support.university.edu/mental-health`
 - **Video Tutorials**: `support.university.edu/tutorials`
 
 ---
 
 **Last Updated**: January 2026
-**Module**: `university_system/modules/domain/student_affairs/services/student_support.py`
+**Module**: `src/education_system/systems/university/domains/student_support/domain/student_support/`
 **Support**: support@university.edu | (555) 123-HELP

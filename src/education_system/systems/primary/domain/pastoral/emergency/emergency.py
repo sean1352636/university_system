@@ -132,7 +132,7 @@ def init_db() -> None:
         logger.exception(
             "Failed to initialise emergency_events tables")
         raise
-    logger.info("Secondary emergency_events tables ready")
+    logger.info("Primary emergency_events tables ready")
     _DB_READY = True
 
 

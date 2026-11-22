@@ -10,9 +10,7 @@ from education_system.systems.university.domains.governance.interfaces.gui.legal
     CASE_TYPES, CONSULTATION_STATUSES,
     _t, logger,
     send_email, render_template, EMAIL_AVAILABLE,
-    record_payment_to_finance,
     get_student_finance_account_balance,
-    process_student_finance_account_payment,
 )
 
 
@@ -309,25 +307,16 @@ class ConsultationsMixin:
 
                 # Handle Student Account payment
                 if payment_method == "Student Account":
-                    if student_balance < fee:
+                    if (student_balance or 0) < fee:
                         messagebox.showerror(
                             _t("common.error", default="Error"),
-                            f"Insufficient balance. Current balance: \u00a3{student_balance:.2f}"
+                            f"Insufficient balance. Current balance: \u00a3{(student_balance or 0):.2f}"
                         )
                         return
-                    # Process student account payment
-                    payment_result = process_student_finance_account_payment(
-                        student_id=client_id,
-                        amount=fee,
-                        description=f"Legal consultation - {consultation['consultation_type']}",
-                        transaction_source="LegalServices",
-                        transaction_ref=str(consultation['consultation_id']),
-                        processed_by=self.current_user.get('username', 'System')
-                    )
-                    if not payment_result.get('success'):
-                        messagebox.showerror(_t("common.error", default="Error"), payment_result.get('message', "Failed to process student account payment"))
-                        return
 
+                # PaymentManager.record_payment is the Finance post: it writes
+                # the payments row, debits the student account when that is the
+                # method, and posts to the GL. Nothing else here should post.
                 payment_id = PaymentManager.record_payment(
                     client_id=client_id,
                     client_email=consultation.get('client_email', ''),
@@ -336,21 +325,12 @@ class ConsultationsMixin:
                     payment_method=payment_method,
                     consultation_id=consultation['consultation_id'],
                     case_id=consultation.get('case_id'),
-                    processed_by=self.current_user.get('username')
+                    processed_by=self.current_user.get('username'),
+                    description=f"Legal consultation - {consultation['consultation_type']}",
                 )
 
                 if payment_id:
-                    # Record revenue in central finance system
-                    record_payment_to_finance(
-                        student_id=client_id,
-                        amount=fee,
-                        payment_method=payment_method,
-                        transaction_source='LegalServices',
-                        transaction_ref=f"CONSULT-{consultation['consultation_id']}",
-                        notes=f"Legal consultation fee - {consultation['consultation_type']}",
-                        created_by=self.current_user.get('username')
-                    )
-                    logger.info(f"Revenue recorded: \u00a3{fee:.2f} for consultation {consultation['consultation_id']}")
+                    logger.info(f"Payment recorded: \u00a3{fee:.2f} for consultation {consultation['consultation_id']}")
 
                     messagebox.showinfo(
                         _t("common.success", default="Success"),
@@ -426,7 +406,7 @@ class ConsultationsMixin:
             subject = None
             receipt_body = None
             if render_template:
-                subject, receipt_body = render_template('commerce/legal/payment_receipt', {
+                subject, receipt_body = render_template('finance_commerce/commerce/legal/payment_receipt', {
                     'client_name': consultation['client_name'],
                     'receipt_number': payment['transaction_reference'],
                     'payment_date': payment['created_at'][:10],

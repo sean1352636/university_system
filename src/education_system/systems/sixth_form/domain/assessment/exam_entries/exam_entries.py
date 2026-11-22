@@ -22,11 +22,19 @@ import sqlite3
 from dataclasses import dataclass
 from typing import Any
 from education_system import paths
-from education_system.systems.sixth_form.domain.academics.subjects.subjects import EXAM_BOARDS
+from education_system.systems.sixth_form.domain.assessment.exams_office.boards import (
+    EXAM_BOARDS,
+    normalise_board,
+    stored_names,
+)
 
 logger = logging.getLogger(__name__)
 
 DB_PATH = paths.SIXTH_FORM_EXAM_ENTRIES_DB
+
+# Re-exported so the exams-office modules, which must not import sqlite3
+# themselves, can recognise constraint failures.
+IntegrityError = sqlite3.IntegrityError
 
 SEASONS: tuple[str, ...] = ("Summer", "January", "November")
 DEFAULT_SEASON: str = "Summer"
@@ -69,6 +77,15 @@ CREATE INDEX IF NOT EXISTS idx_entries_series  ON exam_entries(year, season);
 CREATE INDEX IF NOT EXISTS idx_entries_status  ON exam_entries(status);
 """
 
+# Columns added after the table first shipped. ``entry_code`` is the
+# board's qualification ("cash-in") code the component row belongs to;
+# ``fee_band`` / ``late_fee`` record whether the entry was made late.
+_ADDED_COLUMNS: dict[str, str] = {
+    "entry_code": "TEXT",
+    "fee_band":   "TEXT",
+    "late_fee":   "REAL",
+}
+
 
 @dataclass
 class ExamEntry:
@@ -87,6 +104,9 @@ class ExamEntry:
     notes: str | None
     created_at: str
     updated_at: str
+    entry_code: str | None = None
+    fee_band: str | None = None
+    late_fee: float | None = None
 
 
 @dataclass
@@ -118,12 +138,21 @@ def init_db() -> None:
     _students.init_db()
     with _connect() as conn:
         conn.executescript(_SCHEMA)
+        have = {r["name"] for r in conn.execute("PRAGMA table_info(exam_entries)")}
+        for name, decl in _ADDED_COLUMNS.items():
+            if name not in have:
+                conn.execute(f"ALTER TABLE exam_entries ADD COLUMN {name} {decl}")
+                logger.info("Added exam_entries.%s", name)
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_entries_entry_code "
+                     "ON exam_entries(entry_code)")
+        conn.commit()
     logger.debug("Exam-entries schema ready at %s", DB_PATH)
 
     _DB_READY = True
 
 
 def _row(r: sqlite3.Row) -> ExamEntry:
+    keys = r.keys()
     return ExamEntry(
         entry_id=r["entry_id"], student_id=r["student_id"],
         subject=r["subject"], exam_board=r["exam_board"],
@@ -132,6 +161,9 @@ def _row(r: sqlite3.Row) -> ExamEntry:
         candidate_no=r["candidate_no"], tier=r["tier"],
         status=r["status"], fee=r["fee"], notes=r["notes"],
         created_at=r["created_at"], updated_at=r["updated_at"],
+        entry_code=r["entry_code"] if "entry_code" in keys else None,
+        fee_band=r["fee_band"] if "fee_band" in keys else None,
+        late_fee=r["late_fee"] if "late_fee" in keys else None,
     )
 
 
@@ -165,8 +197,8 @@ def _validate_payload(data: dict[str, Any]) -> dict[str, Any]:
         pass
     out["subject"] = subject
 
-    board = _require(data.get("exam_board"), "Exam board").strip()
-    if board not in EXAM_BOARDS:
+    board = normalise_board(_require(data.get("exam_board"), "Exam board"))
+    if board is None:
         raise ValidationError(
             f"Exam board must be one of: {', '.join(EXAM_BOARDS)}")
     out["exam_board"] = board
@@ -178,6 +210,20 @@ def _validate_payload(data: dict[str, Any]) -> dict[str, Any]:
             "and . / -"
         )
     out["paper_code"] = code
+
+    # Entry (qualification) code: given, else derived from the catalogue
+    # or the part of the component code before the "/".
+    entry_code = (data.get("entry_code") or "").strip().upper()
+    if entry_code and not _PAPER_CODE_RE.match(entry_code):
+        raise ValidationError(
+            "Entry code must be 2-24 chars: uppercase letters, digits, "
+            "and . / -")
+    if not entry_code:
+        from education_system.systems.sixth_form.domain.assessment.exams_office import (
+            entry_admin as _admin,
+        )
+        entry_code = _admin.derive_entry_code(code) or ""
+    out["entry_code"] = entry_code or None
 
     season = (data.get("season") or DEFAULT_SEASON).strip()
     if season not in SEASONS:
@@ -247,14 +293,14 @@ def create_entry(data: dict[str, Any]) -> ExamEntry:
                 """INSERT INTO exam_entries
                        (student_id, subject, exam_board, paper_code,
                         paper_title, season, year, candidate_no, tier,
-                        status, fee, notes,
+                        status, fee, notes, entry_code,
                         created_at, updated_at)
-                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
                            datetime('now'), datetime('now'))""",
                 (p["student_id"], p["subject"], p["exam_board"],
                  p["paper_code"], p["paper_title"], p["season"], p["year"],
                  p["candidate_no"], p["tier"], p["status"],
-                 p["fee"], p["notes"]),
+                 p["fee"], p["notes"], p["entry_code"]),
             )
             conn.commit()
             new_id = cur.lastrowid
@@ -270,6 +316,24 @@ def create_entry(data: dict[str, Any]) -> ExamEntry:
             ) from e
         logger.exception("create_entry DB error")
         raise ValidationError(f"Database error: {e}") from e
+
+    # Amendment history + late-fee band (exams office). A failure here is
+    # logged rather than undoing an entry the board may already expect.
+    try:
+        from education_system.systems.sixth_form.domain.assessment.exams_office import (
+            entry_admin as _admin,
+        )
+        created = get_entry(new_id)
+        if created is not None:
+            band, late = _admin.on_entry_created(created)
+            with _connect() as conn:
+                conn.execute(
+                    "UPDATE exam_entries SET fee_band = ?, late_fee = ? "
+                    "WHERE entry_id = ?", (band, late or None, new_id))
+                conn.commit()
+    except Exception:
+        logger.exception("Could not log exam entry #%d in the amendment history",
+                         new_id)
 
     out = get_entry(new_id)
     assert out is not None
@@ -299,6 +363,7 @@ def list_entries(
     year: int | None = None,
     status: str | None = None,
     paper_code: str | None = None,
+    entry_code: str | None = None,
 ) -> list[ExamEntry]:
     init_db()
     clauses: list[str] = []
@@ -310,11 +375,13 @@ def list_entries(
         clauses.append("subject = ?")
         args.append(subject)
     if exam_board:
-        if exam_board not in EXAM_BOARDS:
+        if normalise_board(exam_board) is None:
             raise ValidationError(
                 f"Exam board must be one of: {', '.join(EXAM_BOARDS)}")
-        clauses.append("exam_board = ?")
-        args.append(exam_board)
+        # Older rows may hold a legacy spelling ("Edexcel").
+        names = stored_names(exam_board)
+        clauses.append(f"exam_board IN ({','.join('?' * len(names))})")
+        args.extend(names)
     if season:
         if season not in SEASONS:
             raise ValidationError(
@@ -333,6 +400,9 @@ def list_entries(
     if paper_code:
         clauses.append("paper_code = ?")
         args.append(paper_code.strip().upper())
+    if entry_code:
+        clauses.append("entry_code = ?")
+        args.append(entry_code.strip().upper())
     where = ("WHERE " + " AND ".join(clauses)) if clauses else ""
     sql = (
         f"SELECT * FROM exam_entries {where} "
@@ -346,7 +416,11 @@ def entries_for_student(student_id: str) -> list[ExamEntry]:
     return list_entries(student_id=student_id)
 
 
-def update_entry(entry_id: int, data: dict[str, Any]) -> ExamEntry:
+def update_entry(entry_id: int, data: dict[str, Any], *,
+                 reason: str | None = None) -> ExamEntry:
+    """Change an entry. Every change lands in the amendment history,
+    with the board's amendment / withdrawal fee once its deadline has
+    passed; ``reason`` is kept with that record."""
     init_db()
     existing = get_entry(entry_id)
     if existing is None:
@@ -358,6 +432,10 @@ def update_entry(entry_id: int, data: dict[str, Any]) -> ExamEntry:
             "subject":      data.get("subject", existing.subject),
             "exam_board":   data.get("exam_board", existing.exam_board),
             "paper_code":   data.get("paper_code", existing.paper_code),
+            "entry_code":   data.get("entry_code", existing.entry_code)
+                            if "paper_code" not in data
+                            or data.get("paper_code") == existing.paper_code
+                            else data.get("entry_code"),
             "paper_title":  data.get("paper_title", existing.paper_title),
             "season":       data.get("season", existing.season),
             "year":         data.get("year", existing.year),
@@ -378,12 +456,13 @@ def update_entry(entry_id: int, data: dict[str, Any]) -> ExamEntry:
                        subject = ?, exam_board = ?, paper_code = ?,
                        paper_title = ?, season = ?, year = ?,
                        candidate_no = ?, tier = ?, status = ?, fee = ?,
-                       notes = ?, updated_at = datetime('now')
+                       notes = ?, entry_code = ?,
+                       updated_at = datetime('now')
                    WHERE entry_id = ?""",
                 (p["subject"], p["exam_board"], p["paper_code"],
                  p["paper_title"], p["season"], p["year"],
                  p["candidate_no"], p["tier"], p["status"], p["fee"],
-                 p["notes"], entry_id),
+                 p["notes"], p["entry_code"], entry_id),
             )
             conn.commit()
     except sqlite3.IntegrityError as e:
@@ -398,6 +477,13 @@ def update_entry(entry_id: int, data: dict[str, Any]) -> ExamEntry:
 
     out = get_entry(entry_id)
     assert out is not None
+    try:
+        from education_system.systems.sixth_form.domain.assessment.exams_office import (
+            entry_admin as _admin,
+        )
+        _admin.on_entry_updated(existing, out, reason=reason)
+    except Exception:
+        logger.exception("Could not log amendment for entry #%d", entry_id)
     logger.info(
         "Updated entry #%d (%s on %s, status=%s)",
         entry_id, out.student_id, out.paper_code, out.status,
@@ -407,6 +493,15 @@ def update_entry(entry_id: int, data: dict[str, Any]) -> ExamEntry:
 
 def delete_entry(entry_id: int) -> bool:
     init_db()
+    existing = get_entry(entry_id)
+    if existing is not None:
+        try:
+            from education_system.systems.sixth_form.domain.assessment.exams_office import (
+                entry_admin as _admin,
+            )
+            _admin.on_entry_deleted(existing)
+        except Exception:
+            logger.exception("Could not log deletion of entry #%d", entry_id)
     with _connect() as conn:
         cur = conn.execute(
             "DELETE FROM exam_entries WHERE entry_id = ?", (entry_id,),

@@ -25,6 +25,70 @@ _SYSTEM = "apprenticeships"
 _CATEGORY = "Assurance"
 
 
+@assurance_menu_bp.route("/assessment-organisations", methods=["GET"])
+@token_required
+@staff_required
+def assurance_assessment_organisations():
+    """Assessment Organisations"""
+    return feature_pending("Assessment Organisations", _SYSTEM, category=_CATEGORY)
+
+
+@assurance_menu_bp.route("/audit-log", methods=["GET"])
+@token_required
+@staff_required
+def assurance_audit_log():
+    """Audit Log"""
+    return feature_pending("Audit Log", _SYSTEM, category=_CATEGORY)
+
+
+@assurance_menu_bp.route("/epa-bookings", methods=["GET"])
+@token_required
+@staff_required
+def assurance_epa_bookings():
+    """EPA Bookings"""
+    return feature_pending("EPA Bookings", _SYSTEM, category=_CATEGORY)
+
+
+@assurance_menu_bp.route("/epa-resits", methods=["GET"])
+@token_required
+@staff_required
+def assurance_epa_resits():
+    """EPA Resits"""
+    return feature_pending("EPA Resits", _SYSTEM, category=_CATEGORY)
+
+
+@assurance_menu_bp.route("/epa-results", methods=["GET"])
+@token_required
+@staff_required
+def assurance_epa_results():
+    """EPA Results"""
+    return feature_pending("EPA Results", _SYSTEM, category=_CATEGORY)
+
+
+@assurance_menu_bp.route("/employer-risk", methods=["GET"])
+@token_required
+@staff_required
+def assurance_employer_risk():
+    """Employer Risk"""
+    return feature_pending("Employer Risk", _SYSTEM, category=_CATEGORY)
+
+
+@assurance_menu_bp.route("/off-the-job-hours", methods=["GET"])
+@token_required
+@staff_required
+def assurance_off_the_job_hours():
+    """Off-the-Job Hours"""
+    return feature_pending("Off-the-Job Hours", _SYSTEM, category=_CATEGORY)
+
+
+@assurance_menu_bp.route("/progress-reviews", methods=["GET"])
+@token_required
+@staff_required
+def assurance_progress_reviews():
+    """Progress Reviews"""
+    return feature_pending("Progress Reviews", _SYSTEM, category=_CATEGORY)
+
+
 @assurance_menu_bp.route("/admin-compliance", methods=["GET"])
 @token_required
 @staff_required
@@ -39,4 +103,28 @@ def assurance_admin_compliance():
 def assurance_admin_funding():
     """admin.funding"""
     return feature_pending("admin.funding", _SYSTEM, category=_CATEGORY)
+
+
+@assurance_menu_bp.route("/shared-documents", methods=["GET"])
+@token_required
+@staff_required
+def assurance_shared_documents():
+    """shared.documents"""
+    return feature_pending("shared.documents", _SYSTEM, category=_CATEGORY)
+
+
+@assurance_menu_bp.route("/staff-gateway-checks", methods=["GET"])
+@token_required
+@staff_required
+def assurance_staff_gateway_checks():
+    """staff.gateway_checks"""
+    return feature_pending("staff.gateway_checks", _SYSTEM, category=_CATEGORY)
+
+
+@assurance_menu_bp.route("/staff-portfolios", methods=["GET"])
+@token_required
+@staff_required
+def assurance_staff_portfolios():
+    """staff.portfolios"""
+    return feature_pending("staff.portfolios", _SYSTEM, category=_CATEGORY)
 

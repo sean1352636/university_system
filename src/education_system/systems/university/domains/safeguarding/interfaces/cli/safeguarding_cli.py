@@ -2,9 +2,12 @@
 Safeguarding — interactive CLI.
 
 Wired to the service-layer managers in
-``student_affairs.safeguarding.services.*``, which read/write the central
-``student_records.db`` (table ``safeguarding_submissions`` and siblings) —
-the same database the Safeguarding GUI (``safeguarding.gui.app``) uses.
+``domains/safeguarding/application/services/*``, which read/write the
+classified safeguarding database
+``var/data/university/safeguarding/safeguarding_records.db`` (table
+``safeguarding_submissions`` and siblings; ``infrastructure/db._connect``) —
+the same database the Safeguarding GUI uses. Nothing of safeguarding's is
+kept in ``student_records.db`` (migration 3c5e7a9b1d4f moved the last rows).
 Anything created here is visible in the GUI and vice-versa.
 
 Covers the areas the GUI staff console exposes: case management (list /

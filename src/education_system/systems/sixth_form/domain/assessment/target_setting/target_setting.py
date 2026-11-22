@@ -27,12 +27,16 @@ The module derives an ``on_track`` flag and a status by comparing
 from __future__ import annotations
 
 import datetime as _dt
+import functools
 import logging
 import re
 import sqlite3
 from dataclasses import dataclass, field
 from typing import Any
 from education_system import paths
+from education_system.systems.sixth_form.domain.academics.qualifications import (
+    grade_scales,
+)
 from education_system.systems.sixth_form.domain.assessment.target_setting import (
     target_setting as data,
 )
@@ -71,10 +75,48 @@ YEAR_GROUPS: tuple[str, ...] = ("Year 12", "Year 13", "Mixed")
 
 _DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 
-# UCAS-style points for grade arithmetic.
+# UCAS-style points for grade arithmetic on the A-level scale. Kept
+# for callers that import it; grade maths now goes through
+# :func:`grade_points`, which uses the scale of the learner's own
+# qualification (BTEC, T Level, GCSE resit ...).
 _POINTS: dict[str, int] = {
     "A*": 6, "A": 5, "B": 4, "C": 3, "D": 2, "E": 1, "U": 0,
 }
+
+
+@functools.lru_cache(maxsize=4096)
+def qualification_type_of(student_id: str | None,
+                          subject: str | None) -> str | None:
+    """Qualification type the student takes *subject* as (None = A level)."""
+    try:
+        from education_system.systems.sixth_form.domain.academics.qualifications import (
+            learning_aims,
+        )
+        return learning_aims.qualification_type_for(student_id, subject)
+    except Exception:
+        logger.debug("qualification type lookup failed", exc_info=True)
+        return None
+
+
+def grade_points(grade: str | None,
+                 qualification_type: str | None = None) -> int | None:
+    """Ordinal points on the qualification's scale, lowest grade = 0.
+
+    On the A-level scale this gives the same numbers as ``_POINTS``.
+    """
+    return grade_scales.grade_points(grade, qualification_type)
+
+
+def grades_for(student_id: str | None, subject: str | None) -> tuple[str, ...]:
+    """Grades (best first) a target for this student and subject may use."""
+    return grade_scales.scale_for(
+        qualification_type_of(student_id, subject)).grades
+
+
+def _grade_at(points: int, qualification_type: str | None) -> str | None:
+    grades = grade_scales.scale_for(qualification_type).grades
+    idx = len(grades) - 1 - points
+    return grades[idx] if 0 <= idx < len(grades) else None
 
 
 _SCHEMA = """
@@ -123,6 +165,48 @@ CREATE INDEX IF NOT EXISTS idx_tr_date    ON target_reviews(review_date);
 """
 
 
+# Academic target *actions* — the SMART steps ("complete weekly essays
+# on time") that progress reviews set. They live here, beside the grade
+# targets they serve, so there is one store for academic targets:
+# progress reviews write through to it and read back from it.
+ACTION_STATUSES: tuple[str, ...] = (
+    "Open", "On Track", "At Risk", "Met", "Missed",
+)
+DEFAULT_ACTION_STATUS: str = "Open"
+OPEN_ACTION_STATUSES: tuple[str, ...] = ("Open", "On Track", "At Risk")
+
+ACTION_SOURCES: tuple[str, ...] = ("Target Setting", "Progress Review")
+
+_ACTIONS_SCHEMA = """
+CREATE TABLE IF NOT EXISTS target_actions (
+    action_id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    student_id         TEXT NOT NULL,
+    target_id          INTEGER,
+    subject_name       TEXT,
+    description        TEXT NOT NULL,
+    measure            TEXT,
+    due_date           TEXT,
+    status             TEXT NOT NULL DEFAULT 'Open',
+    progress_note      TEXT,
+    closed_on          TEXT,
+    source             TEXT NOT NULL DEFAULT 'Target Setting',
+    progress_review_id INTEGER,
+    legacy_progress_target_id INTEGER UNIQUE,
+    created_at         TEXT DEFAULT (datetime('now')),
+    updated_at         TEXT DEFAULT (datetime('now')),
+    FOREIGN KEY (student_id) REFERENCES students(student_id)
+        ON DELETE CASCADE,
+    FOREIGN KEY (target_id) REFERENCES targets(target_id)
+        ON DELETE SET NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_ta_student ON target_actions(student_id);
+CREATE INDEX IF NOT EXISTS idx_ta_target  ON target_actions(target_id);
+CREATE INDEX IF NOT EXISTS idx_ta_status  ON target_actions(status);
+CREATE INDEX IF NOT EXISTS idx_ta_review  ON target_actions(progress_review_id);
+"""
+
+
 @dataclass
 class Target:
     target_id: int
@@ -144,20 +228,20 @@ class Target:
     updated_at: str
 
     @property
+    def qualification_type(self) -> str | None:
+        return qualification_type_of(self.student_id, self.subject_name)
+
+    @property
     def mte_points(self) -> int | None:
-        return _POINTS.get(self.mte_grade) if self.mte_grade else None
+        return grade_points(self.mte_grade, self.qualification_type)
 
     @property
     def current_points(self) -> int | None:
-        if not self.current_grade:
-            return None
-        return _POINTS.get(self.current_grade)
+        return grade_points(self.current_grade, self.qualification_type)
 
     @property
     def aspirational_points(self) -> int | None:
-        if not self.aspirational_grade:
-            return None
-        return _POINTS.get(self.aspirational_grade)
+        return grade_points(self.aspirational_grade, self.qualification_type)
 
     @property
     def points_vs_target(self) -> int | None:
@@ -230,9 +314,17 @@ def init_db() -> None:
     _students.init_db()
     with _connect() as conn:
         conn.executescript(_SCHEMA)
+        conn.executescript(_ACTIONS_SCHEMA)
     logger.debug("Target-setting schema ready at %s", DB_PATH)
 
     _DB_READY = True
+    # Academic targets set in progress reviews before the stores were
+    # unified are copied in once; re-running is a no-op (unique legacy id).
+    try:
+        migrate_progress_targets()
+    except Exception:
+        logger.exception("Progress-target migration failed; will retry "
+                         "on the next explicit sync")
 
 
 def _row_target(r: sqlite3.Row) -> Target:
@@ -294,17 +386,17 @@ def _validate_date(value: Any, label: str, *,
 
 
 def _validate_grade(value: Any, label: str, *,
-                     required: bool = False) -> str | None:
+                     required: bool = False,
+                     qualification_type: str | None = None) -> str | None:
     if value in (None, "") or (isinstance(value, str)
                                   and not value.strip()):
         if required:
             raise ValidationError(f"{label} is required")
         return None
-    s = str(value).strip()
-    if s not in A_LEVEL_GRADES:
-        raise ValidationError(
-            f"{label} must be one of: {', '.join(A_LEVEL_GRADES)}")
-    return s
+    try:
+        return grade_scales.validate_grade(str(value), qualification_type)
+    except ValueError as e:
+        raise ValidationError(f"{label}: {e}") from None
 
 
 def _validate_student(value: Any) -> str:
@@ -352,7 +444,8 @@ def _validate_baseline(value: Any) -> int | None:
 
 def _compute_status(mte: str | None, aspirational: str | None,
                      current: str | None,
-                     manual_status: str | None = None) -> str:
+                     manual_status: str | None = None,
+                     qualification_type: str | None = None) -> str:
     """Derive the on-track status from current vs MTE.
 
     Manual states ``Withdrawn`` and ``Met`` always take precedence —
@@ -368,11 +461,11 @@ def _compute_status(mte: str | None, aspirational: str | None,
         # (defaulting to Not Started) so manual flags survive a no-op
         # update.
         return manual_status or "Not Started"
-    mte_pts = _POINTS.get(mte)
-    cur_pts = _POINTS.get(current)
+    mte_pts = grade_points(mte, qualification_type)
+    cur_pts = grade_points(current, qualification_type)
     if mte_pts is None or cur_pts is None:
         return manual_status or "Not Started"
-    asp_pts = _POINTS.get(aspirational) if aspirational else None
+    asp_pts = grade_points(aspirational, qualification_type)
     if asp_pts is not None and cur_pts >= asp_pts:
         return "Above Target"
     if cur_pts >= mte_pts:
@@ -394,19 +487,22 @@ def _validate_target_payload(payload: dict[str, Any]
             f"{', '.join(YEAR_GROUPS)}")
     out["year_group"] = year or None
 
+    qtype = qualification_type_of(out["student_id"], out["subject_name"])
     out["mte_grade"] = _validate_grade(
         payload.get("mte_grade"), "Minimum target",
-        required=True)
+        required=True, qualification_type=qtype)
     out["aspirational_grade"] = _validate_grade(
-        payload.get("aspirational_grade"), "Aspirational target")
+        payload.get("aspirational_grade"), "Aspirational target",
+        qualification_type=qtype)
     out["current_grade"] = _validate_grade(
-        payload.get("current_grade"), "Current grade")
+        payload.get("current_grade"), "Current grade",
+        qualification_type=qtype)
 
     # Aspirational should not be lower than MTE on the points scale.
     if (out["aspirational_grade"]
             and out["mte_grade"]
-            and _POINTS[out["aspirational_grade"]]
-                < _POINTS[out["mte_grade"]]):
+            and grade_points(out["aspirational_grade"], qtype)
+                < grade_points(out["mte_grade"], qtype)):
         raise ValidationError(
             "Aspirational grade cannot be lower than minimum target")
 
@@ -428,7 +524,7 @@ def _validate_target_payload(payload: dict[str, Any]
     out["status"] = _compute_status(
         out["mte_grade"], out["aspirational_grade"],
         out["current_grade"],
-        manual_status or None)
+        manual_status or None, qtype)
 
     out["rationale"] = (payload.get("rationale")
                           or "").strip() or None
@@ -449,7 +545,8 @@ def _validate_review_payload(payload: dict[str, Any]
     except (TypeError, ValueError):
         raise ValidationError(
             "Target id must be a number") from None
-    if get_target(out["target_id"]) is None:
+    parent = get_target(out["target_id"])
+    if parent is None:
         raise ValidationError(
             f"No target #{out['target_id']}")
 
@@ -457,7 +554,8 @@ def _validate_review_payload(payload: dict[str, Any]
         payload.get("review_date"), "Review date",
         required=True)
     out["current_grade"] = _validate_grade(
-        payload.get("current_grade"), "Current grade")
+        payload.get("current_grade"), "Current grade",
+        qualification_type=parent.qualification_type)
 
     on_track = (payload.get("on_track") or "").strip()
     if on_track and on_track not in PROGRESS_TAGS:
@@ -578,10 +676,8 @@ def list_targets(
         args.append(today)
         args.extend(OPEN_STATUSES)
     if mte_grade:
-        if mte_grade not in A_LEVEL_GRADES:
-            raise ValidationError(
-                f"Grade must be one of: "
-                f"{', '.join(A_LEVEL_GRADES)}")
+        if mte_grade not in grade_scales.ALL_GRADES:
+            raise ValidationError(f"Unknown grade {mte_grade!r}")
         clauses.append("mte_grade = ?")
         args.append(mte_grade)
     where = ("WHERE " + " AND ".join(clauses)) if clauses else ""
@@ -867,16 +963,20 @@ def seed_from_baseline(
         student_id=student_id, primary_only=True)
     created: list[Target] = []
     for b in baselines:
-        if not (b.subject_name and b.baseline_grade
-                and b.baseline_grade in A_LEVEL_GRADES):
+        if not (b.subject_name and b.baseline_grade):
+            continue
+        qtype = qualification_type_of(student_id, b.subject_name)
+        mte_pts = grade_points(b.baseline_grade, qtype)
+        if mte_pts is None:
+            # Baseline isn't on this subject's grade scale.
             continue
         if get_target_for(student_id, b.subject_name) is not None:
             continue
-        # Bump the aspirational by ``plus_grades`` points.
-        mte_pts = _POINTS[b.baseline_grade]
-        asp_pts = min(_POINTS["A*"], mte_pts + plus_grades)
-        asp = next((g for g, p in _POINTS.items() if p == asp_pts),
-                     b.baseline_grade)
+        # Bump the aspirational by ``plus_grades`` points, capped at
+        # the top of the subject's scale.
+        top = len(grade_scales.scale_for(qtype).grades) - 1
+        asp = _grade_at(min(top, mte_pts + plus_grades), qtype) \
+            or b.baseline_grade
         t = create_target({
             "student_id":          student_id,
             "subject_name":        b.subject_name,
@@ -943,3 +1043,366 @@ def summary(*, upcoming_window_days: int = 14) -> Summary:
         overdue_review=overdue,
         upcoming_review=upcoming,
     )
+
+
+# ── Academic target actions (shared with progress reviews) ─────────
+
+@dataclass
+class TargetAction:
+    action_id: int
+    student_id: str
+    target_id: int | None
+    subject_name: str | None
+    description: str
+    measure: str | None
+    due_date: str | None
+    status: str
+    progress_note: str | None
+    closed_on: str | None
+    source: str
+    progress_review_id: int | None
+    legacy_progress_target_id: int | None
+    created_at: str
+    updated_at: str
+
+    @property
+    def is_open(self) -> bool:
+        return self.status in OPEN_ACTION_STATUSES
+
+    @property
+    def is_overdue(self) -> bool:
+        return (self.is_open and bool(self.due_date)
+                and self.due_date < _dt.date.today().isoformat())
+
+
+@dataclass
+class StudentAcademicTargets:
+    """Everything academic set for one student: the per-subject grade
+    targets and the action steps working towards them."""
+    student_id: str
+    grade_targets: list[Target] = field(default_factory=list)
+    actions: list[TargetAction] = field(default_factory=list)
+
+    @property
+    def open_actions(self) -> list[TargetAction]:
+        return [a for a in self.actions if a.is_open]
+
+
+def _row_action(r: sqlite3.Row) -> TargetAction:
+    return TargetAction(
+        action_id=r["action_id"], student_id=r["student_id"],
+        target_id=r["target_id"], subject_name=r["subject_name"],
+        description=r["description"], measure=r["measure"],
+        due_date=r["due_date"], status=r["status"],
+        progress_note=r["progress_note"], closed_on=r["closed_on"],
+        source=r["source"],
+        progress_review_id=r["progress_review_id"],
+        legacy_progress_target_id=r["legacy_progress_target_id"],
+        created_at=r["created_at"], updated_at=r["updated_at"],
+    )
+
+
+def _validate_action_payload(payload: dict[str, Any]) -> dict[str, Any]:
+    out: dict[str, Any] = {}
+    out["student_id"] = _validate_student(payload.get("student_id"))
+    subject = (payload.get("subject_name") or "").strip() or None
+    out["subject_name"] = subject
+    tid = payload.get("target_id")
+    if tid in (None, ""):
+        out["target_id"] = None
+    else:
+        try:
+            out["target_id"] = int(tid)
+        except (TypeError, ValueError):
+            raise ValidationError("Target id must be a number") from None
+        t = get_target(out["target_id"])
+        if t is None:
+            raise ValidationError(f"No target #{out['target_id']}")
+        if t.student_id != out["student_id"]:
+            raise ValidationError(
+                f"Target #{t.target_id} belongs to another student")
+        out["subject_name"] = out["subject_name"] or t.subject_name
+    # Link to the student's grade target for the subject when one exists.
+    if out["target_id"] is None and subject:
+        t = get_target_for(out["student_id"], subject)
+        if t is not None:
+            out["target_id"] = t.target_id
+    out["description"] = _require(payload.get("description"),
+                                  "Description").strip()
+    out["measure"] = (payload.get("measure") or "").strip() or None
+    out["due_date"] = _validate_date(payload.get("due_date"), "Due date")
+    status = (payload.get("status") or DEFAULT_ACTION_STATUS).strip()
+    if status not in ACTION_STATUSES:
+        raise ValidationError(
+            f"Status must be one of: {', '.join(ACTION_STATUSES)}")
+    out["status"] = status
+    out["progress_note"] = (payload.get("progress_note")
+                            or "").strip() or None
+    out["closed_on"] = _validate_date(payload.get("closed_on"),
+                                      "Closed on")
+    if status in ("Met", "Missed") and not out["closed_on"]:
+        out["closed_on"] = _dt.date.today().isoformat()
+    if status in OPEN_ACTION_STATUSES:
+        out["closed_on"] = None
+    source = (payload.get("source") or "Target Setting").strip()
+    if source not in ACTION_SOURCES:
+        raise ValidationError(
+            f"Source must be one of: {', '.join(ACTION_SOURCES)}")
+    out["source"] = source
+    rid = payload.get("progress_review_id")
+    out["progress_review_id"] = int(rid) if rid not in (None, "") else None
+    lid = payload.get("legacy_progress_target_id")
+    out["legacy_progress_target_id"] = (int(lid) if lid not in (None, "")
+                                        else None)
+    return out
+
+
+def create_action(payload: dict[str, Any]) -> TargetAction:
+    """Add an academic action step for a student."""
+    init_db()
+    p = _validate_action_payload(payload)
+    with _connect() as conn:
+        cur = conn.execute(
+            """INSERT INTO target_actions
+                   (student_id, target_id, subject_name, description,
+                    measure, due_date, status, progress_note, closed_on,
+                    source, progress_review_id,
+                    legacy_progress_target_id, created_at, updated_at)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+                       datetime('now'), datetime('now'))""",
+            (p["student_id"], p["target_id"], p["subject_name"],
+             p["description"], p["measure"], p["due_date"], p["status"],
+             p["progress_note"], p["closed_on"], p["source"],
+             p["progress_review_id"], p["legacy_progress_target_id"]))
+        conn.commit()
+        new_id = cur.lastrowid
+    out = get_action(new_id)
+    assert out is not None
+    logger.info("Created academic action #%d for %s (%s)",
+                new_id, p["student_id"], p["source"])
+    return out
+
+
+def get_action(action_id: int) -> TargetAction | None:
+    init_db()
+    with _connect() as conn:
+        r = conn.execute("SELECT * FROM target_actions WHERE action_id = ?",
+                         (action_id,)).fetchone()
+    return _row_action(r) if r else None
+
+
+def action_for_progress_target(progress_target_id: int
+                               ) -> TargetAction | None:
+    """The action a progress-review target is stored as, if any."""
+    init_db()
+    with _connect() as conn:
+        r = conn.execute(
+            "SELECT * FROM target_actions "
+            "WHERE legacy_progress_target_id = ?",
+            (int(progress_target_id),)).fetchone()
+    return _row_action(r) if r else None
+
+
+def list_actions(
+    *,
+    student_id: str | None = None,
+    target_id: int | None = None,
+    subject_name: str | None = None,
+    status: str | None = None,
+    source: str | None = None,
+    progress_review_id: int | None = None,
+    open_only: bool = False,
+    due_before: str | None = None,
+) -> list[TargetAction]:
+    init_db()
+    clauses: list[str] = []
+    args: list[Any] = []
+    if student_id:
+        clauses.append("student_id = ?")
+        args.append(student_id.strip())
+    if target_id is not None:
+        clauses.append("target_id = ?")
+        args.append(int(target_id))
+    if subject_name:
+        clauses.append("subject_name = ?")
+        args.append(subject_name.strip())
+    if status:
+        if status not in ACTION_STATUSES:
+            raise ValidationError(
+                f"Status must be one of: {', '.join(ACTION_STATUSES)}")
+        clauses.append("status = ?")
+        args.append(status)
+    if source:
+        clauses.append("source = ?")
+        args.append(source)
+    if progress_review_id is not None:
+        clauses.append("progress_review_id = ?")
+        args.append(int(progress_review_id))
+    if open_only:
+        ph = ",".join("?" * len(OPEN_ACTION_STATUSES))
+        clauses.append(f"status IN ({ph})")
+        args.extend(OPEN_ACTION_STATUSES)
+    if due_before:
+        clauses.append("due_date IS NOT NULL AND due_date <= ?")
+        args.append(_validate_date(due_before, "Due before"))
+    where = ("WHERE " + " AND ".join(clauses)) if clauses else ""
+    with _connect() as conn:
+        rows = conn.execute(
+            f"SELECT * FROM target_actions {where} "
+            "ORDER BY COALESCE(due_date, created_at), action_id",
+            args).fetchall()
+    return [_row_action(r) for r in rows]
+
+
+def update_action(action_id: int,
+                  payload: dict[str, Any]) -> TargetAction:
+    init_db()
+    existing = get_action(action_id)
+    if existing is None:
+        raise ValidationError(f"No academic action #{action_id}")
+    merged = {
+        "student_id":    existing.student_id,
+        "target_id":     payload.get("target_id", existing.target_id),
+        "subject_name":  payload.get("subject_name",
+                                     existing.subject_name),
+        "description":   payload.get("description", existing.description),
+        "measure":       payload.get("measure", existing.measure),
+        "due_date":      payload.get("due_date", existing.due_date),
+        "status":        payload.get("status", existing.status),
+        "progress_note": payload.get("progress_note",
+                                     existing.progress_note),
+        "closed_on":     payload.get("closed_on", existing.closed_on),
+        "source":        existing.source,
+        "progress_review_id": existing.progress_review_id,
+        "legacy_progress_target_id":
+            existing.legacy_progress_target_id,
+    }
+    new_subject = (merged["subject_name"] or "").strip() or None
+    if ("subject_name" in payload and "target_id" not in payload
+            and new_subject != existing.subject_name):
+        merged["target_id"] = None   # relink to the new subject's target
+    p = _validate_action_payload(merged)
+    with _connect() as conn:
+        conn.execute(
+            """UPDATE target_actions SET
+                   target_id=?, subject_name=?, description=?, measure=?,
+                   due_date=?, status=?, progress_note=?, closed_on=?,
+                   updated_at=datetime('now')
+               WHERE action_id=?""",
+            (p["target_id"], p["subject_name"], p["description"],
+             p["measure"], p["due_date"], p["status"],
+             p["progress_note"], p["closed_on"], action_id))
+        conn.commit()
+    out = get_action(action_id)
+    assert out is not None
+    # Keep the progress review's copy in step when this came from one.
+    if out.legacy_progress_target_id is not None:
+        _push_to_progress(out)
+    return out
+
+
+def delete_action(action_id: int) -> bool:
+    init_db()
+    with _connect() as conn:
+        cur = conn.execute("DELETE FROM target_actions WHERE action_id = ?",
+                           (action_id,))
+        conn.commit()
+    return bool(cur.rowcount)
+
+
+def _push_to_progress(action: TargetAction) -> None:
+    """Mirror an edit made here onto the progress review's row, so the
+    review shows the same status whichever screen changed it."""
+    from education_system.systems.sixth_form.domain.operations.reporting.progress import (
+        progress as _prog,
+    )
+    try:
+        with _prog._connect() as conn:
+            conn.execute(
+                """UPDATE progress_targets SET
+                       description=?, measure=?, due_date=?, status=?,
+                       progress_note=?, closed_on=?,
+                       updated_at=datetime('now')
+                   WHERE target_id=?""",
+                (action.description, action.measure, action.due_date,
+                 action.status, action.progress_note, action.closed_on,
+                 action.legacy_progress_target_id))
+            conn.commit()
+    except sqlite3.Error:
+        logger.exception("Could not mirror action #%d to progress target "
+                         "#%s", action.action_id,
+                         action.legacy_progress_target_id)
+
+
+def student_academic_targets(student_id: str) -> StudentAcademicTargets:
+    """Grade targets + action steps for one student (what ILP and the
+    progress review show alongside their own records)."""
+    sid = (student_id or "").strip()
+    return StudentAcademicTargets(
+        student_id=sid,
+        grade_targets=list_targets(student_id=sid),
+        actions=list_actions(student_id=sid),
+    )
+
+
+@dataclass
+class MigrationResult:
+    copied: int = 0
+    already_present: int = 0
+    skipped: int = 0
+    errors: list[str] = field(default_factory=list)
+
+
+def migrate_progress_targets() -> MigrationResult:
+    """Copy Academic-area progress-review targets into ``target_actions``.
+
+    Idempotent: each progress target is copied at most once, keyed on
+    ``legacy_progress_target_id`` (a UNIQUE column). The original
+    ``progress_targets`` rows are left in place.
+    """
+    init_db()
+    result = MigrationResult()
+    from education_system.systems.sixth_form.domain.operations.reporting.progress import (
+        progress as _prog,
+    )
+    with _prog._connect() as pconn:
+        have = {r[0] for r in pconn.execute(
+            "SELECT name FROM sqlite_master WHERE type='table' "
+            "AND name IN ('progress_targets', 'progress_reviews')")}
+        if have != {"progress_targets", "progress_reviews"}:
+            return result
+        rows = pconn.execute(
+            """SELECT pt.*, pr.student_id AS student_id
+                 FROM progress_targets pt
+                 JOIN progress_reviews pr ON pr.review_id = pt.review_id
+                WHERE pt.area = 'Academic'""").fetchall()
+    with _connect() as conn:
+        for r in rows:
+            try:
+                cur = conn.execute(
+                    """INSERT OR IGNORE INTO target_actions
+                           (student_id, description, measure, due_date,
+                            status, progress_note, closed_on, source,
+                            progress_review_id, legacy_progress_target_id,
+                            created_at, updated_at)
+                       VALUES (?, ?, ?, ?, ?, ?, ?, 'Progress Review',
+                               ?, ?, ?, ?)""",
+                    (r["student_id"], r["description"], r["measure"],
+                     r["due_date"],
+                     r["status"] if r["status"] in ACTION_STATUSES
+                     else DEFAULT_ACTION_STATUS,
+                     r["progress_note"], r["closed_on"], r["review_id"],
+                     r["target_id"], r["created_at"], r["updated_at"]))
+            except sqlite3.IntegrityError as e:
+                result.skipped += 1
+                result.errors.append(f"progress target #{r['target_id']}: {e}")
+                continue
+            if cur.rowcount:
+                result.copied += 1
+            else:
+                result.already_present += 1
+        conn.commit()
+    if result.copied:
+        logger.info("Migrated %d progress target(s) into target_actions",
+                    result.copied)
+    return result

@@ -197,11 +197,22 @@ def subscribe_tk(
     CLI and headless tests. Anything calling this function already has a live
     widget, so Tk is necessarily available.
     """
+    import threading
     import tkinter as tk
+
+    from education_system.platform.delivery.gui.tk_threads import hold, ui
 
     pending: set[str] = set()
 
     def _wrapped(**payload: Any) -> None:
+        # publish() may run on a worker thread; Tk may only be touched from
+        # the main thread, so hand the scheduling over via tk_threads.ui().
+        if threading.current_thread() is threading.main_thread():
+            _schedule(payload)
+        else:
+            ui(widget, _schedule, payload)
+
+    def _schedule(payload: dict[str, Any]) -> None:
         try:
             if not widget.winfo_exists():
                 return
@@ -220,7 +231,14 @@ def subscribe_tk(
             # Widget disappeared between winfo_exists and after_idle
             pass
 
-    unsub = subscribe(event, _wrapped)
+    _unsub_bus = subscribe(event, _wrapped)
+    # Keep the tk_threads pump running while subscribed, so publishes from
+    # worker threads are delivered.
+    _release_pump = hold(widget)
+
+    def unsub() -> None:
+        _unsub_bus()
+        _release_pump()
 
     def _on_destroy(_event: "tk.Event") -> None:
         if _event.widget is widget:

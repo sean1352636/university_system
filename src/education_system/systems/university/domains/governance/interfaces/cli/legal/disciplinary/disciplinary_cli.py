@@ -160,7 +160,7 @@ def _view_incident() -> None:
               f" — {(a[6] or '')[:50]}")
     case_id = db.find_misconduct_case_for_record(iid)
     if case_id:
-        print(f"\n  Linked misconduct case: {case_id}")
+        print(f"\n  Linked academic integrity case: {case_id}")
 
 
 def _update_incident_status() -> None:
@@ -267,15 +267,15 @@ def _actions_menu(auth) -> None:
 def _list_misconduct() -> None:
     cases = _db().list_misconduct_cases()
     if not cases:
-        print("\nNo academic misconduct cases recorded yet.")
+        print("\nNo academic integrity cases recorded yet.")
         return
-    # (case_id, student_name, student_id, violation_type, status,
-    #  severity, date_filed, source_record_id)
-    print(f"\n{'Case ID':<24}{'Student':<20}{'Violation':<20}"
-          f"{'Status':<16}{'Severity':<10}From#")
+    # (case_id, student_name, student_id, case_type, stage,
+    #  severity, created_at, source_record_id)
+    print(f"\n{'Case':<24}{'Student':<20}{'Type':<20}"
+          f"{'Stage':<16}{'Severity':<10}From#")
     print("-" * 96)
     for c in cases:
-        print(f"{(c[0] or '')[:23]:<24}{(c[1] or '')[:19]:<20}"
+        print(f"{(c[0] or '')[:23]:<24}{(c[1] or c[2] or '')[:19]:<20}"
               f"{(c[3] or '')[:19]:<20}{(c[4] or '')[:15]:<16}"
               f"{(c[5] or '')[:9]:<10}{c[7] or '-'}")
 
@@ -292,7 +292,7 @@ def _escalate_incident(auth) -> None:
         return
     try:
         case_id = db.escalate_to_misconduct(iid, imposed_by=_current_username(auth))
-        print(f"\n✓ Escalated incident {iid} → misconduct case {case_id} "
+        print(f"\n✓ Escalated incident {iid} → academic integrity case {case_id} "
               "(incident marked 'Escalated').")
     except Exception as e:
         print(f"\n✗ {e}")
@@ -301,8 +301,8 @@ def _escalate_incident(auth) -> None:
 def _misconduct_menu(auth) -> None:
     while True:
         _header("Academic Misconduct")
-        print("[1] List misconduct cases")
-        print("[2] Escalate an incident to a misconduct case")
+        print("[1] List academic integrity cases")
+        print("[2] Escalate an incident to an academic integrity case")
         print("[0] Back")
         choice = input("\nChoice: ").strip()
         if choice == "1":

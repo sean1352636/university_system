@@ -13,7 +13,7 @@ from unittest.mock import Mock, MagicMock, patch, call
 from datetime import datetime
 
 # The module under test
-LMS_TAB_MOD = "education_system.systems.university.domains.academics.interfaces.gui.course_management_gui.core.lms_tab"
+LMS_TAB_MOD = "education_system.systems.university.domains.curriculum.interfaces.gui.course_management_gui.core.lms_tab"
 
 
 def _import_mixin():

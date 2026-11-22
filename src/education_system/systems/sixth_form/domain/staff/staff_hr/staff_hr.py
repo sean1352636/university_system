@@ -1,7 +1,7 @@
 """Staff HR data layer for Sixth Form System.
 
 Two tables:
-- `staff_hr_records`: one row per staff member (FK cascade on staff)
+- `staff_hr_records`: one row per staff member (kept after they leave)
   with employment status, salary scale, DBS / right-to-work /
   safeguarding training expiry tracking, performance review
   scheduling and FTE working pattern.
@@ -19,6 +19,7 @@ from contextlib import contextmanager
 from dataclasses import dataclass, field
 from typing import Any, Iterator
 from education_system import paths as _paths
+from education_system.systems.sixth_form.infrastructure import soft_delete as _soft
 
 logger = logging.getLogger(__name__)
 
@@ -111,6 +112,10 @@ class HRRecord:
     notes: str | None
     created_on: str
     updated_on: str
+    #: Archive (soft delete) — set by delete_*, cleared by restore_*.
+    archived_at: str | None = None
+    archived_by: str | None = None
+    archive_reason: str | None = None
 
     @property
     def is_active(self) -> bool:
@@ -201,10 +206,11 @@ def _connect() -> Iterator[sqlite3.Connection]:
         conn.close()
 
 
-def init_db() -> None:
-    with _connect() as conn:
-        conn.execute("""
-            CREATE TABLE IF NOT EXISTS staff_hr_records (
+# No foreign key to ``staff``: HR records and events are employment
+# records kept after someone leaves (and after a staff row is removed),
+# like the DBS register. They used to cascade-delete with the staff row.
+_RECORDS_DDL = """
+            CREATE TABLE IF NOT EXISTS {name} (
                 record_id INTEGER PRIMARY KEY AUTOINCREMENT,
                 staff_id TEXT NOT NULL UNIQUE,
                 employment_status TEXT NOT NULL,
@@ -231,13 +237,12 @@ def init_db() -> None:
                 union_member TEXT,
                 notes TEXT,
                 created_on TEXT NOT NULL,
-                updated_on TEXT NOT NULL,
-                FOREIGN KEY(staff_id) REFERENCES staff(staff_id)
-                  ON DELETE CASCADE
+                updated_on TEXT NOT NULL
             )
-        """)
-        conn.execute("""
-            CREATE TABLE IF NOT EXISTS staff_hr_events (
+        """
+
+_EVENTS_DDL = """
+            CREATE TABLE IF NOT EXISTS {name} (
                 event_id INTEGER PRIMARY KEY AUTOINCREMENT,
                 staff_id TEXT NOT NULL,
                 event_type TEXT NOT NULL,
@@ -251,11 +256,33 @@ def init_db() -> None:
                 approved_by TEXT,
                 approved_on TEXT,
                 created_on TEXT NOT NULL,
-                updated_on TEXT NOT NULL,
-                FOREIGN KEY(staff_id) REFERENCES staff(staff_id)
-                  ON DELETE CASCADE
+                updated_on TEXT NOT NULL
             )
-        """)
+        """
+
+_RETENTION_CHECKED = False
+
+
+def init_db() -> None:
+    global _RETENTION_CHECKED
+    with _connect() as conn:
+        conn.execute(_RECORDS_DDL.format(name="staff_hr_records"))
+        conn.execute(_EVENTS_DDL.format(name="staff_hr_events"))
+    if not _RETENTION_CHECKED:
+        # One-off rebuild of tables created with the cascade (backed up
+        # first); a no-op once the cascade is gone.
+        from education_system.systems.sixth_form.domain.safeguarding import (
+            _retention,
+        )
+        for table, ddl in (("staff_hr_records", _RECORDS_DDL),
+                           ("staff_hr_events", _EVENTS_DDL)):
+            _retention.rebuild_table(_paths.SIXTH_FORM_STAFF_HR_DB, table,
+                                     ddl, label="hr_retention")
+        # Archive columns after the rebuild (which copies only the DDL's
+        # columns), once per process.
+        with _connect() as conn:
+            _soft.ensure_columns(conn, "staff_hr_records")
+        _RETENTION_CHECKED = True
 
 
 def _check_date(label: str, value: str | None) -> None:
@@ -412,6 +439,9 @@ def _row_record(r: sqlite3.Row) -> HRRecord:
         notes=r["notes"],
         created_on=r["created_on"],
         updated_on=r["updated_on"],
+        archived_at=r["archived_at"] if "archived_at" in r.keys() else None,
+        archived_by=r["archived_by"] if "archived_by" in r.keys() else None,
+        archive_reason=r["archive_reason"] if "archive_reason" in r.keys() else None,
     )
 
 
@@ -495,13 +525,36 @@ def update_record(record_id: int,
     return get_record(record_id)
 
 
-def delete_record(record_id: int) -> bool:
+def delete_record(record_id: int, *, reason: str | None = None) -> bool:
+    """Archive the staff HR record (a soft delete: UK retention rules expect it to
+    be kept). It drops out of :func:`list_records` unless
+    ``include_archived=True``, keeps who/when/why, and can be brought
+    back with :func:`restore_record`. Nothing is
+    hard-deleted. Returns False if unknown or already archived."""
     init_db()
     with _connect() as conn:
-        cur = conn.execute(
-            "DELETE FROM staff_hr_records WHERE record_id=?",
-            (record_id,))
-        return cur.rowcount > 0
+        ok = _soft.archive(conn, "staff_hr_records", "record_id", record_id,
+                           by=_archive_actor(), reason=reason)
+    return ok
+
+
+def restore_record(record_id: int) -> bool:
+    """Undo :func:`delete_record` (archive)."""
+    init_db()
+    with _connect() as conn:
+        ok = _soft.restore(conn, "staff_hr_records", "record_id", record_id)
+    return ok
+
+
+def _archive_actor() -> str | None:
+    """Username recorded on archive (the signed-in principal)."""
+    try:
+        from education_system.systems.sixth_form.domain.governance.user_management import (
+            access,
+        )
+        return access.current().username or None
+    except Exception:
+        return None
 
 
 def get_record(record_id: int) -> HRRecord | None:
@@ -523,6 +576,7 @@ def get_record_for_staff(staff_id: str) -> HRRecord | None:
 
 
 def list_records(*,
+                      include_archived: bool = False,
                       employment_status: str | None = None,
                       contract_type: str | None = None,
                       salary_scale: str | None = None,
@@ -535,6 +589,8 @@ def list_records(*,
                       ) -> list[HRRecord]:
     init_db()
     sql = "SELECT * FROM staff_hr_records WHERE 1=1"
+    if not include_archived:
+        sql += " AND archived_at IS NULL"
     params: list[Any] = []
     if employment_status:
         sql += " AND employment_status=?"

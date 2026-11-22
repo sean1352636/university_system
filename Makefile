@@ -55,11 +55,11 @@ run-gui: ## Run GUI mode
 run-api: ## Run unified API server
 	$(PYTHON) -m education_system.platform.delivery.api.unified_server
 
-portal: ## Run self-service web portal
-	$(PYTHON) -m education_system --portal
+portal: ## Open the web UI in a browser (starts the API if needed)
+	$(PYTHON) -m education_system --web
 
-seed: ## Seed databases with demo data
-	$(PYTHON) -m education_system --seed
+seed: ## Seed demo students: make seed N=50 (asks which system)
+	$(PYTHON) -m education_system --seed $(or $(N),50)
 
 # ==========================================
 # Testing
@@ -123,8 +123,8 @@ coverage-university-core: ## Enforce coverage for modernised university core (fa
 		--cov=$(SRC)/systems/university/domains/admissions/domain/services/admissions_lifecycle.py \
 		--cov=$(SRC)/systems/university/domains/learners/domain/student_lifecycle.py \
 		--cov=$(SRC)/systems/university/domains/assessment/domain/boards \
-		--cov=$(SRC)/systems/university/domains/academics/domain/programme_governance \
-		--cov=$(SRC)/systems/university/domains/academics/domain/research/pgr \
+		--cov=$(SRC)/systems/university/domains/curriculum/domain/programme_governance \
+		--cov=$(SRC)/systems/university/domains/research/domain/research/pgr \
 		--cov=$(SRC)/systems/university/services/events \
 		--cov=$(SRC)/systems/university/services/operations.py \
 		--cov-report=term-missing --cov-fail-under=60 --timeout=60 -n 0

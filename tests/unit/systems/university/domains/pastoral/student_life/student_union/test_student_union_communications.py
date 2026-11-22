@@ -7,10 +7,10 @@ import pytest
 from education_system.systems.university.infrastructure.database.db import sqlite3
 from unittest.mock import Mock, patch, MagicMock
 
-from education_system.systems.university.domains.pastoral.domain.student_life.student_union.services import communications
+from education_system.systems.university.domains.student_life.domain.student_life.student_union.services import communications
 
 # Module path constant for patching
-_MOD = 'education_system.systems.university.domains.pastoral.domain.student_life.student_union.services.communications'
+_MOD = 'education_system.systems.university.domains.student_life.domain.student_life.student_union.services.communications'
 _EMAIL = 'education_system.systems.university.infrastructure.email'
 
 

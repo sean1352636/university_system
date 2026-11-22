@@ -6,7 +6,9 @@ from education_system.systems.sixth_form.interfaces.gui._ui import grab_when_vie
 import datetime as _dt
 import logging
 import tkinter as tk
-from tkinter import messagebox, ttk
+from tkinter import ttk
+from education_system.systems.sixth_form.interfaces.gui._sidebar import SidebarBook
+from education_system.platform.delivery.gui.parented_dialogs import messagebox
 from typing import Callable
 from education_system.platform import branding
 from education_system.systems.sixth_form.domain.assessment.target_setting import (
@@ -40,12 +42,13 @@ def open_target_setting_window(parent=None) -> None:
     win.geometry(WIN_GEOMETRY)
     win.minsize(*WIN_MINSIZE)
 
-    nb = ttk.Notebook(win)
+    nb = SidebarBook(win)
     nb.pack(fill="both", expand=True, padx=10, pady=10)
 
     TargetsTab(nb)
     SeedTab(nb)
     SummaryTab(nb)
+    AcademicActionsTab(nb)
 
 
 def _today() -> str:
@@ -678,8 +681,10 @@ class SetCurrentDialog:
             row=0, column=0, columnspan=2, sticky="w", pady=(0, 8))
         ttk.Label(form, text="Current grade:").grid(row=1, column=0,
                                                        sticky="e", pady=4)
-        self.cb = ttk.Combobox(form, values=("",) + A_LEVEL_GRADES,
-                                  state="readonly", width=10)
+        self.cb = ttk.Combobox(
+            form, values=("",) + data.grades_for(existing.student_id,
+                                                existing.subject_name),
+            state="readonly", width=14)
         self.cb.set(existing.current_grade or "")
         self.cb.grid(row=1, column=1, sticky="w", padx=6)
         bar = ttk.Frame(form)
@@ -722,8 +727,9 @@ class AddReviewDialog:
         ttk.Label(form, text="Current grade:").grid(row=1, column=0,
                                                        sticky="e", pady=4)
         self.grade_cb = ttk.Combobox(
-            form, values=("",) + A_LEVEL_GRADES,
-            state="readonly", width=10)
+            form, values=("",) + data.grades_for(target.student_id,
+                                                target.subject_name),
+            state="readonly", width=14)
         self.grade_cb.set(self.target.current_grade or "")
         self.grade_cb.grid(row=1, column=1, sticky="w", padx=6)
 
@@ -835,16 +841,19 @@ class TargetDialog:
         r += 1
         ttk.Label(form, text="MTE:").grid(row=r, column=0,
                                              sticky="e", pady=3)
-        self.mte_cb = ttk.Combobox(form, values=A_LEVEL_GRADES,
-                                      state="readonly", width=6)
+        grades = (data.grades_for(self.existing.student_id,
+                                  self.existing.subject_name)
+                  if self.existing else A_LEVEL_GRADES)
+        self.mte_cb = ttk.Combobox(form, values=grades,
+                                      state="readonly", width=14)
         if self.existing:
             self.mte_cb.set(self.existing.mte_grade)
         self.mte_cb.grid(row=r, column=1, sticky="w", padx=6)
         ttk.Label(form, text="Aspirational:").grid(row=r, column=2,
                                                       sticky="e", pady=3)
         self.asp_cb = ttk.Combobox(
-            form, values=("",) + A_LEVEL_GRADES,
-            state="readonly", width=6)
+            form, values=("",) + grades,
+            state="readonly", width=14)
         if self.existing and self.existing.aspirational_grade:
             self.asp_cb.set(self.existing.aspirational_grade)
         self.asp_cb.grid(row=r, column=3, sticky="w", padx=6)
@@ -853,11 +862,18 @@ class TargetDialog:
         ttk.Label(form, text="Current:").grid(row=r, column=0,
                                                  sticky="e", pady=3)
         self.cur_cb = ttk.Combobox(
-            form, values=("",) + A_LEVEL_GRADES,
-            state="readonly", width=6)
+            form, values=("",) + grades,
+            state="readonly", width=14)
         if self.existing and self.existing.current_grade:
             self.cur_cb.set(self.existing.current_grade)
         self.cur_cb.grid(row=r, column=1, sticky="w", padx=6)
+        if not self.existing:
+            # A new target's grade scale follows the subject the student
+            # takes (A level, BTEC, T Level, GCSE resit ...).
+            for cb in (getattr(self, "student_cb", None), self.subject_cb):
+                if cb is not None:
+                    cb.bind("<<ComboboxSelected>>",
+                            lambda _e: self._refresh_grade_scale(), add="+")
         ttk.Label(form, text="Baseline id:").grid(row=r, column=2,
                                                      sticky="e", pady=3)
         self.baseline_e = ttk.Entry(form, width=8)
@@ -938,6 +954,19 @@ class TargetDialog:
         ttk.Button(bar, text="Cancel",
                     command=self.win.destroy).pack(side="left", padx=8)
 
+    def _refresh_grade_scale(self) -> None:
+        idx = self.student_cb.current() if self.student_cb is not None else -1
+        sid = (self._student_ids[idx] if idx >= 0
+               else getattr(self, "_student_id", None))
+        subject = self.subject_cb.get().strip() if self.subject_cb else ""
+        grades = data.grades_for(sid, subject or None)
+        self.mte_cb.configure(values=grades)
+        self.asp_cb.configure(values=("",) + grades)
+        self.cur_cb.configure(values=("",) + grades)
+        for cb in (self.mte_cb, self.asp_cb, self.cur_cb):
+            if cb.get() and cb.get() not in grades:
+                cb.set("")
+
     def _collect(self) -> dict:
         if self.existing:
             sid = self._student_id
@@ -979,6 +1008,244 @@ class TargetDialog:
                 data.create_target(payload)
         except (ValidationError, Exception) as e:
             messagebox.showerror("Save failed", str(e))
+            return
+        self.win.destroy()
+        self.on_save()
+
+
+# ══ Academic actions tab ══════════════════════════════════════════
+#
+# The SMART steps towards each student's grade targets. Progress
+# reviews write their Academic targets here, so this is the one list of
+# academic targets; an edit here shows in the review too.
+
+class AcademicActionsTab:
+    def __init__(self, nb: ttk.Notebook) -> None:
+        self.frame = ttk.Frame(nb)
+        nb.add(self.frame, text="Academic Actions")
+        self._build()
+        self.refresh()
+
+    def _build(self) -> None:
+        bar = ttk.Frame(self.frame)
+        bar.pack(fill="x", padx=8, pady=(8, 4))
+        ttk.Label(bar, text="Student id:").pack(side="left")
+        self.student_var = tk.StringVar()
+        ttk.Entry(bar, textvariable=self.student_var,
+                  width=14).pack(side="left", padx=(4, 10))
+        ttk.Label(bar, text="Status:").pack(side="left")
+        self.status_var = tk.StringVar(value="(any)")
+        ttk.Combobox(bar, textvariable=self.status_var, state="readonly",
+                     values=["(any)", *data.ACTION_STATUSES],
+                     width=12).pack(side="left", padx=(4, 10))
+        self.open_var = tk.BooleanVar(value=False)
+        ttk.Checkbutton(bar, text="Open only",
+                        variable=self.open_var).pack(side="left")
+        ttk.Button(bar, text="Filter",
+                   command=self.refresh).pack(side="left", padx=6)
+
+        actions = ttk.Frame(self.frame)
+        actions.pack(fill="x", padx=8, pady=(0, 4))
+        ttk.Button(actions, text="New Action",
+                   command=self._new).pack(side="left")
+        ttk.Button(actions, text="Edit",
+                   command=self._edit).pack(side="left", padx=4)
+        for st in ("On Track", "At Risk", "Met", "Missed"):
+            ttk.Button(actions, text=f"Mark {st}",
+                       command=lambda s=st: self._set_status(s)
+                       ).pack(side="left", padx=2)
+        ttk.Button(actions, text="Delete",
+                   command=self._delete).pack(side="left", padx=4)
+        ttk.Button(actions, text="Sync from Progress Reviews",
+                   command=self._sync).pack(side="right")
+
+        self.count_var = tk.StringVar()
+        ttk.Label(self.frame, textvariable=self.count_var,
+                  foreground="#555").pack(anchor="w", padx=8)
+
+        table = ttk.Frame(self.frame)
+        table.pack(fill="both", expand=True, padx=8, pady=(0, 8))
+        cols = ("id", "student", "subject", "description", "due",
+                "status", "source")
+        heads = {"id": "ID", "student": "Student", "subject": "Subject",
+                 "description": "Action", "due": "Due",
+                 "status": "Status", "source": "Source"}
+        widths = {"id": 50, "student": 180, "subject": 150,
+                  "description": 420, "due": 100, "status": 100,
+                  "source": 130}
+        self.tree = ttk.Treeview(table, columns=cols, show="headings")
+        for c in cols:
+            self.tree.heading(c, text=heads[c])
+            self.tree.column(c, width=widths[c], anchor="w")
+        sb = ttk.Scrollbar(table, orient="vertical",
+                           command=self.tree.yview)
+        self.tree.configure(yscrollcommand=sb.set)
+        sb.pack(side="right", fill="y")
+        self.tree.pack(fill="both", expand=True)
+        self.tree.bind("<Double-1>", lambda _e: self._edit())
+
+    def refresh(self) -> None:
+        status = self.status_var.get()
+        try:
+            rows = data.list_actions(
+                student_id=self.student_var.get().strip() or None,
+                status=None if status == "(any)" else status,
+                open_only=self.open_var.get())
+        except ValidationError as e:
+            messagebox.showerror("Academic actions", str(e),
+                                 parent=self.frame)
+            return
+        names = _name_lookup()
+        self.tree.delete(*self.tree.get_children())
+        for a in rows:
+            self.tree.insert("", "end", iid=str(a.action_id), values=(
+                a.action_id,
+                f"{a.student_id} — {names.get(a.student_id, '?')}",
+                a.subject_name or "—", a.description,
+                a.due_date or "—",
+                a.status + (" (overdue)" if a.is_overdue else ""),
+                a.source))
+        self.count_var.set(f"{len(rows)} action(s)")
+
+    def _selected(self) -> int | None:
+        sel = self.tree.selection()
+        if not sel:
+            messagebox.showinfo("Academic actions",
+                                "Select an action first.",
+                                parent=self.frame)
+            return None
+        return int(sel[0])
+
+    def _new(self) -> None:
+        ActionDialog(self.frame, existing=None, on_save=self.refresh)
+
+    def _edit(self) -> None:
+        aid = self._selected()
+        if aid is None:
+            return
+        a = data.get_action(aid)
+        if a is not None:
+            ActionDialog(self.frame, existing=a, on_save=self.refresh)
+
+    def _set_status(self, status: str) -> None:
+        aid = self._selected()
+        if aid is None:
+            return
+        try:
+            data.update_action(aid, {"status": status})
+        except ValidationError as e:
+            messagebox.showerror("Academic actions", str(e),
+                                 parent=self.frame)
+            return
+        self.refresh()
+
+    def _delete(self) -> None:
+        aid = self._selected()
+        if aid is None:
+            return
+        a = data.get_action(aid)
+        if a is None:
+            return
+        if a.legacy_progress_target_id is not None:
+            messagebox.showinfo(
+                "Academic actions",
+                "This action was set in a progress review — delete it "
+                "from the review's targets so both stay in step.",
+                parent=self.frame)
+            return
+        if messagebox.askyesno("Delete action",
+                               f"Delete action #{aid}?",
+                               parent=self.frame):
+            data.delete_action(aid)
+            self.refresh()
+
+    def _sync(self) -> None:
+        res = data.migrate_progress_targets()
+        messagebox.showinfo(
+            "Sync from progress reviews",
+            f"Copied {res.copied}, already present {res.already_present}, "
+            f"skipped {res.skipped}."
+            + ("\n\n" + "\n".join(res.errors[:10]) if res.errors else ""),
+            parent=self.frame)
+        self.refresh()
+
+
+class ActionDialog:
+    def __init__(self, parent: tk.Misc, *, existing,
+                 on_save: Callable[[], None]) -> None:
+        self.existing = existing
+        self.on_save = on_save
+        self.win = tk.Toplevel(parent)
+        self.win.title("Edit Academic Action" if existing
+                       else "New Academic Action")
+        self.win.transient(parent)
+        grab_when_viewable(self.win)
+        self._build()
+
+    def _build(self) -> None:
+        e = self.existing
+        frm = ttk.Frame(self.win, padding=12)
+        frm.pack(fill="both", expand=True)
+        self.vars: dict[str, tk.StringVar] = {}
+
+        def row(r: int, label: str, key: str, value: str = "", *,
+                values: list[str] | None = None,
+                readonly: bool = False) -> None:
+            ttk.Label(frm, text=label).grid(row=r, column=0, sticky="w",
+                                            pady=3)
+            var = tk.StringVar(value=value)
+            self.vars[key] = var
+            if values is not None:
+                w = ttk.Combobox(frm, textvariable=var, values=values,
+                                 width=48,
+                                 state="readonly" if readonly else "normal")
+            else:
+                w = ttk.Entry(frm, textvariable=var, width=50)
+                if readonly:
+                    w.configure(state="readonly")
+            w.grid(row=r, column=1, sticky="we", pady=3)
+
+        self._students = _student_options()
+        labels = [lbl for _sid, lbl in self._students]
+        current = ""
+        if e is not None:
+            current = next((lbl for sid, lbl in self._students
+                            if sid == e.student_id), e.student_id)
+        row(0, "Student", "student", current, values=labels,
+            readonly=e is not None)
+        row(1, "Subject", "subject_name",
+            (e.subject_name or "") if e else "",
+            values=_subject_options())
+        row(2, "Action", "description", e.description if e else "")
+        row(3, "Measure", "measure", (e.measure or "") if e else "")
+        row(4, "Due (YYYY-MM-DD)", "due_date",
+            (e.due_date or "") if e else "")
+        row(5, "Status", "status",
+            e.status if e else data.DEFAULT_ACTION_STATUS,
+            values=list(data.ACTION_STATUSES), readonly=True)
+        row(6, "Progress note", "progress_note",
+            (e.progress_note or "") if e else "")
+        frm.columnconfigure(1, weight=1)
+
+        bar = ttk.Frame(self.win, padding=(12, 0, 12, 12))
+        bar.pack(fill="x")
+        ttk.Button(bar, text="Save", command=self._save).pack(side="right")
+        ttk.Button(bar, text="Cancel",
+                   command=self.win.destroy).pack(side="right", padx=4)
+
+    def _save(self) -> None:
+        payload = {k: v.get() for k, v in self.vars.items()
+                   if k != "student"}
+        try:
+            if self.existing is None:
+                label = self.vars["student"].get()
+                sid = next((s for s, lbl in self._students if lbl == label),
+                           label.split(" — ")[0].strip())
+                data.create_action({**payload, "student_id": sid})
+            else:
+                data.update_action(self.existing.action_id, payload)
+        except ValidationError as e:
+            messagebox.showerror("Academic action", str(e), parent=self.win)
             return
         self.win.destroy()
         self.on_save()

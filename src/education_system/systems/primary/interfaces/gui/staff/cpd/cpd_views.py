@@ -6,7 +6,6 @@ import datetime as _dt
 import logging
 import tkinter as tk
 from tkinter import messagebox, ttk
-from education_system.platform import branding
 from education_system.systems.primary.domain.staff.cpd import (
     cpd as data,
 )
@@ -26,6 +25,7 @@ from education_system.systems.primary.domain.staff.cpd.cpd import (
 from education_system.systems.primary.domain.staff import (
     staff as staff_data,
 )
+from education_system.systems.primary.interfaces.gui import kit
 
 logger = logging.getLogger(__name__)
 
@@ -53,14 +53,16 @@ _REC_TAGS = {
 
 def open_cpd_window(parent=None) -> None:
     data.init_db()
-    master = getattr(parent, "root", parent)
-    win = tk.Toplevel(master) if master is not None else tk.Tk()
-    win.title(f"CPD — {branding.SYSTEM_NAME}")
-    win.geometry(WIN_GEOMETRY)
-    win.minsize(*WIN_MINSIZE)
+    host = parent if parent is not None else tk.Tk()
+    kit.show_page(host, "CPD", lambda page: _draw_cpd(page, host))
 
-    nb = ttk.Notebook(win)
-    nb.pack(fill="both", expand=True, padx=10, pady=10)
+
+def _draw_cpd(parent, host) -> None:
+    kit.page_heading(parent, "CPD",
+                     "Professional development activities, staff bookings, "
+                     "attendance, evaluations and certificates.")
+    nb = ttk.Notebook(parent)
+    nb.pack(fill="both", expand=True)
 
     ActivitiesTab(nb)
     RecordsTab(nb)
@@ -75,6 +77,17 @@ def _staff_options() -> list[tuple[str, str]]:
              f"{getattr(s, 'first_name', '')} "
              f"{getattr(s, 'last_name', '')}".strip())
             for s in rows]
+
+
+def _staff_names() -> list[str]:
+    """Current staff names, for name fields that may also hold an
+    outside person (so the drop-down stays typeable)."""
+    try:
+        rows = staff_data.list_staff(active_only=True)
+    except Exception:  # noqa: BLE001 - an empty list beats a broken form
+        logger.exception("staff names for CPD form failed")
+        return []
+    return sorted({s.full_name for s in rows})
 
 
 def _activity_options() -> list[tuple[int | None, str]]:
@@ -272,8 +285,9 @@ class RecordsTab:
     def _build(self) -> None:
         bar = ttk.Frame(self.frame)
         bar.pack(fill="x", padx=8, pady=(8, 4))
-        ttk.Label(bar, text="Staff id:").pack(side="left")
-        self.f_staff = ttk.Entry(bar, width=12)
+        ttk.Label(bar, text="Staff:").pack(side="left")
+        self.f_staff = kit.StaffPicker(bar, active_only=False, width=30)
+        self.f_staff.bind_change(lambda _v: self.refresh())
         self.f_staff.pack(side="left", padx=(2, 8))
         ttk.Label(bar, text="Status:").pack(side="left")
         self.f_status = ttk.Combobox(
@@ -517,7 +531,7 @@ class ActivityEditor:
         self.win = tk.Toplevel(parent)
         self.win.title(f"Edit activity #{activity.activity_id}"
                           if activity else "New activity")
-        self.win.geometry("820x780")
+        self.win.geometry("820x700")
         self.win.transient(parent); self.win.after_idle(self.win.grab_set)
         self._build()
         if activity:
@@ -525,13 +539,20 @@ class ActivityEditor:
         self.win.wait_window()
 
     def _build(self) -> None:
-        body = ttk.Frame(self.win)
-        body.pack(fill="both", expand=True, padx=12, pady=10)
+        body, footer = kit.scrolled_form(self.win)
         body.grid_columnconfigure(1, weight=1)
         body.grid_columnconfigure(3, weight=1)
         self.vars: dict[str, tk.Variable] = {}
         self.texts: dict[str, tk.Text] = {}
         self.bools: dict[str, tk.BooleanVar] = {}
+
+        def field(row, col, label, key, make):
+            ttk.Label(body, text=label).grid(
+                row=row, column=col, sticky="w", padx=4, pady=2)
+            v = tk.StringVar()
+            self.vars[key] = v
+            make(v).grid(row=row, column=col + 1, sticky="w",
+                         padx=4, pady=2)
 
         def entry(row, col, label, key, width=22):
             ttk.Label(body, text=label).grid(
@@ -553,14 +574,22 @@ class ActivityEditor:
         entry(0, 0, "Title*", "title", width=48)
         entry(1, 0, "Provider", "provider")
         combo(1, 2, "Type*", "activity_type", ACTIVITY_TYPES)
-        entry(2, 0, "Date*", "activity_date")
-        entry(2, 2, "End date", "end_date")
-        entry(3, 0, "Hours", "hours")
-        entry(3, 2, "Cost (£)", "cost")
+        field(2, 0, "Date*", "activity_date",
+              lambda v: kit.DateField(body, v))
+        field(2, 2, "End date", "end_date",
+              lambda v: kit.DateField(body, v))
+        field(3, 0, "Hours", "hours",
+              lambda v: kit.NumberField(body, v, to=999, increment=0.5))
+        field(3, 2, "Cost (£)", "cost",
+              lambda v: kit.NumberField(body, v, to=99999,
+                                        increment=0.01))
         entry(4, 0, "Accreditor", "accreditor")
         entry(4, 2, "Location", "location")
-        entry(5, 0, "Capacity", "capacity")
-        entry(5, 2, "Organiser", "organiser")
+        field(5, 0, "Capacity", "capacity",
+              lambda v: kit.NumberField(body, v, to=999))
+        field(5, 2, "Organiser", "organiser",
+              lambda v: kit.ChoiceField(body, v, choices=_staff_names(),
+                                        blank=True, editable=True))
         combo(6, 0, "Status*", "status", ACTIVITY_STATUSES)
         self.bools["certificated"] = tk.BooleanVar()
         ttk.Checkbutton(body, text="Certificated",
@@ -581,11 +610,9 @@ class ActivityEditor:
             self.texts[key] = t
             row += 1
 
-        bar = ttk.Frame(self.win)
-        bar.pack(fill="x", padx=12, pady=(0, 10))
-        ttk.Button(bar, text="Save",
+        ttk.Button(footer, text="Save",
                     command=self._save).pack(side="right", padx=4)
-        ttk.Button(bar, text="Cancel",
+        ttk.Button(footer, text="Cancel",
                     command=self.win.destroy).pack(side="right")
 
         self.vars["activity_date"].set(
@@ -601,9 +628,9 @@ class ActivityEditor:
                      "location", "organiser", "status"):
             self.vars[key].set(getattr(a, key) or "")
         self.vars["hours"].set(
-            str(a.hours) if a.hours is not None else "")
+            f"{a.hours:g}" if a.hours is not None else "")
         self.vars["cost"].set(
-            str(a.cost) if a.cost is not None else "")
+            f"{a.cost:.2f}" if a.cost is not None else "")
         self.vars["capacity"].set(
             str(a.capacity)
             if a.capacity is not None else "")
@@ -641,7 +668,7 @@ class RecordEditor:
         self.win = tk.Toplevel(parent)
         self.win.title(f"Edit record #{record.record_id}"
                           if record else "New record")
-        self.win.geometry("820x720")
+        self.win.geometry("820x680")
         self.win.transient(parent); self.win.after_idle(self.win.grab_set)
         self._build()
         if record:
@@ -649,8 +676,7 @@ class RecordEditor:
         self.win.wait_window()
 
     def _build(self) -> None:
-        body = ttk.Frame(self.win)
-        body.pack(fill="both", expand=True, padx=12, pady=10)
+        body, footer = kit.scrolled_form(self.win)
         body.grid_columnconfigure(1, weight=1)
         body.grid_columnconfigure(3, weight=1)
         self.vars: dict[str, tk.Variable] = {}
@@ -659,13 +685,10 @@ class RecordEditor:
 
         ttk.Label(body, text="Staff*").grid(
             row=0, column=0, sticky="w", padx=4, pady=2)
-        self.staff_combo = ttk.Combobox(body, state="readonly",
-                                            width=42)
-        sopts = _staff_options()
-        self._staff_opts = sopts
-        self.staff_combo["values"] = [lbl for _, lbl in sopts]
-        self.staff_combo.grid(row=0, column=1, sticky="ew",
-                                  padx=4, pady=2)
+        self.staff_var = tk.StringVar()
+        kit.StaffPicker(body, self.staff_var, active_only=False,
+                        width=36).grid(row=0, column=1, sticky="ew",
+                                       padx=4, pady=2)
 
         ttk.Label(body, text="Activity").grid(
             row=0, column=2, sticky="w", padx=4, pady=2)
@@ -677,6 +700,14 @@ class RecordEditor:
         self.act_combo.current(0)
         self.act_combo.grid(row=0, column=3, sticky="ew",
                                 padx=4, pady=2)
+
+        def field(row, col, label, key, make):
+            ttk.Label(body, text=label).grid(
+                row=row, column=col, sticky="w", padx=4, pady=2)
+            v = tk.StringVar()
+            self.vars[key] = v
+            make(v).grid(row=row, column=col + 1, sticky="w",
+                         padx=4, pady=2)
 
         def entry(row, col, label, key, width=22):
             ttk.Label(body, text=label).grid(
@@ -695,12 +726,17 @@ class RecordEditor:
                           state="readonly", width=width).grid(
                 row=row, column=col + 1, sticky="ew", padx=4, pady=2)
 
-        entry(1, 0, "Booked on*", "booked_on")
-        entry(1, 2, "Attended on", "attended_on")
-        entry(2, 0, "Hours completed", "hours_completed")
+        field(1, 0, "Booked on*", "booked_on",
+              lambda v: kit.DateField(body, v))
+        field(1, 2, "Attended on", "attended_on",
+              lambda v: kit.DateField(body, v))
+        field(2, 0, "Hours completed", "hours_completed",
+              lambda v: kit.NumberField(body, v, to=999, increment=0.5))
         combo(2, 2, "Evaluation rating", "evaluation_rating",
                  ("", "1", "2", "3", "4", "5"))
-        entry(3, 0, "Cost to staff (£)", "cost_to_staff")
+        field(3, 0, "Cost to staff (£)", "cost_to_staff",
+              lambda v: kit.NumberField(body, v, to=99999,
+                                        increment=0.01))
         combo(3, 2, "Status*", "status", RECORD_STATUSES)
         entry(4, 0, "Certificate reference", "certificate_ref")
         flags = ttk.LabelFrame(body, text="Certificate")
@@ -730,11 +766,9 @@ class RecordEditor:
             self.texts[key] = t
             row += 1
 
-        bar = ttk.Frame(self.win)
-        bar.pack(fill="x", padx=12, pady=(0, 10))
-        ttk.Button(bar, text="Save",
+        ttk.Button(footer, text="Save",
                     command=self._save).pack(side="right", padx=4)
-        ttk.Button(bar, text="Cancel",
+        ttk.Button(footer, text="Cancel",
                     command=self.win.destroy).pack(side="right")
 
         self.vars["booked_on"].set(_dt.date.today().isoformat())
@@ -743,10 +777,7 @@ class RecordEditor:
     def _load(self) -> None:
         r = self.record
         assert r is not None
-        for i, (sid, _) in enumerate(self._staff_opts):
-            if sid == r.staff_id:
-                self.staff_combo.current(i)
-                break
+        self.staff_var.set(r.staff_id or "")
         for i, (aid, _) in enumerate(self._act_opts):
             if aid == r.activity_id:
                 self.act_combo.current(i)
@@ -755,13 +786,13 @@ class RecordEditor:
                      "certificate_ref", "status"):
             self.vars[key].set(getattr(r, key) or "")
         self.vars["hours_completed"].set(
-            str(r.hours_completed)
+            f"{r.hours_completed:g}"
             if r.hours_completed is not None else "")
         self.vars["evaluation_rating"].set(
             str(r.evaluation_rating)
             if r.evaluation_rating is not None else "")
         self.vars["cost_to_staff"].set(
-            str(r.cost_to_staff)
+            f"{r.cost_to_staff:.2f}"
             if r.cost_to_staff is not None else "")
         for k in self.bools:
             self.bools[k].set(getattr(r, k))
@@ -770,14 +801,14 @@ class RecordEditor:
             self.texts[k].insert("1.0", getattr(r, k) or "")
 
     def _save(self) -> None:
-        sidx = self.staff_combo.current()
-        if sidx < 0:
+        staff_id = self.staff_var.get().strip()
+        if not staff_id:
             messagebox.showerror("CPD", "Pick a staff member.",
                                     parent=self.win)
             return
         aidx = self.act_combo.current()
         payload: dict = {
-            "staff_id": self._staff_opts[sidx][0],
+            "staff_id": staff_id,
             "activity_id": (self._act_opts[aidx][0]
                                 if aidx >= 0 else None),
         }
@@ -806,7 +837,7 @@ class AttendDialog:
         self.result: Record | None = None
         self.win = tk.Toplevel(parent)
         self.win.title(f"Mark attended — #{record.record_id}")
-        self.win.geometry("420x200")
+        self.win.geometry("460x200")
         self.win.transient(parent); self.win.after_idle(self.win.grab_set)
         body = ttk.Frame(self.win)
         body.pack(fill="both", expand=True, padx=12, pady=10)
@@ -815,16 +846,14 @@ class AttendDialog:
             row=0, column=0, sticky="w", padx=4, pady=4)
         self.when = tk.StringVar(
             value=_dt.date.today().isoformat())
-        ttk.Entry(body, textvariable=self.when,
-                    width=14).grid(
+        kit.DateField(body, self.when).grid(
             row=0, column=1, sticky="w", padx=4, pady=4)
         ttk.Label(body, text="Hours completed").grid(
             row=1, column=0, sticky="w", padx=4, pady=4)
         self.hours = tk.StringVar(
-            value=str(record.hours_completed)
+            value=f"{record.hours_completed:g}"
             if record.hours_completed is not None else "")
-        ttk.Entry(body, textvariable=self.hours,
-                    width=8).grid(
+        kit.NumberField(body, self.hours, to=999, increment=0.5).grid(
             row=1, column=1, sticky="w", padx=4, pady=4)
         bar = ttk.Frame(self.win)
         bar.pack(fill="x", padx=12, pady=(0, 10))

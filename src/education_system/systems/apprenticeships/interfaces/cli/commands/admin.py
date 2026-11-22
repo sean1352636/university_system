@@ -30,12 +30,10 @@ from education_system.systems.apprenticeships.infrastructure.persistence.reposit
 )
 from education_system.systems.apprenticeships.interfaces.cli import prompts
 from education_system.systems.apprenticeships.interfaces.cli.commands import apprentices, audit
-from education_system.systems.apprenticeships.services import (
-    compliance_service,
-    document_service,
-    funding_service,
-)
-from education_system.systems.apprenticeships.services.access import Actor, PermissionDenied
+from education_system.systems.apprenticeships.application.compliance import compliance_service
+from education_system.systems.apprenticeships.application.funding import funding_service
+from education_system.systems.apprenticeships.application.records import document_service
+from education_system.systems.apprenticeships.application.security.access import Actor, PermissionDenied
 
 logger = logging.getLogger(__name__)
 

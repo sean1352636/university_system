@@ -207,3 +207,29 @@ class ParentChildLinkService:
             return row is not None
         finally:
             conn.close()
+
+
+def active_child_ids(db_path: str, parent_user_id: int, system_key: str) -> list[str]:
+    """The child ids *parent_user_id* is actively linked to in one system.
+
+    The read used on every own-record screen, so it never creates the table:
+    an auth database that has no parent links yet simply links nobody.
+    """
+    conn = _connect(db_path)
+    try:
+        present = conn.execute(
+            "SELECT 1 FROM sqlite_master WHERE type = 'table' "
+            "AND name = 'parent_child_links'").fetchone()
+        if present is None:
+            return []
+        rows = conn.execute(
+            """
+            SELECT child_student_id FROM parent_child_links
+            WHERE parent_user_id = ? AND child_system_key = ? AND is_active = 1
+            ORDER BY child_student_id
+            """,
+            (int(parent_user_id), system_key),
+        ).fetchall()
+        return [str(r["child_student_id"]) for r in rows]
+    finally:
+        conn.close()

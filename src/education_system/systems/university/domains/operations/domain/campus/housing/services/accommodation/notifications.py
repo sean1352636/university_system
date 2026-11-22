@@ -152,6 +152,9 @@ def check_expiry_notifications(days=NOTIFICATION_THRESHOLD_DAYS):
                             WHERE id = ?
                         ''', (datetime.now().strftime('%Y-%m-%d %H:%M:%S'), acc['id']))
                         conn.commit()
+                        # Carry it to exams, assessments and module staff (consent-gated).
+                        from education_system.systems.university.services.bus import accommodation_bus
+                        accommodation_bus.after_change()
 
                     # Log the expiration
                     log_action('expired', acc['id'], f"Accommodation {acc['accommodation_type']} expired")

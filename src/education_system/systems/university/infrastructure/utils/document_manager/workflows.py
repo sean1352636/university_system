@@ -399,7 +399,7 @@ class WorkflowMixin:
             cursor.execute('''
             SELECT step_name, AVG(
                 julianday(completed_date) - julianday(
-                    (SELECT MIN(created_date) FROM documents WHERE document_id = document_workflow.document_id)
+                    (SELECT MIN(upload_date) FROM documents WHERE document_id = document_workflow.document_id)
                 )
             ) as avg_days
             FROM document_workflow

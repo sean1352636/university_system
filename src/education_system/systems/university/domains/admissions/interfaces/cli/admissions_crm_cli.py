@@ -8,7 +8,8 @@ the GUI and vice-versa.
 
 Covers the seven areas the old stub menu only advertised: Prospects,
 Applications, Review Workflow, Document Management, Recruitment Campaigns,
-Campus Tours, and Yield Prediction Analytics.
+Campus Tours, and Yield Prediction Analytics - plus Conditions & Documents
+and Postgraduate casework (``admissions_casework_cli``).
 """
 
 from __future__ import annotations
@@ -230,8 +231,8 @@ def _list_applications() -> None:
 
 def _submit_application() -> None:
     pid = _prompt_int("Prospect id", allow_blank=False)
-    app_type = _prompt("Application type (undergraduate/postgraduate)",
-                       default="undergraduate")
+    app_type = _prompt("Application type (undergraduate/postgraduate_taught/"
+                       "postgraduate_research)", default="undergraduate")
     program = _prompt("Program applied for")
     year = _prompt("Academic year (e.g. 2026/27)")
     semester = _prompt("Semester (e.g. Autumn)")
@@ -648,10 +649,12 @@ def run_admissions_crm_menu(auth) -> None:
         print("6. Campus Tours")
         print("7. Yield Prediction Analytics")
         print("8. Return to Main Menu")
+        print("9. Conditions & Documents (readiness, Convert to Student)")
+        print("10. Postgraduate: references, proposal, supervisors, interview, sponsor")
         print("=" * 50)
 
         try:
-            choice = input("\nEnter your choice (1-8): ").strip()
+            choice = input("\nEnter your choice (1-10): ").strip()
         except (KeyboardInterrupt, EOFError):
             print()
             return
@@ -674,6 +677,14 @@ def run_admissions_crm_menu(auth) -> None:
             elif choice == "8":
                 print("Returning to main menu...")
                 return
+            elif choice in ("9", "10"):
+                from education_system.systems.university.domains.admissions.interfaces.cli import (
+                    admissions_casework_cli as casework_cli,
+                )
+                if choice == "9":
+                    casework_cli.run_conditions_documents_menu(auth)
+                else:
+                    casework_cli.run_postgraduate_menu(auth)
             else:
                 print("❌ Invalid choice.")
         except KeyboardInterrupt:

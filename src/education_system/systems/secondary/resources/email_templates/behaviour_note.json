@@ -1,0 +1,31 @@
+{
+  "name": "behaviour_note",
+  "description": "A note home about a pupil's behaviour or a reward, sent to contacts with parental responsibility.",
+  "subject": "{headline} - {pupil_name}",
+  "body": [
+    "Dear {recipient_name},",
+    "",
+    "{intro}",
+    "",
+    "{entries}",
+    "",
+    "{closing}",
+    "",
+    "Best wishes,",
+    "{sender_name}",
+    "{school_name}"
+  ],
+  "placeholders": {
+    "recipient_name": "The contact's name",
+    "pupil_name": "The pupil's preferred first name and surname",
+    "headline": "Good news from school / A note about behaviour",
+    "intro": "One line saying what this is about",
+    "entries": "Each entry: date, type, subject and description",
+    "closing": "What happens next or a word of thanks",
+    "sender_name": "The member of staff sending it",
+    "school_name": "The school's name"
+  },
+  "defaults": {
+    "school_name": "Secondary School"
+  }
+}

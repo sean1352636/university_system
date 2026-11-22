@@ -20,7 +20,7 @@ A comprehensive Multi-Factor Authentication (MFA) system with:
 
 ### Core Services
 ```
-university_system/infrastructure/auth/
+src/education_system/systems/university/infrastructure/auth/
 ├── mfa_service.py              # Main MFA service (800+ lines)
 ├── mfa_gui.py                  # User GUI components (900+ lines)
 ├── mfa_admin_gui.py           # Admin panel (700+ lines)
@@ -31,9 +31,9 @@ university_system/infrastructure/auth/
 
 ### Database
 ```
-university_system/infrastructure/database/migrations/
-└── add_mfa_system.py          # Migration script (200+ lines)
-    Creates 7 MFA tables:
+src/education_system/migrations/versions/
+└── 877b10b0175b_baseline.py   # Alembic baseline
+    Creates the MFA tables:
     - mfa_methods
     - mfa_otp_codes
     - mfa_trusted_devices
@@ -45,13 +45,14 @@ university_system/infrastructure/database/migrations/
 
 ### Tests & Documentation
 ```
-university_system/tests/
-└── test_mfa_system.py         # Comprehensive tests (700+ lines)
+tests/unit/systems/university/infrastructure/auth/
+├── test_mfa_service.py        # MFA service tests
+├── test_mfa_integration.py    # Integration helper tests
+└── gui/                       # MFA GUI tests
 
-/
+docs/university/security/
 ├── MFA_SYSTEM_DOCUMENTATION.md  # Full documentation (1000+ lines)
-├── MFA_QUICK_START.md          # This file
-└── test_mfa_simple.py          # Simple verification test
+└── MFA_QUICK_START.md          # This file
 ```
 
 ---
@@ -69,32 +70,17 @@ pip3 install pyotp qrcode[pil] pillow
 
 ### Step 2: Run Database Migration
 ```bash
-python3 university_system/infrastructure/database/migrations/add_mfa_system.py
+python -m alembic -c src/education_system/alembic.ini upgrade head
 ```
 
-Expected output:
-```
-✓ MFA system tables created successfully
-✓ Default MFA enforcement policies added
-✓ Indexes created for performance optimization
-✓ Created 7 MFA tables
-```
+The launcher also applies pending migrations at startup.
 
 ### Step 3: Verify Installation
 ```bash
-./venv/bin/python test_mfa_simple.py
+pytest tests/unit/systems/university/infrastructure/auth/test_mfa_service.py -v --timeout=60
 ```
 
-You should see all ✓ marks:
-```
-✓ MFAService imported successfully
-✓ SMSService imported successfully
-✓ EmailOTPService imported successfully
-✓ pyotp working
-✓ qrcode working
-✓ SMS provider working
-✓ Email provider working
-```
+You should see all tests pass.
 
 ---
 
@@ -103,7 +89,7 @@ You should see all ✓ marks:
 ### For Users - Setup MFA
 
 ```python
-from university_system.infrastructure.auth.mfa_gui import show_mfa_setup
+from education_system.systems.university.infrastructure.auth.mfa_gui import show_mfa_setup
 import tkinter as tk
 
 root = tk.Tk()
@@ -114,7 +100,7 @@ root.mainloop()
 ### For Users - Verify MFA
 
 ```python
-from university_system.infrastructure.auth.mfa_gui import show_mfa_verification
+from education_system.systems.university.infrastructure.auth.mfa_gui import show_mfa_verification
 import tkinter as tk
 
 root = tk.Tk()
@@ -127,7 +113,7 @@ if verified:
 ### For Admins - Open Admin Panel
 
 ```python
-from university_system.infrastructure.auth.mfa_admin_gui import show_mfa_admin
+from education_system.systems.university.infrastructure.auth.mfa_admin_gui import show_mfa_admin
 import tkinter as tk
 
 root = tk.Tk()
@@ -138,7 +124,7 @@ root.mainloop()
 ### For Developers - Integrate into Login
 
 ```python
-from university_system.infrastructure.auth.mfa_integration import integrate_mfa_check
+from education_system.systems.university.infrastructure.auth.mfa_integration import integrate_mfa_check
 
 # In your login function, after password verification:
 mfa_result = integrate_mfa_check(user_id, role)
@@ -173,7 +159,7 @@ elif mfa_result['action'] == 'allow':
 ### Generate TOTP Setup for User
 
 ```python
-from university_system.infrastructure.auth.mfa_service import MFAService
+from education_system.systems.university.infrastructure.auth.mfa_service import MFAService
 
 service = MFAService()
 result = service.setup_totp(user_id=1, username="john_doe")
@@ -263,7 +249,7 @@ export SMTP_PASSWORD="your_app_password"
 
 1. **Setup TOTP:**
 ```python
-from university_system.infrastructure.auth.mfa_service import MFAService
+from education_system.systems.university.infrastructure.auth.mfa_service import MFAService
 import pyotp
 
 service = MFAService()
@@ -308,7 +294,7 @@ print(verify)  # Should show remaining codes
 
 - ✅ **OTP Codes Hashed** - All codes hashed before database storage
 - ✅ **Rate Limiting** - Max 3 attempts per code
-- ✅ **Account Lockout** - 15-minute lockout after 5 failed attempts
+- ✅ **Account Lockout** - 15-minute lockout after 3 failed login attempts
 - ✅ **Code Expiration** - OTP codes expire in 10 minutes
 - ✅ **Audit Logging** - All verification attempts logged
 - ✅ **Device Fingerprinting** - Unique device identification
@@ -370,8 +356,7 @@ The MFA Admin Panel provides:
 **Issue**: "Database migration failed"
 ```bash
 # Solution:
-python3 university_system/infrastructure/database/migrations/add_mfa_system.py \
-  /path/to/university.db
+python -m alembic -c src/education_system/alembic.ini upgrade head
 ```
 
 **Issue**: "User locked out"
@@ -419,7 +404,7 @@ conn.commit()
 ## ✨ Next Steps
 
 1. **Run the installation steps** above
-2. **Test the system** with `test_mfa_simple.py`
+2. **Test the system** with `pytest tests/unit/systems/university/infrastructure/auth/test_mfa_service.py`
 3. **Configure providers** (SMS/Email) for production
 4. **Integrate into login flow** using `mfa_integration.py`
 5. **Review default policies** and adjust for your needs
@@ -433,7 +418,7 @@ conn.commit()
 - **Documentation**: `MFA_SYSTEM_DOCUMENTATION.md`
 - **API Reference**: See `mfa_service.py` docstrings
 - **Examples**: See `mfa_integration.py`
-- **Tests**: Run `test_mfa_simple.py`
+- **Tests**: Run `pytest tests/unit/systems/university/infrastructure/auth/`
 
 ---
 

@@ -140,6 +140,27 @@ CREATE INDEX IF NOT EXISTS idx_att_exam_cand_state
     ON attendance_exam_candidates(state);
 """
 
+# Columns added for the exams office. Candidates carry the access
+# arrangements copied from the SEN record when the sitting is populated
+# (and their own finish time once extra time is applied); sittings carry
+# the timetable row they came from and the latest extra-time finish.
+_ADDED_COLUMNS: dict[str, dict[str, str]] = {
+    "attendance_exam_sittings": {
+        "timetable_id": "INTEGER",
+        "extended_end_time": "TEXT",
+    },
+    "attendance_exam_candidates": {
+        "extra_time_pct": "INTEGER NOT NULL DEFAULT 0",
+        "reader": "INTEGER NOT NULL DEFAULT 0",
+        "scribe": "INTEGER NOT NULL DEFAULT 0",
+        "word_processor": "INTEGER NOT NULL DEFAULT 0",
+        "separate_room": "INTEGER NOT NULL DEFAULT 0",
+        "rest_breaks": "INTEGER NOT NULL DEFAULT 0",
+        "finish_time": "TEXT",
+        "arrangement_flags": "TEXT",
+    },
+}
+
 
 # ── Shapes ──────────────────────────────────────────────────────────
 
@@ -165,6 +186,14 @@ class Sitting:
     reopen_reason: str | None
     notes: str | None
     created_at: str | None
+    timetable_id: int | None = None
+    extended_end_time: str | None = None
+
+    @property
+    def duration_minutes(self) -> int | None:
+        if not self.end_time:
+            return None
+        return _minutes(self.end_time) - _minutes(self.start_time)
 
     @property
     def is_signed_off(self) -> bool:
@@ -202,6 +231,14 @@ class Candidate:
     recorded_by: str | None
     recorded_at: str | None
     full_name: str | None = None
+    extra_time_pct: int = 0
+    reader: bool = False
+    scribe: bool = False
+    word_processor: bool = False
+    separate_room: bool = False
+    rest_breaks: bool = False
+    finish_time: str | None = None
+    arrangement_flags: str | None = None
 
     @property
     def marked(self) -> bool:
@@ -283,12 +320,19 @@ def init_db() -> None:
     core.init_db()
     with _connect() as conn:
         conn.executescript(_SCHEMA)
+        for table, cols in _ADDED_COLUMNS.items():
+            have = {r["name"] for r in conn.execute(f"PRAGMA table_info({table})")}
+            for name, decl in cols.items():
+                if name not in have:
+                    conn.execute(f"ALTER TABLE {table} ADD COLUMN {name} {decl}")
+                    logger.info("Added %s.%s", table, name)
         conn.commit()
     logger.debug("Exam-register schema ready at %s", DB_PATH)
     _DB_READY = True
 
 
 def _sitting_row(r: sqlite3.Row) -> Sitting:
+    keys = r.keys()
     return Sitting(
         sitting_id=r["sitting_id"],
         paper_code=r["paper_code"],
@@ -308,6 +352,9 @@ def _sitting_row(r: sqlite3.Row) -> Sitting:
         reopen_reason=r["reopen_reason"],
         notes=r["notes"],
         created_at=r["created_at"],
+        timetable_id=r["timetable_id"] if "timetable_id" in keys else None,
+        extended_end_time=(r["extended_end_time"]
+                           if "extended_end_time" in keys else None),
     )
 
 
@@ -329,6 +376,16 @@ def _candidate_row(r: sqlite3.Row) -> Candidate:
         recorded_by=r["recorded_by"],
         recorded_at=r["recorded_at"],
         full_name=r["full_name"] if "full_name" in keys else None,
+        extra_time_pct=(r["extra_time_pct"] or 0) if "extra_time_pct" in keys else 0,
+        reader=bool(r["reader"]) if "reader" in keys else False,
+        scribe=bool(r["scribe"]) if "scribe" in keys else False,
+        word_processor=(bool(r["word_processor"])
+                        if "word_processor" in keys else False),
+        separate_room=bool(r["separate_room"]) if "separate_room" in keys else False,
+        rest_breaks=bool(r["rest_breaks"]) if "rest_breaks" in keys else False,
+        finish_time=r["finish_time"] if "finish_time" in keys else None,
+        arrangement_flags=(r["arrangement_flags"]
+                           if "arrangement_flags" in keys else None),
     )
 
 
@@ -408,12 +465,12 @@ def create_sitting(data: dict[str, Any]) -> Sitting:
             """INSERT INTO attendance_exam_sittings
                    (paper_code, paper_title, subject, exam_board, date,
                     start_time, end_time, room, series, year, state,
-                    invigilator, notes)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                    invigilator, notes, timetable_id)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
             (paper_code, text("paper_title"), text("subject"),
              text("exam_board"), date, start_time, end_time, text("room"),
              text("series", 40), year, PLANNED, text("invigilator"),
-             text("notes", 500)))
+             text("notes", 500), data.get("timetable_id") or None))
         conn.commit()
         sitting_id = int(cur.lastrowid or 0)
     logger.info("Created exam sitting #%d: %s on %s", sitting_id, paper_code,
@@ -533,12 +590,18 @@ def add_candidate(sitting_id: int, student_id: str, *,
 
 
 def populate_from_entries(sitting_id: int, *,
-                          auto_seat: bool = True) -> int:
+                          auto_seat: bool = True,
+                          exclude: set[str] | None = None) -> int:
     """Fill a sitting from the exam entries for its paper.
 
     The candidate list already exists in :mod:`exam_entries`; retyping it
     is how a candidate ends up missing from the hall with an entry the
-    board is expecting.
+    board is expecting. Withdrawn entries and anyone in ``exclude`` (e.g.
+    a candidate whose clash moves this paper) are left out.
+
+    Each candidate's number comes from the student record when it holds
+    one, else the entry; their exam access arrangements are copied on
+    and their finish time reflects any extra time.
     """
     init_db()
     sitting = get_sitting(sitting_id)
@@ -547,6 +610,9 @@ def populate_from_entries(sitting_id: int, *,
     from education_system.systems.sixth_form.domain.assessment.exam_entries import (
         exam_entries as _entries,
     )
+    from education_system.systems.sixth_form.domain.assessment.exams_office import (
+        candidates as _cands,
+    )
     kwargs: dict[str, Any] = {"paper_code": sitting.paper_code}
     if sitting.year:
         kwargs["year"] = sitting.year
@@ -554,19 +620,125 @@ def populate_from_entries(sitting_id: int, *,
         kwargs["season"] = sitting.series
     try:
         entries = _entries.list_entries(**kwargs)
-    except TypeError:                        # pragma: no cover - signature drift
+    except (TypeError, ValidationError):        # pragma: no cover - signature drift
         entries = [e for e in _entries.list_entries()
                    if e.paper_code == sitting.paper_code]
+    skip = exclude or set()
+    entries = [e for e in entries
+               if e.status != "Withdrawn" and e.student_id not in skip]
+    idents = _cands.identities(sorted({e.student_id for e in entries}))
 
     added = 0
     for index, entry in enumerate(sorted(entries,
                                          key=lambda e: e.student_id), 1):
+        ident = idents.get(entry.student_id)
+        cand_no = (ident.candidate_no if ident and ident.source == "student record"
+                   else None) or entry.candidate_no or (
+                       ident.candidate_no if ident else None)
         add_candidate(sitting_id, entry.student_id,
                       seat=str(index) if auto_seat else None,
-                      candidate_no=entry.candidate_no)
+                      candidate_no=cand_no)
         added += 1
+    apply_access_arrangements(sitting_id)
     logger.info("Populated sitting #%d with %d candidate(s)", sitting_id, added)
     return added
+
+
+def apply_access_arrangements(sitting_id: int) -> int:
+    """Copy every candidate's exam access arrangements onto the sitting.
+
+    Reads the arrangements recorded under "Exam Access" in the SEN
+    record (expired ones are flagged, not applied), sets the candidate's
+    flags and finish time (start + duration x (1 + extra time)), and
+    stores the latest finish on the sitting. Returns the number of
+    candidates with an arrangement.
+    """
+    init_db()
+    sitting = get_sitting(sitting_id)
+    if sitting is None:
+        raise ValidationError(f"No sitting with id {sitting_id}")
+    _assert_open(sitting)
+    from education_system.systems.sixth_form.domain.assessment.exams_office import (
+        access_arrangements as _access,
+    )
+    duration = sitting.duration_minutes
+    latest = sitting.end_time
+    with_arrangements = 0
+    # Read everything first: the arrangement lookups open their own
+    # connections, which must not wait on this one's write lock.
+    pairs = [(cand, _access.for_student(cand.student_id))
+             for cand in list_candidates(sitting_id)]
+    with _connect() as conn:
+        for cand, arr in pairs:
+            finish = None
+            if duration is not None:
+                extra = round(duration * arr.extra_time_pct / 100)
+                total = _minutes(sitting.start_time) + duration + extra
+                finish = f"{(total // 60) % 24:02d}:{total % 60:02d}"
+                if latest is None or finish > latest:
+                    latest = finish
+            if arr.any or arr.flags:
+                with_arrangements += 1
+            conn.execute(
+                """UPDATE attendance_exam_candidates
+                      SET extra_time_pct = ?, reader = ?, scribe = ?,
+                          word_processor = ?, separate_room = ?,
+                          rest_breaks = ?, finish_time = ?,
+                          arrangement_flags = ?,
+                          access_arrangements = ?
+                    WHERE sitting_id = ? AND student_id = ?""",
+                (arr.extra_time_pct, int(arr.reader), int(arr.scribe),
+                 int(arr.word_processor), int(arr.separate_room),
+                 int(arr.rest_breaks), finish,
+                 "; ".join(arr.flags) or None, arr.summary() or None,
+                 sitting_id, cand.student_id))
+        conn.execute(
+            "UPDATE attendance_exam_sittings SET extended_end_time = ? "
+            "WHERE sitting_id = ?",
+            (latest if latest != sitting.end_time else None, sitting_id))
+        conn.commit()
+    return with_arrangements
+
+
+def move_candidates_to_room(sitting_id: int, student_ids: list[str],
+                            room: str) -> Sitting:
+    """Move candidates (e.g. those needing a separate room) to the same
+    paper in another room, creating that room's sitting if needed."""
+    init_db()
+    sitting = get_sitting(sitting_id)
+    if sitting is None:
+        raise ValidationError(f"No sitting with id {sitting_id}")
+    _assert_open(sitting)
+    room = (room or "").strip()
+    if not room:
+        raise ValidationError("Room is required")
+    if room == (sitting.room or ""):
+        raise ValidationError("That is the room they are already in")
+    target = next((s for s in list_sittings(date=sitting.date,
+                                            paper_code=sitting.paper_code,
+                                            room=room)
+                   if s.start_time == sitting.start_time), None)
+    if target is None:
+        target = create_sitting({
+            "paper_code": sitting.paper_code, "paper_title": sitting.paper_title,
+            "subject": sitting.subject, "exam_board": sitting.exam_board,
+            "date": sitting.date, "start_time": sitting.start_time,
+            "end_time": sitting.end_time, "room": room,
+            "series": sitting.series, "year": sitting.year,
+            "timetable_id": sitting.timetable_id,
+            "notes": f"Separate room for {sitting.label}"})
+    _assert_open(target)
+    for sid in student_ids:
+        cand = get_candidate(sitting_id, sid)
+        if cand is None:
+            continue
+        add_candidate(target.sitting_id, sid, candidate_no=cand.candidate_no)
+        remove_candidate(sitting_id, sid)
+    apply_access_arrangements(target.sitting_id)
+    apply_access_arrangements(sitting_id)
+    out = get_sitting(target.sitting_id)
+    assert out is not None
+    return out
 
 
 def get_candidate(sitting_id: int, student_id: str) -> Candidate | None:
@@ -635,6 +807,27 @@ def seating_plan(sitting_id: int) -> SeatingPlan:
         sitting=sitting,
         rows=[c for c in candidates if c.seat],
         unseated=[c for c in candidates if not c.seat])
+
+
+def seating_plan_text(sitting_id: int) -> str:
+    """The seating plan as printable text, with access arrangements."""
+    plan = seating_plan(sitting_id)
+    s = plan.sitting
+    lines = [f"SEATING PLAN — {s.paper_code} {s.paper_title or ''}",
+             f"{s.date}  {s.start_time}-{s.end_time or ''}"
+             + (f" (latest finish {s.extended_end_time})" if s.extended_end_time else "")
+             + f"  Room: {s.room or '-'}"
+             + (f"  Invigilators: {s.invigilator}" if s.invigilator else ""), "",
+             f"{'Seat':<6}{'Cand #':<8}{'Name':<28}{'Finish':<8}Access arrangements"]
+    for c in plan.rows:
+        lines.append(f"{c.seat or '':<6}{c.candidate_no or '':<8}"
+                     f"{(c.full_name or c.student_id)[:27]:<28}{c.finish_time or '':<8}"
+                     f"{c.access_arrangements or ''}")
+    if plan.unseated:
+        lines += ["", "UNSEATED:"]
+        lines += [f"  {c.candidate_no or ''} {c.full_name or c.student_id}"
+                  for c in plan.unseated]
+    return "\n".join(lines) + "\n"
 
 
 # ── Marking the register ────────────────────────────────────────────

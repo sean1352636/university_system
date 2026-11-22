@@ -25,6 +25,9 @@ from dataclasses import dataclass, field
 from typing import Any
 from education_system import paths
 from education_system.systems.sixth_form.domain.assessment.gradebook.gradebook import LETTER_GRADES
+from education_system.systems.sixth_form.domain.academics.qualifications import (
+    grade_scales as _gs,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -51,6 +54,24 @@ CREATE INDEX IF NOT EXISTS idx_results_grade ON exam_results(grade);
 CREATE INDEX IF NOT EXISTS idx_results_date  ON exam_results(released_at);
 """
 
+# Results-day embargo (exams office). ``released`` defaults to 1 so rows
+# recorded before the embargo workflow existed stay visible; imported
+# board results are written with ``released = 0`` and an
+# ``embargo_until`` time, and stay hidden from students until released.
+_ADDED_COLUMNS: dict[str, str] = {
+    "released":      "INTEGER NOT NULL DEFAULT 1",
+    "embargo_until": "TEXT",
+    "source":        "TEXT",
+    # Which learning aim / qualification the result is for (QUAL): the
+    # grade is validated on that qualification's scale.
+    "qualification_type": "TEXT",
+    "aim_id":             "INTEGER",
+}
+
+# SQL condition: a result students may see.
+VISIBLE_SQL = ("(r.released = 1 OR (r.embargo_until IS NOT NULL "
+               "AND r.embargo_until <= strftime('%Y-%m-%d %H:%M', 'now', 'localtime')))")
+
 
 @dataclass
 class ExamResult:
@@ -63,6 +84,9 @@ class ExamResult:
     notes: str | None
     recorded_at: str
     updated_at: str
+    released: bool = True
+    embargo_until: str | None = None
+    source: str | None = None
 
 
 @dataclass
@@ -113,17 +137,27 @@ def init_db() -> None:
     _entries.init_db()
     with _connect() as conn:
         conn.executescript(_SCHEMA)
+        have = {r["name"] for r in conn.execute("PRAGMA table_info(exam_results)")}
+        for name, decl in _ADDED_COLUMNS.items():
+            if name not in have:
+                conn.execute(f"ALTER TABLE exam_results ADD COLUMN {name} {decl}")
+                logger.info("Added exam_results.%s", name)
+        conn.commit()
     logger.debug("Exam-results schema ready at %s", DB_PATH)
 
     _DB_READY = True
 
 
 def _row(r: sqlite3.Row) -> ExamResult:
+    keys = r.keys()
     return ExamResult(
         result_id=r["result_id"], entry_id=r["entry_id"],
         marks=r["marks"], ums=r["ums"], grade=r["grade"],
         released_at=r["released_at"], notes=r["notes"],
         recorded_at=r["recorded_at"], updated_at=r["updated_at"],
+        released=bool(r["released"]) if "released" in keys else True,
+        embargo_until=r["embargo_until"] if "embargo_until" in keys else None,
+        source=r["source"] if "source" in keys else None,
     )
 
 
@@ -162,10 +196,16 @@ def _validate_payload(data: dict[str, Any]) -> dict[str, Any]:
     grade = (data.get("grade") or "").strip()
     if not grade:
         raise ValidationError("Grade is required")
-    if grade not in LETTER_GRADES:
-        raise ValidationError(
-            f"Grade must be one of: {', '.join(LETTER_GRADES)}")
+    # Validated on the scale of the learner's aim in the entry's subject
+    # (A*-U when no aim / type is known), not A*-U only.
+    qtype, aim_id = aim_link_for_entry(eid_i, data.get("qualification_type"))
+    try:
+        grade = _gs.validate_grade(grade, qtype)
+    except ValueError as e:
+        raise ValidationError(str(e)) from None
     out["grade"] = grade
+    out["qualification_type"] = qtype
+    out["aim_id"] = aim_id
 
     for key, lo, hi in (("marks", 0, 1000), ("ums", 0, 1000)):
         v = data.get(key)
@@ -190,6 +230,51 @@ def _validate_payload(data: dict[str, Any]) -> dict[str, Any]:
         data.get("released_at"), "Released at")
     out["notes"] = (data.get("notes") or "").strip() or None
     return out
+
+
+# ── Learning-aim link (QUAL) ───────────────────────────────────────
+
+def aim_link_for_entry(entry_id: int, explicit_type: str | None = None
+                       ) -> tuple[str | None, int | None]:
+    """(qualification type, aim id) for an exam entry's learner + subject.
+
+    An explicit type wins (and must be a known type). Otherwise the
+    learner's active (else most recent) aim in the subject supplies both;
+    failing that the subject catalogue's type, with no aim.
+    """
+    from education_system.systems.sixth_form.domain.assessment.exam_entries import (
+        exam_entries as _entries,
+    )
+    from education_system.systems.sixth_form.domain.academics.qualifications import (
+        learning_aims as _aims,
+    )
+    if explicit_type:
+        canon = _gs.canonical_type(explicit_type)
+        if canon is None:
+            raise ValidationError(f"Unknown qualification type {explicit_type!r}")
+    entry = _entries.get_entry(int(entry_id))
+    if entry is None:
+        return (_gs.canonical_type(explicit_type) if explicit_type else None), None
+    try:
+        aims = [a for a in _aims.list_aims(entry.student_id)
+                if a.subject == entry.subject]
+    except Exception:
+        logger.debug("aim lookup failed for entry %s", entry_id, exc_info=True)
+        aims = []
+    if explicit_type:
+        canon = _gs.canonical_type(explicit_type)
+        match = [a for a in aims if a.qualification_type == canon]
+        return canon, (match[0].aim_id if match else None)
+    if aims:
+        return aims[0].qualification_type, aims[0].aim_id
+    return _aims.qualification_type_for(entry.student_id, entry.subject), None
+
+
+def _store_aim_link(conn: sqlite3.Connection, p: dict[str, Any]) -> None:
+    conn.execute(
+        "UPDATE exam_results SET qualification_type = ?, aim_id = ? "
+        "WHERE entry_id = ?",
+        (p.get("qualification_type"), p.get("aim_id"), p["entry_id"]))
 
 
 # ── CRUD ───────────────────────────────────────────────────────────
@@ -220,6 +305,7 @@ def save_result(data: dict[str, Any]) -> ExamResult:
             (p["entry_id"], p["marks"], p["ums"], p["grade"],
              p["released_at"], p["notes"]),
         )
+        _store_aim_link(conn, p)
         conn.commit()
 
     # Bump the entry to 'Sat' so the directory reflects reality.
@@ -259,9 +345,11 @@ def get_for_entry(entry_id: int) -> ExamResult | None:
         return _row(r) if r else None
 
 
-def update_result(result_id: int, data: dict[str, Any]) -> ExamResult:
+def update_result(result_id: int, data: dict[str, Any], *,
+                  reason: str | None = None) -> ExamResult:
     """Update grade / marks / UMS / released_at / notes for an existing
-    result. ``entry_id`` is immutable through this entry point."""
+    result. ``entry_id`` is immutable through this entry point. A change
+    of grade or marks is kept in the result history with ``reason``."""
     init_db()
     existing = get_result(result_id)
     if existing is None:
@@ -287,6 +375,7 @@ def update_result(result_id: int, data: dict[str, Any]) -> ExamResult:
             (p["marks"], p["ums"], p["grade"], p["released_at"],
              p["notes"], result_id),
         )
+        _store_aim_link(conn, p)
         conn.commit()
     logger.info(
         "Updated result #%d (entry=%d, grade=%s)",
@@ -294,6 +383,17 @@ def update_result(result_id: int, data: dict[str, Any]) -> ExamResult:
     )
     out = get_result(result_id)
     assert out is not None
+    if (existing.grade, existing.marks) != (out.grade, out.marks):
+        try:
+            from education_system.systems.sixth_form.domain.assessment.exams_office import (
+                results_day as _results_day,
+            )
+            _results_day.log_grade_change(
+                result_id=result_id, old_grade=existing.grade,
+                new_grade=out.grade, old_marks=existing.marks,
+                new_marks=out.marks, reason=reason)
+        except Exception:
+            logger.exception("Could not record history for result #%d", result_id)
     return out
 
 
@@ -330,12 +430,7 @@ def _join_query(extra_where: str = "", args: tuple = ()) -> list[ResultRow]:
         rows = conn.execute(sql, args).fetchall()
     out: list[ResultRow] = []
     for r in rows:
-        result = ExamResult(
-            result_id=r["result_id"], entry_id=r["entry_id"],
-            marks=r["marks"], ums=r["ums"], grade=r["grade"],
-            released_at=r["released_at"], notes=r["notes"],
-            recorded_at=r["recorded_at"], updated_at=r["updated_at"],
-        )
+        result = _row(r)
         out.append(ResultRow(
             result=result,
             student_id=r["student_id"],
@@ -356,9 +451,24 @@ def list_results(
     year: int | None = None,
     paper_code: str | None = None,
     grade: str | None = None,
+    released_only: bool | None = None,
 ) -> list[ResultRow]:
+    """Joined result rows. ``released_only`` hides embargoed results;
+    left as None it is on for a signed-in student or parent, so results
+    day embargoes hold wherever results are listed."""
     clauses: list[str] = []
     args: list[Any] = []
+    if released_only is None:
+        try:
+            from education_system.systems.sixth_form.domain.governance.user_management import (
+                access as _access,
+            )
+            who = _access.current()
+            released_only = who.is_student or who.is_parent
+        except Exception:
+            released_only = False
+    if released_only:
+        clauses.append(VISIBLE_SQL)
     if student_id:
         clauses.append("e.student_id = ?")
         args.append(student_id.strip())
@@ -378,9 +488,9 @@ def list_results(
         clauses.append("e.paper_code = ?")
         args.append(paper_code.strip().upper())
     if grade:
-        if grade not in LETTER_GRADES:
+        if grade not in _gs.ALL_GRADES:
             raise ValidationError(
-                f"Grade must be one of: {', '.join(LETTER_GRADES)}")
+                f"Unknown grade {grade!r} — not on any qualification's scale")
         clauses.append("r.grade = ?")
         args.append(grade)
     where = ("WHERE " + " AND ".join(clauses)) if clauses else ""
@@ -389,8 +499,10 @@ def list_results(
 
 def results_for_student(
     student_id: str, *, year: int | None = None,
+    released_only: bool | None = None,
 ) -> list[ResultRow]:
-    return list_results(student_id=student_id, year=year)
+    return list_results(student_id=student_id, year=year,
+                        released_only=released_only)
 
 
 # ── Bulk-by-paper view ─────────────────────────────────────────────
@@ -402,8 +514,7 @@ def bulk_view(
     result. Excludes Withdrawn entries by default — they don't sit.
     """
     init_db()
-    from education_system.systems.sixth_form.domain.assessment.exam_entries import exam_entries
-    from education_system.systems.sixth_form.domain.learners.students import students as _entries
+    from education_system.systems.sixth_form.domain.assessment.exam_entries import exam_entries as _entries
     from education_system.systems.sixth_form.domain.learners.students import students as _students
     entries = _entries.list_entries(
         paper_code=paper_code, season=season, year=year)
@@ -485,8 +596,8 @@ class GradeDistribution:
 
     @property
     def pass_count(self) -> int:
-        """A*-E counted; U is a fail."""
-        return sum(self.counts.get(g, 0) for g in LETTER_GRADES if g != "U")
+        """Passing grades on any scale (A*-E for A level); U etc. fail."""
+        return sum(n for g, n in self.counts.items() if _gs.is_pass(g))
 
     @property
     def pass_rate(self) -> float | None:
@@ -540,7 +651,7 @@ def per_student_summary(
     if rows:
         sorted_letters = sorted(
             {r.result.grade for r in rows},
-            key=lambda lg: LETTER_GRADES.index(lg) if lg in LETTER_GRADES else 99,
+            key=_gs.sort_key,
         )
         best, worst = sorted_letters[0], sorted_letters[-1]
     else:

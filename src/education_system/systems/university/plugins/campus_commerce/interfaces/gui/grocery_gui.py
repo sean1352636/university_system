@@ -25,6 +25,8 @@ from education_system.systems.university.infrastructure.utils.gui_language_selec
 )
 
 from education_system.systems.university.plugins.campus_commerce.domain.services.grocery.grocery_service import (
+    complete_checkout as grocery_complete_checkout,
+    refund_transaction as grocery_refund_transaction,
     init_grocery_db,
     get_categories,
     get_products,
@@ -42,12 +44,11 @@ from education_system.systems.university.plugins.campus_commerce.domain.services
 # Email integration
 from education_system.systems.university.infrastructure.email.email_service import send_email
 
-# Finance integration for account details and revenue recording
+# Read-only finance helpers for display; all posting goes through
+# grocery_service (complete_checkout / refund_transaction).
 from education_system.systems.university.domains.finance.infrastructure.finance_integration import (
     get_student_info,
     get_student_finance_account_balance,
-    process_student_finance_account_payment,
-    record_revenue_to_finance,
 )
 
 # For database path
@@ -543,35 +544,21 @@ class GroceryGUI:
                     )
                     return
 
-                # Process payment from student finance account
-                payment_result = process_student_finance_account_payment(
-                    student_id=user_identifier,
-                    amount=subtotal,
-                    description=_t("grocery.purchase_description"),
-                    transaction_source="Grocery",
-                    transaction_ref=f"GR_{datetime.now().strftime('%Y%m%d%H%M%S')}",
-                    processed_by=self.current_user.get('username', 'System')
-                )
+            # Complete the checkout. The domain service debits the student
+            # account (if chosen) and posts the sale to Finance itself.
+            outcome = grocery_complete_checkout(
+                user_id, selected_payment,
+                finance_user_id=user_identifier,
+                processed_by=self.current_user.get('username', 'System'),
+            )
+            transaction_id = outcome['transaction_id']
+            payment_result = outcome.get('account_result') or {}
 
-                if not payment_result.get('success'):
-                    messagebox.showerror(_t("grocery.payment_failed"), payment_result.get('message', _t("grocery.payment_process_failed")))
-                    return
-
-            # Complete the checkout
-            transaction_id = checkout(user_id, selected_payment)
+            if not transaction_id and payment_result and not payment_result.get('success'):
+                messagebox.showerror(_t("grocery.payment_failed"), payment_result.get('message', _t("grocery.payment_process_failed")))
+                return
 
             if transaction_id:
-                # Record revenue to finance system
-                record_revenue_to_finance(
-                    student_id=user_identifier,
-                    amount=subtotal,
-                    revenue_category="Grocery Sales",
-                    transaction_source="Grocery",
-                    transaction_ref=str(transaction_id),
-                    payment_method=selected_payment.replace('_', ' ').title(),
-                    notes="Campus Grocery Shop purchase"
-                )
-
                 on_close()
                 self.refresh_cart()
                 self.refresh_products()
@@ -1191,45 +1178,18 @@ Status: {values[7]}
                     if not student_id:
                         return
 
-            success = self.add_grocery_refund_to_student_account(student_id, amount, trans_id)
-        else:
-            # For cash/card, just record the refund
-            success = True
+        # The domain service credits the student account (if chosen), marks the
+        # transaction refunded and posts the refund to Finance.
+        outcome = grocery_refund_transaction(
+            trans_id, amount, refund_method,
+            student_id=student_id,
+            processed_by=self.current_user.get('username', 'system') if self.current_user else 'system',
+        )
+        success = outcome['success']
 
         if success:
-            # Update transaction status to refunded
             try:
-                conn = get_connection()
-                cursor = conn.cursor()
-
-                cursor.execute('''
-                    UPDATE transactions
-                    SET status = 'refunded'
-                    WHERE source_type = 'grocery' AND source_transaction_id = ?
-                ''', (trans_id,))
-
-                # Generate refund reference
-                import uuid
-                refund_ref = f"GROC-REFUND-{uuid.uuid4().hex[:12].upper()}"
-
-                # Record refund in unified_refunds table
-                cursor.execute('''
-                    INSERT INTO unified_refunds
-                    (source_type, reference_id, reference_type, amount, refund_method, refund_reference, student_id, refund_date, status)
-                    VALUES ('grocery', ?, 'transaction', ?, ?, ?, ?, CURRENT_TIMESTAMP, 'processed')
-                ''', (trans_id, amount, refund_method, refund_ref, student_id))
-                refund_row_id = cursor.lastrowid
-
-                conn.commit()
-                conn.close()
-
-                # Auto-post to GL (cash has moved). Never raises.
-                try:
-                    from education_system.systems.university.domains.finance.domain.ledger import notify_ledger
-                    notify_ledger('refund', refund_row_id, posted_by='grocery')
-                except Exception as _e:
-                    import logging
-                    logging.getLogger(__name__).warning("ledger hook failed: %s", _e)
+                refund_ref = outcome['refund_ref']
 
                 # Send refund receipt email
                 self.send_grocery_refund_receipt(trans_id, receipt_number, amount, refund_method, refund_ref, student_id)
@@ -1246,7 +1206,7 @@ Status: {values[7]}
             except Exception as e:
                 messagebox.showerror(_t('gui.operations.commerce.grocery.dialogs.refund_error', default="Refund Error"), f"Failed to process refund: {e}")
         else:
-            messagebox.showerror(_t('gui.operations.commerce.grocery.dialogs.refund_failed', default="Refund Failed"), _t('gui.operations.commerce.grocery.dialogs.failed_to_process_student_account_refund', default="Failed to process student account refund"))
+            messagebox.showerror(_t('gui.operations.commerce.grocery.dialogs.refund_failed', default="Refund Failed"), outcome.get('message') or _t('gui.operations.commerce.grocery.dialogs.failed_to_process_student_account_refund', default="Failed to process student account refund"))
 
     def show_grocery_refund_method_dialog(self, amount: float, trans_id: str, student_id=None, customer_name=None):
         """Show refund method selection dialog."""
@@ -1304,65 +1264,6 @@ Status: {values[7]}
 
         dialog.wait_window()
         return result['method']
-
-    def add_grocery_refund_to_student_account(self, student_id: str, amount: float, trans_id: str):
-        """Add refund amount to student's finance account."""
-        try:
-            conn = get_connection()
-            cursor = conn.cursor()
-
-            # Get account_id and balance
-            cursor.execute('''
-                SELECT account_id, balance FROM student_finance_accounts
-                WHERE student_id = ? AND account_status = 'active'
-            ''', (student_id,))
-            row = cursor.fetchone()
-
-            if not row:
-                # Try to create account if it doesn't exist
-                cursor.execute('''
-                    INSERT INTO student_finance_accounts
-                    (student_id, balance, account_status)
-                    VALUES (?, ?, 'active')
-                ''', (student_id, amount))
-
-                # Get the newly created account_id
-                cursor.execute('''
-                    SELECT account_id FROM student_finance_accounts
-                    WHERE student_id = ?
-                ''', (student_id,))
-                account_id = cursor.fetchone()[0]
-                balance_before = 0.00
-                balance_after = amount
-            else:
-                account_id = row[0]
-                balance_before = float(row[1])
-                balance_after = balance_before + amount
-
-                # Add to balance
-                cursor.execute('''
-                    UPDATE student_finance_accounts
-                    SET balance = ?, updated_at = CURRENT_TIMESTAMP
-                    WHERE account_id = ?
-                ''', (balance_after, account_id))
-
-            # Record transaction
-            cursor.execute('''
-                INSERT INTO transactions
-                (source_type, account_id, student_id, transaction_type, amount, balance_before,
-                 balance_after, description, reference_id, processed_by)
-                VALUES ('student_finance', ?, ?, 'credit', ?, ?, ?, ?, ?, ?)
-            ''', (account_id, student_id, amount, balance_before, balance_after,
-                  f'Grocery Shop Refund - Transaction: {trans_id}',
-                  f'GROCERY-REFUND-{trans_id}',
-                  self.current_user.get('username', 'system') if self.current_user else 'system'))
-
-            conn.commit()
-            conn.close()
-            return True
-        except Exception as e:
-            print(f"Error adding to student account: {e}")
-            return False
 
     def send_grocery_refund_receipt(self, trans_id: str, receipt_number: str, amount: float,
                                     method: str, refund_ref: str, student_id=None):

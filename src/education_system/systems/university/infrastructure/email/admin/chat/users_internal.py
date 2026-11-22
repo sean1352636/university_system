@@ -254,11 +254,11 @@ class UsersInternalMixin:
                 profile['staff'] = None
             try:
                 cursor.execute(
-                    'SELECT student_id FROM students WHERE user_id = ?',
-                    (user_id,),
+                    'SELECT student_id FROM users WHERE username = ?',
+                    (profile['username'],),
                 )
                 sr = cursor.fetchone()
-                if sr:
+                if sr and sr[0]:
                     profile['student_id'] = sr[0]
             except Exception:
                 logger.debug("Suppressed exception", exc_info=True)

@@ -108,6 +108,8 @@ def _run() -> None:
     res = data.run_rules()
     print(f"  ✓ {res['rules_run']} rule(s) run, {res.get('matches', 0)} match(es), "
           f"{res['new_actions']} new action(s).")
+    for err in res.get("errors", []):
+        print(f"  ✗ Not evaluated — {err}")
     _pause()
 
 

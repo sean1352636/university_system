@@ -22,10 +22,10 @@ This guide covers mobile device management, Progressive Web App (PWA) features, 
 The Mobile App & PWA module manages mobile devices, sessions, offline data synchronization, app installations, usage analytics, and user preferences. It supports iOS, Android, and Web/PWA platforms with secure token-based authentication and comprehensive activity logging.
 
 **Key files:**
-- GUI: `modules/domain/mobility/gui/mobile_app_pwa_gui.py`
-- Core Service: `modules/domain/mobility/services/mobile_app_pwa_core.py`
-- Related: `modules/domain/mobility/services/parking_management.py` (mobile parking)
-- Related: `modules/domain/mobility/services/trip_management.py` (mobile trips)
+- GUI: `src/education_system/systems/university/domains/operations/interfaces/gui/campus/mobility/mobile_app_pwa_gui.py`
+- Core Service: `src/education_system/systems/university/domains/operations/domain/campus/mobility/services/mobile_app_pwa_core.py`
+- Related: `src/education_system/systems/university/domains/operations/domain/campus/mobility/services/parking_management/` (mobile parking)
+- Related: `src/education_system/systems/university/domains/operations/domain/campus/mobility/services/trip_management/` (mobile trips)
 
 ## Architecture
 
@@ -62,7 +62,7 @@ Each mobile device must be registered before it can access system features:
 
 ```python
 # Via CLI
-from university_system.modules.domain.mobility.services.mobile_app_pwa_core import (
+from education_system.systems.university.domains.operations.domain.campus.mobility.services.mobile_app_pwa_core import (
     register_mobile_device
 )
 
@@ -87,7 +87,7 @@ register_mobile_device()
 ### Viewing Registered Devices
 
 ```python
-from university_system.modules.domain.mobility.services.mobile_app_pwa_core import (
+from education_system.systems.university.domains.operations.domain.campus.mobility.services.mobile_app_pwa_core import (
     view_mobile_devices
 )
 
@@ -100,7 +100,7 @@ view_mobile_devices()
 Devices can be deactivated without deletion, preserving audit history:
 
 ```python
-from university_system.modules.domain.mobility.services.mobile_app_pwa_core import (
+from education_system.systems.university.domains.operations.domain.campus.mobility.services.mobile_app_pwa_core import (
     deactivate_mobile_device
 )
 
@@ -130,7 +130,7 @@ deactivate_mobile_device()
 Each login from a mobile device creates a new session:
 
 ```python
-from university_system.modules.domain.mobility.services.mobile_app_pwa_core import (
+from education_system.systems.university.domains.operations.domain.campus.mobility.services.mobile_app_pwa_core import (
     create_mobile_session
 )
 
@@ -148,18 +148,18 @@ create_mobile_session()
 ### Viewing Active Sessions
 
 ```python
-from university_system.modules.domain.mobility.services.mobile_app_pwa_core import (
-    view_mobile_sessions
+from education_system.systems.university.domains.operations.domain.campus.mobility.services.mobile_app_pwa_core import (
+    view_active_mobile_sessions
 )
 
-view_mobile_sessions()
+view_active_mobile_sessions()
 # Shows: session_id, device_id, user_id, IP, OS, app version, last activity, status
 ```
 
 ### Ending Sessions
 
 ```python
-from university_system.modules.domain.mobility.services.mobile_app_pwa_core import (
+from education_system.systems.university.domains.operations.domain.campus.mobility.services.mobile_app_pwa_core import (
     end_mobile_session
 )
 
@@ -199,34 +199,27 @@ Device Online:
 
 ### Queuing Offline Data
 
-```python
-from university_system.modules.domain.mobility.services.mobile_app_pwa_core import (
-    sync_offline_data
-)
-
-sync_offline_data()
-# Queues: operation_type, entity_type, entity_id, data (JSON)
-```
+Each queue row holds operation_type, entity_type, entity_id and data (JSON). No application module writes these rows at present: the screens below read and process whatever is in `offline_sync_queue`.
 
 ### Viewing the Sync Queue
 
 ```python
-from university_system.modules.domain.mobility.services.mobile_app_pwa_core import (
-    view_sync_queue
+from education_system.systems.university.domains.operations.domain.campus.mobility.services.mobile_app_pwa_core import (
+    view_offline_sync_queue
 )
 
-view_sync_queue()
+view_offline_sync_queue()
 # Shows: sync_id, device_id, operation, entity, status, created_at
 ```
 
 ### Processing Sync Items
 
 ```python
-from university_system.modules.domain.mobility.services.mobile_app_pwa_core import (
-    process_sync_item
+from education_system.systems.university.domains.operations.domain.campus.mobility.services.mobile_app_pwa_core import (
+    process_offline_sync
 )
 
-process_sync_item()
+process_offline_sync()
 # Applies offline changes to the database, updates status to 'synced'
 ```
 
@@ -255,24 +248,11 @@ process_sync_item()
 
 ### Recording Installations
 
-```python
-from university_system.modules.domain.mobility.services.mobile_app_pwa_core import (
-    record_app_installation
-)
-
-record_app_installation()
-# Records: device_id, app_version, installed_at, is_current
-```
+Each `app_installations` row holds device_id, app_version, installed_at and is_current. No application module writes these rows at present.
 
 ### Viewing Installation History
 
-```python
-from university_system.modules.domain.mobility.services.mobile_app_pwa_core import (
-    view_app_installations
-)
-
-view_app_installations()
-```
+Use the **Installations** tab of the GUI. The core service has no installation functions.
 
 ### Installation Statistics
 
@@ -287,22 +267,22 @@ The GUI provides installation metrics including:
 ### Event Tracking
 
 ```python
-from university_system.modules.domain.mobility.services.mobile_app_pwa_core import (
-    track_app_analytics
+from education_system.systems.university.domains.operations.domain.campus.mobility.services.mobile_app_pwa_core import (
+    log_mobile_event
 )
 
-track_app_analytics()
+log_mobile_event()
 # Records: device_id, event_type, event_data (JSON), timestamp
 ```
 
 ### Viewing Analytics
 
 ```python
-from university_system.modules.domain.mobility.services.mobile_app_pwa_core import (
-    view_app_analytics
+from education_system.systems.university.domains.operations.domain.campus.mobility.services.mobile_app_pwa_core import (
+    view_mobile_analytics
 )
 
-view_app_analytics()
+view_mobile_analytics()
 ```
 
 ### Analytics Data

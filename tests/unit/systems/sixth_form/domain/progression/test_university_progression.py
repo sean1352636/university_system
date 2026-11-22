@@ -105,7 +105,8 @@ def sources(monkeypatch):
                         lambda **kw: state.applications)
 
     monkeypatch.setattr(sd, "list_year_13_students", lambda: state.cohort)
-    monkeypatch.setattr(sd, "list_incomplete_transfers",
+    from education_system.systems.sixth_form.domain.learners.students import transfers
+    monkeypatch.setattr(transfers, "list_incomplete_transfers",
                         lambda: state.incomplete)
     monkeypatch.setattr(sd, "get_student", lambda sid: _ALL.get(sid))
 
@@ -113,7 +114,7 @@ def sources(monkeypatch):
         state.transferred.append((sid, moved_by))
         return DONE
 
-    monkeypatch.setattr(sd, "mark_transferred", _transferred)
+    monkeypatch.setattr(transfers, "mark_transferred", _transferred)
     monkeypatch.setattr(uh, "build_record",
                         lambda s: state.records.get(s.student_id, _record()))
     monkeypatch.setattr(
@@ -264,7 +265,8 @@ class TestBoard:
             raise RuntimeError("sixthform.db is locked")
 
         monkeypatch.setattr(sd, "list_year_13_students", _boom)
-        monkeypatch.setattr(sd, "list_incomplete_transfers", _boom)
+        from education_system.systems.sixth_form.domain.learners.students import transfers
+        monkeypatch.setattr(transfers, "list_incomplete_transfers", _boom)
         assert up.board().rows == []
 
 
@@ -334,7 +336,7 @@ class TestSubmit:
         when the bus write failed. That unset column is the honest answer,
         so it must not be reported as a success with a caveat."""
         from education_system.systems.sixth_form.domain.learners.students import (
-            students as sd,
+            transfers as sd,
         )
         monkeypatch.setattr(sd, "mark_transferred",
                             lambda sid, moved_by=None: STRANDED)
@@ -344,7 +346,7 @@ class TestSubmit:
 
     def test_an_exception_becomes_a_result(self, sources, monkeypatch):
         from education_system.systems.sixth_form.domain.learners.students import (
-            students as sd,
+            transfers as sd,
         )
 
         def _boom(sid, moved_by=None):
@@ -360,7 +362,7 @@ class TestBulk:
         """Results day is the point of this function, and a run that aborts
         halfway leaves an operator with no idea which half went."""
         from education_system.systems.sixth_form.domain.learners.students import (
-            students as sd,
+            transfers as sd,
         )
 
         def _flaky(sid, moved_by=None):

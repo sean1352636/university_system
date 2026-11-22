@@ -16,11 +16,11 @@ from education_system.systems.apprenticeships.domain.apprentices.models import (
     ValidationError,
 )
 from education_system.systems.apprenticeships.interfaces.cli import prompts
-from education_system.systems.apprenticeships.services import (
+from education_system.systems.apprenticeships.application.communications import (
     email_service,
     email_templates,
 )
-from education_system.systems.apprenticeships.services.access import Actor
+from education_system.systems.apprenticeships.application.security.access import Actor
 
 logger = logging.getLogger(__name__)
 

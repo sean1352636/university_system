@@ -12,7 +12,7 @@ import tkinter as tk
 from datetime import datetime
 from unittest.mock import Mock, patch, MagicMock, mock_open
 
-from education_system.systems.university.services.business_intelligence.business_intelligence_gui import (
+from education_system.systems.university.shell.gui.analytics.business_intelligence_gui import (
     BusinessIntelligenceGUI,
     CreateReportDialog,
     RunReportDialog,
@@ -24,7 +24,7 @@ from education_system.systems.university.services.business_intelligence.business
 )
 
 # Common patch prefix for the BI GUI module
-_BI_MOD = 'education_system.systems.university.services.business_intelligence.business_intelligence_gui'
+_BI_MOD = 'education_system.systems.university.shell.gui.analytics.business_intelligence_gui'
 
 
 @pytest.fixture

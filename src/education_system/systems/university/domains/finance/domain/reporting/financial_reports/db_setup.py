@@ -17,7 +17,7 @@ def initialize_enhanced_database():
                 alert_type TEXT NOT NULL,
                 message TEXT NOT NULL,
                 data TEXT,
-                created_date DATETIME DEFAULT CURRENT_TIMESTAMP,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                 resolved BOOLEAN DEFAULT FALSE
             )''',
 
@@ -64,7 +64,7 @@ def initialize_enhanced_database():
 
         # Create performance indexes
         performance_indexes = [
-            'CREATE INDEX IF NOT EXISTS idx_alerts_date ON financial_alerts(created_date)',
+            'CREATE INDEX IF NOT EXISTS idx_alerts_date ON financial_alerts(created_at)',
             'CREATE INDEX IF NOT EXISTS idx_audit_table ON audit_log(table_name)',
             'CREATE INDEX IF NOT EXISTS idx_predictions_student ON ml_predictions(student_id)',
             'CREATE INDEX IF NOT EXISTS idx_performance_metric ON system_performance(metric_name)'

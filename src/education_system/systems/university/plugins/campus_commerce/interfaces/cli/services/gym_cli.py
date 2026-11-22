@@ -17,11 +17,13 @@ from education_system.systems.university.infrastructure.shared_context import ge
 try:
     from education_system.systems.university.plugins.campus_commerce.domain.gym.services.gym_core import (
         init_gym_db, MEMBERSHIP_TYPES, CLASS_TYPES, PT_SESSION_FEES,
-        generate_membership_id, generate_booking_ref, generate_reference
+        generate_membership_id, generate_booking_ref, generate_reference,
+        MembershipManager, PTSessionManager,
     )
     GYM_CORE_AVAILABLE = True
 except ImportError:
     GYM_CORE_AVAILABLE = False
+    MembershipManager = PTSessionManager = None
     MEMBERSHIP_TYPES = {
         'basic': {'name': 'Basic', 'monthly_fee': 25.00, 'features': ['gym_access']},
         'standard': {'name': 'Standard', 'monthly_fee': 40.00, 'features': ['gym_access', 'classes']},
@@ -138,15 +140,23 @@ try:
 except ImportError:
     EMAIL_AVAILABLE = False
 
-# Import finance integration
-try:
-    from education_system.systems.university.domains.finance.infrastructure.finance_integration import (
-        record_payment_to_finance,
-        process_student_finance_account_payment
-    )
-    FINANCE_AVAILABLE = True
-except ImportError:
-    FINANCE_AVAILABLE = False
+# Finance posting lives in gym_core (MembershipManager / PTSessionManager /
+# TransactionManager); this CLI never posts to Finance directly.
+
+PAYMENT_METHODS = {'1': 'cash', '2': 'card', '3': 'student_account'}
+
+
+def _ask_payment_method():
+    """Prompt for a payment method; returns the method key or None on cancel."""
+    print("\nPayment Methods:")
+    print("1. Cash")
+    print("2. Card")
+    print("3. Student Account")
+    choice = input("\nSelect payment method (1-3): ").strip()
+    method = PAYMENT_METHODS.get(choice)
+    if not method:
+        print("❌ Invalid payment method")
+    return method
 
 # Import activity logger
 try:
@@ -305,30 +315,34 @@ def register_membership():
                 input("Press Enter to continue...")
                 return
 
-            with transaction() as conn:
-                conn.execute('''
-                    INSERT INTO gym_memberships (
-                        member_number, user_id, user_name, user_email, membership_type,
-                        monthly_fee, start_date, end_date, status, auto_renew
-                    )
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'active', 1)
-                ''', (member_number, user_id, user_name, user_email or None, selected_type,
-                      monthly_fee, start_date.strftime('%Y-%m-%d'), end_date.strftime('%Y-%m-%d')))
+            payment_method = _ask_payment_method()
+            if not payment_method:
+                input("Press Enter to continue...")
+                return
 
+            if not GYM_CORE_AVAILABLE:
+                print("❌ Gym service unavailable")
+                input("Press Enter to continue...")
+                return
+
+            # The service creates the membership, takes the fee and posts
+            # it to Finance (shared with the GUI).
+            result = MembershipManager.create_membership(
+                user_id=user_id, user_name=user_name, user_email=user_email or None,
+                membership_type=selected_type, months=duration_months,
+                created_by=user_id, payment_method=payment_method,
+            )
+            if not result:
+                print("❌ Registration failed (payment declined or invalid membership)")
+                input("Press Enter to continue...")
+                return
+
+            member_number = result['member_number']
             print("\n✅ Membership registered successfully!")
             print(f"Membership Number: {member_number}")
-
-            log_activity('create', 'gym_membership', membership_id=member_number,
-                         details={'type': selected_type, 'duration': duration_months})
-
-            if FINANCE_AVAILABLE:
-                record_payment_to_finance(
-                    student_id=user_id,
-                    amount=total_cost,
-                    payment_type="Gym Membership",
-                    description=f"Gym Membership - {type_details['name']} - {duration_months} months",
-                    payment_method="Pending"
-                )
+            print(f"Amount Paid: £{result['total_fee']:.2f} ({payment_method.replace('_', ' ').title()})")
+            if result.get('payment'):
+                print(f"Payment Reference: {result['payment']['reference']}")
 
         except ValueError:
             print("❌ Invalid duration")
@@ -642,22 +656,43 @@ def book_pt_session():
 
     session_type, fee = packages[package_choice]
 
+    payment_method = _ask_payment_method()
+    if not payment_method:
+        input("\nPress Enter to continue...")
+        return
+
     try:
-        with transaction() as conn:
-            conn.execute('''
-                INSERT INTO gym_pt_sessions (
-                    user_id, user_name, trainer_name, session_date, session_time,
-                    duration_minutes, session_type, fee, status
-                )
-                VALUES (?, ?, ?, ?, ?, 60, ?, ?, 'scheduled')
-            ''', (user_id, user_name, trainer, session_date, session_time, session_type, fee))
+        if not GYM_CORE_AVAILABLE:
+            print("❌ Gym service unavailable")
+            input("\nPress Enter to continue...")
+            return
+
+        membership = MembershipManager.get_membership(user_id=user_id)
+        if not membership or membership.get('status') != 'active':
+            print("❌ An active gym membership is required to book personal training")
+            input("\nPress Enter to continue...")
+            return
+
+        # The service books the session, takes the fee and posts it to
+        # Finance (shared with the GUI).
+        result = PTSessionManager.book_session(
+            member_id=membership['membership_id'], trainer_name=trainer,
+            session_date=session_date, session_time=session_time,
+            session_type=session_type, payment_method=payment_method,
+            processed_by=user_id,
+        )
+        if not result:
+            print("❌ Booking failed (payment declined)")
+            input("\nPress Enter to continue...")
+            return
 
         print("\n✅ Personal training session booked!")
+        print(f"Booking Reference: {result['booking_ref']}")
         print(f"Trainer: {trainer}")
         print(f"Date: {session_date}")
         print(f"Time: {session_time}")
         print(f"Package: {session_type.replace('_', ' ').title()}")
-        print(f"Fee: £{fee:.2f}")
+        print(f"Fee: £{result['fee']:.2f} ({payment_method.replace('_', ' ').title()})")
 
         log_activity('create', 'gym_pt_session', details={
             'trainer': trainer, 'date': session_date, 'package': session_type

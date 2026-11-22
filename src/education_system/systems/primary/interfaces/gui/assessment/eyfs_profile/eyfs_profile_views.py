@@ -8,6 +8,7 @@ import tkinter as tk
 from tkinter import messagebox, ttk
 from typing import Callable
 
+from education_system.systems.primary.interfaces.gui import kit
 from education_system.systems.primary.domain.assessment.eyfs_profile import (
     eyfs_profile as data,
 )
@@ -52,24 +53,24 @@ def _safe_view(func: Callable[..., None]) -> Callable[..., None]:
 @_safe_view
 def open_eyfs_profile(host) -> None:
     logger.debug("GUI: open_eyfs_profile")
+    kit.show_page(host, "EYFS Profile", lambda parent: _draw_eyfs_profile(parent, host))
 
-    win = tk.Toplevel(host.root)
-    win.title("EYFS Profile")
-    win.transient(host.root)
-    win.geometry("960x580")
 
-    top = ttk.Frame(win, padding=10)
+def _draw_eyfs_profile(parent, host) -> None:
+    kit.page_heading(parent, "EYFS Profile")
+    win = parent.winfo_toplevel()
+
+    top = ttk.Frame(parent, padding=(0, 0, 0, 6))
     top.pack(fill="x")
     summary_var = tk.StringVar()
     ttk.Label(top, textvariable=summary_var,
               font=("Segoe UI", 10, "bold")).pack(side="left")
 
-    filt = ttk.Frame(win, padding=(10, 0, 10, 6))
+    filt = ttk.Frame(parent, padding=(0, 0, 0, 6))
     filt.pack(fill="x")
     ttk.Label(filt, text="Academic year:").pack(side="left")
     year_var = tk.StringVar(value="")
-    year_box = ttk.Combobox(filt, textvariable=year_var,
-                            values=[], width=12)
+    year_box = kit.AcademicYearPicker(filt, year_var, width=12)
     year_box.pack(side="left", padx=(4, 12))
     ttk.Label(filt, text="Pupil year:").pack(side="left")
     py_var = tk.StringVar(value="All")
@@ -78,7 +79,7 @@ def open_eyfs_profile(host) -> None:
                  state="readonly", width=6).pack(side="left", padx=(4, 12))
 
     cols = ("pupil_id", "name", "year", "elgs", "expected", "gld")
-    tree = ttk.Treeview(win, columns=cols, show="headings", height=15)
+    tree = ttk.Treeview(parent, columns=cols, show="headings", height=15)
     for col, label, width, anchor in [
         ("pupil_id", "Pupil ID", 90, "w"),
         ("name", "Name", 260, "w"),
@@ -89,9 +90,9 @@ def open_eyfs_profile(host) -> None:
     ]:
         tree.heading(col, text=label)
         tree.column(col, width=width, anchor=anchor)
-    tree.pack(fill="both", expand=True, padx=10, pady=(0, 6))
+    tree.pack(fill="both", expand=True, pady=(0, 6))
 
-    btns = ttk.Frame(win, padding=10)
+    btns = ttk.Frame(parent, padding=(0, 6))
     btns.pack(fill="x")
 
     def _refresh() -> None:
@@ -99,7 +100,8 @@ def open_eyfs_profile(host) -> None:
             known = data.known_years()
         except Exception:
             known = []
-        year_box["values"] = known
+        year_box.set_choices(
+            sorted(set(kit.academic_years()) | set(known), reverse=True))
         ay = year_var.get().strip()
         if not ay:
             for iid in tree.get_children():
@@ -195,7 +197,8 @@ def open_eyfs_profile(host) -> None:
         side="left", padx=(8, 0))
     ttk.Button(btns, text="Refresh", command=_refresh).pack(
         side="left", padx=(8, 0))
-    ttk.Button(btns, text="Close", command=win.destroy).pack(side="right")
+    ttk.Button(btns, text="Close", command=lambda: kit.close_page(host, parent)).pack(
+        side="right")
 
     tree.bind("<Double-Button-1>", lambda _e: _open_pupil())
     year_var.trace_add("write", lambda *_: _refresh())
@@ -208,7 +211,7 @@ def _prompt_for_pid(parent) -> str | None:
     dlg = tk.Toplevel(parent)
     dlg.title("Open pupil profile")
     dlg.transient(parent)
-    dlg.geometry("360x150")
+    dlg.geometry("520x160")
     try:
         dlg.wait_visibility()
         dlg.grab_set()
@@ -216,9 +219,9 @@ def _prompt_for_pid(parent) -> str | None:
         logger.debug("grab_set skipped", exc_info=True)
     frm = ttk.Frame(dlg, padding=12)
     frm.pack(fill="both", expand=True)
-    ttk.Label(frm, text="Pupil ID:").pack(anchor="w")
+    ttk.Label(frm, text="Pupil:").pack(anchor="w")
     pid_var = tk.StringVar()
-    ttk.Entry(frm, textvariable=pid_var, width=20).pack(anchor="w", pady=(4, 6))
+    kit.PupilPicker(frm, pid_var).pack(anchor="w", pady=(4, 6))
     label_var = tk.StringVar()
     ttk.Label(frm, textvariable=label_var, foreground="#666").pack(anchor="w")
 

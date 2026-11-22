@@ -220,7 +220,7 @@ def show_library_management(self):
                             _t("academic_launchers.fallback.library_gui_unavailable",
                                error=LIBRARY_GUI_IMPORT_ERROR))
         try:
-            from education_system.systems.university.domains.academics.domain.services.library.menu import display_library_menu
+            from education_system.systems.university.domains.library.domain.library.menu import display_library_menu
             display_library_menu()
         except ImportError:
             messagebox.showerror(_t("academic_launchers.errors.title"),
@@ -347,7 +347,7 @@ def show_academic_calendar(self):
         # Offer CLI fallback
         if messagebox.askyesno(_t("academic_launchers.fallback.title"), _t("academic_launchers.fallback.try_cli_calendar")):
             try:
-                from education_system.systems.university.domains.academics.domain.services.academic_calendar.cli import display_academic_calendar_menu
+                from education_system.systems.university.domains.teaching.domain.academic_calendar.cli import display_academic_calendar_menu
                 display_academic_calendar_menu()
             except ImportError:
                 messagebox.showerror(_t("academic_launchers.errors.title"), _t("academic_launchers.errors.calendar_unavailable"))
@@ -397,7 +397,7 @@ def show_course_management(self):
             messagebox.showinfo(_t("academic_launchers.titles.course_short"),
                               _t("academic_launchers.fallback.course_gui_unavailable"))
             try:
-                from education_system.systems.university.domains.academics.domain.services.course_management import display_course_management_menu
+                from education_system.systems.university.domains.curriculum.domain.course_management import display_course_management_menu
                 display_course_management_menu(self.auth)
             except ImportError:
                 messagebox.showerror(_t("academic_launchers.errors.title"), _t("academic_launchers.errors.course_unavailable"))
@@ -422,7 +422,7 @@ def show_module_management(self):
         return
 
     try:
-        from education_system.systems.university.domains.academics.interfaces.gui.module_management import (
+        from education_system.systems.university.domains.curriculum.interfaces.gui.module_management import (
             ModuleManagementGUI,
         )
     except ImportError:
@@ -508,7 +508,7 @@ def show_timetable_management(self):
     picks a target or another tab.
     """
     try:
-        from education_system.systems.university.domains.academics.interfaces.gui.timetable_management import (
+        from education_system.systems.university.domains.teaching.interfaces.gui.timetable_management import (
             TimetableManagementGUI,
         )
     except Exception as e:
@@ -556,7 +556,7 @@ def show_grade_tracking_gui(self):
     if self.grade_tracking_gui:
         self.grade_tracking_gui.show_grade_tracking_gui()
         try:
-            from education_system.systems.university.domains.academics.interfaces.gui.research.external_quality_assurance.qa_receivers import consume_eqa_context
+            from education_system.systems.university.domains.research.interfaces.gui.research.external_quality_assurance.qa_receivers import consume_eqa_context
             consume_eqa_context(self, "Grades", target=self.grade_tracking_gui)
         except Exception:
             logger.debug("Suppressed exception", exc_info=True)
@@ -660,46 +660,31 @@ def show_assignments(self):
 def show_plagiarism_checker(self):
     """Show plagiarism checker interface"""
     try:
-        # Launch plagiarism checker GUI or show in content area
-        from education_system.systems.university.domains.academics.interfaces.gui.plagiarism_main_gui import launch_gui_from_main_system
-        launch_gui_from_main_system(self.auth)
+        from education_system.systems.university.domains.integrity.interfaces.gui.plagiarism_main_gui.window import open_integrity_window
+        open_integrity_window(self.root, self.auth)
     except Exception as e:
         messagebox.showerror(_t("academic_launchers.errors.title"), _t("academic_launchers.errors.plagiarism_unavailable", error=e))
 def show_ai_detector(self):
-    """Show AI detector interface"""
+    """Show the AI Content Detector as the signed-in user (staff only)."""
     try:
         if not AI_DETECTOR_GUI_AVAILABLE:
             messagebox.showerror(_t("academic_launchers.errors.title"), _t("academic_launchers.errors.ai_detector_gui_unavailable"))
             return
-
-        # Create new window for AI Detector
-        ai_window = tk.Toplevel(self.root)
-        _install_clean_close(ai_window)
-        ai_window.title(_t("academic_launchers.titles.ai_detector"))
-        ai_window.geometry("1000x700")
-
-        # Initialize AI Detector GUI
-        ai_gui = AIDetectorGUI(ai_window, self.auth)
-        print(_t("academic_launchers.success.ai_detector_opened"))
-
+        from education_system.systems.university.infrastructure.ui.windows import open_ai_detector
+        gui = open_ai_detector(self.root, self.auth)
+        if gui is not None:
+            _install_clean_close(gui.root)
+            print(_t("academic_launchers.success.ai_detector_opened"))
     except Exception as e:
         messagebox.showerror(_t("academic_launchers.errors.title"), _t("academic_launchers.errors.ai_detector_unavailable", error=e))
 def open_ai_detector_window(self):
-    """Open the AI Detector GUI in a separate full-screen window (new process)."""
-    try:
-        python = sys.executable
-        code = (
-            "import sys, os; "
-            f"sys.path.insert(0, r'{PROJECT_ROOT}'); "
-            "import ai_detector as m; "
-            f"det = m.AIDetector(db_path=r'{DB_PATH}'); "
-            "app = m.AIDetectorGUI(det); "
-            "app.root.attributes('-fullscreen', True); "
-            "app.run()"
-        )
-        subprocess.Popen([python, "-c", code], close_fds=True)
-    except Exception as e:
-        messagebox.showerror(_t("academic_launchers.errors.title"), _t("academic_launchers.errors.failed_open_ai_detector_window", error=e))
+    """Open the AI Content Detector from the sidebar.
+
+    This used to start a separate process with ``import ai_detector``, a
+    module that no longer exists at the top level, and passed the detector
+    where a Tk root belongs; it now opens in-process as the signed-in user,
+    like every other launcher."""
+    show_ai_detector(self)
 def open_attendance_gui(self):
     try:
         import tkinter as tk
@@ -735,7 +720,7 @@ def open_absence_tracker_gui(self):
     try:
         python = sys.executable
         cmd = [python, "-m",
-               "education_system.systems.university.domains.academics.domain.services.attendance.absence_tracking.absence_tracker"]
+               "education_system.systems.university.domains.teaching.domain.attendance.absence_tracking.absence_tracker"]
         user = getattr(self.auth, "current_user", None) if getattr(self, "auth", None) else None
         if user:
             if user.get("username"):
@@ -960,7 +945,7 @@ def show_virtual_classroom_gui(self):
         return
 
     try:
-        from education_system.systems.university.domains.academics.interfaces.gui.virtual_classroom_gui import VirtualClassroomGUI
+        from education_system.systems.university.domains.teaching.interfaces.gui.virtual_classroom_gui import VirtualClassroomGUI
     except ImportError as e:
         messagebox.showerror(_t("academic_launchers.errors.title"), _t("academic_launchers.errors.virtual_classroom_import_error", error=str(e)))
         print(_t("academic_launchers.errors.virtual_classroom_import_log", error=e))
@@ -1164,7 +1149,7 @@ def show_predictive_analytics_gui(self):
     """Launch the Predictive Analytics GUI"""
     launch_predictive_analytics_gui(self.root, self.auth)
     try:
-        from education_system.systems.university.domains.academics.interfaces.gui.research.external_quality_assurance.qa_receivers import consume_eqa_context
+        from education_system.systems.university.domains.research.interfaces.gui.research.external_quality_assurance.qa_receivers import consume_eqa_context
         consume_eqa_context(self, "Predictive Analytics")
     except Exception:
         logger.debug("Suppressed exception", exc_info=True)
@@ -1172,12 +1157,12 @@ def show_business_intelligence_gui(self):
     """Launch the Business Intelligence GUI"""
     bi = launch_business_intelligence_gui(self.root, self.auth)
     try:
-        from education_system.systems.university.domains.academics.interfaces.gui.research.external_quality_assurance.qa_receivers import consume_eqa_context
+        from education_system.systems.university.domains.research.interfaces.gui.research.external_quality_assurance.qa_receivers import consume_eqa_context
         consume_eqa_context(self, "Business Intelligence", target=bi)
     except Exception:
         logger.debug("Suppressed exception", exc_info=True)
     try:
-        from education_system.systems.university.domains.academics.interfaces.gui.research.external_quality_assurance.qa_widgets import EQAStatusStrip
+        from education_system.systems.university.domains.research.interfaces.gui.research.external_quality_assurance.qa_widgets import EQAStatusStrip
         win = getattr(bi, "window", None) if bi is not None else None
         if win is not None:
             EQAStatusStrip(win).pack(fill='x', padx=8, pady=(6, 0))
@@ -1207,7 +1192,9 @@ def show_advanced_search_gui(self):
         search_window.transient(self.root)
 
         # Initialize the Advanced Search GUI in the new window
-        self.advanced_search_gui = AdvancedSearchGUI(search_window, auth=self.auth)
+        self.advanced_search_gui = AdvancedSearchGUI(
+            search_window, auth=self.auth,
+            open_student=getattr(self, 'show_student_details', None))
         search_window.deiconify()
 
         # Store reference for data refresh
@@ -1258,11 +1245,11 @@ def show_exam_scheduler_gui(self):
 
         if role == 'student':
             # Students get read-only exam viewer
-            from education_system.systems.university.domains.academics.interfaces.gui.exam_management import StudentExamViewer
+            from education_system.systems.university.domains.assessment.interfaces.gui.exam_management import StudentExamViewer
             StudentExamViewer(window, auth=self.auth)
         else:
             # Staff/admin get full exam scheduler
-            from education_system.systems.university.domains.academics.interfaces.gui.exam_management import ExamSchedulerApp
+            from education_system.systems.university.domains.assessment.interfaces.gui.exam_management import ExamSchedulerApp
             ExamSchedulerApp(window)
 
         print(_t("extras_gui.messages.exam_scheduler_opened"))
@@ -1273,7 +1260,7 @@ def show_exam_scheduler_gui(self):
 def show_exam_portal(self):
     """Launch the unified Exam Management GUI (portal + scheduler) in a Toplevel window"""
     try:
-        from education_system.systems.university.domains.academics.interfaces.gui.exam_management import ExamPortalGUI
+        from education_system.systems.university.domains.assessment.interfaces.gui.exam_management import ExamPortalGUI
         window = tk.Toplevel(self.root)
         _install_clean_close(window)
         window.title(_t('gui.shell.main.features.academic_launchers.windows.exam_management', default="Exam Management"))
@@ -1303,9 +1290,9 @@ def show_hesa_export_gui(self):
     title = "HESA Export"
 
     def _build_hesa(host):
-        gui = HESAExportGUI(parent=host)
+        gui = HESAExportGUI(parent=host, auth=getattr(self, 'auth', None))
         try:
-            from education_system.systems.university.domains.academics.interfaces.gui.research.external_quality_assurance.qa_receivers import consume_eqa_context
+            from education_system.systems.university.domains.research.interfaces.gui.research.external_quality_assurance.qa_receivers import consume_eqa_context
             consume_eqa_context(self, "HESA Export", target=gui)
         except Exception:
             logger.debug("Suppressed exception", exc_info=True)
@@ -1328,7 +1315,7 @@ def show_curriculum_specification_gui(self):
     inside the main GUI's content notebook when available, falling back
     to a Toplevel."""
     try:
-        from education_system.systems.university.domains.academics.interfaces.gui.curriculum_specification.curriculum_specification_gui import CurriculumSpecificationGUI
+        from education_system.systems.university.domains.curriculum.interfaces.gui.curriculum_specification.curriculum_specification_gui import CurriculumSpecificationGUI
     except ImportError as e:
         logger.error(f"Failed to import Curriculum Specification GUI: {e}")
         messagebox.showerror(_t("common.error"), f"Curriculum Specification GUI not available: {e}")
@@ -1339,7 +1326,7 @@ def show_curriculum_specification_gui(self):
     def _build_curr(host):
         gui = CurriculumSpecificationGUI(parent=host)
         try:
-            from education_system.systems.university.domains.academics.interfaces.gui.research.external_quality_assurance.qa_receivers import consume_eqa_context
+            from education_system.systems.university.domains.research.interfaces.gui.research.external_quality_assurance.qa_receivers import consume_eqa_context
             consume_eqa_context(self, "Curriculum Specification", target=gui)
         except Exception:
             logger.debug("Suppressed exception", exc_info=True)
@@ -1495,7 +1482,7 @@ def show_collaborative_provision_gui(self):
         return
 
     try:
-        from education_system.systems.university.domains.academics.interfaces.gui.collaborative_provision.collaborative_provision_gui import CollaborativeProvisionGUI
+        from education_system.systems.university.domains.curriculum.interfaces.gui.collaborative_provision.collaborative_provision_gui import CollaborativeProvisionGUI
     except ImportError as e:
         logger.error(f"Failed to import Collaborative Provision GUI: {e}")
         messagebox.showerror(_t("common.error"),
@@ -1541,7 +1528,7 @@ def show_student_mobility_gui(self):
         return
 
     try:
-        from education_system.systems.university.domains.academics.interfaces.gui.student_mobility.student_mobility_gui import StudentMobilityGUI
+        from education_system.systems.university.domains.curriculum.interfaces.gui.student_mobility.student_mobility_gui import StudentMobilityGUI
     except ImportError as e:
         logger.error(f"Failed to import Student Mobility GUI: {e}")
         messagebox.showerror(_t("common.error"),

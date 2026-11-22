@@ -410,13 +410,27 @@ def delete_book_flow() -> None:
     except _UserAbort:
         print("\n  Cancelled.")
         return
-    if _input(f"Delete book #{b.book_id}? "
-              "Cascade-deletes its loans. Type 'yes'",
+    print("  Only books that have never been lent can be deleted; "
+          "books on loan or with loan history are kept.")
+    if _input(f"Delete book #{b.book_id}? Type 'yes'",
               default="no").lower() != "yes":
         print("\n  Cancelled.")
         return
-    if data.delete_book(b.book_id):
-        print(f"\n  ✓ Deleted #{b.book_id}")
+    try:
+        if data.delete_book(b.book_id):
+            print(f"\n  ✓ Deleted #{b.book_id}")
+    except data.BookHasLoanHistory as e:
+        print(f"\n  ✗ {e}")
+        try:
+            ok = _input(f"Withdraw book #{b.book_id} instead? (y/n)",
+                        default="y").lower().startswith("y")
+        except _UserAbort:
+            ok = False
+        if ok:
+            data.withdraw_book(b.book_id)
+            print(f"\n  ✓ Withdrawn #{b.book_id} (history kept)")
+    except ValidationError as e:
+        print(f"\n  ✗ {e}")
     _pause()
 
 

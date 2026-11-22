@@ -97,12 +97,12 @@ def cross_system_student_self_service():
     return feature_pending("Student Self-Service", _SYSTEM, category=_CATEGORY)
 
 
-@cross_system_menu_bp.route("/open-certificates", methods=["GET"])
+@cross_system_menu_bp.route("/certificates", methods=["GET"])
 @token_required
 @staff_required
-def cross_system_open_certificates():
-    """open_certificates"""
-    return feature_pending("open_certificates", _SYSTEM, category=_CATEGORY)
+def cross_system_certificates():
+    """Certificates"""
+    return feature_pending("Certificates", _SYSTEM, category=_CATEGORY)
 
 
 @cross_system_menu_bp.route("/university-visits-crm", methods=["GET"])

@@ -13,6 +13,7 @@ from __future__ import annotations
 
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 
+from education_system.systems.university.domains.staff.interfaces.gui.staff_hr import _access as _hr
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
 from datetime import datetime
@@ -47,7 +48,7 @@ class ExpenseGUI:
 
     def _get_user_id(self):
         """Get user ID from current user dict."""
-        return self.current_user.get('id') or self.current_user.get('username')
+        return _hr.user_key(self)
 
     def create_as_tab(self, notebook: ttk.Notebook):
         """Create as a tab in parent notebook."""
@@ -59,7 +60,8 @@ class ExpenseGUI:
         """Create as standalone window."""
         self.window = tk.Toplevel(self.root)
         self.window.title(_t('gui.staff.staff_hr.expense.windows.expense_claims_reimbursements', default="Expense Claims & Reimbursements"))
-        self.window.geometry("1200x700")
+        self.window.geometry("1400x900")
+        self.window.minsize(1200, 800)
         self.window.minsize(1000, 600)
 
         bottom_frame = ttk.Frame(self.window)
@@ -82,9 +84,11 @@ class ExpenseGUI:
         self._create_submit_tab()
         self._create_my_claims_tab()
 
-        if self.current_user.get('role') in ['admin', 'Admin', 'administrator', 'staff']:
+        if _hr.can(self, 'manager'):
             self._create_approvals_tab()
+        if _hr.can(self, 'operations'):
             self._create_categories_tab()
+        if _hr.can(self, 'hr'):
             self._create_reports_tab()
 
     def _create_submit_tab(self):
@@ -368,7 +372,9 @@ class ExpenseGUI:
         for item in self.approvals_tree.get_children():
             self.approvals_tree.delete(item)
 
-        claims = ExpenseManager.get_pending_approvals(self._get_user_id())
+        # Every submitted claim, kept to the ones this person may approve
+        # (their reports' — down the line, or anyone's for HR — never their own).
+        claims = _hr.approvable(self, ExpenseManager.get_pending_approvals())
 
         for c in claims:
             self.approvals_tree.insert('', tk.END, values=(
@@ -390,11 +396,14 @@ class ExpenseGUI:
 
         item = self.approvals_tree.item(selection[0])
         claim_id = item['values'][0]
+        if not _hr.may_approve(self, item['values'][1]):
+            messagebox.showerror(_t('gui.staff.staff_hr.expense.dialogs.error', default="Error"), "You may not approve or reject this person's request.")
+            return
 
         comments = tk.simpledialog.askstring("Comments", "Enter approval comments (optional):", parent=self.root)
 
         try:
-            ExpenseManager.approve_claim(claim_id, self._get_user_id(), comments or '')
+            ExpenseManager.approve_claim(claim_id, self._get_user_id(), comments=comments or '', actor=_hr.actor(self))
             messagebox.showinfo(_t('gui.staff.staff_hr.expense.dialogs.success', default="Success"), _t('gui.staff.staff_hr.expense.dialogs.claim_approved', default="Claim approved"))
             self._load_approvals()
         except Exception as e:
@@ -409,6 +418,9 @@ class ExpenseGUI:
 
         item = self.approvals_tree.item(selection[0])
         claim_id = item['values'][0]
+        if not _hr.may_approve(self, item['values'][1]):
+            messagebox.showerror(_t('gui.staff.staff_hr.expense.dialogs.error', default="Error"), "You may not approve or reject this person's request.")
+            return
 
         comments = tk.simpledialog.askstring("Reason", "Enter rejection reason:", parent=self.root)
         if not comments:
@@ -416,7 +428,7 @@ class ExpenseGUI:
             return
 
         try:
-            ExpenseManager.reject_claim(claim_id, self._get_user_id(), comments)
+            ExpenseManager.reject_claim(claim_id, self._get_user_id(), comments, actor=_hr.actor(self))
             messagebox.showinfo(_t('gui.staff.staff_hr.expense.dialogs.success', default="Success"), _t('gui.staff.staff_hr.expense.dialogs.claim_rejected', default="Claim rejected"))
             self._load_approvals()
         except Exception as e:

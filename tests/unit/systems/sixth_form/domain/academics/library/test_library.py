@@ -23,17 +23,17 @@ from education_system.systems.sixth_form.domain.learners.students import (
 from education_system.systems.sixth_form.domain.academics.subjects import (
     subjects as subjects_mod,
 )
-from education_system.systems.sixth_form.domain.operations.communications.messages import (
+from education_system.systems.sixth_form.domains.communications.domain.messages import (
     messages as messages_mod,
 )
 from education_system.systems.sixth_form.domain.staff import (
     staff as staff_mod,
 )
-from education_system.systems.sixth_form.domain.operations.communications.parent_contacts import (
+from education_system.systems.sixth_form.domains.communications.domain.parent_contacts import (
     parent_contacts as parent_contacts_mod,
 )
 from education_system.systems.sixth_form.domain.learners.alumni import (
-    alumni as alumni_mod,
+    db as alumni_db,
 )
 
 
@@ -49,7 +49,7 @@ def lib_db(tmp_path, monkeypatch):
     # Everything below shares the one sixthform.db file in production, so
     # point them all at the same tmp file for an isolated, FK-complete DB.
     shared = (lib, students_mod, subjects_mod, messages_mod, staff_mod,
-              parent_contacts_mod, alumni_mod)
+              parent_contacts_mod, alumni_db)
     for mod in shared:
         monkeypatch.setattr(mod, "DB_PATH", db_path)
         monkeypatch.setattr(mod, "_DB_READY", False)
@@ -347,7 +347,7 @@ def test_fine_issued_notification_logged(lib_db):
 
 def test_cli_raise_fine_flow(lib_db, monkeypatch):
     """Drive the raise-fine CLI flow through the input() layer."""
-    from education_system.systems.sixth_form.domain.academics.library import (
+    from education_system.systems.sixth_form.interfaces.cli.academics.library import (
         library_cli as cli,
     )
     answers = iter([
@@ -373,7 +373,7 @@ def test_gui_tabs_and_dialogs_build(lib_db):
     """Build every library tab and key dialog against a real Tk root."""
     import tkinter as tk
     from tkinter import ttk
-    from education_system.systems.sixth_form.domain.academics.library import (
+    from education_system.systems.sixth_form.interfaces.gui.academics.library import (
         library_views as v,
     )
     # Seed a bit of data so refresh() has rows to render.

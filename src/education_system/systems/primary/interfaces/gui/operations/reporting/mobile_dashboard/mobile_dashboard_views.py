@@ -12,7 +12,6 @@ import logging
 import tkinter as tk
 from tkinter import messagebox, ttk
 
-from education_system.platform import branding
 from education_system.systems.primary.domain.operations.reporting.mobile_dashboard import (
     mobile_dashboard as data,
 )
@@ -20,6 +19,7 @@ from education_system.systems.primary.domain.operations.reporting.mobile_dashboa
     FeedItem,
     Tile,
 )
+from education_system.systems.primary.interfaces.gui import kit
 
 logger = logging.getLogger(__name__)
 
@@ -43,19 +43,24 @@ _SEV_FG = {
 
 
 def open_mobile_dashboard_window(parent=None) -> None:
-    master = getattr(parent, "root", parent)
-    win = tk.Toplevel(master) if master is not None else tk.Tk()
-    win.title(f"Mobile Dashboard — {branding.SYSTEM_NAME}")
-    win.geometry(WIN_GEOMETRY)
-    win.minsize(*WIN_MINSIZE)
+    if parent is None:
+        root = tk.Tk()
+        root.title("Mobile Dashboard")
+        root.geometry(WIN_GEOMETRY)
+        root.minsize(*WIN_MINSIZE)
+        frame = ttk.Frame(root, padding=10)
+        frame.pack(fill="both", expand=True)
+        _draw_mobile_dashboard(frame)
+        return
+    kit.show_page(parent, "Mobile Dashboard", _draw_mobile_dashboard)
 
-    outer = ttk.Frame(win)
-    outer.pack(fill="both", expand=True, padx=10, pady=10)
+
+def _draw_mobile_dashboard(outer: ttk.Frame) -> None:
+    kit.page_heading(outer, "Mobile Dashboard",
+                     "Tiles up top and a scrolling feed below, as on a phone.")
 
     bar = ttk.Frame(outer)
     bar.pack(fill="x", pady=(0, 8))
-    ttk.Label(bar, text="Mobile Dashboard",
-                font=("TkDefaultFont", 14, "bold")).pack(side="left")
     refresh_btn = ttk.Button(bar, text="Refresh")
     refresh_btn.pack(side="right")
     status_lbl = ttk.Label(bar, text="")
@@ -193,7 +198,8 @@ def open_mobile_dashboard_window(parent=None) -> None:
             d = data.build_dashboard()
         except Exception as e:
             logger.exception("Mobile dashboard refresh failed")
-            messagebox.showerror("Mobile Dashboard", str(e))
+            messagebox.showerror("Mobile Dashboard", str(e),
+                                 parent=outer.winfo_toplevel())
             return
         _render_tiles(d.tiles)
         _render_feed_strip([

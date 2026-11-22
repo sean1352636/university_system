@@ -1,0 +1,11 @@
+{
+  "subject": "Review finished: $assignment_title",
+  "body": "Dear $first_name,\n\nA member of staff has finished reviewing the $check_name on your submission for '$assignment_title' ($module_code). No further action is being taken.\n\nThe result\n$result\n\nIf you have any questions, please contact your module leader.\n\nBest regards,\nAcademic Integrity Team",
+  "variables": {
+    "first_name": {"type": "string", "required": true, "description": "Student's first name"},
+    "assignment_title": {"type": "string", "required": true, "description": "Assignment title"},
+    "module_code": {"type": "string", "required": true, "description": "Module code"},
+    "check_name": {"type": "string", "required": true, "description": "Which check was reviewed"},
+    "result": {"type": "string", "required": true, "description": "The result now released"}
+  }
+}

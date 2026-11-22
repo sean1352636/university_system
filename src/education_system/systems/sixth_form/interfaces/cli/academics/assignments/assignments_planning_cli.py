@@ -14,10 +14,14 @@ import logging
 from typing import Any, Callable
 
 from education_system.systems.sixth_form.domain.academics.assignments import (
-    assignments as data,
     assignments_catalogue as cat,
     assignments_scheduling as sched,
 )
+from education_system.systems.sixth_form.domain.academics.assignments import (
+    models as assignments_models,
+    store as assignments_store,
+)
+import datetime as _dt
 from education_system.systems.sixth_form.interfaces.cli.academics.assignments.assignments_cli import (
     _input,
     _multiline,
@@ -76,7 +80,7 @@ def set_specification_flow() -> None:
             exam_board=board or None, spec_code=spec or None,
             unit_code=unit or None, component_code=component or None,
             objectives=objectives or None)
-    except data.ValidationError as e:
+    except assignments_models.ValidationError as e:
         print(f"\n  ✗ {e}")
         _pause()
         return
@@ -210,7 +214,7 @@ def clone_flow() -> None:
         source = _pick_assignment()
         title = _input("New title", default=f"{source.title} (copy)")
         set_date = _input("Set date (YYYY-MM-DD)",
-                           default=data._dt.date.today().isoformat())
+                           default=_dt.date.today().isoformat())
         due_date = _input("Due date (YYYY-MM-DD)")
         teacher = _input("Teacher", default=source.teacher or "")
         copy_rubric = _yes("Copy the rubric? (y/n)", default="y")
@@ -228,7 +232,7 @@ def clone_flow() -> None:
             copy_rubric=copy_rubric, copy_questions=copy_questions,
             copy_variants=copy_variants,
             copy_attachments=copy_files)
-    except data.ValidationError as e:
+    except assignments_models.ValidationError as e:
         print(f"\n  ✗ {e}")
         _pause()
         return
@@ -301,7 +305,7 @@ def add_variant_flow() -> None:
             "name": name, "tier": tier, "brief": brief,
             "estimated_hours": hours or None,
             "max_marks": max_marks or None, "is_default": is_default})
-    except data.ValidationError as e:
+    except assignments_models.ValidationError as e:
         print(f"\n  ✗ {e}")
         _pause()
         return
@@ -329,7 +333,7 @@ def assign_variant_flow() -> None:
                   else int(choice.split()[0].lstrip("#")))
     try:
         out = cat.assign_variant(sub.submission_id, variant_id)
-    except data.ValidationError as e:
+    except assignments_models.ValidationError as e:
         print(f"\n  ✗ {e}")
         _pause()
         return
@@ -394,7 +398,7 @@ def heavy_weeks_flow() -> None:
     try:
         rows = cat.heavy_weeks(year_group=year or None,
                                 threshold=float(threshold))
-    except (ValueError, data.ValidationError) as e:
+    except (ValueError, assignments_models.ValidationError) as e:
         print(f"\n  ✗ {e}")
         _pause()
         return
@@ -530,9 +534,9 @@ def reminder_settings_flow() -> None:
         print("\n  Cancelled.")
         return
     try:
-        out = data.update_assignment(a.assignment_id,
+        out = assignments_store.update_assignment(a.assignment_id,
                                       {"reminder_days": days or None})
-    except data.ValidationError as e:
+    except assignments_models.ValidationError as e:
         print(f"\n  ✗ {e}")
         _pause()
         return

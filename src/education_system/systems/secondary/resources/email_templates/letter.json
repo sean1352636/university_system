@@ -1,0 +1,16 @@
+{
+  "name": "letter",
+  "description": "A mail-merged letter to a pupil's contacts with parental responsibility (the body is already merged).",
+  "subject": "{subject}",
+  "body": [
+    "{body}",
+    "",
+    "{reply_slip}"
+  ],
+  "placeholders": {
+    "subject": "The merged subject line",
+    "body": "The merged letter",
+    "reply_slip": "How to reply (blank when there is no reply slip)"
+  },
+  "defaults": {"reply_slip": ""}
+}

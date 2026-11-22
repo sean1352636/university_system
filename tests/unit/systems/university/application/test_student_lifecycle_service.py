@@ -2,18 +2,21 @@ import sqlite3
 
 import pytest
 
-from education_system.systems.university.application.student_lifecycle_service import (
+from education_system.systems.university.application.students.lifecycle import (
     PurgeControlError,
     StudentCommand,
     StudentLifecycleService,
     StudentStatus,
+    StudentValidationError,
     validate_student_command,
 )
 
 
 @pytest.fixture(autouse=True)
 def _curriculum_stub(monkeypatch):
-    from education_system.systems.university.domains.academics.domain.services import admissions_selection
+    from education_system.systems.university.domains.admissions.domain.services import (
+        admissions_selection,
+    )
 
     monkeypatch.setattr(
         admissions_selection,
@@ -140,31 +143,40 @@ def test_successful_provisioning_is_idempotent(tmp_path, monkeypatch):
     assert calls == [created.student_id]
 
 
-def test_course_update_rebuilds_curriculum_in_same_transaction(tmp_path, monkeypatch):
+def test_course_change_is_a_transfer_that_keeps_old_modules(tmp_path, monkeypatch):
     db = tmp_path / "students.db"
     _database(db)
     service = StudentLifecycleService(str(db))
     created = service.create(_command(), actor_id="staff", idempotency_key="create:1")
     with sqlite3.connect(db) as conn:
         conn.execute("INSERT INTO courses VALUES ('DS','Data Science','active',0)")
-        conn.execute("INSERT INTO student_modules VALUES (?, 'OLD101')", (created.student_id,))
+        conn.execute("DROP TABLE student_modules")
+        conn.execute("CREATE TABLE student_modules (student_id TEXT, module_code TEXT, "
+                     "module_name TEXT, module_type TEXT, year TEXT, status TEXT, "
+                     "UNIQUE(student_id, module_code))")
+        conn.executemany("INSERT INTO student_modules (student_id, module_code, status) "
+                         "VALUES (?, ?, 'Enrolled')",
+                         [(created.student_id, "OLD101"), (created.student_id, "SHARED")])
         conn.commit()
-    calls = []
-    from education_system.systems.university.domains.academics.domain.services import admissions_selection
+    from education_system.systems.university.domains.admissions.domain.services import (
+        admissions_selection,
+    )
     monkeypatch.setattr(
-        admissions_selection, "enrol_student_in_curriculum",
-        lambda conn, sid, code, name: calls.append((sid, code, name)) or [],
+        admissions_selection, "curriculum_for",
+        lambda cursor, code, name: [{"module_code": "SHARED", "module_name": "S", "year": 1},
+                                    {"module_code": "DS101", "module_name": "D", "year": 1}],
     )
 
-    service.update(
-        created.student_id, {"course": "DS"}, actor_id="staff", reason="transfer",
-        idempotency_key="update:course:1",
-    )
+    with pytest.raises(StudentValidationError, match="transfer"):
+        service.update(created.student_id, {"course": "DS"}, actor_id="staff",
+                       reason="transfer", idempotency_key="update:course:1")
+    service.transfer_course(created.student_id, "DS", actor_id="staff", reason="transfer",
+                            idempotency_key="transfer:1")
 
-    assert calls == [(created.student_id, "DS", "Data Science")]
     with sqlite3.connect(db) as conn:
         assert conn.execute("SELECT course FROM students").fetchone()[0] == "DS"
-        assert conn.execute("SELECT COUNT(*) FROM student_modules").fetchone()[0] == 0
+        assert dict(conn.execute("SELECT module_code, status FROM student_modules").fetchall()) \
+            == {"OLD101": "Transferred", "SHARED": "Enrolled", "DS101": "Enrolled"}
 
 
 def test_deactivation_preserves_academic_records_and_restore_is_reversible(tmp_path):

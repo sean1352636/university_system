@@ -1,4 +1,4 @@
-"""CLI flows for Sixth Form Equality & Diversity."""
+"""CLI flows for Primary School Equality & Diversity."""
 
 from __future__ import annotations
 

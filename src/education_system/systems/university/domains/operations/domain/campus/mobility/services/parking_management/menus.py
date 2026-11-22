@@ -20,12 +20,13 @@ from education_system.systems.university.domains.operations.domain.campus.mobili
 from education_system.systems.university.domains.operations.domain.campus.mobility.services.parking_management.core import init_db
 from education_system.systems.university.infrastructure.database.data_backup import backup_before_operation
 from education_system.systems.university.domains.operations.domain.campus.mobility.services.parking_management import core
+from education_system.systems.university.domains.operations.domain.campus.mobility.services.parking_management import payments as parking_payments
 
 _t = get_text
 
 
 def pay_violation_fine():
-    """Mark an outstanding parking fine as paid after user confirmation."""
+    """Take payment for an outstanding parking fine and post it to Finance."""
     init_db()
     violation_id = input("Enter violation ID to pay: ").strip()
     if not violation_id:
@@ -33,26 +34,48 @@ def pay_violation_fine():
         return False
     with core.get_connection() as conn:
         row = conn.execute(
-            "SELECT violation_id, fine_amount, payment_status FROM parking_violations "
+            "SELECT violation_id, fine_amount, payment_status, license_plate FROM parking_violations "
             "WHERE violation_id = ?", (violation_id,),
         ).fetchone()
-        if not row:
-            print(f"No violation found with ID: {violation_id}")
+    if not row:
+        print(f"No violation found with ID: {violation_id}")
+        return False
+    if str(row[2]).lower() == "paid":
+        print(f"Violation {violation_id} has already been paid.")
+        return True
+    amount = float(row[1] or 0)
+    student_id = parking_payments.resolve_student_id_for_plate(row[3]) if row[3] else None
+
+    print("Payment method: 1. Cash  2. Card  3. Student Account")
+    method = {"1": "cash", "2": "card", "3": "student_account"}.get(
+        input("Select payment method (1-3, default 1): ").strip(), "cash")
+    if method == "student_account" and not student_id:
+        student_id = input("Student ID to charge: ").strip() or None
+        if not student_id:
+            print("A student account payment needs a student ID.")
             return False
-        if str(row[2]).lower() == "paid":
-            print(f"Violation {violation_id} has already been paid.")
-            return True
-        amount = float(row[1] or 0)
-        if input(f"Pay £{amount:.2f} for violation {violation_id}? (y/n): ").strip().lower() != "y":
-            print("Payment cancelled.")
-            return False
-        backup_before_operation("pay_violation_fine")
-        conn.execute(
-            "UPDATE parking_violations SET payment_status = 'Paid' WHERE violation_id = ?",
-            (violation_id,),
+
+    if input(f"Pay £{amount:.2f} for violation {violation_id} via {method.replace('_', ' ')}? (y/n): ").strip().lower() != "y":
+        print("Payment cancelled.")
+        return False
+    backup_before_operation("pay_violation_fine")
+    try:
+        user = core.get_current_user()
+        processed_by = user.get("username") if isinstance(user, dict) else getattr(user, "username", None)
+    except Exception:
+        processed_by = None
+    try:
+        # The domain service writes the payment and posts it to Finance.
+        outcome = parking_payments.record_fine_payment(
+            violation_id, amount, method, student_id=student_id, processed_by=processed_by,
         )
-        conn.commit()
-    print(f"Payment of £{amount:.2f} recorded for violation {violation_id}.")
+    except Exception as exc:
+        print(f"Payment failed: {exc}")
+        return False
+    print(f"Payment of £{amount:.2f} recorded for violation {violation_id} "
+          f"(reference {outcome['payment_ref']}).")
+    if outcome.get("new_balance") is not None:
+        print(f"Remaining student account balance: £{float(outcome['new_balance']):.2f}")
     return True
 
 def check_lot_availability():

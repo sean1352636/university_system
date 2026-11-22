@@ -12,7 +12,7 @@ from unittest.mock import Mock, MagicMock, patch, call
 from datetime import datetime, timedelta
 
 # The base module path for patching
-BASE = 'education_system.systems.university.domains.academics.interfaces.gui.library.base'
+BASE = 'education_system.systems.university.domains.library.interfaces.gui.library.base'
 
 
 @pytest.fixture
@@ -50,8 +50,8 @@ def mock_db():
 
 def _create_gui(mock_root, mock_auth):
     """Helper to create a LibraryGUI instance with all GUI/DB methods mocked out."""
-    import education_system.systems.university.domains.academics.interfaces.gui.library.base as base_mod
-    from education_system.systems.university.domains.academics.interfaces.gui.library import LibraryGUI
+    import education_system.systems.university.domains.library.interfaces.gui.library.base as base_mod
+    from education_system.systems.university.domains.library.interfaces.gui.library import LibraryGUI
 
     with patch.object(base_mod, 'init_library_db'), \
          patch.object(LibraryGUI, 'setup_styles'), \

@@ -83,7 +83,7 @@ def _send_staff_welcome_email(self, name, email, username, role):
         return False
     try:
         # Render email from template
-        subject, body = render_template('commerce/cinema/staff_welcome', {
+        subject, body = render_template('finance_commerce/commerce/cinema/staff_welcome', {
             'staff_name': name,
             'username': username,
             'role': role,

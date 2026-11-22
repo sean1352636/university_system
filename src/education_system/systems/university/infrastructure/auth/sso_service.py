@@ -939,10 +939,11 @@ class SSOService:
                         'message': 'Existing SSO identity matched',
                     }
 
-                # Step 2: Check for email match in user_accounts
+                # Step 2: Check for email match on the university profile
+                # (user_accounts holds no e-mail address).
                 if email:
                     cursor.execute(
-                        "SELECT user_id, username FROM user_accounts WHERE email = ?",
+                        "SELECT id, username FROM users WHERE email = ?",
                         (email,)
                     )
                     user_row = cursor.fetchone()
@@ -977,13 +978,25 @@ class SSOService:
                 username = self._generate_sso_username(cursor, email, external_id)
                 now = datetime.now().isoformat()
 
+                # The profile (users) carries name, e-mail and role; the account
+                # row links the username to it. SSO users have no local password.
+                name_parts = (display_name or '').split(None, 1)
                 cursor.execute(
-                    """INSERT INTO user_accounts
-                       (username, email, role, is_active, created_at)
-                       VALUES (?, ?, 'student', 1, ?)""",
-                    (username, email, now)
+                    """INSERT INTO users
+                       (username, first_name, last_name, email, role, created_at, updated_at)
+                       VALUES (?, ?, ?, ?, 'student', ?, ?)""",
+                    (username,
+                     name_parts[0] if name_parts else username,
+                     name_parts[1] if len(name_parts) > 1 else '',
+                     email or f"{username}@sso.invalid", now, now)
                 )
                 user_id = cursor.lastrowid
+                cursor.execute(
+                    """INSERT INTO user_accounts
+                       (username, password_hash, salt, user_id, is_active, created_at, updated_at)
+                       VALUES (?, '!sso', '', ?, 1, ?, ?)""",
+                    (username, user_id, now, now)
+                )
 
                 # Link SSO identity to new account
                 self._create_identity_link(
@@ -1063,8 +1076,9 @@ class SSOService:
         suffix = 1
         while True:
             cursor.execute(
-                "SELECT COUNT(*) FROM user_accounts WHERE username = ?",
-                (candidate,)
+                "SELECT (SELECT COUNT(*) FROM user_accounts WHERE username = ?) "
+                "+ (SELECT COUNT(*) FROM users WHERE username = ?)",
+                (candidate, candidate)
             )
             count = cursor.fetchone()[0]
             if count == 0:

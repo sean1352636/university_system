@@ -23,8 +23,8 @@ This guide covers managing academic terms, events, deadlines, recurring events, 
 The Academic Calendar module manages the institution's academic schedule, including terms, semesters, events, deadlines, and holidays. It integrates with the Trip Management module to coordinate educational excursions alongside the academic schedule.
 
 **Key files:**
-- Service: `modules/domain/academics/services/academic_calendar.py`
-- GUI: `modules/domain/academics/gui/academic_calendar/`
+- Service: `src/education_system/systems/university/domains/teaching/domain/academic_calendar/`
+- GUI: `src/education_system/systems/university/domains/teaching/interfaces/gui/academic_calendar/`
 - Core class: `AcademicCalendarManager`
 
 ## Getting Started

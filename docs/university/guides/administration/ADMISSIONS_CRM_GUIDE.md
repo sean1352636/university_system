@@ -374,5 +374,5 @@ Submitted → Under Review → Decision Made → Offer Sent → Accepted/Decline
 ---
 
 **Last Updated**: February 2026
-**Module**: `university_system/modules/domain/admissions/gui/admissions_crm_gui.py`
+**Module**: `src/education_system/systems/university/domains/admissions/interfaces/gui/admissions_crm_gui.py`
 **Support**: admissions@university.edu | (555) 123-ADMIT

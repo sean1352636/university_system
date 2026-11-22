@@ -19,12 +19,10 @@ from education_system.systems.apprenticeships.domain.progress.assignments import
     Assignment,
     AssignmentSubmission,
 )
-from education_system.systems.apprenticeships.services import (
-    apprentice_service,
-    assignment_service,
-    portfolio_service,
-)
-from education_system.systems.apprenticeships.services.access import Actor, PermissionDenied
+from education_system.systems.apprenticeships.application.apprentices import apprentice_service
+from education_system.systems.apprenticeships.application.assessments import portfolio_service
+from education_system.systems.apprenticeships.application.learning import assignment_service
+from education_system.systems.apprenticeships.application.security.access import Actor, PermissionDenied
 
 TODAY = date(2026, 9, 10)
 MAX = config.ASSIGNMENT_MAX_ATTEMPTS

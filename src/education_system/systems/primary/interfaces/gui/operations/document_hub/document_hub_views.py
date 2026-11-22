@@ -4,9 +4,9 @@ from __future__ import annotations
 
 import logging
 import tkinter as tk
-from tkinter import messagebox, ttk
+from pathlib import Path
+from tkinter import filedialog, messagebox, ttk
 
-from education_system.platform import branding
 from education_system.systems.primary.domain.operations.document_hub import (
     document_hub as data,
 )
@@ -22,6 +22,8 @@ from education_system.systems.primary.domain.operations.document_hub.document_hu
     STATUSES,
     ValidationError,
 )
+from education_system.systems.primary.domain.staff.staff import DEPARTMENTS
+from education_system.systems.primary.interfaces.gui import kit
 
 logger = logging.getLogger(__name__)
 
@@ -39,16 +41,39 @@ _STATUS_TAGS = {
 }
 
 
+_FUTURE_YEARS = kit.recent_years(ahead=10, back=10)
+
+
+def _document_choices(exclude: int | None = None) -> list[tuple[str, str]]:
+    try:
+        docs = data.list_documents()
+    except Exception:  # noqa: BLE001 - an empty list beats a broken form
+        logger.exception("document list for picker failed")
+        return []
+    return [(str(d.document_id), f"#{d.document_id} {d.title} (v{d.version})")
+            for d in docs if d.document_id != exclude]
+
+
 def open_document_hub_window(parent=None) -> None:
     data.init_db()
-    master = getattr(parent, "root", parent)
-    win = tk.Toplevel(master) if master is not None else tk.Tk()
-    win.title(f"Document Hub — {branding.SYSTEM_NAME}")
-    win.geometry(WIN_GEOMETRY)
-    win.minsize(*WIN_MINSIZE)
+    if parent is None:
+        root = tk.Tk()
+        root.title("Document Hub")
+        root.geometry(WIN_GEOMETRY)
+        root.minsize(*WIN_MINSIZE)
+        frame = ttk.Frame(root, padding=10)
+        frame.pack(fill="both", expand=True)
+        _draw_document_hub(frame)
+        return
+    kit.show_page(parent, "Document Hub", _draw_document_hub)
 
-    nb = ttk.Notebook(win)
-    nb.pack(fill="both", expand=True, padx=10, pady=10)
+
+def _draw_document_hub(parent: ttk.Frame) -> None:
+    kit.page_heading(parent, "Document Hub",
+                     "Policies, handbooks and forms: versions, review dates, approval and "
+                     "publication.")
+    nb = ttk.Notebook(parent)
+    nb.pack(fill="both", expand=True)
 
     DocumentsTab(nb, scope="current",      label="Current")
     DocumentsTab(nb, scope="overdue",      label="Overdue Review")
@@ -246,7 +271,7 @@ class DocumentsTab:
         if not d:
             return
         approver = _prompt_text(self.frame, "Approved by",
-                                  initial=d.approved_by or "")
+                                  initial=d.approved_by or "", staff=True)
         try:
             data.approve(d.document_id,
                               approved_by=approver or None)
@@ -411,11 +436,11 @@ class DocumentEditor:
                  document: Document | None = None) -> None:
         self.document = document
         self.result: Document | None = None
-        self.win = tk.Toplevel(parent)
+        self.win = tk.Toplevel(parent.winfo_toplevel())
         self.win.title(
             f"Edit document #{document.document_id}"
             if document else "New document")
-        self.win.geometry("900x820")
+        self.win.geometry("940x720")
         self.win.transient(parent); self.win.after_idle(self.win.grab_set)
         self._build()
         if document:
@@ -423,8 +448,7 @@ class DocumentEditor:
         self.win.wait_window()
 
     def _build(self) -> None:
-        body = ttk.Frame(self.win)
-        body.pack(fill="both", expand=True, padx=12, pady=10)
+        body, footer = kit.scrolled_form(self.win)
         body.grid_columnconfigure(1, weight=1)
         body.grid_columnconfigure(3, weight=1)
         self.vars: dict[str, tk.Variable] = {}
@@ -451,6 +475,16 @@ class DocumentEditor:
                 row=row, column=col + 1, sticky="ew",
                 padx=4, pady=2)
 
+        def picker(row, col, label, key, make):
+            ttk.Label(body, text=label).grid(
+                row=row, column=col, sticky="w",
+                padx=4, pady=2)
+            v = tk.StringVar()
+            self.vars[key] = v
+            make(v).grid(row=row, column=col + 1, sticky="w",
+                         padx=4, pady=2)
+
+        own_id = self.document.document_id if self.document else None
         entry(0, 0, "Title*", "title", width=48)
         combo(1, 0, "Category*", "category", CATEGORIES)
         combo(1, 2, "Audience*", "audience", AUDIENCES)
@@ -458,17 +492,29 @@ class DocumentEditor:
                  ACCESS_LEVELS)
         combo(2, 2, "Status*", "status", STATUSES)
         entry(3, 0, "Version*", "version")
-        entry(3, 2, "Supersedes id", "supersedes_id")
+        picker(3, 2, "Supersedes", "supersedes_id",
+               lambda v: kit.ChoiceField(body, v, choices=_document_choices(own_id),
+                                         blank=True, width=30))
         entry(4, 0, "File ref / URL", "file_ref", width=48)
+        ttk.Button(body, text="Browse…", command=self._browse).grid(
+            row=4, column=2, sticky="w", padx=4, pady=2)
         entry(5, 0, "File format", "file_format")
-        entry(5, 2, "File size (kB)", "file_size_kb")
-        entry(6, 0, "Author", "author")
-        entry(6, 2, "Owner department", "owner_department")
-        entry(7, 0, "Approved by", "approved_by")
+        picker(5, 2, "File size (kB)", "file_size_kb",
+               lambda v: kit.NumberField(body, v, to=10_000_000, width=10))
+        picker(6, 0, "Author", "author",
+               lambda v: kit.StaffPicker(body, v, by="name", width=30))
+        picker(6, 2, "Owner department", "owner_department",
+               lambda v: kit.ChoiceField(body, v, choices=DEPARTMENTS, blank=True,
+                                         editable=True, width=22))
+        picker(7, 0, "Approved by", "approved_by",
+               lambda v: kit.StaffPicker(body, v, by="name", width=30))
         entry(7, 2, "Linked to", "linked_to")
-        entry(8, 0, "Issued on (YYYY-MM-DD)", "issued_on")
-        entry(8, 2, "Review on (YYYY-MM-DD)", "review_on")
-        entry(9, 0, "Expires on (YYYY-MM-DD)", "expires_on")
+        picker(8, 0, "Issued on", "issued_on",
+               lambda v: kit.DateField(body, v))
+        picker(8, 2, "Review on", "review_on",
+               lambda v: kit.DateField(body, v, years=_FUTURE_YEARS))
+        picker(9, 0, "Expires on", "expires_on",
+               lambda v: kit.DateField(body, v, years=_FUTURE_YEARS))
         entry(10, 0, "Keywords (CSV)", "keywords", width=48)
 
         row = 11
@@ -485,8 +531,7 @@ class DocumentEditor:
             self.texts[key] = t
             row += 1
 
-        bar = ttk.Frame(self.win)
-        bar.pack(fill="x", padx=12, pady=(0, 10))
+        bar = footer
         ttk.Button(bar, text="Save",
                     command=self._save).pack(side="right",
                                                padx=4)
@@ -498,6 +543,23 @@ class DocumentEditor:
         self.vars["access_level"].set(DEFAULT_ACCESS)
         self.vars["status"].set(DEFAULT_STATUS)
         self.vars["version"].set("1.0")
+
+    def _browse(self) -> None:
+        """Pick the file rather than typing its path; fills in its format
+        and size."""
+        path = filedialog.askopenfilename(parent=self.win, title="Choose file")
+        if not path:
+            return
+        p = Path(path)
+        self.vars["file_ref"].set(str(p))
+        if p.suffix:
+            self.vars["file_format"].set(p.suffix.lstrip(".").upper())
+        try:
+            self.vars["file_size_kb"].set(str((p.stat().st_size + 1023) // 1024))
+        except OSError:
+            logger.debug("could not stat %s", p, exc_info=True)
+        if not self.vars["title"].get().strip():
+            self.vars["title"].set(p.stem)
 
     def _load(self) -> None:
         d = self.document
@@ -537,13 +599,18 @@ class DocumentEditor:
 
 
 def _prompt_text(parent, title: str, *,
-                  initial: str = "") -> str | None:
+                  initial: str = "", staff: bool = False) -> str | None:
+    """A one-value prompt; ``staff=True`` offers the staff list (by name)
+    instead of a typing box."""
     win = tk.Toplevel(parent)
-    win.title(title); win.geometry("420x140")
+    win.title(title); win.geometry("460x150")
     win.transient(parent); win.after_idle(win.grab_set)
     ttk.Label(win, text=title).pack(anchor="w", padx=8, pady=8)
     var = tk.StringVar(value=initial)
-    ttk.Entry(win, textvariable=var).pack(fill="x", padx=8)
+    if staff:
+        kit.StaffPicker(win, var, by="name").pack(fill="x", padx=8)
+    else:
+        ttk.Entry(win, textvariable=var).pack(fill="x", padx=8)
     result: dict = {"value": None}
 
     def ok() -> None:

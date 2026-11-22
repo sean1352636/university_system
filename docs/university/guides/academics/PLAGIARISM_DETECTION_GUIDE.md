@@ -401,5 +401,5 @@ The document repository stores all submitted documents for comparison. New submi
 ---
 
 **Last Updated**: February 2026
-**Module**: `university_system/modules/domain/academics/services/plagiarism/plagiarism_main.py`
+**Module**: `src/education_system/systems/university/domains/integrity/domain/plagiarism/plagiarism_main.py`
 **Support**: integrity@university.edu | (555) 123-INTG

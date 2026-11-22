@@ -397,20 +397,42 @@ def delete_todo(todo_id: int) -> bool:
         return False
 
 
-def clear_completed(*, owner: str | None = None) -> int:
-    """Remove Done/Cancelled todos. Returns the number deleted."""
+def current_owner_names() -> list[str]:
+    """Owner values that mean "the signed-in user": their username and,
+    for staff, their staff name (``owner`` is free text). Empty when
+    nobody is signed in."""
+    from education_system.systems.sixth_form.domain.governance.user_management import (
+        access,
+    )
+    p = access.current()
+    names = [p.username, p.staff_name]
+    return [n.strip() for n in names if n and n.strip()]
+
+
+def clear_completed(*, owner: str | None = None,
+                    owners: list[str] | None = None) -> int:
+    """Remove Done/Cancelled todos belonging to ``owner`` / ``owners``
+    (case-insensitive). Returns the number deleted.
+
+    An owner is required: clearing every staff member's completed
+    items in one go is not offered, so a "Clear Completed" button can
+    never remove other people's to-dos."""
     init_db()
-    args: list[Any] = []
-    sql = "DELETE FROM todos WHERE status IN ('Done', 'Cancelled')"
-    if owner:
-        sql += " AND owner = ?"
-        args.append(owner.strip())
+    wanted = [o.strip() for o in ([owner] if owner else []) + list(owners or [])
+              if o and o.strip()]
+    if not wanted:
+        raise ValidationError(
+            "Clear Completed needs an owner — it only removes your own "
+            "completed to-dos")
+    marks = ", ".join("?" for _ in wanted)
+    sql = ("DELETE FROM todos WHERE status IN ('Done', 'Cancelled') "
+           f"AND owner COLLATE NOCASE IN ({marks})")
     with _connect() as conn:
-        cur = conn.execute(sql, args)
+        cur = conn.execute(sql, wanted)
         conn.commit()
         n = cur.rowcount
     if n:
-        logger.info("Cleared %d completed todo(s)", n)
+        logger.info("Cleared %d completed todo(s) for %s", n, wanted)
     return n
 
 

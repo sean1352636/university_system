@@ -82,6 +82,14 @@ from education_system.systems.university.infrastructure.communication.notificati
     send_admin_alert,
 )
 
+# Communication hub (folded in from services/communication)
+from education_system.systems.university.infrastructure.communication.communication_manager import (
+    CommunicationManager,
+)
+from education_system.systems.university.infrastructure.communication.communication_schema import (
+    create_communication_tables,
+)
+
 __all__ = [
     # SMS Services
     'SMSService',
@@ -127,4 +135,7 @@ __all__ = [
     'get_notification_manager',
     'send_notification',
     'send_admin_alert',
+    # Communication hub
+    'CommunicationManager',
+    'create_communication_tables',
 ]

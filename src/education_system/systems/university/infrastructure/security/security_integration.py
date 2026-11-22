@@ -101,13 +101,13 @@ except ImportError:
 try:
     from education_system.systems.university.infrastructure.security.file_upload import (
         get_upload_handler,
-        SecureFileUploadHandler
+        SecureFileUpload
     )
     FILE_UPLOAD_HANDLER_AVAILABLE = True
 except ImportError:
     FILE_UPLOAD_HANDLER_AVAILABLE = False
     get_upload_handler = None
-    SecureFileUploadHandler = None
+    SecureFileUpload = None
 
 # ============================================================================
 # Input Validation

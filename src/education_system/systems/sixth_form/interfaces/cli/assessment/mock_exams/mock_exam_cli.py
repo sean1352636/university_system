@@ -399,12 +399,20 @@ def _results_sheet_for(mid: int) -> None:
         print(f"\n  {v.student_id}  {v.full_name}{existing}")
         try:
             marks_raw = _input(
-                "  Marks (blank = skip)",
+                ("  Marks (blank = keep, '-' = clear result)" if v.result
+                 else "  Marks (blank = skip)"),
                 default=(str(v.result.marks)
                          if v.result and v.result.marks is not None else ""))
         except _UserAbort:
             print("\n  Cancelled.")
             return
+        if marks_raw.strip() == "-":
+            if v.result:
+                # All-blank entry = remove the saved result.
+                payload[v.student_id] = {"marks": "", "grade": "",
+                                         "notes": ""}
+                print("    → saved result will be cleared")
+            continue
         if not marks_raw:
             continue
         # Show derived letter as a hint before asking for an override.

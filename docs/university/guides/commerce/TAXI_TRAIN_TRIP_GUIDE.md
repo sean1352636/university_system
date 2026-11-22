@@ -287,5 +287,5 @@ Trip expenses are tracked by category with:
 ---
 
 **Last Updated**: February 2026
-**Module**: `university_system/modules/domain/mobility/`
+**Module**: `src/education_system/systems/university/domains/operations/domain/campus/mobility/`
 **Support**: Contact individual service emails listed above

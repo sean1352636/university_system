@@ -238,6 +238,45 @@ def get_all_rentals(status=None):
         print(f"Error getting rentals: {e}")
         return []
 
+def get_rental_charge(rental_id):
+    """Return (amount_due, customer_id) for a rental, or None if unknown."""
+    try:
+        with get_connection() as conn:
+            cursor = conn.execute("""
+                SELECT COALESCE(total_cost, total_amount, 0), COALESCE(student_id, customer_id, ''),
+                       COALESCE(payment_status, 'Pending')
+                FROM carrental_rentals WHERE rental_id = ?
+            """, (rental_id,))
+            row = cursor.fetchone()
+            if not row:
+                return None
+            return {'amount': float(row[0] or 0), 'customer_id': row[1] or '', 'payment_status': row[2]}
+    except Exception as e:
+        print(f"Error reading rental: {e}")
+        return None
+
+
+def take_rental_payment(rental_id, payment_method):
+    """Collect the rental charge through the shared car rental domain service.
+
+    The service writes the local transaction and posts the sale to Finance,
+    so the CLI and the GUI share one posting path.
+    """
+    charge = get_rental_charge(rental_id)
+    if not charge or charge['amount'] <= 0:
+        return None
+    from education_system.systems.university.plugins.campus_commerce.domain.carrental.services.carrental_core import (
+        TransactionManager,
+    )
+    return TransactionManager.record_payment(
+        rental_id=int(rental_id),
+        customer_id=charge['customer_id'] or None,
+        amount=charge['amount'],
+        payment_method=payment_method,
+        processed_by=get_current_user().get('username'),
+    )
+
+
 def return_vehicle(rental_id):
     """Process vehicle return."""
     try:
@@ -440,10 +479,28 @@ def return_vehicle_menu():
         print("  Return cancelled.")
         return
 
-    if return_vehicle(int(rental_id)):
-        print("\n  ✅ Vehicle returned successfully!")
-    else:
+    if not return_vehicle(int(rental_id)):
         print("\n  ❌ Failed to process return.")
+        return
+    print("\n  ✅ Vehicle returned successfully!")
+
+    charge = get_rental_charge(int(rental_id))
+    if not charge or charge['amount'] <= 0:
+        return
+    if str(charge['payment_status']).lower() == 'paid':
+        print("  Rental already paid.")
+        return
+
+    print(f"\n  Amount due: £{charge['amount']:.2f}")
+    method = input("  Payment method (cash/card/finance_account) [cash]: ").strip().lower() or 'cash'
+    if method not in ('cash', 'card', 'finance_account'):
+        print("  ❌ Invalid payment method; payment not taken.")
+        return
+    txn_id = take_rental_payment(int(rental_id), method)
+    if txn_id:
+        print(f"  ✅ Payment of £{charge['amount']:.2f} recorded (transaction {txn_id}).")
+    else:
+        print("  ❌ Payment could not be recorded.")
 
 def statistics_menu():
     """Show rental statistics."""

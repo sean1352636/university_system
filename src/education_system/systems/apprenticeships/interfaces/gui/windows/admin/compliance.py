@@ -18,11 +18,9 @@ from typing import Any
 from education_system.systems.apprenticeships import config
 from education_system.systems.apprenticeships.interfaces.gui import widgets
 from education_system.systems.apprenticeships.interfaces.gui.windows.admin import audit_log
-from education_system.systems.apprenticeships.services import (
-    apprentice_service,
-    compliance_service,
-    document_service,
-)
+from education_system.systems.apprenticeships.application.apprentices import apprentice_service
+from education_system.systems.apprenticeships.application.compliance import compliance_service
+from education_system.systems.apprenticeships.application.records import document_service
 
 logger = logging.getLogger(__name__)
 

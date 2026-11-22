@@ -88,16 +88,17 @@ class _MessagingMixin:
                 log_event('error', f"DM blocked: recipient {recipient_id} has blocked sender")
                 return False
 
-            # Validate recipient exists (check legacy users table, fall back to shared auth)
+            # The recipient must have a university profile: storing an id
+            # that isn't one (e.g. a central auth id) leaves a dangling
+            # reference that a profile created later would inherit, showing
+            # that person someone else's mail.
             cursor.execute('SELECT id, email, username FROM users WHERE id = ?', (recipient_id,))
             recipient_data = cursor.fetchone()
-            if recipient_data:
-                recipient_email = recipient_data[1]
-                recipient_username = recipient_data[2]
-            else:
-                # Recipient may only exist in shared auth DB
-                recipient_email = None
-                recipient_username = f"User {recipient_id}"
+            if not recipient_data:
+                log_event('error', f"No university profile with id {recipient_id}; message not sent")
+                return False
+            recipient_email = recipient_data[1]
+            recipient_username = recipient_data[2]
 
             # Create the message
             sender_id = self.auth.current_user['id']

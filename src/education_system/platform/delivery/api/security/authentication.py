@@ -365,7 +365,7 @@ from education_system.platform.kernel.core.system_keys import (
     canonical_system_key,
 )
 
-# Canonical system keys (nursery/primary/secondary/sixth_form/university).
+# Canonical system keys, one per system.
 _KNOWN_SYSTEMS = CANONICAL_SYSTEMS
 
 #: First path segments under ``/api/<v>/`` that are platform surfaces, never

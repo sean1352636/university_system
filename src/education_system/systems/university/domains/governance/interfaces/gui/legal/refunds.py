@@ -3,7 +3,8 @@
 from education_system.systems.university.domains.governance.interfaces.gui.legal._imports import (
     tk, ttk, messagebox, filedialog, traceback,
     datetime,
-    get_connection, transaction,
+    get_connection,
+    PaymentManager,
     log_activity,
     _t, logger,
     send_email, render_template, EMAIL_AVAILABLE,
@@ -287,46 +288,24 @@ class RefundsMixin:
         ttk.Button(buttons_frame, text=_t("common.cancel", default="Cancel"),
                   command=dialog.destroy, width=30).pack(pady=10)
 
+    def _refund_processed_by(self):
+        if self.auth and hasattr(self.auth, 'current_user') and self.auth.current_user:
+            user = self.auth.current_user
+            return user.get('username') or user.get('user_id', '')
+        return None
+
     def _complete_legal_refund(self, payment_id, amount, refund_method, client_id, client_email):
         """Complete the refund process (for cash/card)"""
         try:
-            # Generate refund reference
-            refund_ref = f"LEGAL-REFUND-{datetime.now().strftime('%Y%m%d%H%M%S')}"
-
-            with transaction() as conn:
-                cursor = conn.cursor()
-
-                # Update payment status
-                cursor.execute("""
-                    UPDATE payments
-                    SET status = 'refunded',
-                        payment_reference = ?
-                    WHERE payment_id = ? AND source_type = 'legal'
-                """, (refund_ref, payment_id))
-
-                # Get processed_by
-                processed_by = None
-                if self.auth and hasattr(self.auth, 'current_user') and self.auth.current_user:
-                    user = self.auth.current_user
-                    processed_by = user.get('username') or user.get('user_id', '')
-
-                # Record refund in unified_refunds table
-                cursor.execute("""
-                    INSERT INTO unified_refunds
-                    (source_type, reference_id, reference_type, student_id, customer_email,
-                     amount, refund_method, refund_reference, refund_date, processed_by, status)
-                    VALUES ('legal', ?, 'payment', ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, ?, 'processed')
-                """, (str(payment_id), client_id, client_email, amount, refund_method, refund_ref, processed_by))
-                refund_row_id = cursor.lastrowid
-
-            # Auto-post to GL (cash has moved). Never raises.
-            if refund_row_id is not None:
-                try:
-                    from education_system.systems.university.domains.finance.domain.ledger import notify_ledger
-                    notify_ledger('refund', refund_row_id, posted_by=processed_by or 'legal')
-                except Exception as _e:
-                    import logging
-                    logging.getLogger(__name__).warning("ledger hook failed: %s", _e)
+            # PaymentManager.process_refund records the refund, writes the
+            # unified_refunds row and posts it to the GL (shared with the CLI).
+            result = PaymentManager.process_refund(
+                payment_id, processed_by=self._refund_processed_by(),
+                refund_method=refund_method,
+            )
+            if not result:
+                raise RuntimeError("refund was not recorded")
+            refund_ref = result['refund_ref']
 
             # Log activity
             log_activity('refund', 'legal_payment',
@@ -358,72 +337,16 @@ class RefundsMixin:
             return
 
         try:
-            from education_system.systems.university.domains.finance.infrastructure.finance_integration import ensure_student_finance_account_exists
-
-            # Ensure student account exists
-            ensure_student_finance_account_exists(client_id)
-
-            # Generate refund reference
-            refund_ref = f"LEGAL-REFUND-{datetime.now().strftime('%Y%m%d%H%M%S')}"
-
-            with transaction() as conn:
-                cursor = conn.cursor()
-
-                # Update payment status
-                cursor.execute("""
-                    UPDATE payments
-                    SET status = 'refunded',
-                        payment_reference = ?
-                    WHERE payment_id = ? AND source_type = 'legal'
-                """, (refund_ref, payment_id))
-
-                # Get processed_by
-                processed_by = None
-                if self.auth and hasattr(self.auth, 'current_user') and self.auth.current_user:
-                    user = self.auth.current_user
-                    processed_by = user.get('username') or user.get('user_id', '')
-
-                # Record refund in unified_refunds table
-                cursor.execute("""
-                    INSERT INTO unified_refunds
-                    (source_type, reference_id, reference_type, student_id, customer_email,
-                     amount, refund_method, refund_reference, refund_date, processed_by, status)
-                    VALUES ('legal', ?, 'payment', ?, ?, ?, 'student_account', ?, CURRENT_TIMESTAMP, ?, 'processed')
-                """, (str(payment_id), client_id, client_email, amount, refund_ref, processed_by))
-                refund_row_id = cursor.lastrowid
-
-                # Add to student finance account
-                cursor.execute("""
-                    UPDATE student_finance_accounts
-                    SET balance = balance + ?
-                    WHERE student_id = ?
-                """, (amount, client_id))
-
-                # Get new balance and account_id after update
-                cursor.execute("SELECT account_id, balance FROM student_finance_accounts WHERE student_id = ?", (client_id,))
-                result = cursor.fetchone()
-                if result:
-                    account_id, new_balance = result
-                else:
-                    account_id, new_balance = None, amount
-
-                # Log transaction in transactions table
-                cursor.execute("""
-                    INSERT INTO transactions
-                    (source_type, account_id, student_id, transaction_type, amount, balance_after, description,
-                     reference_id, processed_by, created_at)
-                    VALUES ('student_finance', ?, ?, 'credit', ?, ?, ?, ?, ?, ?)
-                """, (account_id, client_id, amount, new_balance, f'Legal services refund - {refund_ref}',
-                      refund_ref, processed_by, datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
-
-            # Auto-post to GL (cash has moved to student account). Never raises.
-            if refund_row_id is not None:
-                try:
-                    from education_system.systems.university.domains.finance.domain.ledger import notify_ledger
-                    notify_ledger('refund', refund_row_id, posted_by=processed_by or 'legal')
-                except Exception as _e:
-                    import logging
-                    logging.getLogger(__name__).warning("ledger hook failed: %s", _e)
+            # PaymentManager.process_refund credits the account (creating it if
+            # needed), writes the unified_refunds row and posts it to the GL.
+            result = PaymentManager.process_refund(
+                payment_id, processed_by=self._refund_processed_by(),
+                refund_method='student_account',
+            )
+            if not result:
+                raise RuntimeError("refund was not recorded")
+            refund_ref = result['refund_ref']
+            new_balance = result['new_balance']
 
             # Log activity
             log_activity('refund', 'legal_payment',
@@ -457,7 +380,7 @@ class RefundsMixin:
             # Get client name
             with get_connection() as conn:
                 cursor = conn.cursor()
-                cursor.execute("SELECT full_name FROM students WHERE student_id = (SELECT student_id FROM payments WHERE payment_reference = ? AND source_type = 'legal')",
+                cursor.execute("SELECT first_name || ' ' || last_name FROM students WHERE student_id = (SELECT student_id FROM payments WHERE payment_reference = ? AND source_type = 'legal')",
                              (refund_ref,))
                 result = cursor.fetchone()
 
@@ -479,7 +402,7 @@ class RefundsMixin:
             subject = None
             email_body = None
             if render_template:
-                subject, email_body = render_template('commerce/legal/refund_receipt', {
+                subject, email_body = render_template('finance_commerce/commerce/legal/refund_receipt', {
                     'client_name': client_name,
                     'refund_amount': f"\u00a3{amount:.2f}",
                     'refund_method': method_display,

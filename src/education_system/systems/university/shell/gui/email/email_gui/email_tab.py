@@ -33,6 +33,7 @@ project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(c
 if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
+from education_system.systems.university.shell.gui.email import hub_access
 from education_system.systems.university.shell.gui.email.email_gui.email_manager_main import EmailManagerGUI, get_stored_emails, delete_stored_email
 from education_system.systems.university.shell.gui.email.email_gui.email_dialogs import (
     ComposeEmailDialog,
@@ -57,6 +58,8 @@ def create_email_tab(self):
     ttk.Button(toolbar_frame, text=_t("email.menu.templates", default="Templates"), command=self.manage_templates).pack(side=tk.LEFT, padx=5)
     ttk.Button(toolbar_frame, text=_t("email.schedule", default="Schedule"), command=self.schedule_email).pack(side=tk.LEFT, padx=5)
     ttk.Button(toolbar_frame, text=_t("email.queue_workers", default="Queue & Workers"), command=self.open_queue_manager).pack(side=tk.LEFT, padx=5)
+    ttk.Button(toolbar_frame, text="Delivery", command=self.open_delivery).pack(side=tk.LEFT, padx=5)
+    ttk.Button(toolbar_frame, text="E-mail preferences", command=self.email_preferences).pack(side=tk.LEFT, padx=5)
     ttk.Button(toolbar_frame, text=_t("common.refresh", default="Refresh"), command=self.refresh_emails).pack(side=tk.RIGHT, padx=5)
 
     # Email list
@@ -319,14 +322,17 @@ def schedule_email(self):
 EmailManagerGUI.schedule_email = schedule_email
 
 def manage_templates(self):
-    """Open template management dialog"""
-    TemplateManagerDialog(self.root)
+    """Open template management dialog (e-mail administrators only)"""
+    if hub_access.require_email_admin(self.auth, self.root):
+        TemplateManagerDialog(self.root)
 
 # Bind method to EmailManagerGUI
 EmailManagerGUI.manage_templates = manage_templates
 
 def open_queue_manager(self):
-    """Open email queue & scheduler manager"""
+    """Open email queue & scheduler manager (e-mail administrators only)"""
+    if not hub_access.require_email_admin(self.auth, self.root):
+        return
     from education_system.systems.university.shell.gui.email.email_queue_scheduler_gui import EmailQueueSchedulerGUI
     EmailQueueSchedulerGUI(self.root)
 
@@ -334,9 +340,23 @@ def open_queue_manager(self):
 EmailManagerGUI.open_queue_manager = open_queue_manager
 
 def email_configuration(self):
-    """Open email configuration dialog"""
-    EmailConfigDialog(self.root)
+    """Open email configuration dialog (it checks the user's e-mail role)"""
+    EmailConfigDialog(self.root, self.auth)
 
 # Bind method to EmailManagerGUI
 EmailManagerGUI.email_configuration = email_configuration
+
+def open_delivery(self):
+    """Open the e-mail Delivery window (e-mail administrators only)"""
+    from education_system.systems.university.shell.gui.email.delivery_screen import DeliveryScreen
+    DeliveryScreen(self.root, self.auth)
+
+EmailManagerGUI.open_delivery = open_delivery
+
+def email_preferences(self):
+    """Let the signed-in person choose which e-mails they get"""
+    from education_system.systems.university.shell.gui.email.preferences_dialog import EmailPreferencesDialog
+    EmailPreferencesDialog(self.root, self.auth)
+
+EmailManagerGUI.email_preferences = email_preferences
 

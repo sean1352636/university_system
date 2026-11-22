@@ -19,9 +19,13 @@ import datetime as _dt
 import logging
 import re
 import sqlite3
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+from functools import lru_cache
 from typing import Any
 from education_system import paths
+from education_system.systems.sixth_form.domain.academics.qualifications import (
+    grade_scales as _gs,
+)
 from education_system.systems.sixth_form.domain.assessment.baseline_assessment import (
     baseline_assessment as data,
 )
@@ -112,6 +116,21 @@ class BaselineRecord:
     updated_at: str
 
     @property
+    def qualification_type(self) -> str | None:
+        """Type the learner takes this subject as (None = unknown/A level)."""
+        return qualification_type_of(self.student_id, self.subject_name)
+
+    @property
+    def grade_scale(self) -> str | None:
+        """Scale the baseline grade is on: the subject's own, else GCSE."""
+        return scale_of_grade(self.baseline_grade, self.qualification_type)
+
+    @property
+    def points(self) -> int | None:
+        """Ordinal points on :attr:`grade_scale` (fail grade = 0)."""
+        return grade_points(self.baseline_grade, self.grade_scale)
+
+    @property
     def score_label(self) -> str:
         if self.raw_score is not None and self.max_score is not None:
             return f"{self.raw_score:g}/{self.max_score:g}"
@@ -136,6 +155,9 @@ class StudentBaselineSummary:
     by_subject: dict[str, int]
     average_percentage: float | None
     avg_a_level_points: float | None    # over baseline_grade if letters
+    # Mean points per grade scale ("A Level", "BTEC", "GCSE" …) — a
+    # mean across scales would mean nothing, so each is kept apart.
+    average_points_by_scale: dict[str, float] = field(default_factory=dict)
 
 
 @dataclass
@@ -306,7 +328,12 @@ def _validate_payload(payload: dict[str, Any]) -> dict[str, Any]:
         "Standardised score", min_val=0, max_val=200)
 
     grade = (payload.get("baseline_grade") or "").strip()
-    if grade and (grade not in A_LEVEL_GRADES
+    qtype = qualification_type_of(out["student_id"], out["subject_name"])
+    if grade and _gs.is_valid_grade(grade, qtype):
+        # On the subject's own scale (BTEC Merit, T Level Distinction…):
+        # store it in that scale's canonical spelling.
+        grade = _gs.validate_grade(grade, qtype)
+    elif grade and (grade not in A_LEVEL_GRADES
                     and grade not in GCSE_GRADES):
         # Tolerate other free-text grade scales (e.g. distinction),
         # cap length to avoid garbage.
@@ -544,6 +571,7 @@ def student_summary(student_id: str) -> StudentBaselineSummary:
     pct_count = 0
     point_sum = 0
     point_count = 0
+    scale_points: dict[str, list[int]] = {}
     primary = 0
     for r in rows:
         key = r.subject_name or "(none)"
@@ -551,9 +579,13 @@ def student_summary(student_id: str) -> StudentBaselineSummary:
         if r.percentage is not None:
             pct_sum += r.percentage
             pct_count += 1
-        if r.baseline_grade and r.baseline_grade in _A_LEVEL_POINTS:
-            point_sum += _A_LEVEL_POINTS[r.baseline_grade]
-            point_count += 1
+        scale = r.grade_scale
+        pts = grade_points(r.baseline_grade, scale)
+        if pts is not None and scale:
+            scale_points.setdefault(scale, []).append(pts)
+            if scale == "A Level":
+                point_sum += pts
+                point_count += 1
         if r.is_primary:
             primary += 1
     return StudentBaselineSummary(
@@ -565,6 +597,8 @@ def student_summary(student_id: str) -> StudentBaselineSummary:
                               if pct_count else None),
         avg_a_level_points=(round(point_sum / point_count, 2)
                                 if point_count else None),
+        average_points_by_scale={k: round(sum(v) / len(v), 2)
+                                 for k, v in sorted(scale_points.items())},
     )
 
 
@@ -615,3 +649,50 @@ def a_level_points(grade: str | None) -> int | None:
     if grade is None:
         return None
     return _A_LEVEL_POINTS.get(grade.strip())
+
+
+@lru_cache(maxsize=1024)
+def qualification_type_of(student_id: str | None,
+                          subject: str | None) -> str | None:
+    """Qualification type the student takes *subject* as (None = unknown)."""
+    if not subject:
+        return None
+    try:
+        from education_system.systems.sixth_form.domain.academics.qualifications import (
+            learning_aims,
+        )
+        return learning_aims.qualification_type_for(student_id, subject)
+    except Exception:
+        logger.debug("qualification type lookup failed", exc_info=True)
+        return None
+
+
+def scale_of_grade(grade: str | None,
+                   qualification_type: str | None) -> str | None:
+    """The scale *grade* belongs to: the subject's own if it fits, then
+    GCSE 9-1 (a Mock GCSE or prior-attainment baseline), else None."""
+    if not grade:
+        return None
+    own = _gs.canonical_type(qualification_type) or "A Level"
+    if _gs.is_valid_grade(grade, own):
+        return own
+    if _gs.is_valid_grade(grade, "GCSE"):
+        return "GCSE"
+    if grade.strip() in _A_LEVEL_POINTS:
+        return "A Level"
+    return None
+
+
+def grade_points(grade: str | None,
+                 qualification_type: str | None = None) -> int | None:
+    """Points for a baseline grade on its scale (A level = old A*6..U0)."""
+    if not grade:
+        return None
+    return _gs.grade_points(grade.strip(), qualification_type)
+
+
+def grades_for(student_id: str | None, subject: str | None
+               ) -> tuple[str, ...]:
+    """Grade choices for a baseline: the subject's scale, then GCSE 9-1."""
+    own = _gs.grades_for(qualification_type_of(student_id, subject))
+    return own + tuple(g for g in GCSE_GRADES if g not in own)

@@ -127,6 +127,16 @@ class LoginManager:
             AuthenticationError: If account is deactivated or other auth errors
             DatabaseError: If database operation fails
         """
+        # Passwords are kept only in the shared auth (auth.db); the
+        # university's user_accounts holds no credential to check
+        # (migration 2b4d6f8a0c3e). UserAuth.login signs in through the
+        # shared auth; nothing should verify a password here.
+        raise AuthenticationError(
+            "Sign in through the shared sign-in service; the university keeps no passwords.",
+            code="LEGACY_LOGIN_RETIRED",
+            details={'username': username},
+        )
+
         # Check for account lockout
         if username in self.account_security.login_attempts:
             attempts, last_attempt_time = self.account_security.login_attempts[username]

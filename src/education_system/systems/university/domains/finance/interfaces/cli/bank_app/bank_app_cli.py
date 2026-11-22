@@ -2,7 +2,8 @@
 Student Bank App — interactive CLI.
 
 The command-line twin of the bank app GUI
-(``finance/interfaces/gui/bank_app.py``, class ``BankApp`` in student mode).
+(the GUI equivalent is My Finance Account,
+``finance/interfaces/gui/finance_account.py``; the old ``BankApp`` window is in remove/).
 Both act on the logged-in user's own finance account only — the owner is the
 login's ``student_id`` or, failing that, its username — through the same
 services: ``finance_integration`` for top-ups, transfers and the financial

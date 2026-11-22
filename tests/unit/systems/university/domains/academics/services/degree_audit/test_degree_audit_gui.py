@@ -14,9 +14,9 @@ from unittest.mock import Mock, MagicMock, patch, call
 from education_system.systems.university.infrastructure.database.db import sqlite3
 from datetime import datetime
 
-_GUI_MOD = 'education_system.systems.university.domains.academics.interfaces.gui.course_management_gui.degree_audit_gui'
+_GUI_MOD = 'education_system.systems.university.domains.curriculum.interfaces.gui.course_management_gui.degree_audit_gui'
 
-from education_system.systems.university.domains.academics.interfaces.gui.course_management_gui.degree_audit_gui import (
+from education_system.systems.university.domains.curriculum.interfaces.gui.course_management_gui.degree_audit_gui import (
     DegreeAuditGUI, launch_degree_audit_gui
 )
 from education_system.systems.university.infrastructure.auth import UserAuth
@@ -214,30 +214,50 @@ class TestDegreeAuditGUI:
         inner_cursor.execute.assert_called()
 
     def test_approve_graduation(self, make_gui):
-        """Test approving student for graduation"""
+        """Approving now confers the award in absentia through the graduation
+        rules (never a direct students.status update)."""
+        from education_system.systems.university.application.graduation import conferral as gc
+        part = ('education_system.systems.university.domains.curriculum.interfaces.'
+                'gui.course_management_gui.degree_audit_gui_parts.degreeauditgui_run_graduation_audit')
+        common = ('education_system.systems.university.domains.research.interfaces.gui.'
+                  'research.research_portal.common')
         gui, conn, cursor = make_gui()
 
         gui.grad_student_entry = MagicMock()
         gui.grad_student_entry.get.return_value = 'student001'
-        gui.grad_program_combo = MagicMock()
-        gui.grad_program_combo.get.return_value = '1: CS - Computer Science BSc'
+        gui.grad_date_entry = MagicMock()
+        gui.grad_date_entry.get.return_value = '2025-05-15'
+        office = Mock(is_office=True, username='registry')
+        conferred = {'conferral_id': 1, 'student_id': 'student001',
+                     'certificate_number': 'CERT-1', 'verification_code': 'code',
+                     'history_id': None, 'emails': []}
 
-        inner_conn = Mock()
-        inner_cursor = Mock()
-        inner_cursor.fetchone.side_effect = [
-            ('student001', 'John', 'Doe', 'CS'),  # student info
-        ]
-        inner_conn.cursor.return_value = inner_cursor
-        inner_conn.__enter__ = Mock(return_value=inner_conn)
-        inner_conn.__exit__ = Mock(return_value=False)
-
-        with patch(f'{_GUI_MOD}.get_connection', return_value=inner_conn), \
-             patch(f'{_GUI_MOD}.log_activity'), \
-             patch(f'{_GUI_MOD}.messagebox') as mock_msgbox:
-            mock_msgbox.askyesno.return_value = True
+        with patch.object(DegreeAuditGUI, '_grad_officer', return_value=office), \
+             patch(f'{common}.call', return_value=conferred) as mock_call, \
+             patch.object(gc, 'after_commit') as mock_after, \
+             patch(f'{part}.log_activity'), \
+             patch(f'{part}.messagebox') as mock_msgbox:
+            mock_msgbox.askyesnocancel.return_value = True
             gui.approve_graduation()
 
-        inner_cursor.execute.assert_called()
+        rule = mock_call.call_args.args[1]
+        assert rule is gc.confer
+        assert mock_call.call_args.kwargs['mode'] == 'in_absentia'
+        assert mock_call.call_args.kwargs['conferral_date'] == '2025-05-15'
+        mock_after.assert_called_once_with(conferred)
+        assert not any('UPDATE students' in str(c) for c in cursor.execute.call_args_list)
+
+    def test_approve_graduation_refused_for_non_office(self, make_gui):
+        part = ('education_system.systems.university.domains.curriculum.interfaces.'
+                'gui.course_management_gui.degree_audit_gui_parts.degreeauditgui_run_graduation_audit')
+        gui, conn, cursor = make_gui()
+        gui.grad_student_entry = MagicMock()
+        gui.grad_student_entry.get.return_value = 'student001'
+        with patch.object(DegreeAuditGUI, '_grad_officer', return_value=Mock(is_office=False)), \
+             patch(f'{part}.messagebox') as mock_msgbox:
+            gui.approve_graduation()
+        mock_msgbox.showerror.assert_called_once()
+        mock_msgbox.askyesnocancel.assert_not_called()
 
 
 class TestLaunchDegreeAuditGUI:

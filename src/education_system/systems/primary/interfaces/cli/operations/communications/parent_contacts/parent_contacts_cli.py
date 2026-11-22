@@ -7,6 +7,7 @@ from typing import Any, Callable
 from education_system.systems.primary.domain.operations.communications.parent_contacts import parent_contacts
 from education_system.systems.primary.domain.operations.communications.parent_contacts import parent_contacts as data
 from education_system.systems.primary.domain import _pupils_bridge as student_data
+from education_system.systems.primary.domain import access
 from education_system.systems.primary.domain.operations.communications.parent_contacts.parent_contacts import (
     Contact,
     DEFAULT_LANGUAGE,
@@ -479,10 +480,21 @@ _MENU: list[tuple[str, Callable[[], None]]] = [
 ]
 
 
-def run() -> None:
+def _menu_for(auth) -> list[tuple[str, Callable[[], None]]]:
+    """The menu, plus linking parent logins for an administrator."""
+    if auth is None or not access.from_auth(auth).is_admin:
+        return _MENU
+    from education_system.systems.primary.interfaces.cli.learners.own_records import (
+        own_records_cli,
+    )
+    return [*_MENU, ("Link Parent Login", lambda: own_records_cli.link_parent_logins(auth))]
+
+
+def run(auth=None) -> None:
+    menu = _menu_for(auth)
     while True:
         print("\n── Parent Contacts ──")
-        for i, (label, _) in enumerate(_MENU, 1):
+        for i, (label, _) in enumerate(menu, 1):
             print(f"  {i:>2}) {label}")
         print("   0) Back")
         try:
@@ -492,10 +504,10 @@ def run() -> None:
             return
         if choice == "0":
             return
-        if not choice.isdigit() or not (1 <= int(choice) <= len(_MENU)):
+        if not choice.isdigit() or not (1 <= int(choice) <= len(menu)):
             print("  Invalid selection.")
             continue
-        _, handler = _MENU[int(choice) - 1]
+        _, handler = menu[int(choice) - 1]
         try:
             handler()
         except _UserAbort:
@@ -506,11 +518,11 @@ def run() -> None:
             _pause()
 
 
-def dispatch(label: str) -> bool:
+def dispatch(label: str, *, auth=None) -> bool:
     if label != "Parent Contacts":
         return False
     try:
-        run()
+        run(auth)
     except Exception as e:
         logger.exception("Parent-contacts CLI submenu crashed")
         print(f"\n  ✗ Unexpected error: {e}")

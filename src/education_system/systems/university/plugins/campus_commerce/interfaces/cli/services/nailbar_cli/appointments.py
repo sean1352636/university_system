@@ -399,7 +399,7 @@ def cancel_appointment():
 
             print("\n✅ Appointment cancelled successfully")
             _pkg.log_activity('update', 'nailbar_appointment', booking_ref=booking_ref,
-                        action='cancelled')
+                        status='cancelled')
             logger.info(f"User {user.get('username')} cancelled appointment {booking_ref}")
 
     except Exception as e:

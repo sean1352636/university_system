@@ -5,6 +5,8 @@ from __future__ import annotations
 from datetime import date
 
 from education_system.systems.fe_college.config import (
+    EMERGENCY_RELATIONSHIPS,
+    GENDERS,
     LEARNER_TYPES,
     MODES_OF_STUDY,
     STUDENT_STATUSES,
@@ -66,16 +68,25 @@ def view(ctl, student_id: str | None = None) -> None:
     s = profile.student
     sh.header(s.display_name, f"{s.learner_type} · {s.mode_of_study} · {s.status}")
     sh.key_values([
+        ("Legal name", s.legal_name),
+        ("Preferred name", s.preferred_name),
         ("Date of birth", s.date_of_birth),
         ("Age", s.age),
+        ("Gender", s.gender),
         ("ULN", s.uln),
         ("Email", s.email),
         ("Phone", s.phone),
+        ("Address", s.full_address),
+        ("Emergency contact", " · ".join(p for p in (
+            s.emergency_contact_name, s.emergency_contact_relationship,
+            s.emergency_contact_phone) if p)),
         ("Tutor group", s.tutor_group),
         ("Personal tutor", s.personal_tutor),
         ("Started", s.start_date),
         ("Prior attainment", s.prior_attainment),
         ("EHC Plan", s.has_ehcp),
+        ("Learning difficulty / disability", s.has_lldd),
+        ("Medical notes", s.medical_notes),
         ("Balance", sh.money(profile.balance)),
     ])
 
@@ -129,48 +140,101 @@ def view(ctl, student_id: str | None = None) -> None:
         sh.bullet_list(list(profile.warnings))
 
 
+_CREATE_FIELDS = [
+    ("_identity", "Identity", "section"),
+    ("student_id", "Student ID", "text"),
+    ("first_name", "Legal first name", "text"),
+    ("middle_name", "Middle name(s)", "text"),
+    ("last_name", "Legal last name", "text"),
+    ("preferred_name", "Preferred name", "text"),
+    ("date_of_birth", "Date of birth", "date"),
+    ("gender", "Gender", "choice", GENDERS),
+    ("uln", "ULN (10 digits, blank if none)", "text"),
+    ("_contact", "Contact", "section"),
+    ("email", "Email", "text"),
+    ("phone", "Phone", "text"),
+    ("_address", "Home address", "section"),
+    ("address", "Address line 1", "text"),
+    ("address_line2", "Address line 2", "text"),
+    ("town", "Town / city", "text"),
+    ("postcode", "Postcode", "text"),
+    ("_emergency", "Emergency contact", "section"),
+    ("emergency_contact_name", "Name", "text"),
+    ("emergency_contact_relationship", "Relationship", "choice", EMERGENCY_RELATIONSHIPS),
+    ("emergency_contact_phone", "Phone", "text"),
+    ("_study", "Study", "section"),
+    ("learner_type", "Learner type", "choice", LEARNER_TYPES),
+    ("mode_of_study", "Mode of study", "choice", MODES_OF_STUDY),
+    ("status", "Status", "choice", STUDENT_STATUSES),
+    ("tutor_group", "Tutor group", "text"),
+    ("personal_tutor", "Personal tutor (staff ID)", "text"),
+    ("start_date", "Start date", "date"),
+    ("prior_attainment", "Prior attainment", "text"),
+    ("_needs", "Needs and medical", "section"),
+    ("has_lldd", "Learning difficulty or disability?", "bool"),
+    ("has_ehcp", "Has an EHC Plan?", "bool"),
+    ("medical_notes", "Medical notes", "text"),
+    ("notes", "Notes", "text"),
+]
+
+
 def create(ctl) -> None:
-    """Register a new learner."""
+    """Register a new learner, then offer to create their login."""
     sh.header("New learner")
     suggested = ctl.students.next_reference()
-    result = sh.form("Learner details", [
-        ("student_id", "Student ID", "text"),
-        ("first_name", "First name", "text"),
-        ("last_name", "Last name", "text"),
-        ("date_of_birth", "Date of birth", "date"),
-        ("uln", "ULN (10 digits, blank if none)", "text"),
-        ("email", "Email", "text"),
-        ("phone", "Phone", "text"),
-        ("learner_type", "Learner type", "choice", LEARNER_TYPES),
-        ("mode_of_study", "Mode of study", "choice", MODES_OF_STUDY),
-        ("status", "Status", "choice", STUDENT_STATUSES),
-        ("tutor_group", "Tutor group", "text"),
-        ("start_date", "Start date", "date"),
-        ("prior_attainment", "Prior attainment", "text"),
-    ], initial={"student_id": suggested, "start_date": date.today()})
+    result = sh.form("Learner details", _CREATE_FIELDS,
+                     initial={"student_id": suggested, "start_date": date.today()})
     if result is sh.CANCEL:
         return
 
+    values = {k: v for k, v in result.items() if v is not None}
+    values["student_id"] = result["student_id"] or suggested
+    values["learner_type"] = result["learner_type"] or LEARNER_TYPES[0]
+    values["mode_of_study"] = result["mode_of_study"] or MODES_OF_STUDY[0]
+    values["status"] = result["status"] or "applicant"
     try:
-        created = ctl.students.create(Student(
-            student_id=result["student_id"] or suggested,
-            first_name=result["first_name"],
-            last_name=result["last_name"],
-            date_of_birth=result["date_of_birth"],
-            uln=result["uln"],
-            email=result["email"],
-            phone=result["phone"],
-            learner_type=result["learner_type"] or LEARNER_TYPES[0],
-            mode_of_study=result["mode_of_study"] or MODES_OF_STUDY[0],
-            status=result["status"] or "applicant",
-            tutor_group=result["tutor_group"],
-            start_date=result["start_date"],
-            prior_attainment=result["prior_attainment"],
-        ))
+        learner = Student(**values)
+        try:
+            created = ctl.students.create(learner, check_duplicate=True)
+        except ctl.students.DuplicateLearner as dup:
+            sh.warn(str(dup))
+            if not sh.confirm("Twins and common names can match. Save as a new learner anyway?"):
+                sh.note("Not saved. Use 'View a learner' to open the existing record.")
+                return
+            created = ctl.students.create(learner)
     except ValidationError as exc:
         sh.error(str(exc))
         return
     sh.success(f"Created {created.display_name}")
+    if sh.confirm("Create their login and e-mail them a temporary password?", default=True):
+        _create_login(created)
+
+
+def create_login(ctl, student_id: str | None = None) -> None:
+    """Create a login for an existing learner."""
+    learner = _pick(ctl, student_id, "Learner")
+    if learner is None:
+        return
+    if not sh.confirm(f"Create a login for {learner.full_name} (username "
+                      f"{learner.student_id}) and e-mail them a temporary password?"):
+        return
+    _create_login(learner)
+
+
+def _create_login(learner) -> None:
+    """Create the login and print the sign-in details once."""
+    from education_system.systems.fe_college.services import learner_accounts
+
+    try:
+        new = learner_accounts.create_login(learner.student_id)
+    except Exception as exc:  # ValidationError / AccountError
+        sh.error(f"The login could not be created: {exc}")
+        sh.note("Use 'Create a learner login' from the menu to try again.")
+        return
+    sh.success(f"Login created for {learner.full_name}.")
+    sh.key_values([("Username", new.username), ("Password", new.password)])
+    sh.note("Note the password now. It won't be shown again.")
+    sh.note(new.welcome_detail)
 
 
 def enrol(ctl) -> None:

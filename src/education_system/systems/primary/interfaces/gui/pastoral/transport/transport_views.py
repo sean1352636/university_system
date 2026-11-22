@@ -13,6 +13,7 @@ from education_system.systems.primary.domain.pastoral.transport import (
 from education_system.systems.primary.domain.pastoral.transport.transport import (
     ARRANGEMENT_STATUSES,
     Arrangement,
+    DAYS,
     DEFAULT_ARRANGEMENT_STATUS,
     DEFAULT_FEE_STATUS,
     DEFAULT_MODE,
@@ -26,6 +27,7 @@ from education_system.systems.primary.domain.pastoral.transport.transport import
     ValidationError,
 )
 from education_system.systems.primary.domain import _pupils_bridge as student_data
+from education_system.systems.primary.interfaces.gui import kit
 
 logger = logging.getLogger(__name__)
 
@@ -48,19 +50,28 @@ _ARR_TAGS = {
 
 def open_transport_window(parent=None) -> None:
     data.init_db()
-    master = getattr(parent, "root", parent)
-    win = tk.Toplevel(master) if master is not None else tk.Tk()
-    win.title(f"Transport — {branding.SYSTEM_NAME}")
-    win.geometry(WIN_GEOMETRY)
-    win.minsize(*WIN_MINSIZE)
+    if parent is None:
+        win = tk.Tk()
+        win.title(f"Transport — {branding.SYSTEM_NAME}")
+        win.geometry(WIN_GEOMETRY)
+        win.minsize(*WIN_MINSIZE)
+        frame = ttk.Frame(win, padding=10)
+        frame.pack(fill="both", expand=True)
+        _draw_transport(frame)
+        return
+    kit.show_page(parent, "Transport", _draw_transport)
 
-    nb = ttk.Notebook(win)
-    nb.pack(fill="both", expand=True, padx=10, pady=10)
+
+def _draw_transport(page) -> None:
+    kit.page_heading(page, "Transport",
+                     "Routes, pupils' transport arrangements, fees and passes")
+    nb = ttk.Notebook(page)
+    nb.pack(fill="both", expand=True)
 
     RoutesTab(nb)
     ArrangementsTab(nb, scope="active",  label="Active")
     ArrangementsTab(nb, scope="unpaid",  label="Unpaid / Partial")
-    ArrangementsTab(nb, scope="bursary", label="Bursary")
+    ArrangementsTab(nb, scope="bursary", label="LA Funded")
     ArrangementsTab(nb, scope="expired", label="Pass Expired")
     ArrangementsTab(nb, scope="all",     label="All Arrangements")
     PerStudentTab(nb)
@@ -81,6 +92,115 @@ def _route_options() -> list[tuple[int | None, str]]:
         opts.append((r.route_id,
                        f"#{r.route_id} — {r.route_name}"))
     return opts
+
+
+def _operator_names() -> list[str]:
+    """Operators already on a route (the field is free text, so the
+    drop-down stays editable for a new one)."""
+    try:
+        return sorted({r.operator for r in data.list_routes() if r.operator})
+    except Exception:  # noqa: BLE001 - suggestions only
+        logger.debug("operator list failed", exc_info=True)
+        return []
+
+
+# ── Days tick boxes ──────────────────────────────────────────
+
+_SHORT = [d[:3] for d in DAYS]          # Mon … Sun
+_WEEKDAYS = _SHORT[:5]
+
+
+def _parse_days(text: str) -> list[str] | None:
+    """Short day names in *text* ("Mon-Fri", "Mon, Wed, Fri",
+    "Monday Tuesday"…), or None when it is not a list of days (an old
+    free-text value such as "Term time only")."""
+    t = (text or "").strip()
+    if not t:
+        return []
+    picked: set[str] = set()
+    for part in t.replace(";", ",").replace("/", ",").split(","):
+        part = part.strip()
+        if not part:
+            continue
+        rng = [x.strip() for x in part.replace("–", "-").split("-")]
+        if len(rng) == 2 and all(x[:3].title() in _SHORT for x in rng):
+            a, b = (_SHORT.index(x[:3].title()) for x in rng)
+            if a <= b:
+                picked.update(_SHORT[a:b + 1])
+                continue
+            return None
+        for word in part.split():
+            w = word.rstrip(".").title()
+            if w in _SHORT or w in DAYS:
+                picked.add(w[:3])
+            else:
+                return None
+    return [d for d in _SHORT if d in picked]
+
+
+def _format_days(days: list[str]) -> str:
+    """"Mon-Fri" for the school week (as the old default), a range for any
+    other unbroken run of 3+ days, otherwise "Mon, Wed, Fri"."""
+    if not days:
+        return ""
+    idx = [_SHORT.index(d) for d in days]
+    if len(idx) >= 3 and idx == list(range(idx[0], idx[-1] + 1)):
+        return f"{_SHORT[idx[0]]}-{_SHORT[idx[-1]]}"
+    return ", ".join(days)
+
+
+class _DaysField(ttk.Frame):
+    """A tick box per weekday (from the domain's DAYS) bound to the
+    ``days`` StringVar, which keeps the text form the domain stores
+    ("Mon-Fri", "Mon, Wed, Fri"). A stored value that is not a list of
+    days is kept as it is until a box is ticked."""
+
+    def __init__(self, master, textvariable: tk.StringVar) -> None:
+        super().__init__(master)
+        self.var = textvariable
+        self._syncing = False
+        self.boxes: dict[str, tk.BooleanVar] = {}
+        for d in _SHORT:
+            bv = tk.BooleanVar(value=False)
+            self.boxes[d] = bv
+            ttk.Checkbutton(self, text=d, variable=bv,
+                            command=self._picked).pack(side="left")
+        ttk.Button(self, text="Mon–Fri", width=8,
+                   command=self._weekdays).pack(side="left", padx=(6, 0))
+        self.note = ttk.Label(self, text="", foreground="#7a5800")
+        self.note.pack(side="left", padx=(6, 0))
+        self._trace = self.var.trace_add("write", lambda *_: self._show())
+        self._show()
+
+    def _weekdays(self) -> None:
+        for d, bv in self.boxes.items():
+            bv.set(d in _WEEKDAYS)
+        self._picked()
+
+    def _picked(self) -> None:
+        chosen = [d for d in _SHORT if self.boxes[d].get()]
+        self._syncing = True
+        try:
+            self.var.set(_format_days(chosen))
+        finally:
+            self._syncing = False
+        self.note.config(text="")
+
+    def _show(self) -> None:
+        if self._syncing:
+            return
+        parsed = _parse_days(self.var.get())
+        for d, bv in self.boxes.items():
+            bv.set(bool(parsed) and d in parsed)
+        self.note.config(text="" if parsed is not None
+                         else f"(kept: {self.var.get()!r})")
+
+    def destroy(self) -> None:
+        try:
+            self.var.trace_remove("write", self._trace)
+        except (tk.TclError, ValueError):
+            pass
+        super().destroy()
 
 
 # ── Routes tab ───────────────────────────────────────────────
@@ -108,8 +228,9 @@ class RoutesTab:
         self.f_status.current(0)
         self.f_status.pack(side="left", padx=(2, 8))
         ttk.Label(bar, text="Operator:").pack(side="left")
-        self.f_op = ttk.Entry(bar, width=14)
-        self.f_op.pack(side="left", padx=(2, 8))
+        self.f_op = tk.StringVar()
+        kit.ChoiceField(bar, self.f_op, choices=_operator_names(), blank=True,
+                        editable=True, width=16).pack(side="left", padx=(2, 8))
         ttk.Label(bar, text="Name:").pack(side="left")
         self.f_name = ttk.Entry(bar, width=14)
         self.f_name.pack(side="left", padx=(2, 8))
@@ -259,9 +380,11 @@ class ArrangementsTab:
     def _build(self) -> None:
         bar = ttk.Frame(self.frame)
         bar.pack(fill="x", padx=8, pady=(8, 4))
-        ttk.Label(bar, text="Student id:").pack(side="left")
-        self.f_student = ttk.Entry(bar, width=12)
-        self.f_student.pack(side="left", padx=(2, 8))
+        ttk.Label(bar, text="Pupil:").pack(side="left")
+        self.f_student = tk.StringVar()
+        kit.PupilPicker(bar, self.f_student, include_off_roll=True, width=34,
+                        on_change=lambda _v: self.refresh()).pack(
+            side="left", padx=(2, 8))
         ttk.Label(bar, text="Mode:").pack(side="left")
         self.f_mode = ttk.Combobox(bar, values=("",) + MODES,
                                      state="readonly", width=14)
@@ -432,7 +555,7 @@ class ArrangementsTab:
         a = self._selected()
         if not a:
             return
-        when = _prompt_text(self.frame, "End date (YYYY-MM-DD)",
+        when = _prompt_date(self.frame, "End date",
                               initial=_dt.date.today().isoformat())
         if not when:
             return
@@ -510,12 +633,11 @@ class PerStudentTab:
         nb.add(self.frame, text="Per Student")
         bar = ttk.Frame(self.frame)
         bar.pack(fill="x", padx=8, pady=(8, 4))
-        ttk.Label(bar, text="Student:").pack(side="left")
-        self.combo = ttk.Combobox(bar, state="readonly", width=42)
-        opts = _student_options()
-        self._opts = opts
-        self.combo["values"] = [lbl for _, lbl in opts]
-        self.combo.pack(side="left", padx=(2, 8))
+        ttk.Label(bar, text="Pupil:").pack(side="left")
+        self.student_var = tk.StringVar()
+        kit.PupilPicker(bar, self.student_var, include_off_roll=True,
+                        on_change=lambda _v: self._show()).pack(
+            side="left", padx=(2, 8))
         ttk.Button(bar, text="Show",
                     command=self._show).pack(side="left")
         self.text = tk.Text(self.frame, wrap="word",
@@ -525,10 +647,9 @@ class PerStudentTab:
         self.text.config(state="disabled")
 
     def _show(self) -> None:
-        idx = self.combo.current()
-        if idx < 0:
+        sid = self.student_var.get().strip()
+        if not sid:
             return
-        sid = self._opts[idx][0]
         rows = data.arrangements_for_student(sid)
         self.text.config(state="normal")
         self.text.delete("1.0", "end")
@@ -590,7 +711,7 @@ class SummaryTab:
                             f"Suspended           : {s.suspended}\n"
                             f"Pending             : {s.pending}\n"
                             f"Unpaid / partial    : {s.unpaid_or_partial}\n"
-                            f"Bursary supported   : {s.bursary_supported}\n"
+                            f"LA-funded           : {s.bursary_supported}\n"
                             f"Pass expired        : {s.pass_expired}\n"
                             f"Distinct students   : {s.distinct_students}\n\n")
         self.text.insert("end", "By mode:\n")
@@ -625,7 +746,7 @@ class RouteEditor:
         self.win = tk.Toplevel(parent)
         self.win.title(f"Edit route #{route.route_id}"
                           if route else "New route")
-        self.win.geometry("780x680")
+        self.win.geometry("820x640")
         self.win.transient(parent); self.win.after_idle(self.win.grab_set)
         self._build()
         if route:
@@ -633,12 +754,19 @@ class RouteEditor:
         self.win.wait_window()
 
     def _build(self) -> None:
-        body = ttk.Frame(self.win)
-        body.pack(fill="both", expand=True, padx=12, pady=10)
+        body, footer = kit.scrolled_form(self.win)
         body.grid_columnconfigure(1, weight=1)
         body.grid_columnconfigure(3, weight=1)
         self.vars: dict[str, tk.Variable] = {}
         self.texts: dict[str, tk.Text] = {}
+
+        def picker(row, col, label, key, make, span=1):
+            ttk.Label(body, text=label).grid(
+                row=row, column=col, sticky="w", padx=4, pady=2)
+            v = tk.StringVar()
+            self.vars[key] = v
+            make(v).grid(row=row, column=col + 1, columnspan=span,
+                         sticky="w", padx=4, pady=2)
 
         def entry(row, col, label, key, width=22):
             ttk.Label(body, text=label).grid(
@@ -660,15 +788,22 @@ class RouteEditor:
         entry(0, 0, "Route name*", "route_name", width=48)
         combo(1, 0, "Route type*", "route_type", ROUTE_TYPES)
         combo(1, 2, "Status*", "status", ROUTE_STATUSES)
-        entry(2, 0, "Operator", "operator")
-        entry(2, 2, "Capacity", "capacity")
+        picker(2, 0, "Operator", "operator",
+               lambda v: kit.ChoiceField(body, v, choices=_operator_names(),
+                                         blank=True, editable=True, width=22))
+        picker(2, 2, "Capacity", "capacity",
+               lambda v: kit.NumberField(body, v, from_=0, to=999))
         entry(3, 0, "Contact phone", "contact_phone")
         entry(3, 2, "Contact email", "contact_email")
-        entry(4, 0, "Days*", "days")
-        entry(4, 2, "AM pickup (HH:MM)", "am_pickup_time")
-        entry(5, 0, "PM return (HH:MM)", "pm_return_time")
-        entry(5, 2, "Cost / term (£)", "cost_per_term")
-        entry(6, 0, "Cost / year (£)", "cost_per_year")
+        picker(4, 0, "Days*", "days", lambda v: _DaysField(body, v), span=3)
+        picker(5, 0, "AM pickup", "am_pickup_time",
+               lambda v: kit.TimeField(body, v, hours=range(6, 20)))
+        picker(5, 2, "PM return", "pm_return_time",
+               lambda v: kit.TimeField(body, v, hours=range(6, 20)))
+        picker(6, 0, "Cost / term (£)", "cost_per_term",
+               lambda v: kit.NumberField(body, v, increment=0.01, to=99999))
+        picker(6, 2, "Cost / year (£)", "cost_per_year",
+               lambda v: kit.NumberField(body, v, increment=0.01, to=99999))
 
         row = 7
         for key, label in (
@@ -683,11 +818,9 @@ class RouteEditor:
             self.texts[key] = t
             row += 1
 
-        bar = ttk.Frame(self.win)
-        bar.pack(fill="x", padx=12, pady=(0, 10))
-        ttk.Button(bar, text="Save",
+        ttk.Button(footer, text="Save",
                     command=self._save).pack(side="right", padx=4)
-        ttk.Button(bar, text="Cancel",
+        ttk.Button(footer, text="Cancel",
                     command=self.win.destroy).pack(side="right")
 
         self.vars["route_type"].set(DEFAULT_ROUTE_TYPE)
@@ -743,7 +876,7 @@ class ArrangementEditor:
         self.win.title(
             f"Edit arrangement #{arrangement.arrangement_id}"
             if arrangement else "New arrangement")
-        self.win.geometry("820x820")
+        self.win.geometry("860x680")
         self.win.transient(parent); self.win.after_idle(self.win.grab_set)
         self._build()
         if arrangement:
@@ -751,34 +884,36 @@ class ArrangementEditor:
         self.win.wait_window()
 
     def _build(self) -> None:
-        body = ttk.Frame(self.win)
-        body.pack(fill="both", expand=True, padx=12, pady=10)
+        body, footer = kit.scrolled_form(self.win)
         body.grid_columnconfigure(1, weight=1)
         body.grid_columnconfigure(3, weight=1)
         self.vars: dict[str, tk.Variable] = {}
         self.texts: dict[str, tk.Text] = {}
         self.bools: dict[str, tk.BooleanVar] = {}
 
-        ttk.Label(body, text="Student*").grid(
+        ttk.Label(body, text="Pupil*").grid(
             row=0, column=0, sticky="w", padx=4, pady=2)
-        self.student_combo = ttk.Combobox(body, state="readonly",
-                                              width=42)
-        opts = _student_options()
-        self._student_opts = opts
-        self.student_combo["values"] = [lbl for _, lbl in opts]
-        self.student_combo.grid(row=0, column=1, columnspan=3,
-                                  sticky="ew", padx=4, pady=2)
+        self.student_var = tk.StringVar()
+        kit.PupilPicker(body, self.student_var).grid(
+            row=0, column=1, columnspan=3, sticky="w", padx=4, pady=2)
 
         ttk.Label(body, text="Route").grid(
             row=1, column=0, sticky="w", padx=4, pady=2)
-        self.route_combo = ttk.Combobox(body, state="readonly",
-                                              width=42)
-        ropts = _route_options()
-        self._route_opts = ropts
-        self.route_combo["values"] = [lbl for _, lbl in ropts]
-        self.route_combo.current(0)
-        self.route_combo.grid(row=1, column=1, columnspan=3,
-                                  sticky="ew", padx=4, pady=2)
+        self.route_var = tk.StringVar()
+        kit.ChoiceField(
+            body, self.route_var,
+            choices=[(str(rid), lbl) for rid, lbl in _route_options()
+                     if rid is not None],
+            blank=True, width=44).grid(
+            row=1, column=1, columnspan=3, sticky="w", padx=4, pady=2)
+
+        def picker(row, col, label, key, make, span=1):
+            ttk.Label(body, text=label).grid(
+                row=row, column=col, sticky="w", padx=4, pady=2)
+            v = tk.StringVar()
+            self.vars[key] = v
+            make(v).grid(row=row, column=col + 1, columnspan=span,
+                         sticky="w", padx=4, pady=2)
 
         def entry(row, col, label, key, width=22):
             ttk.Label(body, text=label).grid(
@@ -801,22 +936,24 @@ class ArrangementEditor:
         combo(2, 2, "Status*", "status", ARRANGEMENT_STATUSES)
         entry(3, 0, "Pickup point", "pickup_point")
         entry(3, 2, "Drop point", "drop_point")
-        entry(4, 0, "Days*", "days")
-        entry(4, 2, "Start date*", "start_date")
-        entry(5, 0, "End date", "end_date")
-        combo(5, 2, "Fee status*", "fee_status", FEE_STATUSES)
-        entry(6, 0, "Fee amount (£)", "fee_amount")
-        entry(6, 2, "Pass number", "pass_number")
-        entry(7, 0, "Pass expires", "pass_expires_on")
+        picker(4, 0, "Days*", "days", lambda v: _DaysField(body, v), span=3)
+        picker(5, 0, "Start date*", "start_date", lambda v: kit.DateField(body, v))
+        picker(5, 2, "End date", "end_date", lambda v: kit.DateField(body, v))
+        combo(6, 0, "Fee status*", "fee_status", FEE_STATUSES)
+        picker(6, 2, "Fee amount (£)", "fee_amount",
+               lambda v: kit.NumberField(body, v, increment=0.01, to=99999))
+        picker(7, 0, "Pass expires", "pass_expires_on",
+               lambda v: kit.DateField(body, v))
+        entry(7, 2, "Pass number", "pass_number")
         self.bools["bursary_supported"] = tk.BooleanVar()
-        ttk.Checkbutton(body, text="Bursary supported",
+        ttk.Checkbutton(body, text="LA-funded (free home-to-school transport)",
                          variable=self.bools["bursary_supported"]
-                         ).grid(row=7, column=2, columnspan=2,
+                         ).grid(row=8, column=0, columnspan=4,
                                   sticky="w", padx=4, pady=2)
-        entry(8, 0, "Emergency contact", "emergency_contact")
-        entry(8, 2, "Emergency phone", "emergency_phone")
+        entry(9, 0, "Emergency contact", "emergency_contact")
+        entry(9, 2, "Emergency phone", "emergency_phone")
 
-        row = 9
+        row = 10
         for key, label in (
                 ("medical_notes", "Medical notes"),
                 ("notes",         "Notes"),
@@ -829,11 +966,9 @@ class ArrangementEditor:
             self.texts[key] = t
             row += 1
 
-        bar = ttk.Frame(self.win)
-        bar.pack(fill="x", padx=12, pady=(0, 10))
-        ttk.Button(bar, text="Save",
+        ttk.Button(footer, text="Save",
                     command=self._save).pack(side="right", padx=4)
-        ttk.Button(bar, text="Cancel",
+        ttk.Button(footer, text="Cancel",
                     command=self.win.destroy).pack(side="right")
 
         self.vars["mode"].set(DEFAULT_MODE)
@@ -845,14 +980,8 @@ class ArrangementEditor:
     def _load(self) -> None:
         a = self.arrangement
         assert a is not None
-        for i, (sid, _) in enumerate(self._student_opts):
-            if sid == a.student_id:
-                self.student_combo.current(i)
-                break
-        for i, (rid, _) in enumerate(self._route_opts):
-            if rid == a.route_id:
-                self.route_combo.current(i)
-                break
+        self.student_var.set(a.student_id or "")
+        self.route_var.set("" if a.route_id is None else str(a.route_id))
         for key in ("mode", "status", "pickup_point",
                      "drop_point", "days", "start_date",
                      "end_date", "fee_status",
@@ -868,17 +997,16 @@ class ArrangementEditor:
             self.texts[k].insert("1.0", getattr(a, k) or "")
 
     def _save(self) -> None:
-        sidx = self.student_combo.current()
-        if sidx < 0:
+        student_id = self.student_var.get().strip()
+        if not student_id:
             messagebox.showerror("Transport",
-                                    "Pick a student.",
+                                    "Pick a pupil.",
                                     parent=self.win)
             return
-        ridx = self.route_combo.current()
-        route_id = (self._route_opts[ridx][0]
-                      if ridx >= 0 else None)
+        rv = self.route_var.get().strip()
+        route_id = int(rv) if rv.isdigit() else None
         payload: dict = {
-            "student_id": self._student_opts[sidx][0],
+            "student_id": student_id,
             "route_id": route_id,
             "bursary_supported":
                 self.bools["bursary_supported"].get(),
@@ -908,6 +1036,29 @@ def _prompt_text(parent, title: str, *,
     ttk.Label(win, text=title).pack(anchor="w", padx=8, pady=8)
     var = tk.StringVar(value=initial)
     ttk.Entry(win, textvariable=var).pack(fill="x", padx=8)
+    result: dict = {"value": None}
+
+    def ok() -> None:
+        result["value"] = var.get().strip()
+        win.destroy()
+
+    bar = ttk.Frame(win)
+    bar.pack(fill="x", padx=8, pady=12)
+    ttk.Button(bar, text="OK", command=ok).pack(side="right", padx=4)
+    ttk.Button(bar, text="Cancel",
+                command=win.destroy).pack(side="right")
+    win.wait_window()
+    return result["value"]
+
+
+def _prompt_date(parent, title: str, *,
+                 initial: str = "") -> str | None:
+    win = tk.Toplevel(parent)
+    win.title(title); win.geometry("400x150")
+    win.transient(parent); win.after_idle(win.grab_set)
+    ttk.Label(win, text=title).pack(anchor="w", padx=8, pady=8)
+    var = tk.StringVar(value=initial)
+    kit.DateField(win, var).pack(anchor="w", padx=8)
     result: dict = {"value": None}
 
     def ok() -> None:

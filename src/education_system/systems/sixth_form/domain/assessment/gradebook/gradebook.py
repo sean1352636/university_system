@@ -6,7 +6,10 @@ title. The gradebook adds three things on top:
 
 * **Letter grades** — A-Level boundaries (A*, A, B, C, D, E, U), applied
   to either a per-assignment override (table ``grade_boundaries``) or
-  the standard percentage defaults.
+  the standard percentage defaults. A class group whose course teaches
+  another qualification (BTEC, GCSE resit, T Level...) is graded on
+  that qualification's scale via ``qualifications.grade_scales``; the
+  A*-E raw-mark overrides only apply to letter-graded scales.
 * **Per-student summaries** — average percentage across all marked
   submissions in a group, best/worst letter, total marked vs. total set.
 * **Per-group matrix** — wide view: rows = students, columns =
@@ -22,11 +25,17 @@ import sqlite3
 from dataclasses import dataclass
 from typing import Any
 from education_system import paths
+from education_system.systems.sixth_form.domain.academics.qualifications import (
+    grade_scales as _gs,
+)
 
 logger = logging.getLogger(__name__)
 
 DB_PATH = paths.SIXTH_FORM_GRADEBOOK_DB
 
+# A-level letters: still the default scale, and still imported by other
+# modules as the A*-U list. Use ``grades_for(qualification_type)`` for the
+# scale of a particular aim.
 LETTER_GRADES: tuple[str, ...] = ("A*", "A", "B", "C", "D", "E", "U")
 
 # Default percentage thresholds for A-Level letter grades. Order matters
@@ -129,21 +138,56 @@ def init_db() -> None:
 
 # ── Letter grade helpers ───────────────────────────────────────────
 
-def pct_to_letter(pct: float | None) -> str | None:
-    """Return the default A-Level letter for a percentage, or None if
-    pct is None."""
+def pct_to_letter(pct: float | None,
+                  qualification_type: str | None = None) -> str | None:
+    """Return the default letter for a percentage, or None if pct is None.
+
+    A level (and no type) uses DEFAULT_BOUNDARIES_PCT exactly as before;
+    another qualification type uses its scale's percentage defaults.
+    """
     if pct is None:
         return None
+    if qualification_type and _gs.canonical_type(qualification_type) is None \
+            and qualification_type not in _gs.SCALES:
+        qualification_type = None     # unknown type: A-level default
+    if qualification_type and _gs.scale_for(qualification_type).key != "a_level":
+        return _gs.percent_to_grade(pct, qualification_type)
     for letter, threshold in DEFAULT_BOUNDARIES_PCT:
         if pct >= threshold:
             return letter
     return "U"
 
 
+def grades_for(qualification_type: str | None = None) -> tuple[str, ...]:
+    """Grade list (best first) for a qualification type; A*-U by default."""
+    return _gs.grades_for(qualification_type)
+
+
+def qualification_type_for_group(group_id: int | None) -> str | None:
+    """Qualification type taught to a class group (via its course)."""
+    if group_id is None:
+        return None
+    try:
+        from education_system.systems.sixth_form.domain.academics.class_groups import (
+            class_groups as _cg,
+        )
+        from education_system.systems.sixth_form.domain.academics.courses import (
+            courses as _crs,
+        )
+        g = _cg.get_group(int(group_id))
+        c = _crs.get_course(g.course_id) if g else None
+        return _crs.effective_qualification_type(c) if c else None
+    except Exception:
+        logger.debug("qualification_type_for_group(%s) failed", group_id,
+                     exc_info=True)
+        return None
+
+
 def _resolve_letter(
     marks: int | None,
     max_marks: int | None,
     boundaries: GradeBoundaries | None,
+    qualification_type: str | None = None,
 ) -> tuple[float | None, str | None]:
     """Compute (percentage, letter). Returns (None, None) if not marked.
 
@@ -154,8 +198,15 @@ def _resolve_letter(
     if marks is None or max_marks in (None, 0):
         return None, None
     pct = round(100.0 * marks / max_marks, 1)
+    if qualification_type and _gs.canonical_type(qualification_type) is None \
+            and qualification_type not in _gs.SCALES:
+        qualification_type = None
 
-    if boundaries is not None:
+    scale_ok = (qualification_type is None
+                or _gs.scale_for(qualification_type).key
+                in _gs.LETTER_BOUNDARY_SCALES)
+    if boundaries is not None and scale_ok:
+        valid = set(_gs.grades_for(qualification_type))
         ordered = (
             ("A*", boundaries.a_star),
             ("A",  boundaries.a),
@@ -166,10 +217,11 @@ def _resolve_letter(
         )
         if any(th is not None for _, th in ordered):
             for letter, threshold in ordered:
-                if threshold is not None and marks >= threshold:
+                if (threshold is not None and marks >= threshold
+                        and letter in valid):
                     return pct, letter
             # No override hit — fall through to percentage default for U.
-    return pct, pct_to_letter(pct)
+    return pct, pct_to_letter(pct, qualification_type)
 
 
 # ── Boundaries CRUD ────────────────────────────────────────────────
@@ -303,7 +355,7 @@ def graded_submissions_for_student(student_id: str) -> list[GradedSubmission]:
         rows = conn.execute(
             """SELECT s.student_id, s.marks, s.status,
                       a.assignment_id, a.title, a.type, a.due_date,
-                      a.max_marks
+                      a.max_marks, a.group_id
                FROM submissions s
                JOIN assignments a ON a.assignment_id = s.assignment_id
                WHERE s.student_id = ?
@@ -311,9 +363,14 @@ def graded_submissions_for_student(student_id: str) -> list[GradedSubmission]:
             (student_id,),
         ).fetchall()
     out: list[GradedSubmission] = []
+    qtype_cache: dict[int, str | None] = {}
     for r in rows:
         b = get_boundaries(r["assignment_id"])
-        pct, letter = _resolve_letter(r["marks"], r["max_marks"], b)
+        gid = r["group_id"]
+        if gid not in qtype_cache:
+            qtype_cache[gid] = qualification_type_for_group(gid)
+        pct, letter = _resolve_letter(r["marks"], r["max_marks"], b,
+                                      qtype_cache[gid])
         out.append(GradedSubmission(
             student_id=r["student_id"], assignment_id=r["assignment_id"],
             title=r["title"], type=r["type"], due_date=r["due_date"],
@@ -361,13 +418,14 @@ def graded_submissions_for_group(
 
     # Cache boundaries lookup so we don't reissue per-row.
     boundary_cache: dict[int, GradeBoundaries | None] = {}
+    qtype = qualification_type_for_group(group_id)
     out: list[GradedSubmission] = []
     for r in rows:
         aid = r["assignment_id"]
         if aid not in boundary_cache:
             boundary_cache[aid] = get_boundaries(aid)
         pct, letter = _resolve_letter(
-            r["marks"], r["max_marks"], boundary_cache[aid])
+            r["marks"], r["max_marks"], boundary_cache[aid], qtype)
         out.append(GradedSubmission(
             student_id=r["student_id"], assignment_id=aid,
             title=r["title"], type=r["type"], due_date=r["due_date"],
@@ -446,10 +504,11 @@ def student_summary(
         )
 
     avg_pct = round(sum(g.percentage for g in marked) / len(marked), 1)
-    # Best = highest letter (lowest index in LETTER_GRADES).
+    # Best = highest letter. grade_scales.sort_key orders A*-U exactly as
+    # LETTER_GRADES did and places other scales' grades alongside.
     ordered_letters = sorted(
         {g.letter for g in marked if g.letter},
-        key=lambda lg: LETTER_GRADES.index(lg) if lg in LETTER_GRADES else 99,
+        key=_gs.sort_key,
     )
     best = ordered_letters[0] if ordered_letters else None
     worst = ordered_letters[-1] if ordered_letters else None

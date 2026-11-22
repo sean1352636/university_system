@@ -21,7 +21,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from unittest.mock import Mock, patch, MagicMock
 
-from education_system.systems.university.services.communication.communication_manager import (
+from education_system.systems.university.infrastructure.communication.communication_manager import (
     CommunicationManager
 )
 
@@ -165,7 +165,7 @@ class TestCommunicationManagerInit:
 
     def test_initialization_with_default_path(self):
         """Test initialization with default database path."""
-        with patch('education_system.systems.university.services.communication.communication_manager.DEFAULT_DB_PATH', '/tmp/test.db'):
+        with patch('education_system.systems.university.infrastructure.communication.communication_manager.DEFAULT_DB_PATH', '/tmp/test.db'):
             manager = CommunicationManager()
             assert manager.db_path is not None
 

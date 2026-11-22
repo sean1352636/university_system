@@ -39,6 +39,9 @@ from education_system.api.sixth_form.routes.advanced_search_routes import (
 from education_system.api.sixth_form.routes.calendar_routes import (
     calendar_bp,
 )
+from education_system.api.sixth_form.routes.onboarding_routes import (
+    onboarding_bp,
+)
 
 __all__ = [
     "academic_year_bp",
@@ -54,6 +57,7 @@ __all__ = [
     "staff_comms_bp",
     "student_services_bp",
     "advanced_search_bp",
+    "onboarding_bp",
 ]
 
 # ── Mounted surface ──────────────────────────────────────────────────
@@ -75,4 +79,5 @@ ALL_BLUEPRINTS = (
     student_services_bp,
     advanced_search_bp,
     calendar_bp,
+    onboarding_bp,
 ) + tuple(MENU_BLUEPRINTS)

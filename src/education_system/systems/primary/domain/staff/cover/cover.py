@@ -103,14 +103,19 @@ def init_db() -> None:
     from education_system.systems.primary.domain.academics.subjects import (
         subjects as subjects_data,
     )
+    from education_system.systems.primary.domain.academics.timetable import (
+        timetable as timetable_data,
+    )
     subjects_data.init_db()
+    # The cover-clash check reads timetable_slots.
+    timetable_data.init_db()
     try:
         with _connect() as conn:
             conn.executescript(_SCHEMA)
     except sqlite3.Error:
         logger.exception("Failed to initialise cover_arrangements table")
         raise
-    logger.info("Secondary cover_arrangements table ready")
+    logger.info("Primary cover_arrangements table ready")
     _DB_READY = True
 
 

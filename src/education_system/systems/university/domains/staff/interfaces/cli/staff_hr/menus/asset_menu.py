@@ -5,8 +5,9 @@ Asset Menu - Asset and equipment management CLI.
 from education_system.systems.university.domains.staff.domain.staff_hr.services import AssetManager
 
 
-def display_asset_menu(user_id: str, is_admin: bool = False) -> None:
+def display_asset_menu(user_id: str, admin_mode: bool = False) -> None:
     """Display asset management menu."""
+    is_admin = admin_mode
     while True:
         print("\n" + "=" * 60)
         print("ASSET & EQUIPMENT MANAGEMENT")
@@ -55,9 +56,9 @@ def display_asset_menu(user_id: str, is_admin: bool = False) -> None:
         elif choice == '8' and is_admin:
             _manage_issues(user_id)
         elif choice == '9' and is_admin:
-            _schedule_maintenance()
+            _schedule_maintenance(user_id)
         elif choice == '10' and is_admin:
-            _add_asset()
+            _add_asset(user_id)
         elif choice == '11' and is_admin:
             _view_audit_log()
         else:
@@ -115,6 +116,7 @@ def _report_issue(user_id: str) -> None:
             issue_id = AssetManager.report_issue(
                 asset['asset_id'], user_id,
                 issue_type=issue_type,
+                title=f"{issue_type}: {asset.get('name')}",
                 severity=severity,
                 description=description
             )
@@ -141,11 +143,13 @@ def _request_asset(user_id: str) -> None:
             return
         category = categories[cat_choice]
 
+        item_name = input(f"Item needed (blank for {category.get('name')}): ").strip()
         justification = input("Justification:\n").strip()
         priority = input("Priority (low/medium/high): ").strip() or 'medium'
 
         request_id = AssetManager.submit_request(
             user_id, category['category_id'],
+            item_name=item_name,
             justification=justification,
             priority=priority
         )
@@ -167,7 +171,8 @@ def _view_requests(user_id: str) -> None:
         for r in requests:
             status = r.get('status', 'pending').upper()
             print(f"\n  [{status}] {r.get('category_name', 'N/A')}")
-            print(f"    Requested: {r.get('request_date', 'N/A')[:10]}")
+            print(f"    Item: {r.get('item_name', 'N/A')}")
+            print(f"    Requested: {(r.get('request_date') or 'N/A')[:10]}")
             print(f"    Priority: {r.get('priority', 'N/A')}")
             if r.get('justification'):
                 print(f"    Reason: {r.get('justification')[:50]}...")
@@ -302,7 +307,7 @@ def _manage_issues(admin_id: str) -> None:
     for i, issue in enumerate(issues, 1):
         severity = issue.get('severity', 'medium').upper()
         print(f"\n  {i}. [{severity}] {issue.get('asset_name', 'N/A')}")
-        print(f"     Type: {issue.get('issue_type')} | Reported: {issue.get('reported_date', 'N/A')[:10]}")
+        print(f"     Type: {issue.get('issue_type')} | Reported: {(issue.get('reported_date') or 'N/A')[:10]}")
         if issue.get('description'):
             print(f"     {issue.get('description')[:60]}...")
 
@@ -324,7 +329,8 @@ def _manage_issues(admin_id: str) -> None:
                     issue['issue_id'],
                     status=status,
                     resolution=resolution,
-                    resolved_by=admin_id if status in ('resolved', 'closed') else None
+                    resolved_by=admin_id if status in ('resolved', 'closed') else None,
+                    updated_by=admin_id
                 )
                 print("\nIssue updated.")
     except ValueError:
@@ -333,7 +339,7 @@ def _manage_issues(admin_id: str) -> None:
     input("Press Enter to continue...")
 
 
-def _schedule_maintenance() -> None:
+def _schedule_maintenance(admin_id: str) -> None:
     """Schedule asset maintenance."""
     assets = AssetManager.get_assets(limit=50)
     if not assets:
@@ -361,6 +367,8 @@ def _schedule_maintenance() -> None:
                 asset['asset_id'],
                 maintenance_type=maint_type,
                 scheduled_date=scheduled_date,
+                created_by=admin_id,
+                title=f"{maint_type}: {asset.get('name')}",
                 notes=notes
             )
             print(f"\nMaintenance scheduled. ID: {maint_id}")
@@ -372,7 +380,7 @@ def _schedule_maintenance() -> None:
     input("Press Enter to continue...")
 
 
-def _add_asset() -> None:
+def _add_asset(admin_id: str) -> None:
     """Add a new asset."""
     categories = AssetManager.get_categories()
     print("\n--- Add New Asset ---")
@@ -395,15 +403,16 @@ def _add_asset() -> None:
         purchase_cost = input("Purchase Cost: ").strip()
 
         if name:
-            asset_id = AssetManager.create_asset(
+            asset_id, asset_tag = AssetManager.create_asset(
                 name=name,
                 category_id=category['category_id'],
+                created_by=admin_id,
                 serial_number=serial,
                 location=location,
                 purchase_date=purchase_date if purchase_date else None,
-                purchase_cost=float(purchase_cost) if purchase_cost else None
+                purchase_price=float(purchase_cost) if purchase_cost else None
             )
-            print(f"\nAsset created. ID: {asset_id}")
+            print(f"\nAsset created. ID: {asset_id} (tag {asset_tag})")
         else:
             print("\nAsset name is required.")
     except ValueError:
@@ -423,7 +432,7 @@ def _view_audit_log() -> None:
 
     if logs:
         for log in logs:
-            print(f"\n  {log.get('timestamp', 'N/A')[:19]}")
+            print(f"\n  {(log.get('timestamp') or 'N/A')[:19]}")
             print(f"    Asset: {log.get('asset_name', 'N/A')} | Action: {log.get('action')}")
             print(f"    By: {log.get('action_by', 'System')}")
     else:

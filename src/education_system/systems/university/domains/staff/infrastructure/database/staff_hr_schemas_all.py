@@ -68,6 +68,12 @@ def init_staff_hr_schemas() -> None:
     _init_finance_schemas()
     _init_facilities_schemas()
     _init_governance_schemas()
+    # HR roles/audit, staff discipline, absence, pay, hiring, compliance
+    from education_system.systems.university.infrastructure.database.db import get_connection
+
+    from .staff_hr_ddl import apply_to_connection
+    with get_connection() as conn:
+        apply_to_connection(conn)
     print("Staff HR schemas initialized successfully")
 
 

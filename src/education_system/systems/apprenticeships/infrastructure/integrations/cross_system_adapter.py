@@ -431,6 +431,57 @@ class ApprenticeshipsAdapter(PhaseAdapter):
         return ExportResult(record=record,
                             local_student_id=str(local_student_id))
 
+    def receive_training_result(self, local_student_id: str,
+                                result: dict[str, Any]) -> str | None:
+        """A short course this provider sent the apprentice on, from the
+        training provider (``platform.cross_system.training_provider_requests``).
+
+        Every outcome goes onto the apprentice's notes. A certificate for an
+        apprentice On Programme also becomes an off-the-job entry for its
+        guided hours - *Submitted*, so the tutor still approves it (hours
+        only count once signed). Returns a line for the sender's log.
+        """
+        init_db()
+        when = str(result.get("issued_on") or result.get("on")
+                   or date.today().isoformat())[:10]
+        course = result.get("course") or "short course"
+        if result.get("kind") == "certificate":
+            line = (f"{course} - certificate {result.get('cert_no') or ''} issued {when}"
+                    f" (training provider)")
+        else:
+            line = f"{course}: {result.get('outcome') or 'update'} {when} (training provider)"
+        with connect() as conn:
+            row = conn.execute("SELECT status, notes FROM apprentices WHERE apprentice_id = ?",
+                               (local_student_id,)).fetchone()
+            if row is None:
+                logger.warning("receive_training_result: no apprentice %s", local_student_id)
+                return None
+            notes = row["notes"] or ""
+            if line not in notes:
+                conn.execute("UPDATE apprentices SET notes = ?, updated_at = datetime('now') "
+                             "WHERE apprentice_id = ?",
+                             (f"{notes}\n{line}".strip(), local_student_id))
+            try:
+                hours = float(result.get("guided_hours") or 0)
+            except (TypeError, ValueError):
+                hours = 0.0
+            description = f"External training: {course} (training provider certificate " \
+                          f"{result.get('cert_no') or ''})"
+            if result.get("kind") == "certificate" and hours > 0 \
+                    and row["status"] == "On Programme":
+                done = conn.execute("SELECT 1 FROM otj_entries WHERE apprentice_id = ? AND "
+                                    "description = ?", (local_student_id, description)
+                                    ).fetchone()
+                if done is None:
+                    conn.execute(
+                        "INSERT INTO otj_entries (apprentice_id, activity_date, hours, "
+                        "activity_type, description, status, submitted_at) "
+                        "VALUES (?, ?, ?, 'Practical training', ?, 'Submitted', "
+                        "datetime('now'))",
+                        (local_student_id, when, hours, description))
+                    line += f"; {hours:g} off-the-job hours submitted for approval"
+        return line
+
     def close_enrolment(self, local_student_id: str,
                         reason: str, **details: Any) -> None:
         """Close the record when an apprentice leaves. Never deletes.

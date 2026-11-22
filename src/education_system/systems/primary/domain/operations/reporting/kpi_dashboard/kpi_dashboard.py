@@ -2,7 +2,7 @@
 
 Headline-metric layer. This module owns no schema: each metric is a
 read-only roll-up over an existing domain module (students, attendance,
-behaviour, fees, bursaries, UCAS, apprenticeships, exam entries, …).
+behaviour, dinner money, Pupil Premium, SEND, …).
 
 The CLI and GUI both call :func:`snapshot` and render the resulting
 :class:`Tile` list. Each tile carries a label, a formatted value, and
@@ -84,30 +84,30 @@ def kpi_staff_count() -> Tile:
     return Tile("Staff", _fmt_int(n), "Active records")
 
 
-def kpi_course_count() -> Tile:
+def kpi_subject_count() -> Tile:
     def _go():
-        from education_system.systems.primary.domain.courses import courses
-        return len(courses.list_courses())
+        from education_system.systems.primary.domain.academics.subjects import subjects
+        return subjects.counts()["active"]
     n = _safe(_go)
-    return Tile("Courses", _fmt_int(n), "Catalogue size")
+    return Tile("Subjects", _fmt_int(n), "Active in the curriculum")
 
 
-def kpi_class_groups() -> Tile:
+def kpi_classes() -> Tile:
     def _go():
-        from education_system.systems.primary.domain.class_groups import class_groups
-        return len(class_groups.list_groups())
+        from education_system.systems.primary.domain.academics.classes import classes
+        return classes.counts()["active"]
     n = _safe(_go)
-    return Tile("Class groups", _fmt_int(n), "Teaching cohorts")
+    return Tile("Classes", _fmt_int(n), "Active classes")
 
 
 def kpi_today_attendance() -> Tile:
     def _go():
         from education_system.systems.primary.domain.academics.attendance import attendance
         today = _dt.date.today().isoformat()
-        rows = attendance.list_records(date=today)
+        rows = [r for r in attendance.list_records(date=today) if r.is_possible]
         if not rows:
             return None
-        attending = sum(1 for r in rows if r.status in ("Present", "Late"))
+        attending = sum(1 for r in rows if r.is_attending)
         return (attending, len(rows))
     res = _safe(_go)
     if not res:
@@ -122,10 +122,11 @@ def kpi_window_attendance(window_days: int) -> Tile:
     def _go():
         from education_system.systems.primary.domain.academics.attendance import attendance
         df, dt_ = _date_window(window_days)
-        rows = attendance.list_records(date_from=df, date_to=dt_)
+        rows = [r for r in attendance.list_records(date_from=df, date_to=dt_)
+                if r.is_possible]
         if not rows:
             return None
-        attending = sum(1 for r in rows if r.status in ("Present", "Late"))
+        attending = sum(1 for r in rows if r.is_attending)
         return (attending, len(rows))
     res = _safe(_go)
     if not res:
@@ -140,69 +141,43 @@ def kpi_recent_behaviour(window_days: int) -> Tile:
     def _go():
         from education_system.systems.primary.domain.pastoral.behaviour import behaviour
         df, dt_ = _date_window(window_days)
-        rows = behaviour.list_entries() if hasattr(behaviour, "list_entries") else []
-        # filter by date_from/date_to client-side: signature varies
-        return [r for r in rows if df <= (r.entry_date or "") <= dt_]
+        return behaviour.list_incidents(date_from=df, date_to=dt_)
     rows = _safe(_go)
     n = len(rows) if isinstance(rows, list) else None
-    negatives = (sum(1 for r in rows if r.entry_type and "neg" in r.entry_type.lower())
+    negatives = (sum(1 for r in rows if r.polarity == "negative")
                  if isinstance(rows, list) else None)
     hint = f"{negatives} negative" if negatives is not None else "Logged incidents"
     return Tile(f"{window_days}d behaviour", _fmt_int(n), hint)
 
 
-def kpi_outstanding_fees() -> Tile:
+def kpi_dinner_money_owed() -> Tile:
     def _go():
-        from education_system.systems.primary.domain.fees import fees
-        views = fees.list_views()
-        outstanding = sum(max(0.0, getattr(v, "balance", 0.0) or 0.0)
-                          for v in views)
-        return outstanding
-    amt = _safe(_go)
-    return Tile("Outstanding fees", _fmt_money(amt), "Unpaid balance")
+        from education_system.systems.primary.domain.finance.dinner_money import dinner_money
+        owed = dinner_money.balances(owing_only=True)
+        return sum(-bal for _p, bal in owed if bal < 0) / 100.0, len(owed)
+    res = _safe(_go)
+    amt, n = res if res else (None, None)
+    hint = f"{n} pupil(s) in debt" if n is not None else "Dinner money debt"
+    return Tile("Dinner money owed", _fmt_money(amt), hint)
 
 
-def kpi_bursaries_submitted() -> Tile:
+def kpi_pupil_premium() -> Tile:
     def _go():
-        from education_system.systems.primary.domain.bursaries import bursaries
-        apps = bursaries.list_applications()
-        pending = sum(1 for a in apps if a.status in ("Submitted", "Under review",
-                                                       "Approved"))
-        return pending
+        from education_system.systems.primary.domain.finance.pupil_premium import pupil_premium
+        return pupil_premium.cohort_summary()["total"]
     n = _safe(_go)
-    return Tile("Bursary apps", _fmt_int(n), "Submitted or under review")
+    return Tile("Pupil Premium", _fmt_int(n), "Eligible pupils on record")
 
 
-def kpi_ucas_submitted() -> Tile:
+def kpi_send_pupils() -> Tile:
     def _go():
-        from education_system.systems.primary.domain.ucas import ucas
-        apps = ucas.list_applications()
-        submitted = sum(1 for a in apps
-                        if a.status in ("Submitted", "Replied", "Confirmed", "Clearing"))
-        return submitted
-    n = _safe(_go)
-    return Tile("UCAS submitted", _fmt_int(n), "Applications progressing")
-
-
-def kpi_apprenticeships_active() -> Tile:
-    def _go():
-        from education_system.systems.primary.domain.apprenticeships import apprenticeships
-        apps = apprenticeships.list_applications()
-        active = sum(1 for a in apps
-                     if a.status not in ("Offered – Accepted", "Rejected", "Withdrawn"))
-        return active
-    n = _safe(_go)
-    return Tile("Apprenticeships", _fmt_int(n), "Open applications")
-
-
-def kpi_exam_entries() -> Tile:
-    def _go():
-        from education_system.systems.primary.domain.exam_entries import exam_entries
-        entries = exam_entries.list_entries()
-        active = sum(1 for e in entries if e.status == "Entered")
-        return active
-    n = _safe(_go)
-    return Tile("Exam entries", _fmt_int(n), "Currently entered")
+        from education_system.systems.primary.domain.pastoral.send import send
+        s = send.cohort_summary()
+        return s["total"], s["ehcp_count"]
+    res = _safe(_go)
+    n, ehcp = res if res else (None, None)
+    hint = f"{ehcp} with an EHCP" if ehcp is not None else "SEN register"
+    return Tile("SEND pupils", _fmt_int(n), hint)
 
 
 def kpi_attendance_at_risk(window_days: int, threshold: float) -> Tile:
@@ -214,9 +189,11 @@ def kpi_attendance_at_risk(window_days: int, threshold: float) -> Tile:
         rows = attendance.list_records(date_from=df, date_to=dt_)
         by_student: dict[str, list[int]] = {}
         for r in rows:
-            stats = by_student.setdefault(r.student_id, [0, 0])
+            if not r.is_possible:
+                continue
+            stats = by_student.setdefault(r.pupil_id, [0, 0])
             stats[1] += 1
-            if r.status in ("Present", "Late"):
+            if r.is_attending:
                 stats[0] += 1
         at_risk = 0
         for _, (att, tot) in by_student.items():
@@ -243,17 +220,15 @@ def snapshot(*,
     tiles = [
         kpi_student_count(),
         kpi_staff_count(),
-        kpi_course_count(),
-        kpi_class_groups(),
+        kpi_subject_count(),
+        kpi_classes(),
         kpi_today_attendance(),
         kpi_window_attendance(window_days),
         kpi_attendance_at_risk(window_days, threshold_pct),
         kpi_recent_behaviour(window_days),
-        kpi_outstanding_fees(),
-        kpi_bursaries_submitted(),
-        kpi_ucas_submitted(),
-        kpi_apprenticeships_active(),
-        kpi_exam_entries(),
+        kpi_dinner_money_owed(),
+        kpi_pupil_premium(),
+        kpi_send_pupils(),
     ]
     return Snapshot(
         generated_at=_dt.datetime.now().strftime("%Y-%m-%d %H:%M"),

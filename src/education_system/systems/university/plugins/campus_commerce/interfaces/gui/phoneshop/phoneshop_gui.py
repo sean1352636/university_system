@@ -664,19 +664,6 @@ class PhoneShopGUI:
                     messagebox.showerror(_t("common.error"), _t('gui.operations.commerce.phoneshop.phoneshop.dialogs.insufficient_balance_in_student_account', default="Insufficient balance in student account"))
                     return
 
-                # Process student account payment
-                result = process_student_finance_account_payment(
-                    student_id=customer_id,
-                    amount=total,
-                    description="Phone Shop purchase",
-                    transaction_source='PhoneShop',
-                    transaction_ref=f"PHO-{datetime.now().strftime('%Y%m%d%H%M%S')}",
-                    processed_by=self.current_user.get('username')
-                )
-                if not result.get('success'):
-                    messagebox.showerror(_t("common.error"), result.get('message', 'Payment failed'))
-                    return
-
             # Create order
             order_id = OrderManager.create_order(
                 customer_id=customer_id,
@@ -689,7 +676,7 @@ class PhoneShopGUI:
             )
 
             if order_id:
-                # Record payment
+                # Record payment (the service posts the sale to Finance)
                 TransactionManager.record_payment(
                     order_id=order_id,
                     customer_id=customer_id,
@@ -700,9 +687,6 @@ class PhoneShopGUI:
 
                 # Automatically mark order as delivered
                 OrderManager.update_order_status(order_id, 'delivered')
-
-                # Record revenue to finance
-                self.record_revenue_to_finance(order_id, total, actual_method)
 
                 # Send receipt
                 self.send_receipt_email(order_id)
@@ -821,32 +805,22 @@ Payment: {order['payment_status']}
         if not refund_method:
             return
 
-        # Process the refund
+        # Process the refund (the service posts the refund to Finance and
+        # credits the student account when that is the refund method)
         try:
-            if TransactionManager.process_refund(order_id, amount, f"Customer refund via {refund_method}",
-                                                processed_by=self.current_user.get('username')):
-                # Generate refund reference
-                refund_ref = f"ORDER-REFUND-{datetime.now().strftime('%Y%m%d%H%M%S')}"
+            result = TransactionManager.refund_order(
+                order_id, amount, refund_method,
+                reason=f"Customer refund via {refund_method}",
+                processed_by=self.current_user.get('username'),
+                transaction_id=transaction_id,
+            )
+            if result.get('success'):
+                refund_ref = result.get('refund_ref') or f"ORDER-REFUND-{datetime.now().strftime('%Y%m%d%H%M%S')}"
 
-                # Update transaction status if found
-                if transaction_id:
-                    with get_db_connection() as conn:
-                        conn.execute('''
-                            UPDATE transactions
-                            SET status = 'refunded'
-                            WHERE transaction_id = ? AND source_type = 'phone_shop'
-                        ''', (transaction_id,))
-                        conn.commit()
-
-                # Automatically mark order as refunded
-                OrderManager.update_order_status(order_id, 'refunded')
-
-                # If student account refund, add to their account
-                if refund_method == 'Student Account':
-                    success = self.add_phoneshop_refund_to_student_account(customer_id, amount, refund_ref)
-                    if not success:
-                        messagebox.showwarning(_t("phoneshop.msg_titles.partial_success"),
-                                             _t('gui.operations.commerce.phoneshop.phoneshop.dialogs.refund_recorded_but_failed_to_credit_student_account_please_cred', default="Refund recorded but failed to credit student account. Please credit manually."))
+                # If student account refund, warn when the credit failed
+                if refund_method == 'Student Account' and not result.get('credited'):
+                    messagebox.showwarning(_t("phoneshop.msg_titles.partial_success"),
+                                         _t('gui.operations.commerce.phoneshop.phoneshop.dialogs.refund_recorded_but_failed_to_credit_student_account_please_cred', default="Refund recorded but failed to credit student account. Please credit manually."))
 
                 # Send refund receipt email
                 if transaction_id:
@@ -981,29 +955,6 @@ Payment: {order['payment_status']}
             entry.delete(0, tk.END)
         self.new_product_category.set('')
         self.product_description.delete(1.0, tk.END)
-
-    def record_revenue_to_finance(self, order_id: int, amount: float, payment_method: str):
-        """Record phone shop revenue to the central finance system"""
-        try:
-            order = OrderManager.get_order(order_id)
-            if not order:
-                return
-
-            payment_id = record_payment_to_finance(
-                student_id=order.get('customer_id', 'EXTERNAL'),
-                amount=amount,
-                payment_method=payment_method,
-                transaction_source='PhoneShop',
-                transaction_ref=order.get('order_number', str(order_id)),
-                notes="Phone shop purchase",
-                created_by=self.current_user.get('username')
-            )
-            if payment_id:
-                logger.info(f"Revenue recorded: £{amount:.2f} for order {order.get('order_number')}")
-            return payment_id
-        except Exception as e:
-            logger.error(f"Failed to record revenue: {e}")
-            return None
 
     def send_receipt_email(self, order_id: int):
         """Send receipt email to customer"""
@@ -1286,50 +1237,25 @@ Low Stock Items: {summary['low_stock_count']}
         if not refund_method:
             return
 
-        # Process refund
+        # Process refund through the service (local write + Finance posting +
+        # student-account credit all live in TransactionManager.refund_order)
         try:
-            with get_db_connection() as conn:
-                # Update transaction status to refunded
-                conn.execute('''
-                    UPDATE transactions
-                    SET status = 'refunded'
-                    WHERE transaction_id = ? AND source_type = 'phone_shop'
-                ''', (transaction_id,))
+            processed_by = self.current_user.get('username', 'System') if self.current_user else 'System'
+            result = TransactionManager.refund_order(
+                int(order_id), amount, refund_method,
+                reason=f"Refund of transaction {transaction_id}",
+                processed_by=processed_by,
+                transaction_id=transaction_id,
+            )
+            if not result.get('success'):
+                messagebox.showerror(_t("phoneshop.msg_titles.error"), result.get('message', 'Failed to process refund'))
+                return
+            refund_ref = result.get('refund_ref') or f"PHONE-REFUND-{datetime.now().strftime('%Y%m%d%H%M%S')}"
 
-                # Generate refund reference
-                refund_ref = f"PHONE-REFUND-{datetime.now().strftime('%Y%m%d%H%M%S')}"
-
-                # Insert refund record into unified_refunds table
-                processed_by = self.current_user.get('username', 'System') if self.current_user else 'System'
-                cur = conn.execute('''
-                    INSERT INTO unified_refunds
-                    (source_type, reference_id, reference_type, refund_date, amount,
-                     refund_method, refund_reference, student_id, processed_by, notes, status)
-                    VALUES ('phone_shop', ?, 'order', ?, ?, ?, ?, ?, ?, ?, 'processed')
-                ''', (str(order_id), datetime.now().strftime('%Y-%m-%d %H:%M:%S'), amount, refund_method,
-                      refund_ref, customer_id, processed_by, f'phoneshop_transaction_{transaction_id}'))
-                refund_row_id = cur.lastrowid
-
-                conn.commit()
-
-            # Auto-post to GL (cash has moved). Never raises.
-            try:
-                from education_system.systems.university.domains.finance.domain.ledger import notify_ledger
-                notify_ledger('refund', refund_row_id, posted_by=processed_by)
-            except Exception as _e:
-                import logging
-                logging.getLogger(__name__).warning("ledger hook failed: %s", _e)
-
-            # Automatically mark order as refunded
-            if order_id:
-                OrderManager.update_order_status(order_id, 'refunded')
-
-            # If student account refund, add to their account
-            if refund_method == 'Student Account':
-                success = self.add_phoneshop_refund_to_student_account(customer_id, amount, refund_ref)
-                if not success:
-                    messagebox.showwarning(_t("phoneshop.msg_titles.partial_success"),
-                                         _t('gui.operations.commerce.phoneshop.phoneshop.dialogs.refund_recorded_but_failed_to_credit_student_account_please_cred', default="Refund recorded but failed to credit student account. Please credit manually."))
+            # If student account refund, warn when the credit failed
+            if refund_method == 'Student Account' and not result.get('credited'):
+                messagebox.showwarning(_t("phoneshop.msg_titles.partial_success"),
+                                     _t('gui.operations.commerce.phoneshop.phoneshop.dialogs.refund_recorded_but_failed_to_credit_student_account_please_cred', default="Refund recorded but failed to credit student account. Please credit manually."))
 
             # Send refund receipt email
             self.send_phoneshop_refund_receipt(transaction_id, customer_id, amount, refund_method, refund_ref)
@@ -1406,62 +1332,6 @@ Low Stock Items: {summary['low_stock_count']}
         dialog.wait_window()
         return result['method']
 
-    def add_phoneshop_refund_to_student_account(self, customer_id, amount, refund_ref):
-        """Add refund amount to student finance account"""
-        try:
-            with get_db_connection() as conn:
-                # Check if student finance account exists
-                cursor = conn.execute(
-                    'SELECT account_id, balance FROM student_finance_accounts WHERE student_id = ?',
-                    (customer_id,)
-                )
-                account = cursor.fetchone()
-
-                if not account:
-                    # Create account with refund amount
-                    conn.execute('''
-                        INSERT INTO student_finance_accounts (student_id, balance, created_at)
-                        VALUES (?, ?, ?)
-                    ''', (customer_id, amount, datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
-
-                    # Get the new account_id
-                    cursor = conn.execute(
-                        'SELECT account_id, balance FROM student_finance_accounts WHERE student_id = ?',
-                        (customer_id,)
-                    )
-                    account = cursor.fetchone()
-                    account_id = account[0]
-                    balance_before = 0
-                    balance_after = amount
-                else:
-                    # Update existing account
-                    account_id = account[0]
-                    balance_before = account[1]
-                    balance_after = balance_before + amount
-
-                    conn.execute('''
-                        UPDATE student_finance_accounts
-                        SET balance = balance + ?
-                        WHERE student_id = ?
-                    ''', (amount, customer_id))
-
-                # Record transaction
-                processed_by = self.current_user.get('username', 'System') if self.current_user else 'System'
-                conn.execute('''
-                    INSERT INTO transactions
-                    (source_type, account_id, student_id, transaction_type, amount, balance_before,
-                     balance_after, description, reference_id, processed_by)
-                    VALUES ('student_finance', ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                ''', (account_id, customer_id, 'credit', amount, balance_before, balance_after,
-                      'Phone Shop Purchase Refund', refund_ref, processed_by))
-
-                conn.commit()
-                return True
-
-        except Exception as e:
-            logger.error(f"Error adding refund to student account: {e}")
-            return False
-
     def send_phoneshop_refund_receipt(self, transaction_id, customer_id, amount, method, refund_ref):
         """Send refund receipt email to customer"""
         try:
@@ -1489,7 +1359,7 @@ Low Stock Items: {summary['low_stock_count']}
                     logger.debug("Could not retrieve updated student finance balance")
 
             # Use JSON template for email
-            subject, body = render_template('commerce/phoneshop/refund_receipt', {
+            subject, body = render_template('finance_commerce/commerce/phoneshop/refund_receipt', {
                 'customer_name': customer_name,
                 'refund_ref': refund_ref,
                 'original_transaction': str(transaction_id),
@@ -1536,9 +1406,9 @@ Low Stock Items: {summary['low_stock_count']}
             with get_db_connection() as conn:
                 # Get transaction details
                 cursor = conn.execute('''
-                    SELECT t.*, o.shipping_address, o.status as order_status
+                    SELECT t.*, o.shipping_address, o.order_status as order_status
                     FROM transactions t
-                    LEFT JOIN orders o ON t.reference_id = o.id AND t.reference_type = 'order' AND o.source_type = 'phone_shop'
+                    LEFT JOIN orders o ON t.reference_id = o.order_id AND t.reference_type = 'order' AND o.source_type = 'phone_shop'
                     WHERE t.source_type = 'phone_shop' AND t.transaction_id = ?
                 ''', (transaction_id,))
 
@@ -1552,7 +1422,7 @@ Low Stock Items: {summary['low_stock_count']}
                 cursor = conn.execute('''
                     SELECT oi.product_id, p.name, p.brand, p.model, oi.quantity, oi.unit_price, oi.subtotal
                     FROM order_items oi
-                    LEFT JOIN products p ON oi.product_id = p.id AND p.source_type = 'phone_shop'
+                    LEFT JOIN products p ON oi.product_id = p.product_id AND p.source_type = 'phone_shop'
                     WHERE oi.order_id = ?
                 ''', (order_id,))
 

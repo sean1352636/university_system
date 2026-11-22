@@ -536,6 +536,21 @@ def main():
                            dest="apprenticeships", help="Apprenticeships system")
     sys_group.add_argument("--fecollege", "--fe-college", action="store_true",
                            dest="fecollege", help="FE College system")
+    sys_group.add_argument("--specialeducation", "--special-education", "--send",
+                           action="store_true", dest="specialeducation",
+                           help="Special Education (SEND) system")
+    sys_group.add_argument("--adulteducation", "--adult-education", "--adult",
+                           action="store_true", dest="adulteducation",
+                           help="Adult Education system")
+    sys_group.add_argument("--alternativeprovision", "--alternative-provision", "--ap",
+                           action="store_true", dest="alternativeprovision",
+                           help="Alternative Provision system")
+    sys_group.add_argument("--trainingprovider", "--training-provider", "--tp",
+                           action="store_true", dest="trainingprovider",
+                           help="Training Provider system")
+    sys_group.add_argument("--localauthority", "--local-authority", "--la",
+                           action="store_true", dest="localauthority",
+                           help="Local Authority Education system")
 
     args = parser.parse_args()
 
@@ -570,6 +585,16 @@ def main():
         system = "apprenticeships"
     elif args.fecollege:
         system = "fe_college"
+    elif args.specialeducation:
+        system = "special_education"
+    elif args.adulteducation:
+        system = "adult_education"
+    elif args.alternativeprovision:
+        system = "alternative_provision"
+    elif args.trainingprovider:
+        system = "training_provider"
+    elif args.localauthority:
+        system = "local_authority"
     else:
         system = None
 

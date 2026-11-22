@@ -16,14 +16,27 @@ from education_system.systems.university.infrastructure.i18n import get_text as 
 from education_system.systems.university.plugins.campus_commerce.interfaces.gui.cafe_common import get_db_connection, FINANCE_ACCOUNT_AVAILABLE, EMAIL_SERVICE_AVAILABLE
 
 try:
+    from education_system.systems.university.plugins.campus_commerce.domain.cafe.services.checkout import (
+        create_order,
+    )
     from education_system.systems.university.domains.finance.infrastructure.finance_integration import (
-        process_student_finance_account_payment,
         get_student_finance_account_balance,
         get_student_info,
         record_payment_to_finance
     )
 except ImportError:
     pass
+
+
+def _payment_display(payment_method):
+    """Human-readable label for a payment method code."""
+    return {
+        'finance_account': 'Student Finance Account',
+        'cash': 'Cash',
+        'debit_card': 'Debit Card',
+        'credit_card': 'Credit Card',
+        'student_account': 'Student Finance Account'
+    }.get(payment_method, payment_method.replace('_', ' ').title())
 
 
 class CafePOSMixin:
@@ -348,13 +361,7 @@ class CafePOSMixin:
             items_text += f"  {item_name:<25} x{qty}  £{unit_price:.2f}  =  £{subtotal:.2f}\n"
 
         # Format payment method for display
-        payment_display = {
-            'finance_account': 'Student Finance Account',
-            'cash': 'Cash',
-            'debit_card': 'Debit Card',
-            'credit_card': 'Credit Card',
-            'student_account': 'Student Finance Account'
-        }.get(payment_method, payment_method.replace('_', ' ').title())
+        payment_display = _payment_display(payment_method)
 
         # Prepare template variables
         from education_system.systems.university.infrastructure.email.template_utils import render_template
@@ -429,7 +436,8 @@ class CafePOSMixin:
 
         conn = None
         try:
-            # Process finance account payment (deducts from user balance)
+            # Pre-flight for finance account payments; the debit itself is
+            # done by the domain service (cafe.services.checkout.create_order).
             if payment_method in ('finance_account', 'student_account'):
                 if not student_id:
                     messagebox.showerror(_t("common.error"), _t("cafe.messages.student_id_required"))
@@ -454,93 +462,31 @@ class CafePOSMixin:
                     messagebox.showerror(_t("common.error"), _t("cafe.messages.insufficient_balance", balance=f"{balance:.2f}", required=f"{total:.2f}"))
                     return
 
-                # Generate order reference for this transaction
-                order_ref = f"CAFE-{datetime.now().strftime('%Y%m%d%H%M%S')}"
-
-                # Process payment through finance system (this also records to payments table)
-                result = process_student_finance_account_payment(
-                    student_id=student_id,
-                    amount=total,
-                    description="Cafe Purchase",
-                    transaction_source="Cafe",
-                    transaction_ref=order_ref,
-                    processed_by=self.current_user.get('username', 'System') if self.current_user else 'System'
-                )
-
-                if not result.get('success'):
-                    messagebox.showerror(_t("common.error"), _t("cafe.messages.payment_failed", error=result.get('message', 'Unknown error')))
-                    return
-
-            # Save order to unified orders table
+            # Resolve product ids for the order lines
             conn = get_db_connection()
             if not conn:
                 return
-
             cursor = conn.cursor()
-
-            # Map payment method for display
-            payment_method_display = {
-                'finance_account': 'Finance Account',
-                'student_account': 'Finance Account',
-                'cash': 'Cash',
-                'debit_card': 'Debit Card',
-                'credit_card': 'Credit Card'
-            }.get(payment_method, payment_method)
-
-            # Insert order
-            cursor.execute('''
-                INSERT INTO orders (source_type, student_id, customer_name, total_amount, payment_method, order_status)
-                VALUES ('cafe', ?, ?, ?, ?, 'completed')
-            ''', (student_id or None, customer_name, total, payment_method_display))
-
-            order_id = cursor.lastrowid
-
-            # Insert order items and update inventory
+            order_lines = []
             for item_name, quantity, unit_price, subtotal in order_items_data:
-                # Get item_id
                 cursor.execute("SELECT product_id FROM products WHERE source_type = 'cafe' AND name = ?", (item_name,))
-                result = cursor.fetchone()
-                if result:
-                    item_id = result[0]
-
-                    # Insert order item
-                    cursor.execute('''
-                        INSERT INTO order_items (source_type, source_order_id, product_id, item_name, quantity, unit_price, subtotal)
-                        VALUES ('cafe', ?, ?, ?, ?, ?, ?)
-                    ''', (order_id, item_id, item_name, quantity, unit_price, subtotal))
-
-                    # Update inventory
-                    cursor.execute('''
-                        UPDATE products
-                        SET stock_quantity = stock_quantity - ?
-                        WHERE product_id = ? AND source_type = 'cafe'
-                    ''', (quantity, item_id))
-
-                    # Log inventory transaction
-                    cursor.execute('''
-                        INSERT INTO transactions (source_type, reference_id, reference_type, quantity_change, transaction_type, notes)
-                        VALUES ('cafe_inventory', ?, 'item', ?, 'sale', ?)
-                    ''', (item_id, -quantity, f'Order #{order_id}'))
-
-            conn.commit()
-
-            # Record payment to finance system for non-finance-account payments
-            # (Finance account payments are already recorded by process_student_finance_account_payment)
-            if payment_method not in ('finance_account', 'student_account') and FINANCE_ACCOUNT_AVAILABLE:
-                # Record to main finance payments table for revenue tracking
-                record_payment_to_finance(
-                    student_id=student_id or 'WALK-IN',
-                    amount=total,
-                    payment_method=payment_method_display,
-                    transaction_source='Cafe',
-                    transaction_ref=f'ORDER-{order_id}',
-                    currency='GBP',
-                    status='completed',
-                    notes=f'Cafe order #{order_id} - {len(order_items_data)} item(s)',
-                    created_by=self.current_user.get('username', 'System') if self.current_user else 'System'
-                )
-
+                found = cursor.fetchone()
+                if found:
+                    order_lines.append({'item_id': found[0], 'name': item_name, 'quantity': quantity,
+                                        'price': unit_price, 'subtotal': subtotal})
             conn.close()
+            conn = None
+
+            # The domain service debits the finance account (if chosen), writes
+            # the order and posts the sale to Finance. Shared with the CLI.
+            order_id = create_order(
+                student_id or None, customer_name, order_lines, payment_method,
+                processed_by=self.current_user.get('username', 'System') if self.current_user else 'System',
+                finance_user_id=student_id,
+            )
+            if not order_id:
+                messagebox.showerror(_t("common.error"), _t("cafe.messages.payment_failed", error="Order could not be completed"))
+                return
 
             # Send email receipt
             receipt_sent = self.send_cafe_receipt_email(
@@ -559,7 +505,7 @@ class CafePOSMixin:
                 _t("cafe.messages.order_completed",
                    id=order_id,
                    total=f"{total:.2f}",
-                   payment=payment_method_display,
+                   payment=_payment_display(payment_method),
                    receipt=receipt_msg)
             )
 

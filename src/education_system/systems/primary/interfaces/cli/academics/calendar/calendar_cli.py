@@ -1,4 +1,4 @@
-"""CLI flows for Sixth Form Calendar."""
+"""CLI flows for Primary School Calendar."""
 
 from __future__ import annotations
 

@@ -7,7 +7,7 @@ import json
 import pytest
 
 from education_system import paths
-from education_system.systems.sixth_form.domain.operations.communications.parent_portal import (
+from education_system.systems.sixth_form.interfaces.cli.operations.communications.parent_portal import (
     parent_home_cli,
 )
 
@@ -66,7 +66,7 @@ def test_a_failing_send_does_not_undo_the_account(feature_db, monkeypatch):
     """The account and its shared-auth mirror already exist by the time the
     mail goes out — losing them because the mail log was down would make
     staff re-type the form for nothing."""
-    from education_system.systems.sixth_form.domain.operations.communications.messages import (
+    from education_system.systems.sixth_form.domains.communications.domain.messages import (
         email_templates,
     )
 
@@ -125,7 +125,7 @@ def test_mailbox_is_empty_without_an_email_address(feature_db):
 
 def test_mail_about_a_child_is_not_in_the_parents_mailbox(feature_db, mailed):
     """Correspondence addressed to the student stays with the student."""
-    from education_system.systems.sixth_form.domain.operations.communications.messages import (
+    from education_system.systems.sixth_form.domains.communications.domain.messages import (
         messages,
     )
     pp = feature_db.mods["parent_portal"]
@@ -142,7 +142,7 @@ def test_mail_about_a_child_is_not_in_the_parents_mailbox(feature_db, mailed):
 
 
 def test_address_matching_is_case_insensitive(feature_db):
-    from education_system.systems.sixth_form.domain.operations.communications.messages import (
+    from education_system.systems.sixth_form.domains.communications.domain.messages import (
         messages,
     )
     pp = feature_db.mods["parent_portal"]

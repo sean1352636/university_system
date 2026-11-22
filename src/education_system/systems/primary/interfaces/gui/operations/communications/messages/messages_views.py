@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import logging
 import tkinter as tk
-from tkinter import messagebox, ttk
+from tkinter import ttk
 from typing import Callable
 from education_system.systems.primary.domain.operations.communications.messages import messages
 from education_system.systems.primary.domain.operations.communications.parent_contacts import parent_contacts
@@ -13,7 +13,8 @@ from education_system.systems.primary.domain.operations.communications.messages 
 from education_system.systems.primary.domain.operations.communications.parent_contacts import parent_contacts as pc_data
 from education_system.systems.primary.domain.staff import staff as staff_data
 from education_system.systems.primary.domain import _pupils_bridge as student_data
-from education_system.platform import branding
+from education_system.platform.delivery.gui.parented_dialogs import make_toplevel, messagebox
+from education_system.systems.primary.interfaces.gui import kit
 from education_system.systems.primary.domain.operations.communications.messages.messages import (
     CATEGORIES,
     CHANNELS,
@@ -36,16 +37,19 @@ WIN_MINSIZE = (1200, 800)
 
 def open_messages_window(parent=None) -> None:
     data.init_db()
-    master = getattr(parent, "root", parent)
+    kit.show_page(parent, "Email / Messaging",
+                  lambda frame: _draw_messages(frame, parent))
+
+
+def _draw_messages(frame: ttk.Frame, host=None) -> None:
+    kit.page_heading(frame, "Email / Messaging",
+                     "Messages to and from parents, pupils and staff - mailbox, threads "
+                     "and bulk send.")
     # Pick up the signed-in session so the Compose dialog can offer
     # cross-system recipients (and know who's sending if one is picked).
-    auth = getattr(parent, "auth", None)
-    win = tk.Toplevel(master) if master is not None else tk.Tk()
-    win.title(f"Email / Messaging — {branding.SYSTEM_NAME}")
-    win.geometry(WIN_GEOMETRY)
-    win.minsize(*WIN_MINSIZE)
-    nb = ttk.Notebook(win)
-    nb.pack(fill="both", expand=True, padx=10, pady=10)
+    auth = getattr(host, "auth", None)
+    nb = ttk.Notebook(frame)
+    nb.pack(fill="both", expand=True)
     MailboxTab(nb, auth=auth)
     ThreadsTab(nb)
     BulkTab(nb)
@@ -53,19 +57,21 @@ def open_messages_window(parent=None) -> None:
 
 
 # ── Cross-system support ──────────────────────────────────────────
-# A sixth-form user can address a single message to a colleague at
-# any of the other three systems. We surface this as an extra row
+# A primary user can address a single message to a colleague at
+# any of the other systems. We surface this as an extra row
 # in the Compose dialog rather than a separate window, mirroring
-# the university's UnifiedInboxPanel compose flow.
+# the shared messaging service's compose flow.
 
 OWN_SYSTEM_KEY: str = "primary"
 
 CROSS_SYSTEM_NAMES: dict[str, str] = {
-    "university": "University",
-    "sixth_form":    "Sixth Form",
-    "secondary":     "Secondary School",
-    "primary":    "Primary School",
-    "nursery":    "Nursery",
+    "nursery":         "Nursery",
+    "primary":         "Primary School",
+    "secondary":       "Secondary School",
+    "sixth_form":      "Sixth Form",
+    "fe_college":      "FE College",
+    "apprenticeships": "Apprenticeships",
+    "university":      "University",
 }
 
 
@@ -77,7 +83,7 @@ def _recipient_directory() -> list[dict]:
     populate the message row when picked. Cross-system entries also
     carry ``id`` + ``system_key`` for the shared messaging service.
 
-    Sorted with sixth-form recipients first (students → staff →
+    Sorted with our own school's recipients first (students → staff →
     parents) and cross-system staff last, since the common case is
     talking to someone in our own school.
     """
@@ -136,7 +142,7 @@ def _recipient_directory() -> list[dict]:
     except Exception:
         logger.exception("Recipient directory: parent-contact load failed")
 
-    # Cross-system staff (university / school / primary)
+    # Staff in the other systems
     for e in _cross_system_directory():
         entries.append({
             "kind":         "cross",
@@ -230,6 +236,71 @@ def _staff_options(active_only: bool = True) -> list[tuple[str, str]]:
             for t in rows]
 
 
+class _DateTimeField(ttk.Frame):
+    """Date + time drop-downs bound to one StringVar holding
+    ``YYYY-MM-DD HH:MM`` (just the date when no time is picked, "" when no
+    date) - the shape the messages domain validates. A stored value with
+    seconds is kept as it is until the user changes it."""
+
+    def __init__(self, master, var: tk.StringVar) -> None:
+        super().__init__(master)
+        self.var = var
+        self._busy = False
+        self._d = tk.StringVar()
+        self._t = tk.StringVar()
+        self._show()
+        kit.DateField(self, self._d).pack(side="left")
+        ttk.Label(self, text="at").pack(side="left", padx=4)
+        kit.TimeField(self, self._t, hours=range(0, 24)).pack(side="left")
+        for v in (self._d, self._t):
+            v.trace_add("write", lambda *_a: self._sync())
+        self._trace = var.trace_add("write", lambda *_a: self._show())
+
+    def _show(self) -> None:
+        if self._busy:
+            return
+        self._busy = True
+        try:
+            cur = (self.var.get() or "").strip()
+            self._d.set(cur[:10])
+            self._t.set(cur[11:16] if len(cur) >= 16 else "")
+        finally:
+            self._busy = False
+
+    def _sync(self) -> None:
+        if self._busy:
+            return
+        self._busy = True
+        try:
+            d, t = self._d.get().strip(), self._t.get().strip()
+            self.var.set(f"{d} {t}" if d and t else d)
+        finally:
+            self._busy = False
+
+    def get(self) -> str:
+        return self.var.get()
+
+    def destroy(self) -> None:
+        try:
+            self.var.trace_remove("write", self._trace)
+        except (tk.TclError, ValueError):
+            pass
+        super().destroy()
+
+
+def _contact_options() -> list[tuple[str, str]]:
+    """Parent contacts as ``(contact id, "Name (Mother of Pupil)")``."""
+    try:
+        rows = pc_data.list_contacts_with_detail()
+    except Exception:  # noqa: BLE001 - an empty list beats a broken form
+        logger.exception("parent contact list failed")
+        return []
+    rows.sort(key=lambda r: (r.contact.last_name.lower(), r.contact.first_name.lower()))
+    return [(str(r.contact.contact_id),
+             f"{r.contact.full_name} ({r.contact.relationship} of {r.student_name})")
+            for r in rows]
+
+
 def _student_names() -> dict[str, str]:
     return {s.student_id: s.full_name for s in student_data.list_students()}
 
@@ -278,7 +349,9 @@ class MailboxTab:
         self.f_cat.pack(side="left", padx=(2, 10))
 
         ttk.Label(bar, text="Student:").pack(side="left")
-        self.f_student = ttk.Entry(bar, width=12)
+        self.v_student = tk.StringVar()
+        self.f_student = kit.PupilPicker(bar, self.v_student, width=30)
+        self.f_student.bind_change(lambda _v: self.refresh())
         self.f_student.pack(side="left", padx=(2, 10))
 
         ttk.Button(bar, text="Apply",
@@ -347,7 +420,7 @@ class MailboxTab:
         self.q_e.delete(0, "end")
         self.f_chan.current(0)
         self.f_cat.current(0)
-        self.f_student.delete(0, "end")
+        self.v_student.set("")
         self.refresh()
 
     def refresh(self) -> None:
@@ -362,7 +435,7 @@ class MailboxTab:
                 kwargs: dict = {
                     "channel":    self.f_chan.get() or None,
                     "category":   self.f_cat.get() or None,
-                    "student_id": self.f_student.get().strip() or None,
+                    "student_id": self.v_student.get().strip() or None,
                 }
                 if view == "Inbox (Incoming)":
                     kwargs["direction"] = "Incoming"
@@ -639,7 +712,7 @@ class StatusDialog:
                  title: str, current: str, options: list[str],
                  on_save: Callable[[str], None]) -> None:
         self.on_save = on_save
-        self.win = tk.Toplevel(parent)
+        self.win = make_toplevel(parent)
         self.win.title(title)
         self.win.transient(parent)
         self.win.after_idle(self.win.grab_set)
@@ -678,7 +751,7 @@ class _CrossSystemViewDialog:
         self._on_close = on_close
         sender_sys = cs.get("sender_system", "")
         sender_sys_label = CROSS_SYSTEM_NAMES.get(sender_sys, sender_sys)
-        self.win = tk.Toplevel(parent)
+        self.win = make_toplevel(parent)
         self.win.title(
             f"Cross-system message #{cs.get('id')}"
             f" — from {sender_sys_label}")
@@ -738,7 +811,7 @@ class _CrossSystemViewDialog:
 class ViewDialog:
     def __init__(self, parent: tk.Misc, m: Message) -> None:
         data.set_status  # keep import
-        self.win = tk.Toplevel(parent)
+        self.win = make_toplevel(parent)
         self.win.title(f"Message #{m.message_id}")
         self.win.transient(parent)
         self.win.geometry("700x600")
@@ -798,7 +871,7 @@ class MessageDialog:
         self.reply_to = reply_to
         self.on_save = on_save
         self.auth = auth
-        self.win = tk.Toplevel(parent)
+        self.win = make_toplevel(parent)
         title = ("Edit Message" if existing
                   else f"Reply to #{reply_to.message_id}" if reply_to
                   else "New Message")
@@ -816,7 +889,7 @@ class MessageDialog:
 
     def _build(self) -> None:
         # ── Window sizing ────────────────────────────────────────────
-        # Match the rest of the sixth-form GUIs and pick a default
+        # Match the rest of the primary GUIs and pick a default
         # geometry large enough that the bottom button bar always
         # sits in view. The internal form is scrollable as well so
         # the user can't get stuck if the screen is tiny.
@@ -1094,16 +1167,16 @@ class MessageDialog:
             self.existing.parent_contact_id if self.existing else None)
 
         adv_label("Sent at:")
-        self.sent_e = ttk.Entry(adv, width=22)
-        if self.existing and self.existing.sent_at:
-            self.sent_e.insert(0, self.existing.sent_at)
+        self.sent_e = _DateTimeField(
+            adv, tk.StringVar(value=(self.existing.sent_at or "")
+                              if self.existing else ""))
         self.sent_e.grid(row=ar, column=1, sticky="w", pady=2)
         ar += 1
 
         adv_label("Received at:")
-        self.recv_e = ttk.Entry(adv, width=22)
-        if self.existing and self.existing.received_at:
-            self.recv_e.insert(0, self.existing.received_at)
+        self.recv_e = _DateTimeField(
+            adv, tk.StringVar(value=(self.existing.received_at or "")
+                              if self.existing else ""))
         self.recv_e.grid(row=ar, column=1, sticky="w", pady=2)
         ar += 1
 
@@ -1368,7 +1441,7 @@ class MessageDialog:
             return
 
         logger.info(
-            "Cross-system message sent: sixth-form → %s (recipient #%s)",
+            "Cross-system message sent: primary → %s (recipient #%s)",
             target["system_key"], target.get("id"))
         self.win.destroy()
         self.on_save()
@@ -1387,10 +1460,14 @@ class ThreadsTab:
         bar = ttk.Frame(self.frame)
         bar.pack(fill="x", padx=8, pady=(8, 4))
         ttk.Label(bar, text="Student:").pack(side="left")
-        self.f_student = ttk.Entry(bar, width=12)
+        self.v_student = tk.StringVar()
+        self.f_student = kit.PupilPicker(bar, self.v_student, width=34)
+        self.f_student.bind_change(lambda _v: self.refresh())
         self.f_student.pack(side="left", padx=(2, 10))
         ttk.Label(bar, text="Staff:").pack(side="left")
-        self.f_staff = ttk.Entry(bar, width=12)
+        self.v_staff = tk.StringVar()
+        self.f_staff = kit.StaffPicker(bar, self.v_staff, active_only=False, width=32)
+        self.f_staff.bind_change(lambda _v: self.refresh())
         self.f_staff.pack(side="left", padx=(2, 10))
         ttk.Button(bar, text="Apply",
                     command=self.refresh).pack(side="left", padx=(8, 4))
@@ -1431,16 +1508,16 @@ class ThreadsTab:
                    anchor="w").pack(fill="x", padx=8, pady=(0, 8))
 
     def _clear(self) -> None:
-        self.f_student.delete(0, "end")
-        self.f_staff.delete(0, "end")
+        self.v_student.set("")
+        self.v_staff.set("")
         self.refresh()
 
     def refresh(self) -> None:
         for i in self.tree.get_children():
             self.tree.delete(i)
         rows = data.list_threads(
-            student_id=self.f_student.get().strip() or None,
-            staff_id=self.f_staff.get().strip() or None)
+            student_id=self.v_student.get().strip() or None,
+            staff_id=self.v_staff.get().strip() or None)
         for t in rows:
             self.tree.insert("", "end", iid=t.thread_id, values=(
                 t.thread_id, t.message_count, (t.last_at or "")[:19],
@@ -1482,7 +1559,14 @@ class BulkTab:
     AUDIENCES = (
         "All Students", "All Parent Contacts",
         "Primary Parent Contacts", "All Active Staff",
+        "Chosen Students", "Chosen Parent Contacts", "Chosen Staff",
     )
+    # The "Chosen ..." sets show a tick-list to pick the recipients from.
+    _CHOSEN = {
+        "Chosen Students": "student",
+        "Chosen Parent Contacts": "contact",
+        "Chosen Staff": "staff",
+    }
 
     def __init__(self, nb: ttk.Notebook) -> None:
         self.frame = ttk.Frame(nb)
@@ -1499,6 +1583,14 @@ class BulkTab:
                                        state="readonly", width=32)
         self.aud_cb.current(0)
         self.aud_cb.grid(row=r, column=1, sticky="w", padx=6)
+        self.aud_cb.bind("<<ComboboxSelected>>", lambda _e: self._show_chooser())
+        r += 1
+
+        self.chooser_row = r
+        self.chooser_label = ttk.Label(form, text="Recipients:")
+        self.chooser = ttk.Frame(form)
+        self.multi: kit.MultiPicker | None = None
+        self._form = form
         r += 1
 
         ttk.Label(form, text="Channel:").grid(row=r, column=0,
@@ -1566,6 +1658,35 @@ class BulkTab:
         ttk.Button(bar, text="Send",
                     command=self._send).pack(side="left")
 
+    def _show_chooser(self) -> None:
+        """Show the tick-list for a "Chosen ..." recipient set."""
+        for w in self.chooser.winfo_children():
+            w.destroy()
+        self.multi = None
+        kind = self._CHOSEN.get(self.aud_cb.get())
+        if kind is None:
+            self.chooser_label.grid_remove()
+            self.chooser.grid_remove()
+            return
+        if kind == "student":
+            choices = kit._pupil_choices()
+        elif kind == "contact":
+            choices = _contact_options()
+        else:
+            choices = kit._staff_choices(by="id", active_only=True, role=None,
+                                         dsl_only=False)
+        self.chooser_label.grid(row=self.chooser_row, column=0, sticky="ne", pady=3)
+        self.chooser.grid(row=self.chooser_row, column=1, sticky="w", padx=6)
+        self.multi = kit.MultiPicker(self.chooser, choices, height=8, width=60)
+        self.multi.pack(fill="both", expand=True)
+        row = ttk.Frame(self.chooser)
+        row.pack(fill="x")
+        ttk.Button(row, text="Select all",
+                   command=lambda: self.multi.box.selection_set(0, "end")).pack(side="left")
+        ttk.Button(row, text="Clear",
+                   command=lambda: self.multi.box.selection_clear(0, "end")
+                   ).pack(side="left", padx=4)
+
     def _send(self) -> None:
         subject = self.subj_e.get().strip()
         body = self.body_text.get("1.0", "end").strip()
@@ -1577,7 +1698,14 @@ class BulkTab:
         student_ids: list[str] = []
         contact_ids: list[int] = []
         staff_ids: list[str] = []
-        if sel == "All Students":
+        chosen = self.multi.get() if self.multi is not None else []
+        if sel == "Chosen Students":
+            student_ids = list(chosen)
+        elif sel == "Chosen Parent Contacts":
+            contact_ids = [int(c) for c in chosen]
+        elif sel == "Chosen Staff":
+            staff_ids = list(chosen)
+        elif sel == "All Students":
             student_ids = [s.student_id
                             for s in student_data.list_students()]
         elif sel == "All Parent Contacts":

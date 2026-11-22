@@ -6,8 +6,11 @@ import time
 from datetime import datetime
 from education_system.systems.university.infrastructure.database.db import sqlite3, get_connection
 from education_system.systems.university.infrastructure.utils.activity_logger import log_read, log_create
-from education_system.systems.university.domains.finance.infrastructure.finance_integration import record_payment_to_finance
 from education_system.systems.university.plugins.campus_commerce.domain.services.shop_management import config
+from education_system.systems.university.plugins.campus_commerce.domain.services.shop_management.sales import (
+    record_shop_sale,
+    refund_shop_transaction,
+)
 
 
 @log_read(module="shop", description="Browsing products")
@@ -594,91 +597,28 @@ def checkout_process():
             else:
                 print("Invalid choice. Please select a valid payment method.")
 
-        # Generate transaction ID
-        transaction_id = f"T{int(time.time())}"
+        conn.close()
+
+        # Shared domain service: local write + Finance posting (and the
+        # student-account debit when that method is chosen).
+        username = config.auth.current_user.get('username') if config.auth and config.auth.current_user else None
+        outcome = record_shop_sale(
+            config.auth.current_user['id'],
+            [dict(item) for item in cart_items],
+            total,
+            payment_method,
+            student_id=student_id,
+            finance_user_id=student_id or username,
+            processed_by=username,
+            clear_db_cart=True,
+        )
+        transaction_id = outcome['transaction_id']
+        if not transaction_id:
+            print(f"\nCheckout failed: {outcome.get('error')}")
+            input("\nPress Enter to continue...")
+            return
         transaction_date = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-
-        # Create transaction record
-        cursor.execute(
-            '''
-            INSERT INTO transactions
-            (source_transaction_id, customer_id, student_id, total_amount, created_at, payment_method, status, notes, source_type)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'shop')
-            ''',
-            [transaction_id, config.auth.current_user['id'], student_id, total,
-             transaction_date, payment_method, "Completed", None]
-        )
-
-        # Create transaction items (batch insert to avoid N+1)
-        transaction_items_data = [
-            (transaction_id, item['product_id'], item['quantity'],
-             item['price'], item['price'] * item['quantity'])
-            for item in cart_items
-        ]
-        cursor.executemany(
-            '''
-            INSERT INTO shop_transaction_items
-            (transaction_id, product_id, quantity, price_per_item, subtotal)
-            VALUES (?, ?, ?, ?, ?)
-            ''',
-            transaction_items_data
-        )
-
-        # Update inventory (batch update to avoid N+1)
-        inventory_update_data = [
-            (item['quantity'], item['product_id'])
-            for item in cart_items
-        ]
-        cursor.executemany(
-            '''
-            UPDATE shop_inventory
-            SET quantity = quantity - ?
-            WHERE product_id = ?
-            ''',
-            inventory_update_data
-        )
-
-        # Clear shopping cart
-        cursor.execute(
-            "DELETE FROM cart WHERE source_type = 'shop' AND user_id = ?",
-            [config.auth.current_user['id']]
-        )
-
-        conn.commit()
-
-        # Record transaction to central finance system
-        finance_payment_id = record_payment_to_finance(
-            student_id=student_id or "EXTERNAL",
-            amount=total,
-            payment_method=payment_method,
-            transaction_source='Shop',
-            transaction_ref=transaction_id,
-            notes=f'Shop purchase: {len(cart_items)} item(s)',
-            created_by=config.auth.current_user['username'] if config.auth and config.auth.current_user else None
-        )
-
-        # Cross-domain: post the shop sale through the unified
-        # commerce bus so the loyalty ledger / tier and the unified
-        # student account view both pick it up. Walk-ins (no
-        # student_id) are skipped — only loyalty side-effects need
-        # the student link.
-        if student_id and student_id != "EXTERNAL":
-            try:
-                from education_system.systems.university.services.bus import (
-                    commerce_bus,
-                )
-                commerce_bus.post_sale(
-                    student_id,
-                    source="shop",
-                    amount=float(total),
-                    description=f"Shop purchase ({len(cart_items)} items)",
-                    reference_id=transaction_id,
-                    processed_by=(config.auth.current_user.get('username')
-                                  if config.auth and config.auth.current_user
-                                  else None),
-                )
-            except Exception:
-                logger.debug("Suppressed exception", exc_info=True)
+        finance_payment_id = outcome['finance_payment_id']
 
         # Display confirmation
         print("\nOrder placed successfully!")
@@ -688,9 +628,10 @@ def checkout_process():
         print(f"Payment Method: {payment_method}")
         if finance_payment_id:
             print(f"Finance System Payment ID: {finance_payment_id}")
+        if outcome.get('account_result'):
+            print(f"Student account balance: £{outcome['account_result'].get('new_balance', 0):.2f}")
         print("\nThank you for your purchase!")
 
-        conn.close()
         input("\nPress Enter to continue...")
 
     except sqlite3.Error as e:
@@ -1009,6 +950,23 @@ def view_all_transactions():
 
             print("-" * 70)
             print(f"Total: £{transaction['total_amount']:.2f}")
+
+            if (transaction['status'] or '').lower() != 'refunded':
+                if input("\nRefund this transaction? (y/n): ").strip().lower() == 'y':
+                    print("\nRefund method:")
+                    print("1. Cash")
+                    print("2. Card")
+                    print("3. Student Account")
+                    method = {'1': 'Cash', '2': 'Card', '3': 'Student Account'}.get(
+                        input("Choice: ").strip(), 'Cash')
+                    outcome = refund_shop_transaction(
+                        transaction_id, float(transaction['total_amount']), method,
+                        student_id=transaction['student_id'],
+                        processed_by=config.auth.current_user.get('username'),
+                    )
+                    print(outcome['message'])
+                    if outcome['success']:
+                        print(f"Refund reference: {outcome['refund_ref']}")
 
         conn.close()
 

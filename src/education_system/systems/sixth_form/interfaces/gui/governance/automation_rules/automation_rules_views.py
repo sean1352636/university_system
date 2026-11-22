@@ -8,18 +8,39 @@ Two-tab Notebook:
 
 from __future__ import annotations
 
+import functools
 import logging
 import tkinter as tk
-from tkinter import messagebox, ttk
+from tkinter import ttk
+from education_system.platform.delivery.gui.parented_dialogs import messagebox
 
 from education_system.systems.sixth_form.domain.governance.automation_rules import (
     automation_rules as data,
 )
+from education_system.platform.delivery.gui.parented_dialogs import make_toplevel
 
 logger = logging.getLogger(__name__)
 
 _SEV_COLOUR = {"Low": "#2e7d32", "Medium": "#f9a825",
                "High": "#ef6c00", "Critical": "#c62828"}
+
+
+def _guarded(what: str):
+    """Decorate a callback so an adapter/DB error is logged and shown as a
+    warning instead of escaping as a silent Tk traceback."""
+    def deco(fn):
+        @functools.wraps(fn)
+        def run(*args, **kwargs):
+            try:
+                return fn(*args, **kwargs)
+            except Exception as e:
+                logger.exception("Automation Rules: %s failed", what)
+                messagebox.showwarning(
+                    "Automation Rules",
+                    f"Could not {what}: {e}\n\nThe error has been logged.")
+                return None
+        return run
+    return deco
 
 
 def _clear(gui) -> ttk.Frame:
@@ -58,6 +79,7 @@ def _build_rules_tab(gui, parent, refresh_work) -> None:
         tree.column(c, width=w, anchor="w" if c in ("name", "trigger") else "center")
     tree.pack(fill="both", expand=True)
 
+    @_guarded("load the rules")
     def refresh() -> None:
         tree.delete(*tree.get_children())
         for r in data.list_rules():
@@ -66,6 +88,7 @@ def _build_rules_tab(gui, parent, refresh_work) -> None:
                                 f"{r['trigger_label']} {r['threshold']:g}",
                                 r["severity"], r["last_matches"]))
 
+    @_guarded("change the rule")
     def toggle() -> None:
         sel = tree.selection()
         if not sel:
@@ -75,18 +98,26 @@ def _build_rules_tab(gui, parent, refresh_work) -> None:
         data.set_enabled(int(sel[0]), not cur)
         refresh()
 
+    @_guarded("delete the rule")
     def delete() -> None:
         sel = tree.selection()
         if sel and messagebox.askyesno("Delete", f"Delete rule #{sel[0]}?"):
             data.delete_rule(int(sel[0]))
             refresh()
 
+    @_guarded("run the engine")
     def run_engine() -> None:
         res = data.run_rules()
-        messagebox.showinfo("Automation",
-                            f"{res['rules_run']} rule(s) run, "
-                            f"{res.get('matches', 0)} match(es), "
-                            f"{res['new_actions']} new action(s).")
+        text = (f"{res['rules_run']} rule(s) run, "
+                f"{res.get('matches', 0)} match(es), "
+                f"{res['new_actions']} new action(s).")
+        errs = res.get("errors") or []
+        if errs:
+            messagebox.showwarning(
+                "Automation", text + f"\n\n{len(errs)} student(s) could not be "
+                "evaluated:\n" + "\n".join(errs[:15]))
+        else:
+            messagebox.showinfo("Automation", text)
         refresh()
         refresh_work()
 
@@ -98,7 +129,7 @@ def _build_rules_tab(gui, parent, refresh_work) -> None:
 
 
 def _add_dialog(after) -> None:
-    top = tk.Toplevel()
+    top = make_toplevel()
     top.title("New automation rule")
     top.geometry("420x360")
     frm = ttk.Frame(top, padding=12)
@@ -127,6 +158,7 @@ def _add_dialog(after) -> None:
     ttk.Combobox(frm, textvariable=sev_var, state="readonly",
                  values=list(data.SEVERITIES)).pack(fill="x")
 
+    @_guarded("create the rule")
     def save() -> None:
         trig = data.TRIGGERS[trig_labels.index(trig_var.get())]
         try:
@@ -160,12 +192,14 @@ def _build_worklist_tab(gui, parent):
         tree.tag_configure(s, foreground=col)
     tree.pack(fill="both", expand=True)
 
+    @_guarded("load the action worklist")
     def refresh() -> None:
         tree.delete(*tree.get_children())
         for a in data.list_actions(status=status_var.get()):
             tree.insert("", "end", iid=str(a["action_id"]), tags=(a["severity"],),
                         values=(a["action_id"], a["severity"], a["rule_name"], a["message"]))
 
+    @_guarded("update the action")
     def resolve(status: str) -> None:
         sel = tree.selection()
         if not sel:

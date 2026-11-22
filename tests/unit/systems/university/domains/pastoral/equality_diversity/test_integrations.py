@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from education_system.systems.university.domains.pastoral.domain.equality_diversity import (
+from education_system.systems.university.domains.student_support.domain.equality_diversity import (
     integrations,
     schema,
 )

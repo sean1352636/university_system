@@ -23,6 +23,16 @@ Three related records:
 **Nothing escalates itself.** :func:`suggest_stage` will say what the
 ladder implies, but moving a case is always somebody's decision with
 their name on it. Automatic escalation produces cases nobody owns.
+
+**Attendance concerns are cases.** ``attendance_cases`` is the one store
+for attendance concerns as well: :mod:`pastoral.attendance_concerns`
+keeps its public functions and vocabulary (reason, level, status,
+follow-up) but reads and writes rows here through the ``concern_*``
+helpers, so a concern logged by the pastoral team is the case the
+ladder moves. The old ``attendance_concerns`` table is left in place;
+:func:`migrate_concerns` copies its rows across once, keyed on
+``legacy_concern_id``, and links a concern to the case that already
+named it in ``concern_id`` rather than copying it twice.
 """
 
 from __future__ import annotations
@@ -172,6 +182,45 @@ CREATE INDEX IF NOT EXISTS idx_att_meeting_student
     ON attendance_meetings(student_id, date);
 """
 
+# Columns that let a case carry everything an attendance concern held.
+_CONCERN_COLUMNS: tuple[tuple[str, str], ...] = (
+    ("origin",            "TEXT NOT NULL DEFAULT 'case'"),
+    ("reason",            "TEXT"),
+    ("level",             "TEXT"),
+    ("concern_status",    "TEXT"),
+    ("threshold_pct",     "REAL"),
+    ("observed_pct",      "REAL"),
+    ("window_days",       "INTEGER"),
+    ("action_taken",      "TEXT"),
+    ("notes",             "TEXT"),
+    ("created_at",        "TEXT"),
+    ("legacy_concern_id", "INTEGER"),
+)
+_CONCERN_INDEXES = """
+CREATE UNIQUE INDEX IF NOT EXISTS idx_att_case_legacy_concern
+    ON attendance_cases(legacy_concern_id)
+    WHERE legacy_concern_id IS NOT NULL;
+"""
+
+ORIGIN_CASE: str = "case"
+ORIGIN_CONCERN: str = "concern"
+
+# Columns the concern helpers may write; nothing else reaches the SQL.
+_CASE_WRITABLE: frozenset[str] = frozenset({
+    "student_id", "stage", "state", "owner", "opened_on", "opened_by",
+    "review_on", "baseline_pct", "concern_id", "summary", "closed_on",
+    "closed_by", "outcome",
+} | {name for name, _decl in _CONCERN_COLUMNS})
+
+# Concern statuses that close a case, and the rung a concern's status
+# implies when it is first copied in.
+CONCERN_CLOSED_STATUSES: frozenset[str] = frozenset({"Resolved", "Closed"})
+_CONCERN_STATUS_STAGE: dict[str, str] = {
+    "Action Plan": TUTOR_MEETING,
+    "Meeting Held": TUTOR_MEETING,
+    "Escalated": HEAD_OF_YEAR,
+}
+
 
 # ── Shapes ──────────────────────────────────────────────────────────
 
@@ -195,6 +244,18 @@ class Case:
     outcome: str | None
     updated_at: str | None
     student_name: str | None = None
+    # Concern detail (see the module docstring).
+    origin: str = ORIGIN_CASE
+    reason: str | None = None
+    level: str | None = None
+    concern_status: str | None = None
+    threshold_pct: float | None = None
+    observed_pct: float | None = None
+    window_days: int | None = None
+    action_taken: str | None = None
+    notes: str | None = None
+    created_at: str | None = None
+    legacy_concern_id: int | None = None
 
     @property
     def is_open(self) -> bool:
@@ -345,12 +406,28 @@ def init_db() -> None:
     thresholds.init_db()
     with _connect() as conn:
         conn.executescript(_SCHEMA)
+        have = {r["name"] for r in conn.execute(
+            "PRAGMA table_info(attendance_cases)").fetchall()}
+        for name, decl in _CONCERN_COLUMNS:
+            if name not in have:
+                conn.execute(
+                    f"ALTER TABLE attendance_cases ADD COLUMN {name} {decl}")
+        conn.executescript(_CONCERN_INDEXES)
         conn.commit()
+        _DB_READY = True
+        try:
+            migrate_concerns(conn=conn)
+        except sqlite3.Error:
+            logger.exception("Concern migration failed; will retry")
     logger.debug("Escalation schema ready at %s", DB_PATH)
-    _DB_READY = True
 
 
 def _case_row(r: sqlite3.Row) -> Case:
+    keys = set(r.keys())
+
+    def opt(name: str, default: Any = None) -> Any:
+        return r[name] if name in keys else default
+
     return Case(
         case_id=r["case_id"], student_id=r["student_id"], stage=r["stage"],
         state=r["state"], owner=r["owner"], opened_on=r["opened_on"],
@@ -358,7 +435,13 @@ def _case_row(r: sqlite3.Row) -> Case:
         baseline_pct=r["baseline_pct"], concern_id=r["concern_id"],
         summary=r["summary"], closed_on=r["closed_on"],
         closed_by=r["closed_by"], outcome=r["outcome"],
-        updated_at=r["updated_at"])
+        updated_at=r["updated_at"],
+        origin=opt("origin") or ORIGIN_CASE, reason=opt("reason"),
+        level=opt("level"), concern_status=opt("concern_status"),
+        threshold_pct=opt("threshold_pct"), observed_pct=opt("observed_pct"),
+        window_days=opt("window_days"), action_taken=opt("action_taken"),
+        notes=opt("notes"), created_at=opt("created_at"),
+        legacy_concern_id=opt("legacy_concern_id"))
 
 
 def _contract_row(r: sqlite3.Row) -> Contract:
@@ -1026,3 +1109,202 @@ def case_file(student_id: str) -> dict[str, Any]:
         "current_percentage": _current_percentage(student_id),
         "suggested_stage": suggest_stage(student_id),
     }
+
+
+# ── Attendance concerns, stored as cases ────────────────────────────
+
+def _clean(value: Any) -> Any:
+    if isinstance(value, str):
+        return value.strip() or None
+    return value
+
+
+def concern_insert(student_id: str, opened_on: str, **fields: Any) -> int:
+    """Insert a case row on behalf of :mod:`pastoral.attendance_concerns`.
+
+    Unlike :func:`open_case` this does not fold into an existing open
+    case: the concern log has always allowed more than one concern per
+    learner, and each is a record somebody wrote. Returns the case id.
+    """
+    init_db()
+    fields.pop("created_at", None)
+    unknown = set(fields) - _CASE_WRITABLE
+    if unknown:
+        raise ValidationError(f"Unknown case field(s): {sorted(unknown)}")
+    row: dict[str, Any] = {
+        "student_id": student_id, "opened_on": opened_on,
+        "stage": fields.pop("stage", None) or TUTOR_CONVERSATION,
+        "state": fields.pop("state", None) or OPEN,
+        "origin": fields.pop("origin", None) or ORIGIN_CONCERN,
+    }
+    row.update({k: _clean(v) for k, v in fields.items()})
+    cols = list(row)
+    with _connect() as conn:
+        cur = conn.execute(
+            f"INSERT INTO attendance_cases ({', '.join(cols)}, created_at, "
+            "updated_at) VALUES (" + ", ".join("?" * len(cols))
+            + ", datetime('now'), datetime('now'))",
+            [row[c] for c in cols])
+        conn.commit()
+        case_id = int(cur.lastrowid or 0)
+    _log_stage(case_id, row["stage"], owner=row.get("owner"),
+               entered_by=row.get("opened_by"), entered_on=opened_on,
+               review_on=row.get("review_on"),
+               note="Opened as an attendance concern")
+    return case_id
+
+
+def concern_update(case_id: int, **fields: Any) -> None:
+    """Change named columns on one case for the concern log."""
+    init_db()
+    if not fields:
+        return
+    unknown = set(fields) - _CASE_WRITABLE
+    if unknown:
+        raise ValidationError(f"Unknown case field(s): {sorted(unknown)}")
+    before = get_case(case_id)
+    if before is None:
+        raise ValidationError(f"No case with id {case_id}")
+    sets = ", ".join(f"{k} = ?" for k in fields)
+    with _connect() as conn:
+        conn.execute(
+            f"UPDATE attendance_cases SET {sets}, updated_at = datetime('now')"
+            " WHERE case_id = ?",
+            [_clean(v) for v in fields.values()] + [case_id])
+        conn.commit()
+    if "state" in fields and fields["state"] != before.state:
+        _log_stage(case_id, before.stage, owner=before.owner,
+                   entered_by=fields.get("closed_by"),
+                   entered_on=_dt.date.today().isoformat(),
+                   review_on=fields.get("review_on", before.review_on),
+                   note=f"{before.state} → {fields['state']} from the "
+                        "attendance concern log")
+
+
+def delete_case(case_id: int) -> bool:
+    """Delete a case (its stage history goes with it), and the concern
+    row it was copied from so the migration cannot bring it back."""
+    init_db()
+    case = get_case(case_id)
+    if case is None:
+        return False
+    with _connect() as conn:
+        conn.execute("DELETE FROM attendance_cases WHERE case_id = ?",
+                     (case_id,))
+        if case.legacy_concern_id is not None and _table_exists(
+                conn, "attendance_concerns"):
+            conn.execute("DELETE FROM attendance_concerns "
+                         "WHERE concern_id = ?", (case.legacy_concern_id,))
+        conn.commit()
+    logger.info("Deleted attendance case #%d", case_id)
+    return True
+
+
+def case_by_legacy_concern(concern_id: int) -> Case | None:
+    """The case copied from one pre-unification concern id."""
+    init_db()
+    with _connect() as conn:
+        r = conn.execute(
+            "SELECT * FROM attendance_cases WHERE legacy_concern_id = ?",
+            (int(concern_id),)).fetchone()
+    return _case_row(r) if r else None
+
+
+def _table_exists(conn: sqlite3.Connection, table: str) -> bool:
+    return conn.execute(
+        "SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = ?",
+        (table,)).fetchone() is not None
+
+
+@dataclass
+class ConcernMigration:
+    copied: int = 0
+    linked: int = 0
+    skipped: int = 0
+
+    @property
+    def summary(self) -> str:
+        return (f"{self.copied} concern(s) copied, {self.linked} linked to "
+                f"existing cases, {self.skipped} skipped")
+
+
+def migrate_concerns(*, conn: sqlite3.Connection | None = None
+                     ) -> ConcernMigration:
+    """Copy ``attendance_concerns`` rows into ``attendance_cases``.
+
+    Idempotent — every copied or linked case carries
+    ``legacy_concern_id`` (unique), so a second run does nothing. A case
+    that already pointed at the concern through ``concern_id`` is filled
+    in with the concern's detail instead of getting a twin. The old
+    table is not modified.
+    """
+    if conn is None:
+        init_db()       # init_db runs this itself on first use
+        with _connect() as own:
+            return migrate_concerns(conn=own)
+    result = ConcernMigration()
+    if not _table_exists(conn, "attendance_concerns") \
+            or not _table_exists(conn, "students"):
+        return result
+    students = {r[0] for r in conn.execute(
+        "SELECT student_id FROM students").fetchall()}
+    done = {r[0] for r in conn.execute(
+        "SELECT legacy_concern_id FROM attendance_cases "
+        "WHERE legacy_concern_id IS NOT NULL").fetchall()}
+    for r in conn.execute(
+            "SELECT * FROM attendance_concerns ORDER BY concern_id").fetchall():
+        cid = r["concern_id"]
+        if cid in done:
+            continue
+        if r["student_id"] not in students:
+            result.skipped += 1
+            continue
+        detail = (r["reason"], r["level"], r["status"], r["threshold_pct"],
+                  r["observed_pct"], r["window_days"], r["action_taken"],
+                  r["notes"])
+        linked = conn.execute(
+            "SELECT case_id FROM attendance_cases WHERE concern_id = ? "
+            "AND legacy_concern_id IS NULL AND student_id = ? "
+            "ORDER BY case_id LIMIT 1", (cid, r["student_id"])).fetchone()
+        if linked is not None:
+            conn.execute(
+                """UPDATE attendance_cases
+                      SET legacy_concern_id = ?, reason = ?, level = ?,
+                          concern_status = ?, threshold_pct = ?,
+                          observed_pct = ?, window_days = ?,
+                          action_taken = ?, notes = ?
+                    WHERE case_id = ?""",
+                (cid, *detail, linked["case_id"]))
+            result.linked += 1
+            continue
+        closed = r["status"] in CONCERN_CLOSED_STATUSES
+        stage = _CONCERN_STATUS_STAGE.get(r["status"], TUTOR_CONVERSATION)
+        cur = conn.execute(
+            """INSERT INTO attendance_cases
+                   (student_id, stage, state, owner, opened_on, opened_by,
+                    review_on, baseline_pct, concern_id, summary, closed_on,
+                    outcome, updated_at, origin, reason, level,
+                    concern_status, threshold_pct, observed_pct,
+                    window_days, action_taken, notes, created_at,
+                    legacy_concern_id)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+                       ?, ?, ?, ?, ?, ?)""",
+            (r["student_id"], stage, CLOSED if closed else OPEN,
+             r["assigned_to"], r["raised_date"], r["raised_by"],
+             r["follow_up_date"], r["observed_pct"], cid, r["description"],
+             (r["updated_at"] or r["raised_date"])[:10] if closed else None,
+             (r["action_taken"] or r["status"]) if closed else None,
+             r["updated_at"], ORIGIN_CONCERN, *detail, r["created_at"], cid))
+        conn.execute(
+            """INSERT INTO attendance_case_stages
+                   (case_id, stage, owner, entered_on, entered_by,
+                    review_on, note)
+               VALUES (?, ?, ?, ?, ?, ?, ?)""",
+            (int(cur.lastrowid or 0), stage, r["assigned_to"],
+             r["raised_date"], r["raised_by"], r["follow_up_date"],
+             f"Copied from attendance concern #{cid}"))
+        result.copied += 1
+    conn.commit()
+    if result.copied or result.linked:
+        logger.info("Attendance concerns unified: %s", result.summary)
+    return result

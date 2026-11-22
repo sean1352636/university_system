@@ -14,7 +14,7 @@ Quick guide for system administrators to access and use monitoring features.
 
 ```bash
 source venv/bin/activate
-python -m education_system --cli
+python -m education_system --university --cli
 ```
 
 ### 2. Login as Admin
@@ -240,7 +240,7 @@ Create a backup now? (y/n): y
    Name: backup_manual_20260201_225530.db
    Size: 11.6 MB
    Verified: Yes
-   Location: university_system/data/backups/backup_manual_20260201_225530.db
+   Location: var/backups/university/database/backup_manual_20260201_225530.db
 ```
 
 **When to use:** Before major changes, migrations, or bulk operations
@@ -342,7 +342,7 @@ Current cache size: 234 items
 ### Problem: High disk usage (>80%)
 **Solution:**
 1. Check backup management (old backups to clean?)
-2. Review log files in `logs/` directory
+2. Review log files in `var/logs/university/` directory
 3. Check database size
 4. Clean old backups: Automatically done at 05:00 daily
 
@@ -367,7 +367,7 @@ Current cache size: 234 items
 2. Database issues: Check connection, disk space
 3. Disk space issues: Clean old files/backups
 4. Review recent alerts for clues
-5. Check application logs in `logs/app.log`
+5. Check application logs in `var/logs/app.log`
 
 ## 📝 Best Practices
 
@@ -414,7 +414,7 @@ Current cache size: 234 items
 ## 📞 Support
 
 For issues not resolved by monitoring tools:
-- Check logs in `logs/app.log`
+- Check logs in `var/logs/app.log`
 - Review `ENHANCEMENTS_GUIDE.md` for detailed documentation
 - Check `CHANGELOG.md` for recent changes
 

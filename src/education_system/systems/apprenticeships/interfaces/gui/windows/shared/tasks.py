@@ -13,7 +13,7 @@ from typing import Any
 
 from education_system.systems.apprenticeships.domain.workspace.items import count_by_urgency
 from education_system.systems.apprenticeships.interfaces.gui import widgets
-from education_system.systems.apprenticeships.services import task_service
+from education_system.systems.apprenticeships.application.workspace import task_service
 
 logger = logging.getLogger(__name__)
 

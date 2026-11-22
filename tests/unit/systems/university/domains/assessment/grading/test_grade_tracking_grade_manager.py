@@ -11,7 +11,7 @@ from education_system.systems.university.infrastructure.database.db import sqlit
 import tempfile
 import os
 
-from education_system.systems.university.domains.academics.interfaces.gui.grade_tracking.grade_manager import GradeManager
+from education_system.systems.university.domains.assessment.interfaces.gui.grade_tracking.grade_manager import GradeManager
 
 class TestGradeManager(unittest.TestCase):
     """Test GradeManager class"""

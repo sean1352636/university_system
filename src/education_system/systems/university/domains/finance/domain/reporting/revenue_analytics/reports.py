@@ -121,15 +121,16 @@ def generate_budget_variance_report():
     conn = sqlite3.connect(str(UNIVERSITY_DEFAULT_DB_PATH))
     cursor = conn.cursor()
 
-    # This assumes a 'budgets' table and 'expenses' table exist
+    # Budget lines hold both figures: budgeted_amount and actual_amount.
     try:
         cursor.execute("""
-            SELECT b.category, b.allocated_amount,
-                   IFNULL(SUM(e.amount), 0) AS actual_spent,
-                   (b.allocated_amount - IFNULL(SUM(e.amount), 0)) AS variance
-            FROM budgets b
-            LEFT JOIN expenses e ON b.category = e.category
-            GROUP BY b.category
+            SELECT c.category_name, IFNULL(SUM(li.budgeted_amount), 0),
+                   IFNULL(SUM(li.actual_amount), 0) AS actual_spent,
+                   IFNULL(SUM(li.budgeted_amount), 0) - IFNULL(SUM(li.actual_amount), 0) AS variance
+            FROM budget_line_items li
+            JOIN budget_categories c ON li.category_id = c.category_id
+            GROUP BY c.category_id, c.category_name
+            ORDER BY c.category_name
         """)
         rows = cursor.fetchall()
 

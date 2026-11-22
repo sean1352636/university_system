@@ -1,4 +1,9 @@
 from ..context import *  # noqa: F401,F403
+# The domain service completes the sale (account debit + local write +
+# Finance posting); it shadows the persistence-layer create_order above.
+from education_system.systems.university.plugins.campus_commerce.domain.cafe.services.checkout import (
+    create_order,
+)
 
 def point_of_sale_cli() -> None:
     """Process a new order via CLI."""
@@ -131,18 +136,15 @@ def point_of_sale_cli() -> None:
 
                 if FINANCE_ACCOUNT_AVAILABLE:
                     balance = get_student_finance_account_balance(student_id)
+                    if balance is None:
+                        print(f"No finance account found for {student_id}.")
+                        continue
                     if balance < total:
                         print(f"Insufficient balance. Current balance: £{balance:.2f}")
                         continue
-
-                    success, message = process_student_finance_account_payment(
-                        student_id, total, "Cafe Purchase", payment_method='debit'
-                    )
-                    if not success:
-                        print(f"Payment failed: {message}")
-                        continue
                 else:
-                    print("Student finance integration not available. Processing as regular payment.")
+                    print("Student finance integration not available.")
+                    continue
 
             elif pay_choice == '2':
                 payment_method = 'cash'
@@ -152,7 +154,8 @@ def point_of_sale_cli() -> None:
                 print("Invalid payment method.")
                 continue
 
-            # Create order
+            # Create order (the domain service debits the student account
+            # for student_account sales and posts the sale to Finance).
             order_id = create_order(student_id, customer_name, order_items, payment_method)
             if order_id:
                 print(f"\n{'=' * 40}")

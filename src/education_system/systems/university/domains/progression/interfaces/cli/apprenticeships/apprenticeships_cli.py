@@ -284,11 +284,19 @@ def _submit_application(svc: ApprenticeshipService) -> None:
     notes = _prompt("Notes for the employer (optional)")
 
     try:
-        aid = svc.submit_application(student_id, programme.programme_id,
+        # applications.apprenticeship_id references a local listing row
+        # (foreign keys are on), so record against the listing for this
+        # programme at this employer; employer_id keeps the apprenticeships
+        # system's id for routing.
+        listing_id = svc.listing_for_programme(programme, employer)
+        aid = svc.submit_application(student_id, listing_id,
                                      "Pending", notes,
                                      employer_id=employer.employer_id)
-    except sqlite3.IntegrityError:
-        print("\n✗ This student has already applied for that programme.")
+    except sqlite3.IntegrityError as e:
+        if "UNIQUE" in str(e).upper():
+            print("\n✗ This student has already applied for that programme.")
+        else:
+            print(f"\n✗ No student {student_id} in Student Records.")
         return
     except Exception as e:
         print(f"\n✗ {e}")

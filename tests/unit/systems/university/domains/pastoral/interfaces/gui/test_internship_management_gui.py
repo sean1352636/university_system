@@ -12,12 +12,12 @@ import tkinter as tk
 from unittest.mock import Mock, patch, MagicMock
 from datetime import datetime
 
-from education_system.systems.university.domains.pastoral.interfaces.gui.internship_management.internship_gui import InternshipGUI
+from education_system.systems.university.domains.student_life.interfaces.gui.internship_management.internship_gui import InternshipGUI
 
 # Base patch paths for the actual modules where symbols are used
-_GUI_MOD = 'education_system.systems.university.domains.pastoral.interfaces.gui.internship_management.internship_gui'
-_PLACEMENTS_MOD = 'education_system.systems.university.domains.pastoral.interfaces.gui.internship_management.placements'
-_IMPORTS_MOD = 'education_system.systems.university.domains.pastoral.interfaces.gui.internship_management._imports'
+_GUI_MOD = 'education_system.systems.university.domains.student_life.interfaces.gui.internship_management.internship_gui'
+_PLACEMENTS_MOD = 'education_system.systems.university.domains.student_life.interfaces.gui.internship_management.placements'
+_IMPORTS_MOD = 'education_system.systems.university.domains.student_life.interfaces.gui.internship_management._imports'
 
 
 @pytest.fixture

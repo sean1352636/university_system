@@ -15,6 +15,7 @@ logger = logging.getLogger(__name__)
 
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 
+from education_system.systems.university.domains.staff.interfaces.gui.staff_hr import _access as _hr
 import tkinter as tk
 from tkinter import ttk, messagebox
 from datetime import datetime
@@ -48,7 +49,7 @@ class IPGUI:
             self.create_main_window()
 
     def _get_user_id(self):
-        return self.current_user.get('id') or self.current_user.get('username')
+        return _hr.user_key(self)
 
     def create_as_tab(self, notebook: ttk.Notebook):
         self.tab_frame = ttk.Frame(notebook)
@@ -58,7 +59,8 @@ class IPGUI:
     def create_main_window(self):
         self.window = tk.Toplevel(self.root)
         self.window.title(_t('gui.staff.staff_hr.ip.windows.intellectual_property_management', default="Intellectual Property Management"))
-        self.window.geometry("1200x700")
+        self.window.geometry("1400x900")
+        self.window.minsize(1200, 800)
         self.window.minsize(1000, 600)
         bottom_frame = ttk.Frame(self.window)
         bottom_frame.pack(side=tk.BOTTOM, fill=tk.X, padx=10, pady=5)
@@ -78,7 +80,7 @@ class IPGUI:
         self._create_patents_tab()
         self._create_licenses_tab()
 
-        if self.current_user.get('role') in ['admin', 'Admin', 'administrator', 'staff']:
+        if _hr.can(self, 'operations'):
             self._create_reports_tab()
 
     # ==================== TAB 1: MY IP ====================
@@ -587,7 +589,7 @@ class IPGUI:
         self.patents_tree.bind('<Double-1>', self._view_patent_details)
 
         # Admin: Update Status button
-        if self.current_user.get('role') in ['admin', 'Admin', 'administrator', 'staff']:
+        if _hr.can(self, 'operations'):
             btn_frame = ttk.Frame(tab)
             btn_frame.pack(fill=tk.X, padx=10, pady=5)
             ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.ip.buttons.update_status', default="Update Status"),

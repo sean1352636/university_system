@@ -33,18 +33,10 @@ def communication_correspondence():
     return feature_pending("Correspondence", _SYSTEM, category=_CATEGORY)
 
 
-@communication_menu_bp.route("/apprentice-email", methods=["GET"])
+@communication_menu_bp.route("/shared-email", methods=["GET"])
 @token_required
 @staff_required
-def communication_apprentice_email():
-    """apprentice.email"""
-    return feature_pending("apprentice.email", _SYSTEM, category=_CATEGORY)
-
-
-@communication_menu_bp.route("/employer-email", methods=["GET"])
-@token_required
-@staff_required
-def communication_employer_email():
-    """employer.email"""
-    return feature_pending("employer.email", _SYSTEM, category=_CATEGORY)
+def communication_shared_email():
+    """shared.email"""
+    return feature_pending("shared.email", _SYSTEM, category=_CATEGORY)
 

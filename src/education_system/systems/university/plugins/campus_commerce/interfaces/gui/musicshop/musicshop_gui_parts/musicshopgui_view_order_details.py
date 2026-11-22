@@ -78,31 +78,22 @@ class MusicShopGUI:
         if not refund_method:
             return
 
-        # Process the refund
+        # Process the refund (the service posts the refund to Finance and
+        # credits the student account when that is the refund method)
         try:
-            if TransactionManager.process_refund(order_id, amount, processed_by=self.current_user.get('username')):
-                # Generate refund reference
-                refund_ref = f"MUSIC-REFUND-{datetime.now().strftime('%Y%m%d%H%M%S')}"
+            result = TransactionManager.refund_order(
+                order_id, amount, refund_method,
+                reason=f"Customer refund via {refund_method}",
+                processed_by=self.current_user.get('username'),
+                transaction_id=transaction_id,
+            )
+            if result.get('success'):
+                refund_ref = result.get('refund_ref') or f"MUSIC-REFUND-{datetime.now().strftime('%Y%m%d%H%M%S')}"
 
-                # Update transaction status if found
-                if transaction_id:
-                    with get_db_connection() as conn:
-                        conn.execute('''
-                            UPDATE transactions
-                            SET status = 'refunded'
-                            WHERE transaction_id = ? AND source_type = 'music_shop'
-                        ''', (transaction_id,))
-                        conn.commit()
-
-                # Automatically mark order as refunded
-                OrderManager.update_order_status(order_id, 'refunded')
-
-                # If student account refund, add to their account
-                if refund_method == 'Student Account':
-                    success = self.add_musicshop_refund_to_student_account(customer_id, amount, refund_ref)
-                    if not success:
-                        messagebox.showwarning(_t("musicshop.msg_titles.partial_success"),
-                                             _t('gui.operations.commerce.musicshop.musicshop_gui_parts.musicshopgui_view_order_details.dialogs.refund_recorded_but_failed_to_credit_student_account_please_cred', default="Refund recorded but failed to credit student account. Please credit manually."))
+                # If student account refund, warn when the credit failed
+                if refund_method == 'Student Account' and not result.get('credited'):
+                    messagebox.showwarning(_t("musicshop.msg_titles.partial_success"),
+                                         _t('gui.operations.commerce.musicshop.musicshop_gui_parts.musicshopgui_view_order_details.dialogs.refund_recorded_but_failed_to_credit_student_account_please_cred', default="Refund recorded but failed to credit student account. Please credit manually."))
 
                 # Send refund receipt email
                 if transaction_id:
@@ -236,27 +227,6 @@ class MusicShopGUI:
         self.new_product_genre.set('')
         self.new_product_condition.set('new')
         self.is_rare_var.set(False)
-
-    def record_revenue_to_finance(self, order_id: int, amount: float, payment_method: str):
-        """Record music shop revenue to the central finance system"""
-        try:
-            order = OrderManager.get_order(order_id)
-            if not order:
-                return
-
-            payment_id = record_payment_to_finance(
-                student_id=order.get('customer_id', 'EXTERNAL'),
-                amount=amount,
-                payment_method=payment_method,
-                transaction_source='MusicShop',
-                transaction_ref=order.get('order_number', str(order_id)),
-                notes="Music shop purchase",
-                created_by=self.current_user.get('username')
-            )
-            if payment_id:
-                logger.info(f"Revenue recorded: £{amount:.2f} for order {order.get('order_number')}")
-        except Exception as e:
-            logger.error(f"Failed to record revenue: {e}")
 
     def send_receipt_email(self, order_id: int):
         """Send receipt email to customer"""

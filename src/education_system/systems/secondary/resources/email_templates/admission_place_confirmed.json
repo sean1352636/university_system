@@ -1,0 +1,38 @@
+{
+  "name": "admission_place_confirmed",
+  "description": "Sent to the parent when the child is admitted and becomes a pupil.",
+  "subject": "Welcome to {school_name}: {child_first_name} has joined us",
+  "body": [
+    "Dear {parent_name},",
+    "",
+    "We are delighted to confirm that {child_first_name} has joined Year {year_group} at {school_name}, starting on {start_date}.",
+    "",
+    "    Admission number: {admission_no}",
+    "    Form group:       {form_group}",
+    "    School e-mail:    {school_email}",
+    "",
+    "{child_first_name} has been sent their own sign-in details at their school e-mail address.",
+    "",
+    "You are recorded as {child_first_name}'s first contact. Please tell us straight away if your contact details change.",
+    "",
+    "Yours sincerely,",
+    "Admissions, {school_name}"
+  ],
+  "placeholders": {
+    "parent_name": "The parent/carer's name",
+    "child_first_name": "The child's preferred or first name",
+    "child_name": "The child's preferred first name and surname",
+    "application_ref": "The application reference, e.g. APP00012",
+    "year_group": "The year group applied for",
+    "academic_year": "The academic year applied for, e.g. 2026/27",
+    "route": "Year 7 normal round or In-year",
+    "school_name": "The school's name",
+    "admission_no": "The pupil's admission number",
+    "start_date": "The admission date",
+    "form_group": "The pupil's form group",
+    "school_email": "The pupil's school e-mail address"
+  },
+  "defaults": {
+    "school_name": "Secondary School"
+  }
+}

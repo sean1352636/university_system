@@ -292,52 +292,22 @@ def process_shop_refund(self):
     if not refund_method:
         return
 
-    # Process based on method
+    # The domain service credits the finance account (if chosen), marks the
+    # transaction refunded and posts the refund to Finance.
+    from education_system.systems.university.plugins.campus_commerce.domain.services.shop_management.sales import (
+        refund_shop_transaction,
+    )
     try:
-        # Generate unique refund reference
-        refund_ref = f"SHOP-REFUND-{datetime.now().strftime('%Y%m%d%H%M%S')}"
-
-        # Use transaction context manager for atomic operations
-        from education_system.systems.university.infrastructure.database.db import transaction
-
-        with transaction() as conn:
-            cursor = conn.cursor()
-
-            # Update transaction status to refunded
-            cursor.execute('''
-                UPDATE transactions
-                SET status = 'refunded'
-                WHERE source_type = 'shop' AND source_transaction_id = ?
-            ''', (transaction_id,))
-
-            # Insert refund record into unified_refunds table
-            cursor.execute('''
-                INSERT INTO unified_refunds
-                (source_type, reference_id, reference_type, refund_date, amount,
-                 refund_method, refund_reference, student_id, processed_by, status)
-                VALUES ('shop', ?, 'transaction', ?, ?, ?, ?, ?, ?, 'processed')
-            ''', (transaction_id, datetime.now().strftime('%Y-%m-%d %H:%M:%S'), amount, refund_method,
-                  refund_ref, student_id, self.current_user.get('username', 'System')))
-            refund_row_id = cursor.lastrowid
-
-            # Transaction auto-commits on successful exit from context
-
-        # Auto-post to GL (cash has moved). Never raises.
-        try:
-            from education_system.systems.university.domains.finance.domain.ledger import notify_ledger
-            notify_ledger('refund', refund_row_id,
-                          posted_by=self.current_user.get('username', 'shop'))
-        except Exception as _e:
-            import logging
-            logging.getLogger(__name__).warning("ledger hook failed: %s", _e)
-
-        # If student account refund, add to their account
-        if refund_method == 'Student Account':
-            success = self.add_shop_refund_to_student_account(student_id, amount, refund_ref)
-            if not success:
-                if hasattr(self.root, 'winfo_exists') and self.root.winfo_exists():
-                    messagebox.showwarning(_t('gui.operations.commerce.shop_management_gui.refund_manager.dialogs.partial_success', default="Partial Success"),
-                                         _t('gui.operations.commerce.shop_management_gui.refund_manager.dialogs.refund_recorded_but_failed_to_credit_student_account_please_cred', default="Refund recorded but failed to credit student account. Please credit manually."))
+        outcome = refund_shop_transaction(
+            transaction_id, amount, refund_method,
+            student_id=student_id,
+            processed_by=self.current_user.get('username', 'System'),
+        )
+        if not outcome['success']:
+            if hasattr(self.root, 'winfo_exists') and self.root.winfo_exists():
+                messagebox.showerror(_t('gui.operations.commerce.shop_management_gui.refund_manager.dialogs.database_error', default="Database Error"), outcome['message'])
+            return
+        refund_ref = outcome['refund_ref']
 
         # Send refund receipt email
         self.send_shop_refund_receipt(transaction_id, student_id or user_id, amount, refund_method, refund_ref)

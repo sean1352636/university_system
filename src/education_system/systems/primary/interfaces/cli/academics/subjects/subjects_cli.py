@@ -10,7 +10,7 @@ from education_system.systems.primary.domain.academics.subjects import (
     subjects as data,
 )
 from education_system.systems.primary.domain.academics.subjects.subjects import (
-    KEY_STAGES, QUALIFICATIONS,
+    DEFAULT_KEY_STAGE, DEFAULT_QUALIFICATION, KEY_STAGES, QUALIFICATIONS,
 )
 from education_system.systems.primary.domain.learners.pupils.pupils import (
     ValidationError,
@@ -49,7 +49,7 @@ def _print_table(rows: list[data.Subject]) -> None:
     print(f"  {'-'*5} {'-'*8} {'-'*28} {'-'*5} {'-'*6} {'-'*14} {'-'*5} {'-'*6}")
     for s in rows:
         print(f"  {s.subject_id:<5} {s.code:<8} {s.name[:28]:<28} "
-              f"{s.key_stage:<5} {s.qualification:<6} "
+              f"{s.key_stage:<5} {s.qualification:<22} "
               f"{(s.department or '-')[:14]:<14} "
               f"{('Y' if s.is_core else 'N'):<5} "
               f"{('Y' if s.is_active else 'N'):<6}")
@@ -99,10 +99,10 @@ def _collect(existing: data.Subject | None = None) -> dict[str, str]:
     f["name"] = ask("Display name",
                     existing.name if existing else None)
     f["key_stage"] = ask(f"Key stage ({'/'.join(KEY_STAGES)})",
-                         existing.key_stage if existing else "Both")
+                         existing.key_stage if existing else DEFAULT_KEY_STAGE)
     f["qualification"] = ask(
-        f"Qualification ({'/'.join(QUALIFICATIONS)})",
-        existing.qualification if existing else "GCSE")
+        f"Curriculum ({'/'.join(QUALIFICATIONS)})",
+        existing.qualification if existing else DEFAULT_QUALIFICATION)
     f["department"] = ask("Department",
                           existing.department if existing else None)
     core_cur = "y" if (existing and existing.is_core) else "n"
@@ -126,8 +126,8 @@ def _new() -> None:
 def _list() -> None:
     print(f"\n  Filter — key stage ({'/'.join(KEY_STAGES)}), blank for all.")
     ks = _prompt("  Key stage: ") or None
-    print(f"  Filter — qualification ({'/'.join(QUALIFICATIONS)}), blank for all.")
-    qual = _prompt("  Qualification: ") or None
+    print(f"  Filter — curriculum ({'/'.join(QUALIFICATIONS)}), blank for all.")
+    qual = _prompt("  Curriculum: ") or None
     only_active = _prompt("  Active only? (y/N): ").lower().startswith("y")
     rows = data.list_all(key_stage=ks, qualification=qual,
                          active_only=only_active)
@@ -154,7 +154,7 @@ def _view() -> None:
     print(f"  Code:           {s.code}")
     print(f"  Name:           {s.name}")
     print(f"  Key stage:      {s.key_stage}")
-    print(f"  Qualification:  {s.qualification}")
+    print(f"  Curriculum:     {s.qualification}")
     print(f"  Department:     {s.department or '-'}")
     print(f"  Core:           {'Yes' if s.is_core else 'No'}")
     print(f"  Active:         {'Yes' if s.is_active else 'No'}")
@@ -223,7 +223,7 @@ def _delete() -> None:
         print("  Could not delete.")
 
 
-_DISPATCH = {"Subjects (KS3 / GCSE)": open_subjects}
+_DISPATCH = {"Subjects": open_subjects}
 
 
 def dispatch(label: str) -> bool:

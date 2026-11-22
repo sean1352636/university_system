@@ -17,7 +17,7 @@ from datetime import datetime, timedelta
 from unittest.mock import patch, MagicMock
 
 from education_system.systems.university.infrastructure.database.db import get_connection
-from education_system.systems.university.domains.pastoral.domain.services.helpdesk import (
+from education_system.systems.university.domains.student_support.domain.helpdesk import (
     init_helpdesk_db,
     init_default_data,
 )

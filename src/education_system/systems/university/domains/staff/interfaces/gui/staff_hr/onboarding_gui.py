@@ -21,9 +21,16 @@ from tkinter import ttk, messagebox, scrolledtext
 from datetime import datetime, timedelta
 from typing import Optional
 
-from education_system.systems.university.infrastructure.database.db import get_connection, transaction
 from education_system.systems.university.infrastructure.auth import UserAuth
 from education_system.systems.university.infrastructure.activity_logger import log_activity
+from education_system.systems.university.domains.staff.domain.staff_hr.services.managers.onboarding_manager import (
+    OnboardingManager,
+)
+from education_system.systems.university.domains.staff.interfaces.gui.staff_hr import _access as _hr
+
+
+def _err():
+    return _t('gui.staff.staff_hr.onboarding.dialogs.error', default="Error")
 
 
 class OnboardingGUI:
@@ -35,9 +42,10 @@ class OnboardingGUI:
         self.current_user = auth.current_user if auth and auth.current_user else None
         self.parent_notebook = parent_notebook
         self.window = None
+        self.manager = OnboardingManager()
 
         if not self.current_user:
-            messagebox.showerror(_t('gui.staff.staff_hr.onboarding.dialogs.error', default="Error"), _t('gui.staff.staff_hr.onboarding.dialogs.login_required_to_access_onboarding', default="Login required to access Onboarding"))
+            messagebox.showerror(_err(), _t('gui.staff.staff_hr.onboarding.dialogs.login_required_to_access_onboarding', default="Login required to access Onboarding"))
             return
 
         if parent_notebook:
@@ -55,8 +63,8 @@ class OnboardingGUI:
         """Create as standalone window."""
         self.window = tk.Toplevel(self.root)
         self.window.title(_t('gui.staff.staff_hr.onboarding.windows.onboarding_offboarding_system', default="Onboarding & Offboarding System"))
-        self.window.geometry("1200x700")
-        self.window.minsize(1000, 600)
+        self.window.geometry("1400x900")
+        self.window.minsize(1200, 800)
 
         bottom_frame = ttk.Frame(self.window)
         bottom_frame.pack(side=tk.BOTTOM, fill=tk.X, padx=10, pady=5)
@@ -76,7 +84,8 @@ class OnboardingGUI:
         self.notebook.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
         self._create_my_tasks_tab()
-        if self.current_user.get('role') in ['admin', 'Admin', 'administrator', 'staff']:
+        # Assigning onboarding and running templates is HR's job.
+        if _hr.can(self, 'hr'):
             self._create_assignments_tab()
             self._create_templates_tab()
             self._create_progress_tab()
@@ -300,58 +309,34 @@ class OnboardingGUI:
         self._load_progress_overview()
 
     def _load_my_tasks(self):
-        """Load user's onboarding tasks."""
+        """Load user's onboarding tasks (their own, and those they own for others)."""
         try:
             self.tasks_tree.delete(*self.tasks_tree.get_children())
 
-            user_id = self.current_user.get('id') or self.current_user.get('username')
             status_filter = self.task_filter.get()
             today = datetime.now().strftime("%Y-%m-%d")
+            status = None if status_filter == 'All' else status_filter.lower().replace(' ', '_')
 
-            with get_connection() as conn:
-                cursor = conn.cursor()
+            total = completed = pending = 0
+            for row in self.manager.get_my_tasks(_hr.actor(self), status=status):
+                total += 1
+                status = row['status']
+                if status == 'completed':
+                    completed += 1
+                else:
+                    pending += 1
 
-                # Get tasks assigned to user (either as employee or assigned_to)
-                query = '''
-                    SELECT p.progress_id, t.title, t.category, p.due_date, p.status,
-                           te.name as template_name
-                    FROM onboarding_task_progress p
-                    JOIN onboarding_template_tasks t ON p.task_id = t.task_id
-                    JOIN onboarding_assignments a ON p.assignment_id = a.assignment_id
-                    JOIN onboarding_templates te ON a.template_id = te.template_id
-                    WHERE (a.user_id = ? OR p.assigned_to = ?)
-                '''
-                params = [user_id, user_id]
+                # Check if overdue
+                tag = status
+                if row['due_date'] and row['due_date'] < today and status != 'completed':
+                    tag = 'overdue'
 
-                if status_filter != 'All':
-                    query += ' AND p.status = ?'
-                    params.append(status_filter.lower().replace(' ', '_'))
-
-                query += ' ORDER BY p.due_date ASC'
-
-                cursor.execute(query, params)
-
-                total = 0
-                completed = 0
-                pending = 0
-
-                for row in cursor.fetchall():
-                    total += 1
-                    status = row[4]
-
-                    if status == 'completed':
-                        completed += 1
-                    else:
-                        pending += 1
-
-                    # Check if overdue
-                    tag = status
-                    if row[3] and row[3] < today and status != 'completed':
-                        tag = 'overdue'
-
-                    values = (row[0], row[1], row[2] or '-', row[3] or '-',
-                              status.replace('_', ' ').capitalize(), row[5])
-                    self.tasks_tree.insert('', 'end', values=values, tags=(tag,))
+                assignment = row['template_name']
+                if row['staff_user'] != _hr.user_key(self):
+                    assignment = f"{assignment} ({row['staff_user']})"
+                values = (row['progress_id'], row['title'], row['category'] or '-',
+                          row['due_date'] or '-', status.replace('_', ' ').capitalize(), assignment)
+                self.tasks_tree.insert('', 'end', values=values, tags=(tag,))
 
             self.total_tasks_label.config(text=f"Total Tasks: {total}")
             self.completed_tasks_label.config(text=f"Completed: {completed}")
@@ -361,7 +346,7 @@ class OnboardingGUI:
             self.progress_var.set(progress)
 
         except Exception as e:
-            messagebox.showerror(_t('gui.staff.staff_hr.onboarding.dialogs.error', default="Error"), f"Failed to load tasks: {e}")
+            messagebox.showerror(_err(), f"Failed to load tasks: {e}")
 
     def _load_assignments(self):
         """Load onboarding assignments."""
@@ -370,134 +355,60 @@ class OnboardingGUI:
 
             type_filter = self.assign_type_filter.get()
             status_filter = self.assign_status_filter.get()
+            rows = self.manager.list_assignments(
+                _hr.actor(self),
+                template_type=None if type_filter == 'All' else type_filter.lower(),
+                status=None if status_filter == 'All' else status_filter.lower().replace(' ', '_'))
 
-            with get_connection() as conn:
-                cursor = conn.cursor()
+            for row in rows:
+                total = row['total_tasks'] or 0
+                done = row['done_tasks'] or 0
+                progress = f"{done}/{total}" if total > 0 else "0/0"
 
-                query = '''
-                    SELECT a.assignment_id, a.user_id, t.name, t.template_type,
-                           a.start_date, a.target_completion_date, a.status,
-                           (SELECT COUNT(*) FROM onboarding_task_progress WHERE assignment_id = a.assignment_id) as total,
-                           (SELECT COUNT(*) FROM onboarding_task_progress WHERE assignment_id = a.assignment_id AND status = 'completed') as done
-                    FROM onboarding_assignments a
-                    JOIN onboarding_templates t ON a.template_id = t.template_id
-                    WHERE 1=1
-                '''
-                params = []
-
-                if type_filter != 'All':
-                    query += ' AND t.template_type = ?'
-                    params.append(type_filter.lower())
-
-                if status_filter != 'All':
-                    query += ' AND a.status = ?'
-                    params.append(status_filter.lower().replace(' ', '_'))
-
-                query += ' ORDER BY a.start_date DESC'
-
-                cursor.execute(query, params)
-
-                for row in cursor.fetchall():
-                    total = row[7] or 0
-                    done = row[8] or 0
-                    progress = f"{done}/{total}" if total > 0 else "0/0"
-
-                    values = (row[0], row[1], row[2], row[3].capitalize(),
-                              row[4], row[5] or '-', progress,
-                              row[6].replace('_', ' ').capitalize())
-                    self.assignments_tree.insert('', 'end', values=values)
+                values = (row['assignment_id'], row['user_id'], row['template_name'],
+                          (row['template_type'] or '').capitalize(),
+                          row['start_date'], row['target_completion_date'] or '-', progress,
+                          (row['status'] or '').replace('_', ' ').capitalize())
+                self.assignments_tree.insert('', 'end', values=values)
 
         except Exception as e:
-            messagebox.showerror(_t('gui.staff.staff_hr.onboarding.dialogs.error', default="Error"), f"Failed to load assignments: {e}")
+            messagebox.showerror(_err(), f"Failed to load assignments: {e}")
 
     def _load_templates(self):
         """Load onboarding templates."""
         try:
             self.templates_tree.delete(*self.templates_tree.get_children())
 
-            with get_connection() as conn:
-                cursor = conn.cursor()
-                cursor.execute('''
-                    SELECT t.template_id, t.name, t.template_type, t.role, t.department,
-                           t.estimated_days, t.is_active,
-                           (SELECT COUNT(*) FROM onboarding_template_tasks WHERE template_id = t.template_id)
-                    FROM onboarding_templates t
-                    ORDER BY t.name
-                ''')
-
-                for row in cursor.fetchall():
-                    values = (row[0], row[1], row[2].capitalize(), row[3] or '-',
-                              row[4] or '-', row[5] or '-', row[7],
-                              'Yes' if row[6] else 'No')
-                    self.templates_tree.insert('', 'end', values=values)
+            for row in self.manager.list_templates(_hr.actor(self)):
+                values = (row['template_id'], row['name'], (row['template_type'] or '').capitalize(),
+                          row['role'] or '-', row['department'] or '-',
+                          row['estimated_days'] or '-', row['task_count'],
+                          'Yes' if row['is_active'] else 'No')
+                self.templates_tree.insert('', 'end', values=values)
 
         except Exception as e:
-            messagebox.showerror(_t('gui.staff.staff_hr.onboarding.dialogs.error', default="Error"), f"Failed to load templates: {e}")
+            messagebox.showerror(_err(), f"Failed to load templates: {e}")
 
     def _load_progress_overview(self):
         """Load progress overview statistics."""
         try:
-            today = datetime.now()
-            month_start = today.replace(day=1).strftime("%Y-%m-%d")
+            stats = self.manager.progress_overview(_hr.actor(self))
 
-            with get_connection() as conn:
-                cursor = conn.cursor()
+            self.recent_tree.delete(*self.recent_tree.get_children())
+            for row in stats['recent']:
+                duration = f"{int(row['days'])} days" if row['days'] else '-'
+                values = (row['user_id'], row['template_name'],
+                          (row['template_type'] or '').capitalize(),
+                          row['actual_completion_date'], duration)
+                self.recent_tree.insert('', 'end', values=values)
 
-                # Active onboarding
-                cursor.execute('''
-                    SELECT COUNT(*) FROM onboarding_assignments a
-                    JOIN onboarding_templates t ON a.template_id = t.template_id
-                    WHERE a.status = 'in_progress' AND t.template_type = 'onboarding'
-                ''')
-                active_onboarding = cursor.fetchone()[0]
-
-                # Active offboarding
-                cursor.execute('''
-                    SELECT COUNT(*) FROM onboarding_assignments a
-                    JOIN onboarding_templates t ON a.template_id = t.template_id
-                    WHERE a.status = 'in_progress' AND t.template_type = 'offboarding'
-                ''')
-                active_offboarding = cursor.fetchone()[0]
-
-                # Completed this month
-                cursor.execute('''
-                    SELECT COUNT(*) FROM onboarding_assignments
-                    WHERE status = 'completed' AND actual_completion_date >= ?
-                ''', (month_start,))
-                completed_month = cursor.fetchone()[0]
-
-                # Average completion time
-                cursor.execute('''
-                    SELECT AVG(julianday(actual_completion_date) - julianday(start_date))
-                    FROM onboarding_assignments
-                    WHERE status = 'completed' AND actual_completion_date IS NOT NULL
-                ''')
-                avg_days = cursor.fetchone()[0] or 0
-
-                # Recent completions
-                self.recent_tree.delete(*self.recent_tree.get_children())
-                cursor.execute('''
-                    SELECT a.user_id, t.name, t.template_type, a.actual_completion_date,
-                           julianday(a.actual_completion_date) - julianday(a.start_date)
-                    FROM onboarding_assignments a
-                    JOIN onboarding_templates t ON a.template_id = t.template_id
-                    WHERE a.status = 'completed'
-                    ORDER BY a.actual_completion_date DESC
-                    LIMIT 10
-                ''')
-
-                for row in cursor.fetchall():
-                    duration = f"{int(row[4])} days" if row[4] else '-'
-                    values = (row[0], row[1], row[2].capitalize(), row[3], duration)
-                    self.recent_tree.insert('', 'end', values=values)
-
-            self.active_onboarding_label.config(text=f"Active Onboarding: {active_onboarding}")
-            self.active_offboarding_label.config(text=f"Active Offboarding: {active_offboarding}")
-            self.completed_this_month_label.config(text=f"Completed This Month: {completed_month}")
-            self.avg_completion_label.config(text=f"Avg. Completion: {avg_days:.1f} days")
+            self.active_onboarding_label.config(text=f"Active Onboarding: {stats['active_onboarding']}")
+            self.active_offboarding_label.config(text=f"Active Offboarding: {stats['active_offboarding']}")
+            self.completed_this_month_label.config(text=f"Completed This Month: {stats['completed_this_month']}")
+            self.avg_completion_label.config(text=f"Avg. Completion: {stats['average_days']:.1f} days")
 
         except Exception as e:
-            messagebox.showerror(_t('gui.staff.staff_hr.onboarding.dialogs.error', default="Error"), f"Failed to load overview: {e}")
+            messagebox.showerror(_err(), f"Failed to load overview: {e}")
 
     def _mark_task_complete(self):
         """Mark selected task as complete."""
@@ -517,76 +428,25 @@ class OnboardingGUI:
         if not messagebox.askyesno(_t('gui.staff.staff_hr.onboarding.dialogs.confirm', default="Confirm"), _t('gui.staff.staff_hr.onboarding.dialogs.mark_this_task_as_complete', default="Mark this task as complete?")):
             return
 
-        completed_by = self.current_user.get('username') or self.current_user.get('id')
-
         try:
-            with transaction() as conn:
-                conn.execute('''
-                    UPDATE onboarding_task_progress
-                    SET status = 'completed', completed_by = ?, completed_date = ?, updated_at = ?
-                    WHERE progress_id = ?
-                ''', (completed_by, datetime.now().strftime("%Y-%m-%d"),
-                      datetime.now().isoformat(), progress_id))
-
-                # Check if all tasks are complete for this assignment
-                cursor = conn.cursor()
-                cursor.execute('''
-                    SELECT assignment_id FROM onboarding_task_progress WHERE progress_id = ?
-                ''', (progress_id,))
-                assignment_id = cursor.fetchone()[0]
-
-                cursor.execute('''
-                    SELECT COUNT(*), SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END)
-                    FROM onboarding_task_progress WHERE assignment_id = ?
-                ''', (assignment_id,))
-                total, completed = cursor.fetchone()
-
-                if total == completed:
-                    # All tasks complete — but before flipping the
-                    # assignment to 'completed' we require a contract
-                    # document to be present in DM (#9). Without it,
-                    # the new starter shouldn't be considered active.
-                    cursor.execute(
-                        "SELECT staff_id FROM onboarding_assignments "
-                        "WHERE assignment_id = ?",
-                        (assignment_id,),
-                    )
-                    staff_row = cursor.fetchone()
-                    staff_id = staff_row[0] if staff_row else None
-
-                    contract_present = True
-                    try:
-                        from education_system.systems.university.services.bus.document_bus import (
-                            has_document,
-                        )
-                        contract_present = has_document(
-                            "contract", staff_id,
-                            document_type="contract",
-                        )
-                    except Exception:
-                        contract_present = True
-
-                    if not contract_present:
-                        messagebox.showwarning(
-                            _t('gui.staff.staff_hr.onboarding.dialogs.contract_not_on_file', default="Contract not on file"),
-                            f"All onboarding tasks complete, but no signed "
-                            f"contract is linked in Document Manager for "
-                            f"staff {staff_id}. The assignment will stay "
-                            f"in progress until the contract is uploaded.",
-                        )
-                    else:
-                        conn.execute('''
-                            UPDATE onboarding_assignments
-                            SET status = 'completed', actual_completion_date = ?, updated_at = ?
-                            WHERE assignment_id = ?
-                        ''', (datetime.now().strftime("%Y-%m-%d"), datetime.now().isoformat(), assignment_id))
-
-            log_activity('update', 'onboarding_task', progress_id=progress_id, details={'action': 'completed'})
+            result = self.manager.complete_task_for(_hr.actor(self), progress_id)
+            if result is None:
+                messagebox.showerror(_err(), "Task not found")
+                return
+            if result['contract_missing']:
+                # A new starter isn't active until their contract is on file (#9).
+                messagebox.showwarning(
+                    _t('gui.staff.staff_hr.onboarding.dialogs.contract_not_on_file', default="Contract not on file"),
+                    "All onboarding tasks complete, but no signed "
+                    "contract is linked in Document Manager for "
+                    "this staff member. The assignment will stay "
+                    "in progress until the contract is uploaded.",
+                )
             messagebox.showinfo(_t('gui.staff.staff_hr.onboarding.dialogs.success', default="Success"), _t('gui.staff.staff_hr.onboarding.dialogs.task_marked_as_complete', default="Task marked as complete"))
             self._load_my_tasks()
 
         except Exception as e:
-            messagebox.showerror(_t('gui.staff.staff_hr.onboarding.dialogs.error', default="Error"), f"Failed to update task: {e}")
+            messagebox.showerror(_err(), f"Failed to update task: {e}")
 
     def _view_task_details(self, event=None):
         """View task details."""
@@ -598,32 +458,25 @@ class OnboardingGUI:
         progress_id = item['values'][0]
 
         try:
-            with get_connection() as conn:
-                cursor = conn.cursor()
-                cursor.execute('''
-                    SELECT t.title, t.description, t.category, p.due_date, p.status,
-                           p.notes, p.completed_by, p.completed_date
-                    FROM onboarding_task_progress p
-                    JOIN onboarding_template_tasks t ON p.task_id = t.task_id
-                    WHERE p.progress_id = ?
-                ''', (progress_id,))
-                row = cursor.fetchone()
+            row = self.manager.get_task(progress_id, actor=_hr.actor(self))
 
             if row:
                 details = f"""
-Task: {row[0]}
-Description: {row[1] or 'No description'}
-Category: {row[2] or 'General'}
-Due Date: {row[3] or 'Not set'}
-Status: {row[4].replace('_', ' ').capitalize()}
-Notes: {row[5] or 'None'}
-Completed By: {row[6] or 'N/A'}
-Completed Date: {row[7] or 'N/A'}
+Task: {row['title']}
+For: {row['staff_user']}
+Description: {row['description'] or 'No description'}
+Category: {row['category'] or 'General'}
+Owner: {row['assigned_to'] or (row['assigned_to_role'] or 'employee').capitalize()}
+Due Date: {row['due_date'] or 'Not set'}
+Status: {row['status'].replace('_', ' ').capitalize()}
+Notes: {row['notes'] or 'None'}
+Completed By: {row['completed_by'] or 'N/A'}
+Completed Date: {row['completed_date'] or 'N/A'}
                 """
                 messagebox.showinfo(_t('gui.staff.staff_hr.onboarding.dialogs.task_details', default="Task Details"), details.strip())
 
         except Exception as e:
-            messagebox.showerror(_t('gui.staff.staff_hr.onboarding.dialogs.error', default="Error"), f"Failed to load details: {e}")
+            messagebox.showerror(_err(), f"Failed to load details: {e}")
 
     def _create_assignment(self):
         """Create a new onboarding assignment."""
@@ -686,40 +539,22 @@ Completed Date: {row[7] or 'N/A'}
                 return
 
             template_id = templates[template_var.get()]
-            assigned_by = self.current_user.get('username') or self.current_user.get('id')
 
             try:
-                with transaction() as conn:
-                    cursor = conn.cursor()
+                datetime.strptime(start_var.get().strip(), "%Y-%m-%d")
+                if target_var.get().strip():
+                    datetime.strptime(target_var.get().strip(), "%Y-%m-%d")
+            except ValueError:
+                error_label.config(text="Dates must be YYYY-MM-DD")
+                return
 
-                    # Create assignment
-                    cursor.execute('''
-                        INSERT INTO onboarding_assignments
-                        (user_id, template_id, assigned_by, start_date, target_completion_date, notes, status)
-                        VALUES (?, ?, ?, ?, ?, ?, 'in_progress')
-                    ''', (user_var.get().strip(), template_id, assigned_by,
-                          start_var.get(), target_var.get(), notes_text.get('1.0', tk.END).strip()))
-
-                    assignment_id = cursor.lastrowid
-
-                    # Get template tasks and create progress records
-                    cursor.execute('''
-                        SELECT task_id, due_days, assigned_to_role
-                        FROM onboarding_template_tasks
-                        WHERE template_id = ?
-                        ORDER BY order_num
-                    ''', (template_id,))
-
-                    start_date = datetime.strptime(start_var.get(), "%Y-%m-%d")
-
-                    for task in cursor.fetchall():
-                        due_date = (start_date + timedelta(days=task[1])).strftime("%Y-%m-%d") if task[1] else None
-
-                        cursor.execute('''
-                            INSERT INTO onboarding_task_progress
-                            (assignment_id, task_id, status, due_date)
-                            VALUES (?, ?, 'pending', ?)
-                        ''', (assignment_id, task[0], due_date))
+            try:
+                self.manager.assign_template(
+                    user_var.get().strip(), template_id, None,
+                    start_date=start_var.get().strip(),
+                    target_date=target_var.get().strip() or None,
+                    notes=notes_text.get('1.0', tk.END).strip() or None,
+                    actor=_hr.actor(self))
 
                 log_activity('create', 'onboarding_assignment',
                              details={'user_id': user_var.get(), 'template': template_var.get()})
@@ -797,17 +632,20 @@ Completed Date: {row[7] or 'N/A'}
                 error_label.config(text=_t('gui.staff.staff_hr.onboarding.text.template_name_is_required', default="Template name is required"))
                 return
 
-            created_by = self.current_user.get('username') or self.current_user.get('id')
+            try:
+                days = int(days_var.get() or 30)
+            except ValueError:
+                error_label.config(text="Est. Days must be a whole number")
+                return
 
             try:
-                with transaction() as conn:
-                    conn.execute('''
-                        INSERT INTO onboarding_templates
-                        (name, description, template_type, role, department, estimated_days, created_by)
-                        VALUES (?, ?, ?, ?, ?, ?, ?)
-                    ''', (name_var.get().strip(), desc_text.get('1.0', tk.END).strip(),
-                          type_var.get().lower(), role_var.get().strip() or None,
-                          dept_var.get().strip() or None, int(days_var.get() or 30), created_by))
+                self.manager.create_template(
+                    name_var.get().strip(), actor=_hr.actor(self),
+                    description=desc_text.get('1.0', tk.END).strip(),
+                    template_type=type_var.get().lower(),
+                    role=role_var.get().strip() or None,
+                    department=dept_var.get().strip() or None,
+                    estimated_days=days)
 
                 log_activity('create', 'onboarding_template', details={'name': name_var.get()})
                 messagebox.showinfo(_t('gui.staff.staff_hr.onboarding.dialogs.success', default="Success"), _t('gui.staff.staff_hr.onboarding.dialogs.template_created_now_add_tasks_using_manage_tasks', default="Template created. Now add tasks using 'Manage Tasks'."))
@@ -828,7 +666,76 @@ Completed Date: {row[7] or 'N/A'}
         if not selection:
             messagebox.showwarning(_t('gui.staff.staff_hr.onboarding.dialogs.warning', default="Warning"), _t('gui.staff.staff_hr.onboarding.dialogs.please_select_a_template_to_edit', default="Please select a template to edit"))
             return
-        messagebox.showinfo(_t('gui.staff.staff_hr.onboarding.dialogs.edit', default="Edit"), _t('gui.staff.staff_hr.onboarding.dialogs.template_edit_dialog_would_open_here', default="Template edit dialog would open here"))
+
+        template_id = self.templates_tree.item(selection[0])['values'][0]
+        template = self.manager.get_template(template_id)
+        if not template:
+            messagebox.showerror(_err(), "Template not found")
+            return
+
+        dialog = tk.Toplevel(self.root)
+        dialog.title(_t('gui.staff.staff_hr.onboarding.dialogs.edit', default="Edit") + f" - {template['name']}")
+        dialog.geometry("450x420")
+        dialog.transient(self.root)
+        dialog.grab_set()
+
+        main_frame = ttk.Frame(dialog, padding=20)
+        main_frame.pack(fill=tk.BOTH, expand=True)
+
+        def field(label, value, width=25):
+            row = ttk.Frame(main_frame)
+            row.pack(fill=tk.X, pady=5)
+            ttk.Label(row, text=label, width=15, anchor=tk.W).pack(side=tk.LEFT)
+            var = tk.StringVar(value='' if value is None else str(value))
+            ttk.Entry(row, textvariable=var, width=width).pack(side=tk.LEFT)
+            return var
+
+        name_var = field(_t('gui.staff.staff_hr.onboarding.labels.template_name', default="Template Name:"), template['name'])
+        row = ttk.Frame(main_frame)
+        row.pack(fill=tk.X, pady=5)
+        ttk.Label(row, text=_t('gui.staff.staff_hr.onboarding.labels.type', default="Type:"), width=15, anchor=tk.W).pack(side=tk.LEFT)
+        type_var = tk.StringVar(value=(template['template_type'] or 'onboarding').capitalize())
+        ttk.Combobox(row, textvariable=type_var, values=['Onboarding', 'Offboarding'],
+                     width=15, state='readonly').pack(side=tk.LEFT)
+        role_var = field(_t('gui.staff.staff_hr.onboarding.labels.for_role', default="For Role:"), template['role'], 20)
+        dept_var = field(_t('gui.staff.staff_hr.onboarding.labels.department', default="Department:"), template['department'], 20)
+        days_var = field(_t('gui.staff.staff_hr.onboarding.labels.est_days', default="Est. Days:"), template['estimated_days'], 10)
+        active_var = tk.BooleanVar(value=bool(template['is_active']))
+        ttk.Checkbutton(main_frame, text="Active (can be assigned)", variable=active_var).pack(anchor=tk.W, pady=5)
+
+        ttk.Label(main_frame, text=_t('gui.staff.staff_hr.onboarding.labels.description', default="Description:"), anchor=tk.W).pack(fill=tk.X, pady=(10, 5))
+        desc_text = scrolledtext.ScrolledText(main_frame, height=4, width=40)
+        desc_text.insert('1.0', template['description'] or '')
+        desc_text.pack(fill=tk.X)
+
+        error_label = ttk.Label(main_frame, text="", foreground='red')
+        error_label.pack(fill=tk.X, pady=5)
+
+        def save():
+            try:
+                days = int(days_var.get() or 30)
+            except ValueError:
+                error_label.config(text="Est. Days must be a whole number")
+                return
+            try:
+                self.manager.update_template(
+                    template_id, actor=_hr.actor(self),
+                    name=name_var.get().strip(), template_type=type_var.get().lower(),
+                    role=role_var.get().strip() or None,
+                    department=dept_var.get().strip() or None,
+                    estimated_days=days, is_active=1 if active_var.get() else 0,
+                    description=desc_text.get('1.0', tk.END).strip())
+            except Exception as e:
+                error_label.config(text=f"Error: {e}")
+                return
+            log_activity('update', 'onboarding_template', details={'template_id': template_id})
+            dialog.destroy()
+            self._load_templates()
+
+        btn_frame = ttk.Frame(main_frame)
+        btn_frame.pack(pady=15)
+        ttk.Button(btn_frame, text="Save", command=save).pack(side=tk.LEFT, padx=10)
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.onboarding.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(side=tk.LEFT, padx=10)
 
     def _manage_template_tasks(self):
         """Manage tasks for selected template."""
@@ -878,21 +785,9 @@ Completed Date: {row[7] or 'N/A'}
         def load_tasks():
             tasks_tree.delete(*tasks_tree.get_children())
             try:
-                with get_connection() as conn:
-                    cursor = conn.cursor()
-                    cursor.execute('''
-                        SELECT task_id, title, category, assigned_to_role, due_days, is_required, order_num
-                        FROM onboarding_template_tasks
-                        WHERE template_id = ?
-                        ORDER BY order_num
-                    ''', (template_id,))
-
-                    for row in cursor.fetchall():
-                        values = (row[0], row[1], row[2] or '-', row[3] or '-',
-                                  row[4] or '-', 'Yes' if row[5] else 'No', row[6])
-                        tasks_tree.insert('', 'end', values=values)
+                self._fill_template_tasks(tasks_tree, template_id)
             except Exception as e:
-                messagebox.showerror(_t('gui.staff.staff_hr.onboarding.dialogs.error', default="Error"), f"Failed to load tasks: {e}")
+                messagebox.showerror(_err(), f"Failed to load tasks: {e}")
 
         load_tasks()
 
@@ -961,39 +856,24 @@ Completed Date: {row[7] or 'N/A'}
                 return
 
             try:
-                with transaction() as conn:
-                    # Get next order number
-                    cursor = conn.cursor()
-                    cursor.execute('SELECT MAX(order_num) FROM onboarding_template_tasks WHERE template_id = ?',
-                                   (template_id,))
-                    max_order = cursor.fetchone()[0] or 0
+                days = int(days_var.get() or 0)
+            except ValueError:
+                messagebox.showwarning(_t('gui.staff.staff_hr.onboarding.dialogs.warning', default="Warning"), "Due Days must be a whole number")
+                return
 
-                    conn.execute('''
-                        INSERT INTO onboarding_template_tasks
-                        (template_id, title, description, category, assigned_to_role, due_days, is_required, order_num)
-                        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-                    ''', (template_id, title_var.get().strip(), desc_text.get('1.0', tk.END).strip(),
-                          category_var.get(), assigned_var.get().lower(),
-                          int(days_var.get() or 0), required_var.get(), max_order + 1))
+            try:
+                self.manager.add_template_task(
+                    template_id, title_var.get().strip(), actor=_hr.actor(self),
+                    description=desc_text.get('1.0', tk.END).strip(),
+                    category=category_var.get(), assigned_to_role=assigned_var.get().lower(),
+                    due_days=days, is_required=1 if required_var.get() else 0)
 
                 messagebox.showinfo(_t('gui.staff.staff_hr.onboarding.dialogs.success', default="Success"), _t('gui.staff.staff_hr.onboarding.dialogs.task_added', default="Task added"))
                 dialog.destroy()
-
-                # Reload tasks
-                tasks_tree.delete(*tasks_tree.get_children())
-                with get_connection() as conn:
-                    cursor = conn.cursor()
-                    cursor.execute('''
-                        SELECT task_id, title, category, assigned_to_role, due_days, is_required, order_num
-                        FROM onboarding_template_tasks WHERE template_id = ? ORDER BY order_num
-                    ''', (template_id,))
-                    for row in cursor.fetchall():
-                        values = (row[0], row[1], row[2] or '-', row[3] or '-',
-                                  row[4] or '-', 'Yes' if row[5] else 'No', row[6])
-                        tasks_tree.insert('', 'end', values=values)
+                self._fill_template_tasks(tasks_tree, template_id)
 
             except Exception as e:
-                messagebox.showerror(_t('gui.staff.staff_hr.onboarding.dialogs.error', default="Error"), f"Failed to add task: {e}")
+                messagebox.showerror(_err(), f"Failed to add task: {e}")
 
         btn_frame = ttk.Frame(main_frame)
         btn_frame.pack(pady=15)
@@ -1014,14 +894,13 @@ Completed Date: {row[7] or 'N/A'}
         task_id = item['values'][0]
 
         try:
-            with transaction() as conn:
-                conn.execute('DELETE FROM onboarding_template_tasks WHERE task_id = ?', (task_id,))
+            self.manager.delete_template_task(task_id, actor=_hr.actor(self))
 
             messagebox.showinfo(_t('gui.staff.staff_hr.onboarding.dialogs.success', default="Success"), _t('gui.staff.staff_hr.onboarding.dialogs.task_deleted', default="Task deleted"))
             reload_func()
 
         except Exception as e:
-            messagebox.showerror(_t('gui.staff.staff_hr.onboarding.dialogs.error', default="Error"), f"Failed to delete task: {e}")
+            messagebox.showerror(_err(), f"Failed to delete task: {e}")
 
     def _view_assignment_details(self, event=None):
         """View assignment details."""
@@ -1044,15 +923,21 @@ Status: {values[7]}
         """
         messagebox.showinfo(_t('gui.staff.staff_hr.onboarding.dialogs.assignment_details', default="Assignment Details"), details.strip())
 
+    def _fill_template_tasks(self, tasks_tree, template_id):
+        """(Re)fill a template's task list."""
+        tasks_tree.delete(*tasks_tree.get_children())
+        for row in self.manager.get_template_tasks(template_id):
+            values = (row['task_id'], row['title'], row['category'] or '-',
+                      row['assigned_to_role'] or '-', row['due_days'] or '-',
+                      'Yes' if row['is_required'] else 'No', row['order_num'])
+            tasks_tree.insert('', 'end', values=values)
+
     def _get_active_templates(self) -> dict:
         """Get active templates as {name: id} dict."""
         templates = {}
         try:
-            with get_connection() as conn:
-                cursor = conn.cursor()
-                cursor.execute('SELECT template_id, name FROM onboarding_templates WHERE is_active = 1 ORDER BY name')
-                for row in cursor.fetchall():
-                    templates[row[1]] = row[0]
+            for row in self.manager.get_templates():
+                templates[row['name']] = row['template_id']
         except Exception:
             logger.debug("Suppressed exception", exc_info=True)
         return templates
@@ -1063,5 +948,5 @@ def launch_onboarding_gui(root, auth):
     try:
         return OnboardingGUI(root, auth)
     except Exception as e:
-        messagebox.showerror(_t('gui.staff.staff_hr.onboarding.dialogs.error', default="Error"), f"Failed to launch Onboarding GUI: {e}")
+        messagebox.showerror(_err(), f"Failed to launch Onboarding GUI: {e}")
         return None

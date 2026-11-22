@@ -19,8 +19,10 @@ of stages:
 
 **Auto** stages are recomputed from the live domain tables every time
 the pipeline is read, so they're never stale. **Manual** stages carry a
-sign-off (who + when) and persist. Each stage has an optional due date
-so the workflow doubles as a deadline tracker.
+sign-off (who + when) and persist. Each stage has a due date so the
+workflow doubles as a deadline tracker: set automatically from the
+cycle's UCAS deadlines and the application's choices (``deadlines.py``),
+unless somebody types one, which then sticks.
 """
 
 from __future__ import annotations
@@ -109,6 +111,16 @@ def init_db() -> None:
     _students.init_db()
     with _connect() as conn:
         conn.executescript(_SCHEMA)
+        # ``due_source`` says who set a stage's due date: 'auto' (from the
+        # cycle's UCAS deadlines, see deadlines.py) or 'manual'. NULL on
+        # rows written before it existed — a date already there is then
+        # treated as hand-entered and never overwritten.
+        cols = {r["name"] for r in conn.execute(
+            "PRAGMA table_info(ucas_workflow_stages)")}
+        if "due_source" not in cols:
+            conn.execute(
+                "ALTER TABLE ucas_workflow_stages ADD COLUMN due_source TEXT")
+        conn.commit()
     _DB_READY = True
     logger.debug("UCAS-workflow schema ready at %s", DB_PATH)
 
@@ -205,6 +217,17 @@ def get_pipeline(student_id: str, cycle_year: int | None = None) -> dict[str, An
     """
     init_db()
     cycle_year = cycle_year or default_cycle_year()
+    # Due dates from the cycle's UCAS deadlines and this application's
+    # choices. Worked out before the write connection opens, and a
+    # failure only costs the automatic dates, never the pipeline.
+    try:
+        from education_system.systems.sixth_form.domain.progression.university import (
+            deadlines as _deadlines,
+        )
+        auto_due = _deadlines.stage_due_dates(student_id, cycle_year)
+    except Exception:
+        logger.debug("Automatic UCAS due dates unavailable", exc_info=True)
+        auto_due = {}
     with _connect() as conn:
         srow = conn.execute(
             "SELECT first_name, last_name FROM students WHERE student_id=?",
@@ -212,6 +235,13 @@ def get_pipeline(student_id: str, cycle_year: int | None = None) -> dict[str, An
         if not srow:
             raise ValueError(f"Unknown student: {student_id}")
         _ensure_rows(conn, student_id, cycle_year)
+        for key, due in auto_due.items():
+            # Only stages whose date is automatic, or has never been set.
+            conn.execute(
+                "UPDATE ucas_workflow_stages SET due_date=?, due_source='auto' "
+                "WHERE student_id=? AND cycle_year=? AND stage_key=? "
+                "AND (due_source='auto' OR (due_source IS NULL AND due_date IS NULL))",
+                (due, student_id, cycle_year, key))
         # Sync auto stages.
         for d in STAGE_DEFS:
             if not d.auto:
@@ -240,6 +270,7 @@ def get_pipeline(student_id: str, cycle_year: int | None = None) -> dict[str, An
             "status": r["status"], "due_date": r["due_date"],
             "signed_off_by": r["signed_off_by"], "signed_off_at": r["signed_off_at"],
             "notes": r["notes"],
+            "due_source": r["due_source"] if "due_source" in r.keys() else None,
         })
     done = sum(1 for s in stages if s["status"] in (_COMPLETE, "N/A"))
     return {
@@ -294,6 +325,9 @@ def set_stage(student_id: str, stage_key: str, *, cycle_year: int | None = None,
             sets.append("signed_off_at=?"); params.append(signed_at)
         if due_date is not None:
             sets.append("due_date=?"); params.append(due_date or None)
+            # A typed date is the user's and the automatic deadlines leave
+            # it alone; clearing it hands the stage back to them.
+            sets.append("due_source=?"); params.append("manual" if due_date else None)
         if notes is not None:
             sets.append("notes=?"); params.append(notes or None)
         if not sets:

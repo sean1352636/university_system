@@ -352,8 +352,79 @@ def update_department(department_id: int,
     return get_department(department_id)
 
 
-def delete_department(department_id: int) -> bool:
+class DepartmentHasRecords(ValidationError):
+    """Refused: deleting this department would destroy its history."""
+
+    def __init__(self, department_id: int, counts: dict[str, int]):
+        from education_system.systems.sixth_form.infrastructure.record_links import (
+            describe,
+        )
+        self.department_id = department_id
+        self.counts = counts
+        super().__init__(
+            f"Department #{department_id} has linked records "
+            f"({describe(counts)}). Deleting it would destroy its budget "
+            f"history — set its status to Archived or Disbanded instead.")
+
+
+def linked_record_counts(department_id: int) -> dict[str, int]:
+    """``{table/area: rows}`` a delete would lose: budget lines and
+    members (CASCADE), receipt lines and trips filed against it, and
+    staff, expense claims and vacancies naming it in their department."""
+    from education_system.systems.sixth_form.infrastructure import (
+        record_links as _links,
+    )
     init_db()
+    with _connect() as conn:
+        d = conn.execute("SELECT name, code FROM departments "
+                         "WHERE department_id=?", (department_id,)).fetchone()
+        if d is None:
+            return {}
+        hard = _links.cascade_counts(conn, "departments", "department_id",
+                                     department_id)
+        soft = _links.soft_counts(
+            conn, (("receipt_lines", "department_id"),
+                   ("trips", "department_id")), department_id)
+        names = [str(v).strip().lower() for v in (d["name"], d["code"]) if v]
+        by_name: dict[str, int] = {}
+        for table in ("staff", "expense_claims", "vacancies"):
+            if not _links.has_table(conn, table) or \
+                    "department" not in _links.columns(conn, table):
+                continue
+            ph = ",".join("?" * len(names))
+            # db-audit: ignore[DBW001] - table names are constants from the tuple above
+            n = conn.execute(
+                f"SELECT COUNT(*) FROM {table} "
+                f"WHERE LOWER(TRIM(department)) IN ({ph})", names).fetchone()[0]
+            if n:
+                by_name[table] = int(n)
+    return _links.merge(hard, soft, by_name)
+
+
+def _require_delete_permission() -> None:
+    """Only governance / finance staff (or admins) may delete a department."""
+    from education_system.systems.sixth_form.domain.governance.user_management import (
+        access,
+    )
+    p = access.current()
+    if not (p.can(access.GOVERNANCE) or p.can(access.FINANCE)):
+        p.require(access.GOVERNANCE, "deleting a department")
+
+
+def delete_department(department_id: int) -> bool:
+    """Delete a department created by mistake.
+
+    Needs the governance or finance capability, and is refused with
+    :class:`DepartmentHasRecords` while budget lines, receipts, members
+    or staff are linked — set the status to Archived / Disbanded then.
+    """
+    _require_delete_permission()
+    init_db()
+    linked = linked_record_counts(department_id)
+    if linked:
+        logger.warning("delete_department(%d) refused: %s",
+                       department_id, linked)
+        raise DepartmentHasRecords(department_id, linked)
     with _connect() as conn:
         cur = conn.execute(
             "DELETE FROM departments WHERE department_id=?",

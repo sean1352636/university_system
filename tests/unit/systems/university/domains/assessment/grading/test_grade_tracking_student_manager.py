@@ -52,8 +52,8 @@ def mock_app(mock_root, mock_auth, mock_conn):
 @pytest.fixture
 def student_manager(mock_app):
     """Create StudentManager instance with mocked dependencies"""
-    with patch('education_system.systems.university.domains.academics.interfaces.gui.grade_tracking.student_manager.get_connection', return_value=mock_app.conn):
-        from education_system.systems.university.domains.academics.interfaces.gui.grade_tracking.student_manager import StudentManager
+    with patch('education_system.systems.university.domains.assessment.interfaces.gui.grade_tracking.student_manager.get_connection', return_value=mock_app.conn):
+        from education_system.systems.university.domains.assessment.interfaces.gui.grade_tracking.student_manager import StudentManager
         manager = StudentManager(mock_app)
         return manager
 
@@ -62,8 +62,8 @@ class TestStudentManagerInitialization:
 
     def test_initialization_with_valid_app(self, mock_app):
         """Test initialization with valid app object"""
-        with patch('education_system.systems.university.domains.academics.interfaces.gui.grade_tracking.student_manager.get_connection', return_value=mock_app.conn):
-            from education_system.systems.university.domains.academics.interfaces.gui.grade_tracking.student_manager import StudentManager
+        with patch('education_system.systems.university.domains.assessment.interfaces.gui.grade_tracking.student_manager.get_connection', return_value=mock_app.conn):
+            from education_system.systems.university.domains.assessment.interfaces.gui.grade_tracking.student_manager import StudentManager
             manager = StudentManager(mock_app)
 
             assert manager.app == mock_app
@@ -88,19 +88,19 @@ class TestDatabaseOperations:
         """Test get_cursor creates new connection when needed"""
         mock_app.conn = None
 
-        with patch('education_system.systems.university.domains.academics.interfaces.gui.grade_tracking.student_manager.get_connection') as mock_get_conn:
+        with patch('education_system.systems.university.domains.assessment.interfaces.gui.grade_tracking.student_manager.get_connection') as mock_get_conn:
             new_conn = Mock(spec=sqlite3.Connection)
             new_cursor = Mock(spec=sqlite3.Cursor)
             new_conn.cursor.return_value = new_cursor
             mock_get_conn.return_value = new_conn
 
-            from education_system.systems.university.domains.academics.interfaces.gui.grade_tracking.student_manager import StudentManager
+            from education_system.systems.university.domains.assessment.interfaces.gui.grade_tracking.student_manager import StudentManager
             manager = StudentManager(mock_app)
             cursor = manager.get_cursor()
 
             assert cursor is not None
 
-    @patch('education_system.systems.university.domains.academics.interfaces.gui.grade_tracking.student_manager.get_connection')
+    @patch('education_system.systems.university.domains.assessment.interfaces.gui.grade_tracking.student_manager.get_connection')
     def test_refresh_students(self, mock_get_conn, student_manager, mock_conn):
         """Test refresh students functionality"""
         cursor = Mock()
@@ -128,7 +128,7 @@ class TestDatabaseOperations:
 class TestStudentSearch:
     """Test student search functionality"""
 
-    @patch('education_system.systems.university.domains.academics.interfaces.gui.grade_tracking.student_manager.get_connection')
+    @patch('education_system.systems.university.domains.assessment.interfaces.gui.grade_tracking.student_manager.get_connection')
     def test_search_students_with_term(self, mock_get_conn, student_manager, mock_conn):
         """Test searching students with search term"""
         cursor = Mock()
@@ -151,7 +151,7 @@ class TestStudentSearch:
         # Verify search query was executed
         cursor.execute.assert_called_once()
 
-    @patch('education_system.systems.university.domains.academics.interfaces.gui.grade_tracking.student_manager.get_connection')
+    @patch('education_system.systems.university.domains.assessment.interfaces.gui.grade_tracking.student_manager.get_connection')
     def test_search_students_empty_term(self, mock_get_conn, student_manager, mock_conn):
         """Test searching students with empty search term"""
         cursor = Mock()
@@ -175,10 +175,10 @@ class TestStudentSearch:
 class TestImportExport:
     """Test import and export functionality"""
 
-    @patch('education_system.systems.university.domains.academics.interfaces.gui.grade_tracking.student_manager.filedialog')
-    @patch('education_system.systems.university.domains.academics.interfaces.gui.grade_tracking.student_manager.messagebox')
+    @patch('education_system.systems.university.domains.assessment.interfaces.gui.grade_tracking.student_manager.filedialog')
+    @patch('education_system.systems.university.domains.assessment.interfaces.gui.grade_tracking.student_manager.messagebox')
     @patch('builtins.open', create=True)
-    @patch('education_system.systems.university.domains.academics.interfaces.gui.grade_tracking.student_manager.get_connection')
+    @patch('education_system.systems.university.domains.assessment.interfaces.gui.grade_tracking.student_manager.get_connection')
     def test_import_students_success(self, mock_get_conn, mock_open_func, mock_msgbox, mock_filedialog, student_manager, mock_conn):
         """Test successful student import"""
         mock_filedialog.askopenfilename.return_value = '/path/to/students.csv'
@@ -202,10 +202,10 @@ class TestImportExport:
         # For now, we'll just test that the file dialog is called
         assert mock_filedialog is not None
 
-    @patch('education_system.systems.university.domains.academics.interfaces.gui.grade_tracking.student_manager.filedialog')
-    @patch('education_system.systems.university.domains.academics.interfaces.gui.grade_tracking.student_manager.messagebox')
+    @patch('education_system.systems.university.domains.assessment.interfaces.gui.grade_tracking.student_manager.filedialog')
+    @patch('education_system.systems.university.domains.assessment.interfaces.gui.grade_tracking.student_manager.messagebox')
     @patch('builtins.open', create=True)
-    @patch('education_system.systems.university.domains.academics.interfaces.gui.grade_tracking.student_manager.get_connection')
+    @patch('education_system.systems.university.domains.assessment.interfaces.gui.grade_tracking.student_manager.get_connection')
     def test_export_students_success(self, mock_get_conn, mock_open_func, mock_msgbox, mock_filedialog, student_manager, mock_conn):
         """Test successful student export"""
         mock_filedialog.asksaveasfilename.return_value = '/path/to/export.csv'
@@ -230,8 +230,8 @@ class TestImportExport:
 class TestReportGeneration:
     """Test report generation functionality"""
 
-    @patch('education_system.systems.university.domains.academics.interfaces.gui.grade_tracking.student_manager.get_connection')
-    @patch('education_system.systems.university.domains.academics.interfaces.gui.grade_tracking.student_manager.messagebox')
+    @patch('education_system.systems.university.domains.assessment.interfaces.gui.grade_tracking.student_manager.get_connection')
+    @patch('education_system.systems.university.domains.assessment.interfaces.gui.grade_tracking.student_manager.messagebox')
     def test_generate_student_progress_report(self, mock_msgbox, mock_get_conn, student_manager, mock_conn):
         """Test student progress report generation"""
         cursor = Mock()
@@ -249,8 +249,8 @@ class TestReportGeneration:
         # Verify database queries were executed
         assert cursor.execute.called
 
-    @patch('education_system.systems.university.domains.academics.interfaces.gui.grade_tracking.student_manager.get_connection')
-    @patch('education_system.systems.university.domains.academics.interfaces.gui.grade_tracking.student_manager.messagebox')
+    @patch('education_system.systems.university.domains.assessment.interfaces.gui.grade_tracking.student_manager.get_connection')
+    @patch('education_system.systems.university.domains.assessment.interfaces.gui.grade_tracking.student_manager.messagebox')
     def test_generate_at_risk_report(self, mock_msgbox, mock_get_conn, student_manager, mock_conn):
         """Test at-risk students report generation"""
         cursor = Mock()
@@ -304,10 +304,10 @@ class TestFilterFunctionality:
 class TestHelperFunctions:
     """Test helper functions"""
 
-    @patch('education_system.systems.university.domains.academics.interfaces.gui.grade_tracking.student_manager.get_connection')
+    @patch('education_system.systems.university.domains.assessment.interfaces.gui.grade_tracking.student_manager.get_connection')
     def test_init_basic_database(self, mock_get_conn, mock_conn):
         """Test basic database initialization"""
-        from education_system.systems.university.domains.academics.interfaces.gui.grade_tracking.student_manager import init_basic_database
+        from education_system.systems.university.domains.assessment.interfaces.gui.grade_tracking.student_manager import init_basic_database
 
         cursor = Mock()
         mock_conn.cursor.return_value = cursor
@@ -318,10 +318,10 @@ class TestHelperFunctions:
         assert result is True
         assert cursor.execute.called
 
-    @patch('education_system.systems.university.domains.academics.interfaces.gui.grade_tracking.student_manager.get_connection')
+    @patch('education_system.systems.university.domains.assessment.interfaces.gui.grade_tracking.student_manager.get_connection')
     def test_init_enhanced_grades_db(self, mock_get_conn, mock_conn):
         """Test enhanced grades database initialization"""
-        from education_system.systems.university.domains.academics.interfaces.gui.grade_tracking.student_manager import init_enhanced_grades_db
+        from education_system.systems.university.domains.assessment.interfaces.gui.grade_tracking.student_manager import init_enhanced_grades_db
 
         cursor = Mock()
         mock_conn.cursor.return_value = cursor
@@ -334,7 +334,7 @@ class TestHelperFunctions:
 
     def test_percentage_to_letter(self):
         """Test percentage to letter grade conversion"""
-        from education_system.systems.university.domains.academics.interfaces.gui.grade_tracking.student_manager import percentage_to_letter
+        from education_system.systems.university.domains.assessment.interfaces.gui.grade_tracking.student_manager import percentage_to_letter
 
         assert percentage_to_letter(95) == 'A+'
         assert percentage_to_letter(87) == 'A'
@@ -343,7 +343,7 @@ class TestHelperFunctions:
 
     def test_letter_to_gpa(self):
         """Test letter grade to GPA conversion"""
-        from education_system.systems.university.domains.academics.interfaces.gui.grade_tracking.student_manager import letter_to_gpa
+        from education_system.systems.university.domains.assessment.interfaces.gui.grade_tracking.student_manager import letter_to_gpa
 
         assert letter_to_gpa('A+') == 4.3
         assert letter_to_gpa('A') == 4.0

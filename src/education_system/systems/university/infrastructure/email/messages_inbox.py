@@ -49,6 +49,39 @@ def _system_sender_id(cursor):
     return row[0] if row else None
 
 
+def _valid_sender(cursor, sender_id):
+    """``sender_id`` when it is a university profile, else the system sender.
+    An unknown id (e.g. a central auth id from the other id space) would
+    leave a dangling reference that a profile created later would inherit."""
+    if sender_id is not None:
+        cursor.execute("SELECT id FROM users WHERE id = ?", (sender_id,))
+        found = cursor.fetchone()
+        if found:
+            return found[0]
+    return _system_sender_id(cursor)
+
+
+def deliver_inbox_message_on(conn, recipient_ref, subject, body, sender_id=None):
+    """:func:`deliver_inbox_message` inside the caller's transaction.
+
+    For notices that must land with the change that caused them (and roll
+    back with it). Returns the message id, or ``None`` when the recipient has
+    no account. Database errors propagate to the caller.
+    """
+    cur = conn.cursor()
+    recipient_id = _resolve_user_id(cur, recipient_ref)
+    if recipient_id is None:
+        return None
+    sender = _valid_sender(cur, sender_id)
+    cur.execute(
+        "INSERT INTO messages "
+        "(sender_id, recipient_id, subject, message, content, is_read, sent_at) "
+        "VALUES (?, ?, ?, ?, ?, 0, datetime('now'))",
+        (sender, recipient_id, subject, body, body),
+    )
+    return cur.lastrowid
+
+
 def deliver_inbox_message(recipient_ref, subject, body, sender_id=None):
     """Insert an unread message into ``messages`` for ``recipient_ref``.
 
@@ -63,7 +96,7 @@ def deliver_inbox_message(recipient_ref, subject, body, sender_id=None):
             if recipient_id is None:
                 logger.debug("inbox delivery skipped: no user for ref=%r", recipient_ref)
                 return None
-            sender = sender_id if sender_id is not None else _system_sender_id(cur)
+            sender = _valid_sender(cur, sender_id)
             cur.execute(
                 "INSERT INTO messages "
                 "(sender_id, recipient_id, subject, message, content, is_read, sent_at) "

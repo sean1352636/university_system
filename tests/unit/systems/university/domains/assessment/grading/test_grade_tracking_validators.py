@@ -4,7 +4,7 @@ Tests all validation utilities for grade tracking
 """
 
 import pytest
-from education_system.systems.university.domains.academics.interfaces.gui.grade_tracking.utils.validators import (
+from education_system.systems.university.domains.assessment.interfaces.gui.grade_tracking.utils.validators import (
     validate_grade,
     validate_gpa,
     validate_percentage

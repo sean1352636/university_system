@@ -156,12 +156,9 @@ The system will warn you about:
 ## 📞 Quick Reference Commands
 
 ```bash
-# Run the exam scheduler
-python -m university_system.modules.domain.academics.gui.exam_scheduler
-
-# Or through main GUI
-python -m education_system --gui
-# Navigate to: Academics → Exam Scheduler
+# Through the main GUI
+python -m education_system --university --gui
+# Open Exam Management, then its Scheduling tab
 ```
 
 ---
@@ -255,5 +252,5 @@ python -m education_system --gui
 ---
 
 **Print this guide for quick reference!**
-**Bookmark this file:** `university_system/modules/domain/academics/gui/EXAM_SCHEDULER_QUICK_GUIDE.md`
+**Bookmark this file:** `docs/university/guides/academics/EXAM_SCHEDULER_GUIDE.md`
 

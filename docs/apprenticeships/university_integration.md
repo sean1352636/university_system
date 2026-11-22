@@ -1,6 +1,6 @@
 # University Integration
 
-Where apprenticeships meets the other five systems — and, specifically,
+Where apprenticeships meets the other six systems — and, specifically,
 where a higher apprentice meets a degree.
 
 Two distinct things share this page because they are easy to confuse:
@@ -17,7 +17,7 @@ Two distinct things share this page because they are easy to confuse:
 
 Secondary, sixth form, FE college and university all feed
 apprenticeships, and a completed higher apprentice can go on to a
-degree. `infrastructure/integrations/cross_system_adapter.py` is this system's side of
+degree. `src/education_system/systems/apprenticeships/infrastructure/integrations/cross_system_adapter.py` is this system's side of
 the platform's four-method transition contract
 (`platform.cross_system.adapters.base.PhaseAdapter`).
 
@@ -79,7 +79,7 @@ Normal operation is event-driven. University publishes registration, credit and
 award snapshots over the durable cross-system bus; apprenticeships consumes
 them into ``degree_academic_progress_projection`` for its dashboard. The
 projection is replaceable and never becomes the source used to award a degree.
-``infrastructure/integrations/university_gateway.py`` remains an explicit read-only verifier for
+``src/education_system/systems/apprenticeships/infrastructure/integrations/university_gateway.py`` remains an explicit read-only verifier for
 imports, diagnostics and tests, not the normal runtime connection.
 
 The apprenticeship database owns two association tables:

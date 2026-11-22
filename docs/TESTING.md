@@ -1,7 +1,7 @@
 # Testing Guide
 
 This is the **top-level entry point** for running the Education
-System's test suite. The repository contains 800+ test files organized first
+System's test suite. The repository contains about 1,000 Python files under `tests/`, organized first
 by test scope and then by the production code that owns the behavior.
 
 For deeper, system-specific testing notes, see:
@@ -162,11 +162,11 @@ and venvs are excluded from the source tree.
 
 | Target | Used by |
 |--------|---------|
-| `make ci` | `clean + lint + test-cov + security-scan` — full CI gate |
+| `make ci` | `clean + lint + test-cov + security-scan + supply-chain-check` — full CI gate |
 | `make check` | `lint + test` — quick local pre-commit check |
-| `make security-scan` | `bandit -r education_system/ -c pyproject.toml -lll` |
-| `make lint` | `ruff check education_system/` |
-| `make type-check` | `mypy education_system/ --ignore-missing-imports` |
+| `make security-scan` | `bandit -r src/education_system/ -c pyproject.toml -lll` |
+| `make lint` | `ruff check src/education_system/` |
+| `make type-check` | `mypy src/education_system/ --ignore-missing-imports` |
 
 ---
 

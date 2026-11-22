@@ -19,11 +19,9 @@ from education_system.systems.apprenticeships import config
 from education_system.systems.apprenticeships.domain.progress.assignments import Assignment
 from education_system.systems.apprenticeships.interfaces.cli import prompts
 from education_system.systems.apprenticeships.interfaces.cli.commands import apprentices
-from education_system.systems.apprenticeships.services import (
-    assignment_service,
-    portfolio_service,
-)
-from education_system.systems.apprenticeships.services.access import Actor
+from education_system.systems.apprenticeships.application.assessments import portfolio_service
+from education_system.systems.apprenticeships.application.learning import assignment_service
+from education_system.systems.apprenticeships.application.security.access import Actor
 
 logger = logging.getLogger(__name__)
 

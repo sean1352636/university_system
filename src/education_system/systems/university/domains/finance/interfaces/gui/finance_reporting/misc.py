@@ -995,8 +995,10 @@ def generate_advanced_financial_forecasting():
     """Enhanced financial forecasting with ML and advanced analytics"""
     try:
         from education_system.systems.university.infrastructure.database.db import get_connection
-        from datetime import datetime, timedelta
-        import random
+        from datetime import datetime
+        from education_system.systems.university.domains.finance.domain.reporting.forecast_projections import (
+            BACKTEST_MONTHS, complete_monthly_series, monthly_revenue_history, trend_forecast,
+        )
 
         print("=" * 80)
         print(" " * 20 + "ADVANCED FINANCIAL FORECASTING")
@@ -1020,61 +1022,74 @@ def generate_advanced_financial_forecasting():
         ''')
         monthly_revenue = cursor.fetchone()[0] or 0.0
 
+        # Complete months of completed payments (gaps are real zero months;
+        # the current part-month is left out so it cannot skew the trend).
+        series = complete_monthly_series(monthly_revenue_history(24))
+        forecast = trend_forecast(series, horizon=12)
+
         print(f"  • Historical Annual Revenue: £{annual_revenue:,.2f}")
         print(f"  • Last Month Revenue: £{monthly_revenue:,.2f}")
-        print("  • Data Points Analyzed: 12 months")
+        print(f"  • Data Points Analyzed: {len(series)} complete month(s)"
+              + (f" ({series[0][0]} to {series[-1][0]})" if series else ""))
         print("")
 
         # Calculate growth trends
         print("[2/5] Calculating growth trends...")
-        base_monthly = annual_revenue / 12 if annual_revenue > 0 else 100000
-        growth_rate = ((monthly_revenue - base_monthly) / base_monthly * 100) if base_monthly > 0 else 2.5
-
-        print(f"  • Monthly Average (Historical): £{base_monthly:,.2f}")
-        print(f"  • Growth Rate (Month-over-Month): {growth_rate:+.2f}%")
-        print(f"  • Trend: {'Positive' if growth_rate > 0 else 'Negative' if growth_rate < 0 else 'Stable'}")
+        if forecast["slope"] is None:
+            growth_rate = 0.0
+            for note in forecast["notes"]:
+                print(f"  ⚠ {note}")
+        else:
+            fitted = [v for _, v in series[-forecast["months_used"]:]]
+            base_monthly = sum(fitted) / len(fitted)
+            # Trend slope as a share of the average month it was fitted to.
+            growth_rate = (forecast["slope"] / base_monthly * 100) if base_monthly > 0 else 0.0
+            print(f"  • Monthly Average (last {forecast['months_used']} months): £{base_monthly:,.2f}")
+            print(f"  • Trend: £{forecast['slope']:+,.2f} per month ({growth_rate:+.2f}% of the average)")
+            print(f"  • Direction: {'Positive' if growth_rate > 0 else 'Negative' if growth_rate < 0 else 'Stable'}")
         print("")
 
         # Generate forecasts
         print("[3/5] Generating 12-month forecast...")
-        forecasted_revenue = 0
-        current_value = monthly_revenue if monthly_revenue > 0 else base_monthly
-
-        print("  Month-by-Month Projections:")
-        for i in range(1, 13):
-            # Apply growth rate with some variation
-            month_forecast = current_value * (1 + (growth_rate / 100) + random.uniform(-0.01, 0.01))
-            forecasted_revenue += month_forecast
-            current_value = month_forecast
-
-            if i <= 6:  # Show first 6 months in detail
-                month_name = (datetime.now() + timedelta(days=30*i)).strftime('%B %Y')
-                print(f"    {month_name}: £{month_forecast:,.2f}")
-
-        if forecasted_revenue < annual_revenue:
-            forecasted_revenue = annual_revenue * 1.05  # Ensure positive projection
-
-        print("  ... (6 more months)")
-        print("")
-        print(f"  Total 12-Month Projection: £{forecasted_revenue:,.2f}")
+        if not forecast["projections"]:
+            print("  No forecast: not enough payment history (see above).")
+        else:
+            print("  Month-by-Month Projections (linear trend):")
+            for ym, value in forecast["projections"][:6]:
+                month_name = datetime.strptime(ym, "%Y-%m").strftime('%B %Y')
+                print(f"    {month_name}: £{value:,.2f}")
+            print("  ... (6 more months)")
+            print("")
+            print(f"  Total 12-Month Projection: £{forecast['total']:,.2f}")
         print("")
 
-        # Model accuracy and confidence
+        # Model accuracy from a back-test against months that already happened
         print("[4/5] Model performance metrics...")
-        accuracy = 92.5 + random.uniform(-2, 2)
-        confidence = 87.0 + random.uniform(-3, 3)
-
-        print("  • Model Type: Time Series with Regression")
-        print(f"  • Forecast Accuracy: {accuracy:.1f}%")
-        print(f"  • Confidence Interval: {confidence:.1f}%")
-        print("  • Training Data: 24 months historical")
+        print("  • Model Type: Least-squares linear trend over up to 12 complete months")
+        if forecast["backtest"]:
+            print(f"  • Back-test: each of the last {BACKTEST_MONTHS} months forecast from earlier months only")
+            for ym, predicted, actual in forecast["backtest"]:
+                print(f"      {ym}: forecast £{predicted:,.2f} vs actual £{actual:,.2f}")
+        if forecast["accuracy"] is not None:
+            print(f"  • Forecast Accuracy: {forecast['accuracy']:.1f}% (100 − WAPE {forecast['wape']:.1f}%)")
+        if forecast["rmse"] is not None and forecast["projections"]:
+            band = 1.96 * forecast["rmse"]
+            first = forecast["projections"][0][1]
+            print(f"  • 95% Range, next month: £{max(0.0, first - band):,.2f} – £{first + band:,.2f}"
+                  f" (±1.96 × back-test RMSE £{forecast['rmse']:,.2f})")
+        for note in forecast["notes"]:
+            if forecast["slope"] is not None:
+                print(f"  ⚠ {note}")
+        print(f"  • Training Data: {len(series)} complete month(s) of completed payments")
         print("")
 
         # Key insights
         print("[5/5] Key insights and recommendations...")
         print("  INSIGHTS:")
 
-        if growth_rate > 2:
+        if forecast["slope"] is None:
+            print("    ⚠ Not enough payment history to judge the revenue trend yet")
+        elif growth_rate > 2:
             print("    ✓ Strong growth trajectory detected")
             print("    ✓ Revenue expansion opportunities identified")
         elif growth_rate > 0:
@@ -1107,7 +1122,9 @@ def generate_comprehensive_budget_variance_report():
     try:
         from education_system.systems.university.infrastructure.database.db import get_connection
         from datetime import datetime
-        import random
+        from education_system.systems.university.domains.finance.domain.reporting.forecast_projections import (
+            budget_variance,
+        )
 
         # Create report window
         report_window = tk.Toplevel()
@@ -1134,150 +1151,126 @@ def generate_comprehensive_budget_variance_report():
         conn = get_connection()
         cursor = conn.cursor()
 
-        # Get budget variance data from Finance Management tables
+        # Budget vs actual for the current budget plan (Finance Management
+        # tables; revenue actuals from completed payments in the plan's year).
         report_content.append("[1/4] Analyzing budget variance...")
-
-        # Use budget_plans, budget_categories, and budget_line_items (Finance Management tables)
-        cursor.execute('''
-            SELECT
-                bc.category_name,
-                SUM(bli.budgeted_amount) as budgeted,
-                SUM(bli.actual_amount) as actual
-            FROM budget_line_items bli
-            JOIN budget_categories bc ON bli.category_id = bc.category_id
-            JOIN budget_plans bp ON bli.budget_id = bp.budget_id
-            WHERE bp.academic_year = ?
-            GROUP BY bc.category_name
-            ORDER BY budgeted DESC
-        ''', (f"{datetime.now().year}-{datetime.now().year + 1}",))
-        budget_data = cursor.fetchall()
-
-        # Fallback 1: If no budget data, try current year only
-        if not budget_data:
-            cursor.execute('''
-                SELECT
-                    bc.category_name,
-                    SUM(bli.budgeted_amount) as budgeted,
-                    SUM(bli.actual_amount) as actual
-                FROM budget_line_items bli
-                JOIN budget_categories bc ON bli.category_id = bc.category_id
-                GROUP BY bc.category_name
-                ORDER BY budgeted DESC
-            ''')
-            budget_data = cursor.fetchall()
-
-        # Fallback 2: Use student fees (revenue) vs payments (collection) by course
-        if not budget_data:
-            report_content.append("  ⚠ No budget plan data found, using student fees/payments as proxy...")
-            cursor.execute('''
-                SELECT
-                    COALESCE(s.course, 'Unknown') as category,
-                    SUM(sf.amount) as budgeted_fees,
-                    SUM(CASE WHEN p.status = 'completed' THEN p.amount ELSE 0 END) as actual_payments
-                FROM student_fees sf
-                JOIN students s ON sf.student_id = s.student_id
-                LEFT JOIN payments p ON s.student_id = p.student_id
-                WHERE s.course IS NOT NULL
-                GROUP BY s.course
-                ORDER BY budgeted_fees DESC
-                LIMIT 10
-            ''')
-            budget_data = cursor.fetchall()
+        variance_data = budget_variance(conn)
+        plan = variance_data["plan"]
+        budget_data = [(name, budgeted, actual) for name, _kind, budgeted, actual in variance_data["rows"]]
 
         if not budget_data:
-            report_content.append("  ⚠ No budget data available")
-            report_content.append("  Using sample data for demonstration...")
-            # Sample data
-            budget_data = [
-                ('Academic Programs', 500000, 485000),
-                ('Student Services', 300000, 312000),
-                ('Facilities', 250000, 248000),
-                ('Administration', 200000, 195000),
-                ('IT Services', 150000, 158000)
-            ]
-
-        total_allocated = sum(row[1] for row in budget_data)
-        total_spent = sum(row[2] for row in budget_data)
-        overall_variance = ((total_spent - total_allocated) / total_allocated * 100) if total_allocated > 0 else 0
-
-        report_content.append(f"  • Total Budget Allocated: £{total_allocated:,.2f}")
-        report_content.append(f"  • Total Spent to Date: £{total_spent:,.2f}")
-        report_content.append(f"  • Overall Variance: {overall_variance:+.2f}%")
-        report_content.append("")
-
-        # Department-level analysis
-        report_content.append("[2/4] Department variance analysis...")
-        report_content.append("")
-        report_content.append(f"  {'Department':<20} {'Allocated':>15} {'Spent':>15} {'Variance':>12}")
-        report_content.append(f"  {'-'*20} {'-'*15} {'-'*15} {'-'*12}")
-
-        over_budget_count = 0
-        under_budget_count = 0
-        variance_details = []
-
-        for dept, allocated, spent in budget_data:
-            variance = ((spent - allocated) / allocated * 100) if allocated > 0 else 0
-            variance_str = f"{variance:+.1f}%"
-
-            if variance > 0:
-                over_budget_count += 1
-                status = "⚠"
-            elif variance < -5:
-                under_budget_count += 1
-                status = "✓"
-            else:
-                status = " "
-
-            report_content.append(f"  {dept:<20} £{allocated:>13,.2f} £{spent:>13,.2f} {variance_str:>11} {status}")
-            variance_details.append((dept, variance, spent - allocated))
-
-        report_content.append("")
-        report_content.append(f"  Departments Over Budget: {over_budget_count}")
-        report_content.append(f"  Departments Significantly Under Budget: {under_budget_count}")
-        report_content.append("")
-
-        # Predictive adjustments
-        report_content.append("[3/4] Recommended budget adjustments...")
-        report_content.append("")
-
-        adjustments = []
-        for dept, variance, diff in variance_details:
-            if variance > 5:  # Over budget by more than 5%
-                adjustments.append((dept, 'increase', abs(diff) * 1.1))
-            elif variance < -10:  # Under budget by more than 10%
-                adjustments.append((dept, 'decrease', abs(diff) * 0.5))
-
-        if adjustments:
-            for i, (dept, action, amount) in enumerate(adjustments[:5], 1):
-                report_content.append(f"  {i}. {dept}: {action.capitalize()} budget by £{amount:,.2f}")
+            report_content.append("  No budget plans with line items are recorded yet.")
+            report_content.append("  Create a budget in Budget Management to see budget against actual.")
         else:
-            report_content.append("  ✓ No significant adjustments needed")
-            report_content.append("  All departments within acceptable variance")
+            report_content.append(f"  • Budget Plan: {plan['name'] or plan['budget_id']} ({plan['academic_year']})")
+            report_content.append(f"  • Revenue actual: completed payments {plan['window'][0]} to before {plan['window'][1]}")
+            report_content.append("  • Expense actuals: as recorded on the budget line items")
 
-        report_content.append("")
+        if budget_data:
+            # Totals and projections are spending: expense lines (revenue sits
+            # in the table but is income, not spend), unless only revenue is budgeted.
+            spend_rows = [(r[2], r[3]) for r in variance_data["rows"] if r[1] != "revenue"] \
+                or [(r[2], r[3]) for r in variance_data["rows"]]
+            total_allocated = sum(row[0] for row in spend_rows)
+            total_spent = sum(row[1] for row in spend_rows)
+            overall_variance = ((total_spent - total_allocated) / total_allocated * 100) if total_allocated > 0 else 0
 
-        # Future projections
-        report_content.append("[4/4] End-of-year projections...")
-        months_passed = datetime.now().month
-        months_remaining = 12 - months_passed
-
-        if months_passed > 0:
-            projected_spending = (total_spent / months_passed) * 12
-            projected_variance = ((projected_spending - total_allocated) / total_allocated * 100) if total_allocated > 0 else 0
-
-            report_content.append(f"  • Current Period: {months_passed} months")
-            report_content.append(f"  • Projected Annual Spending: £{projected_spending:,.2f}")
-            report_content.append(f"  • Projected Year-End Variance: {projected_variance:+.2f}%")
+            report_content.append(f"  • Total Budget Allocated: £{total_allocated:,.2f}")
+            report_content.append(f"  • Total Spent to Date: £{total_spent:,.2f}")
+            report_content.append(f"  • Overall Variance: {overall_variance:+.2f}%")
             report_content.append("")
 
-            if projected_variance > 5:
-                report_content.append("  ⚠ WARNING: Significant overspending projected")
-                report_content.append("    Action required to control spending")
-            elif projected_variance < -5:
-                report_content.append("  ⚠ NOTE: Significant underspending projected")
-                report_content.append("    Consider reallocating unused funds")
+            # Department-level analysis
+            report_content.append("[2/4] Department variance analysis...")
+            report_content.append("")
+            report_content.append(f"  {'Department':<20} {'Allocated':>15} {'Spent':>15} {'Variance':>12}")
+            report_content.append(f"  {'-'*20} {'-'*15} {'-'*15} {'-'*12}")
+
+            over_budget_count = 0
+            under_budget_count = 0
+            variance_details = []
+
+            revenue_flags = []
+            for (dept, allocated, spent), (_n, kind, _b, _a) in zip(budget_data, variance_data["rows"]):
+                variance = ((spent - allocated) / allocated * 100) if allocated > 0 else 0
+                variance_str = f"{variance:+.1f}%"
+
+                if kind == "revenue":
+                    # Income: above budget is favourable, below is adverse.
+                    if variance < -5:
+                        status = "⚠"
+                        revenue_flags.append(f"{dept} is {abs(variance):.1f}% below budget (adverse)")
+                    elif variance > 0:
+                        status = "✓"
+                        revenue_flags.append(f"{dept} is {variance:.1f}% above budget (favourable)")
+                    else:
+                        status = " "
+                    report_content.append(f"  {dept:<20} £{allocated:>13,.2f} £{spent:>13,.2f} {variance_str:>11} {status}")
+                    continue
+                if variance > 0:
+                    over_budget_count += 1
+                    status = "⚠"
+                elif variance < -5:
+                    under_budget_count += 1
+                    status = "✓"
+                else:
+                    status = " "
+
+                report_content.append(f"  {dept:<20} £{allocated:>13,.2f} £{spent:>13,.2f} {variance_str:>11} {status}")
+                variance_details.append((dept, variance, spent - allocated))
+
+            report_content.append("")
+            report_content.append(f"  Departments Over Budget: {over_budget_count}")
+            report_content.append(f"  Departments Significantly Under Budget: {under_budget_count}")
+            for flag in revenue_flags:
+                report_content.append(f"  Revenue: {flag}")
+            report_content.append("")
+
+            # Predictive adjustments
+            report_content.append("[3/4] Recommended budget adjustments...")
+            report_content.append("")
+
+            adjustments = []
+            for dept, variance, diff in variance_details:
+                if variance > 5:  # Over budget by more than 5%
+                    adjustments.append((dept, 'increase', abs(diff) * 1.1))
+                elif variance < -10:  # Under budget by more than 10%
+                    adjustments.append((dept, 'decrease', abs(diff) * 0.5))
+
+            if adjustments:
+                for i, (dept, action, amount) in enumerate(adjustments[:5], 1):
+                    report_content.append(f"  {i}. {dept}: {action.capitalize()} budget by £{amount:,.2f}")
             else:
-                report_content.append("  ✓ Spending on track for fiscal year")
+                report_content.append("  ✓ No significant adjustments needed")
+                report_content.append("  All departments within acceptable variance")
+
+            report_content.append("")
+
+            # Future projections
+            report_content.append("[4/4] End-of-year projections...")
+            # Months of the plan's academic year (September start) elapsed so far.
+            now = datetime.now()
+            year_start = int(plan['window'][0][:4])
+            months_passed = max(0, min(12, (now.year - year_start) * 12 + now.month - 9 + 1))
+            months_remaining = 12 - months_passed
+
+            if months_passed > 0:
+                projected_spending = (total_spent / months_passed) * 12
+                projected_variance = ((projected_spending - total_allocated) / total_allocated * 100) if total_allocated > 0 else 0
+
+                report_content.append(f"  • Current Period: {months_passed} months")
+                report_content.append(f"  • Projected Annual Spending: £{projected_spending:,.2f}")
+                report_content.append(f"  • Projected Year-End Variance: {projected_variance:+.2f}%")
+                report_content.append("")
+
+                if projected_variance > 5:
+                    report_content.append("  ⚠ WARNING: Significant overspending projected")
+                    report_content.append("    Action required to control spending")
+                elif projected_variance < -5:
+                    report_content.append("  ⚠ NOTE: Significant underspending projected")
+                    report_content.append("    Consider reallocating unused funds")
+                else:
+                    report_content.append("  ✓ Spending on track for fiscal year")
 
         report_content.append("")
         conn.close()
@@ -1311,7 +1304,7 @@ def real_time_financial_dashboard():
         print("=" * 80)
         print("")
         print(f"⏱  Dashboard Last Updated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
-        print("🔄 Auto-refresh: Every 5 minutes (simulated for demo)")
+        print("🔄 Snapshot at the time shown above; run the dashboard again to refresh")
         print("")
         print("=" * 80)
         print("")
@@ -1699,10 +1692,13 @@ def test_email_service():
     try:
         # Check if email infrastructure is available
         try:
-            from education_system.systems.university.infrastructure.email.email_service import EmailService
-            email_service = EmailService()
+            from education_system.systems.university.infrastructure.email.email_service import send_email  # noqa: F401
+            from education_system.systems.university.infrastructure.email.config import config as email_config
             print("✓ Email service: Available")
-            print("✓ SMTP configuration: Valid")
+            if email_config.get('smtp_server'):
+                print(f"✓ SMTP configuration: {email_config['smtp_server']}")
+            else:
+                print("⚠️ SMTP configuration: no server set")
             return True
         except ImportError:
             print("⚠️ Email service: Not configured")

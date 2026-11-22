@@ -240,7 +240,7 @@ class CafeInventoryMixin:
             cursor.execute('''
                 SELECT t.transaction_id, m.name, t.quantity_change, t.transaction_type, t.created_at, t.notes
                 FROM transactions t
-                JOIN products m ON t.reference_id = m.id AND m.source_type = 'cafe' AND t.reference_type = 'item'
+                JOIN products m ON t.reference_id = m.product_id AND m.source_type = 'cafe' AND t.reference_type = 'item'
                 WHERE t.source_type = 'cafe_inventory'
                 ORDER BY t.created_at DESC
                 LIMIT 500

@@ -428,23 +428,22 @@ Authentication: Bearer token required in Authorization header
             control_frame = ttk.LabelFrame(main_frame, text=_t('gui.shell.document_manager.menus.labels.server_controls', default="Server Controls"), padding=15)
             control_frame.pack(fill='x', pady=(0, 15))
 
+            # There is no document web server to start (see api_web.NO_DOCUMENT_API);
+            # the status stays "Stopped" and the buttons say why.
+            from education_system.systems.university.shell.gui.document_manager.api_web import NO_DOCUMENT_API
+
             def start_web_server():
-                status_label.config(text=_t('gui.shell.document_manager.menus.text.web_server_status_running', default="Web Server Status: Running"), foreground='green')
-                url_label.config(text=_t('gui.shell.document_manager.menus.text.url_http_localhost_8000', default="URL: http://localhost:8000"), foreground='blue')
-                messagebox.showinfo(_t('gui.shell.document_manager.menus.dialogs.success', default="Success"),
-                                  _t('gui.shell.document_manager.menus.dialogs.web_server_started_successfully_open_your_browser_and_navigate_t', default="Web Server started successfully!\n\n"
-                                  "Open your browser and navigate to:\n"
-                                  "http://localhost:8000"))
-                self.gui.log_event('start', 'web_server', None, {'port': 8000})
+                messagebox.showinfo(_t('gui.shell.document_manager.menus.buttons.start_web_server', default="Start Web Server"),
+                                    _t('gui.shell.document_manager.api_web.dialogs.no_document_api', default=NO_DOCUMENT_API),
+                                    parent=dialog)
 
             def stop_web_server():
-                status_label.config(text=_t('gui.shell.document_manager.menus.text.web_server_status_stopped', default="Web Server Status: Stopped"), foreground='red')
-                messagebox.showinfo(_t('gui.shell.document_manager.menus.dialogs.info', default="Info"), _t('gui.shell.document_manager.menus.dialogs.web_server_stopped', default="Web Server stopped"))
-                self.gui.log_event('stop', 'web_server', None, {})
+                messagebox.showinfo(_t('gui.shell.document_manager.menus.dialogs.info', default="Info"),
+                                    _t('gui.shell.document_manager.menus.dialogs.no_web_server_running',
+                                       default="No document web server is running."), parent=dialog)
 
             def open_browser():
-                import webbrowser
-                webbrowser.open('http://localhost:8000')
+                start_web_server()   # nothing is served, so explain rather than open a dead page
 
             btn_frame = ttk.Frame(control_frame)
             btn_frame.pack()
@@ -478,7 +477,7 @@ Authentication: Bearer token required in Authorization header
             features_text = tk.Text(features_frame, height=15, wrap=tk.WORD, font=('Arial', 10))
             features_text.pack(fill='both', expand=True)
 
-            features_info = """Web Interface Features:
+            features_info = """Planned Web Interface Features:
 
 Student Portal
   - View and upload documents
@@ -508,7 +507,8 @@ Real-time Updates
   - Auto-refresh
   - WebSocket support
 
-Access the web interface at http://localhost:8000 after starting the server.
+These are the planned features. The Document Manager has no web server yet,
+so none of them is available in a browser today.
 """
             features_text.insert('1.0', features_info)
             features_text.config(state='disabled')

@@ -29,12 +29,38 @@ _RTS_METHODS = ("In-person ID check", "IDVT (digital)", "Manual document scan")
 _ENGAGEMENT_METHODS = ("Attendance ≥80%", "Tutor 1:1", "Submitted assessment", "Email reply", "Other")
 
 
+# Fields saved as dates — checked before a save so a typo can't reach UKVI
+# expiry alerts.
+_DATE_FIELDS = ("passport_expiry", "visa_start_date", "visa_expiry_date", "brp_expiry_date")
+
+
 class VisaComplianceGUI:
-    def __init__(self, parent=None, student_id: str | None = None):
+    """``intake`` opens the window for a student who is still being created
+    (Create Student → "on a Student Route visa"): there is no student id yet,
+    so Save hands the entered profile to ``on_save`` and closes, and the
+    caller writes the visa record once the student exists. ``intake`` holds
+    the prefill — ``name``, ``course``, ``programme`` and any visa fields."""
+
+    def __init__(self, parent=None, student_id: str | None = None, *,
+                 intake: dict | None = None, on_save=None):
         self.window = tk.Toplevel(parent) if parent else tk.Tk()
-        self.window.title(_t('gui.governance.compliance.international_compliance.visa_compliance.windows.tier_4_student_route_sponsorship', default="Tier-4 / Student-Route Sponsorship"))
+        self.intake = dict(intake) if intake is not None else None
+        self._on_save = on_save
+        title = _t('gui.governance.compliance.international_compliance.visa_compliance.windows.tier_4_student_route_sponsorship', default="Tier-4 / Student-Route Sponsorship")
+        if self.intake is not None:
+            title = f"{title} — {self.intake.get('name') or 'new student'}"
+        self.window.title(title)
         self.window.geometry("1200x780")
         self.window.minsize(1000, 700)
+        if self.intake is not None and parent is not None:
+            # Modal over Create Student, which holds its own grab; give the
+            # grab back when this window closes.
+            self.window.transient(parent)
+            self.window.bind("<Destroy>", lambda e, p=parent: self._return_grab(e, p), add="+")
+            try:
+                self.window.grab_set()
+            except tk.TclError:
+                pass
 
         try:
             from education_system.systems.university.infrastructure.shared_context import get_auth
@@ -46,6 +72,8 @@ class VisaComplianceGUI:
         self._build_ui()
         if student_id:
             self._load_student()
+        if self.intake is not None:
+            self._prefill_intake()
         self._refresh_expiry_alerts()
         self._refresh_pending_coc()
 
@@ -56,14 +84,38 @@ class VisaComplianceGUI:
     def _build_ui(self):
         top = ttk.Frame(self.window, padding=10)
         top.pack(fill=tk.X)
+        intake = self.intake is not None
         ttk.Label(top, text=_t('gui.governance.compliance.international_compliance.visa_compliance.labels.student_id', default="Student ID:")).pack(side=tk.LEFT)
-        ttk.Entry(top, textvariable=self.current_student_id, width=20).pack(side=tk.LEFT, padx=6)
-        ttk.Button(top, text=_t('gui.governance.compliance.international_compliance.visa_compliance.buttons.load', default="Load"), command=self._load_student).pack(side=tk.LEFT)
-        ttk.Button(top, text=_t('gui.governance.compliance.international_compliance.visa_compliance.buttons.save_update_visa_record', default="Save / Update Visa Record"),
+        id_entry = ttk.Entry(top, textvariable=self.current_student_id, width=20)
+        id_entry.pack(side=tk.LEFT, padx=6)
+        load_btn = ttk.Button(top, text=_t('gui.governance.compliance.international_compliance.visa_compliance.buttons.load', default="Load"), command=self._load_student)
+        load_btn.pack(side=tk.LEFT)
+        save_text = (_t('gui.governance.compliance.international_compliance.visa_compliance.buttons.save_and_return', default="Save and return to Create Student")
+                     if intake else
+                     _t('gui.governance.compliance.international_compliance.visa_compliance.buttons.save_update_visa_record', default="Save / Update Visa Record"))
+        ttk.Button(top, text=save_text,
                    command=self._save_visa_record).pack(side=tk.LEFT, padx=12)
-        ttk.Button(top, text=_t('gui.governance.compliance.international_compliance.visa_compliance.buttons.issue_status_letter', default="Issue Status Letter"),
-                   command=self._open_status_letter).pack(side=tk.LEFT)
+        letter_btn = ttk.Button(top, text=_t('gui.governance.compliance.international_compliance.visa_compliance.buttons.issue_status_letter', default="Issue Status Letter"),
+                                command=self._open_status_letter)
+        letter_btn.pack(side=tk.LEFT)
         ttk.Button(top, text=_t('gui.governance.compliance.international_compliance.visa_compliance.buttons.close', default="Close"), command=self.window.destroy).pack(side=tk.RIGHT)
+        if intake:
+            # No id until the student is saved; the record is written then.
+            self.current_student_id.set("")
+            id_entry.config(state="disabled")
+            load_btn.config(state="disabled")
+            letter_btn.config(state="disabled")
+            who = ttk.Frame(self.window, padding=(10, 0, 10, 6))
+            who.pack(fill=tk.X)
+            ttk.Label(who, text=f"New student: {self.intake.get('name') or '(name not entered yet)'}",
+                      font=('Arial', 11, 'bold')).pack(side=tk.LEFT)
+            if self.intake.get("course"):
+                ttk.Label(who, text=f"   Course: {self.intake['course']}").pack(side=tk.LEFT)
+            ttk.Label(who, text="The student ID is assigned when the student is created; the visa "
+                                "record is saved then. Right-to-study, CAS, engagement and changes "
+                                "can be recorded here afterwards.",
+                      foreground="#555555", wraplength=1150, justify=tk.LEFT).pack(
+                side=tk.TOP, anchor=tk.W, fill=tk.X, pady=(4, 0))
 
         nb = ttk.Notebook(self.window)
         nb.pack(fill=tk.BOTH, expand=True, padx=10, pady=(0, 10))
@@ -136,16 +188,20 @@ class VisaComplianceGUI:
             "tuition_fee_gbp": tk.StringVar(value="0"),
             "living_costs_gbp": tk.StringVar(value="0"),
         }
-        for c, (key, label) in enumerate([
-            ("programme", "Programme"),
-            ("course_start_date", "Start (YYYY-MM-DD)"),
-            ("course_end_date", "End (YYYY-MM-DD)"),
-            ("tuition_fee_gbp", "Tuition £"),
-            ("living_costs_gbp", "Living £"),
+        # Two rows (programme and dates; money and the button) so the
+        # section fits the window on a 1366-pixel-wide screen.
+        for i, (key, label, width) in enumerate([
+            ("programme", "Programme", 34),
+            ("course_start_date", "Start (YYYY-MM-DD)", 14),
+            ("course_end_date", "End (YYYY-MM-DD)", 14),
+            ("tuition_fee_gbp", "Tuition £", 14),
+            ("living_costs_gbp", "Living £", 14),
         ]):
-            ttk.Label(cas, text=label).grid(row=0, column=c * 2, sticky=tk.W, padx=(4, 0))
-            ttk.Entry(cas, textvariable=self.cas_fields[key], width=18).grid(row=0, column=c * 2 + 1, padx=2)
-        ttk.Button(cas, text=_t('gui.governance.compliance.international_compliance.visa_compliance.buttons.issue_cas', default="Issue CAS"), command=self._issue_cas).grid(row=0, column=10, padx=8)
+            r, c = divmod(i, 3)
+            ttk.Label(cas, text=label).grid(row=r, column=c * 2, sticky=tk.W, padx=(4, 0), pady=2)
+            ttk.Entry(cas, textvariable=self.cas_fields[key], width=width).grid(
+                row=r, column=c * 2 + 1, sticky=tk.W, padx=2, pady=2)
+        ttk.Button(cas, text=_t('gui.governance.compliance.international_compliance.visa_compliance.buttons.issue_cas', default="Issue CAS"), command=self._issue_cas).grid(row=1, column=4, columnspan=2, sticky=tk.W, padx=8)
 
         self.cas_list = ttk.Treeview(cas, columns=("cas", "issued", "programme", "fee", "status"),
                                      show="headings", height=4)
@@ -154,7 +210,7 @@ class VisaComplianceGUI:
                             ("status", "Status", 80)]:
             self.cas_list.heading(col, text=txt)
             self.cas_list.column(col, width=w)
-        self.cas_list.grid(row=1, column=0, columnspan=11, sticky=(tk.W, tk.E), pady=(8, 0))
+        self.cas_list.grid(row=2, column=0, columnspan=11, sticky=(tk.W, tk.E), pady=(8, 0))
 
     def _build_engagement_tab(self, nb):
         frame = ttk.Frame(nb, padding=10)
@@ -299,6 +355,71 @@ class VisaComplianceGUI:
     def _sid(self) -> str:
         return self.current_student_id.get().strip()
 
+    def _need_student(self) -> str:
+        """The loaded student id, or "" after saying why the action can't run."""
+        sid = self._sid()
+        if not sid:
+            messagebox.showinfo(
+                _t('gui.governance.compliance.international_compliance.visa_compliance.dialogs.missing', default="Missing"),
+                ("This can be recorded once the student has been created — open Visa "
+                 "Sponsorship from their Student Records right-click menu then."
+                 if self.intake is not None else
+                 _t('gui.governance.compliance.international_compliance.visa_compliance.dialogs.enter_a_student_id_first', default="Enter a student ID first.")),
+                parent=self.window)
+        return sid
+
+    def _return_grab(self, event, parent):
+        if event.widget is not self.window:
+            return
+        try:
+            if parent.winfo_exists():
+                parent.grab_set()
+                parent.focus_set()
+        except tk.TclError:
+            pass
+
+    def _prefill_intake(self):
+        """Fill the visa form from what Create Student already knows."""
+        for k, var in self.visa_fields.items():
+            if k in self.intake and self.intake[k] not in (None, ""):
+                var.set(bool(self.intake[k]) if k == "atas_required" else self.intake[k])
+        if self.intake.get("notes"):
+            self.notes_text.delete("1.0", tk.END)
+            self.notes_text.insert("1.0", self.intake["notes"])
+        if self.intake.get("programme"):
+            self.cas_fields["programme"].set(self.intake["programme"])
+        self.rts_status_label.config(
+            text="Right-to-study: recorded after the student is created", foreground="#555555")
+
+    def _visa_form(self) -> dict:
+        return {
+            "nationality": self.visa_fields["nationality"].get().strip() or None,
+            "passport_number": self.visa_fields["passport_number"].get().strip() or None,
+            "passport_expiry": self.visa_fields["passport_expiry"].get().strip() or None,
+            "visa_type": self.visa_fields["visa_type"].get() or "student_route",
+            "visa_number": self.visa_fields["visa_number"].get().strip() or None,
+            "visa_start_date": self.visa_fields["visa_start_date"].get().strip() or None,
+            "visa_expiry_date": self.visa_fields["visa_expiry_date"].get().strip() or None,
+            "brp_number": self.visa_fields["brp_number"].get().strip() or None,
+            "brp_expiry_date": self.visa_fields["brp_expiry_date"].get().strip() or None,
+            "sponsor_licence_ref": self.visa_fields["sponsor_licence_ref"].get().strip() or None,
+            "atas_required": bool(self.visa_fields["atas_required"].get()),
+            "status": self.visa_fields["status"].get() or "pending",
+            "notes": self.notes_text.get("1.0", tk.END).strip() or None,
+        }
+
+    @staticmethod
+    def _bad_dates(form: dict) -> list[str]:
+        from datetime import date
+        bad = []
+        for key in _DATE_FIELDS:
+            if form.get(key):
+                try:
+                    date.fromisoformat(form[key])
+                except ValueError:
+                    bad.append(key.replace("_", " "))
+        return bad
+
     def _load_student(self):
         sid = self._sid()
         if not sid:
@@ -335,26 +456,25 @@ class VisaComplianceGUI:
             ))
 
     def _save_visa_record(self):
+        form = self._visa_form()
+        bad = self._bad_dates(form)
+        if bad:
+            messagebox.showwarning(
+                _t('gui.governance.compliance.international_compliance.visa_compliance.dialogs.error', default="Error"),
+                "Use YYYY-MM-DD for: " + ", ".join(bad), parent=self.window)
+            return
+        if self.intake is not None:
+            # The student doesn't exist yet: hand the profile back to Create
+            # Student, which writes it once the student id is assigned.
+            if self._on_save is not None:
+                self._on_save(form)
+            self.window.destroy()
+            return
         sid = self._sid()
         if not sid:
             messagebox.showwarning(_t('gui.governance.compliance.international_compliance.visa_compliance.dialogs.missing', default="Missing"), _t('gui.governance.compliance.international_compliance.visa_compliance.dialogs.enter_a_student_id_first', default="Enter a student ID first."))
             return
-        rec = vs.VisaRecord(
-            student_id=sid,
-            nationality=self.visa_fields["nationality"].get() or None,
-            passport_number=self.visa_fields["passport_number"].get() or None,
-            passport_expiry=self.visa_fields["passport_expiry"].get() or None,
-            visa_type=self.visa_fields["visa_type"].get() or "student_route",
-            visa_number=self.visa_fields["visa_number"].get() or None,
-            visa_start_date=self.visa_fields["visa_start_date"].get() or None,
-            visa_expiry_date=self.visa_fields["visa_expiry_date"].get() or None,
-            brp_number=self.visa_fields["brp_number"].get() or None,
-            brp_expiry_date=self.visa_fields["brp_expiry_date"].get() or None,
-            sponsor_licence_ref=self.visa_fields["sponsor_licence_ref"].get() or None,
-            atas_required=bool(self.visa_fields["atas_required"].get()),
-            status=self.visa_fields["status"].get() or "pending",
-            notes=self.notes_text.get("1.0", tk.END).strip() or None,
-        )
+        rec = vs.VisaRecord(student_id=sid, **form)
         try:
             vs.upsert_visa_record(rec)
             messagebox.showinfo(_t('gui.governance.compliance.international_compliance.visa_compliance.dialogs.saved', default="Saved"), f"Visa record saved for {sid}.")
@@ -363,7 +483,7 @@ class VisaComplianceGUI:
             messagebox.showerror(_t('gui.governance.compliance.international_compliance.visa_compliance.dialogs.error', default="Error"), str(exc))
 
     def _record_rts(self):
-        sid = self._sid()
+        sid = self._need_student()
         if not sid:
             return
         try:
@@ -389,7 +509,7 @@ class VisaComplianceGUI:
             )
             return
         try:
-            from education_system.systems.university.domains.pastoral.interfaces.gui.student_app.documentation.documentation_gui import DocumentationGUI
+            from education_system.systems.university.domains.student_life.interfaces.gui.student_app.documentation.documentation_gui import DocumentationGUI
             DocumentationGUI(
                 parent=self.window,
                 auth=self.auth,
@@ -402,7 +522,7 @@ class VisaComplianceGUI:
             messagebox.showerror(_t('gui.governance.compliance.international_compliance.visa_compliance.dialogs.error', default="Error"), f"Could not open Status Letters: {exc}")
 
     def _issue_cas(self):
-        sid = self._sid()
+        sid = self._need_student()
         if not sid:
             return
         try:
@@ -456,6 +576,14 @@ class VisaComplianceGUI:
             ))
 
     def _load_selected_at_risk(self):
+        if self.intake is not None:
+            # Loading another student would replace the new student's form.
+            messagebox.showinfo(
+                _t('gui.governance.compliance.international_compliance.visa_compliance.dialogs.pick_one', default="Pick one"),
+                "Finish the new student first, then open Visa Sponsorship from another "
+                "student's Student Records right-click menu.",
+                parent=self.window)
+            return
         sel = self.atrisk_tree.selection()
         if not sel:
             messagebox.showinfo(_t('gui.governance.compliance.international_compliance.visa_compliance.dialogs.pick_one', default="Pick one"), _t('gui.governance.compliance.international_compliance.visa_compliance.dialogs.select_a_row_first', default="Select a row first."))
@@ -465,7 +593,7 @@ class VisaComplianceGUI:
         self._load_student()
 
     def _log_engagement(self):
-        sid = self._sid()
+        sid = self._need_student()
         if not sid:
             return
         try:
@@ -483,7 +611,7 @@ class VisaComplianceGUI:
             messagebox.showerror(_t('gui.governance.compliance.international_compliance.visa_compliance.dialogs.error', default="Error"), str(exc))
 
     def _log_coc(self):
-        sid = self._sid()
+        sid = self._need_student()
         if not sid:
             return
         try:

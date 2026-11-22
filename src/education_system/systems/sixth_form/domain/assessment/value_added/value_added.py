@@ -32,6 +32,9 @@ from education_system import paths
 from education_system.systems.sixth_form.domain.assessment.value_added import (
     value_added as data,
 )
+from education_system.systems.sixth_form.domain.academics.qualifications import (
+    grade_scales as _gs,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -43,6 +46,20 @@ A_LEVEL_GRADES: tuple[str, ...] = ("A*", "A", "B", "C", "D", "E", "U")
 _POINTS: dict[str, int] = {
     "A*": 6, "A": 5, "B": 4, "C": 3, "D": 2, "E": 1, "U": 0,
 }
+
+
+def _points(grade: str | None, qualification_type: str | None = None) -> int | None:
+    """Points for a grade on its record's scale.
+
+    A level (and records with no type) use ``_POINTS`` unchanged, so
+    existing A-level VA scores do not move; other qualifications use
+    their grade_scales ordinal (fail grade = 0).
+    """
+    if not grade:
+        return None
+    if not qualification_type or _gs.canonical_type(qualification_type) in (None, "A Level"):
+        return _POINTS.get(grade)
+    return _gs.grade_points(grade, qualification_type)
 
 # ALPS-style indicator (1-9, 1 = top decile, 9 = bottom).
 ALPS_INDICATORS: tuple[int, ...] = (1, 2, 3, 4, 5, 6, 7, 8, 9)
@@ -111,26 +128,24 @@ class VARecord:
     notes: str | None
     created_at: str
     updated_at: str
+    #: Qualification type the grades are on (None = A level).
+    qualification_type: str | None = None
 
     @property
     def expected_points(self) -> int | None:
-        return (_POINTS.get(self.expected_grade)
-                if self.expected_grade else None)
+        return _points(self.expected_grade, self.qualification_type)
 
     @property
     def actual_points(self) -> int | None:
-        return (_POINTS.get(self.actual_grade)
-                if self.actual_grade else None)
+        return _points(self.actual_grade, self.qualification_type)
 
     @property
     def target_points(self) -> int | None:
-        return (_POINTS.get(self.target_grade)
-                if self.target_grade else None)
+        return _points(self.target_grade, self.qualification_type)
 
     @property
     def predicted_points(self) -> int | None:
-        return (_POINTS.get(self.predicted_grade)
-                if self.predicted_grade else None)
+        return _points(self.predicted_grade, self.qualification_type)
 
     @property
     def predicted_vs_target(self) -> int | None:
@@ -210,6 +225,13 @@ def init_db() -> None:
     _students.init_db()
     with _connect() as conn:
         conn.executescript(_SCHEMA)
+        cols = {r["name"] for r in conn.execute(
+            "PRAGMA table_info(value_added_records)")}
+        if "qualification_type" not in cols:
+            conn.execute("ALTER TABLE value_added_records "
+                         "ADD COLUMN qualification_type TEXT")
+            logger.info("Value added: added column qualification_type")
+        conn.commit()
     logger.debug("Value-added schema ready at %s", DB_PATH)
 
     _DB_READY = True
@@ -231,6 +253,8 @@ def _row(r: sqlite3.Row) -> VARecord:
         status=r["status"], teacher=r["teacher"],
         notes=r["notes"],
         created_at=r["created_at"], updated_at=r["updated_at"],
+        qualification_type=(r["qualification_type"]
+                            if "qualification_type" in r.keys() else None),
     )
 
 
@@ -282,17 +306,20 @@ def _validate_session(value: Any) -> str:
 
 
 def _validate_grade(value: Any, label: str, *,
-                     required: bool = False) -> str | None:
+                     required: bool = False,
+                     qualification_type: str | None = None) -> str | None:
     if value in (None, "") or (isinstance(value, str)
                                   and not value.strip()):
         if required:
             raise ValidationError(f"{label} is required")
         return None
     s = str(value).strip()
-    if s not in A_LEVEL_GRADES:
+    try:
+        return _gs.validate_grade(s, qualification_type)
+    except ValueError:
         raise ValidationError(
-            f"{label} must be one of: {', '.join(A_LEVEL_GRADES)}")
-    return s
+            f"{label} must be one of: "
+            f"{', '.join(_gs.grades_for(qualification_type))}") from None
 
 
 def _validate_number(value: Any, label: str, *,
@@ -343,14 +370,31 @@ def _validate_payload(payload: dict[str, Any]) -> dict[str, Any]:
     out["prior_attainment"] = _validate_number(
         payload.get("prior_attainment"), "Prior attainment",
         min_val=0, max_val=10)
+    # Grades are on the scale of the learner's aim in this subject.
+    qtype_raw = (payload.get("qualification_type") or "").strip()
+    if qtype_raw:
+        qtype = _gs.canonical_type(qtype_raw)
+        if qtype is None:
+            raise ValidationError(f"Unknown qualification type {qtype_raw!r}")
+    else:
+        from education_system.systems.sixth_form.domain.academics.qualifications import (
+            learning_aims as _aims,
+        )
+        qtype = _aims.qualification_type_for(out["student_id"],
+                                             out["subject_name"])
+    out["qualification_type"] = qtype
     out["expected_grade"]  = _validate_grade(
-        payload.get("expected_grade"), "Expected grade")
+        payload.get("expected_grade"), "Expected grade",
+        qualification_type=qtype)
     out["target_grade"]    = _validate_grade(
-        payload.get("target_grade"), "Target grade")
+        payload.get("target_grade"), "Target grade",
+        qualification_type=qtype)
     out["predicted_grade"] = _validate_grade(
-        payload.get("predicted_grade"), "Predicted grade")
+        payload.get("predicted_grade"), "Predicted grade",
+        qualification_type=qtype)
     out["actual_grade"]    = _validate_grade(
-        payload.get("actual_grade"), "Actual grade")
+        payload.get("actual_grade"), "Actual grade",
+        qualification_type=qtype)
 
     out["alps_indicator"] = _validate_alps(payload.get("alps_indicator"))
 
@@ -368,8 +412,8 @@ def _validate_payload(payload: dict[str, Any]) -> dict[str, Any]:
     if supplied_va in (None, ""):
         if (out["actual_grade"] and out["expected_grade"]):
             out["va_score"] = float(
-                _POINTS[out["actual_grade"]]
-                - _POINTS[out["expected_grade"]])
+                _points(out["actual_grade"], qtype)
+                - _points(out["expected_grade"], qtype))
         else:
             out["va_score"] = None
     else:
@@ -405,15 +449,15 @@ def create_record(payload: dict[str, Any]) -> VARecord:
                     year_group, prior_attainment, expected_grade,
                     target_grade, predicted_grade, actual_grade,
                     va_score, alps_indicator, status, teacher,
-                    notes, created_at, updated_at)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+                    notes, qualification_type, created_at, updated_at)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
                        datetime('now'), datetime('now'))""",
             (p["student_id"], p["subject_name"], p["exam_session"],
              p["year_group"], p["prior_attainment"],
              p["expected_grade"], p["target_grade"],
              p["predicted_grade"], p["actual_grade"],
              p["va_score"], p["alps_indicator"], p["status"],
-             p["teacher"], p["notes"]),
+             p["teacher"], p["notes"], p["qualification_type"]),
         )
         conn.commit()
         new_id = cur.lastrowid
@@ -564,6 +608,15 @@ def update_record(record_id: int,
         "teacher":           payload.get("teacher",
                                           existing.teacher),
         "notes":             payload.get("notes", existing.notes),
+        # A record written before types existed holds A-level grades;
+        # keep it on A level rather than re-reading the learner's aims.
+        "qualification_type": payload.get(
+            "qualification_type",
+            existing.qualification_type or (
+                "A Level" if any((existing.expected_grade,
+                                  existing.target_grade,
+                                  existing.predicted_grade,
+                                  existing.actual_grade)) else None)),
     }
     p = _validate_payload(merged)
     with _connect() as conn:
@@ -573,14 +626,14 @@ def update_record(record_id: int,
                    expected_grade = ?, target_grade = ?,
                    predicted_grade = ?, actual_grade = ?,
                    va_score = ?, alps_indicator = ?, status = ?,
-                   teacher = ?, notes = ?,
+                   teacher = ?, notes = ?, qualification_type = ?,
                    updated_at = datetime('now')
                WHERE record_id = ?""",
             (p["year_group"], p["prior_attainment"],
              p["expected_grade"], p["target_grade"],
              p["predicted_grade"], p["actual_grade"],
              p["va_score"], p["alps_indicator"], p["status"],
-             p["teacher"], p["notes"], record_id),
+             p["teacher"], p["notes"], p["qualification_type"], record_id),
         )
         conn.commit()
     out = get_record(record_id)
@@ -708,7 +761,13 @@ def summary() -> Summary:
 
 # ── Helpers ───────────────────────────────────────────────────────
 
-def grade_points(grade: str | None) -> int | None:
+def grade_points(grade: str | None,
+                 qualification_type: str | None = None) -> int | None:
     if grade is None:
         return None
-    return _POINTS.get(grade.strip())
+    return _points(grade.strip(), qualification_type)
+
+
+def grades_for(qualification_type: str | None = None) -> tuple[str, ...]:
+    """Grade choices for a record's qualification type (A*-U default)."""
+    return _gs.grades_for(qualification_type)

@@ -25,6 +25,22 @@ def _row_to_dict(row) -> dict:
     return {k: row[k] for k in row.keys()}
 
 
+def _product_to_dict(row) -> dict:
+    """Product row for the API: ``title`` is the unified ``name`` column."""
+    item = _row_to_dict(row)
+    if item:
+        item["title"] = item.get("name")
+    return item
+
+
+def _order_to_dict(row) -> dict:
+    """Order row for the API: ``status`` reads the unified ``order_status``."""
+    item = _row_to_dict(row)
+    if item:
+        item["status"] = item.get("order_status") or item.get("status")
+    return item
+
+
 # ---- products ----
 
 @musicshop_bp.route("/products", methods=["GET"])
@@ -39,14 +55,14 @@ def list_products():
         if search:
             pattern = f"%{escape_like(search)}%"
             rows = conn.execute(
-                "SELECT * FROM musicshop_products WHERE title LIKE ? OR artist LIKE ? OR genre LIKE ?",
+                "SELECT * FROM products WHERE source_type = 'music_shop' AND (name LIKE ? OR artist LIKE ? OR genre LIKE ?)",
                 (pattern, pattern, pattern),
             ).fetchall()
-            items = [_row_to_dict(r) for r in rows]
+            items = [_product_to_dict(r) for r in rows]
             return jsonify({"items": items, "total": len(items)})
 
-        conditions = []
-        params: list = []
+        conditions = ["source_type = ?"]
+        params: list = ["music_shop"]
         if category:
             conditions.append("category = ?")
             params.append(category)
@@ -57,23 +73,23 @@ def list_products():
             conditions.append("is_active = ?")
             params.append(is_active)
 
-        where = (" WHERE " + " AND ".join(conditions)) if conditions else ""
+        where = " WHERE " + " AND ".join(conditions)
         page, per_page, offset = get_pagination_params()
         params_count = list(params)
         params.extend([per_page, offset])
 
         rows = conn.execute(
-            "SELECT * FROM musicshop_products" + where + " ORDER BY product_id DESC LIMIT ? OFFSET ?",
+            "SELECT * FROM products" + where + " ORDER BY product_id DESC LIMIT ? OFFSET ?",
             params,
         ).fetchall()
         total_row = conn.execute(
-            "SELECT COUNT(*) FROM musicshop_products" + where, params_count
+            "SELECT COUNT(*) FROM products" + where, params_count
         ).fetchone()
         total = total_row[0] if total_row else 0
 
     log_activity("view", "musicshop_products", user=g.current_user.get("sub"))
     return jsonify(paginated_response(
-        [_row_to_dict(r) for r in rows], total, page, per_page
+        [_product_to_dict(r) for r in rows], total, page, per_page
     ))
 
 
@@ -82,12 +98,12 @@ def list_products():
 def get_product(product_id: int):
     with get_connection() as conn:
         row = conn.execute(
-            "SELECT * FROM musicshop_products WHERE product_id = ?", (product_id,)
+            "SELECT * FROM products WHERE source_type = 'music_shop' AND product_id = ?", (product_id,)
         ).fetchone()
     if not row:
         raise ValidationError(f"products {product_id} not found")
     log_activity("view", "musicshop_products", user=g.current_user.get("sub"))
-    return jsonify(_row_to_dict(row))
+    return jsonify(_product_to_dict(row))
 
 @musicshop_bp.route("/products", methods=["POST"])
 @token_required
@@ -100,20 +116,20 @@ def create_product():
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     with transaction() as conn:
         conn.execute(
-            """INSERT INTO musicshop_products
-               (title, category, price, sku, artist, genre, format, label, release_year, condition, description, cost_price, stock_quantity, created_at)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
-            (data["title"], data["category"], data["price"], data.get("sku", ""), data.get("artist", ""), data.get("genre", ""), data.get("format", ""), data.get("label", ""), data.get("release_year", ""), data.get("condition", ""), data.get("description", ""), data.get("cost_price", ""), data.get("stock_quantity", ""), now,),
+            """INSERT INTO products
+               (source_type, name, category, price, sku, artist, genre, format, label, release_year, condition, description, cost_price, stock_quantity, min_stock_level, created_at)
+               VALUES ('music_shop', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+            (data["title"], data["category"], data["price"], data.get("sku", ""), data.get("artist", ""), data.get("genre", ""), data.get("format", ""), data.get("label", ""), data.get("release_year"), data.get("condition", "new"), data.get("description", ""), data.get("cost_price"), data.get("stock_quantity", 0), data.get("min_stock_level", 3), now,),
         )
         new_id = conn.execute("SELECT last_insert_rowid()").fetchone()[0]
 
     with get_connection() as conn:
         row = conn.execute(
-            "SELECT * FROM musicshop_products WHERE product_id = ?", (new_id,)
+            "SELECT * FROM products WHERE source_type = 'music_shop' AND product_id = ?", (new_id,)
         ).fetchone()
 
     log_activity("create", "musicshop_products", user=g.current_user.get("sub"))
-    return jsonify(_row_to_dict(row)), 201
+    return jsonify(_product_to_dict(row)), 201
 
 # ---- orders ----
 
@@ -128,38 +144,38 @@ def list_orders():
         if search:
             pattern = f"%{escape_like(search)}%"
             rows = conn.execute(
-                "SELECT * FROM musicshop_orders WHERE customer_name LIKE ? OR order_number LIKE ?",
+                "SELECT * FROM orders WHERE source_type = 'music_shop' AND (customer_name LIKE ? OR order_number LIKE ?)",
                 (pattern, pattern),
             ).fetchall()
-            items = [_row_to_dict(r) for r in rows]
+            items = [_order_to_dict(r) for r in rows]
             return jsonify({"items": items, "total": len(items)})
 
-        conditions = []
-        params: list = []
+        conditions = ["source_type = ?"]
+        params: list = ["music_shop"]
         if customer_id:
             conditions.append("customer_id = ?")
             params.append(customer_id)
         if status:
-            conditions.append("status = ?")
+            conditions.append("order_status = ?")
             params.append(status)
 
-        where = (" WHERE " + " AND ".join(conditions)) if conditions else ""
+        where = " WHERE " + " AND ".join(conditions)
         page, per_page, offset = get_pagination_params()
         params_count = list(params)
         params.extend([per_page, offset])
 
         rows = conn.execute(
-            "SELECT * FROM musicshop_orders" + where + " ORDER BY order_id DESC LIMIT ? OFFSET ?",
+            "SELECT * FROM orders" + where + " ORDER BY order_id DESC LIMIT ? OFFSET ?",
             params,
         ).fetchall()
         total_row = conn.execute(
-            "SELECT COUNT(*) FROM musicshop_orders" + where, params_count
+            "SELECT COUNT(*) FROM orders" + where, params_count
         ).fetchone()
         total = total_row[0] if total_row else 0
 
     log_activity("view", "musicshop_orders", user=g.current_user.get("sub"))
     return jsonify(paginated_response(
-        [_row_to_dict(r) for r in rows], total, page, per_page
+        [_order_to_dict(r) for r in rows], total, page, per_page
     ))
 
 
@@ -168,12 +184,12 @@ def list_orders():
 def get_order(order_id: int):
     with get_connection() as conn:
         row = conn.execute(
-            "SELECT * FROM musicshop_orders WHERE order_id = ?", (order_id,)
+            "SELECT * FROM orders WHERE source_type = 'music_shop' AND order_id = ?", (order_id,)
         ).fetchone()
     if not row:
         raise ValidationError(f"orders {order_id} not found")
     log_activity("view", "musicshop_orders", user=g.current_user.get("sub"))
-    return jsonify(_row_to_dict(row))
+    return jsonify(_order_to_dict(row))
 
 @musicshop_bp.route("/orders", methods=["POST"])
 @token_required
@@ -186,20 +202,20 @@ def create_order():
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     with transaction() as conn:
         conn.execute(
-            """INSERT INTO musicshop_orders
-               (customer_id, customer_name, total_amount, customer_email, customer_phone, shipping_address, payment_method, notes, created_at)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
-            (data["customer_id"], data["customer_name"], data["total_amount"], data.get("customer_email", ""), data.get("customer_phone", ""), data.get("shipping_address", ""), data.get("payment_method", ""), data.get("notes", ""), now,),
+            """INSERT INTO orders
+               (source_type, order_number, customer_id, customer_name, total_amount, customer_email, customer_phone, shipping_address, payment_method, notes, created_at)
+               VALUES ('music_shop', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+            (f"MUS-{datetime.now().strftime('%Y%m%d%H%M%S')}", data["customer_id"], data["customer_name"], data["total_amount"], data.get("customer_email", ""), data.get("customer_phone", ""), data.get("shipping_address", ""), data.get("payment_method", ""), data.get("notes", ""), now,),
         )
         new_id = conn.execute("SELECT last_insert_rowid()").fetchone()[0]
 
     with get_connection() as conn:
         row = conn.execute(
-            "SELECT * FROM musicshop_orders WHERE order_id = ?", (new_id,)
+            "SELECT * FROM orders WHERE source_type = 'music_shop' AND order_id = ?", (new_id,)
         ).fetchone()
 
     log_activity("create", "musicshop_orders", user=g.current_user.get("sub"))
-    return jsonify(_row_to_dict(row)), 201
+    return jsonify(_order_to_dict(row)), 201
 
 
 # ---- product updates ----
@@ -219,7 +235,7 @@ def update_product(product_id: int):
     params: list = []
     for key in allowed:
         if key in data:
-            sets.append(f"{key} = ?")
+            sets.append(f"{'name' if key == 'title' else key} = ?")
             params.append(data[key])
     if not sets:
         raise ValidationError("No valid fields to update")
@@ -230,19 +246,19 @@ def update_product(product_id: int):
 
     with transaction() as conn:
         conn.execute(
-            "UPDATE musicshop_products SET " + ", ".join(sets) + " WHERE product_id = ?",
+            "UPDATE products SET " + ", ".join(sets) + " WHERE source_type = 'music_shop' AND product_id = ?",
             params,
         )
 
     with get_connection() as conn:
         row = conn.execute(
-            "SELECT * FROM musicshop_products WHERE product_id = ?", (product_id,)
+            "SELECT * FROM products WHERE source_type = 'music_shop' AND product_id = ?", (product_id,)
         ).fetchone()
     if not row:
         raise ValidationError(f"Product {product_id} not found")
 
     log_activity("update", "musicshop_products", user=g.current_user.get("sub"))
-    return jsonify(_row_to_dict(row))
+    return jsonify(_product_to_dict(row))
 
 
 # ---- order status updates ----
@@ -257,7 +273,7 @@ def update_order_status(order_id: int):
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     with transaction() as conn:
         cur = conn.execute(
-            "UPDATE musicshop_orders SET status = ?, updated_at = ? WHERE order_id = ?",
+            "UPDATE orders SET order_status = ?, updated_at = ? WHERE source_type = 'music_shop' AND order_id = ?",
             (data["status"], now, order_id),
         )
     if cur.rowcount == 0:
@@ -265,11 +281,11 @@ def update_order_status(order_id: int):
 
     with get_connection() as conn:
         row = conn.execute(
-            "SELECT * FROM musicshop_orders WHERE order_id = ?", (order_id,)
+            "SELECT * FROM orders WHERE source_type = 'music_shop' AND order_id = ?", (order_id,)
         ).fetchone()
 
     log_activity("update", "musicshop_orders", user=g.current_user.get("sub"))
-    return jsonify(_row_to_dict(row))
+    return jsonify(_order_to_dict(row))
 
 
 # ---- cancel order ----
@@ -283,34 +299,34 @@ def cancel_order(order_id: int):
 
     with transaction() as conn:
         row = conn.execute(
-            "SELECT order_id FROM musicshop_orders WHERE order_id = ?", (order_id,)
+            "SELECT order_id FROM orders WHERE source_type = 'music_shop' AND order_id = ?", (order_id,)
         ).fetchone()
         if not row:
             raise ValidationError(f"Order {order_id} not found")
 
         # Restore stock from order items
         items = conn.execute(
-            "SELECT product_id, quantity FROM musicshop_order_items WHERE order_id = ?",
+            "SELECT product_id, quantity FROM order_items WHERE source_type = 'music_shop' AND order_id = ?",
             (order_id,),
         ).fetchall()
         for item in items:
             conn.execute(
-                "UPDATE musicshop_products SET stock_quantity = stock_quantity + ? WHERE product_id = ?",
+                "UPDATE products SET stock_quantity = stock_quantity + ? WHERE source_type = 'music_shop' AND product_id = ?",
                 (item["quantity"], item["product_id"]),
             )
 
         conn.execute(
-            "UPDATE musicshop_orders SET status = 'cancelled', notes = ?, updated_at = ? WHERE order_id = ?",
+            "UPDATE orders SET order_status = 'cancelled', notes = ?, updated_at = ? WHERE source_type = 'music_shop' AND order_id = ?",
             (reason, now, order_id),
         )
 
     with get_connection() as conn:
         row = conn.execute(
-            "SELECT * FROM musicshop_orders WHERE order_id = ?", (order_id,)
+            "SELECT * FROM orders WHERE source_type = 'music_shop' AND order_id = ?", (order_id,)
         ).fetchone()
 
     log_activity("cancel", "musicshop_orders", user=g.current_user.get("sub"))
-    return jsonify(_row_to_dict(row))
+    return jsonify(_order_to_dict(row))
 
 
 # ---- customer orders ----
@@ -321,17 +337,17 @@ def get_customer_orders(customer_id: str):
     page, per_page, offset = get_pagination_params()
     with get_connection() as conn:
         rows = conn.execute(
-            "SELECT * FROM musicshop_orders WHERE customer_id = ? ORDER BY order_id DESC LIMIT ? OFFSET ?",
+            "SELECT * FROM orders WHERE source_type = 'music_shop' AND customer_id = ? ORDER BY order_id DESC LIMIT ? OFFSET ?",
             (customer_id, per_page, offset),
         ).fetchall()
         total_row = conn.execute(
-            "SELECT COUNT(*) FROM musicshop_orders WHERE customer_id = ?", (customer_id,)
+            "SELECT COUNT(*) FROM orders WHERE source_type = 'music_shop' AND customer_id = ?", (customer_id,)
         ).fetchone()
         total = total_row[0] if total_row else 0
 
     log_activity("view", "musicshop_orders", user=g.current_user.get("sub"))
     return jsonify(paginated_response(
-        [_row_to_dict(r) for r in rows], total, page, per_page
+        [_order_to_dict(r) for r in rows], total, page, per_page
     ))
 
 
@@ -342,11 +358,11 @@ def get_customer_orders(customer_id: str):
 def get_low_stock_products():
     with get_connection() as conn:
         rows = conn.execute(
-            "SELECT * FROM musicshop_products WHERE stock_quantity <= min_stock_level AND is_active = 1 ORDER BY stock_quantity ASC"
+            "SELECT * FROM products WHERE source_type = 'music_shop' AND stock_quantity <= min_stock_level AND is_active = 1 ORDER BY stock_quantity ASC"
         ).fetchall()
 
     log_activity("view", "musicshop_products", user=g.current_user.get("sub"))
-    return jsonify({"items": [_row_to_dict(r) for r in rows], "total": len(rows)})
+    return jsonify({"items": [_product_to_dict(r) for r in rows], "total": len(rows)})
 
 
 # ---- payments ----
@@ -362,7 +378,7 @@ def record_payment(order_id: int):
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     with transaction() as conn:
         order_row = conn.execute(
-            "SELECT customer_id FROM musicshop_orders WHERE order_id = ?", (order_id,)
+            "SELECT customer_id FROM orders WHERE source_type = 'music_shop' AND order_id = ?", (order_id,)
         ).fetchone()
         if not order_row:
             raise ValidationError(f"Order {order_id} not found")
@@ -375,7 +391,7 @@ def record_payment(order_id: int):
              data.get("reference_number", ""), g.current_user.get("sub"), now),
         )
         conn.execute(
-            "UPDATE musicshop_orders SET payment_status = 'completed', status = 'confirmed', payment_method = ?, updated_at = ? WHERE order_id = ?",
+            "UPDATE orders SET payment_status = 'completed', order_status = 'confirmed', payment_method = ?, updated_at = ? WHERE source_type = 'music_shop' AND order_id = ?",
             (data["payment_method"], now, order_id),
         )
         txn_id = conn.execute("SELECT last_insert_rowid()").fetchone()[0]
@@ -398,7 +414,7 @@ def process_refund(order_id: int):
 
     with transaction() as conn:
         order_row = conn.execute(
-            "SELECT customer_id, payment_method FROM musicshop_orders WHERE order_id = ?", (order_id,)
+            "SELECT customer_id, payment_method FROM orders WHERE source_type = 'music_shop' AND order_id = ?", (order_id,)
         ).fetchone()
         if not order_row:
             raise ValidationError(f"Order {order_id} not found")
@@ -411,7 +427,7 @@ def process_refund(order_id: int):
              order_row["payment_method"] or "", reason, g.current_user.get("sub"), now),
         )
         conn.execute(
-            "UPDATE musicshop_orders SET payment_status = 'refunded', status = 'refunded', updated_at = ? WHERE order_id = ?",
+            "UPDATE orders SET payment_status = 'refunded', order_status = 'refunded', updated_at = ? WHERE source_type = 'music_shop' AND order_id = ?",
             (now, order_id),
         )
         txn_id = conn.execute("SELECT last_insert_rowid()").fetchone()[0]
@@ -429,11 +445,11 @@ def get_sales_summary():
         row = conn.execute("""
             SELECT
                 COUNT(*) as total_orders,
-                COALESCE(SUM(CASE WHEN status NOT IN ('cancelled','refunded') THEN total_amount ELSE 0 END), 0) as total_revenue,
-                COALESCE(AVG(CASE WHEN status NOT IN ('cancelled','refunded') THEN total_amount ELSE NULL END), 0) as avg_order_value,
-                COALESCE(SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END), 0) as pending_orders,
-                COALESCE(SUM(CASE WHEN status = 'delivered' THEN 1 ELSE 0 END), 0) as completed_orders
-            FROM musicshop_orders
+                COALESCE(SUM(CASE WHEN order_status NOT IN ('cancelled','refunded') THEN total_amount ELSE 0 END), 0) as total_revenue,
+                COALESCE(AVG(CASE WHEN order_status NOT IN ('cancelled','refunded') THEN total_amount ELSE NULL END), 0) as avg_order_value,
+                COALESCE(SUM(CASE WHEN order_status = 'pending' THEN 1 ELSE 0 END), 0) as pending_orders,
+                COALESCE(SUM(CASE WHEN order_status = 'delivered' THEN 1 ELSE 0 END), 0) as completed_orders
+            FROM orders WHERE source_type = 'music_shop'
         """).fetchone()
 
     log_activity("view", "musicshop_reports", user=g.current_user.get("sub"))
@@ -451,7 +467,7 @@ def get_inventory_summary():
                 COALESCE(SUM(stock_quantity * price), 0) as total_value,
                 COALESCE(SUM(CASE WHEN stock_quantity <= min_stock_level THEN 1 ELSE 0 END), 0) as low_stock_count,
                 COALESCE(SUM(CASE WHEN is_rare = 1 THEN 1 ELSE 0 END), 0) as rare_items_count
-            FROM musicshop_products WHERE is_active = 1
+            FROM products WHERE source_type = 'music_shop' AND is_active = 1
         """).fetchone()
 
     log_activity("view", "musicshop_reports", user=g.current_user.get("sub"))
@@ -464,12 +480,12 @@ def get_top_products():
     limit = request.args.get("limit", 10, type=int)
     with get_connection() as conn:
         rows = conn.execute("""
-            SELECT p.product_id, p.title, p.artist, p.genre,
+            SELECT p.product_id, p.name AS title, p.artist, p.genre,
                    SUM(oi.quantity) as total_sold, SUM(oi.subtotal) as total_revenue
-            FROM musicshop_products p
-            JOIN musicshop_order_items oi ON p.product_id = oi.product_id
-            JOIN musicshop_orders o ON oi.order_id = o.order_id
-            WHERE o.status NOT IN ('cancelled','refunded')
+            FROM products p
+            JOIN order_items oi ON p.product_id = oi.product_id AND oi.source_type = 'music_shop'
+            JOIN orders o ON oi.order_id = o.order_id AND o.source_type = 'music_shop'
+            WHERE p.source_type = 'music_shop' AND o.order_status NOT IN ('cancelled','refunded')
             GROUP BY p.product_id
             ORDER BY total_sold DESC
             LIMIT ?
@@ -485,10 +501,10 @@ def get_sales_by_genre():
     with get_connection() as conn:
         rows = conn.execute("""
             SELECT p.genre, COUNT(oi.item_id) as items_sold, SUM(oi.subtotal) as revenue
-            FROM musicshop_order_items oi
-            JOIN musicshop_products p ON oi.product_id = p.product_id
-            JOIN musicshop_orders o ON oi.order_id = o.order_id
-            WHERE o.status NOT IN ('cancelled','refunded') AND p.genre IS NOT NULL AND p.genre != ''
+            FROM order_items oi
+            JOIN products p ON oi.product_id = p.product_id AND p.source_type = 'music_shop'
+            JOIN orders o ON oi.order_id = o.order_id AND o.source_type = 'music_shop'
+            WHERE oi.source_type = 'music_shop' AND o.order_status NOT IN ('cancelled','refunded') AND p.genre IS NOT NULL AND p.genre != ''
             GROUP BY p.genre
             ORDER BY revenue DESC
         """).fetchall()
@@ -504,14 +520,14 @@ def get_sales_by_genre():
 def get_wishlist(customer_id: str):
     with get_connection() as conn:
         rows = conn.execute("""
-            SELECT p.* FROM musicshop_products p
+            SELECT p.* FROM products p
             JOIN musicshop_wishlists w ON p.product_id = w.product_id
-            WHERE w.customer_id = ?
+            WHERE p.source_type = 'music_shop' AND w.customer_id = ?
             ORDER BY w.added_at DESC
         """, (customer_id,)).fetchall()
 
     log_activity("view", "musicshop_wishlists", user=g.current_user.get("sub"))
-    return jsonify({"items": [_row_to_dict(r) for r in rows], "total": len(rows)})
+    return jsonify({"items": [_product_to_dict(r) for r in rows], "total": len(rows)})
 
 
 @musicshop_bp.route("/wishlists/<customer_id>", methods=["POST"])

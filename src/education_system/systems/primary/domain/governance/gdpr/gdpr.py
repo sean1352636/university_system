@@ -81,8 +81,8 @@ DEFAULT_BREACH_STATUS: str = "Reported"
 CONSENT_PURPOSES: tuple[str, ...] = (
     "Photography / Video", "Marketing", "Trips & Visits",
     "Medical", "Third-Party Sharing",
-    "External Coursework Submission", "Newsletter",
-    "Alumni Network", "Other",
+    "Newsletter", "Learning Apps / Online Platforms",
+    "Secondary Transfer", "Other",
 )
 DEFAULT_CONSENT_PURPOSE: str = "Photography / Video"
 

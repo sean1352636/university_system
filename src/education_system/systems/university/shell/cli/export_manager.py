@@ -481,7 +481,7 @@ def display_scheduled_reports_menu():
         return
 
     try:
-        from education_system.systems.university.shell.gui.enhanced_reporting.standalone.system_ops import (
+        from education_system.systems.university.shell.gui.analytics.enhanced_reporting.standalone.system_ops import (
             load_scheduled_reports,
             save_scheduled_reports,
         )

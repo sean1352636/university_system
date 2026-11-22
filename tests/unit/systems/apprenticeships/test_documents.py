@@ -23,12 +23,10 @@ from education_system.systems.apprenticeships.infrastructure.persistence.reposit
     document_repository,
 )
 from education_system.systems.apprenticeships.infrastructure.storage import document_store
-from education_system.systems.apprenticeships.services import (
-    apprentice_service,
-    compliance_service,
-    document_service,
-)
-from education_system.systems.apprenticeships.services.access import Actor, PermissionDenied
+from education_system.systems.apprenticeships.application.apprentices import apprentice_service
+from education_system.systems.apprenticeships.application.compliance import compliance_service
+from education_system.systems.apprenticeships.application.records import document_service
+from education_system.systems.apprenticeships.application.security.access import Actor, PermissionDenied
 
 TODAY = date.today()
 CONTENT = b"%PDF-1.4 apprenticeship agreement, signed"

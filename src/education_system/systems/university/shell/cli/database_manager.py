@@ -39,8 +39,6 @@ from education_system.systems.university.shell.cli.imports import (
     init_grocery_db, setup_grocery_permissions, set_grocery_auth,
     # Staff HR
     init_staff_hr_db, setup_staff_hr_permissions, set_staff_hr_auth,
-    # MFA
-    MFA_INTEGRATION_AVAILABLE,
 )
 
 # Import exception types
@@ -56,10 +54,8 @@ from education_system.systems.university.shell.cli import auth_manager
 from education_system.systems.university.shell.cli.integration_manager import ensure_communication_integration_on_startup
 
 # Import from chatbot_integration
-from education_system.systems.university.shell.cli.chatbot_integration import initialize_chatbot_integration, setup_chatbot_permissions
+from education_system.systems.university.shell.cli.ai.chatbot_integration import initialize_chatbot_integration, setup_chatbot_permissions
 
-# Import from ai_tools_integration
-from education_system.systems.university.shell.cli.ai_tools_integration import integrate_ai_detector_with_main
 from education_system.systems.university.infrastructure.database.schemas.students_table import ensure_students_table
 from education_system.systems.university.infrastructure.database.schemas.users_table import ensure_users_table
 from education_system.systems.university.infrastructure.database.schemas.modules_table import ensure_modules_table
@@ -70,7 +66,7 @@ auth = None
 
 # Import missing database initialization functions
 try:
-    from education_system.systems.university.domains.academics.domain.services.library.database import init_library_db
+    from education_system.systems.university.domains.library.domain.library.database import init_library_db
 except ImportError:
     init_library_db = lambda: False
 
@@ -85,22 +81,22 @@ except ImportError:
     init_alumni_db = lambda: False
 
 try:
-    from education_system.systems.university.plugins.campus_commerce.domain.services.restaurant_management import init_restaurant_db
+    from education_system.systems.university.plugins.campus_commerce.domain.services.restaurant_management import init_db as init_restaurant_db
 except ImportError:
     init_restaurant_db = lambda: False
 
 try:
-    from education_system.systems.university.domains.pastoral.domain.services.career_services.internship import init_internship_db
+    from education_system.systems.university.domains.student_life.domain.internship_management import init_internship_db
 except ImportError:
     init_internship_db = lambda: False
 
 try:
-    from education_system.systems.university.domains.pastoral.domain.services.helpdesk import init_helpdesk_db
+    from education_system.systems.university.domains.student_support.domain.helpdesk import init_helpdesk_db
 except ImportError:
     init_helpdesk_db = lambda: False
 
 try:
-    from education_system.systems.university.domains.pastoral.domain.student_life.student_union.administration.student_union_core import init_student_union_db
+    from education_system.systems.university.domains.student_life.domain.student_life.student_union.administration.student_union_core import init_student_union_db
 except ImportError:
     init_student_union_db = lambda: False
 
@@ -111,17 +107,17 @@ except ImportError:
 
 # Import missing auth setter functions
 try:
-    from education_system.systems.university.domains.pastoral.domain.student_life.student_union.administration.student_union_core import set_auth as set_student_union_auth
+    from education_system.systems.university.domains.student_life.domain.student_life.student_union.administration.student_union_core import set_auth as set_student_union_auth
 except ImportError:
     set_student_union_auth = lambda x: None
 
 try:
-    from education_system.systems.university.domains.finance.domain.core.financial_core import set_auth as set_finance_auth
+    from education_system.systems.university.domains.finance.domain.core.financial_core import set_finance_auth
 except ImportError:
     set_finance_auth = lambda x: None
 
 try:
-    from education_system.systems.university.domains.pastoral.domain.services.career_services.internship import set_auth as set_internship_auth
+    from education_system.systems.university.domains.student_life.domain.internship_management import set_auth as set_internship_auth
 except ImportError:
     set_internship_auth = lambda x: None
 
@@ -131,12 +127,12 @@ except ImportError:
     set_communication_auth = lambda x: None
 
 try:
-    from education_system.systems.university.domains.pastoral.domain.services.student_support import set_auth as set_student_support_auth
+    from education_system.systems.university.domains.student_support.domain.student_support import set_auth as set_student_support_auth
 except ImportError:
     set_student_support_auth = lambda x: None
 
 try:
-    from education_system.systems.university.domains.pastoral.domain.health.services.medical_accommodation import set_auth as set_medical_accommodation_auth
+    from education_system.systems.university.domains.operations.domain.campus.housing.services.accommodation import set_auth as set_medical_accommodation_auth
 except ImportError:
     set_medical_accommodation_auth = lambda x: None
 
@@ -640,125 +636,6 @@ def fix_parent_portal_database():
         return False
 
 
-def fix_ai_detector_database_schema():
-    """Fix AI detector database schema by creating proper tables"""
-    try:
-        conn = get_db_connection()
-        if not conn:
-            return False
-
-        cursor = conn.cursor()
-
-        logger.info("Fixing AI detector database schema...")
-
-        # Create AI detector submissions table with correct column names
-        cursor.execute('''
-        CREATE TABLE IF NOT EXISTS ai_detector_submissions (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            student_id TEXT NOT NULL,
-            submission_text TEXT NOT NULL,
-            title TEXT,
-            course_code TEXT,
-            assignment_id TEXT,
-            submission_date TEXT NOT NULL,
-            word_count INTEGER,
-            character_count INTEGER,
-            institution_id TEXT
-        )
-        ''')
-
-        # Create AI detector results table
-        cursor.execute('''
-        CREATE TABLE IF NOT EXISTS ai_detector_results (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            submission_id INTEGER NOT NULL,
-            ai_score REAL NOT NULL,
-            confidence REAL NOT NULL,
-            detailed_results TEXT,
-            created_at TEXT NOT NULL,
-            style_deviation REAL,
-            FOREIGN KEY (submission_id) REFERENCES ai_detector_submissions (id)
-        )
-        ''')
-
-        # Check if we need to migrate old data or add missing columns
-        cursor.execute("PRAGMA table_info(ai_detector_submissions)")
-        existing_columns = [column[1] for column in cursor.fetchall()]
-
-        # Add missing columns if they don't exist
-        required_columns = {
-            'title': 'TEXT',
-            'course_code': 'TEXT',
-            'assignment_id': 'TEXT',
-            'word_count': 'INTEGER',
-            'character_count': 'INTEGER',
-            'institution_id': 'TEXT'
-        }
-
-        # Use centralized SQL safety validation for column definitions
-        for column_name, column_def in required_columns.items():
-            if column_name not in existing_columns:
-                try:
-                    # Validate column definition using SQL safety module
-                    col_def = validate_column_definition(column_name, column_def)
-                    cursor.execute(f'ALTER TABLE ai_detector_submissions ADD COLUMN [{col_def.name}] {col_def.type_def}')
-                    logger.info(f"Added column '{column_name}' to ai_detector_submissions table")
-                except SQLIdentifierError as e:
-                    logger.warning(f"Invalid column definition for '{column_name}': {e}")
-                    continue
-                except (sqlite3.Error, DatabaseError) as e:
-                    logger.warning(f"Could not add column '{column_name}': {e}")
-
-        # Check if we have the wrong column name and need to rename
-        if 'submission_title' in existing_columns and 'title' not in existing_columns:
-            try:
-                # SQLite doesn't support RENAME COLUMN directly in older versions
-                # So we'll create a new table and copy data
-                cursor.execute('''
-                CREATE TABLE ai_detector_submissions_new (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    student_id TEXT NOT NULL,
-                    submission_text TEXT NOT NULL,
-                    title TEXT,
-                    course_code TEXT,
-                    assignment_id TEXT,
-                    submission_date TEXT NOT NULL,
-                    word_count INTEGER,
-                    character_count INTEGER,
-                    institution_id TEXT
-                )
-                ''')
-
-                # Copy data from old table to new table
-                cursor.execute('''
-                INSERT INTO ai_detector_submissions_new
-                (id, student_id, submission_text, title, course_code, assignment_id,
-                 submission_date, word_count, character_count, institution_id)
-                SELECT id, student_id, submission_text, submission_title, course_code, assignment_id,
-                       submission_date, word_count, character_count, institution_id
-                FROM ai_detector_submissions
-                ''')
-
-                # Drop old table and rename new one
-                cursor.execute('DROP TABLE ai_detector_submissions')
-                cursor.execute('ALTER TABLE ai_detector_submissions_new RENAME TO ai_detector_submissions')
-
-                logger.info("Migrated 'submission_title' column to 'title'")
-
-            except (sqlite3.Error, DatabaseError) as e:
-                logger.warning(f"Could not migrate submission_title column: {e}")
-
-        conn.commit()
-        conn.close()
-
-        logger.info("AI detector database schema fix completed!")
-        return True
-
-    except (sqlite3.Error, DatabaseError) as e:
-        logger.error(f"Error fixing AI detector database schema: {e}")
-        return False
-
-
 def fix_support_database_schema():
     """
     Fix the support database schema by adding missing columns.
@@ -772,81 +649,13 @@ def fix_support_database_schema():
 
         logger.info("Fixing support database schema...")
 
-        # Check if support_tickets table exists
-        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='support_tickets'")
-        if not cursor.fetchone():
-            logger.error("support_tickets table does not exist. Creating it...")
-            cursor.execute('''
-            CREATE TABLE support_tickets (
-                ticket_id INTEGER PRIMARY KEY AUTOINCREMENT,
-                student_id TEXT,
-                user_id INTEGER,
-                subject TEXT NOT NULL,
-                description TEXT NOT NULL,
-                category TEXT NOT NULL,
-                priority TEXT NOT NULL,
-                status TEXT NOT NULL,
-                created_at TEXT NOT NULL,
-                updated_at TEXT,
-                assigned_to TEXT,
-                escalated_at TEXT,
-                resolved_at TEXT,
-                closed_at TEXT,
-                estimated_resolution TEXT,
-                sentiment TEXT DEFAULT 'neutral',
-                satisfaction_rating INTEGER,
-                tags TEXT,
-                parent_ticket_id INTEGER,
-                FOREIGN KEY (student_id) REFERENCES students (student_id),
-                FOREIGN KEY (user_id) REFERENCES users (id),
-                FOREIGN KEY (parent_ticket_id) REFERENCES support_tickets (ticket_id)
-            )
-            ''')
-            logger.info("Created support_tickets table with all required columns")
-        else:
-            # Table exists, check and add missing columns
-            cursor.execute("PRAGMA table_info(support_tickets)")
-            existing_columns = [column[1] for column in cursor.fetchall()]
-
-            # Ensure core columns exist for analytics and SLA tracking
-            required_columns = {
-                'created_at': 'TEXT',
-                'updated_at': 'TEXT',
-                'escalated_at': 'TEXT',
-                'resolved_at': 'TEXT',
-                'closed_at': 'TEXT',
-                'estimated_resolution': 'TEXT',
-                'sentiment': 'TEXT',
-                'satisfaction_rating': 'INTEGER',
-                'tags': 'TEXT',
-                'parent_ticket_id': 'INTEGER',
-                'subject': 'TEXT',
-                'description': 'TEXT'
-            }
-
-            for column_name, column_type in required_columns.items():
-                if column_name not in existing_columns:
-                    try:
-                        # Validate column definition using SQL safety module
-                        col_def = validate_column_definition(column_name, column_type)
-                        cursor.execute(f'ALTER TABLE support_tickets ADD COLUMN [{col_def.name}] {col_def.type_def}')
-                        logger.info(f"Added column '{column_name}' to support_tickets table")
-                    except SQLIdentifierError as e:
-                        logger.warning(f"Invalid column definition for '{column_name}': {e}")
-                        continue
-                    except (sqlite3.Error, DatabaseError) as e:
-                        logger.warning(f"Could not add column '{column_name}': {e}")
-
-            if 'user_id' not in existing_columns:
-                try:
-                    # Validate column definition using SQL safety module
-                    col_def = validate_column_definition('user_id', 'INTEGER')
-                    cursor.execute(f'ALTER TABLE support_tickets ADD COLUMN [{col_def.name}] {col_def.type_def}')
-                    logger.info("Added column 'user_id' to support_tickets table")
-                except SQLIdentifierError as e:
-                    logger.warning(f"Invalid column definition for 'user_id': {e}")
-                except (sqlite3.Error, DatabaseError) as e:
-                    logger.warning(f"Could not add column 'user_id': {e}")
+        # support_tickets and its child tables: one definition, owned by the
+        # Student Support schema (shared with the Helpdesk); it adds any
+        # missing columns too.
+        from education_system.systems.university.domains.student_support.domain.student_support import (
+            schema as support_schema,
+        )
+        support_schema.apply(cursor.execute)
 
         # Fix any existing tickets that have NULL created_at
         cursor.execute("SELECT COUNT(*) FROM support_tickets WHERE created_at IS NULL OR created_at = ''")
@@ -1686,8 +1495,8 @@ def init_all_databases():
     # Ensure the health portal schema and security tables are ready before features load
     try:
         logger.info("Initializing health portal schema...")
-        from education_system.systems.university.domains.pastoral.domain.health.portal.health_portal_core import init_enhanced_health_db
-        from education_system.systems.university.domains.pastoral.domain.health.portal.data_privacy import ensure_security_schema
+        from education_system.systems.university.domains.health.domain.health.portal.health_portal_core import init_enhanced_health_db
+        from education_system.systems.university.domains.health.domain.health.portal.data_privacy import ensure_security_schema
 
         init_enhanced_health_db()
         ensure_security_schema()
@@ -1730,7 +1539,7 @@ def init_all_databases():
 
     try:
         logger.info("Initializing course management database...")
-        from education_system.systems.university.domains.academics.domain.services.course_management import initialize_enhanced_database
+        from education_system.systems.university.domains.curriculum.domain.course_management import initialize_enhanced_database
         if initialize_enhanced_database():
             logger.info("Course management database initialized")
         else:
@@ -1803,26 +1612,15 @@ def init_all_databases():
 
     try:
         conn = get_db_connection()
-        cursor = conn.cursor()
 
-        cursor.execute('''
-        CREATE TABLE IF NOT EXISTS chatbot_conversations (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            user_id INTEGER,
-            username TEXT NOT NULL,
-            message TEXT NOT NULL,
-            response TEXT NOT NULL,
-            intent TEXT,
-            confidence REAL,
-            timestamp TEXT NOT NULL,
-            session_id TEXT,
-            FOREIGN KEY (user_id) REFERENCES users (id)
+        # chatbot_conversations comes from the migrations; this adds the
+        # chatbot's case, feedback and FAQ-workflow tables if missing.
+        from education_system.systems.university.infrastructure.database.schemas import (
+            chatbot_care_schema,
         )
-        ''')
-
-        conn.commit()
+        chatbot_care_schema.apply_to_connection(conn)
         conn.close()
-        logger.info("Chatbot conversations table created")
+        logger.info("Chatbot tables checked")
     except (sqlite3.Error, DatabaseError) as e:
         logging.error(f"Error creating chatbot table: {e}")
 
@@ -1844,14 +1642,6 @@ def init_all_databases():
         time.sleep(0.05)
     except (ValueError, TypeError, ValidationError) as e:
         logging.warning(f"Failed to initialize communication dashboard: {e}")
-
-    # Initialize AI detector (ONLY ONCE)
-    try:
-        logger.info("Initializing AI detector...")
-        integrate_ai_detector_with_main()
-        time.sleep(0.05)
-    except (ValueError, TypeError, ValidationError) as e:
-        logging.warning(f"Failed to initialize AI detector: {e}")
 
     # Mark initialization as complete
     init_all_databases._initialization_complete = True
@@ -1889,11 +1679,11 @@ def init_auth_for_modules():
         set_restaurant_auth(auth)
         from education_system.systems.university.domains.operations.domain.campus.mobility.services.parking_management import set_auth as set_parking_auth
         set_parking_auth(auth)
-        from education_system.systems.university.domains.academics.domain.services.library.settings import set_auth as set_library_auth
+        from education_system.systems.university.domains.library.domain.library.settings import set_auth as set_library_auth
         set_library_auth(auth)
         from education_system.systems.university.domains.learners.domain.alumni import set_auth as set_alumni_auth
         set_alumni_auth(auth)
-        from education_system.systems.university.domains.pastoral.domain.services.student_support import set_auth as set_student_support_auth
+        from education_system.systems.university.domains.student_support.domain.student_support import set_auth as set_student_support_auth
         set_student_support_auth(auth)
         set_medical_accommodation_auth(auth)   # medical accommodation
         from education_system.systems.university.plugins.campus_commerce.domain.services.shop_management import set_auth as set_shop_auth
@@ -1925,7 +1715,6 @@ __all__ = [
     'handle_database_error',
     'fix_accommodation_schema',
     'fix_parent_portal_database',
-    'fix_ai_detector_database_schema',
     'fix_support_database_schema',
     'fix_duplicate_emails',
     'silent_integrity_check',

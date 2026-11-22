@@ -45,8 +45,11 @@ _BAND_MARK = {"Low": " ", "Medium": "•", "High": "!", "Critical": "‼"}
 
 def _run_scan() -> None:
     print("\n  Scanning all active students...")
-    results = data.scan_all()
+    errors: list[str] = []
+    results = data.scan_all(errors=errors)
     print(f"  ✓ Assessed {len(results)} students.")
+    for err in errors:
+        print(f"  ✗ Not assessed — {err}")
     counts = data.summary()
     for band in data.BANDS:
         print(f"    {band:9} {counts.get(band, 0)}")
@@ -63,12 +66,14 @@ def _register() -> None:
     if not snaps:
         print("\n  No snapshots yet — run a scan first.")
         return _pause()
-    print(f"\n  {'Student':<26}{'Score':>6}  {'Band':<9}{'Attend':>7}")
-    print("  " + "-" * 52)
+    print(f"\n  {'Student':<26}{'Score':>6}  {'Band':<9}{'Attend':>7}"
+          f"{'Alerts':>8}{'Interv.':>8}")
+    print("  " + "-" * 68)
     for s in snaps:
         att = f"{s['attendance_pct']}%" if s["attendance_pct"] is not None else "—"
         mark = _BAND_MARK.get(s["band"], " ")
-        print(f"  {mark} {s['full_name'][:23]:<24}{s['score']:>6}  {s['band']:<9}{att:>7}")
+        print(f"  {mark} {s['full_name'][:23]:<24}{s['score']:>6}  {s['band']:<9}{att:>7}"
+              f"{s.get('open_alerts', 0):>8}{s.get('open_interventions', 0):>8}")
     _pause()
 
 
@@ -98,6 +103,46 @@ def _per_student() -> None:
             print(f"    {p.subject[:20]:<22}{(p.baseline_grade or '—'):>5}"
                   f"{(p.latest_mock_grade or '—'):>5}{(p.predicted_grade or '—'):>5}"
                   f"{(p.forecast_grade or '—'):>6}{(p.target_grade or '—'):>7}  {ot}")
+    _print_actions(sid)
+    _pause()
+
+
+def _print_actions(sid: str) -> None:
+    """Open early-warning alerts and interventions beside the score."""
+    try:
+        pic = data.student_risk_picture(sid)
+    except Exception as e:
+        print(f"\n  ✗ Could not load alerts/interventions: {e}")
+        return
+    live = {iv.intervention_id for iv in pic.open_interventions}
+    print(f"\n  Open early-warning alerts ({len(pic.open_alerts)}):")
+    for a in pic.open_alerts:
+        link = (f"intervention #{a.linked_intervention_id}"
+                + ("" if a.linked_intervention_id in live else " (closed)")
+                if a.linked_intervention_id else "no intervention yet")
+        print(f"    #{a.alert_id:<5} {a.severity:<8} {a.alert_type:<14} "
+              f"{a.title[:40]:<40}  {link}")
+    print(f"\n  Open interventions ({len(pic.open_interventions)}):")
+    for iv in pic.open_interventions:
+        print(f"    #{iv.intervention_id:<5} {iv.status:<8} "
+              f"{iv.intervention_type:<20} {iv.title[:40]}")
+
+
+def _open_intervention() -> None:
+    from education_system.systems.sixth_form.domain.assessment.early_warning import (
+        early_warning as ew,
+    )
+    raw = _input("Early-warning alert ID")
+    if not raw.isdigit():
+        print("  ✗ Enter an alert number.")
+        return _pause()
+    try:
+        iv, created = ew.open_intervention(int(raw))
+    except ew.ValidationError as e:
+        print(f"  ✗ {e}")
+        return _pause()
+    print(f"  ✓ {'Opened' if created else 'Already linked to'} "
+          f"intervention #{iv.intervention_id}: {iv.title}")
     _pause()
 
 
@@ -105,6 +150,7 @@ _MENU: list[tuple[str, Callable[[], None]]] = [
     ("Run risk scan (all students)", _run_scan),
     ("At-risk register", _register),
     ("Per-student breakdown", _per_student),
+    ("Open intervention from an alert", _open_intervention),
 ]
 
 

@@ -15,6 +15,8 @@ from tkcalendar import DateEntry
 import logging
 import threading
 
+from education_system.platform.delivery.gui.tk_threads import start_thread, ui
+
 from education_system.systems.university.infrastructure.email.email_service import (
     queue_email,
     queue_template_email,
@@ -103,17 +105,15 @@ class EmailQueueSchedulerGUI:
         Tk is single-threaded: creating, destroying or configuring widgets
         from a worker thread is undefined behaviour that surfaces as stray
         TclErrors or a wedged interpreter. Background work has to hand its
-        result back through after(). Dropped silently if the window has
-        already gone — there is nothing left to update.
+        result back through ui(), which queues it for the main thread.
+        Dropped silently if the window has already gone — there is nothing
+        left to update. The liveness check runs on the main thread too.
         """
-        if not self._is_alive():
-            return
-        try:
-            self.window.after(0, callback)
-        except (tk.TclError, RuntimeError):
-            # TclError: window died between the check and the schedule.
-            # RuntimeError: the main loop has already exited.
-            pass
+        def _run():
+            if self._is_alive():
+                callback()
+
+        ui(self.window, _run)
 
     def setup_ui(self):
         """Set up the user interface"""
@@ -971,8 +971,7 @@ Worker threads are only needed for high-volume async email processing.
                 else:
                     self._post(lambda: finish(result=result))
 
-            thread = threading.Thread(target=wait_thread, daemon=True)
-            thread.start()
+            start_thread(self.window, wait_thread)
 
         except Exception as e:
             self._error(_t("common.error"), f"{_t('email_queue.messages.failed_wait_queue')}: {str(e)}")

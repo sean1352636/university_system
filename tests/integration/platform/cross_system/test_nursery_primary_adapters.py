@@ -207,6 +207,61 @@ def test_a_move_that_stopped_part_way_resumes(phases, monkeypatch):
     assert len(transitions.list_transitions(result.journey_id, db_path=phases)) == 1
 
 
+def test_add_pupil_details_cross_to_primary(phases):
+    """The nursery record now asks the schools' Add Pupil questions; those
+    answers reach the primary pupil (SEN and EAL only with consent)."""
+    from education_system.systems.nursery.domain.learners.children import (
+        children,
+        primary_transfer,
+    )
+    from education_system.systems.primary.domain.learners.pupils import pupils
+    upn = children.upn_check_letter("201234567890") + "201234567890"
+    child = children.create_child({
+        **CHILD, "middle_names": "Grace", "preferred_name": "May", "gender": "Female",
+        "upn": upn, "address_line1": "1 High Street", "town": "Bath",
+        "postcode": "BA1 1AA", "sen_status": "K", "eal": "yes",
+        "parent_relationship": "Mother"}, complete=True)
+
+    exported = registry.require("nursery").export_handover(
+        child.pupil_id, destination_system="primary").record
+    assert set(exported) <= set(handover.NURSERY_TO_PRIMARY.field_keys())
+    assert exported["child_identity"]["upn"] == upn
+    assert exported["guardians"][0]["relationship"] == "Mother"
+    assert exported["send_support"]["sen_status"] == "K"
+    assert exported["communication_needs"] == {"eal": True}
+
+    result = primary_transfer.move_to_primary_school(
+        child.pupil_id, consent=primary_transfer.consent_for(medical=True, support=True),
+        db_path=phases)
+    pupil = pupils.get_pupil(result.primary_pupil_id)
+    assert (pupil.middle_names, pupil.preferred_name, pupil.gender, pupil.upn) == (
+        "Grace", "May", "Female", upn)
+    assert (pupil.address_line1, pupil.town, pupil.postcode) == (
+        "1 High Street", "Bath", "BA1 1AA")
+    assert (pupil.parent_relationship, pupil.parent_email) == (
+        "Mother", "ngozi@example.test")
+    assert (pupil.sen_status, pupil.send_status, pupil.eal) == ("K", "yes", True)
+    left = children.get_child(child.pupil_id)
+    assert left.status == "left" and left.left_date
+
+
+def test_sen_and_eal_stay_behind_without_support_consent(phases):
+    from education_system.systems.nursery.domain.learners.children import (
+        children,
+        primary_transfer,
+    )
+    from education_system.systems.primary.domain.learners.pupils import pupils
+    child = children.create_child({**CHILD, "sen_status": "E", "eal": "yes"})
+
+    result = primary_transfer.move_to_primary_school(
+        child.pupil_id, consent=primary_transfer.consent_for(medical=True, support=False),
+        db_path=phases)
+
+    pupil = pupils.get_pupil(result.primary_pupil_id)
+    assert pupil.sen_status is None and pupil.eal is False
+    assert {"send_support", "communication_needs"} <= set(result.withheld)
+
+
 def test_primary_applicant_is_idempotent_on_the_journey(phases):
     from education_system.systems.primary.domain.learners.pupils import pupils
     request = HandoverRequest(

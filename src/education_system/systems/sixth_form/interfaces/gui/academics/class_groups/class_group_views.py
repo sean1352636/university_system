@@ -9,8 +9,10 @@ from __future__ import annotations
 
 import logging
 import tkinter as tk
-from tkinter import messagebox, ttk
+from tkinter import ttk
+from education_system.platform.delivery.gui.parented_dialogs import messagebox
 from typing import Any, Callable
+from education_system.systems.sixth_form.infrastructure.record_links import describe
 from education_system.systems.sixth_form.domain.academics.class_groups import class_groups
 from education_system.systems.sixth_form.domain.academics.class_groups import class_groups as data
 from education_system.systems.sixth_form.domain.academics.courses import courses as course_data
@@ -222,6 +224,7 @@ def open_directory(gui) -> None:
     course_filter_var = tk.StringVar()
     teacher_var = tk.StringVar()
     search_var = tk.StringVar()
+    archived_var = tk.BooleanVar(value=False)
 
     courses = _load_courses()
     course_filter_choices = [""] + [_course_label(c) for c in courses]
@@ -257,6 +260,7 @@ def open_directory(gui) -> None:
                 course_id=cid_filter,
                 teacher=teacher_var.get().strip() or None,
                 search=search_var.get().strip() or None,
+                include_archived=archived_var.get(),
             )
         except Exception as e:
             logger.exception("Failed to load class groups")
@@ -265,6 +269,13 @@ def open_directory(gui) -> None:
             return
 
         course_codes = {c.course_id: c.course_code for c in courses}
+        if archived_var.get():
+            try:
+                course_codes.update(
+                    (c.course_id, c.course_code)
+                    for c in course_data.list_courses(include_archived=True))
+            except Exception:
+                logger.exception("Could not load archived course codes")
 
         cols = ("group_id", "course", "group_name",
                 "teacher", "room", "members", "cap")
@@ -292,7 +303,7 @@ def open_directory(gui) -> None:
             tree.insert("", "end", iid=str(g.group_id), values=(
                 g.group_id,
                 course_codes.get(g.course_id, f"#{g.course_id}"),
-                g.group_name,
+                g.group_name + (" (archived)" if g.archived_at else ""),
                 g.teacher or "—",
                 g.room or "—",
                 data.count_members(g.group_id),
@@ -321,6 +332,9 @@ def open_directory(gui) -> None:
         ttk.Button(actions_holder, text="Delete",
                    command=lambda: (_require() and _delete_with_confirm(gui, _selected()))
                    ).pack(side="left", padx=(0, 6))
+        ttk.Button(actions_holder, text="Restore",
+                   command=lambda: (_require() and _restore(gui, _selected()))
+                   ).pack(side="left", padx=(0, 6))
         ttk.Button(actions_holder, text="New Class Group",
                    command=lambda: open_add_group(gui)
                    ).pack(side="left", padx=(12, 6))
@@ -331,11 +345,13 @@ def open_directory(gui) -> None:
                   lambda _e: (_selected() and open_profile(gui, _selected())))
         gui.status_var.set(f"Class groups: {len(rows)} match(es)")
 
+    ttk.Checkbutton(filt, text="Show archived", variable=archived_var,
+                    command=refresh).pack(side="left", padx=(8, 0))
     ttk.Button(filt, text="Apply", command=refresh).pack(side="left", padx=(8, 0))
     ttk.Button(
         filt, text="Clear",
         command=lambda: (course_filter_var.set(""), teacher_var.set(""),
-                         search_var.set(""), refresh()),
+                         search_var.set(""), archived_var.set(False), refresh()),
     ).pack(side="left", padx=(4, 0))
     refresh()
 
@@ -523,8 +539,10 @@ def open_profile(gui, group_id: int) -> None:
 
 
 def _delete_with_confirm(gui, group_id: int) -> None:
+    """Delete a group created by mistake; one with history is archived."""
     try:
         g = data.get_group(group_id)
+        history = data.history_counts(group_id) if g else {}
     except Exception as exc:
         logger.exception("Failed to load class group %d", group_id)
         messagebox.showerror("Error", f"Could not load group: {exc}",
@@ -535,10 +553,40 @@ def _delete_with_confirm(gui, group_id: int) -> None:
                              parent=gui.root)
         return
 
+    if history:
+        if g.archived_at:
+            messagebox.showinfo(
+                "Class group archived",
+                f"'{g.group_name}' has recorded history ({describe(history)}), "
+                "so it cannot be deleted. It is already archived; use Restore "
+                "to bring it back.", parent=gui.root)
+            return
+        if not messagebox.askyesno(
+                "Archive class group",
+                f"'{g.group_name}' cannot be deleted — that would destroy:\n\n"
+                f"{describe(history)}\n\n"
+                "Archive it instead? The group and its timetable slots are "
+                "hidden from lists and timetables; members, attendance and "
+                "assignments are kept and it can be restored.",
+                parent=gui.root):
+            return
+        try:
+            data.archive_group(group_id)
+        except Exception as exc:
+            logger.exception("Archive failed for class group %d", group_id)
+            messagebox.showerror("Error", f"Could not archive: {exc}",
+                                 parent=gui.root)
+            return
+        gui.status_var.set(f"Archived class group #{group_id}")
+        open_directory(gui)
+        return
+
     n = data.count_members(group_id)
     msg = f"Delete class group '{g.group_name}'?"
     if n:
         msg += f"\n\n{n} student(s) will be removed from this group."
+    msg += ("\n\nIts timetable slots go too. No attendance, registers or "
+            "assignments are recorded against it.")
     if not messagebox.askyesno("Delete class group", msg, parent=gui.root):
         return
     try:
@@ -554,3 +602,19 @@ def _delete_with_confirm(gui, group_id: int) -> None:
     else:
         messagebox.showerror("Error", "Could not delete class group.",
                              parent=gui.root)
+
+
+def _restore(gui, group_id: int) -> None:
+    try:
+        restored = data.restore_group(group_id)
+    except Exception as exc:
+        logger.exception("Restore failed for class group %d", group_id)
+        messagebox.showerror("Error", f"Could not restore: {exc}",
+                             parent=gui.root)
+        return
+    if not restored:
+        messagebox.showinfo("Restore", "That class group is not archived.",
+                            parent=gui.root)
+        return
+    gui.status_var.set(f"Restored class group #{group_id}")
+    open_directory(gui)

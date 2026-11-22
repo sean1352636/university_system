@@ -16,6 +16,7 @@ logger = logging.getLogger(__name__)
 
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 
+from education_system.systems.university.domains.staff.interfaces.gui.staff_hr import _access as _hr
 import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext
 from datetime import datetime
@@ -54,7 +55,7 @@ class GrantBudgetGUI:
 
     def _get_user_id(self):
         """Get user ID from current user dict."""
-        return self.current_user.get('id') or self.current_user.get('username')
+        return _hr.user_key(self)
 
     def create_as_tab(self, notebook: ttk.Notebook):
         """Create as a tab in parent notebook."""
@@ -66,7 +67,8 @@ class GrantBudgetGUI:
         """Create as standalone window."""
         self.window = tk.Toplevel(self.root)
         self.window.title(_t('gui.staff.staff_hr.grant_budget.windows.grant_budget_management', default="Grant Budget Management"))
-        self.window.geometry("1200x700")
+        self.window.geometry("1400x900")
+        self.window.minsize(1200, 800)
         self.window.minsize(1000, 600)
 
         bottom_frame = ttk.Frame(self.window)
@@ -93,8 +95,17 @@ class GrantBudgetGUI:
         self._create_alerts_tab()
         self._create_transfers_tab()
 
-        if self.current_user.get('role') in ['admin', 'Admin', 'administrator', 'staff']:
+        if _hr.can(self, 'operations') or self._can_decide():
             self._create_admin_tab()
+
+    def _can_decide(self) -> bool:
+        """The research office and principal investigators decide expenses
+        and transfers (GrantBudgetManager checks each decision again)."""
+        try:
+            return GrantBudgetManager.can_decide(_hr.actor(self))
+        except Exception:
+            logger.warning("Grant approval access check failed; hiding it", exc_info=True)
+            return False
 
     # ==================== GRANT MAP ====================
 
@@ -103,13 +114,16 @@ class GrantBudgetGUI:
         self.grant_map = {}
         try:
             with get_connection() as conn:
+                # Awarded grants the Research Portal has accepted are 'active';
+                # budget rows key on application_id (their foreign key).
                 rows = conn.execute(
-                    "SELECT grant_application_id, title FROM grant_applications WHERE status='approved'"
+                    "SELECT application_id, COALESCE(title, grant_name) AS title "
+                    "FROM grant_applications WHERE status IN ('active', 'awarded')"
                 ).fetchall()
                 for row in rows:
                     r = dict(row)
-                    label = f"{r.get('title', '')} (#{r.get('grant_application_id')})"
-                    self.grant_map[label] = r.get('grant_application_id')
+                    label = f"{r.get('title') or ''} (#{r.get('application_id')})"
+                    self.grant_map[label] = r.get('application_id')
         except Exception:
             logger.debug("Suppressed exception", exc_info=True)
 
@@ -1241,7 +1255,8 @@ class GrantBudgetGUI:
         try:
             GrantBudgetManager.approve_expense(
                 expense_id=expense_id,
-                approved_by=self._get_user_id()
+                approved_by=self._get_user_id(),
+                actor=_hr.actor(self)
             )
             messagebox.showinfo(_t('gui.staff.staff_hr.grant_budget.dialogs.success', default="Success"), _t('gui.staff.staff_hr.grant_budget.dialogs.expense_approved', default="Expense approved."))
             self._load_admin_expenses()
@@ -1264,7 +1279,8 @@ class GrantBudgetGUI:
         try:
             GrantBudgetManager.reject_expense(
                 expense_id=expense_id,
-                approved_by=self._get_user_id()
+                approved_by=self._get_user_id(),
+                actor=_hr.actor(self)
             )
             messagebox.showinfo(_t('gui.staff.staff_hr.grant_budget.dialogs.success', default="Success"), _t('gui.staff.staff_hr.grant_budget.dialogs.expense_rejected', default="Expense rejected."))
             self._load_admin_expenses()
@@ -1400,7 +1416,8 @@ class GrantBudgetGUI:
         try:
             GrantBudgetManager.approve_transfer(
                 transfer_id=transfer_id,
-                approved_by=self._get_user_id()
+                approved_by=self._get_user_id(),
+                actor=_hr.actor(self)
             )
             messagebox.showinfo(_t('gui.staff.staff_hr.grant_budget.dialogs.success', default="Success"), _t('gui.staff.staff_hr.grant_budget.dialogs.transfer_approved', default="Transfer approved."))
             self._load_admin_transfers()
@@ -1423,7 +1440,8 @@ class GrantBudgetGUI:
         try:
             GrantBudgetManager.reject_transfer(
                 transfer_id=transfer_id,
-                approved_by=self._get_user_id()
+                approved_by=self._get_user_id(),
+                actor=_hr.actor(self)
             )
             messagebox.showinfo(_t('gui.staff.staff_hr.grant_budget.dialogs.success', default="Success"), _t('gui.staff.staff_hr.grant_budget.dialogs.transfer_rejected', default="Transfer rejected."))
             self._load_admin_transfers()

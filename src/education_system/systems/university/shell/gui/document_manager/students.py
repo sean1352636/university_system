@@ -210,22 +210,26 @@ Total Documents: {doc_count}
                 return
 
             try:
-                conn = get_connection()
-                cursor = conn.cursor()
+                from education_system.systems.university.shell.gui.document_manager.notifications import (
+                    deliver_to_students, delivery_summary, resolve_student_recipients,
+                )
+                recipients = resolve_student_recipients("custom", [str(student_id)])
+                if not recipients:
+                    messagebox.showerror(_t('gui.shell.document_manager.students.dialogs.error', default="Error"),
+                                         f"No student with ID {student_id}.", parent=dialog)
+                    return
+                user = self.gui.current_user if isinstance(self.gui.current_user, dict) else {}
+                stats = deliver_to_students(recipients, subject, message, email=True, inbox=True,
+                                            sender_id=user.get('id'), kind="transactional")
+                self.gui.log_event('send', 'notification', details={'student_id': str(student_id), 'stats': stats})
 
-                cursor.execute('''
-                INSERT INTO notifications (user_id, channel, priority, title, message, source_system)
-                VALUES (?, ?, ?, ?, ?, ?)
-                ''', (student_id, 'general', 'normal', subject, message, 'document_manager'))
-
-                conn.commit()
-                conn.close()
-
-                messagebox.showinfo(_t('gui.shell.document_manager.students.dialogs.success', default="Success"), _t('gui.shell.document_manager.students.dialogs.notification_sent_successfully', default="Notification sent successfully!"))
+                messagebox.showinfo(_t('gui.shell.document_manager.students.dialogs.success', default="Success"),
+                                    delivery_summary(stats, 1), parent=dialog)
                 dialog.destroy()
 
             except Exception as e:
-                messagebox.showerror(_t('gui.shell.document_manager.students.dialogs.error', default="Error"), f"Failed to send notification: {str(e)}")
+                messagebox.showerror(_t('gui.shell.document_manager.students.dialogs.error', default="Error"), f"Failed to send notification: {str(e)}",
+                                     parent=dialog)
 
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(fill='x', pady=(15, 0))
@@ -564,22 +568,11 @@ Total Documents: {doc_count}
                     else:
                         raise Exception("Email sending returned False")
 
-                except ImportError:
-                    # Fallback: Log to database for later sending
-                    conn = get_connection()
-                    cursor = conn.cursor()
-                    cursor.execute('''
-                        INSERT INTO notifications (user_id, channel, priority, title, message, source_system)
-                        VALUES (?, ?, ?, ?, ?, ?)
-                    ''', (recipient, 'email', 'normal', subject, body, 'document_manager'))
-                    conn.commit()
-                    conn.close()
-
-                    messagebox.showinfo(_t('gui.shell.document_manager.students.dialogs.queued', default="Queued"),
-                                      f"Report queued for sending to {recipient}.\n"
-                                      "Email will be sent when the email scheduler runs.")
-                    self.gui.log_event('queue', 'email_report', details=f'Queued {title} for {recipient}')
-                    dialog.destroy()
+                except ImportError as e:
+                    messagebox.showerror(_t('gui.shell.document_manager.students.dialogs.error', default="Error"),
+                                         f"The university e-mail service is not available, so the report was not sent: {e}",
+                                         parent=dialog)
+                    return
 
             except Exception as e:
                 messagebox.showerror(_t('gui.shell.document_manager.students.dialogs.error', default="Error"), f"Failed to send report: {e}")
@@ -721,11 +714,43 @@ Total Documents: {doc_count}
 
     def search_student_for_upload(self):
         """Search for student in upload dialog"""
-        if hasattr(self.gui, 'upload_student_id'):
-            search_term = simpledialog.askstring(_t('gui.shell.document_manager.students.dialogs.search_student', default="Search Student"), _t('gui.shell.document_manager.students.dialogs.enter_student_id_or_name', default="Enter student ID or name:"))
-            if search_term:
-                # Here you would implement actual search logic
-                messagebox.showinfo(_t('gui.shell.document_manager.students.dialogs.search', default="Search"), f"Searching for: {search_term}")
+        combo = getattr(self.gui, 'upload_student_id', None)
+        if combo is None:
+            return
+        try:
+            parent = combo.winfo_toplevel()
+        except tk.TclError:
+            return
+        search_term = simpledialog.askstring(_t('gui.shell.document_manager.students.dialogs.search_student', default="Search Student"), _t('gui.shell.document_manager.students.dialogs.enter_student_id_or_name', default="Enter student ID or name:"),
+                                             parent=parent)
+        if not search_term or not search_term.strip():
+            return
+        term = f"%{search_term.strip()}%"
+        try:
+            with get_connection() as conn:
+                matches = conn.execute('''
+                    SELECT student_id, first_name, last_name FROM students
+                    WHERE student_id LIKE ? OR first_name LIKE ? OR last_name LIKE ?
+                       OR (first_name || ' ' || last_name) LIKE ? OR email_address LIKE ?
+                    ORDER BY last_name, first_name
+                    LIMIT 200
+                ''', (term, term, term, term, term)).fetchall()
+        except Exception as e:
+            messagebox.showerror(_t('gui.shell.document_manager.students.dialogs.error', default="Error"),
+                                 f"Student search failed: {e}", parent=parent)
+            return
+        if not matches:
+            messagebox.showinfo(_t('gui.shell.document_manager.students.dialogs.search', default="Search"),
+                                f"No students match '{search_term.strip()}'.", parent=parent)
+            return
+        values = [f"{sid} - {first} {last}" for sid, first, last in matches]
+        # Narrow the picker to the matches and select the first one.
+        combo['values'] = values
+        combo.set(values[0])
+        if len(values) > 1:
+            messagebox.showinfo(_t('gui.shell.document_manager.students.dialogs.search', default="Search"),
+                                f"{len(values)} students match - the list now shows only those. "
+                                "Pick the right one from the Student box.", parent=parent)
 
     def get_students_list(self):
         """Get list of students"""

@@ -1,0 +1,29 @@
+{
+  "name": "dinner_money_debt",
+  "description": "A letter to a family whose school meal account is overdrawn.",
+  "subject": "School meals account - {pupil_name}",
+  "body": [
+    "Dear {recipient_name},",
+    "",
+    "{pupil_name}'s school meals account is overdrawn by {debt}.",
+    "",
+    "{details}",
+    "",
+    "Please top up the account at the school office or online as soon as you can. {pupil_name} will not be refused a meal. If paying is difficult, please contact the office in confidence - your child may be entitled to free school meals, and we can help you apply.",
+    "",
+    "Yours sincerely,",
+    "{sender_name}",
+    "{school_name}"
+  ],
+  "placeholders": {
+    "recipient_name": "The contact's name",
+    "pupil_name": "The pupil's first name",
+    "debt": "The amount overdrawn",
+    "details": "The recent meals and payments",
+    "sender_name": "The member of staff sending it",
+    "school_name": "The school's name"
+  },
+  "defaults": {
+    "school_name": "Secondary School"
+  }
+}

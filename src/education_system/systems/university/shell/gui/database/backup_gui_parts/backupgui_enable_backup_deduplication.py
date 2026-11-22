@@ -5,6 +5,9 @@ from education_system.systems.university.infrastructure.i18n import get_text as 
 from .. import backup_gui_shared as _shared
 globals().update({name: value for name, value in _shared.__dict__.items() if not name.startswith("__")})
 
+# Imported after the namespace splat so it cannot be shadowed.
+from education_system.platform.delivery.gui.tk_threads import start_thread, ui
+
 
 class BackupGUI:
     def enable_backup_deduplication():
@@ -199,26 +202,30 @@ class BackupGUI:
         """Run backup operation in separate thread"""
         def run_operation():
             try:
-                self.status_var.set(status_message)
-                self.progress_var.set(0)
+                ui(self.root, self.status_var.set, status_message)
+                ui(self.root, self.progress_var.set, 0)
 
                 result = operation()
 
                 if result:
-                    self.status_var.set("Backup completed successfully")
-                    self.refresh_backup_list()
-                    messagebox.showinfo(_t('gui.shell.database.backup_gui_parts.backupgui_enable_backup_deduplication.dialogs.success', default="Success"), f"Backup created: {os.path.basename(result)}")
+                    def _done(result=result):
+                        self.status_var.set("Backup completed successfully")
+                        self.refresh_backup_list()
+                        messagebox.showinfo(_t('gui.shell.database.backup_gui_parts.backupgui_enable_backup_deduplication.dialogs.success', default="Success"), f"Backup created: {os.path.basename(result)}")
+                    ui(self.root, _done)
                 else:
-                    self.status_var.set("Backup failed")
-                    messagebox.showerror(_t('gui.shell.database.backup_gui_parts.backupgui_enable_backup_deduplication.dialogs.error', default="Error"), _t('gui.shell.database.backup_gui_parts.backupgui_enable_backup_deduplication.dialogs.backup_operation_failed', default="Backup operation failed"))
+                    def _failed():
+                        self.status_var.set("Backup failed")
+                        messagebox.showerror(_t('gui.shell.database.backup_gui_parts.backupgui_enable_backup_deduplication.dialogs.error', default="Error"), _t('gui.shell.database.backup_gui_parts.backupgui_enable_backup_deduplication.dialogs.backup_operation_failed', default="Backup operation failed"))
+                    ui(self.root, _failed)
 
             except Exception as e:
-                self.status_var.set("Backup failed")
-                messagebox.showerror(_t('gui.shell.database.backup_gui_parts.backupgui_enable_backup_deduplication.dialogs.error', default="Error"), f"Backup operation failed: {e}")
+                def _error(e=e):
+                    self.status_var.set("Backup failed")
+                    messagebox.showerror(_t('gui.shell.database.backup_gui_parts.backupgui_enable_backup_deduplication.dialogs.error', default="Error"), f"Backup operation failed: {e}")
+                ui(self.root, _error)
             finally:
-                self.progress_var.set(0)
+                ui(self.root, self.progress_var.set, 0)
 
         # Run in separate thread to prevent GUI freezing
-        thread = threading.Thread(target=run_operation)
-        thread.daemon = True
-        thread.start()
+        start_thread(self.root, run_operation)

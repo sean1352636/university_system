@@ -18,11 +18,9 @@ from education_system.systems.apprenticeships.infrastructure.persistence import 
     programme_versions_migration as migration,
 )
 from education_system.systems.apprenticeships.infrastructure.persistence import schema
-from education_system.systems.apprenticeships.services import (
-    apprentice_service,
-    programme_service,
-)
-from education_system.systems.apprenticeships.services.access import Actor
+from education_system.systems.apprenticeships.application.apprentices import apprentice_service
+from education_system.systems.apprenticeships.application.programmes import programme_service
+from education_system.systems.apprenticeships.application.security.access import Actor
 
 # ═════════════════════════════════════════════════════════════════════
 # Rules

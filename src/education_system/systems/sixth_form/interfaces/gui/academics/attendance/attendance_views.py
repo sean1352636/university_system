@@ -1,6 +1,6 @@
 """GUI panels for Sixth Form Attendance.
 
-Tabbed entry point:
+Opens in its own window, with every section listed down a sidebar:
 
   * Take register — pick slot + date, fill in the roster, save once.
     Bulk marking, keyboard marking, arrival/departure stamps, copy
@@ -14,6 +14,16 @@ Tabbed entry point:
     :mod:`attendance_codes_views`.
   * Expected & AM/PM — coverage against the timetable and the statutory
     session marks, built in :mod:`attendance_sessions_views`.
+
+After those, the rest of the attendance package, one sidebar entry per
+page under three headings (each page built only when first opened):
+
+  * Absence & site — leave & absence (the one absence store), signing in
+    and out of site, kiosk, offline capture, bulk import.
+  * Study & interventions — supervised study / activities, punctuality,
+    cases & contracts, CME alerts, register nudges.
+  * Policy & returns — thresholds, the governor report, the census
+    extract.
 """
 
 from __future__ import annotations
@@ -22,12 +32,18 @@ from education_system.systems.sixth_form.interfaces.gui._ui import grab_when_vie
 import logging
 import tkinter as tk
 from datetime import date as _date
-from tkinter import messagebox, simpledialog, ttk
+from tkinter import ttk
+from education_system.platform import branding
+from education_system.platform.delivery.gui import window_sizing
+from education_system.systems.sixth_form.interfaces.gui._sidebar import SidebarBook
+from education_system.platform.delivery.gui.parented_dialogs import messagebox, simpledialog
 from typing import Any
 from education_system.systems.sixth_form.domain.academics.attendance import attendance
 from education_system.systems.sixth_form.domain.academics.attendance import (
-    attendance_codes_views as codes_views,
     attendance_register as register,
+)
+from education_system.systems.sixth_form.interfaces.gui.academics.attendance import (
+    attendance_codes_views as codes_views,
     attendance_register_views as register_views,
     attendance_sessions_views as sessions_views,
 )
@@ -49,6 +65,57 @@ from education_system.systems.sixth_form.domain.academics.timetable.timetable im
 
 logger = logging.getLogger(__name__)
 
+_GUI_PKG = "education_system.systems.sixth_form.interfaces.gui.academics.attendance"
+
+
+def _builder(module: str, func: str):
+    """A tab builder imported only when its tab is first opened."""
+    def build(gui, parent) -> None:
+        import importlib
+        getattr(importlib.import_module(f"{_GUI_PKG}.{module}"), func)(
+            gui, parent)
+    return build
+
+
+# The grouped tabs after the original nine: (tab title, [(page, builder)]).
+# Each page is built the first time it is shown, so opening Attendance
+# does not open every table in the package.
+_GROUPED_TABS: list[tuple[str, list[tuple[str, Any]]]] = [
+    ("Absence & site", [
+        ("Leave & absence", _builder("attendance_absence_views",
+                                     "build_leave_tab")),
+        ("Sign in / out", _builder("attendance_absence_views",
+                                   "build_signout_tab")),
+        ("Kiosk", _builder("attendance_capture_views", "build_kiosk_tab")),
+        ("Offline capture", _builder("attendance_capture_views",
+                                     "build_offline_tab")),
+        ("Import", _builder("attendance_capture_views", "build_import_tab")),
+    ]),
+    ("Study & interventions", [
+        ("Study & activities", _builder("attendance_capture_views",
+                                        "build_activities_tab")),
+        ("Punctuality", _builder("attendance_capture_views",
+                                 "build_punctuality_tab")),
+        ("Cases & contracts", _builder("attendance_oversight_views",
+                                       "build_escalation_tab")),
+        ("CME alerts", _builder("attendance_oversight_views",
+                                "build_safeguarding_tab")),
+        ("Nudges", _builder("attendance_oversight_views",
+                            "build_nudges_tab")),
+        # Reserved: "Bursary holds" (attendance_bursary) is added here by
+        # the finance work, as ("Bursary holds", _builder(<module>, <fn>)).
+    ]),
+    ("Policy & returns", [
+        ("Thresholds", _builder("attendance_oversight_views",
+                                "build_thresholds_tab")),
+        ("Governor report", _builder("attendance_oversight_views",
+                                     "build_governor_tab")),
+        ("Census extract", _builder("attendance_oversight_views",
+                                    "build_census_tab")),
+    ]),
+]
+
+
 # Shown next to the bulk-mark buttons and in the draft banner.
 _KEY_HINT = "  ".join(f"{k.upper()}={v}"
                       for k, v in register.STATUS_KEYS.items())
@@ -59,17 +126,6 @@ def _actor(gui) -> str | None:
     auth = getattr(gui, "auth", None)
     return ((getattr(auth, "current_user", None) or {}).get("username")
             if auth else None)
-
-
-def _clear(gui) -> ttk.Frame:
-    for w in gui.content_frame.winfo_children():
-        w.destroy()
-    return gui.content_frame
-
-
-def _heading(parent, text: str) -> None:
-    ttk.Label(parent, text=text, font=("", 16, "bold")).pack(
-        anchor="w", pady=(0, 8))
 
 
 def _slot_label(slot, group=None, course=None) -> str:
@@ -87,14 +143,54 @@ def _today() -> str:
     return _date.today().isoformat()
 
 
-# ── Top-level tabbed view ───────────────────────────────────────────
+# ── Top-level window ───────────────────────────────────────────────
+
+class _WindowGui:
+    """The main GUI, seen from the Attendance window.
+
+    The tab builders take ``gui`` and parent their dialogs and pop-ups on
+    ``gui.root``. Here ``root`` is the Attendance window, so those open
+    over it rather than behind it on the main window; everything else
+    (auth, the signed-in user, ...) comes from the real GUI.
+    """
+
+    def __init__(self, gui, win: tk.Misc) -> None:
+        self.__dict__["_gui"] = gui
+        self.__dict__["root"] = win
+        # Messages go to this window's own status bar.
+        self.__dict__["status_var"] = tk.StringVar(win, value="Ready.")
+
+    def __getattr__(self, name: str):
+        return getattr(self.__dict__["_gui"], name)
+
+
+# Sidebar headings for the register pages; the grouped pages take their
+# group's title.
+_CORE_SECTIONS = {
+    "Take register": "Registers", "Records": "Registers",
+    "Summary": "Registers", "Sessions": "Registers",
+    "Expected & AM/PM": "Registers", "Bulk & range": "Registers",
+    "Codes & reasons": "Codes & audit", "Authorisation": "Codes & audit",
+    "Audit": "Codes & audit",
+}
+
+WIN_GEOMETRY = "1400x900"
+WIN_MINSIZE = (1200, 800)
+
 
 def open_directory(gui) -> None:
-    frame = _clear(gui)
-    _heading(frame, "Attendance")
+    """Attendance in its own window, with its sections down a sidebar."""
+    master = getattr(gui, "root", None)
+    win = tk.Toplevel(master) if master is not None else tk.Tk()
+    win.title(f"Attendance — {branding.SYSTEM_NAME}")
+    window_sizing.fit(win, WIN_GEOMETRY, WIN_MINSIZE)
+    wgui = _WindowGui(gui, win)
 
-    nb = ttk.Notebook(frame)
-    nb.pack(fill="both", expand=True)
+    ttk.Label(win, textvariable=wgui.status_var, anchor="w",
+              relief="sunken", padding=(6, 2)).pack(
+        side="bottom", fill="x", padx=10, pady=(0, 6))
+    nb = SidebarBook(win, title="Attendance")
+    nb.pack(fill="both", expand=True, padx=10, pady=10)
 
     take_tab = ttk.Frame(nb, padding=8)
     records_tab = ttk.Frame(nb, padding=8)
@@ -105,25 +201,50 @@ def open_directory(gui) -> None:
     authz_tab = ttk.Frame(nb, padding=8)
     audit_tab = ttk.Frame(nb, padding=8)
     expected_tab = ttk.Frame(nb, padding=8)
-    nb.add(take_tab,     text="Take register")
-    nb.add(records_tab,  text="Records")
-    nb.add(summary_tab,  text="Summary")
-    nb.add(sessions_tab, text="Sessions")
-    nb.add(bulk_tab,     text="Bulk & range")
-    nb.add(codes_tab,    text="Codes & reasons")
-    nb.add(authz_tab,    text="Authorisation")
-    nb.add(expected_tab, text="Expected & AM/PM")
-    nb.add(audit_tab,    text="Audit")
+    for frame, text in ((take_tab, "Take register"),
+                        (records_tab, "Records"),
+                        (summary_tab, "Summary"),
+                        (sessions_tab, "Sessions"),
+                        (expected_tab, "Expected & AM/PM"),
+                        (bulk_tab, "Bulk & range"),
+                        (codes_tab, "Codes & reasons"),
+                        (authz_tab, "Authorisation"),
+                        (audit_tab, "Audit")):
+        nb.add(frame, text=text, group=_CORE_SECTIONS[text])
 
-    has_unsaved = _build_take_tab(gui, take_tab)
-    _build_records_tab(gui, records_tab)
-    _build_summary_tab(gui, summary_tab)
-    register_views.build_sessions_tab(gui, sessions_tab)
-    register_views.build_bulk_tab(gui, bulk_tab)
-    codes_views.build_codes_tab(gui, codes_tab)
-    codes_views.build_authorisation_tab(gui, authz_tab)
-    codes_views.build_audit_tab(gui, audit_tab)
-    sessions_views.build_sessions_tab(gui, expected_tab)
+    has_unsaved = _build_take_tab(wgui, take_tab)
+    _build_records_tab(wgui, records_tab)
+    _build_summary_tab(wgui, summary_tab)
+    register_views.build_sessions_tab(wgui, sessions_tab)
+    register_views.build_bulk_tab(wgui, bulk_tab)
+    codes_views.build_codes_tab(wgui, codes_tab)
+    codes_views.build_authorisation_tab(wgui, authz_tab)
+    codes_views.build_audit_tab(wgui, audit_tab)
+    sessions_views.build_sessions_tab(wgui, expected_tab)
+
+    # The rest of the package, one sidebar entry per page under its
+    # group. Each page is built the first time it is shown, so opening
+    # Attendance does not open every table in the package.
+    def _lazy(frame: ttk.Frame, build):
+        state = {"built": False}
+
+        def show() -> None:
+            if state["built"]:
+                return
+            state["built"] = True
+            try:
+                build(wgui, frame)
+            except Exception as e:          # pragma: no cover - UI guard
+                logger.exception("Attendance page failed to build")
+                ttk.Label(frame, text=f"This page could not be opened: {e}",
+                          foreground="#a33").pack(anchor="w")
+        return show
+
+    for group, pages in _GROUPED_TABS:
+        for title, build in pages:
+            frame = ttk.Frame(nb, padding=8)
+            nb.add(frame, text=title, group=group,
+                   on_show=_lazy(frame, build))
 
     # Leaving the register with marks that were never saved is the
     # easiest way to lose a period's attendance, so make it deliberate.
@@ -133,12 +254,23 @@ def open_directory(gui) -> None:
         if messagebox.askyesno(
                 "Unsaved marks",
                 "This register has marks that have not been saved.\n\n"
-                "Leave the tab and discard them?",
-                default="no", parent=gui.root):
+                "Leave the register and discard them?",
+                default="no", parent=win):
             return
         nb.select(take_tab)
 
     nb.bind("<<NotebookTabChanged>>", _guard_tab_change)
+
+    def _on_close() -> None:
+        if has_unsaved() and not messagebox.askyesno(
+                "Unsaved marks",
+                "This register has marks that have not been saved.\n\n"
+                "Close Attendance and discard them?",
+                default="no", parent=win):
+            return
+        win.destroy()
+
+    win.protocol("WM_DELETE_WINDOW", _on_close)
 
 
 # ─── Take register tab ──────────────────────────────────────────────

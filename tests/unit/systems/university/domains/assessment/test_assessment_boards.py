@@ -12,7 +12,7 @@ from education_system.systems.university.infrastructure.database.schemas.core_sc
     init_grade_system_db,
 )
 from education_system.systems.university.domains.assessment.domain.boards import service
-from education_system.systems.university.domains.academics.domain.services.degree_audit.graduation_eligibility import (
+from education_system.systems.university.domains.progression.domain.degree_audit.graduation_eligibility import (
     check_eligibility,
 )
 
@@ -167,7 +167,7 @@ def test_graduation_is_blocked_until_award_ratified(board_db):
     report = check_eligibility("S1")
     assert report["eligible"] is False
     assert report["award_ratified"] is False
-    assert any("ratified" in reason for reason in report["reasons"]) is False
+    assert any("ratified" in reason for reason in report["reasons"])
 
     board_id = _award_board()
     service.generate_agenda(board_id)

@@ -9,7 +9,7 @@ from __future__ import annotations
 import tkinter as tk
 from tkinter import ttk
 
-from education_system.systems.nursery.domain.pastoral.health.accident_report import (
+from education_system.systems.nursery.interfaces.gui.pastoral.health.accident_report import (
     accident_report_views as _impl,
 )
 

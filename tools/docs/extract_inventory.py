@@ -24,7 +24,7 @@ out: dict = {"menus": {}, "university": {}, "api": {}}
 NAV_SOURCES = {
     "nursery": SYS / "nursery/menu.py",
     "primary": SYS / "primary/cli_main.py",
-    "secondary": SYS / "secondary/cli_main.py",
+    "secondary": SYS / "secondary/app/cli_main.py",
     "sixth_form": SYS / "sixth_form/interfaces/cli/cli_main.py",
 }
 for key, path in NAV_SOURCES.items():
@@ -41,7 +41,7 @@ for key, path in NAV_SOURCES.items():
 # GUI nav for primary/secondary lives in gui_main.py; confirm it matches
 for key, path in {
     "primary": SYS / "primary/gui_main.py",
-    "secondary": SYS / "secondary/gui_main.py",
+    "secondary": SYS / "secondary/app/gui_main.py",
     "sixth_form": SYS / "sixth_form/interfaces/gui/gui_main.py",
 }.items():
     src = path.read_text()

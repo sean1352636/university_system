@@ -18,10 +18,8 @@ from typing import Any
 from education_system.systems.apprenticeships import config
 from education_system.systems.apprenticeships.domain.quality.complaints import Complaint
 from education_system.systems.apprenticeships.interfaces.gui import widgets
-from education_system.systems.apprenticeships.services import (
-    apprentice_service,
-    complaint_service,
-)
+from education_system.systems.apprenticeships.application.apprentices import apprentice_service
+from education_system.systems.apprenticeships.application.quality import complaint_service
 
 logger = logging.getLogger(__name__)
 

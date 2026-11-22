@@ -1102,6 +1102,36 @@ def tick_checklist_item(transition_id: str, key: str, *,
     return checklist
 
 
+def add_note(transition_id: str, note: str, *, step: str = "note",
+             actor_user_id: int | str | None = None,
+             db_path: str | None = None) -> None:
+    """Append a note to the transition's step log, without changing it.
+
+    For what happens at the far end after the move - e.g. the SEND service's
+    EHCP decisions on a school's request (``send_referrals``). Allowed after
+    completion; refused on a cancelled transition. *note* is shown to both
+    ends, so it must hold no more than both may see.
+    """
+    text = (note or "").strip()
+    if not text:
+        raise TransitionError("A note needs some text")
+    ensure_enrolment_schema(db_path)
+    conn = connect(db_path)
+    try:
+        r = conn.execute("SELECT status, effective_date FROM learner_transition "
+                         "WHERE transition_id = ?", (transition_id,)).fetchone()
+        if r is None:
+            raise TransitionError(f"No transition {transition_id}")
+        if r["status"] == TRANSITION_CANCELLED:
+            raise TransitionError(f"Transition {transition_id} is cancelled")
+        _insert_event(conn, transition_id, step, from_status=r["status"],
+                      actor=actor_user_id, effective_date=r["effective_date"],
+                      note=text[:1000])
+        conn.commit()
+    finally:
+        conn.close()
+
+
 # ---------------------------------------------------------------------------
 # Effective date and reminders
 # ---------------------------------------------------------------------------
@@ -1524,6 +1554,7 @@ def reject(transition_id: str, *, reason: str,
 
 __all__ = [
     "TransitionError",
+    "add_note",
     "STEP_EVENTS",
     "REMINDER_DAYS_BEFORE",
     "hydrate",

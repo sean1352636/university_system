@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import logging
 from typing import Any, Callable
+from education_system.systems.sixth_form.infrastructure.record_links import describe
 from education_system.systems.sixth_form.domain.academics.class_groups import class_groups
 from education_system.systems.sixth_form.domain.academics.courses import courses
 from education_system.systems.sixth_form.domain.academics.class_groups import class_groups as data
@@ -359,6 +360,33 @@ def delete_group_flow(group_id: int | None = None) -> None:
     existing = data.get_group(gid)
     if existing is None:
         print(f"  ✗ No class group #{gid}")
+        _pause()
+        return
+    try:
+        history = data.history_counts(gid)
+    except Exception as exc:
+        logger.exception("CLI history_counts(%d) failed", gid)
+        print(f"  ✗ Error: {exc}")
+        _pause()
+        return
+    if history:
+        print(f"\n  Group '{existing.group_name}' has recorded history that deleting it would "
+              f"destroy:\n    {describe(history)}")
+        if getattr(existing, "archived_at", None):
+            print("  It is already archived (hidden from lists, history kept).")
+            _pause()
+            return
+        confirm = _input(
+            "Archiving hides the group and its slots from lists and timetables. Type 'yes' to archive instead", default="no")
+        if confirm.lower() != "yes":
+            print("\n  Cancelled.")
+            return
+        try:
+            if data.archive_group(gid):
+                print(f"\n  ✓ Archived class group #{gid} — history kept.")
+        except Exception as e:
+            logger.exception("CLI archive_group(%d) failed", gid)
+            print(f"\n  ✗ Unexpected error: {e}")
         _pause()
         return
     n = data.count_members(gid)

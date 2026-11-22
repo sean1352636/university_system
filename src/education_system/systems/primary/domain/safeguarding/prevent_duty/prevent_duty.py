@@ -136,6 +136,8 @@ def init_db() -> None:
     global _DB_READY
     if _DB_READY:
         return
+    from education_system.systems.primary.domain.learners.pupils import pupils as _pupils
+    _pupils.init_db()  # reads join pupils; a fresh database has no pupils table yet
     try:
         with _connect() as conn:
             conn.executescript(_SCHEMA)
@@ -143,7 +145,7 @@ def init_db() -> None:
         logger.exception(
             "Failed to initialise prevent_referrals tables")
         raise
-    logger.info("Secondary prevent_referrals tables ready")
+    logger.info("Primary prevent_referrals tables ready")
     _DB_READY = True
 
 

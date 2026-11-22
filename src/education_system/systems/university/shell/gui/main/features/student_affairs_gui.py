@@ -26,8 +26,6 @@ from education_system.systems.university.shell.gui.main.imports.gui_imports impo
     HelpdeskGUI,
     HELPDESK_CLI_AVAILABLE,
     display_helpdesk_menu,
-    launch_mental_health_gui,
-    launch_early_warning_gui,
     launch_career_services_gui,
     TRIP_MANAGEMENT_GUI_AVAILABLE,
     TripManagementGUI,
@@ -62,7 +60,7 @@ def open_student_union_portal_gui(self):
         messagebox.showerror(_t("student_affairs.errors.title", default="===== ERRORS ====="), _t("student_affairs.student_union.not_available", default="Not Available"))
 # CLI fallback for the parent portal (not exported by gui_imports).
 try:
-    from education_system.systems.university.domains.academics.domain.services.parent_portal.menu import (
+    from education_system.systems.university.domains.learners.domain.parent_portal.menu import (
         display_parent_portal_menu,
     )
 except ImportError:
@@ -146,21 +144,20 @@ def open_alumni_portal_gui(self):
         except Exception as e:
             logger.debug(f"Could not set window as transient or grab focus: {e}")
 
-        # Spin up the Alumni GUI on this window
-        app = ALUMNI_GUI_APP_CLASS(win)
-
-        # Hand over auth context if the alumni app exposes a slot; harmless if it doesn't
-        try:
-            setattr(app, "auth", self.auth)
-        except Exception as e:
-            logger.debug(f"Could not set auth attribute on app: {e}")
+        # Spin up the Alumni GUI on this window as the signed-in user. The app
+        # works out who is signed in while it builds, so the auth must be
+        # passed in, not attached afterwards.
+        ALUMNI_GUI_APP_CLASS(win, auth=self.auth)
 
         print(_t("student_affairs.alumni_portal.opened_success", default="Opened Success"))
     except Exception as e:
         messagebox.showerror(_t("student_affairs.alumni_portal.title", default="===== ALUMNI PORTAL ====="), _t("student_affairs.alumni_portal.open_failed", default="Open Failed").format(error=e))
 def open_student_support_portal_gui(self):
-    """Open Student Support Portal GUI in a child window"""
-    if not self.auth.current_user:
+    """Open the Student Support Portal in a child window for the signed-in
+    session (house size 1400x900, floor 1200x800, centred and clamped to the
+    screen by window_sizing)."""
+    user = getattr(self.auth, 'current_user', None) if self.auth is not None else None
+    if not user:
         messagebox.showerror(_t("student_affairs.errors.title", default="===== ERRORS ====="), _t("student_affairs.errors.login_required", default="Login Required"))
         return
 
@@ -169,32 +166,27 @@ def open_student_support_portal_gui(self):
             messagebox.showerror(_t("student_affairs.student_support.title", default="===== STUDENT SUPPORT ====="), _t("student_affairs.student_support.not_available", default="Not Available").format(error=_STUDENT_SUPPORT_GUI_IMPORT_ERROR))
             return
 
-        # Create a new window for the Student Support GUI
+        from education_system.platform.delivery.gui import window_sizing
+
         support_window = tk.Toplevel(self.root)
         _install_clean_close(support_window)
         support_window.title(_t("student_affairs.student_support.window_title", default="===== WINDOW ====="))
-        support_window.geometry("1400x900")
-        support_window.minsize(1200, 800)
-
-        # Center the window
-        support_window.update_idletasks()
-        x = (support_window.winfo_screenwidth() - support_window.winfo_width()) // 2
-        y = (support_window.winfo_screenheight() - support_window.winfo_height()) // 2
-        support_window.geometry(f"+{x}+{y}")
-
+        window_sizing.center(support_window, 1400, 900, minsize=(1200, 800))
         try:
             support_window.transient(self.root)
         except Exception:
             logger.debug("Suppressed exception", exc_info=True)
 
-        # Initialize the Student Support GUI in the new window with auth system
-        support_gui = StudentSupportGUI(support_window, auth_system=self.auth)
-
-        print(_t("student_affairs.student_support.opened_success", default="Opened Success"))
+        # The portal checks the session itself and closes the window when
+        # nobody is signed in.
+        StudentSupportGUI(support_window, auth_system=self.auth)
+        logger.info("Student Support portal opened for %s", user.get('username'))
 
     except Exception as e:
+        logger.exception("Student Support portal could not be opened")
         messagebox.showerror(_t("student_affairs.errors.title", default="===== ERRORS ====="), _t("student_affairs.student_support.open_failed", default="Open Failed").format(error=str(e)))
-        print(_t("student_affairs.student_support.open_error", default="Open Error").format(error=e))
+
+
 def open_health_portal_gui(self):
     """Open the Health Portal GUI in a child window from the main app."""
     if self.health_portal_gui:
@@ -244,26 +236,26 @@ def open_helpdesk_gui(self):
 
     except Exception as e:
         messagebox.showerror(_t("student_affairs.helpdesk.title", default="===== HELPDESK ====="), _t("student_affairs.helpdesk.unexpected_error", default="Unexpected Error").format(error=e))
-def show_mental_health_gui(self):
-    """Launch the Mental Health & Wellness Portal GUI"""
-    launch_mental_health_gui(self.root, self.auth)
 def show_early_warning_gui(self):
-    """Launch the Student Success Early Warning System GUI"""
-    launch_early_warning_gui(self.root, self.auth)
+    """Open Early Warning & Interventions on its Early Warning tab.
+
+    The Early Warning window was folded into that one; this name stays
+    for the staff/instructor portals and the academic quick-bar."""
+    self.show_new_feature_intervention_hub(start_tab="early_warning")
 def show_career_services_gui(self):
     """Launch Career Services inside the main GUI's content notebook
     when a workspace is available, falling back to a Toplevel
     otherwise — same pattern as Student Records (8.117.38)."""
     opener = getattr(self, "open_in_workspace", None)
     if callable(opener):
-        from education_system.systems.university.domains.pastoral.interfaces.gui.career_services.career_services_gui import CareerServicesGUI
+        from education_system.systems.university.domains.student_life.interfaces.gui.career_services.career_services_gui import CareerServicesGUI
         opener("Career Services", lambda host: CareerServicesGUI(host, self.auth))
         return
     launch_career_services_gui(self.root, self.auth)
 def open_internship_portal_gui(self):
     """Open the Internship Portal GUI in a child window from the main app."""
     try:
-        from education_system.systems.university.domains.pastoral.interfaces.gui.internship_management import InternshipGUI
+        from education_system.systems.university.domains.student_life.interfaces.gui.internship_management import InternshipGUI
     except Exception as e:
         messagebox.showerror(_t("student_affairs.internship_portal.title", default="===== INTERNSHIP PORTAL ====="), _t("student_affairs.internship_portal.not_available", default="Not Available").format(error=e))
         return
@@ -283,10 +275,18 @@ def open_internship_portal_gui(self):
     except Exception as e:
         messagebox.showerror(_t("student_affairs.internship_portal.title", default="===== INTERNSHIP PORTAL ====="), _t("student_affairs.internship_portal.open_failed", default="Open Failed").format(error=e))
 def show_trip_management_gui(self):
-    """Open the Trip Management GUI in a child window (Toplevel)."""
+    """Open the Trip Management GUI in a child window (Toplevel).
+
+    A normal child window: it does not take a modal grab, so the main
+    window stays usable while Trip Management is open. Needs ``view_trips``.
+    """
     try:
         if not self.auth or not self.auth.current_user:
             messagebox.showerror(_t("student_affairs.trip_management.title", default="===== TRIP MANAGEMENT ====="), _t("student_affairs.errors.login_required", default="Login Required"))
+            return
+
+        if not self.auth.check_permission('view_trips'):
+            messagebox.showerror(_t("student_affairs.trip_management.title", default="===== TRIP MANAGEMENT ====="), _t("student_affairs.trip_management.no_permission", default="You don't have permission to view trips."))
             return
 
         if not TRIP_MANAGEMENT_GUI_AVAILABLE:
@@ -296,33 +296,34 @@ def show_trip_management_gui(self):
         top = tk.Toplevel(self.root)
         _install_clean_close(top)
         top.title(_t("student_affairs.trip_management.window_title", default="===== WINDOW ====="))
-        top.geometry("1200x800")
+        top.geometry("1400x900")
+        top.minsize(1200, 800)
         try:
             top.transient(self.root)
-            top.grab_set()
         except Exception as e:
-            logger.debug(f"Could not set window as transient or grab focus: {e}")
+            logger.debug(f"Could not set window as transient: {e}")
 
         # Embed the TripManagementGUI into this window, passing current auth
         TripManagementGUI(auth_instance=self.auth, root=top)
 
         # No mainloop here; the main GUI already owns it
-        print(_t("student_affairs.trip_management.opened_success", default="Opened Success"))
+        logger.info(_t("student_affairs.trip_management.opened_success", default="Opened Success"))
 
     except Exception as e:
         messagebox.showerror(_t("student_affairs.trip_management.title", default="===== TRIP MANAGEMENT ====="), _t("student_affairs.trip_management.open_failed", default="Open Failed").format(error=e))
+
+
 def open_trip_management_gui(self):
-    try:
-        python = sys.executable
-        code = (
-            "import sys; "
-            "from trip_management_gui import TripManagementGUI; "
-            "app = TripManagementGUI(auth=None); "
-            "app.run()"
-        )
-        subprocess.Popen([python, "-c", code], close_fds=True)
-    except Exception as e:
-        messagebox.showerror(_t("student_affairs.trip_management.title", default="===== TRIP MANAGEMENT ====="), _t("student_affairs.trip_management.open_failed", default="Open Failed").format(error=e))
+    """Open Trip Management for the signed-in user.
+
+    It used to start a separate Python process importing a top-level
+    ``trip_management_gui`` module that no longer exists, signed in as
+    nobody; it now opens the same in-process child window as
+    :func:`show_trip_management_gui`, with the session's auth.
+    """
+    return show_trip_management_gui(self)
+
+
 def show_legal_services_gui(self):
     """Open Legal Services inside the main GUI's content notebook
     when a workspace is available, falling back to a Toplevel
@@ -592,6 +593,18 @@ def show_security_desk_gui(self):
         messagebox.showerror(_t("extras_gui.errors.error"), _t("extras_gui.errors.security_desk_failed").format(error=str(e)))
         print(_t("extras_gui.messages.security_desk_error").format(error=e))
 
+def show_student_handbook(self):
+    """Open the Student Handbook reader in its own window (one at a time)."""
+    try:
+        from education_system.systems.university.domains.student_life.interfaces.gui.student_handbook import (
+            open_student_handbook,
+        )
+        open_student_handbook(self.root)
+    except Exception as e:
+        logger.error(f"Error opening Student Handbook: {e}")
+        messagebox.showerror("Student Handbook", f"Failed to open the Student Handbook: {e}")
+
+
 def show_equality_diversity_gui(self):
     """Launch the Equality & Diversity Management GUI inside the main
     GUI's content notebook when a workspace is available, falling back
@@ -603,7 +616,7 @@ def show_equality_diversity_gui(self):
                 _t('gui.shell.main.features.student_affairs.dialogs.you_must_be_logged_in_to_open_the_equality_diversity_system', default="You must be logged in to open the Equality & Diversity system."),
             )
             return
-        from education_system.systems.university.domains.pastoral.domain.equality_diversity import (
+        from education_system.systems.university.domains.student_support.domain.equality_diversity import (
             open_equality_diversity_gui,
         )
 

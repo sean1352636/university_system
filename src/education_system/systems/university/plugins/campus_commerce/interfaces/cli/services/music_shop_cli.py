@@ -16,6 +16,10 @@ except ImportError:
     def get_connection():
         return sqlite3.connect(str(UNIVERSITY_DEFAULT_DB_PATH))
 
+from education_system.systems.university.plugins.campus_commerce.domain.musicshop.services.musicshop_core import (
+    post_sale_to_finance,
+)
+
 try:
     from education_system.systems.university.infrastructure.shared_context import get_current_user as get_user
 except ImportError:
@@ -55,7 +59,7 @@ CREATE TABLE IF NOT EXISTS products (
     condition TEXT DEFAULT 'New',
     description TEXT,
     release_year INTEGER,
-    created_date TEXT NOT NULL
+    created_at TEXT NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS orders (
@@ -87,12 +91,13 @@ CREATE TABLE IF NOT EXISTS order_items (
     FOREIGN KEY (product_id) REFERENCES products (product_id)
 );
 
-CREATE TABLE IF NOT EXISTS musicshop_wishlist (
+CREATE TABLE IF NOT EXISTS musicshop_wishlists (
     wishlist_id INTEGER PRIMARY KEY AUTOINCREMENT,
-    customer_name TEXT NOT NULL,
+    customer_id TEXT NOT NULL,
     product_id INTEGER NOT NULL,
-    added_date TEXT NOT NULL,
-    FOREIGN KEY (product_id) REFERENCES products (product_id)
+    added_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (product_id) REFERENCES products(product_id),
+    UNIQUE(customer_id, product_id)
 );
 """
 
@@ -122,7 +127,7 @@ def init_musicshop_database():
                 for product in sample_products:
                     conn.execute("""
                         INSERT INTO products
-                        (source_type, sku, name, artist, category, genre, price, stock, condition, description, release_year, created_date)
+                        (source_type, sku, name, artist, category, genre, price, stock, condition, description, release_year, created_at)
                         VALUES ('music_shop', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                     """, (*product, datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
 
@@ -213,7 +218,7 @@ def get_product_by_id(product_id):
 # ==================== ORDER MANAGEMENT ====================
 
 def create_order(order_data, cart_items):
-    """Create a new order with items."""
+    """Create a new order with items. Returns the new order_id (truthy) or False."""
     try:
         with get_connection() as conn:
             # Create order
@@ -250,7 +255,7 @@ def create_order(order_data, cart_items):
                 """, (item['quantity'], item['product_id']))
 
             conn.commit()
-        return True
+        return order_id
     except Exception as e:
         print(f"Error creating order: {e}")
         return False
@@ -281,11 +286,12 @@ def get_all_orders():
 # ==================== WISHLIST ====================
 
 def add_to_wishlist(customer_name, product_id):
-    """Add product to wishlist."""
+    """Add product to wishlist (the shop's one wishlist table, shared with the
+    GUI and API; the customer is keyed by the name given here)."""
     try:
         with get_connection() as conn:
             conn.execute("""
-                INSERT INTO musicshop_wishlist (customer_name, product_id, added_date)
+                INSERT OR IGNORE INTO musicshop_wishlists (customer_id, product_id, added_at)
                 VALUES (?, ?, ?)
             """, (customer_name, product_id, datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
             conn.commit()
@@ -300,10 +306,10 @@ def get_wishlist(customer_name):
         with get_connection() as conn:
             cursor = conn.execute("""
                 SELECT w.wishlist_id, p.product_id, p.name as title, p.artist, p.price, p.stock
-                FROM musicshop_wishlist w
+                FROM musicshop_wishlists w
                 JOIN products p ON w.product_id = p.product_id AND p.source_type = 'music_shop'
-                WHERE w.customer_name = ?
-                ORDER BY w.added_date DESC
+                WHERE w.customer_id = ?
+                ORDER BY w.added_at DESC
             """, (customer_name,))
             wishlist = []
             for row in cursor.fetchall():
@@ -504,11 +510,21 @@ def checkout_menu():
         'order_date': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     }
 
-    if create_order(order_data, cart):
+    order_id = create_order(order_data, cart)
+    if order_id:
         print("\n  ✅ Order placed successfully!")
         print(f"  Order Number: {order_data['order_number']}")
         print(f"  Total: £{total_amount:.2f}")
         cart = []  # Clear cart
+
+        # Post the sale to Finance through the shared domain service
+        payment_id = post_sale_to_finance(
+            order_id, student_id or 'EXTERNAL', total_amount, payment_method,
+            processed_by=current_user.get('username'),
+            order_number=order_data['order_number'],
+        )
+        if payment_id is None:
+            print("  ⚠️  Sale saved, but it could not be posted to Finance (see log).")
     else:
         print("\n  ❌ Failed to process order.")
 

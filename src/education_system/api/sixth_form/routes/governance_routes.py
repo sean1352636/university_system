@@ -22,6 +22,8 @@ import os
 
 from flask import Blueprint, g, jsonify, request
 
+from education_system.api.sixth_form import access_gate
+
 logger = logging.getLogger(__name__)
 
 governance_bp = Blueprint(
@@ -29,6 +31,7 @@ governance_bp = Blueprint(
 
 
 def _token_required(view):
+    view = access_gate.gate(view)
     try:
         from education_system.platform.delivery.api.auth import token_required
         return token_required(view)

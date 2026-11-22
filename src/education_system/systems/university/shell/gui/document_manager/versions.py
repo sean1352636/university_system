@@ -23,6 +23,100 @@ except ImportError:
     _t = lambda key, **kwargs: key if "default" not in kwargs else kwargs.get("default")
 
 
+# A document's versions share an owner and a document type: that is how
+# DocumentsManager.upload_document_to_db chains a re-upload onto the
+# previous version (is_current_version / parent_document_id).
+_LINEAGE = ("COALESCE(NULLIF(owner_id, ''), student_id, '') || '|' || "
+            "COALESCE(NULLIF(document_type, ''), CAST(type_id AS TEXT), '')")
+_LINEAGE_SD = ("COALESCE(NULLIF(sd.owner_id, ''), sd.student_id, '') || '|' || "
+               "COALESCE(NULLIF(sd.document_type, ''), CAST(sd.type_id AS TEXT), '')")
+
+VERSION_SETTINGS = {
+    'retention_days': '365',
+    'max_versions': '10',
+    'auto_archive': '1',
+    'delete_old': '0',
+    'delete_days': '730',
+    'always_keep_current': '1',
+    'keep_approved': '1',
+    'auto_version': '1',
+    'version_on_upload': '1',
+    'version_on_status': '0',
+    'naming_format': 'Sequential (v1, v2, v3...)',
+    'notify_new_version': '1',
+}
+
+
+def load_version_settings():
+    values = dict(VERSION_SETTINGS)
+    try:
+        with get_connection() as conn:
+            for key, value in conn.execute(
+                    "SELECT key, value FROM system_settings WHERE key LIKE 'document_versions.%'"):
+                short = key.split('.', 1)[1]
+                if short in values and value is not None:
+                    values[short] = str(value)
+    except Exception as e:
+        logger.debug("Version settings not readable: %s", e)
+    return values
+
+
+def save_version_settings(updates):
+    with get_connection() as conn:
+        for key, value in updates.items():
+            if isinstance(value, bool):
+                value = '1' if value else '0'
+            conn.execute("INSERT INTO system_settings (key, value, description, last_modified) "
+                         "VALUES (?, ?, ?, CURRENT_TIMESTAMP) "
+                         "ON CONFLICT(key) DO UPDATE SET value = excluded.value, "
+                         "last_modified = CURRENT_TIMESTAMP",
+                         (f"document_versions.{key}", str(value), f"Document versioning: {key}"))
+        conn.commit()
+
+
+def _ensure_archived_column(conn):
+    cols = {r[1] for r in conn.execute("PRAGMA table_info(documents)")}
+    if 'archived' not in cols:
+        conn.execute('ALTER TABLE documents ADD COLUMN archived BOOLEAN DEFAULT 0')
+
+
+def _fmt_bytes(n):
+    n = float(n or 0)
+    for unit in ('B', 'KB', 'MB', 'GB'):
+        if n < 1024 or unit == 'GB':
+            return f"{n:.0f} {unit}" if unit == 'B' else f"{n:.2f} {unit}"
+        n /= 1024
+
+
+def _pct(part, whole):
+    return f"{(part / whole * 100):.0f}%" if whole else "0%"
+
+
+def find_duplicate_versions(conn):
+    """Older versions whose file hash equals a newer version of the same document.
+
+    Returns a list of (document_id, file_size) for the redundant rows; the
+    newest row with each hash in a lineage is the one kept.
+    """
+    # db-audit: ignore[DBW001] - only module-constant SQL fragments / placeholder joins are interpolated
+    rows = conn.execute(f"""
+        SELECT document_id, {_LINEAGE} AS lineage, file_hash, COALESCE(file_size, 0),
+               COALESCE(is_current_version, 0), COALESCE(version_number, 1)
+        FROM documents
+        WHERE file_hash IS NOT NULL AND file_hash != ''
+        ORDER BY lineage, file_hash, COALESCE(is_current_version, 0) DESC,
+                 COALESCE(version_number, 1) DESC, document_id DESC
+    """).fetchall()
+    seen, dupes = set(), []
+    for doc_id, lineage, fhash, size, _current, _ver in rows:
+        key = (lineage, fhash)
+        if key in seen:
+            dupes.append((doc_id, size))
+        else:
+            seen.add(key)
+    return dupes
+
+
 class VersionManager:
     def __init__(self, gui):
         self.gui = gui
@@ -350,19 +444,17 @@ class VersionManager:
                 conn = get_connection()
                 cursor = conn.cursor()
 
-                # Total documents
-                cursor.execute('SELECT COUNT(DISTINCT document_id) FROM documents')
-                total_docs = cursor.fetchone()[0]
-
-                # Total versions
-                cursor.execute('SELECT COUNT(*) FROM documents')
-                total_versions = cursor.fetchone()[0]
+                # Total documents (one per lineage), total versions (rows)
+                # db-audit: ignore[DBW001] - only module-constant SQL fragments / placeholder joins are interpolated
+                cursor.execute(f'SELECT COUNT(DISTINCT {_LINEAGE}), COUNT(*) FROM documents')
+                total_docs, total_versions = cursor.fetchone()
 
                 # Documents with multiple versions
-                cursor.execute('''
+                # db-audit: ignore[DBW001] - only module-constant SQL fragments / placeholder joins are interpolated
+                cursor.execute(f'''
                 SELECT COUNT(*) FROM (
-                    SELECT document_id FROM documents
-                    GROUP BY document_id HAVING COUNT(*) > 1
+                    SELECT 1 FROM documents
+                    GROUP BY {_LINEAGE} HAVING COUNT(*) > 1
                 )
                 ''')
                 multi_version_docs = cursor.fetchone()[0]
@@ -407,19 +499,19 @@ class VersionManager:
                 conn = get_connection()
                 cursor = conn.cursor()
 
-                cursor.execute('''
+                # db-audit: ignore[DBW001] - only module-constant SQL fragments / placeholder joins are interpolated
+                cursor.execute(f'''
                 SELECT
-                    sd.document_id,
-                    s.first_name || ' ' || s.last_name as student_name,
-                    dt.type_name,
+                    MAX(CASE WHEN COALESCE(sd.is_current_version, 0) = 1 THEN sd.document_id END),
+                    COALESCE(MAX(s.first_name || ' ' || s.last_name), MAX(sd.owner_id)) as student_name,
+                    COALESCE(MAX(dt.type_name), MAX(sd.document_type)),
                     COUNT(*) as version_count,
                     MAX(sd.version_number) as current_version,
                     MAX(sd.upload_date) as last_updated
                 FROM documents sd
-                JOIN students s ON sd.owner_id = s.student_id
-                JOIN document_types dt ON dt.type_id = CAST(sd.document_type AS INTEGER)
-                WHERE sd.source_type = 'student'
-                GROUP BY sd.document_id
+                LEFT JOIN students s ON s.student_id = COALESCE(NULLIF(sd.owner_id, ''), sd.student_id)
+                LEFT JOIN document_types dt ON dt.type_id = COALESCE(sd.type_id, CAST(sd.document_type AS INTEGER))
+                GROUP BY {_LINEAGE_SD}
                 HAVING COUNT(*) > 1
                 ORDER BY version_count DESC, last_updated DESC
                 LIMIT 100
@@ -429,6 +521,10 @@ class VersionManager:
 
                 for row in version_data:
                     dist_tree.insert('', 'end', values=row)
+                if not version_data:
+                    dist_tree.insert('', 'end', values=('', _t('gui.shell.document_manager.versions.labels.no_multi_version_documents',
+                                                               default="No document has more than one version yet"),
+                                                        '', '', '', ''))
 
             except Exception:
                 logger.debug("Suppressed exception", exc_info=True)
@@ -611,7 +707,7 @@ class VersionManager:
             options_frame.pack(fill='x', pady=(0, 15))
 
             ttk.Label(options_frame, text=_t('gui.shell.document_manager.versions.labels.archive_versions_older_than', default="Archive versions older than:")).grid(row=0, column=0, sticky='w', pady=5)
-            days_var = tk.StringVar(value="365")
+            days_var = tk.StringVar(value=load_version_settings()['retention_days'])
             ttk.Entry(options_frame, textvariable=days_var, width=10).grid(row=0, column=1, padx=5, pady=5, sticky='w')
             ttk.Label(options_frame, text=_t('gui.shell.document_manager.versions.labels.days', default="days")).grid(row=0, column=2, sticky='w', pady=5)
 
@@ -799,7 +895,7 @@ class VersionManager:
             max_size_mb, allowed_formats = doc_type_info
 
             # Validate file size
-            if file_size_mb > max_size_mb:
+            if max_size_mb and file_size_mb > max_size_mb:
                 conn.close()
                 return {
                     'success': False,
@@ -809,7 +905,7 @@ class VersionManager:
 
             # Validate file format
             if allowed_formats:
-                allowed_list = [f.strip().lower() for f in allowed_formats.split(',')]
+                allowed_list = [f.strip().lower().lstrip('.') for f in allowed_formats.split(',') if f.strip()]
                 if file_ext not in allowed_list:
                     conn.close()
                     return {
@@ -818,14 +914,27 @@ class VersionManager:
                         'error': f'File format .{file_ext} not allowed. Allowed: {allowed_formats}'
                     }
 
-            # Validation passed - import document
-            # (Implementation would call upload_document_to_db here)
-
             conn.close()
+
+            # Validation passed - store it through the same upload path the
+            # Upload Document screen uses (secure copy, hashing, versioning,
+            # student e-mail).
+            stored = self.gui.upload_document_to_db(str(student_id), doc_type_id, file_path,
+                                                    None, None, None)
+            if not stored:
+                return {'success': False, 'document_id': None, 'error': 'Upload failed'}
+
+            with get_connection() as conn:
+                row = conn.execute('''
+                SELECT document_id FROM documents
+                WHERE owner_id = ? AND source_type = 'student' AND document_type = ?
+                  AND is_current_version = 1
+                ORDER BY document_id DESC LIMIT 1
+                ''', (str(student_id), str(doc_type_id))).fetchone()
 
             return {
                 'success': True,
-                'document_id': None,  # Would be set by upload_document_to_db
+                'document_id': row[0] if row else None,
                 'error': None
             }
 
@@ -985,36 +1094,70 @@ class VersionManager:
             with get_connection() as conn:
                 cursor = conn.cursor()
 
-                # Get version distribution (simulated)
-                report_content = f"""
-VERSION DISTRIBUTION REPORT
-================================================================================
-Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+                # db-audit: ignore[DBW001] - only module-constant SQL fragments / placeholder joins are interpolated
+                cursor.execute(f"""
+                    SELECT COUNT(*) AS versions FROM documents GROUP BY {_LINEAGE}
+                """)
+                counts = [r[0] for r in cursor.fetchall()]
+                total_docs = len(counts)
+                total_versions = sum(counts)
+                buckets = {
+                    '1 version': sum(1 for c in counts if c == 1),
+                    '2 versions': sum(1 for c in counts if c == 2),
+                    '3 versions': sum(1 for c in counts if c == 3),
+                    '4+ versions': sum(1 for c in counts if c >= 4),
+                }
+                cursor.execute("""
+                    SELECT COALESCE(SUM(file_size), 0),
+                           COALESCE(SUM(CASE WHEN COALESCE(is_current_version, 1) = 0
+                                             THEN file_size ELSE 0 END), 0)
+                    FROM documents
+                """)
+                total_bytes, old_bytes = cursor.fetchone()
+                dup_bytes = sum(size for _id, size in find_duplicate_versions(conn))
+                settings = load_version_settings()
+                max_versions = int(settings['max_versions'] or 0)
+                over_limit = sum(1 for c in counts if max_versions and c > max_versions)
 
-DOCUMENT VERSION STATISTICS
---------------------------------------------------------------------------------
-
-Documents with 1 version:     245 (82%)
-Documents with 2 versions:     38 (13%)
-Documents with 3 versions:     12 (4%)
-Documents with 4+ versions:     5 (1%)
-
-Total Documents:              300
-Total Versions:               378
-Average Versions per Doc:     1.26
-
-STORAGE IMPACT
---------------------------------------------------------------------------------
-Total Storage (all versions): 2.45 GB
-Storage for old versions:     0.58 GB (24%)
-Potential savings:            0.58 GB
-
-RECOMMENDATIONS
---------------------------------------------------------------------------------
-- Consider archiving documents with 4+ versions
-- Review version retention policies
-- Implement automatic cleanup for old versions
-"""
+                lines = [
+                    "VERSION DISTRIBUTION REPORT",
+                    "=" * 80,
+                    f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
+                    "",
+                    "DOCUMENT VERSION STATISTICS",
+                    "-" * 80,
+                ]
+                if not total_docs:
+                    lines.append("No documents have been uploaded yet.")
+                else:
+                    for label, n in buckets.items():
+                        lines.append(f"Documents with {label + ':':<14}{n:>6} ({_pct(n, total_docs)})")
+                    lines += [
+                        "",
+                        f"Total Documents:              {total_docs}",
+                        f"Total Versions:               {total_versions}",
+                        f"Average Versions per Doc:     {total_versions / total_docs:.2f}",
+                        "",
+                        "STORAGE IMPACT",
+                        "-" * 80,
+                        f"Total Storage (all versions): {_fmt_bytes(total_bytes)}",
+                        f"Storage for old versions:     {_fmt_bytes(old_bytes)} ({_pct(old_bytes, total_bytes)})",
+                        f"Exact duplicate versions:     {_fmt_bytes(dup_bytes)}",
+                        "",
+                        "RECOMMENDATIONS",
+                        "-" * 80,
+                    ]
+                    recs = []
+                    if over_limit:
+                        recs.append(f"- {over_limit} document(s) exceed the {max_versions}-version limit; "
+                                    "archive their oldest versions")
+                    if dup_bytes:
+                        recs.append("- Run 'Cleanup Duplicates' to archive exact duplicate versions")
+                    if old_bytes:
+                        recs.append(f"- Old versions use {_fmt_bytes(old_bytes)}; review the "
+                                    f"{settings['retention_days']}-day retention policy")
+                    lines += recs or ["- Nothing to do: no duplicates and no old versions"]
+                report_content = "\n".join(lines) + "\n"
 
                 report_text.insert('1.0', report_content)
                 report_text.config(state='disabled')
@@ -1035,44 +1178,82 @@ RECOMMENDATIONS
             return
 
         if not messagebox.askyesno(_t('gui.shell.document_manager.versions.dialogs.cleanup_duplicates', default="Cleanup Duplicates"),
-                                   _t('gui.shell.document_manager.versions.dialogs.this_will_identify_and_remove_duplicate_document_versions_only_e', default="This will identify and remove duplicate document versions.\n\n"
-                                   "Only exact file duplicates will be removed.\n"
-                                   "The most recent version will be kept.\n\n"
-                                   "Continue?")):
+                                   _t('gui.shell.document_manager.versions.dialogs.cleanup_duplicates_confirm',
+                                      default="This will find older versions that are exact file duplicates "
+                                              "(same SHA-256) of a newer version of the same document and "
+                                              "archive them.\n\n"
+                                              "The newest copy is kept. Files on disk are not deleted.\n\n"
+                                              "Continue?"), parent=self.root):
             return
 
         try:
-            # Simulated cleanup process
+            with get_connection() as conn:
+                scanned = conn.execute("SELECT COUNT(*) FROM documents").fetchone()[0]
+                dupes = find_duplicate_versions(conn)
+                if dupes:
+                    _ensure_archived_column(conn)
+                    conn.executemany("UPDATE documents SET archived = 1, is_current_version = 0, "
+                                     "updated_at = datetime('now') WHERE document_id = ?",
+                                     [(doc_id,) for doc_id, _size in dupes])
+                conn.commit()
+            dup_bytes = sum(size for _id, size in dupes)
+
             messagebox.showinfo(_t('gui.shell.document_manager.versions.dialogs.cleanup_complete', default="Cleanup Complete"),
-                              _t('gui.shell.document_manager.versions.dialogs.duplicate_cleanup_completed_results_scanned_378_document_version', default="Duplicate cleanup completed!\n\n"
-                              "Results:\n"
-                              "- Scanned: 378 document versions\n"
-                              "- Duplicates found: 12\n"
-                              "- Duplicates removed: 12\n"
-                              "- Storage freed: 156 MB\n\n"
-                              "Latest versions were retained."))
+                                f"Duplicate cleanup completed!\n\n"
+                                f"Results:\n"
+                                f"- Scanned: {scanned} document versions\n"
+                                f"- Exact duplicates archived: {len(dupes)}\n"
+                                f"- Duplicate storage: {_fmt_bytes(dup_bytes)}\n\n"
+                                "Latest versions were retained.", parent=self.root)
 
             self.gui.log_event('cleanup', 'duplicate_versions',
-                          details='Cleaned up 12 duplicate versions')
+                          details={'scanned': scanned, 'archived': len(dupes),
+                                   'document_ids': [d for d, _ in dupes][:200]})
 
         except Exception as e:
-            messagebox.showerror(_t('gui.shell.document_manager.versions.dialogs.cleanup_error', default="Cleanup Error"), f"Failed to cleanup duplicates: {e}")
+            messagebox.showerror(_t('gui.shell.document_manager.versions.dialogs.cleanup_error', default="Cleanup Error"), f"Failed to cleanup duplicates: {e}",
+                                 parent=self.root)
 
     def version_storage_report(self):
         """Generate version storage report"""
         if not self.gui.ensure_login():
             return
 
+        try:
+            with get_connection() as conn:
+                current_bytes, old_bytes = conn.execute("""
+                    SELECT COALESCE(SUM(CASE WHEN COALESCE(is_current_version, 1) = 1 THEN file_size ELSE 0 END), 0),
+                           COALESCE(SUM(CASE WHEN COALESCE(is_current_version, 1) = 0 THEN file_size ELSE 0 END), 0)
+                    FROM documents
+                """).fetchone()
+                names = conn.execute("""
+                    SELECT COALESCE(NULLIF(original_filename, ''), file_name, file_path, ''),
+                           COALESCE(file_size, 0)
+                    FROM documents
+                """).fetchall()
+        except Exception as e:
+            messagebox.showerror(_t('gui.shell.document_manager.versions.dialogs.error', default="Error"),
+                                 f"Could not build storage report: {e}", parent=self.root)
+            return
+        by_ext = {}
+        for name, size in names:
+            ext = os.path.splitext(str(name))[1].lower() or '(no extension)'
+            by_ext[ext] = by_ext.get(ext, 0) + (size or 0)
+        total = current_bytes + old_bytes
+        if not names:
+            body = "No documents have been uploaded yet."
+        else:
+            top = sorted(by_ext.items(), key=lambda kv: kv[1], reverse=True)[:5]
+            body = (f"Current Version Storage:  {_fmt_bytes(current_bytes)} ({_pct(current_bytes, total)})\n"
+                    f"Old Version Storage:      {_fmt_bytes(old_bytes)} ({_pct(old_bytes, total)})\n"
+                    f"Total Storage:            {_fmt_bytes(total)}\n\n"
+                    "Top Storage Consumers (by file type):\n"
+                    + "\n".join(f"{i}. {ext}: {_fmt_bytes(size)}" for i, (ext, size) in enumerate(top, 1)))
+            if old_bytes:
+                body += (f"\n\nRecommendation: archive versions older than "
+                         f"{load_version_settings()['retention_days']} days")
         messagebox.showinfo(_t('gui.shell.document_manager.versions.dialogs.version_storage_report', default="Version Storage Report"),
-                          _t('gui.shell.document_manager.versions.dialogs.storage_usage_by_document_versions_current_version_storage_1_87', default="STORAGE USAGE BY DOCUMENT VERSIONS\n\n"
-                          "Current Version Storage:  1.87 GB (76%)\n"
-                          "Old Version Storage:      0.58 GB (24%)\n"
-                          "Total Storage:            2.45 GB\n\n"
-                          "Top Storage Consumers:\n"
-                          "1. Large PDF files:       845 MB\n"
-                          "2. Image scans:           623 MB\n"
-                          "3. Word documents:        412 MB\n\n"
-                          "Recommendation: Archive versions older than 1 year"))
+                            "STORAGE USAGE BY DOCUMENT VERSIONS\n\n" + body, parent=self.root)
 
         self.gui.log_event('generate', 'storage_report', details='Generated version storage report')
 
@@ -1097,27 +1278,28 @@ RECOMMENDATIONS
         # Keep versions for X days
         ttk.Label(settings_frame, text=_t('gui.shell.document_manager.versions.labels.keep_old_versions_for', default="Keep old versions for:")).grid(row=0, column=0, sticky='w', pady=5)
         days_spinbox = ttk.Spinbox(settings_frame, from_=30, to=3650, width=15)
-        days_spinbox.set(365)
+        saved = load_version_settings()
+        days_spinbox.set(saved['retention_days'])
         days_spinbox.grid(row=0, column=1, sticky='w', pady=5)
         ttk.Label(settings_frame, text=_t('gui.shell.document_manager.versions.labels.days', default="days")).grid(row=0, column=2, sticky='w', pady=5, padx=5)
 
         # Maximum versions per document
         ttk.Label(settings_frame, text=_t('gui.shell.document_manager.versions.labels.maximum_versions_per_document', default="Maximum versions per document:")).grid(row=1, column=0, sticky='w', pady=5)
         max_versions_spinbox = ttk.Spinbox(settings_frame, from_=1, to=50, width=15)
-        max_versions_spinbox.set(10)
+        max_versions_spinbox.set(saved['max_versions'])
         max_versions_spinbox.grid(row=1, column=1, sticky='w', pady=5)
 
         # Auto-archive old versions
-        auto_archive_var = tk.BooleanVar(value=True)
+        auto_archive_var = tk.BooleanVar(value=saved['auto_archive'] == '1')
         ttk.Checkbutton(settings_frame, text=_t('gui.shell.document_manager.versions.buttons.automatically_archive_old_versions', default="Automatically archive old versions"),
                        variable=auto_archive_var).grid(row=2, column=0, columnspan=3, sticky='w', pady=10)
 
         # Delete versions older than
-        delete_old_var = tk.BooleanVar(value=False)
+        delete_old_var = tk.BooleanVar(value=saved['delete_old'] == '1')
         ttk.Checkbutton(settings_frame, text=_t('gui.shell.document_manager.versions.buttons.delete_versions_older_than', default="Delete versions older than:"),
                        variable=delete_old_var).grid(row=3, column=0, sticky='w', pady=5)
         delete_days_spinbox = ttk.Spinbox(settings_frame, from_=365, to=3650, width=15)
-        delete_days_spinbox.set(730)
+        delete_days_spinbox.set(saved['delete_days'])
         delete_days_spinbox.grid(row=3, column=1, sticky='w', pady=5)
         ttk.Label(settings_frame, text=_t('gui.shell.document_manager.versions.labels.days', default="days")).grid(row=3, column=2, sticky='w', pady=5, padx=5)
 
@@ -1125,15 +1307,38 @@ RECOMMENDATIONS
         exceptions_frame = ttk.LabelFrame(settings_window, text=_t('gui.shell.document_manager.versions.labels.exceptions', default="Exceptions"), padding=15)
         exceptions_frame.pack(fill='x', padx=10, pady=5)
 
-        always_keep_var = tk.BooleanVar(value=True)
+        always_keep_var = tk.BooleanVar(value=saved['always_keep_current'] == '1')
         ttk.Checkbutton(exceptions_frame, text=_t('gui.shell.document_manager.versions.buttons.always_keep_current_version', default="Always keep current version"),
                        variable=always_keep_var).pack(anchor='w', pady=2)
 
-        keep_approved_var = tk.BooleanVar(value=True)
+        keep_approved_var = tk.BooleanVar(value=saved['keep_approved'] == '1')
         ttk.Checkbutton(exceptions_frame, text=_t('gui.shell.document_manager.versions.buttons.keep_all_versions_of_approved_documents', default="Keep all versions of approved documents"),
                        variable=keep_approved_var).pack(anchor='w', pady=2)
 
         def save_settings():
+            try:
+                keep_days = int(days_spinbox.get())
+                max_versions = int(max_versions_spinbox.get())
+                delete_days = int(delete_days_spinbox.get())
+                if keep_days < 1 or max_versions < 1 or delete_days < 1:
+                    raise ValueError
+            except ValueError:
+                messagebox.showerror(_t('gui.shell.document_manager.versions.dialogs.error', default="Error"),
+                                     _t('gui.shell.document_manager.versions.dialogs.whole_numbers_required',
+                                        default="Days and version counts must be positive whole numbers."),
+                                     parent=settings_window)
+                return
+            try:
+                save_version_settings({
+                    'retention_days': keep_days, 'max_versions': max_versions,
+                    'auto_archive': auto_archive_var.get(), 'delete_old': delete_old_var.get(),
+                    'delete_days': delete_days, 'always_keep_current': always_keep_var.get(),
+                    'keep_approved': keep_approved_var.get(),
+                })
+            except Exception as e:
+                messagebox.showerror(_t('gui.shell.document_manager.versions.dialogs.error', default="Error"),
+                                     f"Could not save settings: {e}", parent=settings_window)
+                return
             messagebox.showinfo(_t('gui.shell.document_manager.versions.dialogs.settings_saved', default="Settings Saved"),
                               "Version retention settings saved successfully!\n\n"
                               f"Keep versions for: {days_spinbox.get()} days\n"
@@ -1172,17 +1377,18 @@ RECOMMENDATIONS
         settings_frame.pack(fill='both', expand=True, padx=10, pady=5)
 
         # Enable auto-versioning
-        auto_version_var = tk.BooleanVar(value=True)
+        saved = load_version_settings()
+        auto_version_var = tk.BooleanVar(value=saved['auto_version'] == '1')
         ttk.Checkbutton(settings_frame, text=_t('gui.shell.document_manager.versions.buttons.enable_automatic_versioning', default="Enable automatic versioning"),
                        variable=auto_version_var).pack(anchor='w', pady=5)
 
         # Create version on upload
-        version_on_upload_var = tk.BooleanVar(value=True)
+        version_on_upload_var = tk.BooleanVar(value=saved['version_on_upload'] == '1')
         ttk.Checkbutton(settings_frame, text=_t('gui.shell.document_manager.versions.buttons.create_new_version_when_document_is_re_uploaded', default="Create new version when document is re-uploaded"),
                        variable=version_on_upload_var).pack(anchor='w', pady=5)
 
         # Create version on status change
-        version_on_status_var = tk.BooleanVar(value=False)
+        version_on_status_var = tk.BooleanVar(value=saved['version_on_status'] == '1')
         ttk.Checkbutton(settings_frame, text=_t('gui.shell.document_manager.versions.buttons.create_version_on_status_change', default="Create version on status change"),
                        variable=version_on_status_var).pack(anchor='w', pady=5)
 
@@ -1195,15 +1401,30 @@ RECOMMENDATIONS
             'Date only (2024-11-07)',
             'Custom pattern'
         ]
-        naming_combo.current(0)
+        if saved['naming_format'] in naming_combo['values']:
+            naming_combo.set(saved['naming_format'])
+        else:
+            naming_combo.current(0)
         naming_combo.pack(anchor='w', padx=20, pady=5)
 
         # Notification
-        notify_var = tk.BooleanVar(value=True)
+        notify_var = tk.BooleanVar(value=saved['notify_new_version'] == '1')
         ttk.Checkbutton(settings_frame, text=_t('gui.shell.document_manager.versions.buttons.notify_users_when_new_version_is_created', default="Notify users when new version is created"),
                        variable=notify_var).pack(anchor='w', pady=5)
 
         def save_settings():
+            try:
+                save_version_settings({
+                    'auto_version': auto_version_var.get(),
+                    'version_on_upload': version_on_upload_var.get(),
+                    'version_on_status': version_on_status_var.get(),
+                    'naming_format': naming_combo.get(),
+                    'notify_new_version': notify_var.get(),
+                })
+            except Exception as e:
+                messagebox.showerror(_t('gui.shell.document_manager.versions.dialogs.error', default="Error"),
+                                     f"Could not save settings: {e}", parent=settings_window)
+                return
             messagebox.showinfo(_t('gui.shell.document_manager.versions.dialogs.settings_saved', default="Settings Saved"),
                               "Auto-versioning settings saved successfully!\n\n"
                               f"Auto-versioning: {'Enabled' if auto_version_var.get() else 'Disabled'}\n"

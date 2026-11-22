@@ -21,6 +21,7 @@ import tkinter as tk
 from datetime import datetime
 from tkinter import messagebox, ttk
 
+from education_system.platform.delivery.gui.idle_timeout import install_idle_logout
 from education_system.systems.fe_college import SYSTEM_NAME, SYSTEM_SLUG
 from education_system.systems.fe_college.config import (
     COLLEGE_NAME,
@@ -46,7 +47,10 @@ NAVIGATION: dict[str, list[tuple[str, list[tuple[str, str]]]]] = {
         ]),
         ("People", [
             ("students", "Learners"),
-            ("pathways", "Sixth Form referrals"),
+            ("pathways", "Incoming referrals (Sixth Form / Apprenticeship / Adult Education / "
+                         "Training Provider)"),
+            ("adult_education_referrals", "Referrals to Adult Education"),
+            ("training_provider_requests", "Training Provider Requests"),
             ("apprenticeship_progression", "Apprenticeship progression"),
             ("university_progression", "University progression"),
             ("learner_journey", "Learner journey (360)"),
@@ -137,6 +141,7 @@ class CollegeGUI:
 
         self._build_layout()
         self.root.protocol("WM_DELETE_WINDOW", self._on_close)
+        self._cancel_idle_timeout = install_idle_logout(self.root, self._logout)
         self.open_screen("dashboard")
 
     # ── Layout ─────────────────────────────────────────────────────────────

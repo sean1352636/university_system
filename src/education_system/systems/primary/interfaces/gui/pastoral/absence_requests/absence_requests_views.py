@@ -17,6 +17,7 @@ from education_system.systems.primary.domain.pastoral.absence_requests.absence_r
 from education_system.systems.primary.domain.learners.pupils.pupils import (
     ValidationError,
 )
+from education_system.systems.primary.interfaces.gui import kit
 
 logger = logging.getLogger(__name__)
 
@@ -47,13 +48,20 @@ def _safe_view(func: Callable[..., None]) -> Callable[..., None]:
     return wrapper
 
 
+def _owner(host, owner=None):
+    """The window a pop-up belongs to: the page's own window when the page
+    was popped out, else the main window."""
+    return owner if owner is not None else host.root
+
+
 def _request_dialog(host, title: str,
-                      initial: dict[str, Any] | None = None
-                      ) -> dict[str, Any] | None:
-    dlg = tk.Toplevel(host.root)
+                      initial: dict[str, Any] | None = None, *,
+                      owner=None) -> dict[str, Any] | None:
+    master = _owner(host, owner)
+    dlg = tk.Toplevel(master)
     dlg.title(title)
-    dlg.transient(host.root)
-    dlg.geometry("560x720")
+    dlg.transient(master)
+    dlg.geometry("620x680")
     dlg.update_idletasks()
     try:
         dlg.wait_visibility()
@@ -62,8 +70,7 @@ def _request_dialog(host, title: str,
         logger.debug("grab_set skipped", exc_info=True)
 
     initial = initial or {}
-    frm = ttk.Frame(dlg, padding=12)
-    frm.pack(fill="both", expand=True)
+    frm, footer = kit.scrolled_form(dlg)
 
     pupil_var   = tk.StringVar(value=str(initial.get("pupil_id") or ""))
     reqby_var   = tk.StringVar(value=str(initial.get("requested_by") or ""))
@@ -83,31 +90,34 @@ def _request_dialog(host, title: str,
     phone_var   = tk.StringVar(value=str(initial.get("contact_phone") or ""))
 
     rows: list[tuple[str, tk.Widget]] = [
-        ("Pupil ID:",       ttk.Entry(frm, textvariable=pupil_var, width=14)),
+        ("Pupil:",          kit.PupilPicker(frm, pupil_var)),
         ("Requested by:",   ttk.Entry(frm, textvariable=reqby_var, width=28)),
         ("Relationship:",   ttk.Entry(frm, textvariable=rel_var, width=18)),
-        ("Submitted:",      ttk.Entry(frm, textvariable=sub_var, width=14)),
-        ("Start date:",     ttk.Entry(frm, textvariable=start_var, width=14)),
-        ("End date:",       ttk.Entry(frm, textvariable=end_var, width=14)),
-        ("School days:",    ttk.Entry(frm, textvariable=days_var, width=6)),
-        ("Category:",       ttk.Combobox(frm, textvariable=cat_var,
-                                           values=list(ABSENCE_CATEGORIES),
-                                           state="readonly", width=28)),
+        ("Submitted:",      kit.DateField(frm, sub_var)),
+        ("Start date:",     kit.DateField(frm, start_var)),
+        ("End date:",       kit.DateField(frm, end_var)),
+        ("School days:",    kit.NumberField(frm, days_var, from_=0, to=60,
+                                            width=6)),
+        ("Category:",       kit.ChoiceField(frm, cat_var,
+                                            choices=ABSENCE_CATEGORIES)),
         ("Destination:",    ttk.Entry(frm, textvariable=dest_var, width=28)),
-        ("Status:",         ttk.Combobox(frm, textvariable=status_var,
-                                           values=list(REQUEST_STATUSES),
-                                           state="readonly", width=14)),
-        ("Authorisation:",  ttk.Combobox(frm, textvariable=auth_var,
-                                           values=list(AUTHORISATIONS),
-                                           state="readonly", width=18)),
-        ("Decided by:",     ttk.Entry(frm, textvariable=decby_var, width=24)),
-        ("Decided date:",   ttk.Entry(frm, textvariable=decdate_var, width=14)),
+        ("Status:",         kit.ChoiceField(frm, status_var,
+                                            choices=REQUEST_STATUSES,
+                                            width=14)),
+        ("Authorisation:",  kit.ChoiceField(frm, auth_var,
+                                            choices=AUTHORISATIONS,
+                                            width=18)),
+        ("Decided by:",     kit.StaffPicker(frm, decby_var, by="name")),
+        ("Decided date:",   kit.DateField(frm, decdate_var)),
         ("Contact phone:",  ttk.Entry(frm, textvariable=phone_var, width=18)),
     ]
     for i, (label, widget) in enumerate(rows):
         ttk.Label(frm, text=label).grid(row=i, column=0, sticky="w",
                                           pady=2)
-        widget.grid(row=i, column=1, sticky="ew", pady=2)
+        widget.grid(row=i, column=1, sticky="w", pady=2)
+    ttk.Label(frm, text="(leave School days blank to count them from the "
+                        "dates)", foreground="#666").grid(
+        row=len(rows), column=1, sticky="w")
     frm.columnconfigure(1, weight=1)
 
     text_fields = [("Reason:",         "reason", 4),
@@ -115,7 +125,7 @@ def _request_dialog(host, title: str,
                     ("Notes:",          "notes", 2)]
     text_widgets: dict[str, tk.Text] = {}
     for i, (label, key, lines) in enumerate(text_fields,
-                                              start=len(rows)):
+                                              start=len(rows) + 1):
         ttk.Label(frm, text=label).grid(row=i, column=0, sticky="nw",
                                           pady=2)
         t = tk.Text(frm, width=44, height=lines, wrap="word")
@@ -147,12 +157,49 @@ def _request_dialog(host, title: str,
             result[k] = w.get("1.0", "end").strip()
         dlg.destroy()
 
-    btns = ttk.Frame(frm)
-    btns.grid(row=len(rows) + len(text_fields), column=0,
-                columnspan=2, sticky="e", pady=(12, 0))
-    ttk.Button(btns, text="Cancel",
+    ttk.Button(footer, text="Cancel",
                  command=dlg.destroy).pack(side="right", padx=4)
-    ttk.Button(btns, text="Save", command=_save).pack(side="right")
+    ttk.Button(footer, text="Save", command=_save).pack(side="right")
+    dlg.wait_window()
+    return result
+
+
+def _decision_dialog(owner, label: str) -> tuple[str, str] | None:
+    """Who decided (a staff member) and optional notes; None if cancelled."""
+    dlg = tk.Toplevel(owner)
+    dlg.title(label)
+    dlg.transient(owner)
+    try:
+        dlg.wait_visibility()
+        dlg.grab_set()
+    except tk.TclError:
+        logger.debug("grab_set skipped", exc_info=True)
+    frm = ttk.Frame(dlg, padding=12)
+    frm.pack(fill="both", expand=True)
+    by_var = tk.StringVar()
+    notes_var = tk.StringVar()
+    ttk.Label(frm, text="Decided by:").grid(row=0, column=0, sticky="w", pady=2)
+    kit.StaffPicker(frm, by_var, by="name").grid(row=0, column=1, sticky="w",
+                                                  pady=2)
+    ttk.Label(frm, text="Decision notes (optional):").grid(
+        row=1, column=0, sticky="w", pady=2)
+    ttk.Entry(frm, textvariable=notes_var, width=44).grid(
+        row=1, column=1, sticky="w", pady=2)
+    result: tuple[str, str] | None = None
+
+    def _ok() -> None:
+        nonlocal result
+        if not by_var.get().strip():
+            messagebox.showerror(label, "Choose who decided.", parent=dlg)
+            return
+        result = (by_var.get().strip(), notes_var.get().strip())
+        dlg.destroy()
+
+    btns = ttk.Frame(frm)
+    btns.grid(row=2, column=0, columnspan=2, sticky="e", pady=(10, 0))
+    ttk.Button(btns, text="Cancel", command=dlg.destroy).pack(side="right",
+                                                              padx=4)
+    ttk.Button(btns, text=label, command=_ok).pack(side="right")
     dlg.wait_window()
     return result
 
@@ -160,10 +207,16 @@ def _request_dialog(host, title: str,
 @_safe_view
 def open_absence_requests(host) -> None:
     logger.debug("GUI: open_absence_requests")
-    host._clear_content()
-    root = host.content_frame
-    ttk.Label(root, text="Absence Requests",
-                font=("", 16, "bold")).pack(anchor="w", pady=(0, 8))
+    kit.show_page(host, "Absence Requests",
+                  lambda parent: _draw_absence_requests(parent, host))
+
+
+def _draw_absence_requests(parent, host) -> None:
+    root = parent
+    win = parent.winfo_toplevel()
+    kit.page_heading(root, "Absence Requests",
+                     "Term-time leave requests from parents: approve, "
+                     "decline or cancel.")
 
     summary_var = tk.StringVar()
     ttk.Label(root, textvariable=summary_var,
@@ -173,61 +226,57 @@ def open_absence_requests(host) -> None:
     bar.pack(fill="x", pady=(0, 6))
     ttk.Label(bar, text="Status:").pack(side="left", padx=(0, 4))
     status_var = tk.StringVar(value="")
-    ttk.Combobox(bar, textvariable=status_var,
-                   values=["", *REQUEST_STATUSES], state="readonly",
-                   width=10).pack(side="left", padx=(0, 6))
+    kit.ChoiceField(bar, status_var, choices=REQUEST_STATUSES, blank=True,
+                    width=10).pack(side="left", padx=(0, 6))
     ttk.Label(bar, text="Category:").pack(side="left", padx=(0, 4))
     cat_var = tk.StringVar(value="")
-    ttk.Combobox(bar, textvariable=cat_var,
-                   values=["", *ABSENCE_CATEGORIES], state="readonly",
-                   width=22).pack(side="left", padx=(0, 6))
+    kit.ChoiceField(bar, cat_var, choices=ABSENCE_CATEGORIES, blank=True,
+                    width=22).pack(side="left", padx=(0, 6))
     pending_only_var = tk.BooleanVar(value=False)
     ttk.Checkbutton(bar, text="Pending only",
                       variable=pending_only_var).pack(side="left", padx=4)
     ttk.Button(bar, text="Apply",
                  command=lambda: _refresh()).pack(side="left", padx=2)
     ttk.Button(bar, text="New",
-                 command=lambda: _new(host, on_done=_refresh)
+                 command=lambda: _new(host, on_done=_refresh, owner=win)
                  ).pack(side="left", padx=2)
     ttk.Button(bar, text="Edit",
-                 command=lambda: _edit(host, tree, on_done=_refresh)
+                 command=lambda: _edit(host, tree, on_done=_refresh,
+                                       owner=win)
                  ).pack(side="left", padx=2)
     ttk.Button(bar, text="Approve",
                  command=lambda: _decide(host, tree, approve=True,
-                                            on_done=_refresh)
+                                            on_done=_refresh, owner=win)
                  ).pack(side="left", padx=2)
     ttk.Button(bar, text="Decline",
                  command=lambda: _decide(host, tree, approve=False,
-                                            on_done=_refresh)
+                                            on_done=_refresh, owner=win)
                  ).pack(side="left", padx=2)
     ttk.Button(bar, text="Cancel req",
-                 command=lambda: _cancel(host, tree, on_done=_refresh)
+                 command=lambda: _cancel(host, tree, on_done=_refresh,
+                                         owner=win)
                  ).pack(side="left", padx=2)
     ttk.Button(bar, text="Delete",
-                 command=lambda: _delete(host, tree, on_done=_refresh)
+                 command=lambda: _delete(host, tree, on_done=_refresh,
+                                         owner=win)
                  ).pack(side="left", padx=2)
     ttk.Button(bar, text="Refresh",
                  command=lambda: _refresh()).pack(side="left", padx=2)
 
-    cols = ("id", "pupil", "year", "start", "end", "days",
-             "category", "status", "auth", "decided")
-    tree = ttk.Treeview(root, columns=cols, show="headings", height=18)
-    for c, label, w in [
+    tree = kit.tree(root, [
         ("id", "ID", 50), ("pupil", "Pupil", 200),
         ("year", "Yr", 50), ("start", "Start", 90),
         ("end", "End", 90), ("days", "Days", 50),
         ("category", "Category", 170), ("status", "Status", 90),
         ("auth", "Auth", 110), ("decided", "Decided", 90),
-    ]:
-        tree.heading(c, text=label)
-        tree.column(c, width=w, anchor="w")
-    tree.pack(fill="both", expand=True)
-    tree.tag_configure("pending",  background="#fff7d6")
-    tree.tag_configure("approved", background="#e3f5e3")
-    tree.tag_configure("declined", background="#fde7e7")
-    tree.tag_configure("cancelled", foreground="#888")
+    ], height=18, tags={
+        "pending": "#fff7d6", "approved": "#e3f5e3", "declined": "#fde7e7",
+        "cancelled": {"foreground": "#888"},
+    })
 
     def _refresh() -> None:
+        if not tree.winfo_exists():
+            return
         for i in tree.get_children():
             tree.delete(i)
         try:
@@ -238,13 +287,13 @@ def open_absence_requests(host) -> None:
             )
         except ValidationError as e:
             messagebox.showerror("Absence Requests", str(e),
-                                  parent=host.root)
+                                  parent=win)
             return
         except Exception as e:
             logger.exception("absence_requests refresh failed")
             messagebox.showerror("Absence Requests",
                                   f"Could not load:\n\n{e}",
-                                  parent=host.root)
+                                  parent=win)
             return
         for r in rows:
             pupil = f"{r.pupil_id} ({r.pupil_name or '-'})"
@@ -266,23 +315,24 @@ def open_absence_requests(host) -> None:
                 f"Days approved: {s['approved_school_days']}")
         except Exception:
             summary_var.set(f"{len(rows)} request(s)")
-        host.status_var.set(
-            f"Absence Requests: {len(rows)} record(s)")
+        status_bar = getattr(host, "status_var", None)
+        if status_bar is not None:
+            status_bar.set(f"Absence Requests: {len(rows)} record(s)")
 
     tree.bind("<Double-1>",
-                lambda _e: _edit(host, tree, on_done=_refresh))
+                lambda _e: _edit(host, tree, on_done=_refresh, owner=win))
     status_var.trace_add("write", lambda *_: _refresh())
     cat_var.trace_add("write", lambda *_: _refresh())
     pending_only_var.trace_add("write", lambda *_: _refresh())
     _refresh()
 
 
-def _selected_id(tree: ttk.Treeview, host) -> int | None:
+def _selected_id(tree: ttk.Treeview, host, owner=None) -> int | None:
     sel = tree.focus()
     if not sel:
         messagebox.showinfo("Absence Requests",
                               "Select a request first.",
-                              parent=host.root)
+                              parent=_owner(host, owner))
         return None
     try:
         return int(sel)
@@ -291,8 +341,8 @@ def _selected_id(tree: ttk.Treeview, host) -> int | None:
 
 
 @_safe_view
-def _new(host, *, on_done=None) -> None:
-    fields = _request_dialog(host, "New absence request")
+def _new(host, *, on_done=None, owner=None) -> None:
+    fields = _request_dialog(host, "New absence request", owner=owner)
     if not fields:
         return
     r = data.create(fields)
@@ -300,15 +350,15 @@ def _new(host, *, on_done=None) -> None:
         "Absence Requests",
         f"Created request #{r.request_id}: {r.pupil_id} "
         f"{r.start_date}→{r.end_date} ({r.school_days} days)",
-        parent=host.root,
+        parent=_owner(host, owner),
     )
     if on_done:
         on_done()
 
 
 @_safe_view
-def _edit(host, tree: ttk.Treeview, *, on_done=None) -> None:
-    rid = _selected_id(tree, host)
+def _edit(host, tree: ttk.Treeview, *, on_done=None, owner=None) -> None:
+    rid = _selected_id(tree, host, owner)
     if rid is None:
         return
     existing = data.get(rid)
@@ -321,7 +371,7 @@ def _edit(host, tree: ttk.Treeview, *, on_done=None) -> None:
         "status", "authorisation", "decided_by", "decided_date",
         "decision_notes", "contact_phone", "notes")}
     fields = _request_dialog(host, f"Edit request #{rid}",
-                                initial=initial)
+                                initial=initial, owner=owner)
     if not fields:
         return
     data.update(rid, fields)
@@ -331,44 +381,42 @@ def _edit(host, tree: ttk.Treeview, *, on_done=None) -> None:
 
 @_safe_view
 def _decide(host, tree: ttk.Treeview, *,
-              approve: bool, on_done=None) -> None:
-    rid = _selected_id(tree, host)
+              approve: bool, on_done=None, owner=None) -> None:
+    rid = _selected_id(tree, host, owner)
     if rid is None:
         return
     label = "Approve" if approve else "Decline"
-    decided_by = simpledialog.askstring(
-        label, "Decided by (name):", parent=host.root)
-    if not decided_by:
+    picked = _decision_dialog(_owner(host, owner), label)
+    if not picked:
         return
-    notes = simpledialog.askstring(
-        label, "Decision notes (optional):", parent=host.root)
+    decided_by, notes = picked
     data.decide(rid, approve=approve,
-                  decided_by=decided_by.strip(),
-                  decision_notes=(notes or "").strip() or None)
+                  decided_by=decided_by,
+                  decision_notes=notes or None)
     if on_done:
         on_done()
 
 
 @_safe_view
-def _cancel(host, tree: ttk.Treeview, *, on_done=None) -> None:
-    rid = _selected_id(tree, host)
+def _cancel(host, tree: ttk.Treeview, *, on_done=None, owner=None) -> None:
+    rid = _selected_id(tree, host, owner)
     if rid is None:
         return
     if not messagebox.askyesno(
             "Cancel request",
             f"Mark request #{rid} as Cancelled?",
-            parent=host.root):
+            parent=_owner(host, owner)):
         return
     notes = simpledialog.askstring(
-        "Cancel request", "Notes (optional):", parent=host.root)
+        "Cancel request", "Notes (optional):", parent=_owner(host, owner))
     data.cancel(rid, decision_notes=(notes or "").strip() or None)
     if on_done:
         on_done()
 
 
 @_safe_view
-def _delete(host, tree: ttk.Treeview, *, on_done=None) -> None:
-    rid = _selected_id(tree, host)
+def _delete(host, tree: ttk.Treeview, *, on_done=None, owner=None) -> None:
+    rid = _selected_id(tree, host, owner)
     if rid is None:
         return
     existing = data.get(rid)
@@ -378,7 +426,7 @@ def _delete(host, tree: ttk.Treeview, *, on_done=None) -> None:
             "Delete request",
             f"Delete request #{rid} ({existing.pupil_id}, "
             f"{existing.start_date}→{existing.end_date})?",
-            parent=host.root):
+            parent=_owner(host, owner)):
         return
     data.delete(rid)
     if on_done:

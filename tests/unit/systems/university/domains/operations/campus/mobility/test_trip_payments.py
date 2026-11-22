@@ -21,7 +21,7 @@ def answers(monkeypatch):
 
 
 class _Finance:
-    """Stand-in for finance_integration recording what it was asked to do."""
+    """Stand-in for finance_bus recording what it was asked to do."""
 
     def __init__(self, *, balance=None, account_ok=True, payment_id=99,
                  refund_id=7, topup_ok=True):
@@ -32,21 +32,21 @@ class _Finance:
         self.topup_ok = topup_ok
         self.calls = []
 
-    def record_refund_to_finance(self, **kwargs):
+    def record_refund(self, **kwargs):
         self.calls.append(("refund", kwargs))
         return self.refund_id
 
-    def top_up_student_finance_account(self, **kwargs):
+    def credit_student_account(self, **kwargs):
         self.calls.append(("topup", kwargs))
         if not self.topup_ok:
             return {"success": False, "message": "account closed"}
         self.balance += kwargs["amount"]
         return {"success": True, "new_balance": self.balance}
 
-    def get_student_finance_account_balance(self, student_id):
+    def account_balance(self, student_id):
         return self.balance
 
-    def process_student_finance_account_payment(self, **kwargs):
+    def pay_from_student_account(self, **kwargs):
         self.calls.append(("account", kwargs))
         if not self.account_ok:
             return {"success": False, "message": "Insufficient balance. Current: £1.00, Required: £50.00"}
@@ -58,7 +58,7 @@ class _Finance:
             "transaction_id": "Trips_TRIP-1_20260815",
         }
 
-    def record_payment_to_finance(self, **kwargs):
+    def record_payment(self, **kwargs):
         self.calls.append(("till", kwargs))
         return self.payment_id
 

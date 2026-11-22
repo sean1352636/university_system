@@ -1,0 +1,31 @@
+{
+  "name": "detention_notice",
+  "description": "A notice of a detention, or of a missed one, sent to contacts with parental responsibility.",
+  "subject": "{headline} - {pupil_name}",
+  "body": [
+    "Dear {recipient_name},",
+    "",
+    "{intro}",
+    "",
+    "{details}",
+    "",
+    "{closing}",
+    "",
+    "Best wishes,",
+    "{sender_name}",
+    "{school_name}"
+  ],
+  "placeholders": {
+    "recipient_name": "The contact's name",
+    "pupil_name": "The pupil's preferred first name and surname",
+    "headline": "Detention / Missed detention",
+    "intro": "One line saying what this is about",
+    "details": "Each detention: day, time, type, length, room and reason",
+    "closing": "What happens next and who to contact",
+    "sender_name": "The member of staff sending it",
+    "school_name": "The school's name"
+  },
+  "defaults": {
+    "school_name": "Secondary School"
+  }
+}

@@ -210,7 +210,7 @@ def configure_accessible_seats(self):
                 f"Couple seats: {couple_count}\n\n"
                 f"Changes applied to all existing screenings.")
             form.destroy()
-            self.show_admin_panel()  # Refresh the admin panel
+            self.show_accessible_page()  # Refresh the accessible seating page
 
         except Exception as e:
             messagebox.showerror(_t("cinema.common.error"), f"Failed to save configuration:\n{str(e)}")

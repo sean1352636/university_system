@@ -270,6 +270,182 @@ def project_series(series: list[tuple[str, float]]) -> dict[str, Any]:
     }
 
 
+# --------------------------------------------------------------------------- #
+# Linear-trend forecast with a back-test (Advanced Financial Forecasting)
+# --------------------------------------------------------------------------- #
+#: Fewest complete months a trend is fitted to.
+MIN_TREND_MONTHS = 3
+#: Months held out, one at a time, to measure the forecast's error.
+BACKTEST_MONTHS = 3
+
+
+def _next_month(ym: str) -> str:
+    year, month = int(ym[:4]), int(ym[5:7])
+    return f"{year + month // 12}-{month % 12 + 1:02d}"
+
+
+def complete_monthly_series(history: list[tuple[str, float]],
+                            through: str | None = None) -> list[tuple[str, float]]:
+    """*history* with months that had no payments filled in as 0.
+
+    Runs from the first month in *history* to *through* (default: last
+    month, so the current part-month never drags the trend down).
+    """
+    if through is None:
+        through = (datetime.now().replace(day=1) - timedelta(days=1)).strftime("%Y-%m")
+    totals = {ym: v for ym, v in history if ym <= through}
+    if not totals:
+        return []
+    series, ym = [], min(totals)
+    while ym <= through:
+        series.append((ym, float(totals.get(ym, 0.0))))
+        ym = _next_month(ym)
+    return series
+
+
+def _fit_line(values: list[float]) -> tuple[float, float]:
+    """Least-squares (intercept, slope) of *values* against 0..n-1."""
+    n = len(values)
+    mean_x, mean_y = (n - 1) / 2, sum(values) / n
+    sxx = sum((x - mean_x) ** 2 for x in range(n))
+    slope = (sum((x - mean_x) * (y - mean_y) for x, y in enumerate(values)) / sxx) if sxx else 0.0
+    return mean_y - slope * mean_x, slope
+
+
+def trend_forecast(series: list[tuple[str, float]], horizon: int = 12,
+                   window: int = 12) -> dict[str, Any]:
+    """Forecast *horizon* months from a linear trend over the last *window* months.
+
+    Accuracy comes from a back-test: each of the last ``BACKTEST_MONTHS``
+    months is forecast from the months before it only and compared with what
+    actually came in. ``accuracy`` is 100 − WAPE (weighted absolute % error);
+    ``rmse`` gives the ±1.96·RMSE monthly range. Either is ``None`` when there
+    is too little history, with the reason in ``notes`` — nothing is guessed.
+    """
+    result: dict[str, Any] = {
+        "months_used": 0, "slope": None, "projections": [], "total": None,
+        "accuracy": None, "wape": None, "rmse": None, "backtest": [], "notes": [],
+    }
+    if len(series) < MIN_TREND_MONTHS:
+        result["notes"].append(
+            f"Only {len(series)} complete month(s) of payments; a trend needs at least "
+            f"{MIN_TREND_MONTHS}. No forecast made.")
+        return result
+
+    fit = series[-window:]
+    values = [v for _, v in fit]
+    intercept, slope = _fit_line(values)
+    result["months_used"] = len(fit)
+    result["slope"] = round(slope, 2)
+    ym = fit[-1][0]
+    for i in range(horizon):
+        ym = _next_month(ym)
+        # Revenue cannot go negative; a falling trend bottoms out at zero.
+        result["projections"].append((ym, round(max(0.0, intercept + slope * (len(fit) + i)), 2)))
+    result["total"] = round(sum(v for _, v in result["projections"]), 2)
+
+    if len(series) < MIN_TREND_MONTHS + BACKTEST_MONTHS:
+        result["notes"].append(
+            f"Accuracy not measured: back-testing {BACKTEST_MONTHS} months needs at least "
+            f"{MIN_TREND_MONTHS + BACKTEST_MONTHS} complete months (have {len(series)}).")
+        return result
+
+    abs_err = actual_sum = sq_err = 0.0
+    for k in range(len(series) - BACKTEST_MONTHS, len(series)):
+        train = [v for _, v in series[max(0, k - window):k]]
+        b0, b1 = _fit_line(train)
+        predicted = max(0.0, b0 + b1 * len(train))
+        actual = series[k][1]
+        result["backtest"].append((series[k][0], round(predicted, 2), round(actual, 2)))
+        abs_err += abs(predicted - actual)
+        sq_err += (predicted - actual) ** 2
+        actual_sum += actual
+    result["rmse"] = round((sq_err / BACKTEST_MONTHS) ** 0.5, 2)
+    if actual_sum > 0:
+        result["wape"] = round(100 * abs_err / actual_sum, 1)
+        result["accuracy"] = round(max(0.0, 100 - result["wape"]), 1)
+    else:
+        result["notes"].append("Accuracy not measured: no payments in the back-test months.")
+    return result
+
+
+# --------------------------------------------------------------------------- #
+# Budget vs actual (Comprehensive Budget Variance Report)
+# --------------------------------------------------------------------------- #
+def _academic_year_start(today: datetime | None = None) -> int:
+    today = today or datetime.now()
+    return today.year if today.month >= 9 else today.year - 1
+
+
+def budget_variance(conn=None) -> dict[str, Any]:
+    """Budget against actual, per category, for the current budget plan.
+
+    The plan is the one for the current academic year (``2026-2027`` or
+    ``2026/2027``), else the most recent plan. Budgets are the plan's
+    ``budget_line_items``. Revenue actuals are completed payments dated in
+    the plan's academic year (1 Sep - 31 Aug), read live and shown as one
+    revenue line (payments carry no category); expense actuals
+    are the ``actual_amount`` kept on the line items by Budget Management,
+    as no categorised expense ledger exists. Returns ``{"plan": None, "rows":
+    []}`` when no plan has line items — nothing is invented.
+    """
+    own = conn is None
+    conn = conn or get_connection()
+    try:
+        start = _academic_year_start()
+        plans = conn.execute(
+            """
+            SELECT bp.budget_id, bp.plan_name, bp.academic_year
+            FROM budget_plans bp
+            WHERE EXISTS (SELECT 1 FROM budget_line_items bli WHERE bli.budget_id = bp.budget_id)
+            ORDER BY bp.academic_year IN (?, ?) DESC, bp.budget_id DESC
+            LIMIT 1
+            """,
+            (f"{start}-{start + 1}", f"{start}/{start + 1}"),
+        ).fetchall()
+        if not plans:
+            return {"plan": None, "rows": []}
+        budget_id, plan_name, plan_year = tuple(plans[0])
+        try:
+            year_start = int(str(plan_year or "")[:4])
+        except ValueError:
+            year_start = start
+        window = (f"{year_start}-09-01", f"{year_start + 1}-09-01")
+        revenue_actual = float(conn.execute(
+            "SELECT COALESCE(SUM(amount), 0) FROM payments WHERE status = 'completed' "
+            "AND payment_date >= ? AND payment_date < ?", window).fetchone()[0] or 0)
+        rows = conn.execute(
+            """
+            SELECT bc.category_name, COALESCE(bc.category_type, ''),
+                   COALESCE(SUM(bli.budgeted_amount), 0), COALESCE(SUM(bli.actual_amount), 0)
+            FROM budget_line_items bli
+            JOIN budget_categories bc ON bli.category_id = bc.category_id
+            WHERE bli.budget_id = ?
+            GROUP BY bc.category_id
+            ORDER BY 3 DESC
+            """,
+            (budget_id,),
+        ).fetchall()
+    finally:
+        if own:
+            conn.close()
+
+    # Payments are not categorised, so revenue is one line: every revenue
+    # category's budget against all completed payments in the year.
+    out = []
+    revenue_budget = sum(float(r[2] or 0) for r in rows if str(r[1]).lower() == "revenue")
+    if any(str(r[1]).lower() == "revenue" for r in rows):
+        out.append(("Revenue (all categories)", "revenue", round(revenue_budget, 2),
+                    round(revenue_actual, 2)))
+    for name, kind, budgeted, stored_actual in rows:
+        if str(kind).lower() != "revenue":
+            out.append((str(name), str(kind).lower(), round(float(budgeted or 0), 2),
+                        round(float(stored_actual or 0), 2)))
+    return {"plan": {"budget_id": budget_id, "name": plan_name, "academic_year": plan_year,
+                     "window": window, "revenue_actual": round(revenue_actual, 2)},
+            "rows": out}
+
+
 def _projection_report(title: str, label: str, projection: dict[str, Any]) -> str:
     series = projection["series"]
     out = ["=" * 80, title, "=" * 80, "", f"Generated: {datetime.now():%Y-%m-%d %H:%M:%S}", ""]

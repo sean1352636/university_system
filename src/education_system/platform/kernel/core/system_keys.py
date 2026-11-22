@@ -15,13 +15,22 @@ Canonical keys match the plan's naming standard:
 
 from __future__ import annotations
 
-#: The canonical key for each of the five systems, in launcher/report order.
+#: The canonical key for each system, in launcher/report order.
+#: API role checks use this list: a URL prefix that doesn't resolve to one of
+#: these keys falls back to the user's best role in any system.
 CANONICAL_SYSTEMS: tuple[str, ...] = (
     "nursery",
     "primary",
     "secondary",
     "sixth_form",
+    "fe_college",
+    "apprenticeships",
     "university",
+    "special_education",
+    "adult_education",
+    "alternative_provision",
+    "training_provider",
+    "local_authority",
 )
 
 #: Legacy / alternate spellings → canonical key. Kept permanently so existing
@@ -34,6 +43,28 @@ _ALIASES: dict[str, str] = {
     "sixthform": "sixth_form",
     "sixth-form": "sixth_form",
     "sixthform_college": "sixth_form",
+    "fecollege": "fe_college",
+    "fe-college": "fe_college",
+    "apprentice": "apprenticeships",
+    "apprenticeship": "apprenticeships",
+    "send": "special_education",
+    "specialeducation": "special_education",
+    "special-education": "special_education",
+    "adult": "adult_education",
+    "adulteducation": "adult_education",
+    "adult-education": "adult_education",
+    "community_learning": "adult_education",
+    "ap": "alternative_provision",
+    "alternativeprovision": "alternative_provision",
+    "alternative-provision": "alternative_provision",
+    "pru": "alternative_provision",
+    "tp": "training_provider",
+    "trainingprovider": "training_provider",
+    "training-provider": "training_provider",
+    "la": "local_authority",
+    "localauthority": "local_authority",
+    "local-authority": "local_authority",
+    "la_education": "local_authority",
 }
 
 
@@ -47,5 +78,5 @@ def canonical_system_key(key: str | None) -> str | None:
 
 
 def is_known_system(key: str | None) -> bool:
-    """True if *key* (after normalisation) is one of the five systems."""
+    """True if *key* (after normalisation) is one of the canonical systems."""
     return canonical_system_key(key) in CANONICAL_SYSTEMS

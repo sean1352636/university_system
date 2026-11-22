@@ -33,12 +33,12 @@ def finance_bursaries_finance_dashboard():
     return feature_pending("Finance Dashboard", _SYSTEM, category=_CATEGORY)
 
 
-@finance_bursaries_menu_bp.route("/open-fees", methods=["GET"])
+@finance_bursaries_menu_bp.route("/fees", methods=["GET"])
 @token_required
 @staff_required
-def finance_bursaries_open_fees():
-    """open_fees"""
-    return feature_pending("open_fees", _SYSTEM, category=_CATEGORY)
+def finance_bursaries_fees():
+    """Fees"""
+    return feature_pending("Fees", _SYSTEM, category=_CATEGORY)
 
 
 @finance_bursaries_menu_bp.route("/bursary-applications", methods=["GET"])
@@ -57,12 +57,20 @@ def finance_bursaries_trips_payments():
     return feature_pending("Trips & Payments", _SYSTEM, category=_CATEGORY)
 
 
-@finance_bursaries_menu_bp.route("/open-receipts", methods=["GET"])
+@finance_bursaries_menu_bp.route("/receipts", methods=["GET"])
 @token_required
 @staff_required
-def finance_bursaries_open_receipts():
-    """open_receipts"""
-    return feature_pending("open_receipts", _SYSTEM, category=_CATEGORY)
+def finance_bursaries_receipts():
+    """Receipts"""
+    return feature_pending("Receipts", _SYSTEM, category=_CATEGORY)
+
+
+@finance_bursaries_menu_bp.route("/online-payments", methods=["GET"])
+@token_required
+@staff_required
+def finance_bursaries_online_payments():
+    """Online Payments"""
+    return feature_pending("Online Payments", _SYSTEM, category=_CATEGORY)
 
 
 @finance_bursaries_menu_bp.route("/expense-claims", methods=["GET"])
@@ -73,12 +81,12 @@ def finance_bursaries_expense_claims():
     return feature_pending("Expense Claims", _SYSTEM, category=_CATEGORY)
 
 
-@finance_bursaries_menu_bp.route("/open-funding", methods=["GET"])
+@finance_bursaries_menu_bp.route("/funding", methods=["GET"])
 @token_required
 @staff_required
-def finance_bursaries_open_funding():
-    """open_funding"""
-    return feature_pending("open_funding", _SYSTEM, category=_CATEGORY)
+def finance_bursaries_funding():
+    """Funding"""
+    return feature_pending("Funding", _SYSTEM, category=_CATEGORY)
 
 
 @finance_bursaries_menu_bp.route("/census-ilr", methods=["GET"])

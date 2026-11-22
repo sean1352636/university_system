@@ -8,6 +8,7 @@ import tkinter as tk
 from tkinter import messagebox, ttk
 from typing import Callable
 
+from education_system.systems.primary.interfaces.gui import kit
 from education_system.systems.primary.domain.assessment.phonics import (
     phonics as data,
 )
@@ -52,19 +53,20 @@ def _safe_view(func: Callable[..., None]) -> Callable[..., None]:
 @_safe_view
 def open_phonics(host) -> None:
     logger.debug("GUI: open_phonics")
+    kit.show_page(host, "Phonics Tracking", lambda parent: _draw_phonics(parent, host))
 
-    win = tk.Toplevel(host.root)
-    win.title("Phonics Tracking")
-    win.transient(host.root)
-    win.geometry("960x560")
 
-    top = ttk.Frame(win, padding=10)
+def _draw_phonics(parent, host) -> None:
+    kit.page_heading(parent, "Phonics Tracking")
+    win = parent.winfo_toplevel()
+
+    top = ttk.Frame(parent, padding=(0, 0, 0, 6))
     top.pack(fill="x")
     summary_var = tk.StringVar()
     ttk.Label(top, textvariable=summary_var,
               font=("Segoe UI", 10, "bold")).pack(side="left")
 
-    filt = ttk.Frame(win, padding=(10, 0, 10, 6))
+    filt = ttk.Frame(parent, padding=(0, 0, 0, 6))
     filt.pack(fill="x")
     ttk.Label(filt, text="Year:").pack(side="left")
     year_var = tk.StringVar(value="All")
@@ -83,7 +85,7 @@ def open_phonics(host) -> None:
                  state="readonly", width=10).pack(side="left", padx=(4, 12))
 
     cols = ("pupil_id", "name", "year", "phase", "status", "last_assessed")
-    tree = ttk.Treeview(win, columns=cols, show="headings", height=15)
+    tree = ttk.Treeview(parent, columns=cols, show="headings", height=15)
     for col, label, width, anchor in [
         ("pupil_id", "Pupil ID", 90, "w"),
         ("name", "Name", 240, "w"),
@@ -94,9 +96,9 @@ def open_phonics(host) -> None:
     ]:
         tree.heading(col, text=label)
         tree.column(col, width=width, anchor=anchor)
-    tree.pack(fill="both", expand=True, padx=10, pady=(0, 6))
+    tree.pack(fill="both", expand=True, pady=(0, 6))
 
-    btns = ttk.Frame(win, padding=10)
+    btns = ttk.Frame(parent, padding=(0, 6))
     btns.pack(fill="x")
 
     def _refresh() -> None:
@@ -178,7 +180,8 @@ def open_phonics(host) -> None:
         side="left", padx=(8, 0))
     ttk.Button(btns, text="Refresh", command=_refresh).pack(
         side="left", padx=(8, 0))
-    ttk.Button(btns, text="Close", command=win.destroy).pack(side="right")
+    ttk.Button(btns, text="Close", command=lambda: kit.close_page(host, parent)).pack(
+        side="right")
 
     tree.bind("<Double-Button-1>", lambda _e: _view())
     year_var.trace_add("write", lambda *_: _refresh())
@@ -233,10 +236,10 @@ def _open_record_dialog(parent, pupil_id: str,
     status_var = tk.StringVar(value=existing.status if existing else "working")
     ttk.Combobox(grid, textvariable=status_var, values=list(STATUSES),
                  state="readonly", width=10).grid(row=1, column=1, sticky="w", pady=4)
-    ttk.Label(grid, text="Assessed on (YYYY-MM-DD)").grid(
+    ttk.Label(grid, text="Assessed on").grid(
         row=2, column=0, sticky="w", pady=4)
     date_var = tk.StringVar()
-    ttk.Entry(grid, textvariable=date_var, width=14).grid(
+    kit.DateField(grid, date_var).grid(
         row=2, column=1, sticky="w", pady=4)
     ttk.Label(grid, text="Notes").grid(row=3, column=0, sticky="w", pady=4)
     notes_var = tk.StringVar()

@@ -1,0 +1,35 @@
+{
+  "name": "attendance_letter_2",
+  "description": "Second letter about attendance (stage: Letter 2).",
+  "subject": "Attendance - second letter - {pupil_name}",
+  "body": [
+    "Dear {recipient_name},",
+    "",
+    "We wrote to you earlier about {first_name}'s attendance. Unfortunately it remains a concern.",
+    "",
+    "{first_name}'s attendance from {period} is {attendance_pct}%. {first_name} has missed {sessions_missed} sessions (half-days), {unauthorised} of them unauthorised.",
+    "",
+    "{details}",
+    "",
+    "If attendance does not improve, the school may need to involve formal support, which can include a parenting contract or a referral to the local authority. We would much rather work with you to avoid this - please contact us.",
+    "",
+    "Yours sincerely,",
+    "{sender_name}",
+    "{school_name}"
+  ],
+  "placeholders": {
+    "recipient_name": "The contact's name",
+    "pupil_name": "The pupil's preferred first name and surname",
+    "first_name": "The pupil's preferred first name",
+    "attendance_pct": "Attendance this school year (%)",
+    "sessions_missed": "Sessions missed this school year",
+    "unauthorised": "Unauthorised sessions this school year",
+    "period": "The dates the figures cover",
+    "details": "Meeting date, the agreed target and any extra note",
+    "sender_name": "The attendance lead / key worker",
+    "school_name": "The school's name"
+  },
+  "defaults": {
+    "school_name": "Secondary School"
+  }
+}

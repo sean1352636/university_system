@@ -69,50 +69,24 @@ class NailBarGUI:
         if not refund_method:
             return
 
-        # Process refund
+        # Process refund through the service (marks the transaction refunded,
+        # posts the refund to Finance and credits the student account when
+        # that is the chosen method) - shared with the CLIs.
         try:
-            with get_db_connection() as conn:
-                # Update transaction status to refunded
-                conn.execute('''
-                    UPDATE transactions
-                    SET status = 'refunded'
-                    WHERE transaction_id = ? AND source_type = 'nail_bar'
-                ''', (transaction_id,))
+            processed_by = self.current_user.get('username', 'System')
+            from education_system.systems.university.plugins.campus_commerce.domain.nailbar.services.nailbar_core import TransactionManager
+            refund = TransactionManager.process_refund(
+                transaction_id=transaction_id, amount=amount,
+                refund_method=refund_method, processed_by=processed_by,
+            )
+            if not refund:
+                messagebox.showerror(_t("nailbar.msg_titles.error"), _t('gui.operations.commerce.nailbar.nailbar_gui_parts.nailbargui_process_nailbar_refund.dialogs.transaction_not_found_in_database', default="Transaction not found in database."))
+                return
+            refund_ref = refund['refund_ref']
 
-                # Generate refund reference
-                refund_ref = f"NAILBAR-REFUND-{datetime.now().strftime('%Y%m%d%H%M%S')}"
-
-                # Insert refund record into unified refunds table
-                processed_by = self.current_user.get('username', 'System')
-                refund_notes = f"Nail Bar/Salon service refund (transaction_id={transaction_id})"
-                cur = conn.execute('''
-                    INSERT INTO unified_refunds
-                    (source_type, reference_id, reference_type, refund_date, amount,
-                     refund_method, refund_reference, student_id, processed_by, notes, status)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'processed')
-                ''', ('nail_bar',
-                      str(appointment_id) if appointment_id != 'N/A' else None,
-                      'appointment',
-                      datetime.now().strftime('%Y-%m-%d %H:%M:%S'), amount, refund_method,
-                      refund_ref, customer_id, processed_by, refund_notes))
-                refund_row_id = cur.lastrowid
-
-                conn.commit()
-
-            # Auto-post to GL (cash has moved). Never raises.
-            try:
-                from education_system.systems.university.domains.finance.domain.ledger import notify_ledger
-                notify_ledger('refund', refund_row_id, posted_by=processed_by)
-            except Exception as _e:
-                import logging
-                logging.getLogger(__name__).warning("ledger hook failed: %s", _e)
-
-            # If student account refund, add to their account
-            if refund_method == 'Student Account':
-                success = self.add_nailbar_refund_to_student_account(customer_id, amount, refund_ref)
-                if not success:
-                    messagebox.showwarning(_t("nailbar.msg_titles.partial_success"),
-                                         _t('gui.operations.commerce.nailbar.nailbar_gui_parts.nailbargui_process_nailbar_refund.dialogs.refund_recorded_but_failed_to_credit_student_account_please_cred', default="Refund recorded but failed to credit student account. Please credit manually."))
+            if refund_method == 'Student Account' and not refund.get('credited'):
+                messagebox.showwarning(_t("nailbar.msg_titles.partial_success"),
+                                     _t('gui.operations.commerce.nailbar.nailbar_gui_parts.nailbargui_process_nailbar_refund.dialogs.refund_recorded_but_failed_to_credit_student_account_please_cred', default="Refund recorded but failed to credit student account. Please credit manually."))
 
             # Send refund receipt email
             self.send_nailbar_refund_receipt(transaction_id, customer_id, amount, refund_method, refund_ref)
@@ -192,63 +166,10 @@ class NailBarGUI:
         return result['method']
 
     def add_nailbar_refund_to_student_account(self, customer_id, amount, refund_ref):
-        """Add refund amount to student finance account"""
-        if not FINANCE_AVAILABLE:
-            return False
-
-        try:
-            with get_db_connection() as conn:
-                # Check if student finance account exists
-                cursor = conn.execute(
-                    'SELECT account_id, balance FROM student_finance_accounts WHERE student_id = ?',
-                    (customer_id,)
-                )
-                account = cursor.fetchone()
-
-                if not account:
-                    # Create account with refund amount
-                    conn.execute('''
-                        INSERT INTO student_finance_accounts (student_id, balance, created_at)
-                        VALUES (?, ?, ?)
-                    ''', (customer_id, amount, datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
-
-                    # Get the new account_id
-                    cursor = conn.execute(
-                        'SELECT account_id, balance FROM student_finance_accounts WHERE student_id = ?',
-                        (customer_id,)
-                    )
-                    account = cursor.fetchone()
-                    account_id = account[0]
-                    balance_before = 0
-                    balance_after = amount
-                else:
-                    # Update existing account
-                    account_id = account[0]
-                    balance_before = account[1]
-                    balance_after = balance_before + amount
-
-                    conn.execute('''
-                        UPDATE student_finance_accounts
-                        SET balance = balance + ?
-                        WHERE student_id = ?
-                    ''', (amount, customer_id))
-
-                # Record transaction
-                processed_by = self.current_user.get('username', 'System')
-                conn.execute('''
-                    INSERT INTO transactions
-                    (source_type, account_id, student_id, transaction_type, amount, balance_before,
-                     balance_after, description, reference_id, processed_by)
-                    VALUES ('student_finance', ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                ''', (account_id, customer_id, 'credit', amount, balance_before, balance_after,
-                      'Nail Bar/Salon Service Refund', refund_ref, processed_by))
-
-                conn.commit()
-                return True
-
-        except Exception as e:
-            logger.error(f"Error adding refund to student account: {e}")
-            return False
+        """Kept for callers; the credit is now made by
+        ``TransactionManager.process_refund`` when the refund method is the
+        student account."""
+        return True
 
     def send_nailbar_refund_receipt(self, transaction_id, customer_id, amount, method, refund_ref):
         """Send refund receipt email to customer"""
@@ -279,7 +200,7 @@ class NailBarGUI:
                     logger.debug("Could not retrieve updated student finance balance")
 
             # Use JSON template for email
-            subject, body = render_template('commerce/nailbar/refund_receipt', {
+            subject, body = render_template('finance_commerce/commerce/nailbar/refund_receipt', {
                 'customer_name': customer_name,
                 'refund_ref': refund_ref,
                 'original_transaction': str(transaction_id),

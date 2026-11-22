@@ -6,6 +6,7 @@ from tkinter.scrolledtext import ScrolledText
 from tkinter import ttk, messagebox, filedialog, scrolledtext
 from tkinter.font import Font
 import threading
+from education_system.platform.delivery.gui.tk_threads import start_thread, ui
 from datetime import datetime, timedelta
 import json
 import webbrowser
@@ -190,15 +191,15 @@ def generate_advanced_financial_forecasting(self):
             fig.tight_layout()
 
             # Show in window
-            self.root.after(0, lambda: self.show_chart_window(
+            ui(self.root, lambda: self.show_chart_window(
                 "Advanced Financial Forecasting",
                 fig
             ))
         else:
-            messagebox.showinfo(_("finance_reporting.messages.no_data"), _("finance_reporting.messages.no_revenue_data"))
+            ui(self.root, messagebox.showinfo, _("finance_reporting.messages.no_data"), _("finance_reporting.messages.no_revenue_data"))
 
     except Exception as e:
-        messagebox.showerror(_("common.error"), _("finance_reporting.messages.forecast_error").format(error=str(e)))
+        ui(self.root, messagebox.showerror, _("common.error"), _("finance_reporting.messages.forecast_error").format(error=str(e)))
         print(f"Forecasting error: {e}")
         import traceback
         traceback.print_exc()
@@ -321,15 +322,15 @@ def generate_comprehensive_budget_variance_report(self):
             fig.tight_layout()
 
             # Show in window
-            self.root.after(0, lambda: self.show_chart_window(
+            ui(self.root, lambda: self.show_chart_window(
                 "Comprehensive Budget Variance Report",
                 fig
             ))
         else:
-            messagebox.showinfo(_("finance_reporting.messages.no_data"), _("finance_reporting.messages.no_budget_data"))
+            ui(self.root, messagebox.showinfo, _("finance_reporting.messages.no_data"), _("finance_reporting.messages.no_budget_data"))
 
     except Exception as e:
-        messagebox.showerror(_("common.error"), _("finance_reporting.messages.budget_variance_error").format(error=str(e)))
+        ui(self.root, messagebox.showerror, _("common.error"), _("finance_reporting.messages.budget_variance_error").format(error=str(e)))
         print(f"Budget variance error: {e}")
         import traceback
         traceback.print_exc()
@@ -442,13 +443,13 @@ def scenario_planning_tools(self):
         fig.tight_layout()
 
         # Show in window
-        self.root.after(0, lambda: self.show_chart_window(
+        ui(self.root, lambda: self.show_chart_window(
             "Scenario Planning Analysis",
             fig
         ))
 
     except Exception as e:
-        messagebox.showerror(_("common.error"), _("finance_reporting.messages.scenario_error").format(error=str(e)))
+        ui(self.root, messagebox.showerror, _("common.error"), _("finance_reporting.messages.scenario_error").format(error=str(e)))
         print(f"Scenario planning error: {e}")
         import traceback
         traceback.print_exc()
@@ -588,13 +589,13 @@ def compliance_audit_system(self):
         fig.tight_layout()
 
         # Show in window
-        self.root.after(0, lambda: self.show_chart_window(
+        ui(self.root, lambda: self.show_chart_window(
             "Compliance Audit System",
             fig
         ))
 
     except Exception as e:
-        messagebox.showerror(_("common.error"), _("finance_reporting.messages.compliance_error").format(error=str(e)))
+        ui(self.root, messagebox.showerror, _("common.error"), _("finance_reporting.messages.compliance_error").format(error=str(e)))
         print(f"Compliance audit error: {e}")
         import traceback
         traceback.print_exc()
@@ -607,13 +608,13 @@ def run_function_background(self, func_id):
             self.log_activity("Advanced financial forecasting completed")
 
         elif func_id == 'comparative_analysis':  # ADD THIS
-            self.run_comparative_analysis()
+            ui(self.root, self.run_comparative_analysis)
 
         elif func_id == 'data_quality':  # ADD THIS
-            self.run_data_quality_assessment()
+            ui(self.root, self.run_data_quality_assessment)
 
         elif func_id == 'performance_optimization':  # ADD THIS
-            self.run_performance_optimization()
+            ui(self.root, self.run_performance_optimization)
 
         elif func_id == 'budget_variance':
             self.generate_comprehensive_budget_variance_report()
@@ -629,7 +630,7 @@ def run_function_background(self, func_id):
             self.log_activity(f"Payment risk analysis completed - {len(risk_students)} students analyzed")
 
         elif func_id == 'lifecycle_analysis':
-            self.run_student_lifecycle_analysis()
+            ui(self.root, self.run_student_lifecycle_analysis)
 
         elif func_id == 'anomaly_detection':
             anomaly_detector = AnomalyDetector()
@@ -660,68 +661,68 @@ def run_function_background(self, func_id):
                 self.log_activity("ML model training failed - insufficient data")
 
         elif func_id == 'alert_system':
-            self.show_alert_system_dialog()
+            ui(self.root, self.show_alert_system_dialog)
             self.log_activity("Smart alert system dialog opened")
 
         elif func_id == 'automated_reporting':
-            self.show_automated_reporting_dialog()
+            ui(self.root, self.show_automated_reporting_dialog)
             self.log_activity("Automated reporting configuration opened")
 
         elif func_id == 'performance_monitoring':
-            self.show_performance_monitoring_dialog()
+            ui(self.root, self.show_performance_monitoring_dialog)
             self.log_activity("Performance monitoring dashboard opened")
 
         elif func_id == 'yoy_analysis':
-            self.run_yoy_analysis()
+            ui(self.root, self.run_yoy_analysis)
             self.log_activity("Year-over-year analysis completed")
 
         elif func_id == 'department_comparison':
-            self.run_department_comparison()
+            ui(self.root, self.run_department_comparison)
             self.log_activity("Department comparison analysis completed")
 
         elif func_id == 'benchmarking':
-            self.run_benchmarking_analysis()
+            ui(self.root, self.run_benchmarking_analysis)
             self.log_activity("Peer benchmarking analysis completed")
 
         elif func_id == 'payment_optimization':
-            self.show_payment_optimization_dialog()
+            ui(self.root, self.show_payment_optimization_dialog)
             self.log_activity("Payment plan optimization opened")
 
         elif func_id == 'collection_strategy':
-            self.show_collection_strategy_dialog()
+            ui(self.root, self.show_collection_strategy_dialog)
             self.log_activity("Collection strategy planner opened")
 
         elif func_id == 'scholarship_analysis':
-            self.show_scholarship_analysis_dialog()
+            ui(self.root, self.show_scholarship_analysis_dialog)
             self.log_activity("Scholarship analysis opened")
 
         elif func_id == 'revenue_optimization':
-            self.show_revenue_optimization_dialog()
+            ui(self.root, self.show_revenue_optimization_dialog)
             self.log_activity("Revenue optimization tools opened")
 
         elif func_id == 'advanced_export':
-            self.show_advanced_export_dialog()
+            ui(self.root, self.show_advanced_export_dialog)
             self.log_activity("Advanced export dialog opened")
 
         elif func_id == 'api_config':
-            self.show_api_config_dialog()
+            ui(self.root, self.show_api_config_dialog)
             self.log_activity("API configuration dialog opened")
 
         elif func_id == 'custom_reports':
-            self.show_custom_reports_dialog()
+            ui(self.root, self.show_custom_reports_dialog)
             self.log_activity("Custom report builder opened")
 
         elif func_id == 'regulatory_reporting':
-            self.generate_regulatory_reports()
+            ui(self.root, self.generate_regulatory_reports)
             self.log_activity("Regulatory reports generated")
 
         elif func_id == 'archive_management':
-            self.show_archive_management_dialog()
+            ui(self.root, self.show_archive_management_dialog)
             self.log_activity("Archive management interface opened")
 
         else:
             self.log_activity(f"Function {func_id} requested")
-            messagebox.showinfo(_("finance_reporting.messages.function_not_found"),
+            ui(self.root, messagebox.showinfo, _("finance_reporting.messages.function_not_found"),
                 f"The function '{func_id}' is not recognized.\n\n"
                 "This may be a custom function that needs to be configured, "
                 "or a feature from a newer version.")
@@ -732,24 +733,22 @@ def run_function_background(self, func_id):
         error_msg = f"Error executing {func_id}: {str(e)}"
         self.log_activity(error_msg)
         self.update_status("Error occurred")
-        messagebox.showerror(_t('gui.finance.finance_reporting.advanced_features.dialogs.error', default="Error"), error_msg)
+        ui(self.root, messagebox.showerror, _t('gui.finance.finance_reporting.advanced_features.dialogs.error', default="Error"), error_msg)
 
 def run_compliance_check(self):
     """Run compliance check"""
     def check_in_background():
         try:
             self.compliance_audit_system()
-            self.root.after(0, lambda: [
+            ui(self.root, lambda: [
                 self.log_activity("Compliance check completed"),
                 messagebox.showinfo(_t('gui.finance.finance_reporting.advanced_features.dialogs.compliance_check', default="Compliance Check"), _t('gui.finance.finance_reporting.advanced_features.dialogs.compliance_audit_completed_check_console_for_results', default="Compliance audit completed. Check console for results."))
             ])
         except Exception as e:
             error_msg = str(e)
-            self.root.after(0, lambda err=error_msg: messagebox.showerror(_t('gui.finance.finance_reporting.advanced_features.dialogs.error', default="Error"), f"Compliance check failed: {err}"))
+            ui(self.root, lambda err=error_msg: messagebox.showerror(_t('gui.finance.finance_reporting.advanced_features.dialogs.error', default="Error"), f"Compliance check failed: {err}"))
 
-    thread = threading.Thread(target=check_in_background)
-    thread.daemon = True
-    thread.start()
+    start_thread(self.root, check_in_background)
 
 def run_advanced_forecasting(self):
     """Run advanced forecasting analysis"""
@@ -758,22 +757,20 @@ def run_advanced_forecasting(self):
     def forecast_in_background():
         try:
             self.generate_advanced_financial_forecasting()
-            self.root.after(0, lambda: [
+            ui(self.root, lambda: [
                 self.log_activity("Advanced forecasting completed"),
                 self.update_status("Ready"),
                 messagebox.showinfo(_t('gui.finance.finance_reporting.advanced_features.dialogs.analysis_complete', default="Analysis Complete"), _t('gui.finance.finance_reporting.advanced_features.dialogs.advanced_forecasting_analysis_completed_check_generated_charts_a', default="Advanced forecasting analysis completed. Check generated charts and reports."))
             ])
         except Exception as e:
             error_msg = str(e)
-            self.root.after(0, lambda err=error_msg: [
+            ui(self.root, lambda err=error_msg: [
                 self.log_activity(f"Forecasting error: {err}"),
                 self.update_status("Error"),
                 messagebox.showerror(_t('gui.finance.finance_reporting.advanced_features.dialogs.error', default="Error"), f"Forecasting failed: {err}")
             ])
 
-    thread = threading.Thread(target=forecast_in_background)
-    thread.daemon = True
-    thread.start()
+    start_thread(self.root, forecast_in_background)
 
 def run_scenario_planning(self):
     """Run scenario planning analysis with GUI display"""
@@ -781,9 +778,9 @@ def run_scenario_planning(self):
 
     def scenario_in_background():
         try:
-            scenario_planning_tools()
+            self.scenario_planning_tools()
 
-            self.root.after(0, lambda: [
+            ui(self.root, lambda: [
                 self.log_activity("Scenario planning analysis completed"),
                 self.update_status("Ready"),
                 messagebox.showinfo(_t('gui.finance.finance_reporting.advanced_features.dialogs.scenario_planning', default="Scenario Planning"), _t('gui.finance.finance_reporting.advanced_features.dialogs.scenario_planning_analysis_completed_check_console_for_detailed', default="Scenario planning analysis completed. Check console for detailed results and generated charts."))
@@ -791,15 +788,13 @@ def run_scenario_planning(self):
 
         except Exception as e:
             error_msg = str(e)
-            self.root.after(0, lambda err=error_msg: [
+            ui(self.root, lambda err=error_msg: [
                 self.log_activity(f"Scenario planning error: {err}"),
                 self.update_status("Error"),
                 messagebox.showerror(_t('gui.finance.finance_reporting.advanced_features.dialogs.error', default="Error"), f"Scenario planning failed: {err}")
             ])
 
-    thread = threading.Thread(target=scenario_in_background)
-    thread.daemon = True
-    thread.start()
+    start_thread(self.root, scenario_in_background)
 
 def run_compliance_audit(self):
     """Run compliance audit with GUI display"""
@@ -809,7 +804,7 @@ def run_compliance_audit(self):
         try:
             self.compliance_audit_system()
 
-            self.root.after(0, lambda: [
+            ui(self.root, lambda: [
                 self.log_activity("Compliance audit completed"),
                 self.update_status("Ready"),
                 messagebox.showinfo(_t('gui.finance.finance_reporting.advanced_features.dialogs.compliance_audit', default="Compliance Audit"), _t('gui.finance.finance_reporting.advanced_features.dialogs.compliance_audit_completed_check_console_for_detailed_results', default="Compliance audit completed. Check console for detailed results."))
@@ -817,15 +812,13 @@ def run_compliance_audit(self):
 
         except Exception as e:
             error_msg = str(e)
-            self.root.after(0, lambda err=error_msg: [
+            ui(self.root, lambda err=error_msg: [
                 self.log_activity(f"Compliance audit error: {err}"),
                 self.update_status("Error"),
                 messagebox.showerror(_t('gui.finance.finance_reporting.advanced_features.dialogs.error', default="Error"), f"Compliance audit failed: {err}")
             ])
 
-    thread = threading.Thread(target=audit_in_background)
-    thread.daemon = True
-    thread.start()
+    start_thread(self.root, audit_in_background)
 
 def run_automated_reporting_setup(self):
     """Set up automated reporting with GUI display"""
@@ -835,7 +828,7 @@ def run_automated_reporting_setup(self):
         try:
             automated_reporting_system()
 
-            self.root.after(0, lambda: [
+            ui(self.root, lambda: [
                 self.log_activity("Automated reporting system configured"),
                 self.update_status("Ready"),
                 messagebox.showinfo(_t('gui.finance.finance_reporting.advanced_features.dialogs.automated_reporting', default="Automated Reporting"), _t('gui.finance.finance_reporting.advanced_features.dialogs.automated_reporting_system_configured_successfully', default="Automated reporting system configured successfully."))
@@ -843,15 +836,13 @@ def run_automated_reporting_setup(self):
 
         except Exception as e:
             error_msg = str(e)
-            self.root.after(0, lambda err=error_msg: [
+            ui(self.root, lambda err=error_msg: [
                 self.log_activity(f"Automated reporting setup error: {err}"),
                 self.update_status("Error"),
                 messagebox.showerror(_t('gui.finance.finance_reporting.advanced_features.dialogs.error', default="Error"), f"Automated reporting setup failed: {err}")
             ])
 
-    thread = threading.Thread(target=setup_in_background)
-    thread.daemon = True
-    thread.start()
+    start_thread(self.root, setup_in_background)
 
 def run_advanced_export(self):
     """Run advanced export system with GUI display"""
@@ -861,7 +852,7 @@ def run_advanced_export(self):
         try:
             advanced_export_system()
 
-            self.root.after(0, lambda: [
+            ui(self.root, lambda: [
                 self.log_activity("Advanced export system accessed"),
                 self.update_status("Ready"),
                 messagebox.showinfo(_t('gui.finance.finance_reporting.advanced_features.dialogs.advanced_export', default="Advanced Export"), _t('gui.finance.finance_reporting.advanced_features.dialogs.advanced_export_system_completed_check_console_for_export_option', default="Advanced export system completed. Check console for export options."))
@@ -869,15 +860,13 @@ def run_advanced_export(self):
 
         except Exception as e:
             error_msg = str(e)
-            self.root.after(0, lambda err=error_msg: [
+            ui(self.root, lambda err=error_msg: [
                 self.log_activity(f"Advanced export error: {err}"),
                 self.update_status("Error"),
                 messagebox.showerror(_t('gui.finance.finance_reporting.advanced_features.dialogs.error', default="Error"), f"Advanced export failed: {err}")
             ])
 
-    thread = threading.Thread(target=export_in_background)
-    thread.daemon = True
-    thread.start()
+    start_thread(self.root, export_in_background)
 
 def run_function_background_updated(self, func_id):
     """Updated run function in background thread with all new functions"""
@@ -896,7 +885,7 @@ def run_function_background_updated(self, func_id):
             self.run_performance_optimization()
 
         elif func_id == 'budget_variance':
-            generate_comprehensive_budget_variance_report()
+            self.generate_comprehensive_budget_variance_report()
             self.log_activity("Budget variance analysis completed")
 
         elif func_id == 'realtime_dashboard':
@@ -999,7 +988,7 @@ def run_advanced_forecasting_updated(self):
         try:
             self.generate_advanced_financial_forecasting()
 
-            self.root.after(0, lambda: [
+            ui(self.root, lambda: [
                 self.log_activity("Advanced forecasting completed"),
                 self.update_status("Ready"),
                 messagebox.showinfo(_t('gui.finance.finance_reporting.advanced_features.dialogs.forecasting_complete', default="Forecasting Complete"),
@@ -1013,15 +1002,13 @@ def run_advanced_forecasting_updated(self):
             ])
         except Exception as e:
             error_msg = str(e)
-            self.root.after(0, lambda err=error_msg: [
+            ui(self.root, lambda err=error_msg: [
                 self.log_activity(f"Advanced forecasting error: {err}"),
                 self.update_status("Error"),
                 messagebox.showerror(_t('gui.finance.finance_reporting.advanced_features.dialogs.error', default="Error"), f"Advanced forecasting failed: {err}")
             ])
 
-    thread = threading.Thread(target=forecast_in_background)
-    thread.daemon = True
-    thread.start()
+    start_thread(self.root, forecast_in_background)
 
 
 # ---------------------------------------------------------------------------
@@ -1142,7 +1129,7 @@ def run_payment_optimization(self):
             ax4.text(0.5, 0.5, 'No priority accounts', ha='center', va='center')
 
         fig.tight_layout()
-        self.root.after(0, lambda: [
+        ui(self.root, lambda: [
             self.show_chart_window("Payment Plan Optimization", fig),
             self.log_activity(
                 f"Payment optimization completed - {students_with_balance} accounts, "
@@ -1150,7 +1137,7 @@ def run_payment_optimization(self):
         ])
     except Exception as e:
         err = str(e)
-        self.root.after(0, lambda: messagebox.showerror(_t('gui.finance.finance_reporting.advanced_features.dialogs.error', default="Error"),
+        ui(self.root, lambda: messagebox.showerror(_t('gui.finance.finance_reporting.advanced_features.dialogs.error', default="Error"),
             f"Payment optimization failed: {err}"))
 
 
@@ -1247,7 +1234,7 @@ def run_collection_strategy(self):
             ax4.text(0.5, 0.5, 'No outstanding debtors', ha='center', va='center')
 
         fig.tight_layout()
-        self.root.after(0, lambda: [
+        ui(self.root, lambda: [
             self.show_chart_window("Collection Strategy", fig),
             self.log_activity(
                 f"Collection strategy completed - {collection_rate:.1f}% collected, "
@@ -1255,7 +1242,7 @@ def run_collection_strategy(self):
         ])
     except Exception as e:
         err = str(e)
-        self.root.after(0, lambda: messagebox.showerror(_t('gui.finance.finance_reporting.advanced_features.dialogs.error', default="Error"),
+        ui(self.root, lambda: messagebox.showerror(_t('gui.finance.finance_reporting.advanced_features.dialogs.error', default="Error"),
             f"Collection strategy failed: {err}"))
 
 
@@ -1362,7 +1349,7 @@ def run_scholarship_analysis(self):
         ax4.grid(True, alpha=0.3, axis='y')
 
         fig.tight_layout()
-        self.root.after(0, lambda: [
+        ui(self.root, lambda: [
             self.show_chart_window("Scholarship Impact Analysis", fig),
             self.log_activity(
                 f"Scholarship analysis completed - {active_count} active, "
@@ -1370,7 +1357,7 @@ def run_scholarship_analysis(self):
         ])
     except Exception as e:
         err = str(e)
-        self.root.after(0, lambda: messagebox.showerror(_t('gui.finance.finance_reporting.advanced_features.dialogs.error', default="Error"),
+        ui(self.root, lambda: messagebox.showerror(_t('gui.finance.finance_reporting.advanced_features.dialogs.error', default="Error"),
             f"Scholarship analysis failed: {err}"))
 
 
@@ -1484,7 +1471,7 @@ def run_revenue_optimization(self):
             ax4.axis('off')
 
         fig.tight_layout()
-        self.root.after(0, lambda: [
+        ui(self.root, lambda: [
             self.show_chart_window("Revenue Optimization", fig),
             self.log_activity(
                 f"Revenue optimization completed - £{total_revenue:,.2f} across "
@@ -1492,13 +1479,13 @@ def run_revenue_optimization(self):
         ])
     except Exception as e:
         err = str(e)
-        self.root.after(0, lambda: messagebox.showerror(_t('gui.finance.finance_reporting.advanced_features.dialogs.error', default="Error"),
+        ui(self.root, lambda: messagebox.showerror(_t('gui.finance.finance_reporting.advanced_features.dialogs.error', default="Error"),
             f"Revenue optimization failed: {err}"))
 
 
 def run_api_config(self):
     """Open the payment-gateway API configuration dialog (main thread)."""
-    self.root.after(0, self._build_api_config_dialog)
+    ui(self.root, self._build_api_config_dialog)
 
 
 def _build_api_config_dialog(self):
@@ -1677,7 +1664,7 @@ def run_regulatory_reporting(self):
             ttk.Button(btns, text=_t('gui.finance.finance_reporting.advanced_features.buttons.export', default="Export…"), command=_export).pack(side=tk.LEFT, padx=6)
             ttk.Button(btns, text=_t('gui.finance.finance_reporting.advanced_features.buttons.close', default="Close"), command=win.destroy).pack(side=tk.LEFT, padx=6)
 
-        self.root.after(0, lambda: [
+        ui(self.root, lambda: [
             _present(),
             self.log_activity(
                 f"Regulatory reporting generated - £{vat_total:,.2f} VAT over "
@@ -1685,7 +1672,7 @@ def run_regulatory_reporting(self):
         ])
     except Exception as e:
         err = str(e)
-        self.root.after(0, lambda: messagebox.showerror(_t('gui.finance.finance_reporting.advanced_features.dialogs.error', default="Error"),
+        ui(self.root, lambda: messagebox.showerror(_t('gui.finance.finance_reporting.advanced_features.dialogs.error', default="Error"),
             f"Regulatory reporting failed: {err}"))
 
 

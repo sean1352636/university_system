@@ -1,7 +1,7 @@
 """Unit tests for the pure scheduling solver core."""
 import pytest
 
-from education_system.systems.university.domains.academics.interfaces.gui.module_scheduling.auto_scheduler_core import (
+from education_system.systems.university.domains.teaching.interfaces.gui.module_scheduling.auto_scheduler_core import (
     Assignment, Instructor, ModuleReq, Options, Room, Weights,
     evaluate, find_back_to_back, find_travel_violations, generate_start_times,
     overlaps, solve, to_hhmm, to_minutes, weights_for_goal,

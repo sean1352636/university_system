@@ -464,11 +464,20 @@ def create_unified_app() -> Flask:
             reports_bp, staff_comms_bp, student_services_bp,
             advanced_search_bp, calendar_bp,
         )
+        # Public online application (POST only, no token by design).
+        from education_system.api.sixth_form.routes.applications_routes import (
+            applications_bp,
+        )
+        # Applicant self-service portal (own sign-in by e-mailed code).
+        from education_system.api.sixth_form.routes.applicant_portal_routes import (
+            applicant_portal_bp,
+        )
         for bp in (
             academic_year_bp, students_bp, academics_bp, assessment_bp,
             finance_bp, governance_bp, pastoral_bp, progression_bp,
             reports_bp, staff_comms_bp, student_services_bp,
-            advanced_search_bp, calendar_bp,
+            advanced_search_bp, calendar_bp, applications_bp,
+            applicant_portal_bp,
         ):
             new_prefix = _reprefix(bp.url_prefix, "sixthform")
             new_name = f"sixthform_{bp.name}"

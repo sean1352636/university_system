@@ -20,7 +20,7 @@ from education_system.systems.university.infrastructure.database.schemas.users_t
 auth = None
 
 try:
-    from education_system.systems.university.domains.academics.domain.services.academic_calendar.cli import display_academic_calendar_menu
+    from education_system.systems.university.domains.teaching.domain.academic_calendar.cli import display_academic_calendar_menu
 except ImportError:
     display_academic_calendar_menu = None
 
@@ -30,11 +30,18 @@ except ImportError:
     display_trip_management_menu = None
 
 try:
-    from education_system.systems.university.shell.cli.services.academic_misconduct_cli import academic_misconduct_menu
+    from education_system.systems.university.shell.cli.integrity_menu import (
+        integrity_menu as _integrity_menu,
+    )
     ACADEMIC_MISCONDUCT_AVAILABLE = True
 except ImportError:
-    academic_misconduct_menu = None
+    _integrity_menu = None
     ACADEMIC_MISCONDUCT_AVAILABLE = False
+
+
+def academic_misconduct_menu():
+    """Academic misconduct cases are academic integrity cases."""
+    _integrity_menu(auth)
 
 def set_auth(auth_instance):
     """Set the authentication instance for this module"""
@@ -309,8 +316,8 @@ def create_trip_calendar_event(trip_id, event_details=None):
             return False
 
         # Create calendar event using the academic calendar system
-        from education_system.systems.university.domains.academics.domain.services.academic_calendar.calendar_core import AcademicCalendarManager
-        from education_system.systems.university.domains.academics.domain.services.academic_calendar.config import CalendarConfig
+        from education_system.systems.university.domains.teaching.domain.academic_calendar.calendar_core import AcademicCalendarManager
+        from education_system.systems.university.domains.teaching.domain.academic_calendar.config import CalendarConfig
 
         config = CalendarConfig()
         calendar_manager = AcademicCalendarManager(config=config, auth_manager=auth)
@@ -377,8 +384,8 @@ def view_integrated_dashboard():
 
         # Get upcoming calendar events
         try:
-            from education_system.systems.university.domains.academics.domain.services.academic_calendar.calendar_core import AcademicCalendarManager
-            from education_system.systems.university.domains.academics.domain.services.academic_calendar.config import CalendarConfig
+            from education_system.systems.university.domains.teaching.domain.academic_calendar.calendar_core import AcademicCalendarManager
+            from education_system.systems.university.domains.teaching.domain.academic_calendar.config import CalendarConfig
             config = CalendarConfig()
             calendar_manager = AcademicCalendarManager(config=config, auth_manager=auth)
 
@@ -670,10 +677,10 @@ def display_integrated_academic_menu():
             options.append(('trips', display_trip_management_menu))
             option_num += 1
 
-        # Academic Misconduct System (admin, staff, instructor only)
+        # Academic integrity cases (admin, staff, instructor only)
         misconduct_access = auth.current_user['role'].lower() in ['admin', 'staff', 'instructor', 'administrator']
         if misconduct_access and ACADEMIC_MISCONDUCT_AVAILABLE:
-            print(f"{option_num}. Academic Misconduct Management")
+            print(f"{option_num}. Academic Integrity Cases")
             options.append(('misconduct', academic_misconduct_menu))
             option_num += 1
 

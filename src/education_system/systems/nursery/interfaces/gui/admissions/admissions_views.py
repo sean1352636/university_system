@@ -254,7 +254,7 @@ def _enrol_selected(tree: ttk.Treeview, host) -> None:
             "Enrol anyway?",
             parent=host.root):
         return
-    from education_system.systems.nursery.domain.admissions.enrolment import (
+    from education_system.systems.nursery.interfaces.gui.admissions.enrolment import (
         enrolment_views,
     )
     enrolment_views.open_enrol_from_application(host, sel)

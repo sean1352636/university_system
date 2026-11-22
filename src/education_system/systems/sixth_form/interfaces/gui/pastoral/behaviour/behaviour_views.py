@@ -14,7 +14,9 @@ from __future__ import annotations
 import logging
 import tkinter as tk
 from datetime import date as _date
-from tkinter import messagebox, ttk
+from tkinter import ttk
+from education_system.systems.sixth_form.interfaces.gui._sidebar import SidebarBook
+from education_system.platform.delivery.gui.parented_dialogs import messagebox
 from typing import Any, Callable
 from education_system.systems.sixth_form.domain.pastoral.behaviour import behaviour
 from education_system.systems.sixth_form.domain.pastoral.behaviour import behaviour as data
@@ -49,7 +51,7 @@ def open_directory(gui) -> None:
     frame = _clear(gui)
     _heading(frame, "Behaviour Log")
 
-    nb = ttk.Notebook(frame)
+    nb = SidebarBook(frame)
     nb.pack(fill="both", expand=True)
 
     dir_tab = ttk.Frame(nb, padding=8)
@@ -65,6 +67,12 @@ def open_directory(gui) -> None:
     _build_editor_tab(gui, editor_tab)
     _build_student_tab(gui, student_tab)
     _build_summary_tab(gui, summary_tab)
+
+    # Escalations, thresholds, learner agreement, dress code breaches.
+    from education_system.systems.sixth_form.interfaces.gui.pastoral.behaviour.escalation_tabs import (
+        add_behaviour_extra_tabs,
+    )
+    add_behaviour_extra_tabs(nb)
 
 
 # ─── Directory tab ──────────────────────────────────────────────────

@@ -25,6 +25,22 @@ _SYSTEM = "apprenticeships"
 _CATEGORY = "My Evidence"
 
 
+@my_evidence_menu_bp.route("/action-plans", methods=["GET"])
+@token_required
+@staff_required
+def my_evidence_action_plans():
+    """Action Plans"""
+    return feature_pending("Action Plans", _SYSTEM, category=_CATEGORY)
+
+
+@my_evidence_menu_bp.route("/functional-skills", methods=["GET"])
+@token_required
+@staff_required
+def my_evidence_functional_skills():
+    """Functional Skills"""
+    return feature_pending("Functional Skills", _SYSTEM, category=_CATEGORY)
+
+
 @my_evidence_menu_bp.route("/off-the-job-hours", methods=["GET"])
 @token_required
 @staff_required
@@ -41,10 +57,42 @@ def my_evidence_progress_reviews():
     return feature_pending("Progress Reviews", _SYSTEM, category=_CATEGORY)
 
 
+@my_evidence_menu_bp.route("/skills-matrix", methods=["GET"])
+@token_required
+@staff_required
+def my_evidence_skills_matrix():
+    """Skills Matrix"""
+    return feature_pending("Skills Matrix", _SYSTEM, category=_CATEGORY)
+
+
 @my_evidence_menu_bp.route("/apprentice-portfolio", methods=["GET"])
 @token_required
 @staff_required
 def my_evidence_apprentice_portfolio():
     """apprentice.portfolio"""
     return feature_pending("apprentice.portfolio", _SYSTEM, category=_CATEGORY)
+
+
+@my_evidence_menu_bp.route("/shared-assignments", methods=["GET"])
+@token_required
+@staff_required
+def my_evidence_shared_assignments():
+    """shared.assignments"""
+    return feature_pending("shared.assignments", _SYSTEM, category=_CATEGORY)
+
+
+@my_evidence_menu_bp.route("/shared-documents", methods=["GET"])
+@token_required
+@staff_required
+def my_evidence_shared_documents():
+    """shared.documents"""
+    return feature_pending("shared.documents", _SYSTEM, category=_CATEGORY)
+
+
+@my_evidence_menu_bp.route("/shared-qualifications", methods=["GET"])
+@token_required
+@staff_required
+def my_evidence_shared_qualifications():
+    """shared.qualifications"""
+    return feature_pending("shared.qualifications", _SYSTEM, category=_CATEGORY)
 

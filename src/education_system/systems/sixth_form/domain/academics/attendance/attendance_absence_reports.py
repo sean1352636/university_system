@@ -23,6 +23,19 @@ The queue is the point of the first route. An absence somebody phoned in
 and nobody actioned looks identical, in the register, to one nobody
 explained — and the whole reason for taking the call was to tell those
 two apart.
+
+**Storage.** Reports live in the one absence store,
+``attendance_leave_requests`` (see :mod:`attendance_leave`), as rows with
+``origin = 'report'``; this module keeps its own vocabulary (Pending /
+Accepted / Rejected / Superseded) and maps it onto the store's states.
+``report_id`` is the store's ``request_id``. The original
+``attendance_absence_reports`` table is still created and left in place;
+its rows were copied across once and are not written to any more.
+
+**Portals.** :func:`report_absence_for` and :func:`self_certify_for` are
+the entry points for the parent and student portals: they take the
+signed-in identity, check it may speak for the learner, and only then
+call :func:`report_absence` / :func:`self_certify`.
 """
 
 from __future__ import annotations
@@ -37,6 +50,7 @@ from education_system.systems.sixth_form.domain.academics.attendance import (
     attendance as core,
     attendance_calendar as calendar,
     attendance_codes as codes,
+    attendance_leave as store,
     attendance_register as reg,
     attendance_thresholds as thresholds,
     attendance_weeks as weeks,
@@ -78,6 +92,18 @@ ACCEPTED: str = "Accepted"
 REJECTED: str = "Rejected"
 SUPERSEDED: str = "Superseded"
 STATES: tuple[str, ...] = (PENDING, ACCEPTED, REJECTED, SUPERSEDED)
+
+# This module's states ↔ the absence store's.
+_TO_STORE: dict[str, str] = {
+    PENDING: store.REQUESTED, ACCEPTED: store.APPROVED,
+    REJECTED: store.DECLINED, SUPERSEDED: store.SUPERSEDED,
+}
+_FROM_STORE: dict[str, str] = {
+    store.REQUESTED: PENDING, store.APPROVED: ACCEPTED,
+    store.DECLINED: REJECTED, store.SUPERSEDED: SUPERSEDED,
+    # Withdrawn / cancelled from the leave screens: no longer live.
+    store.WITHDRAWN: SUPERSEDED, store.CANCELLED: SUPERSEDED,
+}
 
 # The code a self-certified illness earns. `I` — authorised, and the
 # learner said so themselves.
@@ -224,13 +250,17 @@ def init_db() -> None:
     reg.init_db()
     thresholds.init_db()
     with _connect() as conn:
+        # The pre-unification table is kept so its rows stay readable;
+        # creating it first lets the store's migration find them.
         conn.executescript(_SCHEMA)
         conn.commit()
+    store.init_db()
     logger.debug("Absence-report schema ready at %s", DB_PATH)
     _DB_READY = True
 
 
 def _row(r: sqlite3.Row) -> AbsenceReport:
+    """A row of the *old* table — kept for anything reading it directly."""
     return AbsenceReport(
         report_id=r["report_id"], student_id=r["student_id"],
         date_from=r["date_from"], date_to=r["date_to"],
@@ -241,6 +271,24 @@ def _row(r: sqlite3.Row) -> AbsenceReport:
         decided_by=r["decided_by"], decided_at=r["decided_at"],
         decision_note=r["decision_note"], marks_written=r["marks_written"],
         received_at=r["received_at"])
+
+
+def _from_store(r: store.LeaveRequest) -> AbsenceReport:
+    return AbsenceReport(
+        report_id=r.request_id, student_id=r.student_id,
+        date_from=r.date_from, date_to=r.date_to,
+        channel=r.channel or PHONE, reported_by=r.reporter_type or PARENT,
+        reporter_name=r.reporter_name, reason_id=r.reason_id,
+        reason_text=r.reason_text, message=r.message,
+        state=_FROM_STORE.get(r.state, PENDING),
+        self_certified=r.self_certified, code=r.code,
+        decided_by=r.decided_by, decided_at=r.decided_at,
+        decision_note=r.decision_note, marks_written=r.marks_written,
+        received_at=r.requested_at, student_name=r.student_name)
+
+
+def _now() -> str:
+    return _dt.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
 
 # ── Validation ──────────────────────────────────────────────────────
@@ -327,18 +375,19 @@ def report_absence(
             reason = codes.get_reason(reason_id)
             reason_text = reason.name if reason else None
 
-    with _connect() as conn:
-        cur = conn.execute(
-            """INSERT INTO attendance_absence_reports
-                   (student_id, date_from, date_to, channel, reported_by,
-                    reporter_name, reason_id, reason_text, message, state)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
-            (student.student_id, date_from, date_to, channel, reported_by,
-             (reporter_name or "").strip() or None, reason_id,
-             (reason_text or "").strip() or None,
-             (message or "").strip() or None, PENDING))
-        conn.commit()
-        report_id = int(cur.lastrowid or 0)
+    reason_text = (reason_text or "").strip() or None
+    report_id = store.store_insert(
+        student.student_id, date_from, date_to, origin=store.ORIGIN_REPORT,
+        state=store.REQUESTED,
+        kind=("Illness" if reason_text and "ill" in reason_text.lower()
+              else store.DEFAULT_KIND),
+        detail=reason_text, requested_by=reporter_name,
+        requested_at=_now(), request_date=_dt.date.today().isoformat(),
+        notice_days=(_dt.date.fromisoformat(date_from)
+                     - _dt.date.today()).days,
+        channel=channel, reporter_type=reported_by,
+        reporter_name=reporter_name, reason_id=reason_id,
+        reason_text=reason_text, message=message)
     logger.info("Absence reported: %s %s → %s via %s", student.student_id,
                 date_from, date_to, channel)
     out = get_report(report_id)
@@ -411,11 +460,7 @@ def self_certify(
         reported_by=STUDENT, reporter_name=student.full_name,
         reason_id=reason_id, reason_text=reason_text or "Self-certified",
         message=message)
-    with _connect() as conn:
-        conn.execute(
-            "UPDATE attendance_absence_reports SET self_certified = 1 "
-            "WHERE report_id = ?", (report.report_id,))
-        conn.commit()
+    store.store_update(report.report_id, self_certified=1, kind="Illness")
     accept(report.report_id, code=SELF_CERT_CODE,
            decided_by=student.student_id,
            note="Self-certified by the learner",
@@ -493,16 +538,10 @@ def accept(
         written += marked_here
         (used if marked_here else skipped).append(date)
 
-    with _connect() as conn:
-        conn.execute(
-            """UPDATE attendance_absence_reports
-                  SET state = ?, code = ?, reason_id = ?, decided_by = ?,
-                      decided_at = datetime('now'), decision_note = ?,
-                      marks_written = ?
-                WHERE report_id = ?""",
-            (ACCEPTED, code, reason_id, (decided_by or "").strip() or None,
-             (note or "").strip() or None, written, report_id))
-        conn.commit()
+    store.store_update(report_id, state=store.APPROVED, code=code,
+                       reason_id=reason_id, decided_by=decided_by,
+                       decided_at=_now(), decision_note=note,
+                       marks_written=written)
     logger.info("Absence report #%d accepted as %s: %d mark(s)", report_id,
                 code, written)
     return ApplyResult(report_id=report_id, marks_written=written,
@@ -524,14 +563,9 @@ def reject(report_id: int, *, reason: str,
     note = (reason or "").strip()
     if not note:
         raise ValidationError("A reason is required to reject a report")
-    with _connect() as conn:
-        conn.execute(
-            """UPDATE attendance_absence_reports
-                  SET state = ?, decided_by = ?, decided_at = datetime('now'),
-                      decision_note = ?
-                WHERE report_id = ?""",
-            (REJECTED, (decided_by or "").strip() or None, note, report_id))
-        conn.commit()
+    store.store_update(report_id, state=store.DECLINED,
+                       decided_by=decided_by, decided_at=_now(),
+                       decision_note=note)
     out = get_report(report_id)
     assert out is not None
     return out
@@ -541,11 +575,16 @@ def reject(report_id: int, *, reason: str,
 
 def get_report(report_id: int) -> AbsenceReport | None:
     init_db()
-    with _connect() as conn:
-        r = conn.execute(
-            "SELECT * FROM attendance_absence_reports WHERE report_id = ?",
-            (report_id,)).fetchone()
-    return _row(r) if r else None
+    r = store.get_request(report_id)
+    return _from_store(r) if r is not None and r.origin == store.ORIGIN_REPORT \
+        else None
+
+
+def get_legacy_report(old_report_id: int) -> AbsenceReport | None:
+    """A report by its id in the pre-unification table."""
+    init_db()
+    r = store.by_legacy_ref(store.LEGACY_REPORTS, old_report_id)
+    return _from_store(r) if r is not None else None
 
 
 def list_reports(
@@ -559,35 +598,16 @@ def list_reports(
     limit: int = 200,
 ) -> list[AbsenceReport]:
     init_db()
-    clauses: list[str] = []
-    args: list[Any] = []
-    if student_id:
-        clauses.append("student_id = ?")
-        args.append(student_id.strip())
-    if state:
-        if state not in STATES:
-            raise ValidationError(f"State must be one of: {', '.join(STATES)}")
-        clauses.append("state = ?")
-        args.append(state)
-    if channel:
-        clauses.append("channel = ?")
-        args.append(validate_channel(channel))
-    if date_from:
-        clauses.append("date_to >= ?")
-        args.append(core._validate_date(date_from))
-    if date_to:
-        clauses.append("date_from <= ?")
-        args.append(core._validate_date(date_to))
-    if self_certified is not None:
-        clauses.append("self_certified = ?")
-        args.append(1 if self_certified else 0)
-    where = ("WHERE " + " AND ".join(clauses)) if clauses else ""
-    args.append(max(1, int(limit)))
-    with _connect() as conn:
-        rows = conn.execute(
-            f"SELECT * FROM attendance_absence_reports {where} "
-            "ORDER BY date_from DESC, report_id DESC LIMIT ?", args).fetchall()
-    return [_row(r) for r in rows]
+    if state and state not in STATES:
+        raise ValidationError(f"State must be one of: {', '.join(STATES)}")
+    rows = store.list_requests(
+        student_id=student_id,
+        state=_TO_STORE[state] if state else None,
+        date_from=date_from, date_to=date_to, limit=limit,
+        origins=(store.ORIGIN_REPORT,),
+        channel=validate_channel(channel) if channel else None,
+        self_certified=self_certified, newest_first=True)
+    return [_from_store(r) for r in rows]
 
 
 def queue(*, with_names: bool = True) -> list[AbsenceReport]:
@@ -612,8 +632,9 @@ def queue_count() -> int:
     init_db()
     with _connect() as conn:
         r = conn.execute(
-            "SELECT COUNT(*) AS n FROM attendance_absence_reports "
-            "WHERE state = ?", (PENDING,)).fetchone()
+            "SELECT COUNT(*) AS n FROM attendance_leave_requests "
+            "WHERE origin = ? AND state = ?",
+            (store.ORIGIN_REPORT, store.REQUESTED)).fetchone()
     return int(r["n"])
 
 
@@ -656,3 +677,160 @@ def self_certification_report(*, date_from: str | None = None,
         if report.student_id not in seen:
             seen[report.student_id] = self_cert_status(report.student_id)
     return sorted(seen.values(), key=lambda s: -s.used_days)
+
+
+# ── Portal entry points ─────────────────────────────────────────────
+#
+# The parent and student portals call these, never report_absence /
+# self_certify directly: the identity comes from the signed-in session
+# and is checked against the learner before anything is written.
+
+def _access_denied(message: str) -> Exception:
+    try:
+        from education_system.systems.sixth_form.domain.governance.user_management import (  # noqa: E501
+            access as _access,
+        )
+        return _access.AccessDenied(message)
+    except (ImportError, AttributeError):   # pragma: no cover - optional dep
+        return PermissionError(message)
+
+
+def _parent_account(parent_username: str) -> Any:
+    from education_system.systems.sixth_form.domain.operations.communications.parent_portal import (  # noqa: E501
+        parent_portal as _portal,
+    )
+    account = _portal.account_for_username(parent_username)
+    if account is None:
+        raise _access_denied(
+            f"{parent_username or 'This account'} has no active parent "
+            "portal account")
+    return account, _portal
+
+
+def report_absence_as_parent(
+    parent_username: str,
+    student_id: str,
+    date_from: str,
+    *,
+    date_to: str | None = None,
+    reason_text: str | None = None,
+    reason_id: int | None = None,
+    message: str | None = None,
+    channel: str = PORTAL,
+) -> AbsenceReport:
+    """A parent reports their child's absence from the parent portal.
+
+    The parent is identified by their signed-in username; the report is
+    refused (``AccessDenied``) unless the portal account is linked to
+    the learner. Lands in the queue as Pending, like a phone call.
+    """
+    account, portal = _parent_account(parent_username)
+    sid = (student_id or "").strip()
+    if not portal.is_linked(account.account_id, sid):
+        raise _access_denied(
+            f"{account.username} is not linked to student {sid}")
+    return report_absence(
+        sid, date_from, date_to=date_to, channel=channel,
+        reported_by=PARENT, reporter_name=account.full_name,
+        reason_id=reason_id, reason_text=reason_text,
+        message=message)
+
+
+def _require_active_student(student_id: str) -> Any:
+    student = _require_student(student_id)
+    if getattr(student, "status", "Active") not in ("Active", None):
+        raise _access_denied(
+            f"{student.student_id} is not an active student")
+    return student
+
+
+def report_absence_as_student(
+    student_id: str,
+    date_from: str,
+    *,
+    date_to: str | None = None,
+    reason_text: str | None = None,
+    reason_id: int | None = None,
+    message: str | None = None,
+    channel: str = PORTAL,
+) -> AbsenceReport:
+    """A learner tells the college about an absence for staff to decide.
+
+    For anything that is not a self-certifiable illness — a learner who
+    has used their self-certification, or a reason staff should code.
+    """
+    student = _require_active_student(student_id)
+    return report_absence(
+        student.student_id, date_from, date_to=date_to, channel=channel,
+        reported_by=STUDENT, reporter_name=student.full_name,
+        reason_id=reason_id, reason_text=reason_text, message=message)
+
+
+def self_certify_as_student(
+    student_id: str,
+    date_from: str,
+    *,
+    date_to: str | None = None,
+    reason_text: str | None = None,
+    reason_id: int | None = None,
+    message: str | None = None,
+    channel: str = PORTAL,
+) -> AbsenceReport:
+    """A learner self-certifies from the student portal (coded at once).
+
+    Same cap as :func:`self_certify`; raises ``ValidationError`` with the
+    remaining allowance when it is used up.
+    """
+    student = _require_active_student(student_id)
+    return self_certify(
+        student.student_id, date_from, date_to=date_to,
+        reason_text=reason_text, reason_id=reason_id, message=message,
+        channel=channel)
+
+
+def report_absence_for(principal: Any, student_id: str | None,
+                       date_from: str, **kwargs: Any) -> AbsenceReport:
+    """Report an absence as whoever ``principal`` is.
+
+    ``principal`` is an ``access.Principal`` (``.is_parent``,
+    ``.is_student``, ``.username``, ``.student_id``). A parent must name
+    a linked learner; a student always reports for themselves (a
+    ``student_id`` naming anybody else is refused).
+    """
+    if getattr(principal, "is_parent", False):
+        if not student_id:
+            raise ValidationError("Say which learner the report is for")
+        return report_absence_as_parent(principal.username, student_id,
+                                        date_from, **kwargs)
+    if getattr(principal, "is_student", False):
+        own = principal.student_id
+        if not own:
+            raise _access_denied("This login is not linked to a student")
+        if student_id and student_id.strip() != own:
+            raise _access_denied("Learners can only report their own absence")
+        return report_absence_as_student(own, date_from, **kwargs)
+    raise _access_denied("Only parents and students report absence here")
+
+
+def self_certify_for(principal: Any, date_from: str,
+                     **kwargs: Any) -> AbsenceReport:
+    """Self-certify as the signed-in learner. Parents cannot self-certify."""
+    if not getattr(principal, "is_student", False) or not principal.student_id:
+        raise _access_denied("Only a learner can self-certify an absence")
+    return self_certify_as_student(principal.student_id, date_from, **kwargs)
+
+
+def portal_history(principal: Any, student_id: str | None = None, *,
+                   limit: int = 50) -> list[AbsenceReport]:
+    """Reports a parent or learner may see — their own, or a linked child's."""
+    if getattr(principal, "is_student", False) and principal.student_id:
+        sid = principal.student_id
+    elif getattr(principal, "is_parent", False) and student_id:
+        account, portal = _parent_account(principal.username)
+        if not portal.is_linked(account.account_id, student_id.strip()):
+            raise _access_denied(
+                f"{account.username} is not linked to student {student_id}")
+        sid = student_id.strip()
+    else:
+        raise _access_denied("No learner to show absence reports for")
+    return list_reports(student_id=sid, limit=limit)

@@ -10,29 +10,32 @@ from __future__ import annotations
 import logging
 import tkinter as tk
 from tkinter import ttk
+
 from education_system.systems.primary.domain.operations.reporting.kpi_dashboard import kpi_dashboard as data
 from education_system.systems.primary.domain.operations.reporting.kpi_dashboard.kpi_dashboard import (
     DEFAULT_THRESHOLD,
     DEFAULT_WINDOW_DAYS,
     Snapshot,
 )
+from education_system.systems.primary.interfaces.gui import kit
 
 logger = logging.getLogger(__name__)
 
 _TILE_COLUMNS = 4
 
 
-def _clear(gui) -> ttk.Frame:
-    for w in gui.content_frame.winfo_children():
-        w.destroy()
-    return gui.content_frame
+def _status(gui, text: str) -> None:
+    var = getattr(gui, "status_var", None)
+    if var is not None:
+        var.set(text)
 
 
 def open_kpi_dashboard_window(gui) -> None:
-    frame = _clear(gui)
+    kit.show_page(gui, "KPI Dashboard", lambda parent: _draw_kpi_dashboard(parent, gui))
 
-    ttk.Label(frame, text="KPI Dashboard", font=("", 16, "bold")).pack(
-        anchor="w", pady=(0, 4))
+
+def _draw_kpi_dashboard(frame: ttk.Frame, gui) -> None:
+    kit.page_heading(frame, "KPI Dashboard")
     meta_var = tk.StringVar(value="")
     ttk.Label(frame, textvariable=meta_var, foreground="#666").pack(
         anchor="w", pady=(0, 12))
@@ -44,10 +47,10 @@ def open_kpi_dashboard_window(gui) -> None:
     threshold_var = tk.StringVar(value=str(DEFAULT_THRESHOLD))
 
     ttk.Label(bar, text="Window (days):").pack(side="left")
-    ttk.Entry(bar, textvariable=window_var, width=6).pack(
+    kit.NumberField(bar, window_var, from_=1, to=3650, width=6).pack(
         side="left", padx=(4, 12))
     ttk.Label(bar, text="At-risk threshold (%):").pack(side="left")
-    ttk.Entry(bar, textvariable=threshold_var, width=6).pack(
+    kit.NumberField(bar, threshold_var, from_=0, to=100, increment=0.5, width=6).pack(
         side="left", padx=(4, 12))
 
     grid_holder = ttk.Frame(frame)
@@ -94,7 +97,7 @@ def open_kpi_dashboard_window(gui) -> None:
                       foreground="#a33").grid(row=0, column=0, sticky="w")
             return
         _render(snap)
-        gui.status_var.set("KPI Dashboard refreshed")
+        _status(gui, "KPI Dashboard refreshed")
 
     ttk.Button(bar, text="Refresh", command=_refresh).pack(
         side="left", padx=(8, 0))

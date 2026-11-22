@@ -35,7 +35,15 @@ ROLES: Dict[str, str] = {
     'instructor': 'Instructor with access to assigned modules and student grades',
     'parent': 'Parent with access to their children\'s records',
     'shop_manager': 'Campus shop manager with access to products, inventory and sales',
-    'alumni': 'Graduate with access to the alumni directory, job board and giving'
+    'alumni': 'Graduate with access to the alumni directory, job board and giving',
+    # Health service roles (migration 7a9c1e3b5d8f). Clinical access to health
+    # records comes from these, never from the generic staff role.
+    'nurse': 'Nurse in the university health service: clinical access to student health records',
+    'doctor': 'Doctor in the university health service: clinical access to student health records',
+    'clinician': 'Other clinician in the university health service: clinical access to student health records',
+    'first_aider': 'Trained first aider: emergency health information and first-aid records',
+    'dentist': 'Dentist in the university dental clinic: clinical access to student health records',
+    'health_admin': 'Health service administrator: health records, reports, accommodation approval and break-glass review',
 }
 
 # Updated Permission sets for different roles with AI detector permissions
@@ -52,10 +60,15 @@ PERMISSIONS: Dict[str, List[str]] = {
         'access_academic_support', 'access_ai_detector', 'access_alumni_directory',
         'access_communication_dashboard', 'access_mentorship', 'access_parent_dashboard',
         'access_plagiarism_menu', 'add_module', 'add_student', 'admin_security',
+        # Student wellbeing casework (2026-10-30): PEEPs, Support to Study, trusted contacts.
+        'approve_trusted_contact_use', 'manage_peeps', 'manage_support_to_study',
+        'manage_trusted_contacts', 'view_peeps',
         'advanced_analytics', 'ambassador_program', 'analyze_submissions', 'apply_for_internship',
         'apply_for_jobs', 'approve_accommodations', 'approve_applications',
         'approve_delegation_requests', 'approve_events', 'approve_facility_bookings',
-        'approve_link_requests', 'approve_trip_registrations', 'assign_instructors', 'assign_tas',
+        'approve_link_requests', 'approve_trip_registrations', 'approve_trips_department',
+        'approve_trips_finance', 'approve_trips_hs', 'approve_trips_international',
+        'assign_instructors', 'assign_tas',
         'assignment_analytics', 'attend_career_events', 'backup_restore', 'backup_system',
         'batch_operations', 'book_office_hours', 'browse_knowledge_base', 'browse_shop_products',
         'bulk_course_update', 'bulk_operations', 'cancel_trip_registration', 'career_analytics',
@@ -171,8 +184,8 @@ PERMISSIONS: Dict[str, List[str]] = {
         'advanced_analytics', 'analyze_submissions', 'assign_tas', 'assignment_analytics',
         'cancel_trip_registration', 'check_plagiarism', 'course_analytics', 'create_assessment',
         'create_assignment', 'create_course', 'create_internship', 'create_templates',
-        'custom_reports', 'department_statistics', 'edit_assessment', 'edit_course', 'edit_grades',
-        'edit_internship', 'enroll_biometric', 'enrollment_reports', 'enter_grades',
+        'create_trips', 'custom_reports', 'department_statistics', 'edit_assessment', 'edit_course',
+        'edit_grades', 'edit_internship', 'enroll_biometric', 'enrollment_reports', 'enter_grades',
         'export_module_data', 'export_submission_data', 'file_preview', 'generate_transcripts',
         'generate_trip_reports', 'grade_assignments', 'grade_reports', 'grade_statistics',
         'grade_submissions', 'grade_with_rubrics', 'import_export_courses', 'link_own_accounts',
@@ -220,7 +233,8 @@ PERMISSIONS: Dict[str, List[str]] = {
     ],
     'staff': [
         'access_ai_detector', 'access_plagiarism_menu', 'advanced_analytics', 'analyze_submissions',
-        'approve_applications', 'approve_trip_registrations', 'assignment_analytics',
+        'approve_applications', 'approve_trip_registrations', 'approve_trips_department',
+        'approve_trips_finance', 'assignment_analytics',
         'career_analytics', 'check_plagiarism', 'checkout_books', 'course_analytics',
         'create_assessment', 'create_assignment', 'create_course', 'create_internship',
         'create_knowledge_articles', 'create_permit', 'create_student', 'create_ticket',
@@ -230,37 +244,35 @@ PERMISSIONS: Dict[str, List[str]] = {
         'export_submission_data', 'export_support_data', 'file_preview', 'finance_settings',
         'generate_helpdesk_reports', 'generate_reports', 'generate_sales_reports',
         'generate_transcripts', 'generate_trip_reports', 'grade_assignments', 'grade_reports',
-        'grade_statistics', 'grade_submissions', 'grade_with_rubrics', 'health_email_manager',
-        'helpdesk_analytics', 'import_export_courses', 'import_helpdesk_data', 'link_own_accounts',
-        'link_sso_identity', 'make_purchase', 'manage_academic_calendar', 'manage_alumni',
-        'manage_alumni_directory', 'manage_ambassadors', 'manage_assessments', 'manage_assignments',
-        'manage_attendance', 'manage_campaigns', 'manage_career_events', 'manage_collections',
-        'manage_communication', 'manage_course_schedules', 'manage_course_status', 'manage_courses',
-        'manage_events', 'manage_events_advanced', 'manage_fees', 'manage_grades', 'manage_groups',
-        'manage_health_appointments', 'manage_internships', 'manage_job_board',
-        'manage_job_postings', 'manage_modules', 'manage_payments', 'manage_peer_reviews',
-        'manage_placements', 'manage_prerequisites', 'manage_reading_lists',
-        'manage_research_grants', 'manage_reservations', 'manage_revenue_sources', 'manage_reviews',
-        'manage_schedules', 'manage_shop_discounts', 'manage_shop_inventory',
-        'manage_shop_products', 'manage_social_features', 'manage_students',
-        'manage_students_finance', 'manage_tickets', 'manage_trip_expenses',
-        'manage_trip_participants', 'manage_vaccinations', 'moderate_forum', 'order_takeaway',
-        'place_own_order', 'print_product_labels', 'process_payments', 'provide_career_counseling',
-        'purchase_grocery', 'rate_takeaway_orders', 'record_payments', 'record_violation',
-        'register_vehicle', 'register_webauthn_key', 'reply_to_any_ticket', 'reply_to_own_ticket',
-        'search_courses', 'send_emails', 'send_messages_to_students', 'send_newsletters',
-        'shop_analytics', 'submit_document', 'switch_active_role', 'unlink_sso_identity',
-        'update_any_permit', 'update_any_student', 'view_academic_calendar', 'view_accommodations',
-        'view_ai_statistics', 'view_all_applications', 'view_all_grades',
-        'view_all_grocery_transactions', 'view_all_submissions', 'view_all_support_tickets',
-        'view_all_takeaway_orders', 'view_all_tickets', 'view_all_transactions', 'view_alumni',
-        'view_analytics', 'view_any_ai_results', 'view_any_health_record', 'view_any_permit',
-        'view_any_student', 'view_any_vehicle', 'view_any_violation', 'view_assigned_modules',
-        'view_assignments', 'view_books', 'view_core_finance', 'view_course_schedules',
-        'view_courses', 'view_events', 'view_financial_reports', 'view_grocery_products',
-        'view_health_advisories', 'view_health_reports', 'view_health_resources',
-        'view_internship_reports', 'view_internships', 'view_loans', 'view_menu',
-        'view_office_hours', 'view_own_biometrics', 'view_own_grocery_history',
+        'grade_statistics', 'grade_submissions', 'grade_with_rubrics', 'helpdesk_analytics',
+        'import_export_courses', 'import_helpdesk_data', 'link_own_accounts', 'link_sso_identity',
+        'make_purchase', 'manage_academic_calendar', 'manage_alumni', 'manage_alumni_directory',
+        'manage_ambassadors', 'manage_assessments', 'manage_assignments', 'manage_attendance',
+        'manage_campaigns', 'manage_career_events', 'manage_collections', 'manage_communication',
+        'manage_course_schedules', 'manage_course_status', 'manage_courses', 'manage_events',
+        'manage_events_advanced', 'manage_fees', 'manage_grades', 'manage_groups',
+        'manage_internships', 'manage_job_board', 'manage_job_postings', 'manage_modules',
+        'manage_payments', 'manage_peer_reviews', 'manage_placements', 'manage_prerequisites',
+        'manage_reading_lists', 'manage_research_grants', 'manage_reservations',
+        'manage_revenue_sources', 'manage_reviews', 'manage_schedules', 'manage_shop_discounts',
+        'manage_shop_inventory', 'manage_shop_products', 'manage_social_features',
+        'manage_students', 'manage_students_finance', 'manage_tickets', 'manage_trip_expenses',
+        'manage_trip_participants', 'moderate_forum', 'order_takeaway', 'place_own_order',
+        'print_product_labels', 'process_payments', 'provide_career_counseling', 'purchase_grocery',
+        'rate_takeaway_orders', 'record_payments', 'record_violation', 'register_vehicle',
+        'register_webauthn_key', 'reply_to_any_ticket', 'reply_to_own_ticket', 'search_courses',
+        'send_emails', 'send_messages_to_students', 'send_newsletters', 'shop_analytics',
+        'submit_document', 'switch_active_role', 'unlink_sso_identity', 'update_any_permit',
+        'update_any_student', 'view_academic_calendar', 'view_accommodations', 'view_ai_statistics',
+        'view_all_applications', 'view_all_grades', 'view_all_grocery_transactions',
+        'view_all_submissions', 'view_all_support_tickets', 'view_all_takeaway_orders',
+        'view_all_tickets', 'view_all_transactions', 'view_alumni', 'view_analytics',
+        'view_any_ai_results', 'view_any_permit', 'view_any_student', 'view_any_vehicle',
+        'view_any_violation', 'view_assigned_modules', 'view_assignments', 'view_books',
+        'view_core_finance', 'view_course_schedules', 'view_courses', 'view_events',
+        'view_financial_reports', 'view_grocery_products', 'view_health_advisories',
+        'view_health_resources', 'view_internship_reports', 'view_internships', 'view_loans',
+        'view_menu', 'view_office_hours', 'view_own_biometrics', 'view_own_grocery_history',
         'view_own_linked_accounts', 'view_own_purchase_history', 'view_own_sso_identities',
         'view_own_takeaway_orders', 'view_own_tickets', 'view_own_timetable',
         'view_own_webauthn_keys', 'view_parking_lots', 'view_products', 'view_reports',
@@ -303,6 +315,40 @@ PERMISSIONS: Dict[str, List[str]] = {
         'view_ta_assignments', 'view_takeaway_restaurants', 'view_trips', 'view_waitlists',
         'vote_in_elections'
     ],
+    # Health service roles: the same grants migration 7a9c1e3b5d8f writes.
+    'nurse': [
+        'health_email_manager', 'issue_health_advisories', 'manage_health_appointments',
+        'manage_health_records', 'manage_vaccinations', 'schedule_health_appointment',
+        'view_accommodations', 'view_any_health_record', 'view_health_advisories',
+        'view_health_reports', 'view_health_resources'
+    ],
+    'doctor': [
+        'health_email_manager', 'issue_health_advisories', 'manage_health_appointments',
+        'manage_health_records', 'manage_vaccinations', 'schedule_health_appointment',
+        'view_accommodations', 'view_any_health_record', 'view_health_advisories',
+        'view_health_reports', 'view_health_resources'
+    ],
+    'clinician': [
+        'health_email_manager', 'issue_health_advisories', 'manage_health_appointments',
+        'manage_health_records', 'manage_vaccinations', 'schedule_health_appointment',
+        'view_accommodations', 'view_any_health_record', 'view_health_advisories',
+        'view_health_reports', 'view_health_resources'
+    ],
+    'dentist': [
+        'manage_health_appointments', 'manage_health_records', 'schedule_health_appointment',
+        'view_any_health_record', 'view_health_advisories', 'view_health_resources'
+    ],
+    'first_aider': [
+        'view_any_health_record', 'view_health_advisories', 'view_health_resources'
+    ],
+    'health_admin': [
+        'approve_accommodations', 'approve_trips_hs', 'health_data_management', 'health_email_manager',
+        'health_security_audit', 'issue_health_advisories', 'manage_accommodations',
+        'manage_health_appointments', 'manage_health_records', 'manage_vaccinations',
+        'schedule_health_appointment', 'view_accommodations', 'view_any_health_record',
+        'view_health_advisories', 'view_health_reports', 'view_health_resources', 'view_trips',
+        'approve_trusted_contact_use', 'view_peeps'
+    ]
 }
 
 # Session and Security Constants

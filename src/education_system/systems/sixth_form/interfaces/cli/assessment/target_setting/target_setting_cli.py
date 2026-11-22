@@ -82,9 +82,11 @@ def _pick_from(label: str, options: list[str],
 
 def _pick_grade(label: str, *,
                  default: str | None = None,
-                 allow_empty: bool = False) -> str | None:
-    options = list(A_LEVEL_GRADES) if not allow_empty \
-        else [""] + list(A_LEVEL_GRADES)
+                 allow_empty: bool = False,
+                 grades: tuple[str, ...] = A_LEVEL_GRADES) -> str | None:
+    """Pick from *grades* — the subject's own scale (see data.grades_for)."""
+    options = list(grades) if not allow_empty \
+        else [""] + list(grades)
     res = _pick_from(label, options, default=default)
     return res or None
 
@@ -276,7 +278,7 @@ def filter_flow() -> None:
         subject = _input("Subject") or None
         status = _input(f"Status ({'/'.join(STATUSES)})") or None
         year = _input(f"Year ({'/'.join(YEAR_GROUPS)})") or None
-        mte = _input(f"MTE ({'/'.join(A_LEVEL_GRADES)})") or None
+        mte = _input("MTE grade") or None
     except _UserAbort:
         print("\n  Cancelled.")
         return
@@ -329,17 +331,18 @@ def _collect_form(existing: Target | None) -> dict[str, Any]:
     payload["year_group"] = _pick_from(
         "Year group", [""] + list(YEAR_GROUPS),
         default=(existing.year_group if is_edit else ""))
+    grades = data.grades_for(payload["student_id"], payload["subject_name"])
     payload["mte_grade"] = _pick_grade(
         "Minimum target (MTE)",
-        default=(existing.mte_grade if is_edit else None))
+        default=(existing.mte_grade if is_edit else None), grades=grades)
     payload["aspirational_grade"] = _pick_grade(
         "Aspirational target",
         default=(existing.aspirational_grade if is_edit else None),
-        allow_empty=True)
+        allow_empty=True, grades=grades)
     payload["current_grade"] = _pick_grade(
         "Current grade (optional)",
         default=(existing.current_grade if is_edit else None),
-        allow_empty=True)
+        allow_empty=True, grades=grades)
     payload["baseline_record_id"] = _input(
         "Baseline record id (optional)",
         default=(str(existing.baseline_record_id)
@@ -409,7 +412,9 @@ def set_current_flow() -> None:
         t = _pick_target()
         new_grade = _pick_grade("New current grade",
                                   default=t.current_grade,
-                                  allow_empty=True)
+                                  allow_empty=True,
+                                  grades=data.grades_for(t.student_id,
+                                                         t.subject_name))
     except _UserAbort:
         print("\n  Cancelled.")
         return
@@ -470,7 +475,8 @@ def add_review_flow() -> None:
                                default=_date.today().isoformat())
         current = _pick_grade(
             "Current grade",
-            default=t.current_grade, allow_empty=True)
+            default=t.current_grade, allow_empty=True,
+            grades=data.grades_for(t.student_id, t.subject_name))
         on_track = _pick_from(
             "On track?", [""] + list(PROGRESS_TAGS),
             default="")
@@ -528,7 +534,8 @@ def edit_review_flow() -> None:
                             allow_empty=False)
         current = _pick_grade(
             "Current grade",
-            default=r.current_grade, allow_empty=True)
+            default=r.current_grade, allow_empty=True,
+            grades=data.grades_for(t.student_id, t.subject_name))
         on_track = _pick_from(
             "On track?", [""] + list(PROGRESS_TAGS),
             default=r.on_track or "")
@@ -639,6 +646,112 @@ def summary_flow() -> None:
     _pause()
 
 
+# ── Academic actions (shared with progress reviews) ──────────────
+
+def _print_actions(rows: list[Any]) -> None:
+    if not rows:
+        print("    (no actions)")
+        return
+    print(f"    {'ID':>4}  {'Student':<10} {'Subject':<18} "
+          f"{'Due':<10} {'Status':<9} {'Source':<15} Action")
+    for a in rows:
+        print(f"    {a.action_id:>4}  {a.student_id:<10} "
+              f"{(a.subject_name or '—')[:18]:<18} "
+              f"{a.due_date or '—':<10} {a.status:<9} "
+              f"{a.source:<15} {a.description[:50]}"
+              + ("  (overdue)" if a.is_overdue else ""))
+
+
+def list_actions_flow() -> None:
+    print("\n═══ Academic actions ═══")
+    sid = _input("Student id (blank = all)")
+    open_only = _input("Open only? (y/N)").lower().startswith("y")
+    _print_actions(data.list_actions(student_id=sid or None,
+                                     open_only=open_only))
+    _pause()
+
+
+def new_action_flow() -> None:
+    print("\n═══ New academic action ═══")
+    sid = _input("Student id", allow_empty=False)
+    payload = {
+        "student_id": sid,
+        "subject_name": _input("Subject (blank = general)"),
+        "description": _input("Action", allow_empty=False),
+        "measure": _input("Measure"),
+        "due_date": _input("Due (YYYY-MM-DD)"),
+    }
+    try:
+        a = data.create_action(payload)
+    except ValidationError as e:
+        print(f"  ✗ {e}")
+    else:
+        print(f"  ✓ Action #{a.action_id} created"
+              + (f" (linked to target #{a.target_id})"
+                 if a.target_id else ""))
+    _pause()
+
+
+def edit_action_flow() -> None:
+    print("\n═══ Edit academic action ═══")
+    try:
+        aid = int(_input("Action ID", allow_empty=False))
+    except ValueError:
+        print("  ✗ Not a number")
+        return
+    a = data.get_action(aid)
+    if a is None:
+        print(f"  ✗ No action #{aid}")
+        _pause()
+        return
+    payload = {
+        "description": _input("Action", default=a.description),
+        "measure": _input("Measure", default=a.measure or ""),
+        "due_date": _input("Due", default=a.due_date or ""),
+        "status": _pick_from("Status", list(data.ACTION_STATUSES),
+                             default=a.status),
+        "progress_note": _input("Progress note",
+                                default=a.progress_note or ""),
+    }
+    try:
+        data.update_action(aid, payload)
+    except ValidationError as e:
+        print(f"  ✗ {e}")
+    else:
+        print("  ✓ Saved"
+              + (" (progress review updated too)"
+                 if a.legacy_progress_target_id else ""))
+    _pause()
+
+
+def delete_action_flow() -> None:
+    print("\n═══ Delete academic action ═══")
+    try:
+        aid = int(_input("Action ID", allow_empty=False))
+    except ValueError:
+        print("  ✗ Not a number")
+        return
+    a = data.get_action(aid)
+    if a is None:
+        print(f"  ✗ No action #{aid}")
+    elif a.legacy_progress_target_id is not None:
+        print("  ✗ Set in a progress review — delete it from the review's "
+              "targets so both stay in step.")
+    elif _input(f"Delete #{aid}? (y/N)").lower().startswith("y"):
+        data.delete_action(aid)
+        print("  ✓ Deleted")
+    _pause()
+
+
+def sync_progress_flow() -> None:
+    res = data.migrate_progress_targets()
+    print(f"\n  Copied {res.copied}, already present "
+          f"{res.already_present}, skipped {res.skipped}.")
+    for err in res.errors[:10]:
+        print(f"    {err}")
+    _pause()
+
+
 # ── Submenu ───────────────────────────────────────────────────────
 
 _MENU: list[tuple[str, Callable[[], None]]] = [
@@ -662,6 +775,12 @@ _MENU: list[tuple[str, Callable[[], None]]] = [
     ("─" * 6,                lambda: None),
     ("Seed from baselines",  seed_flow),
     ("Summary",              summary_flow),
+    ("─" * 6,                lambda: None),
+    ("Academic actions",     list_actions_flow),
+    ("New academic action",  new_action_flow),
+    ("Edit academic action", edit_action_flow),
+    ("Delete academic action", delete_action_flow),
+    ("Sync from progress reviews", sync_progress_flow),
 ]
 
 

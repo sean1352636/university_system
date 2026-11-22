@@ -5,7 +5,7 @@ from __future__ import annotations
 import functools
 import logging
 import tkinter as tk
-from tkinter import messagebox, simpledialog, ttk
+from tkinter import messagebox, ttk
 from typing import Any, Callable
 
 from education_system.systems.primary.domain.assessment.intervention_tracking import (
@@ -17,6 +17,10 @@ from education_system.systems.primary.domain.assessment.intervention_tracking.in
 from education_system.systems.primary.domain.academics.subjects import (
     subjects as subjects_data,
 )
+from education_system.systems.primary.domain.assessment.assessment import (
+    GRADES as ATTAINMENT_GRADES,
+)
+from education_system.systems.primary.interfaces.gui import kit
 from education_system.systems.primary.domain.learners.pupils.pupils import (
     ValidationError, YEAR_GROUPS,
 )
@@ -55,7 +59,7 @@ def _intervention_dialog(host, title: str,
     dlg = tk.Toplevel(host.root)
     dlg.title(title)
     dlg.transient(host.root)
-    dlg.geometry("520x680")
+    dlg.geometry("620x680")
     dlg.update_idletasks()
     try:
         dlg.wait_visibility()
@@ -64,8 +68,8 @@ def _intervention_dialog(host, title: str,
         logger.debug("grab_set skipped — dialog not viewable", exc_info=True)
 
     initial = initial or {}
-    frm = ttk.Frame(dlg, padding=12)
-    frm.pack(fill="both", expand=True)
+    # Tall form: the fields scroll on a small screen, Save/Cancel stay put.
+    frm, footer = kit.scrolled_form(dlg)
 
     pupil_var  = tk.StringVar(value=str(initial.get("pupil_id") or ""))
     type_var   = tk.StringVar(value=str(initial.get("intervention_type")
@@ -101,30 +105,34 @@ def _intervention_dialog(host, title: str,
                 break
 
     rows: list[tuple[str, tk.Widget]] = [
-        ("Pupil ID:",    ttk.Entry(frm, textvariable=pupil_var,
-                                     width=14)),
+        ("Pupil:",       kit.PupilPicker(frm, pupil_var)),
         ("Subject:",     ttk.Combobox(frm, textvariable=subject_var,
                                        values=subject_labels,
                                        state="readonly", width=42)),
         ("Type:",        ttk.Combobox(frm, textvariable=type_var,
                                        values=list(INTERVENTION_TYPES),
                                        state="readonly", width=18)),
-        ("Start date:",  ttk.Entry(frm, textvariable=start_var, width=14)),
-        ("End date:",    ttk.Entry(frm, textvariable=end_var, width=14)),
+        ("Start date:",  kit.DateField(frm, start_var)),
+        ("End date:",    kit.DateField(frm, end_var)),
         ("Status:",      ttk.Combobox(frm, textvariable=status_var,
                                        values=list(INTERVENTION_STATUSES),
                                        state="readonly", width=12)),
-        ("Led by:",      ttk.Entry(frm, textvariable=ledby_var, width=28)),
+        ("Led by:",      kit.StaffPicker(frm, ledby_var, by="name")),
         ("Location:",    ttk.Entry(frm, textvariable=loc_var, width=20)),
         ("Frequency:",   ttk.Combobox(frm, textvariable=freq_var,
                                        values=list(FREQUENCIES),
                                        state="readonly", width=14)),
-        ("Baseline grade:", ttk.Entry(frm, textvariable=baseline_var,
-                                       width=6)),
-        ("Target grade:",   ttk.Entry(frm, textvariable=target_var,
-                                       width=6)),
-        ("Current grade:",  ttk.Entry(frm, textvariable=current_var,
-                                       width=6)),
+        # Grades are free-form (up to 3 characters); the attainment
+        # grades are offered, another value can still be typed.
+        ("Baseline grade:", kit.ChoiceField(frm, baseline_var,
+                                            choices=ATTAINMENT_GRADES,
+                                            blank=True, editable=True, width=8)),
+        ("Target grade:",   kit.ChoiceField(frm, target_var,
+                                            choices=ATTAINMENT_GRADES,
+                                            blank=True, editable=True, width=8)),
+        ("Current grade:",  kit.ChoiceField(frm, current_var,
+                                            choices=ATTAINMENT_GRADES,
+                                            blank=True, editable=True, width=8)),
         ("Outcome:",     ttk.Combobox(frm, textvariable=outcome_var,
                                        values=["", *OUTCOMES],
                                        state="readonly", width=14)),
@@ -132,7 +140,7 @@ def _intervention_dialog(host, title: str,
     for i, (label, widget) in enumerate(rows):
         ttk.Label(frm, text=label).grid(row=i, column=0, sticky="w",
                                          pady=2)
-        widget.grid(row=i, column=1, sticky="ew", pady=2)
+        widget.grid(row=i, column=1, sticky="w", pady=2)
     frm.columnconfigure(1, weight=1)
 
     ttk.Label(frm, text="Goal:").grid(row=len(rows), column=0,
@@ -176,9 +184,7 @@ def _intervention_dialog(host, title: str,
         }
         dlg.destroy()
 
-    btns = ttk.Frame(frm)
-    btns.grid(row=len(rows) + 2, column=0, columnspan=2, sticky="e",
-              pady=(12, 0))
+    btns = footer
     ttk.Button(btns, text="Cancel",
                command=dlg.destroy).pack(side="right", padx=4)
     ttk.Button(btns, text="Save", command=_save).pack(side="right")
@@ -192,7 +198,7 @@ def _review_dialog(host, intervention_id: int,
     dlg = tk.Toplevel(host.root)
     dlg.title(f"Review — intervention #{intervention_id}")
     dlg.transient(host.root)
-    dlg.geometry("440x420")
+    dlg.geometry("560x420")
     dlg.update_idletasks()
     try:
         dlg.wait_visibility()
@@ -215,11 +221,9 @@ def _review_dialog(host, intervention_id: int,
         existing.next_action if existing else ""))
 
     rows: list[tuple[str, tk.Widget]] = [
-        ("Review date:", ttk.Entry(frm, textvariable=date_var,
-                                     width=14)),
-        ("Reviewer:",    ttk.Entry(frm, textvariable=reviewer_var,
-                                     width=24)),
-        ("Attendance %:", ttk.Entry(frm, textvariable=att_var, width=8)),
+        ("Review date:", kit.DateField(frm, date_var)),
+        ("Reviewer:",    kit.StaffPicker(frm, reviewer_var, by="name")),
+        ("Attendance %:", kit.NumberField(frm, att_var, from_=0, to=100)),
         ("On-track:",    ttk.Checkbutton(frm, variable=on_track_var)),
         ("Next action:", ttk.Entry(frm, textvariable=next_var, width=30)),
     ]
@@ -263,10 +267,13 @@ def _review_dialog(host, intervention_id: int,
 @_safe_view
 def open_intervention_tracking(host) -> None:
     logger.debug("GUI: open_intervention_tracking")
-    host._clear_content()
-    root = host.content_frame
-    ttk.Label(root, text="Intervention Tracking",
-              font=("", 16, "bold")).pack(anchor="w", pady=(0, 8))
+    kit.show_page(host, "Intervention Tracking",
+                  lambda parent: _draw_intervention_tracking(parent, host))
+
+
+def _draw_intervention_tracking(parent, host) -> None:
+    root = parent
+    kit.page_heading(root, "Intervention Tracking")
 
     summary_var = tk.StringVar()
     ttk.Label(root, textvariable=summary_var, foreground="#666").pack(
@@ -339,13 +346,13 @@ def open_intervention_tracking(host) -> None:
             )
         except ValidationError as e:
             messagebox.showerror("Intervention Tracking", str(e),
-                                 parent=host.root)
+                                 parent=root.winfo_toplevel())
             return
         except Exception as e:
             logger.exception("interventions refresh failed")
             messagebox.showerror("Intervention Tracking",
                                  f"Could not load:\n\n{e}",
-                                 parent=host.root)
+                                 parent=root.winfo_toplevel())
             return
         for i in rows:
             tree.insert("", "end", iid=str(i.intervention_id), values=(
@@ -363,7 +370,9 @@ def open_intervention_tracking(host) -> None:
                                 for k, v in s["by_status"].items()))
         except Exception:
             summary_var.set(f"{len(rows)} intervention(s)")
-        host.status_var.set(f"Interventions: {len(rows)} record(s)")
+        status_bar = getattr(host, "status_var", None)
+        if status_bar is not None:
+            status_bar.set(f"Interventions: {len(rows)} record(s)")
 
     tree.bind("<Double-1>", lambda _e: _open_reviews(host, tree))
     year_var.trace_add("write", lambda *_: _refresh())

@@ -6,447 +6,364 @@ This guide walks through every step required to add a new domain module to the S
 
 ## Module Structure
 
-Every domain module lives under `education_system/college_system/modules/domain/` and follows this directory layout:
+The sixth form system lives under `src/education_system/systems/sixth_form/`, with HTTP routes kept apart in `src/education_system/api/sixth_form/`. A module's rules and its screens sit in parallel trees:
 
 ```
-modules/domain/awards/
-    __init__.py
-    services/
+systems/sixth_form/
+    domain/pastoral/awards/
         __init__.py
-        awards_service.py
-    gui/
-        __init__.py
-        awards_gui.py
-    cli/
-        __init__.py
-        awards_cli.py
+        awards.py                # Data layer: schema, dataclasses, validation, queries
+    interfaces/
+        cli/pastoral/awards/
+            __init__.py
+            awards_cli.py        # run() and dispatch(label)
+        gui/pastoral/awards/
+            __init__.py
+            awards_views.py      # open_awards_window(parent)
 ```
 
-Not every module needs all three interfaces (services, gui, cli), but the services layer is mandatory -- it is the single source of business logic that the API, GUI, and CLI all depend on.
+Choose the area that fits: `domain/` holds `academics`, `admissions`, `assessment`, `governance`, `learners`, `operations`, `pastoral`, `progression`, `safeguarding` and `staff`. Finance, communications and operations work that has moved to vertical slices goes in `domains/{finance,communications,operations}/domain/<module>/`, with its screens in that slice's `interfaces/{cli,gui}/`.
+
+Not every module needs all three interfaces (domain, gui, cli), but the domain layer is mandatory -- it is the single source of business logic that the API, GUI, and CLI all depend on. Domain code may not import `tkinter`, Flask or the `sqlite3` driver; `tools/check_layout.py` enforces this.
 
 
-## Step 1: Define an Exception
+## Step 1: Add a Database Path
 
-Add a module-specific exception to `core/exceptions.py`. All domain exceptions inherit from `CollegeSystemError`:
+Every sixth form module shares one database, `var/data/sixth_form/sixthform.db`. Add a named constant for the module to `src/education_system/paths.py`, and list it in `__all__` in the same file:
 
 ```python
-# In education_system/college_system/core/exceptions.py
-
-class AwardsError(CollegeSystemError):
-    """Awards related errors."""
-```
-
-This exception will be raised by the service layer and caught by the API error handlers.
-
-
-## Step 2: Add Database Tables
-
-Add the required table(s) to the schema initialisation in `infrastructure/database/schema.py`. Locate the `init_db()` function and add a `CREATE TABLE IF NOT EXISTS` statement:
-
-```sql
-CREATE TABLE IF NOT EXISTS awards (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    student_id INTEGER NOT NULL,
-    title TEXT NOT NULL,
-    description TEXT,
-    category TEXT DEFAULT 'academic',
-    awarded_date TEXT DEFAULT (date('now')),
-    awarded_by INTEGER,
-    status TEXT DEFAULT 'active',
-    created_at TEXT DEFAULT (datetime('now')),
-    updated_at TEXT DEFAULT (datetime('now')),
-    FOREIGN KEY (student_id) REFERENCES students(id),
-    FOREIGN KEY (awarded_by) REFERENCES users(id)
-);
+SIXTH_FORM_AWARDS_DB: Path = SIXTH_FORM_STUDENTS_DB
 ```
 
 
-## Step 3: Create the Service Class
+## Step 2: Create the Data Layer
 
-Create the service file at `modules/domain/awards/services/awards_service.py`. Follow the established pattern:
+There is no central schema file, service class or shared exception hierarchy. Each module owns its `_SCHEMA`, creates it lazily in `init_db()`, returns dataclasses from module-level functions, and defines its own `ValidationError`.
+
+Create `domain/pastoral/awards/awards.py`:
 
 ```python
-"""Awards management service."""
+"""Student awards data layer."""
 
-from datetime import datetime
-
-from education_system.college_system.core.exceptions import AwardsError, ValidationError
-from education_system.college_system.infrastructure.database.db import connect
-from education_system.college_system.infrastructure.validation.validators import validate_non_empty
+from __future__ import annotations
 
 import logging
+from dataclasses import dataclass
+from typing import Any
+
+from education_system import paths
+from education_system.systems.sixth_form.domain.learners.students import (
+    students as _students,
+)
+from education_system.systems.sixth_form.infrastructure import database as _sql
 
 logger = logging.getLogger(__name__)
 
+DB_PATH = paths.SIXTH_FORM_AWARDS_DB
 
-class AwardsService:
-    """Service for managing student awards."""
+CATEGORIES: tuple[str, ...] = ("Academic", "Enrichment", "Attendance", "Other")
 
-    def __init__(self, db_path: str | None = None):
-        self._db_path = db_path
+_SCHEMA = """
+CREATE TABLE IF NOT EXISTS awards (
+    award_id     INTEGER PRIMARY KEY AUTOINCREMENT,
+    student_id   TEXT NOT NULL,
+    title        TEXT NOT NULL,
+    description  TEXT,
+    category     TEXT NOT NULL DEFAULT 'Academic',
+    awarded_on   TEXT DEFAULT (date('now')),
+    awarded_by   TEXT,
+    created_at   TEXT DEFAULT (datetime('now')),
+    FOREIGN KEY (student_id) REFERENCES students(student_id) ON DELETE CASCADE
+);
+CREATE INDEX IF NOT EXISTS idx_awards_student ON awards(student_id);
+"""
 
-    def _conn(self):
-        return connect(self._db_path)
 
-    def create_award(self, student_id: int, title: str,
-                     description: str | None = None,
-                     category: str = "academic",
-                     awarded_by: int | None = None) -> dict:
-        """Create a new award record."""
-        title = validate_non_empty(title, "Title")
+class ValidationError(ValueError):
+    """Bad input to an awards operation."""
 
-        conn = self._conn()
-        try:
-            conn.execute(
-                """INSERT INTO awards (student_id, title, description, category, awarded_by)
-                   VALUES (?, ?, ?, ?, ?)""",
-                (student_id, title, description, category, awarded_by),
+
+@dataclass
+class Award:
+    award_id: int
+    student_id: str
+    title: str
+    description: str | None
+    category: str
+    awarded_on: str | None
+    awarded_by: str | None
+    created_at: str | None = None
+
+
+def _connect() -> _sql.Connection:
+    paths.ensure_sixth_form_directories()
+    conn = _sql.connect(str(DB_PATH))
+    conn.row_factory = _sql.Row
+    conn.execute("PRAGMA foreign_keys=ON")
+    return conn
+
+
+_DB_READY: bool = False
+
+
+def init_db() -> None:
+    global _DB_READY
+    if _DB_READY:
+        return
+    _students.init_db()                # The table this one references
+    with _connect() as conn:
+        conn.executescript(_SCHEMA)
+    _DB_READY = True
+
+
+def _row(r: _sql.Row) -> Award:
+    return Award(**{k: r[k] for k in r.keys()})
+
+
+def create_award(payload: dict[str, Any]) -> Award:
+    init_db()
+    title = (payload.get("title") or "").strip()
+    if not title:
+        raise ValidationError("Title is required")
+    category = payload.get("category") or "Academic"
+    if category not in CATEGORIES:
+        raise ValidationError(f"Unknown category: {category}")
+    try:
+        with _connect() as conn:
+            cur = conn.execute(
+                "INSERT INTO awards (student_id, title, description, category, awarded_by) "
+                "VALUES (?, ?, ?, ?, ?)",
+                (payload.get("student_id"), title, payload.get("description"),
+                 category, payload.get("awarded_by")),
             )
-            conn.commit()
-            award_id = conn.execute("SELECT last_insert_rowid()").fetchone()[0]
-            logger.info("Award created: id=%d for student=%d", award_id, student_id)
-            return self.get_award(award_id)
-        except Exception as e:
-            conn.rollback()
-            raise AwardsError(f"Failed to create award: {e}") from e
-        finally:
-            conn.close()
+            award_id = cur.lastrowid
+    except _sql.IntegrityError as e:
+        raise ValidationError(f"Could not save award: {e}") from e
+    logger.info("Award %s created", award_id)
+    return get_award(award_id)
 
-    def get_award(self, award_id: int) -> dict | None:
-        """Get an award by primary key."""
-        conn = self._conn()
-        try:
-            row = conn.execute("SELECT * FROM awards WHERE id = ?", (award_id,)).fetchone()
-            return dict(row) if row else None
-        finally:
-            conn.close()
 
-    def list_awards(self, student_id: int | None = None,
-                    category: str | None = None,
-                    limit: int = 100, offset: int = 0) -> list[dict]:
-        """List awards with optional filters."""
-        sql = "SELECT * FROM awards WHERE 1=1"
-        params = []
+def get_award(award_id: int) -> Award | None:
+    init_db()
+    with _connect() as conn:
+        r = conn.execute("SELECT * FROM awards WHERE award_id = ?", (award_id,)).fetchone()
+    return _row(r) if r else None
 
-        if student_id:
-            sql += " AND student_id = ?"
-            params.append(student_id)
-        if category:
-            sql += " AND category = ?"
-            params.append(category)
 
-        sql += " ORDER BY awarded_date DESC LIMIT ? OFFSET ?"
-        params.extend([limit, offset])
+def list_awards(*, student_id: str | None = None) -> list[Award]:
+    init_db()
+    sql = "SELECT * FROM awards"
+    params: tuple = ()
+    if student_id:
+        sql += " WHERE student_id = ?"
+        params = (student_id,)
+    with _connect() as conn:
+        return [_row(r) for r in conn.execute(sql + " ORDER BY awarded_on DESC", params)]
 
-        conn = self._conn()
-        try:
-            rows = conn.execute(sql, params).fetchall()
-            return [dict(r) for r in rows]
-        finally:
-            conn.close()
 
-    def update_award(self, award_id: int, **kwargs) -> dict:
-        """Update an award record."""
-        allowed = {"title", "description", "category", "status"}
-        updates = {k: v for k, v in kwargs.items() if k in allowed and v is not None}
-
-        if not updates:
-            raise ValidationError("No valid fields to update.")
-
-        updates["updated_at"] = datetime.utcnow().isoformat()
-        set_clause = ", ".join(f"{k} = ?" for k in updates)
-        params = list(updates.values()) + [award_id]
-
-        conn = self._conn()
-        try:
-            conn.execute(f"UPDATE awards SET {set_clause} WHERE id = ?", params)
-            conn.commit()
-            result = self.get_award(award_id)
-            if not result:
-                raise AwardsError("Award not found.")
-            return result
-        finally:
-            conn.close()
-
-    def delete_award(self, award_id: int) -> bool:
-        """Delete an award record."""
-        conn = self._conn()
-        try:
-            cursor = conn.execute("DELETE FROM awards WHERE id = ?", (award_id,))
-            conn.commit()
-            if cursor.rowcount == 0:
-                raise AwardsError("Award not found.")
-            logger.info("Award deleted: id=%d", award_id)
-            return True
-        except AwardsError:
-            raise
-        except Exception as e:
-            conn.rollback()
-            raise AwardsError(f"Failed to delete award: {e}") from e
-        finally:
-            conn.close()
-
-    def count_awards(self, student_id: int | None = None) -> int:
-        """Count total awards."""
-        conn = self._conn()
-        try:
-            if student_id:
-                row = conn.execute(
-                    "SELECT COUNT(*) as cnt FROM awards WHERE student_id = ?", (student_id,)
-                ).fetchone()
-            else:
-                row = conn.execute("SELECT COUNT(*) as cnt FROM awards").fetchone()
-            return row["cnt"]
-        finally:
-            conn.close()
+def delete_award(award_id: int) -> bool:
+    init_db()
+    with _connect() as conn:
+        return conn.execute("DELETE FROM awards WHERE award_id = ?", (award_id,)).rowcount > 0
 ```
 
 Key patterns to follow:
 
-- `__init__` accepts `db_path` and stores it as `self._db_path`.
-- `_conn()` returns `connect(self._db_path)`.
-- Every method opens a connection, uses `try/finally` to ensure `conn.close()`, and calls `conn.commit()` after writes.
-- Rollback on failure, re-raise as the domain exception.
+- `DB_PATH` is a module attribute, so tests can redirect it with `monkeypatch`.
+- `init_db()` is idempotent and is called at the top of every public function. It first initialises any module whose tables it references, because foreign keys are enforced.
+- `with _connect() as conn:` commits on success and rolls back on an exception.
+- Always use `?` placeholders.
 - Use logging for significant operations.
 
+`src/education_system/systems/sixth_form/domain/academics/enrichment/enrichment.py` is a complete real example.
 
-## Step 4: Add API Routes
 
-Create the route file at `api/routes/awards_routes.py`:
+## Step 3: Add API Routes
+
+Route modules live at `src/education_system/api/sixth_form/routes/`, and related resources share a module. To add a whole new module, create `api/sixth_form/routes/awards_routes.py`:
 
 ```python
-"""Awards API routes."""
+"""REST API for sixth form awards."""
 
-from flask import Blueprint, jsonify, request, g
+from __future__ import annotations
 
-from education_system.college_system.api.auth import token_required, role_required
-from education_system.college_system.api.validators import get_json_body, require_fields
-from education_system.college_system.api.pagination import get_pagination_params, paginated_response
-from education_system.college_system.modules.domain.awards.services.awards_service import AwardsService
+import dataclasses
+import functools
+import os
 
-awards_bp = Blueprint("awards", __name__, url_prefix="/api/awards")
+from flask import Blueprint, g, jsonify, request
 
-_db_path = None
+from education_system.api.sixth_form import access_gate
+
+awards_bp = Blueprint("sf_awards", __name__, url_prefix="/api/awards")
 
 
-def init_awards_routes(db_path=None):
-    global _db_path
-    _db_path = db_path
+def _token_required(view):
+    view = access_gate.gate(view)
+    try:
+        from education_system.platform.delivery.api.auth import token_required
+        return token_required(view)
+    except Exception:
+        @functools.wraps(view)
+        def wrapper(*args, **kwargs):
+            expected = os.environ.get("SIXTHFORM_API_TOKEN")
+            got = request.headers.get("X-Sixthform-Token")
+            if expected and got and got == expected:
+                g.current_user = {"sub": "service", "role": "service"}
+                return view(*args, **kwargs)
+            return jsonify({"error": "Unauthorized"}), 401
+        return wrapper
+
+
+def _data():
+    from education_system.systems.sixth_form.domain.pastoral.awards import awards
+    return awards
 
 
 @awards_bp.route("", methods=["GET"])
-@token_required
-def list_awards():
-    svc = AwardsService(_db_path)
-    limit, offset = get_pagination_params()
-    awards = svc.list_awards(
-        student_id=request.args.get("student_id", type=int),
-        category=request.args.get("category"),
-        limit=limit, offset=offset,
-    )
-    total = svc.count_awards(student_id=request.args.get("student_id", type=int))
-    return jsonify(paginated_response(awards, total))
-
-
-@awards_bp.route("/<int:award_id>", methods=["GET"])
-@token_required
-def get_award(award_id):
-    svc = AwardsService(_db_path)
-    award = svc.get_award(award_id)
-    if not award:
-        return jsonify({"error": "Award not found."}), 404
-    return jsonify({"data": award})
+@_token_required
+def list_awards_route():
+    rows = _data().list_awards(student_id=request.args.get("student_id"))
+    return jsonify({"awards": [dataclasses.asdict(r) for r in rows], "count": len(rows)})
 
 
 @awards_bp.route("", methods=["POST"])
-@token_required
-@role_required("admin", "staff")
-def create_award():
-    data = get_json_body()
-    require_fields(data, "student_id", "title")
-    svc = AwardsService(_db_path)
-    award = svc.create_award(
-        student_id=data["student_id"],
-        title=data["title"],
-        description=data.get("description"),
-        category=data.get("category", "academic"),
-        awarded_by=g.current_user["user_id"],
-    )
-    return jsonify({"message": "Award created.", "data": award}), 201
-
-
-@awards_bp.route("/<int:award_id>", methods=["PUT"])
-@token_required
-@role_required("admin", "staff")
-def update_award(award_id):
-    data = get_json_body()
-    svc = AwardsService(_db_path)
-    award = svc.update_award(award_id, **data)
-    return jsonify({"message": "Award updated.", "data": award})
+@_token_required
+def create_award_route():
+    data = _data()
+    try:
+        award = data.create_award(request.get_json(silent=True) or {})
+    except data.ValidationError as e:
+        return jsonify({"error": str(e)}), 400
+    return jsonify(dataclasses.asdict(award)), 201
 
 
 @awards_bp.route("/<int:award_id>", methods=["DELETE"])
-@token_required
-@role_required("admin")
-def delete_award(award_id):
-    svc = AwardsService(_db_path)
-    svc.delete_award(award_id)
-    return jsonify({"message": "Award deleted."})
+@_token_required
+def delete_award_route(award_id: int):
+    if not _data().delete_award(award_id):
+        return jsonify({"error": f"No award with id {award_id}"}), 404
+    return jsonify({"deleted": award_id})
 ```
 
 Key patterns:
 
-- Create a `Blueprint` with a descriptive name and `/api/<resource>` prefix.
-- Use a module-level `_db_path` global, set via `init_awards_routes(db_path)`.
-- Apply `@token_required` to all routes.
-- Apply `@role_required(...)` to mutation routes.
-- Use `get_json_body()` and `require_fields()` for input validation.
-- Use `get_pagination_params()` and `paginated_response()` for list endpoints.
+- The Blueprint keeps the `/api/<resource>` prefix. The unified server rewrites it on mounting, so these routes are served at `/api/v1/sixthform/awards`.
+- Wrap every view in the module's `_token_required`, which runs the JWT check and then `access_gate.gate`.
+- Import the domain module inside the view, so importing the routes stays cheap.
+- Map `ValidationError` to 400 in the view, and a missing record to 404.
 - Return `201` for POST create, `200` for everything else.
 
 
-## Step 5: Register Routes in the Routes Package
+## Step 4: Register the Blueprint and Its Access Rule
 
-Edit `api/routes/__init__.py` to import and register the new blueprint:
+Edit `src/education_system/api/sixth_form/routes/__init__.py` to import `awards_bp`, then add it to `__all__` and to `ALL_BLUEPRINTS`. The server mounts that tuple, so no other server change is needed.
 
-```python
-# Add the import
-from education_system.college_system.api.routes.awards_routes import awards_bp, init_awards_routes
-
-# Add to ALL_BLUEPRINTS list
-ALL_BLUEPRINTS = [
-    ...
-    awards_bp,
-]
-
-# Add to ALL_INIT_FUNCS list
-ALL_INIT_FUNCS = [
-    ...
-    init_awards_routes,
-]
-```
-
-The app factory in `api_server.py` iterates over both lists, so no changes are needed there.
-
-
-## Step 6: Add an Error Handler (Optional)
-
-If you want the API to return a specific HTTP status for your exception, add a handler in `api/errors.py`:
+Then give the routes a rule in `RULES` in `src/education_system/api/sixth_form/access_gate.py`, keyed by the route module's short name. **A route without a rule is refused.**
 
 ```python
-from education_system.college_system.core.exceptions import AwardsError
-
-@app.errorhandler(AwardsError)
-def handle_awards_error(e):
-    return jsonify({"error": "Awards Error", "message": str(e)}), 400
+"awards_routes": (
+    Rule(r"", A.PASTORAL, A.PASTORAL),
+),
 ```
 
-This is optional because unhandled `CollegeSystemError` subclasses will already be caught by the generic `CollegeSystemError` handler (returning 500). Adding a specific handler changes the status code to 400.
 
+## Step 5: Add a Test Fixture
 
-## Step 7: Add a Test Fixture
-
-Add a fixture to `tests/conftest.py`:
+Add a fixture beside your tests, either in a `conftest.py` or in the test file. It points the module at a temporary database:
 
 ```python
 @pytest.fixture
-def awards_service(db_path):
-    """Create an AwardsService instance with the test database."""
-    from education_system.college_system.modules.domain.awards.services.awards_service import AwardsService
-    return AwardsService(db_path)
+def awards_data(tmp_path, monkeypatch):
+    """The awards data layer, on a temporary database."""
+    from education_system.systems.sixth_form.domain.learners.students import students
+    from education_system.systems.sixth_form.domain.pastoral.awards import awards
+
+    db = str(tmp_path / "sixthform.db")
+    for module in (students, awards):
+        monkeypatch.setattr(module, "DB_PATH", db)
+        monkeypatch.setattr(module, "_DB_READY", False)
+    awards.init_db()
+    return awards
 ```
 
+Redirect every module whose tables `init_db()` creates, or the test will write to the live database.
 
-## Step 8: Write Tests
 
-Create `tests/test_awards_service.py`:
+## Step 6: Write Tests
+
+Create `tests/unit/systems/sixth_form/domain/pastoral/awards/test_awards.py`:
 
 ```python
-"""Tests for AwardsService."""
+"""Tests for the awards data layer."""
 
 import pytest
-from education_system.college_system.core.exceptions import AwardsError, ValidationError
 
 
-class TestAwardsService:
-    def test_create_award(self, awards_service, sample_student):
-        award = awards_service.create_award(
-            student_id=sample_student["id"],
-            title="Outstanding Achievement",
-            category="academic",
-        )
-        assert award["title"] == "Outstanding Achievement"
-        assert award["student_id"] == sample_student["id"]
-        assert award["category"] == "academic"
+def test_create_award_requires_title(awards_data):
+    with pytest.raises(awards_data.ValidationError):
+        awards_data.create_award({"student_id": "C1000001", "title": ""})
 
-    def test_create_award_empty_title(self, awards_service, sample_student):
-        with pytest.raises(ValidationError):
-            awards_service.create_award(student_id=sample_student["id"], title="")
 
-    def test_get_award_not_found(self, awards_service):
-        assert awards_service.get_award(9999) is None
+def test_unknown_category_refused(awards_data):
+    with pytest.raises(awards_data.ValidationError):
+        awards_data.create_award(
+            {"student_id": "C1000001", "title": "A", "category": "Nope"})
 
-    def test_list_awards(self, awards_service, sample_student):
-        awards_service.create_award(student_id=sample_student["id"], title="A")
-        awards_service.create_award(student_id=sample_student["id"], title="B")
-        results = awards_service.list_awards(student_id=sample_student["id"])
-        assert len(results) == 2
 
-    def test_update_award(self, awards_service, sample_student):
-        created = awards_service.create_award(
-            student_id=sample_student["id"], title="Original",
-        )
-        updated = awards_service.update_award(created["id"], title="Updated")
-        assert updated["title"] == "Updated"
+def test_get_award_not_found(awards_data):
+    assert awards_data.get_award(9999) is None
 
-    def test_delete_award(self, awards_service, sample_student):
-        created = awards_service.create_award(
-            student_id=sample_student["id"], title="ToDelete",
-        )
-        result = awards_service.delete_award(created["id"])
-        assert result is True
-        assert awards_service.get_award(created["id"]) is None
 
-    def test_count_awards(self, awards_service, sample_student):
-        awards_service.create_award(student_id=sample_student["id"], title="A")
-        awards_service.create_award(student_id=sample_student["id"], title="B")
-        assert awards_service.count_awards(student_id=sample_student["id"]) == 2
+def test_delete_missing_award(awards_data):
+    assert awards_data.delete_award(9999) is False
 ```
 
 
-## Step 9: Add GUI and CLI (Optional)
+## Step 7: Add GUI and CLI (Optional)
 
-### GUI Panel
+### GUI Window
 
-Create `modules/domain/awards/gui/awards_gui.py` with a `tk.Frame` subclass:
+Create `interfaces/gui/pastoral/awards/awards_views.py`. A sixth form window is a `Toplevel` holding a `SidebarBook`. Import dialogs from `parented_dialogs`, never directly from `tkinter`:
 
 ```python
 import tkinter as tk
 from tkinter import ttk
 
+from education_system.platform.delivery.gui.parented_dialogs import messagebox
+from education_system.systems.sixth_form.domain.pastoral.awards import awards as data
+from education_system.systems.sixth_form.interfaces.gui._sidebar import SidebarBook
 
-class AwardsPanel(tk.Frame):
-    def __init__(self, parent, db_path=None, **kwargs):
-        super().__init__(parent, **kwargs)
-        self._db_path = db_path
-        self._build_ui()
 
-    def _build_ui(self):
-        # Build your treeview, forms, buttons, etc.
-        ...
+def open_awards_window(parent=None) -> None:
+    data.init_db()
+    master = getattr(parent, "root", parent)
+    win = tk.Toplevel(master) if master is not None else tk.Tk()
+    win.title("Awards")
+
+    nb = SidebarBook(win)
+    nb.pack(fill="both", expand=True, padx=10, pady=10)
+    # Build your treeview, forms, buttons, etc.
+```
+
+Then wire it into `interfaces/gui/gui_main.py`: add `("Awards", "open_awards")` to the right group in `NAV_CATEGORIES`, and add the method to `SixthFormMainGUI`:
+
+```python
+def open_awards(self) -> None:
+    from education_system.systems.sixth_form.interfaces.gui.pastoral.awards import awards_views
+    awards_views.open_awards_window(self)
 ```
 
 ### CLI Handler
 
-Create `modules/domain/awards/cli/awards_cli.py` with menu functions:
+Create `interfaces/cli/pastoral/awards/awards_cli.py` with a `run()` menu and a `dispatch(label)`:
 
 ```python
-from education_system.college_system.modules.domain.awards.services.awards_service import AwardsService
+from education_system.systems.sixth_form.domain.pastoral.awards import awards as data
 
 
-def awards_menu(db_path):
+def run() -> None:
     """Awards management CLI menu."""
-    svc = AwardsService(db_path)
     while True:
         print("\n  Awards Management")
         print("  [1] List Awards")
@@ -459,6 +376,27 @@ def awards_menu(db_path):
             ...
         elif choice == "2":
             ...
+
+
+def dispatch(label: str) -> bool:
+    if label != "Awards":
+        return False
+    run()
+    return True
+```
+
+Then wire it into `interfaces/cli/cli_main.py`: add `"Awards"` to the right category's list of labels, and add this entry to `_DISPATCHERS`:
+
+```python
+("education_system.systems.sixth_form.interfaces.cli.pastoral.awards", "awards_cli"),
+```
+
+### Menu Access
+
+Add the label to `MENU_CAPABILITIES` in `domain/governance/user_management/access.py`. A label missing from that map is admin-only:
+
+```python
+"Awards": PASTORAL,
 ```
 
 
@@ -466,13 +404,14 @@ def awards_menu(db_path):
 
 When adding a new module, verify the following:
 
-- [ ] Exception class added to `core/exceptions.py`
-- [ ] Database table(s) added to `infrastructure/database/schema.py`
-- [ ] `__init__.py` files created in `modules/domain/<name>/`, `services/`, `gui/`, `cli/`
-- [ ] Service class created with the standard `_conn()` / `try/finally` pattern
-- [ ] API route blueprint created with `init_*_routes()` function
-- [ ] Blueprint and init function registered in `api/routes/__init__.py`
-- [ ] Error handler added to `api/errors.py` (optional, for 400 status)
-- [ ] Test fixture added to `tests/conftest.py`
+- [ ] `SIXTH_FORM_<NAME>_DB` added to `src/education_system/paths.py` and its `__all__`
+- [ ] `__init__.py` files created in `domain/<area>/<name>/` and `interfaces/{cli,gui}/<area>/<name>/`
+- [ ] Data layer created with `_SCHEMA`, `init_db()`, `_connect()` and `ValidationError`
+- [ ] API route blueprint created in `api/sixth_form/routes/`
+- [ ] Blueprint added to `ALL_BLUEPRINTS` in `api/sixth_form/routes/__init__.py`
+- [ ] Rule added to `RULES` in `api/sixth_form/access_gate.py`
+- [ ] Menu label added to `MENU_CAPABILITIES` in `domain/governance/user_management/access.py`
+- [ ] GUI wired into `gui_main.py` and CLI wired into `cli_main.py`
+- [ ] Test fixture redirects `DB_PATH` for every module involved
 - [ ] Test file created with CRUD tests and error-path tests
-- [ ] Tests pass: `python -m pytest tests/test_awards_service.py -v`
+- [ ] Tests pass: `python -m pytest tests/unit/systems/sixth_form/domain/pastoral/awards/ -v`

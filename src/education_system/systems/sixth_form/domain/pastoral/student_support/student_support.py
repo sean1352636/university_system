@@ -5,6 +5,13 @@ sessions, study skills, exam prep, organisation support, welfare /
 finance referrals etc. Distinct from wellbeing/safeguarding (which
 have heavier confidentiality + DSL workflows). FK cascade on
 students.
+
+Also holds **external mental-health referrals** (``mh_referrals``):
+CAMHS, NHS Talking Therapies, GP, college counsellor, Kooth, the
+Mental Health Support Team and so on — date, service, reason, status,
+time waiting, outcome and follow-up. Those functions require the
+PASTORAL capability, respect tutor scoping (can_see_student) and are
+written to the sensitive-access log.
 """
 
 from __future__ import annotations
@@ -16,6 +23,7 @@ from contextlib import contextmanager
 from dataclasses import dataclass, field
 from typing import Any, Iterator
 from education_system import paths as _paths
+from education_system.systems.sixth_form.domain.pastoral import _records
 
 logger = logging.getLogger(__name__)
 
@@ -171,6 +179,7 @@ def init_db() -> None:
                   ON DELETE CASCADE
             )
         """)
+        conn.executescript(_MH_SCHEMA)
 
 
 def _check_date(label: str, value: str | None) -> None:
@@ -443,6 +452,64 @@ def referrals_for_student(student_id: str) -> list[Referral]:
     return list_referrals(student_id=student_id)
 
 
+# ── Learner self-referral (student portal) ───────────────────────
+
+#: What a learner can ask for themselves. Staff-only routes (SENCo,
+#: safeguarding) are not offered; a worry about safety goes through
+#: safeguarding's "Report a concern" instead.
+SELF_REFERRAL_TYPES: tuple[str, ...] = (
+    "Wellbeing Referral",
+    "Academic Catch-Up",
+    "Study Skills",
+    "Organisation Support",
+    "Time Management",
+    "Subject-Specific Help",
+    "Exam Prep Tuition",
+    "Pastoral Check-In",
+    "Welfare / Finance",
+    "Careers Drop-In",
+    "Transition Support",
+    "Other",
+)
+
+SELF_SOURCE = "Self-referral"
+
+
+def self_refer(student_id: str, *, support_type: str, issue: str,
+               referrer: str, subject_context: str | None = None,
+               urgent: bool = False) -> Referral:
+    """A learner asks for support for themselves.
+
+    Filed as ``source='Self-referral'`` with status Referred, so it lands
+    in the support team's triage queue like any other referral.
+    """
+    if support_type not in SELF_REFERRAL_TYPES:
+        raise ValidationError(
+            f"Choose one of: {', '.join(SELF_REFERRAL_TYPES)}")
+    issue = (issue or "").strip()
+    if not issue:
+        raise ValidationError("Tell us a little about what you need help with")
+    if len(issue) > 2000:
+        raise ValidationError("Please keep it under 2000 characters")
+    return create_referral({
+        "student_id": student_id, "support_type": support_type,
+        "source": SELF_SOURCE, "referrer": referrer or student_id,
+        "priority": 4 if urgent else 3, "presenting_issue": issue,
+        "subject_context": subject_context, "status": DEFAULT_STATUS,
+    })
+
+
+def self_referrals_for(student_id: str) -> list[Referral]:
+    """Only the referrals the learner made themselves.
+
+    Referrals staff raised about a learner are not shown back to them.
+    """
+    sid = (student_id or "").strip()
+    if not sid:
+        return []
+    return list_referrals(student_id=sid, source=SELF_SOURCE)
+
+
 # ── Workflow ─────────────────────────────────────────────────────
 
 def _to_dict(r: Referral) -> dict[str, Any]:
@@ -592,4 +659,301 @@ __all__ = [
     "triage", "start_progress", "log_session",
     "resolve", "close_referral", "set_status",
     "summary",
+    # Mental-health referrals
+    "MH_SERVICES", "MH_URGENCIES", "MH_STATUSES", "MH_OPEN_STATUSES",
+    "MHReferral", "MH_SPEC",
+    "create_mh_referral", "get_mh_referral", "list_mh_referrals",
+    "update_mh_referral", "delete_mh_referral", "set_mh_status",
+    "record_mh_outcome", "mh_waiting_list", "mh_follow_ups_due",
 ]
+
+
+# ══ External mental-health referrals ══════════════════════════════
+
+MH_SERVICES: tuple[str, ...] = (
+    "CAMHS",
+    "Adult Mental Health Services",
+    "NHS Talking Therapies",
+    "GP",
+    "College Counsellor",
+    "Mental Health Support Team (MHST)",
+    "Kooth",
+    "School / College Nurse",
+    "Eating Disorder Service",
+    "Early Intervention in Psychosis",
+    "Crisis Team",
+    "Bereavement Service",
+    "Substance Misuse Service",
+    "Charity / Voluntary Service",
+    "Other",
+)
+MH_URGENCIES: tuple[str, ...] = ("Routine", "Urgent", "Emergency")
+MH_STATUSES: tuple[str, ...] = (
+    "Considering",
+    "Referred",
+    "Accepted",
+    "Waiting",
+    "In Treatment",
+    "Declined by Service",
+    "Declined by Student",
+    "Discharged",
+    "Closed",
+)
+#: Statuses in which the student is still waiting to be seen.
+MH_WAITING_STATUSES: tuple[str, ...] = ("Referred", "Accepted", "Waiting")
+MH_OPEN_STATUSES: tuple[str, ...] = (
+    "Considering", "Referred", "Accepted", "Waiting", "In Treatment",
+)
+
+_MH_SCHEMA = """
+CREATE TABLE IF NOT EXISTS mh_referrals (
+    referral_id        INTEGER PRIMARY KEY AUTOINCREMENT,
+    student_id         TEXT NOT NULL,
+    referred_on        TEXT NOT NULL,
+    service            TEXT NOT NULL,
+    service_detail     TEXT,
+    referred_by        TEXT,
+    reason             TEXT NOT NULL,
+    urgency            TEXT NOT NULL DEFAULT 'Routine',
+    student_consent    INTEGER NOT NULL DEFAULT 0,
+    parent_informed    INTEGER NOT NULL DEFAULT 0,
+    status             TEXT NOT NULL DEFAULT 'Referred',
+    service_reference  TEXT,
+    accepted_on        TEXT,
+    first_appointment  TEXT,
+    outcome            TEXT,
+    follow_up_date     TEXT,
+    follow_up_by       TEXT,
+    closed_on          TEXT,
+    notes              TEXT,
+    created_at         TEXT DEFAULT (datetime('now')),
+    updated_at         TEXT DEFAULT (datetime('now')),
+    FOREIGN KEY (student_id) REFERENCES students(student_id) ON DELETE CASCADE
+);
+CREATE INDEX IF NOT EXISTS idx_mhr_student ON mh_referrals(student_id);
+CREATE INDEX IF NOT EXISTS idx_mhr_status  ON mh_referrals(status);
+"""
+
+
+@dataclass
+class MHReferral:
+    referral_id: int
+    student_id: str
+    referred_on: str
+    service: str
+    service_detail: str | None
+    referred_by: str | None
+    reason: str
+    urgency: str
+    student_consent: bool
+    parent_informed: bool
+    status: str
+    service_reference: str | None
+    accepted_on: str | None
+    first_appointment: str | None
+    outcome: str | None
+    follow_up_date: str | None
+    follow_up_by: str | None
+    closed_on: str | None
+    notes: str | None
+    created_at: str | None
+    updated_at: str | None
+
+    @property
+    def is_open(self) -> bool:
+        return self.status in MH_OPEN_STATUSES
+
+    @property
+    def days_waiting(self) -> int | None:
+        """Days from referral to first appointment (or to today while
+        still waiting). None once seen with no appointment date."""
+        start = _dt.date.fromisoformat(self.referred_on)
+        if self.first_appointment:
+            end = _dt.date.fromisoformat(self.first_appointment)
+        elif self.status in MH_WAITING_STATUSES:
+            end = _dt.date.today()
+        else:
+            return None
+        return max(0, (end - start).days)
+
+    @property
+    def follow_up_overdue(self) -> bool:
+        return bool(self.follow_up_date
+                    and self.follow_up_date < _dt.date.today().isoformat()
+                    and self.status not in ("Closed",))
+
+
+_C = _records.Col
+
+MH_SPEC = _records.TableSpec(
+    table="mh_referrals", id_col="referral_id", row_type=MHReferral,
+    label="Mental-health referral",
+    order_by="referred_on DESC, referral_id DESC",
+    cols=(
+        _C("student_id", "Student", "student", required=True, fixed=True),
+        _C("referred_on", "Referred on", "date", required=True,
+           default=_records.today),
+        _C("service", "Service", "choice", required=True,
+           choices=MH_SERVICES),
+        _C("service_detail", "Service detail / team", listed=False),
+        _C("referred_by", "Referred by"),
+        _C("reason", "Reason", "multiline", required=True),
+        _C("urgency", "Urgency", "choice", choices=MH_URGENCIES,
+           default="Routine"),
+        _C("student_consent", "Student consented", "bool", listed=False),
+        _C("parent_informed", "Parent informed", "bool", listed=False),
+        _C("status", "Status", "choice", choices=MH_STATUSES,
+           default="Referred"),
+        _C("service_reference", "Service reference", listed=False),
+        _C("accepted_on", "Accepted on", "date", listed=False),
+        _C("first_appointment", "First appointment", "date"),
+        _C("outcome", "Outcome", "multiline"),
+        _C("follow_up_date", "Follow-up date", "date"),
+        _C("follow_up_by", "Follow-up by", listed=False),
+        _C("closed_on", "Closed on", "date", listed=False),
+        _C("notes", "Notes", "multiline", listed=False),
+    ))
+
+
+def _mh_guard(action: str, student_id: str | None = None,
+              ref: str | None = None) -> Any:
+    return _records.guard("PASTORAL", "mental_health", action,
+                          student_id=student_id, record_ref=ref)
+
+
+def _mh_rules(p: dict[str, Any]) -> None:
+    for k, label in (("accepted_on", "Accepted on"),
+                     ("first_appointment", "First appointment"),
+                     ("closed_on", "Closed on")):
+        if p.get(k) and p[k] < p["referred_on"]:
+            raise ValidationError(f"{label} cannot be before the referral")
+    if p["status"] in ("Discharged", "Closed", "Declined by Service",
+                       "Declined by Student") and not p.get("closed_on"):
+        p["closed_on"] = _dt.date.today().isoformat()
+    if p["status"] in MH_OPEN_STATUSES:
+        p["closed_on"] = None
+
+
+def create_mh_referral(data: dict[str, Any]) -> MHReferral:
+    init_db()
+    p = _records.validate(MH_SPEC, data, error=ValidationError,
+                          student_exists=_student_exists)
+    _mh_rules(p)
+    actor = _mh_guard("create mental-health referral", p["student_id"])
+    p["referred_by"] = (p["referred_by"] or actor.staff_name
+                        or actor.username or None)
+    with _connect() as conn:
+        new_id = _records.insert(conn, MH_SPEC, p)
+    logger.info("Created %s mental-health referral #%d (%s) for %s",
+                p["urgency"].lower(), new_id, p["service"], p["student_id"])
+    return get_mh_referral(new_id)
+
+
+def get_mh_referral(referral_id: int) -> MHReferral | None:
+    init_db()
+    with _connect() as conn:
+        r = _records.fetch(conn, MH_SPEC, referral_id)
+    if r is not None:
+        _mh_guard("view mental-health referral", r.student_id,
+                  f"mh:{referral_id}")
+    return r
+
+
+def list_mh_referrals(*, student_id: str | None = None,
+                      service: str | None = None,
+                      status: str | None = None,
+                      open_only: bool = False) -> list[MHReferral]:
+    init_db()
+    _mh_guard("list mental-health referrals", student_id)
+    where, args = [], []
+    if open_only:
+        where.append("status IN (%s)" % ",".join("?" * len(MH_OPEN_STATUSES)))
+        args.extend(MH_OPEN_STATUSES)
+    with _connect() as conn:
+        rows = _records.select(conn, MH_SPEC, equals={
+            "student_id": student_id, "service": service, "status": status},
+            where=where, args=args)
+    return _records.visible_filter("PASTORAL", rows)
+
+
+def update_mh_referral(referral_id: int,
+                       data: dict[str, Any]) -> MHReferral:
+    init_db()
+    with _connect() as conn:
+        existing = _records.fetch(conn, MH_SPEC, referral_id)
+    if existing is None:
+        raise ValidationError(f"No mental-health referral #{referral_id}")
+    p = _records.validate(MH_SPEC, data, error=ValidationError,
+                          existing=existing, student_exists=_student_exists)
+    _mh_rules(p)
+    _mh_guard("update mental-health referral", existing.student_id,
+              f"mh:{referral_id}")
+    with _connect() as conn:
+        _records.update(conn, MH_SPEC, referral_id, p)
+    return get_mh_referral(referral_id)
+
+
+def set_mh_status(referral_id: int, status: str, *,
+                  on: str | None = None) -> MHReferral:
+    """Move a referral on; 'Accepted' stamps accepted_on, 'In Treatment'
+    stamps first_appointment if it is blank."""
+    if status not in MH_STATUSES:
+        raise ValidationError(
+            f"Status must be one of: {', '.join(MH_STATUSES)}")
+    when = _records.check_date(on, "Date", ValidationError) \
+        or _dt.date.today().isoformat()
+    existing = get_mh_referral(referral_id)
+    if existing is None:
+        raise ValidationError(f"No mental-health referral #{referral_id}")
+    payload: dict[str, Any] = {"status": status}
+    if status == "Accepted" and not existing.accepted_on:
+        payload["accepted_on"] = when
+    if status == "In Treatment" and not existing.first_appointment:
+        payload["first_appointment"] = when
+    if status in ("Discharged", "Closed", "Declined by Service",
+                  "Declined by Student"):
+        payload["closed_on"] = when
+    return update_mh_referral(referral_id, payload)
+
+
+def record_mh_outcome(referral_id: int, *, outcome: str,
+                      follow_up_date: str | None = None,
+                      follow_up_by: str | None = None,
+                      close: bool = False) -> MHReferral:
+    if not (outcome or "").strip():
+        raise ValidationError("Outcome is required")
+    payload: dict[str, Any] = {"outcome": outcome.strip(),
+                               "follow_up_date": follow_up_date,
+                               "follow_up_by": follow_up_by}
+    if close:
+        payload["status"] = "Closed"
+    return update_mh_referral(referral_id, payload)
+
+
+def delete_mh_referral(referral_id: int) -> bool:
+    init_db()
+    with _connect() as conn:
+        existing = _records.fetch(conn, MH_SPEC, referral_id)
+        if existing is None:
+            return False
+        _mh_guard("delete mental-health referral", existing.student_id,
+                  f"mh:{referral_id}")
+        return _records.delete(conn, MH_SPEC, referral_id)
+
+
+def mh_waiting_list() -> list[MHReferral]:
+    """Students referred but not yet seen, longest wait first."""
+    rows = [r for r in list_mh_referrals()
+            if r.status in MH_WAITING_STATUSES]
+    rows.sort(key=lambda r: -(r.days_waiting or 0))
+    return rows
+
+
+def mh_follow_ups_due(*, within_days: int = 7) -> list[MHReferral]:
+    horizon = (_dt.date.today()
+               + _dt.timedelta(days=within_days)).isoformat()
+    rows = [r for r in list_mh_referrals()
+            if r.follow_up_date and r.follow_up_date <= horizon
+            and r.status != "Closed"]
+    rows.sort(key=lambda r: r.follow_up_date or "")
+    return rows

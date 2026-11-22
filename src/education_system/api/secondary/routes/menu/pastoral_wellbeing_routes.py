@@ -33,44 +33,60 @@ def pastoral_wellbeing_form_tutors():
     return feature_pending("Form Tutors", _SYSTEM, category=_CATEGORY)
 
 
-@pastoral_wellbeing_menu_bp.route("/behaviour-log", methods=["GET"])
+@pastoral_wellbeing_menu_bp.route("/behaviour-rewards", methods=["GET"])
 @token_required
 @staff_required
-def pastoral_wellbeing_behaviour_log():
-    """Behaviour Log"""
-    return feature_pending("Behaviour Log", _SYSTEM, category=_CATEGORY)
+def pastoral_wellbeing_behaviour_rewards():
+    """Behaviour & Rewards"""
+    return feature_pending("Behaviour & Rewards", _SYSTEM, category=_CATEGORY)
 
 
-@pastoral_wellbeing_menu_bp.route("/open-detentions", methods=["GET"])
+@pastoral_wellbeing_menu_bp.route("/detentions", methods=["GET"])
 @token_required
 @staff_required
-def pastoral_wellbeing_open_detentions():
-    """open_detentions"""
-    return feature_pending("open_detentions", _SYSTEM, category=_CATEGORY)
+def pastoral_wellbeing_detentions():
+    """Detentions"""
+    return feature_pending("Detentions", _SYSTEM, category=_CATEGORY)
 
 
-@pastoral_wellbeing_menu_bp.route("/open-disciplinary", methods=["GET"])
+@pastoral_wellbeing_menu_bp.route("/suspensions-exclusions", methods=["GET"])
 @token_required
 @staff_required
-def pastoral_wellbeing_open_disciplinary():
-    """open_disciplinary"""
-    return feature_pending("open_disciplinary", _SYSTEM, category=_CATEGORY)
+def pastoral_wellbeing_suspensions_exclusions():
+    """Suspensions & Exclusions"""
+    return feature_pending("Suspensions & Exclusions", _SYSTEM, category=_CATEGORY)
 
 
-@pastoral_wellbeing_menu_bp.route("/open-safeguarding", methods=["GET"])
+@pastoral_wellbeing_menu_bp.route("/safeguarding", methods=["GET"])
 @token_required
 @staff_required
-def pastoral_wellbeing_open_safeguarding():
-    """open_safeguarding"""
-    return feature_pending("open_safeguarding", _SYSTEM, category=_CATEGORY)
+def pastoral_wellbeing_safeguarding():
+    """Safeguarding"""
+    return feature_pending("Safeguarding", _SYSTEM, category=_CATEGORY)
 
 
-@pastoral_wellbeing_menu_bp.route("/open-send", methods=["GET"])
+@pastoral_wellbeing_menu_bp.route("/report-a-safeguarding-concern", methods=["GET"])
 @token_required
 @staff_required
-def pastoral_wellbeing_open_send():
-    """open_send"""
-    return feature_pending("open_send", _SYSTEM, category=_CATEGORY)
+def pastoral_wellbeing_report_a_safeguarding_concern():
+    """Report a Safeguarding Concern"""
+    return feature_pending("Report a Safeguarding Concern", _SYSTEM, category=_CATEGORY)
+
+
+@pastoral_wellbeing_menu_bp.route("/send", methods=["GET"])
+@token_required
+@staff_required
+def pastoral_wellbeing_send():
+    """SEND"""
+    return feature_pending("SEND", _SYSTEM, category=_CATEGORY)
+
+
+@pastoral_wellbeing_menu_bp.route("/medical", methods=["GET"])
+@token_required
+@staff_required
+def pastoral_wellbeing_medical():
+    """Medical"""
+    return feature_pending("Medical", _SYSTEM, category=_CATEGORY)
 
 
 @pastoral_wellbeing_menu_bp.route("/pupil-premium", methods=["GET"])
@@ -81,38 +97,6 @@ def pastoral_wellbeing_pupil_premium():
     return feature_pending("Pupil Premium", _SYSTEM, category=_CATEGORY)
 
 
-@pastoral_wellbeing_menu_bp.route("/open-accessibility", methods=["GET"])
-@token_required
-@staff_required
-def pastoral_wellbeing_open_accessibility():
-    """open_accessibility"""
-    return feature_pending("open_accessibility", _SYSTEM, category=_CATEGORY)
-
-
-@pastoral_wellbeing_menu_bp.route("/open-wellbeing", methods=["GET"])
-@token_required
-@staff_required
-def pastoral_wellbeing_open_wellbeing():
-    """open_wellbeing"""
-    return feature_pending("open_wellbeing", _SYSTEM, category=_CATEGORY)
-
-
-@pastoral_wellbeing_menu_bp.route("/pupil-support", methods=["GET"])
-@token_required
-@staff_required
-def pastoral_wellbeing_pupil_support():
-    """Pupil Support"""
-    return feature_pending("Pupil Support", _SYSTEM, category=_CATEGORY)
-
-
-@pastoral_wellbeing_menu_bp.route("/peer-mentoring", methods=["GET"])
-@token_required
-@staff_required
-def pastoral_wellbeing_peer_mentoring():
-    """Peer Mentoring"""
-    return feature_pending("Peer Mentoring", _SYSTEM, category=_CATEGORY)
-
-
 @pastoral_wellbeing_menu_bp.route("/attendance-concerns", methods=["GET"])
 @token_required
 @staff_required
@@ -121,82 +105,18 @@ def pastoral_wellbeing_attendance_concerns():
     return feature_pending("Attendance Concerns", _SYSTEM, category=_CATEGORY)
 
 
-@pastoral_wellbeing_menu_bp.route("/absence-requests", methods=["GET"])
+@pastoral_wellbeing_menu_bp.route("/wellbeing", methods=["GET"])
 @token_required
 @staff_required
-def pastoral_wellbeing_absence_requests():
-    """Absence Requests"""
-    return feature_pending("Absence Requests", _SYSTEM, category=_CATEGORY)
+def pastoral_wellbeing_wellbeing():
+    """Wellbeing"""
+    return feature_pending("Wellbeing", _SYSTEM, category=_CATEGORY)
 
 
-@pastoral_wellbeing_menu_bp.route("/first-aid", methods=["GET"])
+@pastoral_wellbeing_menu_bp.route("/complaints", methods=["GET"])
 @token_required
 @staff_required
-def pastoral_wellbeing_first_aid():
-    """First Aid"""
-    return feature_pending("First Aid", _SYSTEM, category=_CATEGORY)
-
-
-@pastoral_wellbeing_menu_bp.route("/open-emergency", methods=["GET"])
-@token_required
-@staff_required
-def pastoral_wellbeing_open_emergency():
-    """open_emergency"""
-    return feature_pending("open_emergency", _SYSTEM, category=_CATEGORY)
-
-
-@pastoral_wellbeing_menu_bp.route("/prevent-duty", methods=["GET"])
-@token_required
-@staff_required
-def pastoral_wellbeing_prevent_duty():
-    """Prevent Duty"""
-    return feature_pending("Prevent Duty", _SYSTEM, category=_CATEGORY)
-
-
-@pastoral_wellbeing_menu_bp.route("/equality-diversity", methods=["GET"])
-@token_required
-@staff_required
-def pastoral_wellbeing_equality_diversity():
-    """Equality & Diversity"""
-    return feature_pending("Equality & Diversity", _SYSTEM, category=_CATEGORY)
-
-
-@pastoral_wellbeing_menu_bp.route("/open-complaints", methods=["GET"])
-@token_required
-@staff_required
-def pastoral_wellbeing_open_complaints():
-    """open_complaints"""
-    return feature_pending("open_complaints", _SYSTEM, category=_CATEGORY)
-
-
-@pastoral_wellbeing_menu_bp.route("/open-feedback", methods=["GET"])
-@token_required
-@staff_required
-def pastoral_wellbeing_open_feedback():
-    """open_feedback"""
-    return feature_pending("open_feedback", _SYSTEM, category=_CATEGORY)
-
-
-@pastoral_wellbeing_menu_bp.route("/open-surveys", methods=["GET"])
-@token_required
-@staff_required
-def pastoral_wellbeing_open_surveys():
-    """open_surveys"""
-    return feature_pending("open_surveys", _SYSTEM, category=_CATEGORY)
-
-
-@pastoral_wellbeing_menu_bp.route("/school-council", methods=["GET"])
-@token_required
-@staff_required
-def pastoral_wellbeing_school_council():
-    """School Council"""
-    return feature_pending("School Council", _SYSTEM, category=_CATEGORY)
-
-
-@pastoral_wellbeing_menu_bp.route("/open-transport", methods=["GET"])
-@token_required
-@staff_required
-def pastoral_wellbeing_open_transport():
-    """open_transport"""
-    return feature_pending("open_transport", _SYSTEM, category=_CATEGORY)
+def pastoral_wellbeing_complaints():
+    """Complaints"""
+    return feature_pending("Complaints", _SYSTEM, category=_CATEGORY)
 

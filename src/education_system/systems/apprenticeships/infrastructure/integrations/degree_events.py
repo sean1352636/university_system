@@ -61,7 +61,7 @@ def _consume_academic(envelope: dict[str, Any]) -> None:
         )
         apprentice = apprentice_repository.get(link.apprentice_id)
         if apprentice and apprentice.username:
-            from education_system.systems.apprenticeships.services.degree_apprenticeship_service import (
+            from education_system.systems.apprenticeships.application.programmes.degree_apprenticeship_service import (
                 grant_shared_account_access,
             )
             try:

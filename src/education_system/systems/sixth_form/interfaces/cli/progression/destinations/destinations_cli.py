@@ -407,6 +407,22 @@ _MENU: list[tuple[str, Callable[[], None]]] = [
     ("Summary report",                show_summary),
 ]
 
+# Monthly activity, sustained destinations and the NCCIS-style export
+# (sustained_cli), after the original entries so their numbers do not move.
+from education_system.systems.sixth_form.interfaces.cli.progression import (  # noqa: E402
+    _record_menus as _rm,
+)
+from education_system.systems.sixth_form.interfaces.cli.progression.destinations import (  # noqa: E402
+    sustained_cli as _sustained_cli,
+)
+_MENU += [(label, _rm.guarded(fn)) for label, fn in _sustained_cli.MENU]
+
+# Destinations confirmed by the university, after those.
+from education_system.systems.sixth_form.interfaces.cli.progression.destinations import (  # noqa: E402
+    university_confirmations_cli as _uni_cli,
+)
+_MENU += [(label, _rm.guarded(fn)) for label, fn in _uni_cli.MENU]
+
 
 def run() -> None:
     while True:

@@ -480,5 +480,5 @@ Submitted → Under Review → Approved/Denied → Active
 ---
 
 **Last Updated**: February 2026
-**Module**: `university_system/modules/domain/accessibility/accessibility_service.py`
+**Module**: `src/education_system/systems/university/domains/student_support/domain/disability/accessibility_service.py`
 **Support**: disability@university.edu | (555) 123-DSBL

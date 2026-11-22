@@ -2,11 +2,13 @@
 
 from __future__ import annotations
 
+import hashlib
 import logging
+import mimetypes
 import tkinter as tk
-from tkinter import messagebox, ttk
+from pathlib import Path
+from tkinter import filedialog, messagebox, ttk
 
-from education_system.platform import branding
 from education_system.systems.primary.domain.operations.attachments import (
     attachments as data,
 )
@@ -22,6 +24,7 @@ from education_system.systems.primary.domain.operations.attachments.attachments 
     ValidationError,
     VISIBILITY,
 )
+from education_system.systems.primary.interfaces.gui import kit
 
 logger = logging.getLogger(__name__)
 
@@ -36,16 +39,65 @@ _STATUS_TAGS = {
 }
 
 
+_RETENTION_YEARS = kit.recent_years(ahead=25, back=10)
+
+
+class _EntityIdField(ttk.Frame):
+    """The record an attachment hangs off. For a Student or Staff entity it
+    is a picker (holding the pupil / staff id); for anything else the id is
+    typed, as before. *type_var* is the entity-type variable to follow."""
+
+    def __init__(self, master: tk.Misc, var: tk.StringVar, type_var: tk.StringVar, *,
+                 width: int = 22) -> None:
+        super().__init__(master)
+        self.var, self.type_var, self.width = var, type_var, width
+        self._kind: str | None = None
+        self._trace = type_var.trace_add("write", lambda *_a: self._rebuild())
+        self._rebuild()
+
+    def _rebuild(self) -> None:
+        kind = self.type_var.get()
+        kind = kind if kind in ("Student", "Staff") else "text"
+        if kind == self._kind:
+            return
+        self._kind = kind
+        for w in self.winfo_children():
+            w.destroy()
+        if kind == "Student":
+            kit.PupilPicker(self, self.var, width=max(self.width, 36)).pack(fill="x")
+        elif kind == "Staff":
+            kit.StaffPicker(self, self.var, width=max(self.width, 32)).pack(fill="x")
+        else:
+            ttk.Entry(self, textvariable=self.var, width=self.width).pack(fill="x")
+
+    def destroy(self) -> None:
+        try:
+            self.type_var.trace_remove("write", self._trace)
+        except (tk.TclError, ValueError):
+            pass
+        super().destroy()
+
+
 def open_attachments_window(parent=None) -> None:
     data.init_db()
-    master = getattr(parent, "root", parent)
-    win = tk.Toplevel(master) if master is not None else tk.Tk()
-    win.title(f"Attachments — {branding.SYSTEM_NAME}")
-    win.geometry(WIN_GEOMETRY)
-    win.minsize(*WIN_MINSIZE)
+    if parent is None:
+        root = tk.Tk()
+        root.title("Attachments")
+        root.geometry(WIN_GEOMETRY)
+        root.minsize(*WIN_MINSIZE)
+        frame = ttk.Frame(root, padding=10)
+        frame.pack(fill="both", expand=True)
+        _draw_attachments(frame)
+        return
+    kit.show_page(parent, "Attachments", _draw_attachments)
 
-    nb = ttk.Notebook(win)
-    nb.pack(fill="both", expand=True, padx=10, pady=10)
+
+def _draw_attachments(parent: ttk.Frame) -> None:
+    kit.page_heading(parent, "Attachments",
+                     "Files attached to pupils, staff and other records: visibility, PII, "
+                     "retention and quarantine.")
+    nb = ttk.Notebook(parent)
+    nb.pack(fill="both", expand=True)
 
     AttachmentsTab(nb, scope="active",       label="Active")
     AttachmentsTab(nb, scope="pii",          label="Contains PII")
@@ -68,13 +120,15 @@ class AttachmentsTab:
         bar = ttk.Frame(self.frame)
         bar.pack(fill="x", padx=8, pady=(8, 4))
         ttk.Label(bar, text="Entity type:").pack(side="left")
+        self.f_et_var = tk.StringVar()
         self.f_et = ttk.Combobox(
-            bar, values=("",) + ENTITY_TYPES,
+            bar, values=("",) + ENTITY_TYPES, textvariable=self.f_et_var,
             state="readonly", width=14)
         self.f_et.current(0)
         self.f_et.pack(side="left", padx=(2, 8))
         ttk.Label(bar, text="Entity id:").pack(side="left")
-        self.f_eid = ttk.Entry(bar, width=12)
+        self.f_eid_var = tk.StringVar()
+        self.f_eid = _EntityIdField(bar, self.f_eid_var, self.f_et_var, width=12)
         self.f_eid.pack(side="left", padx=(2, 8))
         ttk.Label(bar, text="Category:").pack(side="left")
         self.f_cat = ttk.Combobox(
@@ -170,8 +224,8 @@ class AttachmentsTab:
         f: dict = {}
         if self.f_et.get():
             f["entity_type"] = self.f_et.get()
-        if self.f_eid.get().strip():
-            f["entity_id"] = self.f_eid.get().strip()
+        if self.f_eid_var.get().strip():
+            f["entity_id"] = self.f_eid_var.get().strip()
         if self.f_cat.get():
             f["category"] = self.f_cat.get()
         if self.f_vis.get():
@@ -413,11 +467,11 @@ class AttachmentEditor:
                  attachment: Attachment | None = None) -> None:
         self.attachment = attachment
         self.result: Attachment | None = None
-        self.win = tk.Toplevel(parent)
+        self.win = tk.Toplevel(parent.winfo_toplevel())
         self.win.title(
             f"Edit attachment #{attachment.attachment_id}"
             if attachment else "New attachment")
-        self.win.geometry("900x780")
+        self.win.geometry("940x720")
         self.win.transient(parent); self.win.after_idle(self.win.grab_set)
         self._build()
         if attachment:
@@ -425,8 +479,7 @@ class AttachmentEditor:
         self.win.wait_window()
 
     def _build(self) -> None:
-        body = ttk.Frame(self.win)
-        body.pack(fill="both", expand=True, padx=12, pady=10)
+        body, footer = kit.scrolled_form(self.win)
         body.grid_columnconfigure(1, weight=1)
         body.grid_columnconfigure(3, weight=1)
         self.vars: dict[str, tk.Variable] = {}
@@ -454,20 +507,35 @@ class AttachmentEditor:
                 row=row, column=col + 1, sticky="ew",
                 padx=4, pady=2)
 
+        def picker(row, col, label, key, make):
+            ttk.Label(body, text=label).grid(
+                row=row, column=col, sticky="w",
+                padx=4, pady=2)
+            v = tk.StringVar()
+            self.vars[key] = v
+            make(v).grid(row=row, column=col + 1, sticky="w",
+                         padx=4, pady=2)
+
         combo(0, 0, "Entity type*", "entity_type",
                  ENTITY_TYPES)
-        entry(0, 2, "Entity id*", "entity_id")
+        picker(0, 2, "Entity id*", "entity_id",
+               lambda v: _EntityIdField(body, v, self.vars["entity_type"]))
         entry(1, 0, "Title*", "title", width=48)
         entry(2, 0, "File ref / URL*", "file_ref", width=48)
+        ttk.Button(body, text="Browse…", command=self._browse).grid(
+            row=2, column=2, sticky="w", padx=4, pady=2)
         entry(3, 0, "File name", "file_name")
         entry(3, 2, "File format", "file_format")
-        entry(4, 0, "File size (kB)", "file_size_kb")
+        picker(4, 0, "File size (kB)", "file_size_kb",
+               lambda v: kit.NumberField(body, v, to=10_000_000, width=10))
         entry(4, 2, "MIME type", "mime_type")
         entry(5, 0, "Checksum", "checksum")
-        entry(5, 2, "Uploaded by", "uploaded_by")
-        entry(6, 0, "Uploaded on (YYYY-MM-DD)", "uploaded_on")
-        entry(6, 2, "Retention until (YYYY-MM-DD)",
-                 "retention_until")
+        picker(5, 2, "Uploaded by", "uploaded_by",
+               lambda v: kit.StaffPicker(body, v, by="name", width=30))
+        picker(6, 0, "Uploaded on", "uploaded_on",
+               lambda v: kit.DateField(body, v))
+        picker(6, 2, "Retention until", "retention_until",
+               lambda v: kit.DateField(body, v, years=_RETENTION_YEARS))
         combo(7, 0, "Category*", "category", CATEGORIES)
         combo(7, 2, "Visibility*", "visibility", VISIBILITY)
         combo(8, 0, "Status*", "status", STATUSES)
@@ -502,8 +570,7 @@ class AttachmentEditor:
             self.texts[key] = t
             row += 1
 
-        bar = ttk.Frame(self.win)
-        bar.pack(fill="x", padx=12, pady=(0, 10))
+        bar = footer
         ttk.Button(bar, text="Save",
                     command=self._save).pack(side="right",
                                                padx=4)
@@ -517,6 +584,33 @@ class AttachmentEditor:
         self.vars["status"].set(DEFAULT_STATUS)
         self.vars["uploaded_on"].set(
             _dt.date.today().isoformat())
+
+    def _browse(self) -> None:
+        """Pick the file rather than typing its path; fills in its name,
+        format, size, MIME type and checksum."""
+        path = filedialog.askopenfilename(parent=self.win, title="Choose file")
+        if not path:
+            return
+        p = Path(path)
+        self.vars["file_ref"].set(str(p))
+        self.vars["file_name"].set(p.name)
+        if p.suffix:
+            self.vars["file_format"].set(p.suffix.lstrip(".").upper())
+        mime, _enc = mimetypes.guess_type(p.name)
+        if mime:
+            self.vars["mime_type"].set(mime)
+        try:
+            size = p.stat().st_size
+            self.vars["file_size_kb"].set(str((size + 1023) // 1024))
+            digest = hashlib.sha256()
+            with p.open("rb") as fh:
+                for chunk in iter(lambda: fh.read(1 << 20), b""):
+                    digest.update(chunk)
+            self.vars["checksum"].set(digest.hexdigest())
+        except OSError:
+            logger.debug("could not read %s for size/checksum", p, exc_info=True)
+        if not self.vars["title"].get().strip():
+            self.vars["title"].set(p.stem)
 
     def _load(self) -> None:
         a = self.attachment

@@ -1221,9 +1221,11 @@ def user_management_cli_menu(dashboard):
             conn = dashboard._get_connection()
             cursor = conn.cursor()
             cursor.execute("""
-                SELECT id, username, role, is_active, two_fa_enabled, last_login
-                FROM users
-                ORDER BY id
+                SELECT u.id, u.username, u.role, COALESCE(ua.is_active, 0),
+                       COALESCE(ua.two_fa_enabled, 0), ua.last_login
+                FROM users u
+                LEFT JOIN user_accounts ua ON ua.user_id = u.id
+                ORDER BY u.id
                 LIMIT 50
             """)
             users = cursor.fetchall()
@@ -1244,9 +1246,9 @@ def user_management_cli_menu(dashboard):
             cursor = conn.cursor()
             cursor.execute("SELECT COUNT(*) FROM users")
             count = cursor.fetchone()[0]
-            cursor.execute("SELECT COUNT(*) FROM users WHERE is_active = 1")
+            cursor.execute("SELECT COUNT(*) FROM user_accounts WHERE is_active = 1")
             active_count = cursor.fetchone()[0]
-            cursor.execute("SELECT COUNT(*) FROM users WHERE two_fa_enabled = 1")
+            cursor.execute("SELECT COUNT(*) FROM user_accounts WHERE two_fa_enabled = 1")
             mfa_count = cursor.fetchone()[0]
             conn.close()
 
@@ -1289,7 +1291,7 @@ def role_management_cli_menu(dashboard):
         cursor = conn.cursor()
 
         # List roles
-        cursor.execute("SELECT id, name, description FROM roles ORDER BY id")
+        cursor.execute("SELECT id, role_name, description FROM roles ORDER BY id")
         roles = cursor.fetchall()
 
         if roles:
@@ -1301,7 +1303,7 @@ def role_management_cli_menu(dashboard):
             print("\n✅ No roles found")
 
         # List permissions
-        cursor.execute("SELECT id, name, description FROM permissions ORDER BY name LIMIT 20")
+        cursor.execute("SELECT id, permission_name, description FROM permissions ORDER BY permission_name LIMIT 20")
         perms = cursor.fetchall()
 
         if perms:

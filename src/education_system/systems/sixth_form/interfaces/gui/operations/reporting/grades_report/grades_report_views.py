@@ -4,7 +4,9 @@ from __future__ import annotations
 
 import logging
 import tkinter as tk
-from tkinter import messagebox, ttk
+from tkinter import ttk
+from education_system.systems.sixth_form.interfaces.gui._sidebar import SidebarBook
+from education_system.platform.delivery.gui.parented_dialogs import messagebox
 from typing import Callable
 from education_system.systems.sixth_form.domain.operations.reporting.grades_report import grades_report
 from education_system.systems.sixth_form.domain.learners.students import students
@@ -31,13 +33,21 @@ def open_grades_report_window(parent=None) -> None:
     win.title(f"Grades Report — {branding.SYSTEM_NAME}")
     win.geometry(WIN_GEOMETRY)
     win.minsize(*WIN_MINSIZE)
-    nb = ttk.Notebook(win)
+    nb = SidebarBook(win)
     nb.pack(fill="both", expand=True, padx=10, pady=10)
     CohortTab(nb)
     PerStudentTab(nb)
     PerSubjectTab(nb)
     PredVsActualTab(nb)
     AlertsTab(nb)
+    # Report cards: periods, comment entry, completion, review and publish.
+    try:
+        from education_system.systems.sixth_form.interfaces.gui.assessment.report_cards import (
+            report_cards_views,
+        )
+        report_cards_views.add_report_cards_tab(nb)
+    except Exception:
+        logger.exception("Could not add the Report Cards tab")
 
 
 def _student_options() -> list[tuple[str, str]]:

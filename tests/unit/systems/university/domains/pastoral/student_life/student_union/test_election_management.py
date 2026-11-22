@@ -16,7 +16,7 @@ import pytest
 from unittest.mock import Mock, patch, MagicMock, mock_open
 from datetime import datetime
 from education_system.systems.university.infrastructure.database.db import sqlite3
-from education_system.systems.university.domains.pastoral.domain.student_life.student_union.elections import election_management
+from education_system.systems.university.domains.student_life.domain.student_life.student_union.elections import election_management
 
 @pytest.fixture
 def mock_cursor():
@@ -87,7 +87,7 @@ class TestNominateForElection:
     """Test nomination functionality."""
 
     @patch('builtins.input', side_effect=['1', 'My manifesto statement'])
-    @patch('education_system.systems.university.domains.pastoral.domain.student_life.student_union.elections.election_management.send_confirmation_email')
+    @patch('education_system.systems.university.domains.student_life.domain.student_life.student_union.elections.election_management.send_confirmation_email')
     def test_nominate_success(self, mock_email, mock_input, mock_cursor, mock_conn, mock_auth):
         """Test successful nomination."""
         election_management.auth = mock_auth
@@ -251,7 +251,7 @@ class TestElectionResults:
             (0,),  # no one currently in position
         ]
 
-        with patch('education_system.systems.university.domains.pastoral.domain.student_life.student_union.elections.election_management.send_confirmation_email'):
+        with patch('education_system.systems.university.domains.student_life.domain.student_life.student_union.elections.election_management.send_confirmation_email'):
             election_management.view_election_results(mock_cursor, mock_conn)
 
         mock_conn.commit.assert_called()
@@ -351,7 +351,7 @@ class TestElectionMenu:
     """Test election menu display."""
 
     @patch('builtins.input', side_effect=[str(i) for i in range(1, 10)])
-    @patch('education_system.systems.university.domains.pastoral.domain.student_life.student_union.elections.election_management.get_connection')
+    @patch('education_system.systems.university.domains.student_life.domain.student_life.student_union.elections.election_management.get_connection')
     def test_display_election_menu(self, mock_get_conn, mock_input, mock_auth):
         """Test displaying election menu."""
         mock_conn = Mock()

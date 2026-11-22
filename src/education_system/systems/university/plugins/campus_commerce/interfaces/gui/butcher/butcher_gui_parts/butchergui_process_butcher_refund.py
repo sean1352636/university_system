@@ -252,7 +252,7 @@ class ButcherGUI:
                     email = row[0]
                 else:
                     # Fallback to students table
-                    cursor = conn.execute("SELECT email FROM students WHERE student_id = ?", (customer_id,))
+                    cursor = conn.execute("SELECT email_address FROM students WHERE student_id = ?", (customer_id,))
                     row = cursor.fetchone()
                     if row and row[0]:
                         email = row[0]
@@ -277,7 +277,7 @@ class ButcherGUI:
                             balance_text = f"Your new Student Finance Account balance: GBP {balance:.2f}"
 
                 # Render email from template
-                subject, body = render_template('commerce/butcher/refund_receipt', {
+                subject, body = render_template('finance_commerce/commerce/butcher/refund_receipt', {
                     'customer_name': customer_name,
                     'refund_ref': refund_ref,
                     'original_order': order_number,

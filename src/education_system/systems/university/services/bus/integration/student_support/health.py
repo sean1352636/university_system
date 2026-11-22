@@ -91,7 +91,7 @@ def _on_health_appointment_booked(**payload: Any) -> None:
                 )
             conn.execute(
                 "UPDATE health_appointments SET has_conflict = 1 "
-                "WHERE appointment_id = ?",
+                "WHERE id = ?",
                 (int(payload.get("appointment_id")),),
             )
             conn.commit()

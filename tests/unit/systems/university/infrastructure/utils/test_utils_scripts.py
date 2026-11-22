@@ -38,7 +38,7 @@ class TestResetPasswordScript:
 
     def test_reset_password_file_exists(self):
         """Test that reset_password file exists."""
-        script_file = Path("university_system/scripts/reset_password.py")
+        script_file = Path("tools/university/reset_password.py")
         assert script_file.exists()
 
     def test_reset_password_imports(self):
@@ -51,7 +51,7 @@ class TestResetPasswordScript:
 
     def test_reset_password_is_script(self):
         """Test that reset_password is a runnable script."""
-        script_file = Path("university_system/scripts/reset_password.py")
+        script_file = Path("tools/university/reset_password.py")
         content = script_file.read_text()
 
         # Should have script-like content

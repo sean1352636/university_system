@@ -120,7 +120,7 @@ University Library System
                 return False
 
             # Render email from template
-            subject, body = render_template('library/payment_receipt', {
+            subject, body = render_template('campus_services/library/payment_receipt', {
                 'student_name': user_info['full_name'],
                 'transaction_id': transaction_id,
                 'payment_date': payment_date,

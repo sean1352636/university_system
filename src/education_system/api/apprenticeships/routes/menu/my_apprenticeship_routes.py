@@ -25,6 +25,14 @@ _SYSTEM = "apprenticeships"
 _CATEGORY = "My Apprenticeship"
 
 
+@my_apprenticeship_menu_bp.route("/learning-plan", methods=["GET"])
+@token_required
+@staff_required
+def my_apprenticeship_learning_plan():
+    """Learning Plan"""
+    return feature_pending("Learning Plan", _SYSTEM, category=_CATEGORY)
+
+
 @my_apprenticeship_menu_bp.route("/my-details", methods=["GET"])
 @token_required
 @staff_required
@@ -33,12 +41,20 @@ def my_apprenticeship_my_details():
     return feature_pending("My Details", _SYSTEM, category=_CATEGORY)
 
 
-@my_apprenticeship_menu_bp.route("/training-plan", methods=["GET"])
+@my_apprenticeship_menu_bp.route("/my-tasks", methods=["GET"])
 @token_required
 @staff_required
-def my_apprenticeship_training_plan():
-    """Training Plan"""
-    return feature_pending("Training Plan", _SYSTEM, category=_CATEGORY)
+def my_apprenticeship_my_tasks():
+    """My Tasks"""
+    return feature_pending("My Tasks", _SYSTEM, category=_CATEGORY)
+
+
+@my_apprenticeship_menu_bp.route("/university-degree", methods=["GET"])
+@token_required
+@staff_required
+def my_apprenticeship_university_degree():
+    """University Degree"""
+    return feature_pending("University Degree", _SYSTEM, category=_CATEGORY)
 
 
 @my_apprenticeship_menu_bp.route("/apprentice-dashboard", methods=["GET"])
@@ -47,4 +63,20 @@ def my_apprenticeship_training_plan():
 def my_apprenticeship_apprentice_dashboard():
     """apprentice.dashboard"""
     return feature_pending("apprentice.dashboard", _SYSTEM, category=_CATEGORY)
+
+
+@my_apprenticeship_menu_bp.route("/shared-calendar", methods=["GET"])
+@token_required
+@staff_required
+def my_apprenticeship_shared_calendar():
+    """shared.calendar"""
+    return feature_pending("shared.calendar", _SYSTEM, category=_CATEGORY)
+
+
+@my_apprenticeship_menu_bp.route("/shared-search", methods=["GET"])
+@token_required
+@staff_required
+def my_apprenticeship_shared_search():
+    """shared.search"""
+    return feature_pending("shared.search", _SYSTEM, category=_CATEGORY)
 

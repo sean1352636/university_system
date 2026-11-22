@@ -6,12 +6,12 @@ Comprehensive guide to the newly added monitoring, data management, and performa
 
 ### 1. Application Metrics
 
-**Location**: `university_system/infrastructure/monitoring/metrics.py`
+**Location**: `src/education_system/systems/university/infrastructure/monitoring/metrics.py`
 
 Track performance metrics for any operation:
 
 ```python
-from university_system.infrastructure.monitoring import track_operation, record_metric
+from education_system.systems.university.infrastructure.monitoring import track_operation, record_metric
 
 # Decorator approach - tracks everything automatically
 @track_operation('student_enrollment')
@@ -29,7 +29,7 @@ record_metric('login_attempts', 1, 'counter')
 record_metric('database_query_time', 0.25, 'histogram')
 
 # Get all metrics
-from university_system.infrastructure.monitoring import get_metrics_collector
+from education_system.systems.university.infrastructure.monitoring import get_metrics_collector
 
 metrics = get_metrics_collector()
 all_metrics = metrics.get_all_metrics()
@@ -46,12 +46,12 @@ print(f"P95 response time: {all_metrics['histograms']['student_enrollment']['p95
 
 ### 2. Health Checks
 
-**Location**: `university_system/infrastructure/monitoring/health_checks.py`
+**Location**: `src/education_system/systems/university/infrastructure/monitoring/health_checks.py`
 
 Monitor system health in real-time:
 
 ```python
-from university_system.infrastructure.monitoring import check_system_health
+from education_system.systems.university.infrastructure.monitoring import check_system_health
 
 # Check all subsystems
 health_status = check_system_health()
@@ -73,7 +73,7 @@ for subsystem, result in health_status['checks'].items():
 
 **Kubernetes/Docker Ready**:
 ```python
-from university_system.infrastructure.monitoring import get_health_checker
+from education_system.systems.university.infrastructure.monitoring import get_health_checker
 
 health = get_health_checker()
 
@@ -90,12 +90,12 @@ if health.check_liveness():
 
 ### 3. Alerting System
 
-**Location**: `university_system/infrastructure/monitoring/alerts.py`
+**Location**: `src/education_system/systems/university/infrastructure/monitoring/alerts.py`
 
 Send alerts for critical events:
 
 ```python
-from university_system.infrastructure.monitoring import send_alert, AlertLevel
+from education_system.systems.university.infrastructure.monitoring import send_alert, AlertLevel
 
 # Send different severity levels
 send_alert(
@@ -113,7 +113,7 @@ send_alert(
 )
 
 # Get alert history
-from university_system.infrastructure.monitoring import get_alert_manager
+from education_system.systems.university.infrastructure.monitoring import get_alert_manager
 
 alerts = get_alert_manager()
 recent_alerts = alerts.get_alert_history(hours=24)
@@ -133,12 +133,12 @@ print(f"Critical alerts: {summary['by_level']['critical']}")
 
 ### 1. Automated Backup Scheduler
 
-**Location**: `university_system/infrastructure/data_management/backup_scheduler.py`
+**Location**: `src/education_system/systems/university/infrastructure/data_management/backup_scheduler.py`
 
 Never lose data again with automated backups:
 
 ```python
-from university_system.infrastructure.data_management import schedule_backups
+from education_system.systems.university.infrastructure.data_management import schedule_backups
 
 # Start automated backups (runs in background)
 scheduler = schedule_backups()
@@ -179,22 +179,19 @@ To restore from a backup:
 
 ```bash
 # Stop the application first
-make db-restore BACKUP_FILE=university_system/data/backups/backup_daily_20260201.db
-
-# Or manually:
-cp university_system/data/backups/backup_daily_20260201.db university_system/data/db_files/student_records.db
+cp var/backups/university/database/backup_daily_20260201.db var/data/university/db_files/student_records.db
 ```
 
 ## 🚀 Performance Optimization
 
 ### 1. Caching Layer
 
-**Location**: `university_system/infrastructure/performance/cache.py`
+**Location**: `src/education_system/systems/university/infrastructure/performance/cache.py`
 
 Speed up repeated operations with intelligent caching:
 
 ```python
-from university_system.infrastructure.performance import cached, invalidate_cache
+from education_system.systems.university.infrastructure.performance import cached, invalidate_cache
 
 # Cache expensive calculations
 @cached(ttl=600)  # Cache for 10 minutes
@@ -220,7 +217,7 @@ invalidate_cache('gpa:123')  # Clear specific pattern
 invalidate_cache()            # Clear entire cache
 
 # Get cache statistics
-from university_system.infrastructure.performance import get_cache_manager
+from education_system.systems.university.infrastructure.performance import get_cache_manager
 
 cache = get_cache_manager()
 stats = cache.get_stats()
@@ -250,9 +247,9 @@ def enroll_student(student_id, course_id):
 ### Example 1: Monitor Critical Operation
 
 ```python
-from university_system.infrastructure.monitoring import track_operation
-from university_system.infrastructure.monitoring import send_alert, AlertLevel
-from university_system.infrastructure.performance import cached
+from education_system.systems.university.infrastructure.monitoring import track_operation
+from education_system.systems.university.infrastructure.monitoring import send_alert, AlertLevel
+from education_system.systems.university.infrastructure.performance import cached
 
 @track_operation('grade_submission')
 @cached(ttl=60)
@@ -288,7 +285,7 @@ def submit_grade(student_id, course_id, grade):
 ```python
 import schedule
 import time
-from university_system.infrastructure.monitoring import (
+from education_system.systems.university.infrastructure.monitoring import (
     check_system_health,
     send_alert,
     AlertLevel
@@ -325,7 +322,7 @@ while True:
 Create a monitoring dashboard:
 
 ```python
-from university_system.infrastructure.monitoring import (
+from education_system.systems.university.infrastructure.monitoring import (
     get_metrics_collector,
     get_health_checker,
     get_alert_manager
@@ -365,7 +362,7 @@ scheduler.retention = {
 
 Adjust cache size and TTL:
 ```python
-from university_system.infrastructure.performance import get_cache_manager
+from education_system.systems.university.infrastructure.performance import get_cache_manager
 
 cache = get_cache_manager()
 cache._max_size = 5000      # Store up to 5000 items
@@ -376,7 +373,7 @@ cache._default_ttl = 600    # Default 10 minute expiration
 
 Configure alert thresholds:
 ```python
-from university_system.infrastructure.monitoring import get_alert_manager
+from education_system.systems.university.infrastructure.monitoring import get_alert_manager
 
 alerts = get_alert_manager()
 alerts._thresholds = {
@@ -387,46 +384,32 @@ alerts._thresholds = {
 
 ## 🚀 Getting Started
 
-### 1. Initialize All Features
-
-```bash
-source venv/bin/activate
-python initialize_enhancements.py
-```
-
-This will:
-- ✅ Initialize monitoring
-- ✅ Create initial backup
-- ✅ Start backup scheduler
-- ✅ Configure caching
-- ✅ Run system tests
-
-### 2. Verify Health
+### 1. Verify Health
 
 ```bash
 python -c "
-from university_system.infrastructure.monitoring import check_system_health
+from education_system.systems.university.infrastructure.monitoring import check_system_health
 health = check_system_health()
 print(f'System status: {health[\"status\"]}')
 "
 ```
 
-### 3. Check Metrics
+### 2. Check Metrics
 
 ```bash
 python -c "
-from university_system.infrastructure.monitoring import get_metrics_collector
+from education_system.systems.university.infrastructure.monitoring import get_metrics_collector
 metrics = get_metrics_collector()
 stats = metrics.get_all_metrics()
 print('Metrics:', stats)
 "
 ```
 
-### 4. View Backups
+### 3. View Backups
 
 ```bash
 python -c "
-from university_system.infrastructure.data_management import get_backup_scheduler
+from education_system.systems.university.infrastructure.data_management import get_backup_scheduler
 scheduler = get_backup_scheduler()
 backups = scheduler.list_backups()
 print(f'Found {len(backups)} backups')
@@ -437,10 +420,10 @@ for b in backups:
 
 ## 📚 Additional Resources
 
-- **Metrics**: See `infrastructure/monitoring/metrics.py` for all available metric types
-- **Health Checks**: See `infrastructure/monitoring/health_checks.py` for check details
-- **Backups**: See `infrastructure/data_management/backup_scheduler.py` for backup options
-- **Caching**: See `infrastructure/performance/cache.py` for caching patterns
+- **Metrics**: See `src/education_system/systems/university/infrastructure/monitoring/metrics.py` for all available metric types
+- **Health Checks**: See `src/education_system/systems/university/infrastructure/monitoring/health_checks.py` for check details
+- **Backups**: See `src/education_system/systems/university/infrastructure/data_management/backup_scheduler.py` for backup options
+- **Caching**: See `src/education_system/systems/university/infrastructure/performance/cache.py` for caching patterns
 
 ## 🎯 Best Practices
 
@@ -455,4 +438,4 @@ for b in backups:
 
 These enhancements are part of University Management System **v5.12.0**.
 
-For previous enhancements, see [CHANGELOG.md](../../../../CHANGELOG.md).
+For previous enhancements, see [CHANGELOG.md](../../../CHANGELOG.md).

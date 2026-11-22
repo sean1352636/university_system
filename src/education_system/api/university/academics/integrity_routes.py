@@ -1,4 +1,11 @@
-"""Academic integrity routes: misconduct cases, plagiarism results, AI detection, forensic cases."""
+"""Academic integrity routes: misconduct cases, plagiarism results, AI detection, forensic cases.
+
+Not mounted (``academic_integrity_bp`` in ``academic_integrity_routes`` owns
+``/api/integrity``). The ``/misconduct`` endpoints here read the retired
+``academic_misconduct_cases`` table: university cases are ``integrity_cases``
+now (``/api/integrity/cases``). The module stays for its capability gates,
+which the security tests pin.
+"""
 
 from __future__ import annotations
 
@@ -234,43 +241,9 @@ def update_misconduct_case(case_id: int):
 
 # ---- Plagiarism Results ----
 
-@integrity_bp.route("/plagiarism", methods=["GET"])
-@token_required
-def list_plagiarism_results():
-    denial = _require_detection_access()
-    if denial is not None:
-        return denial
+# Plagiarism results moved to academic_integrity_routes (``/api/integrity/results``),
+# which applies the integrity rules' access checks and is mounted.
 
-    status = request.args.get("status")
-
-    with get_connection() as conn:
-        conditions = []
-        params: list = []
-        if status:
-            conditions.append("status = ?")
-            params.append(status)
-
-        where = (" WHERE " + " AND ".join(conditions)) if conditions else ""
-        page, per_page, offset = get_pagination_params()
-        params_count = list(params)
-        params.extend([per_page, offset])
-
-        rows = conn.execute(
-            "SELECT * FROM plagiarism_results" + where + " ORDER BY check_date DESC LIMIT ? OFFSET ?",
-            params,
-        ).fetchall()
-        total_row = conn.execute(
-            "SELECT COUNT(*) FROM plagiarism_results" + where, params_count
-        ).fetchone()
-        total = total_row[0] if total_row else 0
-
-    log_activity("view", "plagiarism_results", user=g.current_user.get("sub"))
-    return jsonify(paginated_response(
-        [_row_to_dict(r) for r in rows], total, page, per_page
-    ))
-
-
-# ---- AI Detection Results ----
 
 @integrity_bp.route("/ai-detection", methods=["GET"])
 @token_required

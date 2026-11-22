@@ -8,7 +8,7 @@ from typing import Any, Callable
 from education_system.systems.sixth_form.domain.assessment.exam_entries import exam_entries
 from education_system.systems.sixth_form.domain.assessment.exam_results import exam_results
 from education_system.systems.sixth_form.domain.learners.students import students
-from education_system.systems.sixth_form.domain.academics.subjects import subjects as entries_data
+from education_system.systems.sixth_form.domain.assessment.exam_entries import exam_entries as entries_data
 from education_system.systems.sixth_form.domain.assessment.exam_results import exam_results as data
 from education_system.systems.sixth_form.domain.learners.students import students as student_data
 from education_system.systems.sixth_form.domain.academics.subjects import subjects as subjects_data
@@ -20,7 +20,7 @@ from education_system.systems.sixth_form.domain.assessment.exam_results.exam_res
 )
 from education_system.systems.sixth_form.domain.assessment.gradebook.gradebook import LETTER_GRADES
 from education_system.systems.sixth_form.domain.learners.students.students import A_LEVEL_SUBJECTS
-from education_system.systems.sixth_form.domain.academics.subjects.subjects import EXAM_BOARDS
+from education_system.systems.sixth_form.domain.assessment.exam_entries.exam_entries import EXAM_BOARDS
 
 logger = logging.getLogger(__name__)
 
@@ -543,6 +543,41 @@ _MENU: list[tuple[str, Callable[[], None]]] = [
     ("Edit Result",       edit_result),
     ("Delete Result",     delete_result_flow),
 ]
+
+
+# Exams-office additions, appended so existing option numbers stay put.
+def _exams_office() -> None:
+    from education_system.systems.sixth_form.interfaces.cli.assessment.exams_office import (
+        exams_office_cli,
+    )
+    exams_office_cli.run()
+
+
+def _extend_menu() -> None:
+    from education_system.systems.sixth_form.interfaces.cli.assessment.exams_office import (
+        results_day_cli as _extra,
+    )
+    from education_system.systems.sixth_form.interfaces.cli.assessment.exams_office.exams_cli_helpers import (
+        UserAbort as _Abort,
+    )
+
+    def _wrap(handler):
+        def run_one() -> None:
+            try:
+                handler()
+            except _Abort:
+                print("\n  Cancelled.")
+            except ValueError as e:
+                print(f"\n  ✗ {e}")
+                _pause()
+        return run_one
+
+    for label, handler in _extra.MENU:
+        _MENU.append((label, _wrap(handler)))
+    _MENU.append(("Exams Office…", _exams_office))
+
+
+_extend_menu()
 
 
 def run() -> None:

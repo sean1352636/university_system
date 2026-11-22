@@ -201,8 +201,7 @@ class UserManager:
                         print(f"Student ID {student_id} does not exist in the system.")
                         return False
 
-                # Hash password
-                salt, password_hash = self.password_hasher(password)
+                salt, password_hash = "", ""  # passwords are kept only in the shared auth (auth.db)
 
                 # Create user
                 timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')

@@ -21,17 +21,21 @@ from education_system.systems.sixth_form.interfaces.gui._ui import grab_when_vie
 import datetime as _dt
 import logging
 import tkinter as tk
-from tkinter import messagebox, ttk
+from tkinter import ttk
+from education_system.systems.sixth_form.interfaces.gui._sidebar import SidebarBook
+from education_system.platform.delivery.gui.parented_dialogs import messagebox
 from typing import Callable
 from education_system.platform import branding
 from education_system.systems.sixth_form.domain.academics.calendar import (
     calendar as data,
-    calendar_admin_views as admin_views,
     calendar_governance as governance,
-    calendar_grid_views as grid_views,
     calendar_notifications as notifications,
-    calendar_planning_views as planning_views,
     calendar_taxonomy as taxonomy,
+)
+from education_system.systems.sixth_form.interfaces.gui.academics.calendar import (
+    calendar_admin_views as admin_views,
+    calendar_grid_views as grid_views,
+    calendar_planning_views as planning_views,
 )
 from education_system.systems.sixth_form.domain.academics.calendar.calendar import (
     AUDIENCES,
@@ -97,7 +101,7 @@ def open_calendar_window(parent=None) -> None:
     win.geometry(WIN_GEOMETRY)
     win.minsize(*WIN_MINSIZE)
 
-    nb = ttk.Notebook(win)
+    nb = SidebarBook(win)
     nb.pack(fill="both", expand=True, padx=10, pady=10)
 
     add_tabs(nb, actor=_actor(parent), role=_role(parent))

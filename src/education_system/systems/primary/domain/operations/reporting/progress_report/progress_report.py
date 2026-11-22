@@ -29,7 +29,7 @@ from education_system.systems.primary.domain.assessment import (
     assessment as assessment_data,
 )
 from education_system.systems.primary.domain.assessment.assessment import (
-    GRADES, GRADE_RANK,
+    GRADES, GRADE_RANK, TERMS,
 )
 from education_system.systems.primary.domain.assessment.eyfs_profile import (
     eyfs_profile as eyfs_data,
@@ -305,6 +305,14 @@ def find_pupils_with_data(
     return out
 
 
+def _assessment_recency(r: Any) -> tuple:
+    """Sort key for "latest": academic year, then term in school order
+    (Autumn < Spring < Summer), then assessed date, then insertion."""
+    term_rank = TERMS.index(r.term) if r.term in TERMS else -1
+    return (r.academic_year or "", term_rank, r.assessed_on or "",
+            r.assessment_id or 0)
+
+
 def export_cohort_csv(path: str | Path,
                       *, academic_year: str | None = None,
                       year_group: str | None = None) -> int:
@@ -340,7 +348,8 @@ def export_cohort_csv(path: str | Path,
                 a_in_year = [r for r in pp.assessments
                              if academic_year is None
                              or r.academic_year == academic_year]
-                latest = a_in_year[0] if a_in_year else None
+                latest = (max(a_in_year, key=_assessment_recency)
+                          if a_in_year else None)
                 mtc_in_year = [r for r in pp.mtc_results
                                if academic_year is None
                                or r.academic_year == academic_year]

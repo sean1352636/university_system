@@ -20,19 +20,19 @@ This guide covers email configuration, templates, scheduling, queue management, 
 
 ## Overview
 
-The Email System provides asynchronous email delivery with database-only mode (default), optional SMTP integration, template rendering, scheduled tasks, and comprehensive audit logging. All emails are stored in the database for inbox access and compliance.
+The Email System provides asynchronous email delivery through one outbox with three delivery modes (`inbox_only` is the default), template rendering, scheduled tasks, and comprehensive audit logging. All emails are stored in the database for inbox access and compliance.
 
 **Key files:**
-- Email Service: `infrastructure/email/email_service.py`
-- Configuration: `infrastructure/email/config.py`
-- Email Manager: `infrastructure/email/email_manager.py`
-- Scheduler: `infrastructure/email/email_scheduler.py`
-- DB Utilities: `infrastructure/email/email_db_utilities.py`
-- Admin Panel: `infrastructure/email/admin.py`
-- Templates: `infrastructure/email/templates.py`
-- SMTP: `infrastructure/email/smtp.py`
-- State: `infrastructure/email/state.py`
-- Template Utils: `infrastructure/email/template_utils.py`
+- Email Service: `src/education_system/systems/university/infrastructure/utils/email_service.py`
+- Configuration: `src/education_system/systems/university/infrastructure/email/config.py`
+- Email Manager: `src/education_system/systems/university/infrastructure/email/email_manager.py`
+- Scheduler: `src/education_system/systems/university/infrastructure/email/email_scheduler.py`
+- DB Utilities: `src/education_system/systems/university/infrastructure/email/email_db_utilities.py`
+- Admin Panel: `src/education_system/systems/university/infrastructure/email/admin/`
+- Templates: `src/education_system/systems/university/infrastructure/email/templates.py`
+- SMTP: `src/education_system/systems/university/infrastructure/email/smtp.py`
+- State: `src/education_system/systems/university/infrastructure/email/state.py`
+- Template Utils: `src/education_system/systems/university/infrastructure/email/template_utils.py`
 
 ## Email Architecture
 
@@ -64,23 +64,26 @@ The Email System provides asynchronous email delivery with database-only mode (d
 
 | Mode | Description | Default |
 |------|-------------|---------|
-| **Database-Only** | Emails stored in DB, accessible via inbox | Yes |
-| **SMTP** | Emails sent via SMTP server + stored in DB | No |
+| `inbox_only` | Nothing leaves the system; messages appear in the in-app inbox | Yes |
+| `sandbox` | Writes `.eml` files to `var/data/university/email/sandbox` instead of sending | No |
+| `live` | Sends through the SMTP server and keeps the in-app copy | No |
+
+The mode comes from `delivery_mode` in the shared e-mail config. If that is empty, `database_only_mode` decides: true means `inbox_only`, false means `live`.
 
 ## Configuration
 
 ### Loading Configuration
 
-Configuration is loaded from a JSON file at `data/config/email_config.json`:
+Configuration is loaded from a JSON file at `var/data/platform/config/email_config.json`:
 
 ```python
-from university_system.infrastructure.email.config import load_config, save_config
+from education_system.systems.university.infrastructure.email.config import load_config, save_config
 
 # Load configuration
 config = load_config()
 
 # Update settings
-from university_system.infrastructure.email.config import configure_email_settings
+from education_system.systems.university.infrastructure.email.config import configure_email_settings
 configure_email_settings(
     sender_email='noreply@university.edu',
     sender_name='University System',
@@ -95,7 +98,8 @@ save_config()
 
 | Setting | Default | Description |
 |---------|---------|-------------|
-| `database_only_mode` | `True` | Store emails in DB only (no SMTP) |
+| `delivery_mode` | `''` | `inbox_only`, `sandbox` or `live`; empty uses `database_only_mode` |
+| `database_only_mode` | `True` | Fallback when `delivery_mode` is empty: true is `inbox_only`, false is `live` |
 | `templates_dir` | `templates/email` | Email template directory |
 | `sender_email` | `''` | Default sender email address |
 | `sender_name` | `''` | Default sender display name |
@@ -116,7 +120,7 @@ save_config()
 ### Ensuring Database Mode
 
 ```python
-from university_system.infrastructure.email.config import ensure_email_config_for_database_mode
+from education_system.systems.university.infrastructure.email.config import ensure_email_config_for_database_mode
 
 # Validate and set up database-only mode
 ensure_email_config_for_database_mode()
@@ -146,7 +150,7 @@ configure_email_settings(
 Passwords are **never** stored in configuration files. The system uses secure storage:
 
 ```python
-from university_system.infrastructure.email.config import (
+from education_system.systems.university.infrastructure.email.config import (
     set_smtp_password,
     get_smtp_password,
     delete_smtp_password
@@ -180,7 +184,7 @@ export SMTP_PORT=587
 ### Basic Email
 
 ```python
-from university_system.infrastructure.email.email_service import send_email
+from education_system.systems.university.infrastructure.email.email_service import send_email
 
 send_email(
     recipient_email='student@university.edu',
@@ -192,7 +196,7 @@ send_email(
 ### Send as Specific User
 
 ```python
-from university_system.infrastructure.email.email_service import send_email_as_user
+from education_system.systems.university.infrastructure.email.email_service import send_email_as_user
 
 send_email_as_user(
     recipient_email='student@university.edu',
@@ -205,7 +209,7 @@ send_email_as_user(
 ### Send as System
 
 ```python
-from university_system.infrastructure.email.email_service import send_email_as_system
+from education_system.systems.university.infrastructure.email.email_service import send_email_as_system
 
 send_email_as_system(
     recipient_email='student@university.edu',
@@ -244,7 +248,7 @@ Templates are stored in the configured `templates_dir` (default: `templates/emai
 ### Template Rendering
 
 ```python
-from university_system.infrastructure.email.template_utils import render_template
+from education_system.systems.university.infrastructure.email.template_utils import render_template
 
 body = render_template('welcome.html', {
     'student_name': 'John Doe',
@@ -261,15 +265,13 @@ Templates support variable substitution using placeholder syntax. Variables are 
 
 ### Queuing Emails
 
-The Email Manager provides in-memory queuing for batch operations:
+The Email Manager module sends each notification through the university outbox and keeps an in-memory record of them:
 
 ```python
-from university_system.infrastructure.email.email_manager import EmailManager
+from education_system.systems.university.infrastructure.email.email_manager import _queue_email, get_queued_emails, clear_email_queue
 
-manager = EmailManager()
-
-# Queue emails for batch processing
-manager._queue_email(
+# Send through the outbox and add to the in-memory record
+_queue_email(
     email_type='notification',
     recipient='student@university.edu',
     subject='Grade Posted',
@@ -281,16 +283,16 @@ manager._queue_email(
 
 ```python
 # Retrieve queued emails (max 1000 in-memory)
-queued = manager.get_queued_emails(limit=100)
+queued = get_queued_emails(limit=100)
 
 # Clear the queue after processing
-manager.clear_email_queue()
+clear_email_queue()
 ```
 
 ### Notification Shortcuts
 
 ```python
-from university_system.infrastructure.email.email_manager import (
+from education_system.systems.university.infrastructure.email.email_manager import (
     send_ticket_notification,
     send_confirmation_email,
     send_reply_notification,
@@ -346,19 +348,19 @@ The scheduler runs four automated tasks:
 **Background mode (production):**
 
 ```bash
-python -m university_system.scripts.email_scheduler_control start
+python tools/university/email_scheduler_control.py start
 ```
 
 **Foreground mode (debugging):**
 
 ```bash
-python -m university_system.scripts.email_scheduler_control run
+python tools/university/email_scheduler_control.py run
 ```
 
 **Programmatic start:**
 
 ```python
-from university_system.infrastructure.email.email_scheduler import start_scheduler
+from education_system.systems.university.infrastructure.email.email_scheduler import start_scheduler
 
 start_scheduler()  # Runs in a daemon thread
 ```
@@ -367,14 +369,14 @@ start_scheduler()  # Runs in a daemon thread
 
 ```bash
 # Check status
-python -m university_system.scripts.email_scheduler_control status
+python tools/university/email_scheduler_control.py status
 
 # Stop scheduler
-python -m university_system.scripts.email_scheduler_control stop
+python tools/university/email_scheduler_control.py stop
 ```
 
 ```python
-from university_system.infrastructure.email.email_scheduler import (
+from education_system.systems.university.infrastructure.email.email_scheduler import (
     stop_scheduler,
     is_scheduler_running,
     get_scheduled_jobs
@@ -412,23 +414,19 @@ stop_scheduler(timeout=10)
 
 ### Querying Email Logs
 
+Sent mail is recorded in the `email_log` table:
+
 ```python
-from university_system.infrastructure.email.email_db_utilities import (
-    get_email_logs,
-    get_email_stats
-)
+from education_system.systems.university.infrastructure.database.db import get_connection
 
-# Retrieve recent logs
-logs = get_email_logs(limit=50)
-
-# Get statistics
-stats = get_email_stats()
+with get_connection() as conn:
+    logs = conn.execute("SELECT * FROM email_log ORDER BY rowid DESC LIMIT 50").fetchall()
 ```
 
 ### Fixing Inbox Issues
 
 ```python
-from university_system.infrastructure.email.email_service import fix_inbox_display_issue
+from education_system.systems.university.infrastructure.email.email_service import fix_inbox_display_issue
 
 # Repair missing inbox messages
 fix_inbox_display_issue()
@@ -436,7 +434,7 @@ fix_inbox_display_issue()
 
 ## Admin Panel
 
-The Email Admin panel (`infrastructure/email/admin.py`) provides a comprehensive management interface with:
+The Email Admin panel (`src/education_system/systems/university/infrastructure/email/admin/`) provides a comprehensive management interface with:
 
 - **Email Configuration** - View and modify SMTP settings
 - **Email Logs** - Browse sent email history with filters
@@ -505,8 +503,8 @@ The `safe_log_email()` function handles schema mismatches gracefully by falling 
 
 ### Scheduler Not Running
 
-1. Check status: `python -m university_system.scripts.email_scheduler_control status`
-2. Review logs for errors: `logs/app.log`
+1. Check status: `python tools/university/email_scheduler_control.py status`
+2. Review logs for errors: `var/logs/university/app.log`
 3. Ensure the `schedule` library is installed
 4. Try running in foreground mode for debugging
 

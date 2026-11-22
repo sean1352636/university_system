@@ -32,7 +32,7 @@ class TrainStationApp:
                     s.departure_station || ' → ' || s.arrival_station as route,
                     t.price_paid,
                     t.payment_method,
-                    CASE WHEN r.id IS NOT NULL THEN 'refunded' ELSE 'active' END as status
+                    CASE WHEN r.refund_id IS NOT NULL THEN 'refunded' ELSE 'active' END as status
                 FROM train_station_tickets t
                 JOIN train_station_services s ON t.service_id = s.id
                 LEFT JOIN unified_refunds r ON t.ticket_number = r.reference_id AND r.source_type = 'train' AND r.reference_type = 'ticket'

@@ -1,191 +1,116 @@
 # Primary School Database Guide
 
-> Last Updated: March 2026
+> Last Updated: October 2026
 
 ## Overview
 
 The Primary School Management System uses SQLite as its database engine, storing all domain data in a single file at:
 
 ```
-education_system/primary_school/data/db_files/primary_school.db
+var/data/primary/primary.db
 ```
 
 Authentication data is stored separately in the shared auth database:
 
 ```
-education_system/shared/data/db_files/auth.db
+var/data/platform/db_files/auth.db
 ```
 
-This separation ensures that authentication concerns are decoupled from domain data and shared consistently across all four Education System subsystems (University, College, Secondary School, Primary School).
+This separation ensures that authentication concerns are decoupled from domain data and shared consistently across all seven Education System systems.
 
 ---
 
-## Table Listing by Domain Category
+## Table Listing by Domain Area
 
-### Academics
+Each domain module creates its own tables, so the authoritative definition of a table is the `_SCHEMA` string in its module under `src/education_system/systems/primary/domain/`. Tables are listed under the area that defines them.
 
-| Table | Description |
+| Area | Tables |
 |---|---|
-| `pupils` | Core pupil records (PRI0001 format IDs). Name, DOB, year group, key stage, class, status. |
-| `subjects` | Subjects offered (English, Maths, Science, etc.) across EYFS, KS1, KS2. |
-| `classes` | Class/form groups with assigned teacher and year group. |
-| `assessment_records` | Per-pupil assessment entries. Levels: Emerging, Developing, Expected, Greater Depth. |
-| `attendance` | Daily and session-level attendance marks per pupil. |
-| `timetable` | Lesson scheduling: subject, class, room, teacher, day, period. |
-| `homework` | Homework assignments with set/due dates, subject, class. |
-| `sats_results` | Key Stage 1 and Key Stage 2 SATs results. |
-| `phonics_screening` | Year 1 (and Year 2 retake) phonics screening check results. |
-| `reading_records` | Reading log entries: book, level, date, notes. |
-| `progress_records` | Longitudinal progress tracking across terms and year groups. |
-
-### Pastoral Care
-
-| Table | Description |
-|---|---|
-| `behaviour_incidents` | Behaviour incident records with type, severity, action taken. |
-| `rewards` | Positive recognition: house points, stickers, certificates. |
-| `safeguarding_concerns` | Safeguarding referrals and concern logs. Access-restricted. |
-| `send_records` | Special Educational Needs and Disabilities records, support plans. |
-| `pastoral_notes` | General pastoral care notes per pupil. |
-
-### Staff
-
-| Table | Description |
-|---|---|
-| `staff` | Staff directory records (STF0001 format IDs). Includes HR data. |
-| `cpd` | Continuing Professional Development records and training logs. |
-| `cover` | Cover arrangements for absent staff. |
-
-### Admin
-
-| Table | Description |
-|---|---|
-| `users` | Local user records (references shared auth for login). |
-| `settings` | Application settings and preferences. |
-| `admissions` | Pupil admission applications and status tracking. |
-| `finance` | Financial records: fees, payments, budgets. |
-| `data_exports` | Log of data export operations for audit purposes. |
-| `audit_log` | System-wide audit trail of user actions. |
-| `policies` | School policy documents and metadata. |
-| `documents` | Document storage metadata and references. |
-
-### Pupil Life
-
-| Table | Description |
-|---|---|
-| `clubs` | Extra-curricular clubs and pupil memberships. |
-| `meals` | Meal preferences, free school meals (FSM) status, dietary needs. |
-| `transport` | Transport arrangements (bus routes, walking, parent pickup). |
-| `trips` | School trip records with consent tracking. |
-| `library` | Library catalogue and loan records. |
-| `medical` | Medical conditions, medications, care plans. |
-| `class_groups` | Class group assignments and history. |
-| `consent` | Parental consent records (photos, trips, data sharing). |
-
-### Facilities
-
-| Table | Description |
-|---|---|
-| `room_bookings` | Room and resource booking records. |
-| `assets` | School asset inventory and tracking. |
-| `visitors` | Visitor sign-in/out log. |
-| `incidents` | Health & safety incident reports. |
-
-### Communication
-
-| Table | Description |
-|---|---|
-| `announcements` | School announcements and bulletins. |
-| `calendar_events` | School calendar events (term dates, INSET days, assemblies). |
-| `parents_evening` | Parents' evening scheduling and appointment slots. |
-| `communication_log` | Record of communications sent (letters, emails, SMS). |
-| `notifications` | In-app notification queue per user. |
-| `email_queue` | Outbound email queue with status tracking. |
+| Academics | `academic_breaks`, `academic_terms`, `academic_years`, `attendance_records`, `calendar_events`, `classes`, `club_memberships`, `clubs`, `homework_assignments`, `homework_submissions`, `lesson_plans`, `library_books`, `library_loans`, `subjects`, `timetable_slots`, `year_groups` |
+| Admissions | `admissions` |
+| Assessment | `assessment_records`, `early_warning_alerts`, `eyfs_profile_results`, `intervention_reviews`, `interventions`, `ks1_sats_results`, `ks2_sats_results`, `mtc_results`, `observations`, `phonics_assessments`, `phonics_screening_results`, `progress_reviews`, `progress_targets`, `pupil_phonics`, `pupil_reading_levels`, `pupil_targets`, `reading_level_assessments` |
+| Finance | `dinner_money_ledger`, `expense_claim_lines`, `expense_claims`, `funding_allocations`, `funding_streams`, `pp_interventions`, `pupil_premium_records`, `receipt_lines`, `receipts`, `trip_bookings`, `trip_payments`, `trips` |
+| Governance | `audit_report_defs`, `audit_report_runs`, `census_returns`, `compliance_items`, `gdpr_breaches`, `gdpr_consents`, `gdpr_processing`, `gdpr_requests`, `governance_meetings`, `governors`, `hs_actions`, `hs_incidents`, `learner_aims` (unused since 2026-11-05: ILR aims removed) (unused since 2026-11-05 — ILR aims removed), `policies`, `policy_revisions`, `risk_actions`, `risk_reviews`, `risks` |
+| Learners | `leavers`, `pupil_onboarding`, `pupils` |
+| Operations | `activity_events`, `announcements`, `asset_maintenance`, `assets`, `attachments`, `data_export_jobs`, `data_export_presets`, `documents`, `letter_templates`, `messages`, `newsletters`, `notifications`, `parent_contacts`, `parents_evening_bookings`, `parents_evenings`, `pupil_reports`, `todos`, `visitors`, `wraparound_attendance`, `wraparound_sessions` |
+| Pastoral | `absence_requests`, `accessibility_arrangements`, `attendance_concerns`, `behaviour_incidents`, `complaints`, `ed_incidents`, `emergency_events`, `feedback`, `first_aid_incidents`, `house_point_awards`, `houses`, `medical_records`, `school_council_meetings`, `school_council_members`, `school_council_motions`, `send_records`, `send_reviews`, `support_plan_reviews`, `support_plans`, `survey_responses`, `surveys`, `transport_arrangements`, `transport_routes`, `wellbeing_checkins` |
+| Safeguarding | `prevent_referrals`, `safeguarding_actions`, `safeguarding_concerns` |
+| Staff | `appraisal_objectives`, `appraisals`, `class_teacher_assignments`, `cover_arrangements`, `cpd_activities`, `cpd_records`, `dbs_checks`, `department_members`, `departments`, `recruitment_applicants`, `staff`, `staff_absences`, `staff_hr_events`, `staff_hr_records`, `staff_wellbeing_entries`, `teaching_assistants`, `vacancies` |
+| System settings | `settings_kv` |
 
 ---
 
 ## Connection Patterns
 
-All database access follows the service layer pattern used across the Education System platform.
+All database access goes through the domain modules; there is no central connection factory.
 
 ### Standard Connection Pattern
 
+`domain/learners/pupils/pupils.py` owns the connection that most other modules borrow. It reads its location from `education_system.paths`:
+
 ```python
-from infrastructure.database import connect
-from core.paths import DB_PATH
+import os
+import sqlite3
 
-class PupilService:
-    def _conn(self):
-        """Create a new database connection."""
-        return connect(DB_PATH)
+from education_system import paths
 
-    def get_pupil(self, pupil_id: str) -> dict | None:
-        conn = self._conn()
-        try:
-            cursor = conn.execute(
-                "SELECT * FROM pupils WHERE pupil_id = ?",
-                (pupil_id,)
-            )
-            row = cursor.fetchone()
-            return dict(row) if row else None
-        except Exception:
-            raise
-        finally:
-            conn.close()
+DB_PATH = paths.PRIMARY_PUPILS_DB
+_DATA_DIR = DB_PATH.parent
+
+
+def _connect() -> sqlite3.Connection:
+    os.makedirs(_DATA_DIR, exist_ok=True)
+    conn = sqlite3.connect(str(DB_PATH))
+    conn.row_factory = sqlite3.Row
+    conn.execute("PRAGMA foreign_keys=ON")
+    return conn
+
+
+def get_pupil(pupil_id: str):
+    init_db()
+    with _connect() as conn:
+        return conn.execute(
+            "SELECT * FROM pupils WHERE pupil_id = ?",
+            (pupil_id,),
+        ).fetchone()
 ```
 
 ### Key Rules
 
-1. **Always use `_conn()`** to obtain connections -- never construct them directly in business logic.
-2. **Always close connections** in a `finally` block to prevent resource leaks.
+1. **Always use `_connect()`** to obtain connections -- never construct them directly in business logic.
+2. **Always call `init_db()` first** so the module's tables exist.
 3. **Always use parameterized queries** (`?` placeholders) -- never interpolate user input into SQL strings.
-4. **Use `try/except/finally`** for every database operation to ensure cleanup on error.
+4. **Use a `with` block** so the transaction is committed or rolled back on error. It does not close the connection.
 
 ### Write Operations
 
 ```python
-def add_pupil(self, data: dict) -> str:
-    conn = self._conn()
-    try:
+def add_note(pupil_id: str, note: str) -> None:
+    init_db()
+    with _connect() as conn:
         conn.execute(
-            """INSERT INTO pupils (pupil_id, first_name, last_name, dob, year_group, key_stage)
-               VALUES (?, ?, ?, ?, ?, ?)""",
-            (data["pupil_id"], data["first_name"], data["last_name"],
-             data["dob"], data["year_group"], data["key_stage"])
+            "INSERT INTO pupil_notes (pupil_id, note) VALUES (?, ?)",
+            (pupil_id, note),
         )
         conn.commit()
-        return data["pupil_id"]
-    except Exception:
-        conn.rollback()
-        raise
-    finally:
-        conn.close()
 ```
 
 ---
 
 ## Schema Initialization
 
-The database schema is **auto-created on first run**. When the application starts, it checks for the existence of `primary_school.db` and creates all required tables if the file does not exist or is empty.
-
-Initialization is handled by the database infrastructure module:
-
-```
-education_system/primary_school/infrastructure/database/
-```
-
-Each domain module may also register its own tables during initialization, ensuring the schema is always up to date.
+The database schema is **created as modules are used**. Each module has an `init_db()` that runs its `_SCHEMA` with `CREATE TABLE IF NOT EXISTS`, guarded by a `_DB_READY` flag so it does its work once per process. These tables are not managed by Alembic. A module adds columns to an existing table in its own step, as `_migrate()` in `domain/learners/pupils/pupils.py` does.
 
 ### Manual Re-initialization
 
 To reset the database (destroys all data):
 
 ```bash
-rm education_system/primary_school/data/db_files/primary_school.db
-python -m education_system
+rm var/data/primary/primary.db
+python -m education_system --primary --gui
 ```
 
-The schema will be recreated automatically on the next launch.
+The tables will be recreated as each module is next used.
 
 ---
 
@@ -197,28 +122,27 @@ SQLite databases can be backed up by copying the file while no writes are in pro
 
 ```bash
 # Stop the application first, or use SQLite's backup API
-cp education_system/primary_school/data/db_files/primary_school.db \
-   education_system/primary_school/data/db_files/primary_school_backup_$(date +%Y%m%d_%H%M%S).db
+mkdir -p var/backups/primary
+cp var/data/primary/primary.db var/backups/primary/primary_backup_$(date +%Y%m%d_%H%M%S).db
 ```
 
 For a live backup without stopping the application (using SQLite's `.backup` command):
 
 ```bash
-sqlite3 education_system/primary_school/data/db_files/primary_school.db \
-  ".backup 'education_system/primary_school/data/db_files/primary_school_backup.db'"
+sqlite3 var/data/primary/primary.db \
+  ".backup 'var/backups/primary/primary_backup.db'"
 ```
 
 ### Restoring from Backup
 
 ```bash
 # Stop the application
-cp education_system/primary_school/data/db_files/primary_school_backup.db \
-   education_system/primary_school/data/db_files/primary_school.db
+cp var/backups/primary/primary_backup.db var/data/primary/primary.db
 ```
 
 ### Backup Recommendations
 
-- Schedule daily automated backups of both `primary_school.db` and `auth.db`.
+- Schedule daily automated backups of both `primary.db` and `auth.db`.
 - Retain at least 30 days of rolling backups.
 - Store backups in a separate location from the application server.
 - Test restore procedures termly.
@@ -226,44 +150,12 @@ cp education_system/primary_school/data/db_files/primary_school_backup.db \
 
 ---
 
-## WAL Mode and Concurrency
+## Journal Mode and Concurrency
 
-SQLite is configured to use **Write-Ahead Logging (WAL)** mode for improved concurrent read performance.
-
-### What WAL Mode Provides
-
-- **Multiple concurrent readers** can access the database simultaneously without blocking.
-- **A single writer** can write while readers continue to read from a consistent snapshot.
-- Improved performance for read-heavy workloads typical of school management systems.
-
-### WAL Mode Files
-
-When WAL mode is active, two additional files appear alongside the database:
-
-```
-primary_school.db          # Main database file
-primary_school.db-wal      # Write-ahead log
-primary_school.db-shm      # Shared memory index
-```
-
-These files are managed automatically by SQLite. Do not delete them while the application is running.
+The Primary School's connections do not switch on Write-Ahead Logging, so `primary.db` uses SQLite's default rollback journal.
 
 ### Concurrency Limitations
 
-- SQLite allows only **one writer at a time**. Concurrent writes will queue (with a configurable busy timeout).
+- SQLite allows only **one writer at a time**, and readers wait while a write commits. Python's `sqlite3` waits up to 5 seconds for a lock by default, then raises `database is locked`.
 - For the Primary School system's expected load (single school, tens of concurrent users), SQLite provides adequate performance.
-- If the application is deployed behind a multi-process web server, ensure the busy timeout is set appropriately to avoid `database is locked` errors.
-
-### Configuration
-
-WAL mode is typically enabled during database initialization:
-
-```python
-conn.execute("PRAGMA journal_mode=WAL")
-```
-
-The busy timeout is set to prevent immediate failures on write contention:
-
-```python
-conn.execute("PRAGMA busy_timeout=5000")  # 5 seconds
-```
+- If the application is deployed behind a multi-process web server, watch for `database is locked` errors.

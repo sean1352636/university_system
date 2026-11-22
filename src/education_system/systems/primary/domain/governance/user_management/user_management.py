@@ -6,7 +6,7 @@ on the *roles and access* perspective:
 
 * the **access matrix**: for each system, who has access and at what
   role level;
-* **role distribution**: per-role counts for the sixth-form system;
+* **role distribution**: per-role counts for the primary school system;
 * bulk operations: **grant a role to many users**, **revoke a role
   for many users**;
 * a summary aggregating active / inactive / locked / admin counts.
@@ -35,7 +35,10 @@ logger = logging.getLogger(__name__)
 
 # Recognised system keys — anything in user_systems beyond these still
 # appears in matrices, but these are the ones we surface first.
-KNOWN_SYSTEMS: tuple[str, ...] = ("sixth_form", "secondary", "university")
+KNOWN_SYSTEMS: tuple[str, ...] = (
+    "primary", "nursery", "secondary", "sixth_form", "fe_college", "apprenticeships",
+    "university",
+)
 
 
 # ── Access matrix / role distribution ──────────────────────────────
@@ -52,7 +55,7 @@ class SystemAccess:
 @dataclass
 class AccessMatrix:
     systems: list[SystemAccess]
-    users_without_sixthform: list[UserRow]
+    users_without_primary: list[UserRow]
 
 
 def access_matrix(auth: Any) -> AccessMatrix:
@@ -75,7 +78,7 @@ def access_matrix(auth: Any) -> AccessMatrix:
         ordered.append(per_system[k])
 
     without = [u for u in users if u.role_for(SYSTEM_KEY) is None]
-    return AccessMatrix(systems=ordered, users_without_sixthform=without)
+    return AccessMatrix(systems=ordered, users_without_primary=without)
 
 
 def role_distribution(auth: Any,
@@ -183,7 +186,7 @@ def list_inactive(auth: Any) -> list[UserRow]:
 class Snapshot:
     summary: _ua.Summary
     matrix: AccessMatrix
-    role_distribution_sixthform: dict[str, int]
+    role_distribution_primary: dict[str, int]
     locked: int
     inactive: int
     admins: int
@@ -195,7 +198,7 @@ def snapshot(auth: Any) -> Snapshot:
     return Snapshot(
         summary=s,
         matrix=m,
-        role_distribution_sixthform=role_distribution(auth, SYSTEM_KEY),
+        role_distribution_primary=role_distribution(auth, SYSTEM_KEY),
         locked=s.locked,
         inactive=s.inactive,
         admins=len(list_admins(auth)),

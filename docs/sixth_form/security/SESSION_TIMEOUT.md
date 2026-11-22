@@ -1,9 +1,8 @@
 # Idle / Inactivity Auto-Logout — College System
 
-This document describes the session-timeout behaviour added in
-**v8.74.0** for the Sixth Form College Management System. The same
-mechanism is also installed in the Secondary and Primary subsystems
-(see their respective `SESSION_TIMEOUT.md` files).
+This document describes the session-timeout behaviour of the Sixth Form
+College Management System. It uses the system's own idle-timeout
+helpers rather than the shared ones in `platform/delivery/`.
 
 ---
 
@@ -14,10 +13,10 @@ The College GUI **and** CLI auto-log-out the active user after
 terminals exposing student data and is enabled by default — no
 configuration is required.
 
-| Interface | Default | Configurable in |
+| Interface | Default | Configurable with |
 |-----------|---------|------------------|
-| GUI | 30 minutes | `college_system/modules/shared/gui/main_gui.py` (`CollegeApp.__init__`) |
-| CLI | 30 minutes | `college_system/modules/shared/cli/cli_main.py` (`main()`) |
+| GUI | 30 minutes | `EDU_SIXTHFORM_IDLE_TIMEOUT_MINUTES` |
+| CLI | 30 minutes | `EDU_SIXTHFORM_IDLE_TIMEOUT_MINUTES` |
 
 ---
 
@@ -25,41 +24,39 @@ configuration is required.
 
 ### GUI
 
-The GUI uses the shared helper
-`education_system.shared.gui.idle_timeout.attach_idle_timeout` which:
+`SixthFormMainGUI` starts an `IdleTimeoutWatcher` from
+`education_system.systems.sixth_form.interfaces.gui.idle_timeout`, which:
 
-- Records a `last_activity` timestamp on the root window using `time.monotonic()`.
-- Binds `<Motion>`, `<KeyPress>`, `<ButtonPress>`, and `<MouseWheel>`
-  events via `bind_all` so any user interaction anywhere in the
-  application resets the timer.
-- Wakes up every 30 seconds via `root.after()` and checks
-  `now - last_activity` against the configured timeout.
-- On `WM_DELETE_WINDOW`, the watchdog is cancelled cleanly so no stray
-  `after` callbacks fire into a destroyed root.
+- Records the time of the last activity.
+- Binds key, mouse-button, mouse-motion and mouse-wheel events so any
+  user interaction in the application resets the timer.
+- Wakes up every 30 seconds via `after()` and checks the idle time
+  against the configured timeout.
+- Shows a warning 60 seconds before the cut-off.
+- Is stopped cleanly when the window closes.
 
 This is **real activity tracking** — a user clicking around stays
 logged in indefinitely; only walking away triggers the logout.
 
+The parent and student portal windows start the same watcher.
+
 ### CLI
 
-The CLI uses `education_system.shared.cli.cli_helpers.enable_idle_timeout`
-which wraps the menu prompt (`get_choice`) in a `signal.SIGALRM` watchdog:
+The CLI uses `timed_input` from
+`education_system.systems.sixth_form.interfaces.cli.idle_timeout` for its
+menu prompts:
 
-- Each call to `get_choice()` installs a fresh `SIGALRM` for `timeout * 60` seconds.
-- If the user enters input within the window, the alarm is cancelled and the timer resets.
-- If the alarm fires while waiting on `input()`, an internal exception unwinds the stack, the message is printed, the logout callback runs, and the process exits cleanly.
-- The previous `SIGALRM` handler is restored in a `finally` block.
+- `timed_input()` is a drop-in replacement for `input()` that raises
+  `SessionTimeoutError` if nothing arrives within the timeout.
+- `stamp_activity()` records that the user just did something, so the
+  next main-loop prompt measures idle time across the whole session.
+- The main loop catches `SessionTimeoutError` and returns to the
+  universal login.
 
-> **Note:** Long-running actions inside menu handlers (e.g. typing a
-> long message body, browsing through a paginated report) are **not**
-> bounded by the timeout. The clock starts again the next time you
-> return to a menu prompt. In practice this means the timeout measures
-> "time since the last menu navigation", which is close enough to
-> idleness for most cases.
-
-> **Platform note:** `signal.SIGALRM` is Unix-only. On Windows the CLI
-> idle timeout is silently a no-op. The GUI watchdog works on all
-> platforms because it uses tk events instead of signals.
+> **Note:** Prompts inside a domain CLI's own menus (e.g. typing a long
+> message body) use plain `input()` and are **not** bounded by the
+> timeout. The clock is checked the next time you return to a main menu
+> prompt.
 
 ---
 
@@ -67,46 +64,28 @@ which wraps the menu prompt (`get_choice`) in a `signal.SIGALRM` watchdog:
 
 ### GUI
 
-1. A `Session Expired` warning dialog appears:
-   > *You have been logged out due to inactivity.*
-2. Click `OK`.
-3. `auth.logout()` is called, the universal-login redirect is requested via `request_logout()`, and the main window is destroyed.
+A warning appears 60 seconds before the cut-off. On timeout, the watcher
+calls `_idle_logout()`, which runs the same teardown as the Logout button
+and shows a notice explaining why the user is back at the login screen.
 
 ### CLI
 
-```
-⚠ Logged out after 30 minutes of inactivity.
-```
-
-The process then exits with status 0.
+The menu prompt stops waiting, the session ends and the CLI returns to the
+login.
 
 ---
 
 ## Changing the default timeout
 
-### GUI
+Set the environment variable before launching, for both interfaces:
 
-Edit `CollegeApp.__init__` in
-`education_system/college_system/modules/shared/gui/main_gui.py`:
-
-```python
-self._cancel_idle_timeout = attach_idle_timeout(
-    self, self._idle_logout, timeout_minutes=30,  # ← change this
-)
+```bash
+export EDU_SIXTHFORM_IDLE_TIMEOUT_MINUTES=15
+python -m education_system --college --gui
 ```
 
-### CLI
-
-Edit the `main()` function in
-`education_system/college_system/modules/shared/cli/cli_main.py`:
-
-```python
-enable_idle_timeout(30, _idle_logout)  # ← change this
-```
-
-To **disable** the timeout entirely, set the value to `0` (the helper
-treats anything `<= 0` as disabled) or call `disable_idle_timeout()`
-directly in the CLI.
+To **disable** the timeout entirely, set the value to `0`. An invalid or
+negative value is ignored and the default of 30 minutes is used.
 
 ---
 
@@ -116,8 +95,8 @@ directly in the CLI.
 |------|------------|
 | Lab/staffroom workstation left unattended | Auto-logout after 30 min ensures the next user can't see the previous session's records |
 | Remote-desktop session left open overnight | Same — the watchdog fires regardless of who is physically at the keyboard |
-| Forgotten SSH/CLI session | The CLI watchdog kills the process, freeing locked DB connections |
-| Long-running batch operation that legitimately needs more than 30 min | Timeout only applies between menu prompts, not inside an action's own `input()` calls |
+| Forgotten SSH/CLI session | The CLI prompt times out and ends the session |
+| Long-running batch operation that legitimately needs more than 30 min | Timeout only applies at main menu prompts, not inside an action's own `input()` calls |
 
 ---
 
@@ -125,10 +104,10 @@ directly in the CLI.
 
 | Component | File |
 |-----------|------|
-| Shared GUI helper | `education_system/shared/gui/idle_timeout.py` |
-| Shared CLI helper | `education_system/shared/cli/cli_helpers.py` |
-| College GUI wiring | `education_system/college_system/modules/shared/gui/main_gui.py` |
-| College CLI wiring | `education_system/college_system/modules/shared/cli/cli_main.py` |
+| GUI watcher | `src/education_system/systems/sixth_form/interfaces/gui/idle_timeout.py` |
+| CLI helper | `src/education_system/systems/sixth_form/interfaces/cli/idle_timeout.py` |
+| College GUI wiring | `src/education_system/systems/sixth_form/interfaces/gui/gui_main.py` |
+| College CLI wiring | `src/education_system/systems/sixth_form/interfaces/cli/cli_main.py` |
 
 ---
 

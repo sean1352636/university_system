@@ -15,7 +15,7 @@ import random
 import pytest
 
 from education_system.systems.sixth_form.domain.academics.academic_year import (
-    academic_year_views as views,
+    planning as academic_year_planning,
 )
 
 
@@ -215,7 +215,7 @@ def test_ics_round_trip_terms(fresh_ay_db):
     assert "BEGIN:VCALENDAR" in ics_body
     assert "END:VCALENDAR" in ics_body
 
-    parsed = views._parse_ics(ics_body)
+    parsed = academic_year_planning._parse_ics(ics_body)
     # Filter just the term events
     by_name = {p[0].split(" (")[0]: (p[1], p[2]) for p in parsed}
     assert by_name["Autumn"] == ("2025-09-01", "2025-12-19")
@@ -234,7 +234,7 @@ def test_parse_ics_handles_line_folding(fresh_ay_db):
         "END:VEVENT\r\n"
         "END:VCALENDAR\r\n"
     )
-    out = views._parse_ics(body)
+    out = academic_year_planning._parse_ics(body)
     assert len(out) == 1
     name, s, e = out[0]
     assert "Long event" in name

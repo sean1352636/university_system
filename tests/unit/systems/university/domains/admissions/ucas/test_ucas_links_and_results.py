@@ -15,6 +15,16 @@ from education_system.systems.university.domains.admissions.domain.ucas import (
 )
 
 
+def _patch_results(monkeypatch, grades, *, released=True, release_at=None):
+    """Stand in for the sixth form adapter's ``exam_results_for_admissions``."""
+    rows = [{"subject": subject, "grade": grade,
+             "qualification_type": "A Level", "released": released,
+             "release_at": release_at, "season": "Summer", "year": 2027}
+            for subject, grade in grades.items()]
+    monkeypatch.setattr(results_day, "_results_for",
+                        lambda student_id, year=None: [dict(r) for r in rows])
+
+
 @pytest.fixture
 def link(ucas_env):
     """A link, created the way a decision creates one."""
@@ -142,8 +152,7 @@ class TestResultsDayBoard:
         return ucas_env
 
     def _grades(self, monkeypatch, grades):
-        monkeypatch.setattr(results_day, "_achieved_grades",
-                            lambda student_id, year: grades)
+        _patch_results(monkeypatch, grades)
 
     def test_met_conditions_are_recognised(self, firm_conditional,
                                            monkeypatch):
@@ -170,21 +179,37 @@ class TestResultsDayBoard:
         self._grades(monkeypatch, {"Mathematics": "A"})
         assert results_day.board()[0].verdict == results_day.PENDING
 
-    def test_a_prose_condition_always_goes_to_a_person(self, ucas_env,
-                                                       monkeypatch):
-        """The case that must never be automated: the profile is met but
-        the subject requirement cannot be checked."""
+    def _offer(self, ucas_env, text):
         ucas_env.uni_ucas.record_decision(
             ucas_env.our_choice_id, "Conditional Offer",
-            offer_terms="ABB including B in Mathematics",
-            terms={"grade_requirement": "ABB including B in Mathematics"},
+            offer_terms=text, terms={"grade_requirement": text},
             issued_by="a.officer")
         ucas_env.sf_ucas.update_choice(ucas_env.our_choice_id,
                                        {"final_decision": "Firm"})
+
+    def test_an_unreadable_prose_condition_goes_to_a_person(
+            self, ucas_env, monkeypatch):
+        """What cannot be read word by word is never treated as checked."""
+        self._offer(ucas_env, "ABB excluding General Studies")
         self._grades(monkeypatch, {"Mathematics": "B", "Physics": "A",
                                    "Chemistry": "A"})
-        candidate = results_day.board()[0]
-        assert candidate.verdict == results_day.REVIEW
+        assert results_day.board()[0].verdict == results_day.REVIEW
+
+    def test_a_subject_requirement_is_checked_in_full(self, ucas_env,
+                                                      monkeypatch):
+        self._offer(ucas_env, "ABB including B in Mathematics")
+        self._grades(monkeypatch, {"Mathematics": "B", "Physics": "A",
+                                   "Chemistry": "A"})
+        assert results_day.board()[0].verdict == results_day.MET
+        self._grades(monkeypatch, {"Mathematics": "C", "Physics": "A",
+                                   "Chemistry": "A"})
+        assert results_day.board()[0].verdict == results_day.MISSED
+
+    def test_a_tariff_offer_is_checked(self, ucas_env, monkeypatch):
+        self._offer(ucas_env, "112 UCAS points")
+        self._grades(monkeypatch, {"Mathematics": "B", "Physics": "C",
+                                   "Chemistry": "C"})          # 40+32+32
+        assert results_day.board()[0].verdict == results_day.MET
 
     def test_applicants_without_a_reply_are_not_on_the_board(self, ucas_env,
                                                              monkeypatch):
@@ -205,16 +230,14 @@ class TestConfirmingAPlace:
             issued_by="a.officer")
         ucas_env.sf_ucas.update_choice(ucas_env.our_choice_id,
                                        {"final_decision": "Firm"})
-        monkeypatch.setattr(
-            results_day, "_achieved_grades",
-            lambda student_id, year: {"Mathematics": "A", "Physics": "A",
-                                      "Chemistry": "B"})
+        _patch_results(monkeypatch, {"Mathematics": "A", "Physics": "A",
+                                     "Chemistry": "B"})
         return ucas_env
 
     def test_confirming_makes_the_offer_unconditional(self, firm_met):
         results_day.confirm_place(firm_met.our_choice_id,
                                   decided_by="a.officer")
-        choice = firm_met.sf_ucas.get_choice(firm_met.our_choice_id)
+        choice = firm_met.uni_ucas._sf().get_choice(firm_met.our_choice_id)
         assert choice.decision_status == "Unconditional Offer"
 
     def test_confirming_settles_the_sixth_forms_application(self, firm_met):
@@ -236,13 +259,13 @@ class TestConfirmingAPlace:
         would = results_day.auto_confirm(decided_by="a.officer")
         assert [c.choice_id for c in would] == [firm_met.our_choice_id]
         # Nothing actually changed.
-        assert firm_met.sf_ucas.get_choice(
+        assert firm_met.uni_ucas._sf().get_choice(
             firm_met.our_choice_id).decision_status == "Conditional Offer"
 
     def test_auto_confirm_when_asked_actually_confirms(self, firm_met):
         done = results_day.auto_confirm(decided_by="a.officer", dry_run=False)
         assert len(done) == 1
-        assert firm_met.sf_ucas.get_choice(
+        assert firm_met.uni_ucas._sf().get_choice(
             firm_met.our_choice_id).decision_status == "Unconditional Offer"
 
     def test_auto_confirm_leaves_a_missed_condition_alone(self, ucas_env,
@@ -255,22 +278,65 @@ class TestConfirmingAPlace:
             issued_by="a.officer")
         ucas_env.sf_ucas.update_choice(ucas_env.our_choice_id,
                                        {"final_decision": "Firm"})
-        monkeypatch.setattr(results_day, "_achieved_grades",
-                            lambda student_id, year: {"Mathematics": "C",
-                                                      "Physics": "C",
-                                                      "Chemistry": "D"})
+        _patch_results(monkeypatch, {"Mathematics": "C", "Physics": "C",
+                                     "Chemistry": "D"})
         assert results_day.auto_confirm(dry_run=False) == []
-        assert ucas_env.sf_ucas.get_choice(
+        assert ucas_env.uni_ucas._sf().get_choice(
             ucas_env.our_choice_id).decision_status == "Conditional Offer"
 
     def test_declining_records_a_rejection_with_a_reason(self, firm_met):
         results_day.decline_place(firm_met.our_choice_id,
                                   decided_by="a.officer",
                                   reason="Missed by two grades.")
-        assert firm_met.sf_ucas.get_choice(
+        assert firm_met.uni_ucas._sf().get_choice(
             firm_met.our_choice_id).decision_status == "Rejected"
         assert firm_met.decision_log.last_decision(
             firm_met.our_choice_id).notes == "Missed by two grades."
+
+
+class TestResultsEmbargo:
+    """Nothing is confirmed or e-mailed before results are public."""
+
+    @pytest.fixture
+    def embargoed(self, ucas_env, monkeypatch):
+        ucas_env.uni_ucas.record_decision(
+            ucas_env.our_choice_id, "Conditional Offer",
+            offer_terms="ABB", terms={"grade_requirement": "ABB"},
+            issued_by="a.officer")
+        ucas_env.sf_ucas.update_choice(ucas_env.our_choice_id,
+                                       {"final_decision": "Firm"})
+        _patch_results(monkeypatch, {"Mathematics": "A", "Physics": "A",
+                                     "Chemistry": "B"},
+                       released=False, release_at="2999-08-13 08:00")
+        return ucas_env
+
+    def test_a_met_verdict_is_worked_out_but_held(self, embargoed):
+        candidate = results_day.board()[0]
+        assert candidate.verdict == results_day.MET
+        assert candidate.is_embargoed
+
+    def test_confirming_under_embargo_holds_and_sends_nothing(self, embargoed):
+        out = results_day.confirm_place(embargoed.our_choice_id,
+                                        decided_by="a.officer")
+        assert isinstance(out, results_day.Hold)
+        assert out.held_by == "a.officer"
+        assert embargoed.uni_ucas._sf().get_choice(
+            embargoed.our_choice_id).decision_status == "Conditional Offer"
+        assert results_day.board()[0].hold is not None
+
+    def test_a_hold_is_applied_once_results_are_released(self, embargoed,
+                                                         monkeypatch):
+        results_day.auto_confirm(decided_by="a.officer", dry_run=False)
+        assert embargoed.uni_ucas._sf().get_choice(
+            embargoed.our_choice_id).decision_status == "Conditional Offer"
+        _patch_results(monkeypatch, {"Mathematics": "A", "Physics": "A",
+                                     "Chemistry": "B"})
+        counts = results_day.release_held(released_by="b.officer")
+        assert counts["Applied"] == 1
+        assert embargoed.uni_ucas._sf().get_choice(
+            embargoed.our_choice_id).decision_status == "Unconditional Offer"
+        hold = results_day.list_holds(status="Applied")[0]
+        assert hold.released_by == "b.officer" and hold.released_at
 
 
 class TestClearingReconciliation:

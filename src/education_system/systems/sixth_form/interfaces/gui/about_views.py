@@ -5,9 +5,10 @@ from __future__ import annotations
 import logging
 import tkinter as tk
 from pathlib import Path
-from tkinter import filedialog, messagebox, ttk
+from tkinter import ttk
+from education_system.platform.delivery.gui.parented_dialogs import filedialog, messagebox
 from typing import Any
-from education_system.systems.sixth_form.interfaces import about as data
+from education_system.systems.sixth_form.domain.governance.about import about as data
 from education_system.platform import branding
 
 logger = logging.getLogger(__name__)

@@ -11,10 +11,10 @@ Tests the degree audit core functionality including:
 
 import pytest
 from datetime import datetime
-from education_system.systems.university.domains.academics.domain.services.degree_audit.db_schema import (
+from education_system.systems.university.domains.progression.domain.degree_audit.db_schema import (
     initialize_degree_audit_database
 )
-from education_system.systems.university.domains.academics.domain.services.degree_audit.degree_audit_core import (
+from education_system.systems.university.domains.progression.domain.degree_audit.degree_audit_core import (
     DegreeProgramManager,
     DegreeProgressManager,
     WhatIfScenarioManager,
@@ -406,9 +406,40 @@ class TestGraduationAuditManager:
         assert 'credit_requirement_met' in audit_result
         assert 'can_graduate' in audit_result
 
+    @staticmethod
+    def _ratified_award(student_id):
+        """The student and an assessment board's ratified, released award —
+        approval is refused without one."""
+        with get_connection() as conn:
+            conn.execute("INSERT OR IGNORE INTO students (student_id, first_name, last_name, "
+                         "course, status) VALUES (?, 'Grace', 'Hopper', 'CS', 'Active')",
+                         (student_id,))
+            conn.execute("""CREATE TABLE IF NOT EXISTS assessment_boards (
+                board_id INTEGER PRIMARY KEY AUTOINCREMENT, board_type TEXT NOT NULL,
+                name TEXT NOT NULL, academic_year TEXT NOT NULL, status TEXT NOT NULL
+                DEFAULT 'draft', created_by TEXT NOT NULL)""")
+            conn.execute("""CREATE TABLE IF NOT EXISTS ratified_student_awards (
+                award_id INTEGER PRIMARY KEY AUTOINCREMENT, board_id INTEGER NOT NULL,
+                student_id TEXT NOT NULL, programme_code TEXT NOT NULL, award_name TEXT NOT NULL,
+                classification TEXT, academic_year TEXT NOT NULL,
+                status TEXT NOT NULL DEFAULT 'ratified', ratified_at TEXT NOT NULL,
+                ratified_by TEXT NOT NULL, release_authorised INTEGER NOT NULL DEFAULT 1,
+                superseded_by_award_id INTEGER,
+                UNIQUE(student_id, programme_code, academic_year))""")
+            board = conn.execute("INSERT INTO assessment_boards (board_type, name, "
+                                 "academic_year, status, created_by) VALUES ('award', "
+                                 "'Test board', '2024/25', 'ratified', 'test')").lastrowid
+            conn.execute("INSERT INTO ratified_student_awards (board_id, student_id, "
+                         "programme_code, award_name, classification, academic_year, "
+                         "ratified_at, ratified_by) VALUES (?, ?, 'CS', 'BSc (Hons) Computer "
+                         "Science', 'First Class', '2024/25', '2025-05-01', 'senate')",
+                         (board, student_id))
+            conn.commit()
+
     def test_approve_graduation(self):
         """Test approving a student for graduation"""
         self.setUp()
+        self._ratified_award('GRAD-STU002')
 
         # Run audit first
         GraduationAuditManager.run_graduation_audit(
@@ -424,6 +455,25 @@ class TestGraduationAuditManager:
         )
 
         assert result is True
+        assert GraduationAuditManager.last_refusal == ""
+
+    def test_approve_graduation_refused_without_a_ratified_award(self):
+        """No ratified, released award: approval is refused with the reason."""
+        self.setUp()
+        with get_connection() as conn:
+            conn.execute("INSERT OR IGNORE INTO students (student_id, first_name, last_name, "
+                         "course, status) VALUES ('GRAD-STU003', 'Alan', 'Turing', 'CS', "
+                         "'Active')")
+            conn.commit()
+
+        result = GraduationAuditManager.approve_graduation(
+            student_id='GRAD-STU003',
+            program_id=self.program_id,
+            graduation_date='2025-05-15'
+        )
+
+        assert result is False
+        assert "award" in GraduationAuditManager.last_refusal
 
 
 class TestIntegration:

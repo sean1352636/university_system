@@ -23,8 +23,8 @@ This guide covers student housing allocation, room management, applications, mai
 The Housing & Accommodation module manages the full lifecycle of student housing, from building and room setup through applications, assignments, maintenance, and payments. It supports both CLI and GUI interfaces with role-based access for administrators, staff, and students.
 
 **Key files:**
-- Service: `modules/domain/housing/services/housing_accommodation.py`
-- GUI: `modules/domain/housing/gui/housing_accommodation_gui/`
+- Service: `src/education_system/systems/university/domains/operations/domain/campus/housing/services/housing_accommodation/`
+- GUI: `src/education_system/systems/university/domains/operations/interfaces/gui/campus/housing/housing_accommodation_gui/`
 
 ## Getting Started
 
@@ -41,7 +41,7 @@ From the main menu, select **Housing Accommodation Management**. The menu adapts
 Launch the GUI from the main application window or directly:
 
 ```python
-from university_system.modules.domain.housing.gui.housing_accommodation_gui import display_housing_accommodation_menu_gui
+from education_system.systems.university.domains.operations.interfaces.gui.campus.housing.housing_accommodation_gui import display_housing_accommodation_menu_gui
 display_housing_accommodation_menu_gui(auth_instance)
 ```
 

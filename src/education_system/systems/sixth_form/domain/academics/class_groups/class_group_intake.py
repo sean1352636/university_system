@@ -155,6 +155,7 @@ def candidates_for_course(course_id: int,
           JOIN students s ON s.student_id = e.student_id
          WHERE e.academic_year = ?
            AND e.year_group = ?
+           AND e.archived_at IS NULL
            AND e.status IN ({status_marks})
          ORDER BY s.last_name COLLATE NOCASE, s.first_name COLLATE NOCASE
     """

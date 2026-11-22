@@ -1,10 +1,10 @@
 # Primary School Management System -- Development Guide
 
-Last Updated: March 2026
+Last Updated: October 2026
 
 ## Overview
 
-The Primary School Management System is one of four subsystems in the Education System platform. It manages Reception through Year 6, covering EYFS, KS1, and KS2 key stages. Built with Python, tkinter (GUI), CLI menus, and SQLite.
+The Primary School Management System is one of seven systems in the Education System platform. It manages Reception through Year 6, covering EYFS, KS1, and KS2 key stages. Built with Python, tkinter (GUI), CLI menus, and SQLite.
 
 ---
 
@@ -13,20 +13,20 @@ The Primary School Management System is one of four subsystems in the Education 
 ### Prerequisites
 
 - Python 3.11+
-- The project virtualenv at `./venv/`
+- A virtualenv with the project installed
 
 ### Install Dependencies
 
 ```bash
-./venv/bin/pip install -r requirements.lock
+make install-dev
 ```
 
-Key dependencies: `tkinter` (stdlib), `sqlite3` (stdlib), `flask`, `bcrypt`, `pyotp`, `pytest`, `black`, `ruff`.
+This installs from `requirements-dev.lock`. Key dependencies: `tkinter` (stdlib), `sqlite3` (stdlib), `flask`, `bcrypt`, `pyotp`, `pytest`, `ruff`.
 
 ### Verify Setup
 
 ```bash
-python -c "from education_system.primary_school.core.paths import DB_FILE; print(DB_FILE)"
+python -c "from education_system.paths import PRIMARY_PUPILS_DB; print(PRIMARY_PUPILS_DB)"
 ```
 
 ---
@@ -36,30 +36,35 @@ python -c "from education_system.primary_school.core.paths import DB_FILE; print
 ### GUI Mode
 
 ```bash
-# Via the universal launcher (shared login across all 4 systems)
+# Via the universal launcher (shared login across all 7 systems)
 python -m education_system
 
-# Directly (standalone login)
-python -m education_system.primary_school
+# Directly
+python -m education_system --primary --gui
 ```
 
 ### CLI Mode
 
 ```bash
-python -m education_system.primary_school.cli.cli_main
+python -m education_system --primary --cli
 ```
+
+`gui_main.py` and `cli_main.py` refuse to start standalone: they need the session the launcher creates.
 
 ### Running Tests
 
 ```bash
-# All primary school tests
-python -m pytest education_system/primary_school/tests/ -v
+# All primary school unit tests
+python -m pytest tests/unit/systems/primary/ -v
 
 # Specific test file
-python -m pytest education_system/primary_school/tests/test_pupil_service.py -v
+python -m pytest tests/unit/systems/primary/test_paths.py -v
+
+# Smoke test
+python -m pytest tests/smoke/primary/ -v
 
 # With coverage
-python -m pytest education_system/primary_school/tests/ --cov=education_system.primary_school -v
+python -m pytest tests/unit/systems/primary/ --cov=education_system.systems.primary -v
 ```
 
 ### Default Login Credentials
@@ -69,48 +74,56 @@ python -m pytest education_system/primary_school/tests/ --cov=education_system.p
 | `admin3`   | `admin1234`   | admin   |
 | `staff3`   | `staff1234`   | teacher |
 | `student3` | `student1234` | student |
-| `parent`   | `Parent@123`  | parent  |
+| `parent3`  | `parent1234`  | parent  |
+
+These are seeded only when `EDU_DEV_SEED=true`. See [DEFAULT_ACCOUNTS.md](../../reference/DEFAULT_ACCOUNTS.md).
 
 ---
 
 ## Project Structure
 
 ```
-education_system/primary_school/
-├── core/                          # Cross-cutting concerns
-│   ├── defaults.py                # Constants (year groups, key stages, assessment levels, IDs)
-│   ├── exceptions.py              # Exception hierarchy rooted at SchoolSystemError
-│   ├── logs.py                    # Logging configuration
-│   └── paths.py                   # Centralised file paths (DB_FILE, DATA_DIR, etc.)
-├── infrastructure/                # Technical foundations
-│   ├── auth/                      # Authentication (wraps shared auth module)
-│   ├── database/
-│   │   ├── db.py                  # connect(), transaction(), set_db_path()
-│   │   ├── schema.py              # CREATE TABLE IF NOT EXISTS definitions
-│   │   └── constants.py           # DB-level constants (SEND statuses, etc.)
-│   └── validation/                # Input validators
-├── modules/domain/                # Business domain modules (7 categories)
-│   ├── academics/                 # pupils, subjects, classes, assessment, attendance,
-│   │                              # timetable, homework, sats, phonics, reading_records, progress
-│   ├── pastoral_care/             # behaviour, rewards, safeguarding, send, pastoral
-│   ├── staff/                     # hr, cpd, cover, staff_directory
-│   ├── admin/                     # users, settings, admissions, finance, data_export,
-│   │                              # audit_log, policies, documents
-│   ├── pupil_life/                # clubs, meals, transport, trips, library, medical,
-│   │                              # class_groups, consent
-│   ├── communication/             # email, notifications, announcements, calendar,
-│   │                              # parents_evening, communication_log
-│   └── facilities/                # room_booking, assets, visitors, incidents
-├── cli/                           # CLI interface
-│   ├── cli_main.py                # Entry point, login prompt, menu routing
-│   └── menus/                     # One *_cli.py per domain module
-├── api/                           # Flask REST API
-├── main_gui.py                    # GUI entry point, login window, sidebar navigation
-├── data/
-│   ├── db_files/primary_school.db # SQLite database
-│   └── config/                    # Runtime configuration
-├── logs/                          # Application log files
-└── tests/                         # Test suite
+src/education_system/systems/primary/
+├── manifest.py                    # Key, display name and interfaces
+├── cli_main.py                    # CLI entry point, CATEGORIES and menu routing
+├── gui_main.py                    # GUI entry point, NAV_CATEGORIES and sidebar
+├── domain/                        # Business domain modules, by area
+│   ├── academics/                 # academic_year, attendance, calendar, classes, enrichment,
+│   │                              # homework, lesson_plans, library, subjects, timetable, year_groups
+│   ├── admissions/                # admissions, enrolment
+│   ├── assessment/                # assessment, early_warning, eyfs_profile, intervention_tracking,
+│   │                              # ks1_sats, ks2_sats, mtc, observations, phonics, phonics_screening,
+│   │                              # progress, reading_levels, target_setting
+│   ├── finance/                   # dinner_money, expense_claims, funding, pupil_premium, receipts, trips
+│   ├── governance/                # audit, compliance, gdpr, governance, health_safety, mfa,
+│   │                              # policies, risk_management, user_management
+│   ├── learners/pupils/           # pupils, onboarding, leavers, bulk_operations
+│   ├── operations/                # assets, attachments, communications, daily_care, document_hub,
+│   │                              # reporting, todo, visitors
+│   ├── pastoral/                  # absence_requests, accessibility, attendance_concerns, behaviour,
+│   │                              # complaints, emergency, equality_diversity, feedback, health,
+│   │                              # house_points, pupil_support, school_council, send, surveys,
+│   │                              # transport, wellbeing
+│   ├── safeguarding/              # safeguarding, prevent_duty
+│   └── staff/                     # appraisals, class_teachers, cover, cpd, dbs_checks, departments,
+│                                  # recruitment, staff, staff_absence, staff_hr, staff_wellbeing,
+│                                  # teaching_assistants
+├── infrastructure/                # Currently only __init__.py
+└── interfaces/
+    ├── cli/                       # Terminal menus, mirroring the domain areas
+    ├── gui/                       # tkinter windows, mirroring the domain areas
+    └── about.py, change_password.py, settings.py, user_accounts.py
+
+src/education_system/api/primary/
+├── routes/                        # One Flask blueprint per module (ALL_BLUEPRINTS)
+└── schemas/                       # Scaffolded, not yet implemented
+
+src/education_system/paths.py      # Every path, including PRIMARY_PUPILS_DB
+var/data/primary/primary.db        # SQLite database (shared by all modules)
+var/backups/primary/               # Backups
+
+tests/unit/systems/primary/        # Unit tests
+tests/smoke/primary/               # Smoke test
 ```
 
 ---
@@ -120,58 +133,53 @@ education_system/primary_school/
 The system follows a layered architecture with strict dependency direction:
 
 ```
-infrastructure  -->  core  -->  domain modules  -->  service layer  -->  gui / cli
-     |                |              |                     |
-  database         paths          module dir          business logic     presentation
-  auth             exceptions     __init__.py         CRUD operations    tkinter frames
-  validation       defaults                           DB queries         CLI menus
-                   logs
+gui / cli / api routes  -->  domain modules  -->  SQLite
+                                  |
+                          education_system.paths
+                          education_system.platform
 ```
 
 ### Layer Responsibilities
 
-| Layer              | Location                       | Purpose                                         |
-|--------------------|--------------------------------|--------------------------------------------------|
-| **Infrastructure** | `infrastructure/`              | Database connections, authentication, validation |
-| **Core**           | `core/`                        | Paths, exceptions, logging, constants            |
-| **Domain Modules** | `modules/domain/<category>/`   | Business logic organised by domain               |
-| **Service**        | `<module>/services/`           | CRUD operations, DB queries, business rules      |
-| **GUI**            | `<module>/gui/`                | tkinter frames, Treeview tables, dialogs         |
-| **CLI**            | `cli/menus/`                   | Text-based menus for each module                 |
+| Layer              | Location                                 | Purpose                                         |
+|--------------------|------------------------------------------|--------------------------------------------------|
+| **Domain Modules** | `domain/<area>/`                         | Schema, validation, CRUD, business rules        |
+| **GUI**            | `interfaces/gui/<area>/`                 | tkinter windows, Treeview tables, dialogs       |
+| **CLI**            | `interfaces/cli/<area>/`                 | Text-based menus for each module                |
+| **API**            | `education_system/api/primary/routes/`   | REST blueprints over the domain modules         |
+| **Platform**       | `education_system/platform/`             | Shared auth, validators, messaging, delivery    |
 
 ### Data Flow
 
-1. GUI/CLI calls service method (e.g., `PupilService.create_pupil()`)
-2. Service validates input via `infrastructure/validation/`
-3. Service calls `connect()` from `infrastructure/database/db.py`
-4. Service executes parameterized SQL, commits, closes connection
-5. Service raises domain exception (e.g., `PupilError`) on failure
-6. GUI/CLI catches exception and displays error to user
+1. GUI/CLI calls a domain function (e.g., `pupils.create_pupil()`)
+2. The function validates its input and raises `ValidationError` if it is wrong
+3. The function calls `init_db()`, then opens a connection with `_connect()`
+4. The function executes parameterized SQL and commits
+5. The function returns a dataclass
+6. GUI/CLI catches `ValidationError` and displays the error to the user
 
 ---
 
 ## Key Conventions
 
-### Service-First Design
+### Domain-First Design
 
-All business logic lives in service classes. GUI and CLI are thin presentation layers that call service methods. Never put SQL or business rules in GUI/CLI code.
+All business logic lives in domain modules. GUI and CLI are thin presentation layers that call them. Never put SQL or business rules in GUI/CLI code, and keep domain modules free of Tkinter, Flask and CLI code.
 
 ### Database Connection Pattern
 
-Every service method manages its own connection with `try/finally`:
+Every function opens its connection in a `with` block:
 
 ```python
-def some_operation(self):
-    conn = self._conn()
-    try:
-        cursor = conn.cursor()
-        cursor.execute("SELECT ...", (param,))
-        return cursor.fetchall()
-    finally:
-        conn.close()
+def some_operation(pupil_id):
+    init_db()
+    with _connect() as conn:
+        return conn.execute(
+            "SELECT * FROM pupils WHERE pupil_id = ?", (pupil_id,)
+        ).fetchone()
 ```
 
-For write operations, call `conn.commit()` before the `finally` block. Alternatively, use the `transaction()` context manager from `db.py`.
+For write operations, call `conn.commit()` inside the block. The `with` block commits or rolls back the transaction; it does not close the connection.
 
 ### Parameterized Queries
 
@@ -179,35 +187,37 @@ Always use `?` placeholders. Never use f-strings or `.format()` to build SQL:
 
 ```python
 # Correct
-cursor.execute("SELECT * FROM pupils WHERE year_group = ?", (year_group,))
+conn.execute("SELECT * FROM pupils WHERE year_group = ?", (year_group,))
 
 # NEVER do this
-cursor.execute(f"SELECT * FROM pupils WHERE year_group = '{year_group}'")
+conn.execute(f"SELECT * FROM pupils WHERE year_group = '{year_group}'")
 ```
+
+Where an identifier must be dynamic, validate it with `education_system.platform.kernel.database.sql_safety`.
 
 ### Exception Handling
 
-Raise domain-specific exceptions from `core/exceptions.py`. All exceptions inherit from `SchoolSystemError`:
+There is no system-wide exception hierarchy. Raise `ValidationError` for invalid input, using the class in `domain/learners/pupils/pupils.py` or the module's own:
 
 ```python
-from education_system.primary_school.core.exceptions import PupilError
+from education_system.systems.primary.domain.learners.pupils.pupils import ValidationError
 
 if not first_name:
-    raise PupilError("First name is required")
+    raise ValidationError("First name is required")
 ```
 
 ### Centralised Paths
 
-Import paths from `core/paths.py`. Never hardcode file paths:
+Import paths from `education_system.paths`. Never hardcode file paths:
 
 ```python
-from education_system.primary_school.core.paths import DB_FILE, DATA_DIR, LOGS_DIR
+from education_system.paths import PRIMARY_DATA_DIR, PRIMARY_PUPILS_DB, PRIMARY_BACKUP_DIR
 ```
 
 ### ID Formats
 
-- Pupil IDs: `PRI0001`, `PRI0002`, ... (prefix from `PUPIL_ID_PREFIX`)
-- Staff IDs: `STF0001`, `STF0002`, ... (prefix from `STAFF_ID_PREFIX`)
+- Pupil IDs: `P` followed by digits (`ID_PREFIX` in `domain/learners/pupils/pupils.py`)
+- Staff IDs: `T` followed by digits (`ID_PREFIX` in `domain/staff/staff.py`)
 
 ---
 
@@ -216,22 +226,22 @@ from education_system.primary_school.core.paths import DB_FILE, DATA_DIR, LOGS_D
 ### Formatting and Linting
 
 ```bash
-# Format code with Black
-python -m black education_system/primary_school/
+# Format code with Ruff
+make format
 
 # Lint with Ruff
-python -m ruff check education_system/primary_school/
+python -m ruff check src/education_system/systems/primary/
 
 # Auto-fix linting issues
-python -m ruff check --fix education_system/primary_school/
+python -m ruff check --fix src/education_system/systems/primary/
 ```
 
 ### Style Rules
 
 - PEP 8 naming: `snake_case` for functions/variables, `PascalCase` for classes
-- Line length: 88 characters (Black default)
+- Line length: 100 characters
 - Imports: standard library, then third-party, then local (Ruff enforces order)
-- Docstrings: required on all modules, classes, and public methods
+- Docstrings: required on all modules, classes, and public functions
 - Type hints: encouraged on public APIs
 
 ---
@@ -243,22 +253,22 @@ python -m ruff check --fix education_system/primary_school/
 python -m education_system
 
 # Run CLI
-python -m education_system.primary_school.cli.cli_main
+python -m education_system --primary --cli
 
 # Format + lint
-python -m black education_system/primary_school/ && \
-python -m ruff check education_system/primary_school/
+make format && python -m ruff check src/education_system/systems/primary/
 
 # Run tests with coverage
-python -m pytest education_system/primary_school/tests/ \
-    --cov=education_system.primary_school --cov-report=term-missing -v
+python -m pytest tests/unit/systems/primary/ \
+    --cov=education_system.systems.primary --cov-report=term-missing -v
 
-# Check database schema
+# Check database schema (read-only)
 python -c "
-from education_system.primary_school.infrastructure.database.db import connect
-conn = connect()
-tables = conn.execute(\"SELECT name FROM sqlite_master WHERE type='table'\").fetchall()
-for t in tables: print(t['name'])
+import sqlite3
+from education_system.paths import PRIMARY_PUPILS_DB
+conn = sqlite3.connect(f'file:{PRIMARY_PUPILS_DB}?mode=ro', uri=True)
+for (name,) in conn.execute(\"SELECT name FROM sqlite_master WHERE type='table'\"):
+    print(name)
 conn.close()
 "
 ```

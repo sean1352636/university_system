@@ -7,6 +7,7 @@ import logging
 import tkinter as tk
 from tkinter import messagebox, ttk
 from education_system.platform import branding
+from education_system.systems.primary.interfaces.gui import kit
 from education_system.systems.primary.domain.staff.staff_absence import (
     staff_absence as data,
 )
@@ -23,9 +24,6 @@ from education_system.systems.primary.domain.staff.staff_absence.staff_absence i
     NOTIFICATION_METHODS,
     STATUSES,
     ValidationError,
-)
-from education_system.systems.primary.domain.staff import (
-    staff as staff_data,
 )
 
 logger = logging.getLogger(__name__)
@@ -45,14 +43,24 @@ _STATUS_TAGS = {
 
 def open_staff_absence_window(parent=None) -> None:
     data.init_db()
-    master = getattr(parent, "root", parent)
-    win = tk.Toplevel(master) if master is not None else tk.Tk()
-    win.title(f"Staff Absence — {branding.SYSTEM_NAME}")
-    win.geometry(WIN_GEOMETRY)
-    win.minsize(*WIN_MINSIZE)
+    if parent is None:
+        win = tk.Tk()
+        win.title(f"Staff Absence — {branding.SYSTEM_NAME}")
+        win.geometry(WIN_GEOMETRY)
+        win.minsize(*WIN_MINSIZE)
+        frame = ttk.Frame(win, padding=10)
+        frame.pack(fill="both", expand=True)
+        _draw_staff_absence(frame)
+        return
+    kit.show_page(parent, "Staff Absence", _draw_staff_absence)
 
-    nb = ttk.Notebook(win)
-    nb.pack(fill="both", expand=True, padx=10, pady=10)
+
+def _draw_staff_absence(parent) -> None:
+    kit.page_heading(parent, "Staff Absence",
+                     "Report absences, arrange cover and track "
+                     "returns and return-to-work meetings.")
+    nb = ttk.Notebook(parent)
+    nb.pack(fill="both", expand=True)
 
     AbsenceTab(nb, scope="active_today",      label="Active Today")
     AbsenceTab(nb, scope="open",              label="Open")
@@ -62,16 +70,6 @@ def open_staff_absence_window(parent=None) -> None:
     AbsenceTab(nb, scope="rtw_overdue",       label="RTW Overdue")
     AbsenceTab(nb, scope="all",               label="All")
     SummaryTab(nb)
-
-
-def _staff_options() -> list[tuple[str, str]]:
-    rows = sorted(staff_data.list_staff(),
-                   key=lambda s: s.staff_id)
-    return [(s.staff_id,
-             f"{s.staff_id} — "
-             f"{getattr(s, 'first_name', '')} "
-             f"{getattr(s, 'last_name', '')}".strip())
-            for s in rows]
 
 
 class AbsenceTab:
@@ -86,8 +84,10 @@ class AbsenceTab:
     def _build(self) -> None:
         bar = ttk.Frame(self.frame)
         bar.pack(fill="x", padx=8, pady=(8, 4))
-        ttk.Label(bar, text="Staff id:").pack(side="left")
-        self.f_staff = ttk.Entry(bar, width=12)
+        ttk.Label(bar, text="Staff:").pack(side="left")
+        self.f_staff = kit.StaffPicker(bar, active_only=False,
+                                       width=30)
+        self.f_staff.bind_change(lambda _v: self.refresh())
         self.f_staff.pack(side="left", padx=(2, 8))
         ttk.Label(bar, text="Type:").pack(side="left")
         self.f_type = ttk.Combobox(bar,
@@ -398,7 +398,7 @@ class AbsenceEditor:
         self.win = tk.Toplevel(parent)
         self.win.title(f"Edit absence #{absence.absence_id}"
                           if absence else "New absence")
-        self.win.geometry("880x820")
+        self.win.geometry("880x700")
         self.win.transient(parent); self.win.after_idle(self.win.grab_set)
         self._build()
         if absence:
@@ -406,8 +406,7 @@ class AbsenceEditor:
         self.win.wait_window()
 
     def _build(self) -> None:
-        body = ttk.Frame(self.win)
-        body.pack(fill="both", expand=True, padx=12, pady=10)
+        body, footer = kit.scrolled_form(self.win)
         body.grid_columnconfigure(1, weight=1)
         body.grid_columnconfigure(3, weight=1)
         self.vars: dict[str, tk.Variable] = {}
@@ -416,13 +415,12 @@ class AbsenceEditor:
 
         ttk.Label(body, text="Staff*").grid(
             row=0, column=0, sticky="w", padx=4, pady=2)
-        self.staff_combo = ttk.Combobox(body, state="readonly",
-                                            width=42)
-        opts = _staff_options()
-        self._staff_opts = opts
-        self.staff_combo["values"] = [lbl for _, lbl in opts]
+        self.staff_var = tk.StringVar()
+        self.staff_combo = kit.StaffPicker(body, self.staff_var,
+                                           active_only=False,
+                                           width=42)
         self.staff_combo.grid(row=0, column=1, columnspan=3,
-                                  sticky="ew", padx=4, pady=2)
+                                  sticky="w", padx=4, pady=2)
 
         def entry(row, col, label, key, width=22):
             ttk.Label(body, text=label).grid(
@@ -432,35 +430,49 @@ class AbsenceEditor:
             ttk.Entry(body, textvariable=v, width=width).grid(
                 row=row, column=col + 1, sticky="ew", padx=4, pady=2)
 
-        def combo(row, col, label, key, values, width=22):
+        def field(row, col, label, key, make):
             ttk.Label(body, text=label).grid(
                 row=row, column=col, sticky="w", padx=4, pady=2)
             v = tk.StringVar()
             self.vars[key] = v
-            ttk.Combobox(body, textvariable=v, values=values,
-                          state="readonly", width=width).grid(
-                row=row, column=col + 1, sticky="ew", padx=4, pady=2)
+            make(v).grid(row=row, column=col + 1, sticky="w",
+                         padx=4, pady=2)
 
-        entry(1, 0, "Absence date*", "absence_date")
+        def combo(row, col, label, key, values, width=22):
+            field(row, col, label, key,
+                  lambda v: kit.ChoiceField(body, v, choices=values,
+                                            width=width))
+
+        def date(row, col, label, key):
+            field(row, col, label, key, lambda v: kit.DateField(body, v))
+
+        def staff_name(row, col, label, key):
+            field(row, col, label, key,
+                  lambda v: kit.StaffPicker(body, v, by="name",
+                                            width=30))
+
+        date(1, 0, "Absence date*", "absence_date")
         combo(1, 2, "Absence type*", "absence_type",
                  ABSENCE_TYPES)
-        entry(2, 0, "Expected return", "expected_return")
-        entry(2, 2, "Actual return", "actual_return")
+        date(2, 0, "Expected return", "expected_return")
+        date(2, 2, "Actual return", "actual_return")
         entry(3, 0, "Reason", "reason", width=48)
-        entry(4, 0, "Notified on", "notified_on")
+        date(4, 0, "Notified on", "notified_on")
         combo(4, 2, "Notification", "notification_method",
                  NOTIFICATION_METHODS)
-        entry(5, 0, "Notified by", "notified_by")
+        staff_name(5, 0, "Notified by", "notified_by")
         combo(5, 2, "Certificate", "certificate_type",
                  CERTIFICATE_TYPES)
-        entry(6, 0, "Cert received on", "cert_received_on")
+        date(6, 0, "Cert received on", "cert_received_on")
         combo(6, 2, "Cover source*", "cover_source",
                  COVER_SOURCES)
-        entry(7, 0, "Cover arranged by", "cover_arranged_by")
+        staff_name(7, 0, "Cover arranged by", "cover_arranged_by")
         combo(7, 2, "Status*", "status", STATUSES)
-        entry(8, 0, "RTW meeting on", "rtw_meeting_on")
-        entry(8, 2, "RTW completed by", "rtw_completed_by")
-        entry(9, 0, "Days lost", "days_lost")
+        date(8, 0, "RTW meeting on", "rtw_meeting_on")
+        staff_name(8, 2, "RTW completed by", "rtw_completed_by")
+        field(9, 0, "Days lost", "days_lost",
+              lambda v: kit.NumberField(body, v, to=366,
+                                        increment=0.5))
 
         flags = ttk.LabelFrame(body, text="Flags")
         flags.grid(row=10, column=0, columnspan=4,
@@ -491,8 +503,7 @@ class AbsenceEditor:
             self.texts[key] = t
             row += 1
 
-        bar = ttk.Frame(self.win)
-        bar.pack(fill="x", padx=12, pady=(0, 10))
+        bar = footer
         ttk.Button(bar, text="Save",
                     command=self._save).pack(side="right", padx=4)
         ttk.Button(bar, text="Cancel",
@@ -513,10 +524,7 @@ class AbsenceEditor:
     def _load(self) -> None:
         a = self.absence
         assert a is not None
-        for i, (sid, _) in enumerate(self._staff_opts):
-            if sid == a.staff_id:
-                self.staff_combo.current(i)
-                break
+        self.staff_var.set(a.staff_id or "")
         for key in ("absence_date", "expected_return",
                      "actual_return", "absence_type", "reason",
                      "notified_on", "notification_method",
@@ -535,13 +543,13 @@ class AbsenceEditor:
             self.texts[k].insert("1.0", getattr(a, k) or "")
 
     def _save(self) -> None:
-        idx = self.staff_combo.current()
-        if idx < 0:
+        staff_id = self.staff_var.get().strip()
+        if not staff_id:
             messagebox.showerror("Staff Absence",
                                     "Pick a staff member.",
                                     parent=self.win)
             return
-        payload: dict = {"staff_id": self._staff_opts[idx][0]}
+        payload: dict = {"staff_id": staff_id}
         for k, v in self.vars.items():
             payload[k] = v.get().strip()
         for k, t in self.texts.items():
@@ -576,15 +584,13 @@ class CoverDialog:
         ttk.Label(body, text="Source*").grid(
             row=0, column=0, sticky="w", padx=4, pady=4)
         self.source = tk.StringVar(value=absence.cover_source)
-        ttk.Combobox(body, textvariable=self.source,
-                      values=COVER_SOURCES,
-                      state="readonly").grid(
-            row=0, column=1, sticky="ew", padx=4, pady=4)
+        kit.ChoiceField(body, self.source, choices=COVER_SOURCES).grid(
+            row=0, column=1, sticky="w", padx=4, pady=4)
         ttk.Label(body, text="Arranged by").grid(
             row=1, column=0, sticky="w", padx=4, pady=4)
         self.by = tk.StringVar(value=absence.cover_arranged_by or "")
-        ttk.Entry(body, textvariable=self.by).grid(
-            row=1, column=1, sticky="ew", padx=4, pady=4)
+        kit.StaffPicker(body, self.by, by="name", width=34).grid(
+            row=1, column=1, sticky="w", padx=4, pady=4)
         ttk.Label(body, text="Cover notes").grid(
             row=2, column=0, sticky="nw", padx=4, pady=4)
         self.notes = tk.Text(body, height=6, width=48,
@@ -622,7 +628,7 @@ class ReturnDialog:
         self.win = tk.Toplevel(parent)
         self.win.title(
             f"Record return — #{absence.absence_id}")
-        self.win.geometry("420x200")
+        self.win.geometry("560x200")
         self.win.transient(parent); self.win.after_idle(self.win.grab_set)
         body = ttk.Frame(self.win)
         body.pack(fill="both", expand=True, padx=12, pady=10)
@@ -631,14 +637,15 @@ class ReturnDialog:
             row=0, column=0, sticky="w", padx=4, pady=4)
         self.when = tk.StringVar(
             value=_dt.date.today().isoformat())
-        ttk.Entry(body, textvariable=self.when, width=14).grid(
+        kit.DateField(body, self.when).grid(
             row=0, column=1, sticky="w", padx=4, pady=4)
         ttk.Label(body, text="Days lost (blank=auto)").grid(
             row=1, column=0, sticky="w", padx=4, pady=4)
         self.days = tk.StringVar(
             value=str(absence.days_lost)
             if absence.days_lost is not None else "")
-        ttk.Entry(body, textvariable=self.days, width=8).grid(
+        kit.NumberField(body, self.days, to=366,
+                        increment=0.5).grid(
             row=1, column=1, sticky="w", padx=4, pady=4)
         bar = ttk.Frame(self.win)
         bar.pack(fill="x", padx=12, pady=(0, 10))
@@ -677,7 +684,7 @@ class RTWDialog:
         self.result: Absence | None = None
         self.win = tk.Toplevel(parent)
         self.win.title(f"RTW meeting — #{absence.absence_id}")
-        self.win.geometry("420x200")
+        self.win.geometry("560x200")
         self.win.transient(parent); self.win.after_idle(self.win.grab_set)
         body = ttk.Frame(self.win)
         body.pack(fill="both", expand=True, padx=12, pady=10)
@@ -686,13 +693,13 @@ class RTWDialog:
             row=0, column=0, sticky="w", padx=4, pady=4)
         self.by = tk.StringVar(value=absence.rtw_completed_by
                                   or "")
-        ttk.Entry(body, textvariable=self.by).grid(
-            row=0, column=1, sticky="ew", padx=4, pady=4)
+        kit.StaffPicker(body, self.by, by="name", width=34).grid(
+            row=0, column=1, sticky="w", padx=4, pady=4)
         ttk.Label(body, text="Meeting on").grid(
             row=1, column=0, sticky="w", padx=4, pady=4)
         self.when = tk.StringVar(
             value=_dt.date.today().isoformat())
-        ttk.Entry(body, textvariable=self.when, width=14).grid(
+        kit.DateField(body, self.when).grid(
             row=1, column=1, sticky="w", padx=4, pady=4)
         bar = ttk.Frame(self.win)
         bar.pack(fill="x", padx=12, pady=(0, 10))

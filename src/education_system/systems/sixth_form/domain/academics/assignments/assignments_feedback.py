@@ -32,7 +32,8 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from education_system.systems.sixth_form.domain.academics.assignments import (
-    assignments as core,
+    models as assignments_models,
+    store as assignments_store,
 )
 from education_system import paths
 
@@ -40,7 +41,7 @@ logger = logging.getLogger(__name__)
 
 DB_PATH = paths.SIXTH_FORM_ASSIGNMENTS_DB
 
-ValidationError = core.ValidationError
+ValidationError = assignments_models.ValidationError
 
 
 # ── Vocabularies ──────────────────────────────────────────────────
@@ -145,7 +146,7 @@ class Appeal:
 class TurnaroundRow:
     """One submission's marking turnaround against the target."""
 
-    submission: core.Submission
+    submission: assignments_models.Submission
     student_name: str
     target_days: int
     days_taken: int | None = None
@@ -261,7 +262,7 @@ def init_db() -> None:
     global _DB_READY
     if _DB_READY:
         return
-    core.init_db()
+    assignments_store.init_db()
     with _connect() as conn:
         conn.executescript(_SCHEMA)
         conn.commit()
@@ -299,8 +300,8 @@ def _days_between(start: str | None, end: str | None) -> int | None:
         return None
 
 
-def _require_submission(submission_id: int) -> core.Submission:
-    sub = core.get_submission(submission_id)
+def _require_submission(submission_id: int) -> assignments_models.Submission:
+    sub = assignments_store.get_submission(submission_id)
     if sub is None:
         raise ValidationError(f"No submission #{submission_id}")
     return sub
@@ -320,8 +321,8 @@ def _student_names() -> dict[str, str]:
 
 # ── Feedback release (item 22) ────────────────────────────────────
 
-def is_visible_to_student(submission: core.Submission,
-                          assignment: core.Assignment | None = None,
+def is_visible_to_student(submission: assignments_models.Submission,
+                          assignment: assignments_models.Assignment | None = None,
                           *, today: str | None = None) -> bool:
     """Can this student see their mark and feedback yet?
 
@@ -333,10 +334,10 @@ def is_visible_to_student(submission: core.Submission,
     if submission.feedback_released:
         return True
     if assignment is None:
-        assignment = core.get_assignment(submission.assignment_id)
+        assignment = assignments_store.get_assignment(submission.assignment_id)
     if assignment is None:
         return False
-    policy = assignment.release_policy or core.DEFAULT_RELEASE_POLICY
+    policy = assignment.release_policy or assignments_models.DEFAULT_RELEASE_POLICY
     if policy == "Immediate":
         return True
     if policy == "On date":
@@ -347,7 +348,7 @@ def is_visible_to_student(submission: core.Submission,
 
 def release_submission(submission_id: int, *,
                         released_by: str | None = None,
-                        notify: bool = True) -> core.Submission:
+                        notify: bool = True) -> assignments_models.Submission:
     """Publish one student's mark and feedback to them."""
     init_db()
     sub = _require_submission(submission_id)
@@ -383,11 +384,11 @@ def release_assignment(assignment_id: int, *,
     together rather than by looking over a shoulder.
     """
     init_db()
-    a = core.get_assignment(assignment_id)
+    a = assignments_store.get_assignment(assignment_id)
     if a is None:
         raise ValidationError(f"No assignment #{assignment_id}")
     released = already = skipped = 0
-    for sub in core.list_submissions(assignment_id=assignment_id):
+    for sub in assignments_store.list_submissions(assignment_id=assignment_id):
         if sub.feedback_released:
             already += 1
             continue
@@ -409,7 +410,7 @@ def release_assignment(assignment_id: int, *,
                           skipped_unmarked=skipped)
 
 
-def unrelease_submission(submission_id: int) -> core.Submission:
+def unrelease_submission(submission_id: int) -> assignments_models.Submission:
     """Pull a result back. Use when something was published in error."""
     init_db()
     _require_submission(submission_id)
@@ -431,9 +432,9 @@ def release_due(*, today: str | None = None) -> ReleaseResult:
     Idempotent, so it is safe to run from a scheduler every morning.
     """
     init_db()
-    day = core._validate_date(today, "today") or _today()
+    day = assignments_store._validate_date(today, "today") or _today()
     released = already = skipped = 0
-    for a in core.list_assignments():
+    for a in assignments_store.list_assignments():
         if a.release_policy != "On date":
             continue
         if not a.release_on or a.release_on > day:
@@ -448,17 +449,17 @@ def release_due(*, today: str | None = None) -> ReleaseResult:
 
 
 def list_pending_release(*, assignment_id: int | None = None
-                          ) -> list[core.Submission]:
+                          ) -> list[assignments_models.Submission]:
     """Marked work the student cannot see yet."""
     init_db()
-    out: list[core.Submission] = []
-    assignments = ([core.get_assignment(assignment_id)]
+    out: list[assignments_models.Submission] = []
+    assignments = ([assignments_store.get_assignment(assignment_id)]
                    if assignment_id is not None
-                   else core.list_assignments())
+                   else assignments_store.list_assignments())
     for a in assignments:
         if a is None:
             continue
-        for sub in core.list_submissions(assignment_id=a.assignment_id):
+        for sub in assignments_store.list_submissions(assignment_id=a.assignment_id):
             if sub.marks is None and not sub.feedback:
                 continue
             if not is_visible_to_student(sub, a):
@@ -466,17 +467,17 @@ def list_pending_release(*, assignment_id: int | None = None
     return out
 
 
-def _notify_release(submission: core.Submission) -> None:
+def _notify_release(submission: assignments_models.Submission) -> None:
     """Tell the student their result is available. Best-effort."""
     try:
         from education_system.systems.sixth_form import SYSTEM_NAME
-        from education_system.systems.sixth_form.domain.operations.communications.messages import (
+        from education_system.systems.sixth_form.domains.communications.domain.messages import (
             email_templates,
         )
         from education_system.systems.sixth_form.domain.learners.students import (
             students as _students,
         )
-        a = core.get_assignment(submission.assignment_id)
+        a = assignments_store.get_assignment(submission.assignment_id)
         student = _students.get_student(submission.student_id)
         if a is None or student is None:
             return
@@ -511,13 +512,13 @@ def _notify_release(submission: core.Submission) -> None:
 
 # ── Anonymous marking (item 21) ───────────────────────────────────
 
-def anonymous_label(submission: core.Submission) -> str:
+def anonymous_label(submission: assignments_models.Submission) -> str:
     """A stable pseudonym for one submission."""
     return f"{ANONYMOUS_PREFIX} {submission.submission_id:04d}"
 
 
-def display_name(submission: core.Submission,
-                  assignment: core.Assignment | None = None,
+def display_name(submission: assignments_models.Submission,
+                  assignment: assignments_models.Assignment | None = None,
                   *, names: dict[str, str] | None = None,
                   reveal: bool = False) -> str:
     """What to show a marker for this student.
@@ -527,7 +528,7 @@ def display_name(submission: core.Submission,
     swayed about, and staff need real names to talk to students.
     """
     if assignment is None:
-        assignment = core.get_assignment(submission.assignment_id)
+        assignment = assignments_store.get_assignment(submission.assignment_id)
     if (not reveal and assignment is not None
             and assignment.anonymous_marking
             and not submission.feedback_released):
@@ -537,12 +538,12 @@ def display_name(submission: core.Submission,
     return names.get(submission.student_id, submission.student_id)
 
 
-def display_student_id(submission: core.Submission,
-                        assignment: core.Assignment | None = None,
+def display_student_id(submission: assignments_models.Submission,
+                        assignment: assignments_models.Assignment | None = None,
                         *, reveal: bool = False) -> str:
     """The student id, or the pseudonym while marking is anonymous."""
     if assignment is None:
-        assignment = core.get_assignment(submission.assignment_id)
+        assignment = assignments_store.get_assignment(submission.assignment_id)
     if (not reveal and assignment is not None
             and assignment.anonymous_marking
             and not submission.feedback_released):
@@ -550,10 +551,10 @@ def display_student_id(submission: core.Submission,
     return submission.student_id
 
 
-def is_anonymous(submission: core.Submission,
-                  assignment: core.Assignment | None = None) -> bool:
+def is_anonymous(submission: assignments_models.Submission,
+                  assignment: assignments_models.Assignment | None = None) -> bool:
     if assignment is None:
-        assignment = core.get_assignment(submission.assignment_id)
+        assignment = assignments_store.get_assignment(submission.assignment_id)
     return bool(assignment and assignment.anonymous_marking
                  and not submission.feedback_released)
 
@@ -563,7 +564,7 @@ def is_anonymous(submission: core.Submission,
 def acknowledge(submission_id: int, *,
                  response: str | None = None,
                  acknowledged_on: str | None = None
-                 ) -> core.Submission:
+                 ) -> assignments_models.Submission:
     """Record that the student has read their feedback.
 
     Refuses when the feedback isn't visible yet — an acknowledgement of
@@ -571,11 +572,11 @@ def acknowledge(submission_id: int, *,
     """
     init_db()
     sub = _require_submission(submission_id)
-    a = core.get_assignment(sub.assignment_id)
+    a = assignments_store.get_assignment(sub.assignment_id)
     if not is_visible_to_student(sub, a):
         raise ValidationError(
             "This feedback has not been released to the student yet")
-    when = core._validate_date(acknowledged_on, "Acknowledged on") \
+    when = assignments_store._validate_date(acknowledged_on, "Acknowledged on") \
         or _today()
     with _connect() as conn:
         conn.execute(
@@ -589,7 +590,7 @@ def acknowledge(submission_id: int, *,
     return _require_submission(submission_id)
 
 
-def clear_acknowledgement(submission_id: int) -> core.Submission:
+def clear_acknowledgement(submission_id: int) -> assignments_models.Submission:
     init_db()
     _require_submission(submission_id)
     with _connect() as conn:
@@ -602,17 +603,17 @@ def clear_acknowledgement(submission_id: int) -> core.Submission:
 
 
 def list_unacknowledged(*, assignment_id: int | None = None
-                         ) -> list[core.Submission]:
+                         ) -> list[assignments_models.Submission]:
     """Released feedback the student has not confirmed reading."""
     init_db()
-    out: list[core.Submission] = []
-    assignments = ([core.get_assignment(assignment_id)]
+    out: list[assignments_models.Submission] = []
+    assignments = ([assignments_store.get_assignment(assignment_id)]
                    if assignment_id is not None
-                   else core.list_assignments())
+                   else assignments_store.list_assignments())
     for a in assignments:
         if a is None:
             continue
-        for sub in core.list_submissions(assignment_id=a.assignment_id):
+        for sub in assignments_store.list_submissions(assignment_id=a.assignment_id):
             if sub.acknowledged_on:
                 continue
             if is_visible_to_student(sub, a):
@@ -625,13 +626,13 @@ def acknowledgement_rate(*, assignment_id: int | None = None
     """(acknowledged, visible) — the inspection-friendly ratio."""
     init_db()
     acknowledged = visible = 0
-    assignments = ([core.get_assignment(assignment_id)]
+    assignments = ([assignments_store.get_assignment(assignment_id)]
                    if assignment_id is not None
-                   else core.list_assignments())
+                   else assignments_store.list_assignments())
     for a in assignments:
         if a is None:
             continue
-        for sub in core.list_submissions(assignment_id=a.assignment_id):
+        for sub in assignments_store.list_submissions(assignment_id=a.assignment_id):
             if not is_visible_to_student(sub, a):
                 continue
             visible += 1
@@ -642,7 +643,7 @@ def acknowledgement_rate(*, assignment_id: int | None = None
 
 # ── Marking turnaround SLA (item 20) ──────────────────────────────
 
-def sla_target(assignment: core.Assignment) -> int:
+def sla_target(assignment: assignments_models.Assignment) -> int:
     return (assignment.marking_sla_days
             if assignment.marking_sla_days is not None
             else DEFAULT_MARKING_SLA_DAYS)
@@ -658,12 +659,12 @@ def turnaround_report(*, assignment_id: int | None = None,
     be late to mark.
     """
     init_db()
-    day = core._validate_date(today, "today") or _today()
+    day = assignments_store._validate_date(today, "today") or _today()
     if assignment_id is not None:
-        a = core.get_assignment(assignment_id)
+        a = assignments_store.get_assignment(assignment_id)
         assignments = [a] if a is not None else []
     else:
-        assignments = core.list_assignments(teacher_like=teacher,
+        assignments = assignments_store.list_assignments(teacher_like=teacher,
                                              subject_name=subject_name)
     names = _student_names()
     target = (sla_target(assignments[0]) if len(assignments) == 1
@@ -672,7 +673,7 @@ def turnaround_report(*, assignment_id: int | None = None,
                                target_days=target)
     for a in assignments:
         a_target = sla_target(a)
-        for sub in core.list_submissions(assignment_id=a.assignment_id):
+        for sub in assignments_store.list_submissions(assignment_id=a.assignment_id):
             if not sub.submitted_on:
                 continue
             row = TurnaroundRow(
@@ -701,7 +702,7 @@ def teacher_sla_summary(*, today: str | None = None
     """Turnaround broken down by teacher, for a head of department."""
     init_db()
     out: dict[str, TurnaroundReport] = {}
-    for a in core.list_assignments():
+    for a in assignments_store.list_assignments():
         who = a.teacher or "(unassigned)"
         report = turnaround_report(assignment_id=a.assignment_id,
                                     today=today)
@@ -715,14 +716,14 @@ def teacher_sla_summary(*, today: str | None = None
 
 # ── Appeals and remark requests (item 24) ─────────────────────────
 
-def appeal_window_days(assignment: core.Assignment) -> int:
+def appeal_window_days(assignment: assignments_models.Assignment) -> int:
     return (assignment.appeal_window_days
             if assignment.appeal_window_days is not None
             else DEFAULT_APPEAL_WINDOW_DAYS)
 
 
-def appeal_deadline(submission: core.Submission,
-                     assignment: core.Assignment | None = None
+def appeal_deadline(submission: assignments_models.Submission,
+                     assignment: assignments_models.Assignment | None = None
                      ) -> str | None:
     """Last day this student can appeal, measured from release.
 
@@ -731,7 +732,7 @@ def appeal_deadline(submission: core.Submission,
     would eat the whole appeal window.
     """
     if assignment is None:
-        assignment = core.get_assignment(submission.assignment_id)
+        assignment = assignments_store.get_assignment(submission.assignment_id)
     if assignment is None:
         return None
     start = submission.feedback_released_on or submission.marked_on
@@ -758,13 +759,13 @@ def raise_appeal(submission_id: int, *,
     """
     init_db()
     sub = _require_submission(submission_id)
-    a = core.get_assignment(sub.assignment_id)
-    grounds_text = core._require(grounds, "Grounds for appeal").strip()
+    a = assignments_store.get_assignment(sub.assignment_id)
+    grounds_text = assignments_store._require(grounds, "Grounds for appeal").strip()
     kind = (appeal_type or DEFAULT_APPEAL_TYPE).strip()
     if kind not in APPEAL_TYPES:
         raise ValidationError(
             f"Appeal type must be one of: {', '.join(APPEAL_TYPES)}")
-    when = core._validate_date(raised_on, "Raised on") or _today()
+    when = assignments_store._validate_date(raised_on, "Raised on") or _today()
 
     if not is_visible_to_student(sub, a):
         raise ValidationError(
@@ -851,7 +852,7 @@ def start_review(appeal_id: int, *, reviewer: str,
     if not appeal.is_open:
         raise ValidationError(
             f"Appeal #{appeal_id} is already {appeal.status}")
-    who = core._require(reviewer, "Reviewer").strip()
+    who = assignments_store._require(reviewer, "Reviewer").strip()
     with _connect() as conn:
         conn.execute(
             "UPDATE coursework_appeals SET status = 'Under review', "
@@ -884,7 +885,7 @@ def resolve_appeal(appeal_id: int, *,
         raise ValidationError(
             f"Resolving status must be one of: "
             f"{', '.join(CLOSED_APPEAL_STATUSES)}")
-    outcome_text = core._require(outcome, "Outcome").strip()
+    outcome_text = assignments_store._require(outcome, "Outcome").strip()
 
     marks_after: float | None = None
     if new_marks is not None:

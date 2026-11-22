@@ -5,7 +5,7 @@ import json
 from education_system.systems.university.application import (
     case_management, connectors,
 )
-from education_system.systems.university.domains.academics.application import timetabling
+from education_system.systems.university.domains.teaching.application import timetabling
 from education_system.systems.university.domains.learners.application import alumni_transition, identity_management
 from education_system.systems.university.infrastructure.database import db as db_module
 

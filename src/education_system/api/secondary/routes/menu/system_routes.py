@@ -49,98 +49,26 @@ def system_user_accounts():
     return feature_pending("User Accounts", _SYSTEM, category=_CATEGORY)
 
 
-@system_menu_bp.route("/user-management", methods=["GET"])
+@system_menu_bp.route("/settings", methods=["GET"])
 @token_required
 @staff_required
-def system_user_management():
-    """User Management"""
-    return feature_pending("User Management", _SYSTEM, category=_CATEGORY)
+def system_settings():
+    """Settings"""
+    return feature_pending("Settings", _SYSTEM, category=_CATEGORY)
 
 
-@system_menu_bp.route("/open-settings", methods=["GET"])
+@system_menu_bp.route("/audit-log", methods=["GET"])
 @token_required
 @staff_required
-def system_open_settings():
-    """open_settings"""
-    return feature_pending("open_settings", _SYSTEM, category=_CATEGORY)
+def system_audit_log():
+    """Audit Log"""
+    return feature_pending("Audit Log", _SYSTEM, category=_CATEGORY)
 
 
-@system_menu_bp.route("/open-compliance", methods=["GET"])
+@system_menu_bp.route("/about", methods=["GET"])
 @token_required
 @staff_required
-def system_open_compliance():
-    """open_compliance"""
-    return feature_pending("open_compliance", _SYSTEM, category=_CATEGORY)
-
-
-@system_menu_bp.route("/open-governance", methods=["GET"])
-@token_required
-@staff_required
-def system_open_governance():
-    """open_governance"""
-    return feature_pending("open_governance", _SYSTEM, category=_CATEGORY)
-
-
-@system_menu_bp.route("/open-policies", methods=["GET"])
-@token_required
-@staff_required
-def system_open_policies():
-    """open_policies"""
-    return feature_pending("open_policies", _SYSTEM, category=_CATEGORY)
-
-
-@system_menu_bp.route("/open-gdpr", methods=["GET"])
-@token_required
-@staff_required
-def system_open_gdpr():
-    """open_gdpr"""
-    return feature_pending("open_gdpr", _SYSTEM, category=_CATEGORY)
-
-
-@system_menu_bp.route("/risk-management", methods=["GET"])
-@token_required
-@staff_required
-def system_risk_management():
-    """Risk Management"""
-    return feature_pending("Risk Management", _SYSTEM, category=_CATEGORY)
-
-
-@system_menu_bp.route("/health-safety", methods=["GET"])
-@token_required
-@staff_required
-def system_health_safety():
-    """Health & Safety"""
-    return feature_pending("Health & Safety", _SYSTEM, category=_CATEGORY)
-
-
-@system_menu_bp.route("/open-assets", methods=["GET"])
-@token_required
-@staff_required
-def system_open_assets():
-    """open_assets"""
-    return feature_pending("open_assets", _SYSTEM, category=_CATEGORY)
-
-
-@system_menu_bp.route("/open-multi-language", methods=["GET"])
-@token_required
-@staff_required
-def system_open_multi_language():
-    """open_multi_language"""
-    return feature_pending("open_multi_language", _SYSTEM, category=_CATEGORY)
-
-
-@system_menu_bp.route("/open-todo", methods=["GET"])
-@token_required
-@staff_required
-def system_open_todo():
-    """open_todo"""
-    return feature_pending("open_todo", _SYSTEM, category=_CATEGORY)
-
-
-@system_menu_bp.route("/open-about", methods=["GET"])
-@token_required
-@staff_required
-def system_open_about():
-    """open_about"""
-    return feature_pending("open_about", _SYSTEM, category=_CATEGORY)
+def system_about():
+    """About"""
+    return feature_pending("About", _SYSTEM, category=_CATEGORY)
 

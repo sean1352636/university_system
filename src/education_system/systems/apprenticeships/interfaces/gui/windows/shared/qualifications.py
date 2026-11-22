@@ -18,10 +18,8 @@ from education_system.systems.apprenticeships.domain.learner_support.qualificati
     Qualification,
 )
 from education_system.systems.apprenticeships.interfaces.gui import widgets
-from education_system.systems.apprenticeships.services import (
-    apprentice_service,
-    qualification_service,
-)
+from education_system.systems.apprenticeships.application.apprentices import apprentice_service
+from education_system.systems.apprenticeships.application.assessments import qualification_service
 
 logger = logging.getLogger(__name__)
 

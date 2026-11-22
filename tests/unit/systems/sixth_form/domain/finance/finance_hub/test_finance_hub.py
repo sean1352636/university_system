@@ -19,13 +19,13 @@ _NO_DISPLAY = not os.environ.get("DISPLAY")
 # whose DB_PATH must be redirected at a temp file for an isolated build.
 _DATA_MODULES = (
     "education_system.systems.sixth_form.domain.learners.students.students",
-    "education_system.systems.sixth_form.domain.finance.fees.fees",
-    "education_system.systems.sixth_form.domain.finance.bursaries.bursaries",
-    "education_system.systems.sixth_form.domain.finance.trips.trips",
-    "education_system.systems.sixth_form.domain.finance.receipts.receipts",
-    "education_system.systems.sixth_form.domain.finance.expense_claims.expense_claims",
-    "education_system.systems.sixth_form.domain.finance.funding.funding",
-    "education_system.systems.sixth_form.domain.governance.compliance.census_ilr.census_ilr",
+    "education_system.systems.sixth_form.domains.finance.domain.fees.fees",
+    "education_system.systems.sixth_form.domains.finance.domain.bursaries.bursaries",
+    "education_system.systems.sixth_form.domains.finance.domain.trips.trips",
+    "education_system.systems.sixth_form.domains.finance.domain.receipts.receipts",
+    "education_system.systems.sixth_form.domains.finance.domain.expense_claims.expense_claims",
+    "education_system.systems.sixth_form.domains.finance.domain.funding.funding",
+    "education_system.systems.sixth_form.domains.finance.domain.census_ilr.census_ilr",
 )
 
 
@@ -50,7 +50,7 @@ def finance_db(tmp_path, monkeypatch):
 # ── wiring (no display needed) ───────────────────────────────────────
 
 def test_sections_have_builders_for_every_module():
-    from education_system.systems.sixth_form.domain.finance.finance_hub import (
+    from education_system.systems.sixth_form.domains.finance.interfaces.gui.finance_hub import (
         finance_hub_views as v,
     )
     ids = [sid for sid, _label, _b in v.FinanceHubGUI.SECTIONS]
@@ -68,7 +68,7 @@ def test_sections_have_builders_for_every_module():
 
 
 def test_money_formatting():
-    from education_system.systems.sixth_form.domain.finance.finance_hub import (
+    from education_system.systems.sixth_form.domains.finance.interfaces.gui.finance_hub import (
         finance_hub_views as v,
     )
     assert v._money(1234.5) == "£1,234.50"
@@ -83,7 +83,7 @@ def test_money_formatting():
 def test_hub_builds_every_section_and_dashboard(finance_db):
     import tkinter as tk
 
-    from education_system.systems.sixth_form.domain.finance.finance_hub import (
+    from education_system.systems.sixth_form.domains.finance.interfaces.gui.finance_hub import (
         finance_hub_views as v,
     )
 
@@ -106,7 +106,7 @@ def test_hub_builds_every_section_and_dashboard(finance_db):
 def test_dashboard_cards_cover_all_modules(finance_db):
     import tkinter as tk
 
-    from education_system.systems.sixth_form.domain.finance.finance_hub import (
+    from education_system.systems.sixth_form.domains.finance.interfaces.gui.finance_hub import (
         finance_hub_views as v,
     )
 

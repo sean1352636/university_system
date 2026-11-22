@@ -225,6 +225,10 @@ class Review:
     next_review_due: str | None
     created_at: str
     updated_at: str
+    # The learner's own voice on the review, written from the student
+    # portal (see :func:`set_student_comment`). Staff never edit it.
+    student_comment: str | None = None
+    student_comment_at: str | None = None
 
 
 @dataclass
@@ -233,6 +237,9 @@ class PlanDetail:
     goals: list[Goal] = field(default_factory=list)
     reviews: list[Review] = field(default_factory=list)
     student_name: str = ""
+    # Academic targets are kept in Target Setting; ILP goals stay the
+    # student's personal goals and show these alongside, read-only.
+    academic_targets: Any = None
 
     @property
     def goal_progress(self) -> tuple[int, int]:
@@ -274,6 +281,16 @@ def _connect() -> sqlite3.Connection:
 
 _DB_READY: bool = False
 
+#: ``ilp_reviews`` columns added after the table first shipped: the
+#: learner's own comment on a review and when they last wrote it.
+_ADDED_REVIEW_COLUMNS: dict[str, str] = {
+    "student_comment": "TEXT",
+    "student_comment_at": "TEXT",
+}
+
+#: Longest learner comment accepted on a review.
+STUDENT_COMMENT_MAX: int = 2000
+
 
 def init_db() -> None:
     global _DB_READY
@@ -285,6 +302,13 @@ def init_db() -> None:
     _students.init_db()
     with _connect() as conn:
         conn.executescript(_SCHEMA)
+        # Backfill columns added after the table first shipped.
+        have = {r["name"] for r in conn.execute("PRAGMA table_info(ilp_reviews)")}
+        for name, decl in _ADDED_REVIEW_COLUMNS.items():
+            if name not in have:
+                conn.execute(f"ALTER TABLE ilp_reviews ADD COLUMN {name} {decl}")
+                logger.info("Added ilp_reviews.%s", name)
+        conn.commit()
     logger.debug("ILP schema ready at %s", DB_PATH)
 
     _DB_READY = True
@@ -329,6 +353,9 @@ def _row_review(r: sqlite3.Row) -> Review:
         next_steps=r["next_steps"],
         next_review_due=r["next_review_due"],
         created_at=r["created_at"], updated_at=r["updated_at"],
+        student_comment=r["student_comment"] if "student_comment" in r.keys() else None,
+        student_comment_at=(r["student_comment_at"]
+                            if "student_comment_at" in r.keys() else None),
     )
 
 
@@ -660,7 +687,22 @@ def get_plan_detail(plan_id: int) -> PlanDetail | None:
     student = _students.get_student(p.student_id)
     name = student.full_name if student else "(unknown)"
     return PlanDetail(plan=p, goals=goals, reviews=reviews,
-                       student_name=name)
+                       student_name=name,
+                       academic_targets=academic_targets_for(p.student_id))
+
+
+def academic_targets_for(student_id: str) -> Any:
+    """The student's academic targets from Target Setting (grade targets
+    plus action steps), or ``None`` if they cannot be read."""
+    try:
+        from education_system.systems.sixth_form.domain.assessment.target_setting import (
+            target_setting as _ts,
+        )
+        return _ts.student_academic_targets(student_id)
+    except Exception:
+        logger.exception("Could not read academic targets for %s",
+                         student_id)
+        return None
 
 
 def update_plan(plan_id: int, payload: dict[str, Any]) -> Plan:
@@ -1022,6 +1064,60 @@ def delete_review(review_id: int) -> bool:
             (review_id,))
         conn.commit()
         return bool(cur.rowcount)
+
+
+# ── The learner's own view (student portal) ───────────────────────
+
+#: Plan statuses a learner sees. A Draft plan is still being written by
+#: staff and is not shared until it moves on.
+LEARNER_VISIBLE_PLAN_STATUSES: tuple[str, ...] = tuple(
+    s for s in PLAN_STATUSES if s != "Draft")
+
+
+def plans_for_learner(student_id: str) -> list[PlanDetail]:
+    """One learner's shared plans with goals and reviews (no Drafts)."""
+    sid = (student_id or "").strip()
+    if not sid:
+        return []
+    out: list[PlanDetail] = []
+    for p in list_plans(student_id=sid):
+        if p.status not in LEARNER_VISIBLE_PLAN_STATUSES:
+            continue
+        out.append(PlanDetail(plan=p, goals=list_goals(plan_id=p.plan_id),
+                              reviews=list_reviews(plan_id=p.plan_id)))
+    return out
+
+
+def set_student_comment(student_id: str, review_id: int,
+                        comment: str | None) -> Review:
+    """The learner writes (or clears) their own comment on a review.
+
+    Only the learner whose plan it is may do this, and only on a plan
+    they can see. Nothing else on the review changes.
+    """
+    init_db()
+    sid = (student_id or "").strip()
+    review = get_review(int(review_id))
+    plan = get_plan(review.plan_id) if review else None
+    if (review is None or plan is None or not sid or plan.student_id != sid
+            or plan.status not in LEARNER_VISIBLE_PLAN_STATUSES):
+        raise ValidationError("That review is not on one of your plans.")
+    text = (comment or "").strip() or None
+    if text and len(text) > STUDENT_COMMENT_MAX:
+        raise ValidationError(
+            f"Your comment is too long (at most {STUDENT_COMMENT_MAX} characters).")
+    with _connect() as conn:
+        conn.execute(
+            "UPDATE ilp_reviews SET student_comment = ?, "
+            "student_comment_at = CASE WHEN ? IS NULL THEN NULL "
+            "ELSE datetime('now') END WHERE review_id = ?",
+            (text, text, review.review_id))
+        conn.commit()
+    logger.info("Learner %s %s their comment on ILP review #%d", sid,
+                "updated" if text else "cleared", review.review_id)
+    out = get_review(review.review_id)
+    assert out is not None
+    return out
 
 
 # ── Summary ───────────────────────────────────────────────────────

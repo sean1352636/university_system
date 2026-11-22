@@ -610,7 +610,7 @@ def get_attendance_at_risk(min_pct: float = 80.0) -> list[dict]:
     one definition of "at risk" with the attendance dashboard. Empty list
     if the attendance enhancements module isn't installed."""
     try:
-        from education_system.systems.university.domains.academics.domain.services.attendance.absence_tracking.absence_enhancements import (
+        from education_system.systems.university.domains.teaching.domain.attendance.absence_tracking.absence_enhancements import (
             ComplianceService,
         )
     except Exception:
@@ -1350,7 +1350,7 @@ def record_sponsor_compliance_kpis() -> int:
     Best-effort: if the analytics module isn't installed (minimal
     deployment) we silently return 0."""
     try:
-        from education_system.systems.university.services.analytics.analytics_dashboard_core import (
+        from education_system.systems.university.shared.analytics.analytics_dashboard_core import (
             KPIManager,
         )
     except Exception:

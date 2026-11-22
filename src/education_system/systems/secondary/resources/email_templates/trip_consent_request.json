@@ -1,0 +1,30 @@
+{
+  "name": "trip_consent_request",
+  "description": "The trip letter: details, cost and payment plan, asking for consent and medical / dietary information.",
+  "subject": "{trip_title} - consent needed for {pupil_name}",
+  "body": [
+    "Dear {recipient_name},",
+    "",
+    "{pupil_name} has been invited on {trip_title}.",
+    "",
+    "{details}",
+    "",
+    "Please let the school office know by {reply_by} whether you give consent for {pupil_name} to go, and tell us about any medical needs, medication or dietary requirements we should know about for the visit.",
+    "",
+    "Yours sincerely,",
+    "{sender_name}",
+    "{school_name}"
+  ],
+  "placeholders": {
+    "recipient_name": "The contact's name",
+    "pupil_name": "The pupil's first name",
+    "trip_title": "The trip",
+    "details": "Where, when, the leader, the cost and the payment plan",
+    "reply_by": "The consent due date (or the start date)",
+    "sender_name": "The member of staff sending it",
+    "school_name": "The school's name"
+  },
+  "defaults": {
+    "school_name": "Secondary School"
+  }
+}

@@ -520,12 +520,19 @@ def delete_flow() -> None:
     except _UserAbort:
         print("\n  Cancelled.")
         return
-    if _input(f"Delete #{i.incident_id}? Type 'yes'",
+    print("  Records are archived, not deleted (UK retention): hidden "
+          "from lists, who/when/why recorded, restorable.")
+    if _input(f"Archive #{i.incident_id}? Type 'yes'",
               default="no").lower() != "yes":
         print("\n  Cancelled.")
         return
-    if data.delete_incident(i.incident_id):
-        print(f"\n  ✓ Deleted #{i.incident_id}")
+    try:
+        reason = _input("Reason for archiving (optional)", default="")
+    except _UserAbort:
+        print("\n  Cancelled.")
+        return
+    if data.delete_incident(i.incident_id, reason=reason or None):
+        print(f"\n  ✓ Archived #{i.incident_id}")
     _pause()
 
 

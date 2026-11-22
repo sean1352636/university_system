@@ -5,12 +5,13 @@ from __future__ import annotations
 import functools
 import logging
 import tkinter as tk
-from tkinter import messagebox, simpledialog, ttk
+from tkinter import messagebox, ttk
 from typing import Any, Callable
 
 from education_system.systems.primary.domain.assessment.observations import (
     observations as data,
 )
+from education_system.systems.primary.interfaces.gui import kit
 from education_system.systems.primary.domain.assessment.observations.observations import (
     OBSERVATION_TYPES, JUDGEMENTS, OBSERVATION_STATUSES,
     MIN_PERIOD, MAX_PERIOD,
@@ -50,13 +51,64 @@ def _safe_view(func: Callable[..., None]) -> Callable[..., None]:
     return wrapper
 
 
+def _staff_names() -> list[str]:
+    try:
+        from education_system.systems.primary.domain.staff import staff as staff_data
+        return sorted({s.full_name for s in staff_data.list_staff(active_only=False)},
+                      key=str.lower)
+    except Exception:  # noqa: BLE001 - an empty list beats a broken form
+        logger.debug("staff list failed", exc_info=True)
+        return []
+
+
+def _teacher_names() -> list[str]:
+    """Staff names plus every teacher already observed (an old record may
+    name someone who has left or was typed differently)."""
+    names = set(_staff_names())
+    try:
+        names.update(o.teacher for o in data.list_observations() if o.teacher)
+    except Exception:  # noqa: BLE001
+        logger.debug("observed teacher list failed", exc_info=True)
+    return sorted(names, key=str.lower)
+
+
+def _ask_teacher(host) -> str | None:
+    """Pick a teacher for the summary ("" = cohort summary, None = cancel)."""
+    dlg = tk.Toplevel(host.root)
+    dlg.title("Summary")
+    dlg.transient(host.root)
+    try:
+        dlg.wait_visibility()
+        dlg.grab_set()
+    except tk.TclError:
+        logger.debug("grab_set skipped", exc_info=True)
+    frm = ttk.Frame(dlg, padding=12)
+    frm.pack(fill="both", expand=True)
+    ttk.Label(frm, text="Teacher (blank = cohort summary):").pack(anchor="w")
+    var = tk.StringVar()
+    kit.ChoiceField(frm, var, choices=_teacher_names(), blank=True,
+                    width=36).pack(anchor="w", pady=(4, 8))
+    result: dict[str, str] = {}
+
+    def _ok() -> None:
+        result["teacher"] = var.get()
+        dlg.destroy()
+
+    row = ttk.Frame(frm)
+    row.pack(fill="x")
+    ttk.Button(row, text="Cancel", command=dlg.destroy).pack(side="right", padx=4)
+    ttk.Button(row, text="OK", command=_ok).pack(side="right")
+    dlg.wait_window()
+    return result.get("teacher")
+
+
 def _obs_dialog(host, title: str,
                  initial: dict[str, Any] | None = None
                  ) -> dict[str, Any] | None:
     dlg = tk.Toplevel(host.root)
     dlg.title(title)
     dlg.transient(host.root)
-    dlg.geometry("560x720")
+    dlg.geometry("620x700")
     dlg.update_idletasks()
     try:
         dlg.wait_visibility()
@@ -65,8 +117,8 @@ def _obs_dialog(host, title: str,
         logger.debug("grab_set skipped — dialog not viewable", exc_info=True)
 
     initial = initial or {}
-    frm = ttk.Frame(dlg, padding=12)
-    frm.pack(fill="both", expand=True)
+    # Tall form: the fields scroll on a small screen, Save/Cancel stay put.
+    frm, footer = kit.scrolled_form(dlg)
 
     teacher_var  = tk.StringVar(value=str(initial.get("teacher") or ""))
     year_var     = tk.StringVar(value=str(initial.get("year_group") or ""))
@@ -100,22 +152,20 @@ def _obs_dialog(host, title: str,
                 break
 
     rows: list[tuple[str, tk.Widget]] = [
-        ("Teacher:",     ttk.Entry(frm, textvariable=teacher_var,
-                                     width=28)),
+        ("Teacher:",     kit.StaffPicker(frm, teacher_var, by="name")),
         ("Subject:",     ttk.Combobox(frm, textvariable=subject_var,
                                        values=subject_labels,
                                        state="readonly", width=42)),
         ("Year:",        ttk.Combobox(frm, textvariable=year_var,
                                        values=["", *YEAR_GROUPS],
                                        state="readonly", width=8)),
-        ("Form:",        ttk.Entry(frm, textvariable=form_var,
-                                     width=12)),
-        ("Date:",        ttk.Entry(frm, textvariable=date_var,
-                                     width=14)),
-        ("Period:",      ttk.Entry(frm, textvariable=period_var,
-                                     width=6)),
-        ("Observer:",    ttk.Entry(frm, textvariable=observer_var,
-                                     width=28)),
+        ("Form:",        kit.ClassPicker(frm, form_var)),
+        ("Date:",        kit.DateField(frm, date_var)),
+        ("Period:",      kit.NumberField(frm, period_var, from_=MIN_PERIOD,
+                                         to=MAX_PERIOD, width=6)),
+        # Editable: an observer may be from outside the school.
+        ("Observer:",    kit.ChoiceField(frm, observer_var, choices=_staff_names(),
+                                         editable=True, width=36)),
         ("Type:",        ttk.Combobox(frm, textvariable=type_var,
                                        values=list(OBSERVATION_TYPES),
                                        state="readonly", width=18)),
@@ -124,8 +174,7 @@ def _obs_dialog(host, title: str,
         ("Judgement:",   ttk.Combobox(frm, textvariable=judgement_var,
                                        values=list(JUDGEMENTS),
                                        state="readonly", width=22)),
-        ("Follow-up date:", ttk.Entry(frm, textvariable=follow_var,
-                                        width=14)),
+        ("Follow-up date:", kit.DateField(frm, follow_var)),
         ("Status:",      ttk.Combobox(frm, textvariable=status_var,
                                        values=list(OBSERVATION_STATUSES),
                                        state="readonly", width=14)),
@@ -133,7 +182,7 @@ def _obs_dialog(host, title: str,
     for i, (label, widget) in enumerate(rows):
         ttk.Label(frm, text=label).grid(row=i, column=0, sticky="w",
                                          pady=2)
-        widget.grid(row=i, column=1, sticky="ew", pady=2)
+        widget.grid(row=i, column=1, sticky="w", pady=2)
     frm.columnconfigure(1, weight=1)
 
     text_fields = [("Strengths:", "strengths", 3),
@@ -178,9 +227,7 @@ def _obs_dialog(host, title: str,
             result[k] = w.get("1.0", "end").strip()
         dlg.destroy()
 
-    btns = ttk.Frame(frm)
-    btns.grid(row=len(rows) + len(text_fields), column=0,
-              columnspan=2, sticky="e", pady=(12, 0))
+    btns = footer
     ttk.Button(btns, text="Cancel",
                command=dlg.destroy).pack(side="right", padx=4)
     ttk.Button(btns, text="Save", command=_save).pack(side="right")
@@ -191,10 +238,13 @@ def _obs_dialog(host, title: str,
 @_safe_view
 def open_observations(host) -> None:
     logger.debug("GUI: open_observations")
-    host._clear_content()
-    root = host.content_frame
-    ttk.Label(root, text="Observations",
-              font=("", 16, "bold")).pack(anchor="w", pady=(0, 8))
+    kit.show_page(host, "Observations",
+                  lambda parent: _draw_observations(parent, host))
+
+
+def _draw_observations(parent, host) -> None:
+    root = parent
+    kit.page_heading(root, "Observations")
 
     summary_var = tk.StringVar()
     ttk.Label(root, textvariable=summary_var, foreground="#666").pack(
@@ -204,8 +254,8 @@ def open_observations(host) -> None:
     bar.pack(fill="x", pady=(0, 6))
     ttk.Label(bar, text="Teacher:").pack(side="left", padx=(0, 4))
     teacher_var = tk.StringVar(value="")
-    ttk.Entry(bar, textvariable=teacher_var, width=16).pack(
-        side="left", padx=(0, 6))
+    kit.ChoiceField(bar, teacher_var, choices=_teacher_names(), blank=True,
+                    width=20).pack(side="left", padx=(0, 6))
     ttk.Label(bar, text="Type:").pack(side="left", padx=(0, 4))
     type_var = tk.StringVar(value="")
     ttk.Combobox(bar, textvariable=type_var,
@@ -266,13 +316,13 @@ def open_observations(host) -> None:
             )
         except ValidationError as e:
             messagebox.showerror("Observations", str(e),
-                                 parent=host.root)
+                                 parent=root.winfo_toplevel())
             return
         except Exception as e:
             logger.exception("observations refresh failed")
             messagebox.showerror("Observations",
                                  f"Could not load:\n\n{e}",
-                                 parent=host.root)
+                                 parent=root.winfo_toplevel())
             return
         for o in rows:
             tree.insert("", "end", iid=str(o.observation_id), values=(
@@ -290,10 +340,13 @@ def open_observations(host) -> None:
                                 for k, v in s["by_judgement"].items()))
         except Exception:
             summary_var.set(f"{len(rows)} observation(s) listed")
-        host.status_var.set(f"Observations: {len(rows)} record(s)")
+        status_bar = getattr(host, "status_var", None)
+        if status_bar is not None:
+            status_bar.set(f"Observations: {len(rows)} record(s)")
 
     tree.bind("<Double-1>", lambda _e: _edit(host, tree,
                                               on_done=_refresh))
+    teacher_var.trace_add("write", lambda *_: _refresh())
     type_var.trace_add("write", lambda *_: _refresh())
     jud_var.trace_add("write", lambda *_: _refresh())
     status_var.trace_add("write", lambda *_: _refresh())
@@ -420,9 +473,9 @@ def _delete(host, tree: ttk.Treeview, *, on_done=None) -> None:
 
 @_safe_view
 def _summary(host) -> None:
-    teacher = simpledialog.askstring(
-        "Summary",
-        "Teacher name (blank = cohort summary):", parent=host.root)
+    teacher = _ask_teacher(host)
+    if teacher is None:
+        return
     if teacher and teacher.strip():
         s = data.teacher_summary(teacher.strip())
         title = f"Observations — {teacher}"

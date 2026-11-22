@@ -263,7 +263,7 @@ class ImportExportMixin:
             cursor = conn.cursor()
 
             cursor.execute('''
-            SELECT student_id, first_name, last_name, email, course, year,
+            SELECT student_id, first_name, last_name, email_address, course, year,
                    enrollment_date, status
             FROM students
             ORDER BY last_name, first_name

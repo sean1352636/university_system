@@ -4,9 +4,10 @@ from __future__ import annotations
 
 import logging
 import tkinter as tk
-from tkinter import messagebox, ttk
+from tkinter import ttk
 
-from education_system.platform import branding
+from education_system.platform.delivery.gui.parented_dialogs import make_toplevel, messagebox
+from education_system.systems.primary.interfaces.gui import kit
 from education_system.systems.primary.domain.operations.communications.letter_templates import (
     letter_templates as data,
 )
@@ -38,14 +39,16 @@ _STATUS_TAGS = {
 
 def open_letter_templates_window(parent=None) -> None:
     data.init_db()
-    master = getattr(parent, "root", parent)
-    win = tk.Toplevel(master) if master is not None else tk.Tk()
-    win.title(f"Letter Templates — {branding.SYSTEM_NAME}")
-    win.geometry(WIN_GEOMETRY)
-    win.minsize(*WIN_MINSIZE)
+    kit.show_page(parent, "Letter Templates",
+                  lambda frame: _draw_letter_templates(frame, parent))
 
-    nb = ttk.Notebook(win)
-    nb.pack(fill="both", expand=True, padx=10, pady=10)
+
+def _draw_letter_templates(parent: ttk.Frame, host=None) -> None:
+    kit.page_heading(parent, "Letter Templates",
+                     "Reusable letters with {{placeholders}} - write, activate, "
+                     "duplicate and render.")
+    nb = ttk.Notebook(parent)
+    nb.pack(fill="both", expand=True)
 
     TemplatesTab(nb, scope="active",   label="Active")
     TemplatesTab(nb, scope="drafts",   label="Drafts")
@@ -67,22 +70,16 @@ class TemplatesTab:
         bar = ttk.Frame(self.frame)
         bar.pack(fill="x", padx=8, pady=(8, 4))
         ttk.Label(bar, text="Category:").pack(side="left")
-        self.f_cat = ttk.Combobox(
-            bar, values=("",) + CATEGORIES,
-            state="readonly", width=22)
-        self.f_cat.current(0)
+        self.f_cat = kit.ChoiceField(bar, tk.StringVar(), choices=CATEGORIES,
+                                     blank=True, width=22)
         self.f_cat.pack(side="left", padx=(2, 8))
         ttk.Label(bar, text="Recipient:").pack(side="left")
-        self.f_rt = ttk.Combobox(
-            bar, values=("",) + RECIPIENT_TYPES,
-            state="readonly", width=16)
-        self.f_rt.current(0)
+        self.f_rt = kit.ChoiceField(bar, tk.StringVar(), choices=RECIPIENT_TYPES,
+                                     blank=True, width=16)
         self.f_rt.pack(side="left", padx=(2, 8))
         ttk.Label(bar, text="Format:").pack(side="left")
-        self.f_fmt = ttk.Combobox(
-            bar, values=("",) + FORMATS,
-            state="readonly", width=18)
-        self.f_fmt.current(0)
+        self.f_fmt = kit.ChoiceField(bar, tk.StringVar(), choices=FORMATS,
+                                     blank=True, width=18)
         self.f_fmt.pack(side="left", padx=(2, 8))
         ttk.Label(bar, text="Name:").pack(side="left")
         self.f_name = ttk.Entry(bar, width=20)
@@ -404,20 +401,19 @@ class TemplateEditor:
                  template: Template | None = None) -> None:
         self.template = template
         self.result: Template | None = None
-        self.win = tk.Toplevel(parent)
+        self.win = make_toplevel(parent.winfo_toplevel())
         self.win.title(
             f"Edit template #{template.template_id}"
             if template else "New template")
-        self.win.geometry("900x820")
-        self.win.transient(parent); self.win.after_idle(self.win.grab_set)
+        self.win.geometry("900x700")
+        self.win.after_idle(self.win.grab_set)
         self._build()
         if template:
             self._load()
         self.win.wait_window()
 
     def _build(self) -> None:
-        body = ttk.Frame(self.win)
-        body.pack(fill="both", expand=True, padx=12, pady=10)
+        body, footer = kit.scrolled_form(self.win)
         body.grid_columnconfigure(1, weight=1)
         body.grid_columnconfigure(3, weight=1)
         self.vars: dict[str, tk.Variable] = {}
@@ -439,8 +435,7 @@ class TemplateEditor:
                 padx=4, pady=2)
             v = tk.StringVar()
             self.vars[key] = v
-            ttk.Combobox(body, textvariable=v, values=values,
-                          state="readonly", width=width).grid(
+            kit.ChoiceField(body, v, choices=values, width=width).grid(
                 row=row, column=col + 1, sticky="ew",
                 padx=4, pady=2)
 
@@ -452,7 +447,11 @@ class TemplateEditor:
         combo(2, 2, "Status*", "status", STATUSES)
         entry(3, 0, "Subject line", "subject_line", width=48)
         entry(4, 0, "Sender role", "sender_role")
-        entry(4, 2, "Created by", "created_by")
+        ttk.Label(body, text="Created by").grid(row=4, column=2, sticky="w",
+                                                padx=4, pady=2)
+        self.vars["created_by"] = tk.StringVar()
+        kit.StaffPicker(body, self.vars["created_by"], by="name", width=30).grid(
+            row=4, column=3, sticky="ew", padx=4, pady=2)
         entry(5, 0, "Attachments ref", "attachments_ref")
         entry(5, 2, "Merge fields (CSV; blank = auto)",
                  "merge_fields")
@@ -475,12 +474,10 @@ class TemplateEditor:
             self.texts[key] = t
             row += 1
 
-        bar = ttk.Frame(self.win)
-        bar.pack(fill="x", padx=12, pady=(0, 10))
-        ttk.Button(bar, text="Save",
+        ttk.Button(footer, text="Save",
                     command=self._save).pack(side="right",
                                                padx=4)
-        ttk.Button(bar, text="Cancel",
+        ttk.Button(footer, text="Cancel",
                     command=self.win.destroy).pack(side="right")
 
         self.vars["category"].set(DEFAULT_CATEGORY)
@@ -525,10 +522,10 @@ class TemplateEditor:
 class RenderDialog:
     def __init__(self, parent, *, template: Template) -> None:
         self.template = template
-        self.win = tk.Toplevel(parent)
+        self.win = make_toplevel(parent.winfo_toplevel())
         self.win.title(f"Render — {template.name}")
         self.win.geometry("780x680")
-        self.win.transient(parent); self.win.after_idle(self.win.grab_set)
+        self.win.after_idle(self.win.grab_set)
         self.entries: dict[str, tk.StringVar] = {}
         self._build()
         self.win.wait_window()
@@ -557,9 +554,8 @@ class RenderDialog:
                     padx=4, pady=2)
                 v = tk.StringVar()
                 self.entries[p] = v
-                ttk.Entry(fields_frame, textvariable=v,
-                            width=60).grid(
-                    row=i, column=1, sticky="ew",
+                _merge_field_widget(fields_frame, p, v).grid(
+                    row=i, column=1, sticky="w",
                     padx=4, pady=2)
 
         ttk.Label(self.win, text="Output").pack(
@@ -600,11 +596,31 @@ class RenderDialog:
         self.output.config(state="disabled")
 
 
+def _merge_field_widget(master, placeholder: str, var: tk.StringVar) -> tk.Misc:
+    """A picker for merge fields whose name says what they hold (a date,
+    a time, a year group, a class, a staff member's name); free text for
+    the rest."""
+    key = placeholder.lower()
+    if key.endswith("date") or key.startswith("date") or key.endswith("_on") \
+            or key in ("dob", "deadline"):
+        return kit.DateField(master, var)
+    if key.endswith("time") or key.startswith("time"):
+        return kit.TimeField(master, var)
+    if key == "year_group":
+        return kit.YearGroupPicker(master, var, labels=True, blank=True)
+    if key in ("class", "class_name"):
+        return kit.ClassPicker(master, var)
+    if key in ("teacher", "teacher_name", "staff_name", "class_teacher", "sender_name",
+               "headteacher", "head_teacher"):
+        return kit.StaffPicker(master, var, by="name")
+    return ttk.Entry(master, textvariable=var, width=60)
+
+
 def _prompt_text(parent, title: str, *,
                   initial: str = "") -> str | None:
-    win = tk.Toplevel(parent)
+    win = make_toplevel(parent.winfo_toplevel())
     win.title(title); win.geometry("420x140")
-    win.transient(parent); win.after_idle(win.grab_set)
+    win.after_idle(win.grab_set)
     ttk.Label(win, text=title).pack(anchor="w", padx=8, pady=8)
     var = tk.StringVar(value=initial)
     ttk.Entry(win, textvariable=var).pack(fill="x", padx=8)
@@ -626,14 +642,13 @@ def _prompt_text(parent, title: str, *,
 
 def _prompt_choice(parent, title: str, options: list[str], *,
                     default: str | None = None) -> str | None:
-    win = tk.Toplevel(parent)
+    win = make_toplevel(parent.winfo_toplevel())
     win.title(title); win.geometry("360x140")
-    win.transient(parent); win.after_idle(win.grab_set)
+    win.after_idle(win.grab_set)
     ttk.Label(win, text=title).pack(anchor="w", padx=8, pady=8)
     var = tk.StringVar(
         value=default or (options[0] if options else ""))
-    ttk.Combobox(win, textvariable=var, values=options,
-                  state="readonly").pack(fill="x", padx=8)
+    kit.ChoiceField(win, var, choices=options).pack(fill="x", padx=8)
     result: dict = {"value": None}
 
     def ok() -> None:

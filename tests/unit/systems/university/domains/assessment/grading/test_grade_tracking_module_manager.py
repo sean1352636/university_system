@@ -11,7 +11,7 @@ from education_system.systems.university.infrastructure.database.db import sqlit
 import tempfile
 import os
 
-from education_system.systems.university.domains.academics.interfaces.gui.grade_tracking.module_manager import ModuleManager
+from education_system.systems.university.domains.assessment.interfaces.gui.grade_tracking.module_manager import ModuleManager
 
 class TestModuleManager(unittest.TestCase):
     """Test ModuleManager class"""
@@ -128,7 +128,7 @@ class TestModuleManager(unittest.TestCase):
         # refresh_modules() loads via the module-level get_connection(), so point
         # it at the test's temp database that holds the seeded module row.
         with patch(
-            'education_system.systems.university.domains.academics.interfaces.gui.grade_tracking.module_manager.get_connection',
+            'education_system.systems.university.domains.assessment.interfaces.gui.grade_tracking.module_manager.get_connection',
             return_value=self.conn,
         ):
             # Should not raise exception
@@ -169,7 +169,7 @@ class TestModuleManager(unittest.TestCase):
         # Should show warning
         mock_warning.assert_called()
 
-    @patch('education_system.systems.university.domains.academics.interfaces.gui.grade_tracking.module_manager.get_connection')
+    @patch('education_system.systems.university.domains.assessment.interfaces.gui.grade_tracking.module_manager.get_connection')
     def test_load_courses_for_filter(self, mock_get_connection):
         """Test load_courses_for_filter method"""
         mock_get_connection.return_value = self.conn

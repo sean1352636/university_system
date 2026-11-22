@@ -5,6 +5,7 @@ Wired to TravelManager (travel requests, conference registrations,
 and the two-level approval workflow).
 """
 
+from education_system.systems.university.domains.staff.interfaces.cli.staff_hr.menus import _access as _hr
 from education_system.systems.university.domains.staff.domain.staff_hr.services.managers import (
     TravelManager,
 )
@@ -200,7 +201,7 @@ def _register_conference(user_id: str) -> None:
 
 def _list_pending(user_id: str) -> None:
     """List pending travel approvals."""
-    pending = TravelManager.get_pending_approvals()
+    pending = _hr.approvable(TravelManager.get_pending_approvals())
     print("\n" + "-" * 60)
     print("PENDING TRAVEL APPROVALS")
     print("-" * 60)
@@ -216,14 +217,25 @@ def _list_pending(user_id: str) -> None:
     input("\nPress Enter to continue...")
 
 
+def _may_decide(approval_id: int) -> bool:
+    """Only a pending approval for someone this person may approve for."""
+    mine = {p.get('approval_id') for p in
+            _hr.approvable(TravelManager.get_pending_approvals())}
+    if approval_id in mine:
+        return True
+    print("\nThat is not a pending approval you may decide.")
+    input("Press Enter to continue...")
+    return False
+
+
 def _approve_request(user_id: str) -> None:
     """Approve a travel request at one level."""
     approval_id = _prompt_int("Approval ID to approve: ")
-    if approval_id is None:
+    if approval_id is None or not _may_decide(approval_id):
         return
     comments = input("Comments (optional): ").strip() or None
     try:
-        TravelManager.approve_request(approval_id, user_id, comments=comments)
+        TravelManager.approve_request(approval_id, user_id, comments=comments, actor=_hr.actor())
         print("\nApproval recorded.")
     except Exception as e:
         print(f"\nError: {e}")
@@ -233,11 +245,11 @@ def _approve_request(user_id: str) -> None:
 def _reject_request(user_id: str) -> None:
     """Reject a travel request."""
     approval_id = _prompt_int("Approval ID to reject: ")
-    if approval_id is None:
+    if approval_id is None or not _may_decide(approval_id):
         return
     comments = input("Comments (optional): ").strip() or None
     try:
-        TravelManager.reject_request(approval_id, user_id, comments=comments)
+        TravelManager.reject_request(approval_id, user_id, comments=comments, actor=_hr.actor())
         print("\nRequest rejected.")
     except Exception as e:
         print(f"\nError: {e}")

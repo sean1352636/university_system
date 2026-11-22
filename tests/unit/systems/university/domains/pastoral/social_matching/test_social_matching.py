@@ -10,7 +10,7 @@ from __future__ import annotations
 import pytest
 
 from education_system.systems.university.infrastructure.database import db as db_module
-from education_system.systems.university.domains.pastoral.domain.social_matching.services.social_matching_service import (
+from education_system.systems.university.domains.student_life.domain.social_matching.services.social_matching_service import (
     INTEREST_CATEGORIES,
     PERSONALITY_TYPES,
     SocialMatchingService,

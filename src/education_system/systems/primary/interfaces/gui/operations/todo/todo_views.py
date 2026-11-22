@@ -9,7 +9,6 @@ from tkinter import messagebox, ttk
 from typing import Callable
 
 from education_system.systems.primary.domain.operations.todo import todo as data
-from education_system.platform import branding
 from education_system.systems.primary.domain.operations.todo.todo import (
     DEFAULT_PRIORITY,
     DEFAULT_STATUS,
@@ -18,6 +17,7 @@ from education_system.systems.primary.domain.operations.todo.todo import (
     Todo,
     ValidationError,
 )
+from education_system.systems.primary.interfaces.gui import kit
 
 logger = logging.getLogger(__name__)
 
@@ -27,17 +27,60 @@ WIN_MINSIZE = (1200, 800)
 
 def open_todo_window(parent=None) -> None:
     data.init_db()
-    master = getattr(parent, "root", parent)
-    win = tk.Toplevel(master) if master is not None else tk.Tk()
-    win.title(f"To-Do — {branding.SYSTEM_NAME}")
-    win.geometry(WIN_GEOMETRY)
-    win.minsize(*WIN_MINSIZE)
-    nb = ttk.Notebook(win)
-    nb.pack(fill="both", expand=True, padx=10, pady=10)
+    if parent is None:
+        root = tk.Tk()
+        root.title("To-Do")
+        root.geometry(WIN_GEOMETRY)
+        root.minsize(*WIN_MINSIZE)
+        frame = ttk.Frame(root, padding=10)
+        frame.pack(fill="both", expand=True)
+        _draw_todo(frame)
+        return
+    kit.show_page(parent, "To-Do", _draw_todo)
+
+
+def _draw_todo(parent: ttk.Frame) -> None:
+    kit.page_heading(parent, "To-Do", "Tasks with an owner, priority and due date.")
+    nb = ttk.Notebook(parent)
+    nb.pack(fill="both", expand=True)
     BoardTab(nb)
     AllTodosTab(nb)
     OverdueTab(nb)
     SummaryTab(nb)
+
+
+# Owner / assignee / category are free text in the domain (an owner is
+# usually a username). Offer what is already used plus the staff list, and
+# still let a new value be typed.
+
+def _used_values() -> tuple[list[str], list[str]]:
+    people: set[str] = set()
+    cats: set[str] = set()
+    try:
+        for t in data.list_todos():
+            people.update(v for v in (t.owner, t.assignee) if v)
+            if t.category:
+                cats.add(t.category)
+    except Exception:  # noqa: BLE001 - suggestions are a nicety
+        logger.debug("todo suggestions failed", exc_info=True)
+    return sorted(people, key=str.lower), sorted(cats, key=str.lower)
+
+
+def _people_choices() -> list[str]:
+    people, _cats = _used_values()
+    try:
+        from education_system.systems.primary.domain.staff import staff as staff_data
+        names = [s.full_name for s in staff_data.list_staff(active_only=True)]
+    except Exception:  # noqa: BLE001
+        logger.debug("staff names for todo failed", exc_info=True)
+        names = []
+    out = list(people)
+    out += sorted((n for n in names if n not in set(people)), key=str.lower)
+    return out
+
+
+def _category_choices() -> list[str]:
+    return _used_values()[1]
 
 
 # ══ Board tab (open todos as cards) ═══════════════════════════════
@@ -213,10 +256,14 @@ class AllTodosTab:
         self.f_pri.current(0)
         self.f_pri.pack(side="left", padx=(2, 10))
         ttk.Label(bar, text="Owner:").pack(side="left")
-        self.f_owner = ttk.Entry(bar, width=16)
+        self.f_owner_var = tk.StringVar()
+        self.f_owner = kit.ChoiceField(bar, self.f_owner_var, choices=_used_values()[0],
+                                       blank=True, editable=True, width=16)
         self.f_owner.pack(side="left", padx=(2, 10))
         ttk.Label(bar, text="Category:").pack(side="left")
-        self.f_cat = ttk.Entry(bar, width=16)
+        self.f_cat_var = tk.StringVar()
+        self.f_cat = kit.ChoiceField(bar, self.f_cat_var, choices=_category_choices(),
+                                     blank=True, editable=True, width=16)
         self.f_cat.pack(side="left", padx=(2, 10))
         self.f_open = tk.BooleanVar(value=False)
         ttk.Checkbutton(bar, text="Open only",
@@ -282,8 +329,8 @@ class AllTodosTab:
         self.q_e.delete(0, "end")
         self.f_status.current(0)
         self.f_pri.current(0)
-        self.f_owner.delete(0, "end")
-        self.f_cat.delete(0, "end")
+        self.f_owner_var.set("")
+        self.f_cat_var.set("")
         self.f_open.set(False)
         self.refresh()
 
@@ -298,8 +345,8 @@ class AllTodosTab:
                 rows = data.list_todos(
                     status=self.f_status.get() or None,
                     priority=self.f_pri.get() or None,
-                    owner=self.f_owner.get().strip() or None,
-                    category=self.f_cat.get().strip() or None,
+                    owner=self.f_owner_var.get().strip() or None,
+                    category=self.f_cat_var.get().strip() or None,
                     open_only=self.f_open.get(),
                 )
         except ValidationError as e:
@@ -500,7 +547,9 @@ class SummaryTab:
         bar = ttk.Frame(self.frame)
         bar.pack(fill="x", padx=8, pady=(8, 4))
         ttk.Label(bar, text="Owner filter:").pack(side="left")
-        self.owner_e = ttk.Entry(bar, width=20)
+        self.owner_var = tk.StringVar()
+        self.owner_e = kit.ChoiceField(bar, self.owner_var, choices=_used_values()[0],
+                                       blank=True, editable=True, width=20)
         self.owner_e.pack(side="left", padx=(2, 10))
         ttk.Button(bar, text="Apply",
                     command=self.refresh).pack(side="left", padx=(4, 4))
@@ -512,7 +561,7 @@ class SummaryTab:
         self.text.pack(fill="both", expand=True, padx=8, pady=8)
 
     def refresh(self) -> None:
-        owner = self.owner_e.get().strip() or None
+        owner = self.owner_var.get().strip() or None
         s = data.summary(owner=owner)
         self.text.configure(state="normal")
         self.text.delete("1.0", "end")
@@ -572,34 +621,42 @@ class TodoDialog(tk.Toplevel):
 
         ttk.Label(body, text="Owner:").grid(row=2, column=0, sticky="e",
                                               padx=4, pady=2)
-        self.e_owner = ttk.Entry(body, width=30)
+        people = _people_choices()
+        self.owner_var = tk.StringVar()
+        self.e_owner = kit.ChoiceField(body, self.owner_var, choices=people, blank=True,
+                                       editable=True, width=30)
         self.e_owner.grid(row=2, column=1, sticky="w", padx=4, pady=2)
 
         ttk.Label(body, text="Assignee:").grid(row=3, column=0, sticky="e",
                                                  padx=4, pady=2)
-        self.e_assignee = ttk.Entry(body, width=30)
+        self.assignee_var = tk.StringVar()
+        self.e_assignee = kit.ChoiceField(body, self.assignee_var, choices=people,
+                                          blank=True, editable=True, width=30)
         self.e_assignee.grid(row=3, column=1, sticky="w", padx=4, pady=2)
 
         ttk.Label(body, text="Status:").grid(row=4, column=0, sticky="e",
                                                padx=4, pady=2)
-        self.cb_status = ttk.Combobox(body, values=STATUSES,
+        self.cb_status = ttk.Combobox(body, values=list(STATUSES),
                                         state="readonly", width=14)
         self.cb_status.grid(row=4, column=1, sticky="w", padx=4, pady=2)
 
         ttk.Label(body, text="Priority:").grid(row=5, column=0, sticky="e",
                                                  padx=4, pady=2)
-        self.cb_pri = ttk.Combobox(body, values=PRIORITIES,
+        self.cb_pri = ttk.Combobox(body, values=list(PRIORITIES),
                                      state="readonly", width=14)
         self.cb_pri.grid(row=5, column=1, sticky="w", padx=4, pady=2)
 
         ttk.Label(body, text="Category:").grid(row=6, column=0, sticky="e",
                                                  padx=4, pady=2)
-        self.e_cat = ttk.Entry(body, width=30)
+        self.cat_var = tk.StringVar()
+        self.e_cat = kit.ChoiceField(body, self.cat_var, choices=_category_choices(),
+                                     blank=True, editable=True, width=30)
         self.e_cat.grid(row=6, column=1, sticky="w", padx=4, pady=2)
 
-        ttk.Label(body, text="Due date (YYYY-MM-DD):").grid(
+        ttk.Label(body, text="Due date:").grid(
             row=7, column=0, sticky="e", padx=4, pady=2)
-        self.e_due = ttk.Entry(body, width=16)
+        self.due_var = tk.StringVar()
+        self.e_due = kit.DateField(body, self.due_var)
         self.e_due.grid(row=7, column=1, sticky="w", padx=4, pady=2)
 
         bar = ttk.Frame(body)
@@ -615,12 +672,12 @@ class TodoDialog(tk.Toplevel):
             self.e_title.insert(0, existing.title)
             if existing.description:
                 self.t_desc.insert("1.0", existing.description)
-            self.e_owner.insert(0, existing.owner or "")
-            self.e_assignee.insert(0, existing.assignee or "")
+            self.owner_var.set(existing.owner or "")
+            self.assignee_var.set(existing.assignee or "")
             self.cb_status.set(existing.status)
             self.cb_pri.set(existing.priority)
-            self.e_cat.insert(0, existing.category or "")
-            self.e_due.insert(0, existing.due_date or "")
+            self.cat_var.set(existing.category or "")
+            self.due_var.set(existing.due_date or "")
         else:
             self.cb_status.set(DEFAULT_STATUS)
             self.cb_pri.set(DEFAULT_PRIORITY)
@@ -629,12 +686,12 @@ class TodoDialog(tk.Toplevel):
         payload = {
             "title": self.e_title.get(),
             "description": self.t_desc.get("1.0", "end").rstrip("\n"),
-            "owner": self.e_owner.get(),
-            "assignee": self.e_assignee.get(),
+            "owner": self.owner_var.get(),
+            "assignee": self.assignee_var.get(),
             "status": self.cb_status.get(),
             "priority": self.cb_pri.get(),
-            "category": self.e_cat.get(),
-            "due_date": self.e_due.get(),
+            "category": self.cat_var.get(),
+            "due_date": self.due_var.get(),
         }
         try:
             if self.existing is None:

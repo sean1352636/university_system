@@ -172,7 +172,7 @@ class TestFeedbackEmail:
 
     def _capture(self, monkeypatch):
         captured: list[dict] = []
-        import education_system.systems.sixth_form.domain.operations.communications.messages.email_templates as tpl
+        import education_system.systems.sixth_form.domains.communications.domain.messages.email_templates as tpl
 
         def _send(name, context, **kwargs):
             captured.append({"name": name, **context, **kwargs})
@@ -238,7 +238,7 @@ class TestFeedbackEmail:
             self, sf, monkeypatch):
         """The review is already saved by the time this runs."""
         _ucas, ps = sf
-        import education_system.systems.sixth_form.domain.operations.communications.messages.email_templates as tpl
+        import education_system.systems.sixth_form.domains.communications.domain.messages.email_templates as tpl
 
         def _boom(*_a, **_k):
             raise RuntimeError("mail server down")

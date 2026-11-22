@@ -5,7 +5,11 @@ module used to import the primary school's pupil table and write a pupil
 row itself, copying the child's medical notes straight across. It now runs
 the platform's seven-step transition instead:
 
-* the nursery adapter exports what the nursery holds;
+* the nursery adapter exports what the nursery holds — since 2026-11-05
+  that includes the Add Pupil parity details (middle and preferred names,
+  gender, UPN, address, parent relationship and e-mail, and — consent
+  permitting — SEN status and EAL), which the primary adapter stores on
+  the new pupil's matching columns;
 * ``handover.NURSERY_TO_PRIMARY`` decides what may cross, and medical,
   SEND and communication detail cross only with the parent's consent;
 * the primary adapter creates the applicant and puts them on roll;

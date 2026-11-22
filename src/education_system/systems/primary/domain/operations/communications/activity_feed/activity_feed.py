@@ -350,8 +350,20 @@ def list_events(
         clauses.append("ts >= ?")
         args.append(date_from.strip())
     if date_to:
-        clauses.append("ts <= ?")
-        args.append(date_to.strip())
+        dt = date_to.strip()
+        if re.fullmatch(r"\d{4}-\d{2}-\d{2}", dt):
+            # A bare date means "up to the end of that day": ts carries a
+            # time, so a string <= on the date alone would drop the day.
+            try:
+                next_day = (_dt.date.fromisoformat(dt)
+                            + _dt.timedelta(days=1)).isoformat()
+            except ValueError:
+                raise ValidationError(f"Invalid date_to: {dt}") from None
+            clauses.append("ts < ?")
+            args.append(next_day)
+        else:
+            clauses.append("ts <= ?")
+            args.append(dt)
     where = ("WHERE " + " AND ".join(clauses)) if clauses else ""
     if limit is None or limit <= 0:
         limit_sql = ""

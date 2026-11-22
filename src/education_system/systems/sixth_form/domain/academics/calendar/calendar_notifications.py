@@ -69,7 +69,11 @@ QUEUED: str = "Queued"
 SENT: str = "Sent"
 FAILED: str = "Failed"
 CANCELLED: str = "Cancelled"
-STATES: tuple[str, ...] = (QUEUED, SENT, FAILED, CANCELLED)
+#: Handed to the sixth form outbox, which is holding it (delivery mode
+#: inbox_only / sandbox) or retrying it. Becomes Sent / Failed when the
+#: outbox does.
+OUTBOX: str = "In Outbox"
+STATES: tuple[str, ...] = (QUEUED, SENT, FAILED, CANCELLED, OUTBOX)
 
 # How many days before each type of event its reminder goes out.
 # Types not listed remind the day before.
@@ -166,6 +170,12 @@ def init_db() -> None:
     core.init_db()
     with _connect() as conn:
         conn.executescript(_SCHEMA)
+        cols = {r[1] for r in conn.execute(
+            "PRAGMA table_info(calendar_notifications)").fetchall()}
+        if "message_id" not in cols:
+            # The messages-log row an e-mailed notification became.
+            conn.execute("ALTER TABLE calendar_notifications "
+                         "ADD COLUMN message_id INTEGER")
         conn.commit()
     logger.debug("Calendar notification schema ready at %s", DB_PATH)
     _DB_READY = True
@@ -455,15 +465,58 @@ def cancel_notification(notification_id: int) -> bool:
     return bool(cur.rowcount)
 
 
-def _send_email(address: str, subject: str, body: str) -> None:
-    from education_system.platform.integrations.email.email_service import (
-        EmailService,
+def _set_state(notification_id: int, state: str, *,
+               detail: str | None = None, message_id: int | None = None,
+               sent: bool = False) -> None:
+    with _connect() as conn:
+        conn.execute(
+            "UPDATE calendar_notifications SET state = ?, detail = ?, "
+            "message_id = COALESCE(?, message_id), "
+            "sent_at = CASE WHEN ? THEN datetime('now') ELSE sent_at END "
+            "WHERE notification_id = ?",
+            (state, (detail or "")[:300] or None, message_id, 1 if sent else 0,
+             notification_id))
+        conn.commit()
+
+
+def _hand_to_outbox(n: Notification) -> str:
+    """Send one notification through the sixth form outbox, which obeys
+    the platform delivery mode. Returns the state it ends in."""
+    from education_system.systems.sixth_form.domains.communications.domain.messages import (
+        messages as _messages,
     )
-    service = EmailService()
-    if not service.is_configured():
-        raise RuntimeError("Email is not configured on this "
-                           "installation")
-    service.send_email(to=address, subject=subject, body=body)
+    msg = _messages.create_message({
+        "direction": "Outgoing", "channel": "Email", "category": "General",
+        "status": "Queued", "subject": n.subject[:_messages.MAX_SUBJECT_LEN],
+        "body": n.body, "to_address": n.recipient,
+        "tags": f"calendar-notification:{n.notification_id}",
+    })
+    msg = _messages.send_message(msg.message_id)
+    return _apply_outbox_state(n.notification_id, msg.message_id)
+
+
+def _apply_outbox_state(notification_id: int, message_id: int) -> str:
+    from education_system.systems.sixth_form.domains.communications.domain.messages import (
+        messages as _messages,
+    )
+    msg = _messages.get_message(message_id)
+    d = _messages.delivery_status(message_id)
+    if msg is None:
+        _set_state(notification_id, FAILED, detail="Outbox message was deleted")
+        return FAILED
+    if msg.status in _messages.SENT_STATUSES:
+        _set_state(notification_id, SENT, message_id=message_id, sent=True,
+                   detail=f"message #{message_id}: sent")
+        return SENT
+    if msg.status == "Failed":
+        _set_state(notification_id, FAILED, message_id=message_id,
+                   detail=f"message #{message_id}: "
+                          f"{(d.last_error if d else None) or 'failed'}")
+        return FAILED
+    _set_state(notification_id, OUTBOX, message_id=message_id,
+               detail=f"message #{message_id}: "
+                      f"{(d.detail if d else None) or 'waiting in the outbox'}")
+    return OUTBOX
 
 
 def send_queued(*, sender: Callable[[str, str, str], None] | None = None,
@@ -472,12 +525,22 @@ def send_queued(*, sender: Callable[[str, str, str], None] | None = None,
 
     Only rows addressed to an actual address go out; broadcast rows
     (``audience:…``) stay queued for whichever surface owns the
-    fan-out. ``sender`` is ``(email, subject, body)``; without one
-    the college's email service is used, and an unconfigured service
-    fails the rows rather than pretending.
+    fan-out. ``sender`` is ``(email, subject, body)``. Without one, each
+    row goes through the sixth form outbox, which obeys the platform
+    e-mail delivery mode: a row the outbox is holding or retrying moves
+    to *In Outbox* (and is neither "sent" nor "failed" here) and follows
+    the outbox to Sent/Failed on later drains.
     """
     init_db()
     sent = failed = 0
+    if sender is None:
+        for n in list_notifications(state=OUTBOX, limit=limit):
+            mid = _message_id_of(n.notification_id)
+            if mid is None:
+                continue
+            state = _apply_outbox_state(n.notification_id, mid)
+            sent += state == SENT
+            failed += state == FAILED
     for n in list_notifications(state=QUEUED, limit=limit):
         if n.is_broadcast:
             continue
@@ -485,24 +548,24 @@ def send_queued(*, sender: Callable[[str, str, str], None] | None = None,
             if sender is not None:
                 sender(n.recipient, n.subject, n.body)
             else:
-                _send_email(n.recipient, n.subject, n.body)
+                state = _hand_to_outbox(n)
+                sent += state == SENT
+                failed += state == FAILED
+                continue
         except Exception as e:
             failed += 1
-            with _connect() as conn:
-                conn.execute(
-                    "UPDATE calendar_notifications SET state = ?, "
-                    "detail = ? WHERE notification_id = ?",
-                    (FAILED, str(e)[:300], n.notification_id))
-                conn.commit()
+            _set_state(n.notification_id, FAILED, detail=str(e))
             continue
         sent += 1
-        with _connect() as conn:
-            conn.execute(
-                "UPDATE calendar_notifications SET state = ?, "
-                "sent_at = datetime('now') WHERE notification_id = ?",
-                (SENT, n.notification_id))
-            conn.commit()
+        _set_state(n.notification_id, SENT, sent=True)
     if sent or failed:
         logger.info("Notification drain: %d sent, %d failed", sent,
                     failed)
     return sent, failed
+
+
+def _message_id_of(notification_id: int) -> int | None:
+    with _connect() as conn:
+        r = conn.execute("SELECT message_id FROM calendar_notifications "
+                         "WHERE notification_id = ?", (notification_id,)).fetchone()
+    return r["message_id"] if r else None

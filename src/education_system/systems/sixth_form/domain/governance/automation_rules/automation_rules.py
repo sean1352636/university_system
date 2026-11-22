@@ -60,18 +60,24 @@ def _t_risk(a, thr: float):
     return a.score >= thr, f"risk score {a.score} ≥ {thr}"
 
 
+def _below(lower: str | None, upper: str | None,
+           qualification_type: str | None) -> bool:
+    """True if grade *lower* is below *upper* on the subject's scale."""
+    pts = risk_analytics.grade_scales.grade_points
+    lo, hi = pts(lower, qualification_type), pts(upper, qualification_type)
+    return lo is not None and hi is not None and lo < hi
+
+
 def _count_pred_below_target(a) -> int:
-    gp = risk_analytics.GRADE_POINTS
     return sum(1 for p in a.predictions
-              if p.predicted_grade in gp and p.target_grade in gp
-              and gp[p.predicted_grade] < gp[p.target_grade])
+              if _below(p.predicted_grade, p.target_grade,
+                        p.qualification_type))
 
 
 def _count_mock_below_pred(a) -> int:
-    gp = risk_analytics.GRADE_POINTS
     return sum(1 for p in a.predictions
-              if p.latest_mock_grade in gp and p.predicted_grade in gp
-              and gp[p.latest_mock_grade] < gp[p.predicted_grade])
+              if _below(p.latest_mock_grade, p.predicted_grade,
+                        p.qualification_type))
 
 
 def _t_pred_below(a, thr: float):
@@ -222,34 +228,46 @@ def list_rules() -> list[dict[str, Any]]:
 def run_rules(*, rule_id: int | None = None) -> dict[str, Any]:
     """Evaluate enabled rules against every active student.
 
-    One :func:`risk_analytics.assess_student` call per student feeds all
-    rules, so the cost is one pass regardless of rule count. New matches
-    become Open actions; existing Open actions for the same (rule,
-    student) are left untouched (idempotent).
+    Each rule is evaluated over its own ``window_days`` (attendance and
+    behaviour are measured over that many days back): one
+    :func:`risk_analytics.assess_student` call per (student, distinct
+    window) feeds every rule sharing that window. New matches become
+    Open actions; existing Open actions for the same (rule, student)
+    are left untouched (idempotent).
+
+    The result carries ``errors`` — one line per student whose
+    assessment failed — so a scheduled run reports a partial failure
+    instead of silently skipping the student.
     """
     init_db()
     rules = [r for r in list_rules() if r["enabled"]
              and (rule_id is None or r["rule_id"] == rule_id)]
     if not rules:
-        return {"rules_run": 0, "new_actions": 0}
+        return {"rules_run": 0, "new_actions": 0, "matches": 0, "errors": []}
 
     with risk_analytics._connect() as rconn:  # reuse one connection
         student_ids = risk_analytics._active_student_ids(rconn)
 
+    windows = sorted({max(1, int(r["window_days"] or 90)) for r in rules})
     new_actions = 0
     per_rule_counts: dict[int, int] = {r["rule_id"]: 0 for r in rules}
+    errors: list[str] = []
     now = _dt.datetime.now().isoformat(timespec="seconds")
 
     with _connect() as conn:
         for sid in student_ids:
-            try:
-                assessment = risk_analytics.assess_student(sid)
-            except Exception:
-                logger.exception("Assessment failed for %s during rule run", sid)
-                continue
+            by_window: dict[int, Any] = {}
+            for w in windows:
+                try:
+                    by_window[w] = risk_analytics.assess_student(sid, window_days=w)
+                except Exception as e:
+                    logger.exception("Assessment failed for %s (window %dd) "
+                                     "during rule run", sid, w)
+                    errors.append(f"{sid} ({w}-day window): {type(e).__name__}: {e}")
             for r in rules:
                 td = _TRIGGER_BY_KEY.get(r["trigger_key"])
-                if not td:
+                assessment = by_window.get(max(1, int(r["window_days"] or 90)))
+                if not td or assessment is None:
                     continue
                 matched, detail = td.evaluate(assessment, r["threshold"])
                 if not matched:
@@ -262,7 +280,8 @@ def run_rules(*, rule_id: int | None = None) -> dict[str, Any]:
                     (r["rule_id"], sid)).fetchone()
                 if exists:
                     continue
-                message = f"{r['action_label']} — {assessment.full_name}: {detail}"
+                message = (f"{r['action_label']} — {assessment.full_name}: {detail} "
+                           f"(last {r['window_days']} days)")
                 conn.execute(
                     "INSERT INTO automation_actions "
                     "(rule_id, student_id, message, severity) VALUES (?,?,?,?)",
@@ -274,9 +293,10 @@ def run_rules(*, rule_id: int | None = None) -> dict[str, Any]:
                 (now, per_rule_counts[r["rule_id"]], r["rule_id"]))
         conn.commit()
 
-    logger.info("Automation run: %d rules, %d new actions", len(rules), new_actions)
+    logger.info("Automation run: %d rules, %d new actions, %d error(s)",
+                len(rules), new_actions, len(errors))
     return {"rules_run": len(rules), "new_actions": new_actions,
-            "matches": sum(per_rule_counts.values())}
+            "matches": sum(per_rule_counts.values()), "errors": errors}
 
 
 # ── Action worklist ──────────────────────────────────────────────────

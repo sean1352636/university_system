@@ -247,6 +247,9 @@ def _print_intervention_full(iv: Intervention) -> None:
           f"{iv.impact_grade or '—'}  ({iv.impact_label})")
     print(f"    Funding source  : {iv.funding_source or '—'}")
     print(f"    Referral source : {iv.referral_source or '—'}")
+    alert_id = data.source_alert_id(iv.intervention_id)
+    if alert_id is not None:
+        print(f"    Opened from     : early-warning alert #{alert_id}")
     for label, val in (
             ("Rationale",          iv.rationale),
             ("Success criteria",   iv.success_criteria),

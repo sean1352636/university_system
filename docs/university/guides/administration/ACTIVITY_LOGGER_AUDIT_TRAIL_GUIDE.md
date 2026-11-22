@@ -21,11 +21,11 @@ This guide covers compliance logging, audit trails, immutable audit logs, and ac
 The University Management System provides a multi-layered logging and audit system designed for regulatory compliance. It includes a simple file-based activity logger for general use, a database-backed audit trail for structured queries, and an immutable blockchain-style audit log for tamper-proof compliance records.
 
 **Key files:**
-- Simple Activity Logger: `modules/shared/utils/activity_logger.py`
-- Enterprise Activity Logger: `modules/shared/utils/simple_activity_logger.py`
-- Audit Trail: `infrastructure/security/audit_trail.py`
-- Immutable Audit Log: `infrastructure/security/immutable_audit_log.py`
-- Audit Helpers: `infrastructure/security/audit_helpers.py`
+- Simple Activity Logger: `src/education_system/systems/university/infrastructure/activity_logger.py`
+- Enterprise Activity Logger: `src/education_system/systems/university/infrastructure/utils/activity_logger/`
+- Audit Trail: `src/education_system/systems/university/infrastructure/security/audit_trail.py`
+- Immutable Audit Log: `src/education_system/systems/university/infrastructure/security/immutable_audit_log.py`
+- Audit Helpers: `src/education_system/systems/university/infrastructure/security/audit_helpers.py`
 
 ## Logging Architecture
 
@@ -63,7 +63,7 @@ The default activity logger for general-purpose logging across all modules. Uses
 ### Setting the User Context
 
 ```python
-from university_system.modules.shared.utils.activity_logger import set_user, get_user
+from education_system.systems.university.infrastructure.activity_logger import set_user, get_user
 
 # Set the current user (persists for subsequent log calls)
 set_user('admin')
@@ -75,7 +75,7 @@ current = get_user()  # Returns 'admin' (default: 'System')
 ### Logging Activities
 
 ```python
-from university_system.modules.shared.utils.activity_logger import (
+from education_system.systems.university.infrastructure.activity_logger import (
     log_activity,
     log_login,
     log_logout,
@@ -125,10 +125,10 @@ System - Permission denied: admin_dashboard - 2025-10-19 14:50:15
 
 | Setting | Value |
 |---------|-------|
-| Directory | `logs/` (via `paths.LOG_DIR`) |
-| Active File | `activity.log` |
+| Directory | `var/logs/university/` (via `paths.UNIVERSITY_LOG_DIR`) |
+| Active File | `app.log` |
 | Rotation | Daily at midnight |
-| Backup Format | `activity_YYYY-MM-DD.log` |
+| Backup Format | `app.YYYY-MM-DD` |
 | Retention | 90 days |
 
 ## Advanced Audit Trail
@@ -138,7 +138,7 @@ The database-backed audit trail provides structured, queryable audit records for
 ### Setting User Context
 
 ```python
-from university_system.infrastructure.security.audit_trail import AuditLogger, AuditAction
+from education_system.systems.university.infrastructure.security.audit_trail import AuditLogger, AuditAction
 
 logger = AuditLogger()
 
@@ -248,7 +248,7 @@ Entry 1:                     Entry 2:                     Entry 3:
 ### Adding Entries
 
 ```python
-from university_system.infrastructure.security.immutable_audit_log import immutable_audit_log
+from education_system.systems.university.infrastructure.security.immutable_audit_log import immutable_audit_log
 
 entry_hash = immutable_audit_log.add_entry(
     user_id='admin_123',
@@ -322,7 +322,7 @@ Safe wrapper functions that never raise exceptions, ensuring logging failures do
 ### Safe Logging
 
 ```python
-from university_system.infrastructure.security.audit_helpers import safe_log_security_event
+from education_system.systems.university.infrastructure.security.audit_helpers import safe_log_security_event
 
 # This never raises - returns True/False
 success = safe_log_security_event(
@@ -340,7 +340,7 @@ success = safe_log_security_event(
 ### Context Extraction
 
 ```python
-from university_system.infrastructure.security.audit_helpers import (
+from education_system.systems.university.infrastructure.security.audit_helpers import (
     get_gui_context,
     get_api_context,
     get_current_user_id
@@ -359,7 +359,7 @@ current_user = get_current_user_id()
 ### Sensitive Data Masking
 
 ```python
-from university_system.infrastructure.security.audit_helpers import mask_sensitive_data
+from education_system.systems.university.infrastructure.security.audit_helpers import mask_sensitive_data
 
 data = {
     'username': 'admin',
@@ -376,7 +376,7 @@ Fields automatically masked: passwords, tokens, secrets, SSNs, credit cards, API
 
 ## Enterprise Activity Logger
 
-The enterprise logger (`modules/shared/utils/simple_activity_logger.py`) provides advanced features for large-scale deployments.
+The enterprise logger (`src/education_system/systems/university/infrastructure/utils/activity_logger/`) provides advanced features for large-scale deployments.
 
 ### Rich Log Entries
 
@@ -509,25 +509,23 @@ logger.export(format='csv', filename='audit_export.csv')
 
 ### Log Directories
 
-All log files are stored under the centralized `paths.LOG_DIR` directory (typically `logs/`).
+All log files are stored under the centralized `paths.UNIVERSITY_LOG_DIR` directory (`var/logs/university/`).
 
 | File | Content |
 |------|---------|
-| `activity.log` | Current activity log |
-| `activity_YYYY-MM-DD.log` | Rotated daily logs |
-| `activity_logs.db` | Database-backed audit entries |
-| `app.log` | Application logs |
+| `app.log` | Current activity and application log |
+| `app.YYYY-MM-DD` | Rotated daily logs |
 
 ## Troubleshooting
 
 ### Logs Not Being Written
 
-1. Check write permissions on the `logs/` directory
-2. Verify the `LOG_DIR` path in `modules/shared/constants/paths.py`
+1. Check write permissions on the `var/logs/university/` directory
+2. Verify the `UNIVERSITY_LOG_DIR` path in `src/education_system/paths.py`
 3. Ensure `set_user()` is called before logging user-specific activities
 
 ```bash
-chmod -R 755 logs/
+chmod -R 755 var/logs/university/
 ```
 
 ### Immutable Audit Log Integrity Failure

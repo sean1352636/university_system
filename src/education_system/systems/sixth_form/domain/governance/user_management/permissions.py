@@ -31,8 +31,8 @@ from education_system.platform.identity.auth.role_manager import ROLE_HIERARCHY
 from education_system.systems.sixth_form.domain.governance.user_management import (
     lifecycle,
 )
-from education_system.systems.sixth_form.interfaces import user_accounts as _ua
-from education_system.systems.sixth_form.interfaces.user_accounts import (
+from education_system.systems.sixth_form.domain.governance.user_management import user_accounts as _ua
+from education_system.systems.sixth_form.domain.governance.user_management.user_accounts import (
     SYSTEM_KEY, UserAccountError,
 )
 

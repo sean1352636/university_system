@@ -7,6 +7,39 @@ from education_system.systems.university.infrastructure.activity_logger import l
 logger = logging.getLogger(__name__)
 
 
+
+# The old ``notifications`` table was removed by design; notices are now the
+# Notifications Hub inbox: unread ``messages`` addressed to the user's
+# university-local id (resolved by username — auth.db ids differ).
+_INBOX_WHERE = ("recipient_id = ? AND (is_archived IS NULL OR is_archived = 0) "
+                "AND (is_deleted_by_recipient IS NULL OR is_deleted_by_recipient = 0)")
+
+
+def _inbox_id(username):
+    from education_system.systems.university.infrastructure.auth.session_user import (
+        resolve_local_identity,
+    )
+    local_id, _student_id = resolve_local_identity(username or '')
+    return local_id
+
+
+def _unread_inbox_count(cursor, username) -> int:
+    local_id = _inbox_id(username)
+    if local_id is None:
+        return 0
+    cursor.execute(f"SELECT COUNT(*) FROM messages WHERE {_INBOX_WHERE} "  # nosec B608 - constant
+                   "AND (is_read IS NULL OR is_read = 0)", (local_id,))
+    return cursor.fetchone()[0]
+
+
+def _open_ticket_count(user) -> int:
+    """How many of ``user``'s own support tickets are still open (a count:
+    no ticket text)."""
+    from education_system.systems.university.domains.student_support.domain.helpdesk.tickets import (
+        service as tickets,
+    )
+    return tickets.ticket_counts(user, filters={'active_only': True}, mine=True) if user else 0
+
 class DashboardMixin:
     """Mixin for student dashboard quick-action methods."""
 
@@ -246,10 +279,7 @@ class DashboardMixin:
 
                 # Unread notifications
                 try:
-                    cursor.execute(
-                        "SELECT COUNT(*) FROM notifications WHERE user_id = ? AND is_read = 0",
-                        (username,))
-                    count = cursor.fetchone()[0]
+                    count = _unread_inbox_count(cursor, username)
                     if count:
                         lines.append(f"Notifications: {count} unread")
                 except Exception:
@@ -257,10 +287,7 @@ class DashboardMixin:
 
                 # Open support tickets
                 try:
-                    cursor.execute(
-                        "SELECT COUNT(*) FROM support_tickets WHERE user_id = ? AND status NOT IN ('Closed', 'Resolved')",
-                        (username,))
-                    count = cursor.fetchone()[0]
+                    count = _open_ticket_count(self.current_user)
                     if count:
                         lines.append(f"Support: {count} open ticket{'s' if count != 1 else ''}")
                 except Exception:
@@ -294,20 +321,14 @@ class DashboardMixin:
                 cursor = conn.cursor()
 
                 try:
-                    cursor.execute(
-                        "SELECT COUNT(*) FROM notifications WHERE user_id = ? AND is_read = 0",
-                        (username,))
-                    count = cursor.fetchone()[0]
+                    count = _unread_inbox_count(cursor, username)
                     if count:
                         lines.append(f"\nNotifications: {count} unread")
                 except Exception:
                     logger.debug("Suppressed exception", exc_info=True)
 
                 try:
-                    cursor.execute(
-                        "SELECT COUNT(*) FROM support_tickets WHERE user_id = ? AND status NOT IN ('Closed', 'Resolved')",
-                        (username,))
-                    count = cursor.fetchone()[0]
+                    count = _open_ticket_count(self.current_user)
                     if count:
                         lines.append(f"Support: {count} open ticket{'s' if count != 1 else ''}")
                 except Exception:
@@ -429,31 +450,28 @@ class DashboardMixin:
             self.add_chat_message("Chatbot", f"Error fetching attendance: {e}", "bot")
 
     def show_my_tickets(self):
-        """Show the student's open support tickets."""
+        """Show the signed-in person's open support tickets (both
+        front-ends; through the ticket service)."""
         try:
             username = self.current_user.get('username', '')
-            with get_connection() as conn:
-                cursor = conn.cursor()
-                cursor.execute('''
-                    SELECT ticket_id, subject, category, priority, status, created_at
-                    FROM support_tickets
-                    WHERE user_id = ? AND status NOT IN ('Closed')
-                    ORDER BY created_at DESC
-                    LIMIT 10
-                ''', (username,))
-                rows = cursor.fetchall()
+            from education_system.systems.university.domains.student_support.domain.student_support import (
+                service as support,
+            )
+            result = support.list_my_tickets(self.current_user, {'active_only': True}, 1, 10)
+            rows = result['tickets']
 
             if not rows:
                 self.add_chat_message("Chatbot",
                     "You have no open support tickets.", "bot")
                 return
 
-            response = f"Support Tickets ({len(rows)} open):\n\n"
-            for r in rows:
-                tid, title, cat, pri, status, created = r
-                response += f"  #{tid}: {title}\n"
-                response += f"    Category: {cat or 'N/A'}  |  Priority: {pri or 'N/A'}  |  Status: {status}\n"
-                response += f"    Created: {created or 'N/A'}\n\n"
+            response = f"Support Tickets ({result['total_count']} open):\n\n"
+            for t in rows:
+                response += f"  #{t['ticket_id']}: {t.get('subject')}\n"
+                response += (f"    Category: {t.get('category') or 'N/A'}  |  "
+                             f"Priority: {t.get('priority') or 'N/A'}  |  "
+                             f"Status: {t.get('status_label') or t.get('status')}\n")
+                response += f"    Created: {t.get('created_at') or 'N/A'}\n\n"
 
             self.add_chat_message("Chatbot", response, "bot")
             log_activity('view', 'support_tickets', None, details={'user': username})
@@ -465,16 +483,20 @@ class DashboardMixin:
         """Show the student's recent notifications."""
         try:
             username = self.current_user.get('username', '')
-            with get_connection() as conn:
-                cursor = conn.cursor()
-                cursor.execute('''
-                    SELECT message, created_at, is_read
-                    FROM notifications
-                    WHERE user_id = ?
-                    ORDER BY created_at DESC
-                    LIMIT 10
-                ''', (username,))
-                rows = cursor.fetchall()
+            local_id = _inbox_id(username)
+            rows = []
+            if local_id is not None:
+                with get_connection() as conn:
+                    cursor = conn.cursor()
+                    cursor.execute(f"""
+                        SELECT COALESCE(NULLIF(subject, ''), substr(COALESCE(content, message, ''), 1, 80)),
+                               sent_at, is_read
+                        FROM messages
+                        WHERE {_INBOX_WHERE}
+                        ORDER BY id DESC
+                        LIMIT 10
+                    """, (local_id,))  # nosec B608 - constant
+                    rows = cursor.fetchall()
 
             if not rows:
                 self.add_chat_message("Chatbot",
@@ -678,38 +700,23 @@ class DashboardMixin:
             with get_connection() as conn:
                 cursor = conn.cursor()
                 rows = []
-                # Try exams table with rooms join
+                # Published exams, with the room's building where the room is known
                 try:
                     cursor.execute('''
-                        SELECT e.module_code, e.exam_date, e.start_time, e.end_time,
-                               r.room_number, r.building
+                        SELECT e.module_code, e.date, e.start_time, e.end_time,
+                               e.room, r.building
                         FROM exams e
-                        LEFT JOIN rooms r ON e.room_id = r.id
+                        LEFT JOIN rooms r ON r.room_number = e.room
                         WHERE e.module_code IN (
                             SELECT module_code FROM student_modules
                             WHERE student_id = ? AND LOWER(status) = 'enrolled'
-                        ) AND e.exam_date >= date('now')
-                        ORDER BY e.exam_date ASC
+                        ) AND e.date >= date('now')
+                          AND COALESCE(e.status, 'published') = 'published'
+                        ORDER BY e.date ASC
                     ''', (username,))
                     rows = cursor.fetchall()
                 except Exception:
                     logger.debug("Suppressed exception", exc_info=True)
-
-                if not rows:
-                    # Fallback: exam_schedule table
-                    try:
-                        cursor.execute('''
-                            SELECT module_code, exam_date, start_time, end_time, location, ''
-                            FROM exam_schedule
-                            WHERE module_code IN (
-                                SELECT module_code FROM student_modules
-                                WHERE student_id = ? AND LOWER(status) = 'enrolled'
-                            ) AND exam_date >= date('now')
-                            ORDER BY exam_date ASC
-                        ''', (username,))
-                        rows = cursor.fetchall()
-                    except Exception:
-                        logger.debug("Suppressed exception", exc_info=True)
 
             if not rows:
                 self.add_chat_message("Chatbot",

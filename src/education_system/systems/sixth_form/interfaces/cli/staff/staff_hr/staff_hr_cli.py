@@ -597,13 +597,19 @@ def records_delete() -> None:
     except _UserAbort:
         print("\n  Cancelled.")
         return
-    if _input(f"Delete HR record #{r.record_id}? "
-              "Type 'yes'",
+    print("  Records are archived, not deleted (UK retention): hidden "
+          "from lists, who/when/why recorded, restorable.")
+    if _input(f"Archive HR record #{r.record_id}? Type 'yes'",
               default="no").lower() != "yes":
         print("\n  Cancelled.")
         return
-    if data.delete_record(r.record_id):
-        print(f"\n  ✓ Deleted #{r.record_id}")
+    try:
+        reason = _input("Reason for archiving (optional)", default="")
+    except _UserAbort:
+        print("\n  Cancelled.")
+        return
+    if data.delete_record(r.record_id, reason=reason or None):
+        print(f"\n  ✓ Archived #{r.record_id}")
     _pause()
 
 
@@ -903,7 +909,15 @@ _MENU: list[tuple[str, Callable[[], None]]] = [
     ("Delete event",         events_delete),
     ("──",                   lambda: None),
     ("Summary",              summary_flow),
+    ("Single central record", lambda: _scr_cli().run()),
 ]
+
+
+def _scr_cli():
+    from education_system.systems.sixth_form.interfaces.cli.staff.staff_hr import (
+        single_central_record_cli,
+    )
+    return single_central_record_cli
 
 
 def run() -> None:

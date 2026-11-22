@@ -142,12 +142,11 @@ def points_balance(student_id: str | int) -> int:
                     total += int(row[0] or 0)
             except Exception:
                 logger.debug("Suppressed exception", exc_info=True)
-            # Legacy: SU points (table layout varies — sum points col
-            # if present; tolerate missing table)
+            # Legacy: SU points (earned less spent); tolerate a missing table
             try:
                 row = conn.execute(
-                    "SELECT COALESCE(SUM(points), 0) FROM su_points "
-                    "WHERE student_id = ?",
+                    "SELECT COALESCE(SUM(points_earned) - SUM(points_spent), 0) "
+                    "FROM student_points WHERE student_id = ?",
                     (sid,),
                 ).fetchone()
                 if row:

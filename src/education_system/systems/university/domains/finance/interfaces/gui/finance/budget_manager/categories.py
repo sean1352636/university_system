@@ -563,12 +563,13 @@ class BudgetCategoriesMixin:
                     messagebox.showerror(_t('gui.finance.finance.budget_manager.categories.dialogs.error', default="Error"), _t('gui.finance.finance.budget_manager.categories.dialogs.all_fields_are_required', default="All fields are required"))
                     return
 
-                update_actual_amounts(plan_id, category_id, amount)
+                from education_system.systems.university.domains.finance.domain.core.analytics import set_line_item_actual
+                set_line_item_actual(plan_id, category_id, amount)
                 messagebox.showinfo(_t('gui.finance.finance.budget_manager.categories.dialogs.success', default="Success"), _t('gui.finance.finance.budget_manager.categories.dialogs.actual_amounts_updated_successfully', default="Actual amounts updated successfully!"))
                 dialog.destroy()
 
-            except ValueError:
-                messagebox.showerror(_t('gui.finance.finance.budget_manager.categories.dialogs.error', default="Error"), _t('gui.finance.finance.budget_manager.categories.dialogs.invalid_id_or_amount_values', default="Invalid ID or amount values"))
+            except ValueError as e:
+                messagebox.showerror(_t('gui.finance.finance.budget_manager.categories.dialogs.error', default="Error"), str(e) if 'budget plan' in str(e).lower() else _t('gui.finance.finance.budget_manager.categories.dialogs.invalid_id_or_amount_values', default="Invalid ID or amount values"))
             except Exception as e:
                 messagebox.showerror(_t('gui.finance.finance.budget_manager.categories.dialogs.error', default="Error"), f"Failed to update actual amounts: {e}")
 

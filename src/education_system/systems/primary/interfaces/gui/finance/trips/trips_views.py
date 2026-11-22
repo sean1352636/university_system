@@ -31,6 +31,7 @@ from education_system.systems.primary.domain.finance.trips.trips import (
     ValidationError,
     YEAR_GROUPS,
 )
+from education_system.systems.primary.interfaces.gui import kit
 
 logger = logging.getLogger(__name__)
 
@@ -40,13 +41,23 @@ WIN_MINSIZE = (1200, 800)
 
 def open_trips_window(parent=None) -> None:
     data.init_db()
-    master = getattr(parent, "root", parent)
-    win = tk.Toplevel(master) if master is not None else tk.Tk()
-    win.title(f"Trips & Payments — {branding.SYSTEM_NAME}")
-    win.geometry(WIN_GEOMETRY)
-    win.minsize(*WIN_MINSIZE)
-    nb = ttk.Notebook(win)
-    nb.pack(fill="both", expand=True, padx=10, pady=10)
+    if parent is None:
+        win = tk.Tk()
+        win.title(f"Trips & Payments — {branding.SYSTEM_NAME}")
+        win.geometry(WIN_GEOMETRY)
+        win.minsize(*WIN_MINSIZE)
+        frame = ttk.Frame(win, padding=10)
+        frame.pack(fill="both", expand=True)
+        _draw_trips(frame)
+        return
+    kit.show_page(parent, "Trips & Payments", _draw_trips)
+
+
+def _draw_trips(parent) -> None:
+    kit.page_heading(parent, "Trips & Payments",
+                     "School trips, pupil bookings and the payments against them.")
+    nb = ttk.Notebook(parent)
+    nb.pack(fill="both", expand=True)
     trips_tab = TripsTab(nb)
     bookings_tab = BookingsTab(nb)
     PaymentsTab(nb)
@@ -70,6 +81,16 @@ def _staff_options() -> list[tuple[str, str]]:
 
 def _student_names() -> dict[str, str]:
     return {s.student_id: s.full_name for s in student_data.list_students()}
+
+
+def _trip_choices() -> list[tuple[str, str]]:
+    """``(trip id, "#id name (start)")`` for the trip filter."""
+    try:
+        return [(str(t.trip_id), f"#{t.trip_id} {t.name} ({t.start_date})")
+                for t in data.list_trips()]
+    except Exception:  # noqa: BLE001 - an empty list beats a broken filter
+        logger.exception("trip list for filter failed")
+        return []
 
 
 def _money(v: float | None) -> str:
@@ -306,8 +327,7 @@ class TripDialog:
         self._build()
 
     def _build(self) -> None:
-        form = ttk.Frame(self.win)
-        form.pack(fill="both", expand=True, padx=12, pady=12)
+        form, footer = kit.scrolled_form(self.win)
         r = 0
 
         def label(t: str):
@@ -330,17 +350,15 @@ class TripDialog:
         r += 1
 
         label("Start date:")
-        self.start_e = ttk.Entry(form, width=14)
-        self.start_e.insert(0, self.existing.start_date
-                                if self.existing
-                                else _date.today().isoformat())
+        self.start_e = kit.DateField(form, tk.StringVar(
+            value=self.existing.start_date if self.existing
+            else _date.today().isoformat()))
         self.start_e.grid(row=r, column=1, sticky="w", padx=6)
         r += 1
 
         label("End date:")
-        self.end_e = ttk.Entry(form, width=14)
-        if self.existing and self.existing.end_date:
-            self.end_e.insert(0, self.existing.end_date)
+        self.end_e = kit.DateField(form, tk.StringVar(
+            value=(self.existing.end_date or "") if self.existing else ""))
         self.end_e.grid(row=r, column=1, sticky="w", padx=6)
         r += 1
 
@@ -353,32 +371,33 @@ class TripDialog:
         r += 1
 
         label(f"Cost / place ({CURRENCY_SYMBOL}):")
-        self.cost_e = ttk.Entry(form, width=12)
-        self.cost_e.insert(0,
-                              f"{self.existing.cost_per_place:.2f}"
-                              if self.existing else "0.00")
+        self.cost_e = kit.NumberField(form, tk.StringVar(
+            value=f"{self.existing.cost_per_place:.2f}"
+            if self.existing else "0.00"),
+            increment=0.01, to=99999, width=12)
         self.cost_e.grid(row=r, column=1, sticky="w", padx=6)
         r += 1
 
         label(f"Deposit ({CURRENCY_SYMBOL}):")
-        self.dep_e = ttk.Entry(form, width=12)
-        self.dep_e.insert(0,
-                              f"{self.existing.deposit:.2f}"
-                              if self.existing else "0.00")
+        self.dep_e = kit.NumberField(form, tk.StringVar(
+            value=f"{self.existing.deposit:.2f}"
+            if self.existing else "0.00"),
+            increment=0.01, to=99999, width=12)
         self.dep_e.grid(row=r, column=1, sticky="w", padx=6)
         r += 1
 
         label("Capacity:")
-        self.cap_e = ttk.Entry(form, width=8)
-        if self.existing and self.existing.capacity is not None:
-            self.cap_e.insert(0, str(self.existing.capacity))
+        self.cap_e = kit.NumberField(form, tk.StringVar(
+            value=str(self.existing.capacity)
+            if self.existing and self.existing.capacity is not None
+            else ""), from_=0, to=999, width=8)
         self.cap_e.grid(row=r, column=1, sticky="w", padx=6)
         r += 1
 
         label("Payment due:")
-        self.due_e = ttk.Entry(form, width=14)
-        if self.existing and self.existing.payment_due:
-            self.due_e.insert(0, self.existing.payment_due)
+        self.due_e = kit.DateField(form, tk.StringVar(
+            value=(self.existing.payment_due or "") if self.existing
+            else ""))
         self.due_e.grid(row=r, column=1, sticky="w", padx=6)
         r += 1
 
@@ -421,8 +440,7 @@ class TripDialog:
         self.notes_text.grid(row=r, column=1, sticky="w", padx=6)
         r += 1
 
-        bar = ttk.Frame(form)
-        bar.grid(row=r, column=0, columnspan=2, pady=(12, 0))
+        bar = footer
         ttk.Button(bar, text="Save",
                     command=self._save).pack(side="left")
         ttk.Button(bar, text="Cancel",
@@ -784,8 +802,7 @@ class BookingDialog:
         self._build()
 
     def _build(self) -> None:
-        form = ttk.Frame(self.win)
-        form.pack(fill="both", expand=True, padx=12, pady=12)
+        form, footer = kit.scrolled_form(self.win)
         r = 0
         ttk.Label(form,
                    text=f"Trip #{self.trip.trip_id}  {self.trip.name}\n"
@@ -806,22 +823,15 @@ class BookingDialog:
                             f"{names.get(self._student_id, '?')}"
                        ).grid(row=r, column=1, sticky="w", padx=6)
         else:
-            opts = _student_options()
-            self._student_ids = [s for s, _ in opts]
-            self.student_cb = ttk.Combobox(
-                form, values=[l for _, l in opts],
-                state="readonly", width=40)
-            if opts:
-                self.student_cb.current(0)
+            self.student_cb = kit.PupilPicker(form)
             self.student_cb.grid(row=r, column=1, sticky="w", padx=6)
         r += 1
 
         ttk.Label(form, text="Booking date:").grid(row=r, column=0,
                                                        sticky="e", pady=3)
-        self.bd_e = ttk.Entry(form, width=14)
-        self.bd_e.insert(0, self.existing.booking_date
-                              if self.existing
-                              else _date.today().isoformat())
+        self.bd_e = kit.DateField(form, tk.StringVar(
+            value=self.existing.booking_date if self.existing
+            else _date.today().isoformat()))
         self.bd_e.grid(row=r, column=1, sticky="w", padx=6)
         r += 1
 
@@ -876,8 +886,7 @@ class BookingDialog:
         self.notes_text.grid(row=r, column=1, sticky="w", padx=6)
         r += 1
 
-        bar = ttk.Frame(form)
-        bar.grid(row=r, column=0, columnspan=2, pady=(12, 0))
+        bar = footer
         ttk.Button(bar, text="Save",
                     command=self._save).pack(side="left")
         ttk.Button(bar, text="Cancel",
@@ -885,11 +894,10 @@ class BookingDialog:
 
     def _save(self) -> None:
         if self.student_cb is not None:
-            idx = self.student_cb.current()
-            if idx < 0:
+            sid = self.student_cb.get()
+            if not sid:
                 messagebox.showerror("Validation", "Pick a student.")
                 return
-            sid = self._student_ids[idx]
         else:
             sid = self._student_id
         payload = {
@@ -961,19 +969,21 @@ class PaymentDialog:
         ttk.Label(form,
                    text=f"Amount ({CURRENCY_SYMBOL}):").grid(
             row=r, column=0, sticky="e", pady=3)
-        self.amt_e = ttk.Entry(form, width=12)
+        amt_init = ""
         if self.existing:
-            self.amt_e.insert(0, f"{self.existing.amount:.2f}")
+            amt_init = f"{self.existing.amount:.2f}"
         elif self.bv and self.bv.balance > 0:
-            self.amt_e.insert(0, f"{self.bv.balance:.2f}")
+            amt_init = f"{self.bv.balance:.2f}"
+        self.amt_e = kit.NumberField(form, tk.StringVar(value=amt_init),
+                                     increment=0.01, to=99999, width=12)
         self.amt_e.grid(row=r, column=1, sticky="w", padx=6)
         r += 1
 
         ttk.Label(form, text="Paid on:").grid(row=r, column=0,
                                                 sticky="e", pady=3)
-        self.paid_e = ttk.Entry(form, width=14)
-        self.paid_e.insert(0, self.existing.paid_on if self.existing
-                                else _date.today().isoformat())
+        self.paid_e = kit.DateField(form, tk.StringVar(
+            value=self.existing.paid_on if self.existing
+            else _date.today().isoformat()))
         self.paid_e.grid(row=r, column=1, sticky="w", padx=6)
         r += 1
 
@@ -1005,9 +1015,9 @@ class PaymentDialog:
 
         ttk.Label(form, text="Recorded by:").grid(row=r, column=0,
                                                     sticky="e", pady=3)
-        self.by_e = ttk.Entry(form, width=30)
-        if self.existing and self.existing.recorded_by:
-            self.by_e.insert(0, self.existing.recorded_by)
+        self.by_e = kit.StaffPicker(form, tk.StringVar(
+            value=(self.existing.recorded_by or "") if self.existing
+            else ""), by="name")
         self.by_e.grid(row=r, column=1, sticky="w", padx=6)
         r += 1
 
@@ -1065,10 +1075,12 @@ class PaymentsTab:
         bar = ttk.Frame(self.frame)
         bar.pack(fill="x", padx=8, pady=(8, 4))
         ttk.Label(bar, text="Trip ID:").pack(side="left")
-        self.f_trip = ttk.Entry(bar, width=8)
+        self.f_trip = kit.ChoiceField(bar, choices=_trip_choices(),
+                                      blank=True, width=26)
         self.f_trip.pack(side="left", padx=(2, 10))
         ttk.Label(bar, text="Student:").pack(side="left")
-        self.f_student = ttk.Entry(bar, width=12)
+        self.f_student = kit.PupilPicker(bar, include_off_roll=True,
+                                         width=28)
         self.f_student.pack(side="left", padx=(2, 10))
         ttk.Label(bar, text="Method:").pack(side="left")
         self.f_method = ttk.Combobox(bar,
@@ -1083,10 +1095,10 @@ class PaymentsTab:
         self.f_status.current(0)
         self.f_status.pack(side="left", padx=(2, 10))
         ttk.Label(bar, text="From:").pack(side="left")
-        self.f_from = ttk.Entry(bar, width=12)
+        self.f_from = kit.DateField(bar)
         self.f_from.pack(side="left", padx=(2, 6))
         ttk.Label(bar, text="To:").pack(side="left")
-        self.f_to = ttk.Entry(bar, width=12)
+        self.f_to = kit.DateField(bar)
         self.f_to.pack(side="left", padx=(2, 10))
         ttk.Button(bar, text="Apply",
                     command=self.refresh).pack(side="left", padx=(8, 4))
@@ -1136,12 +1148,13 @@ class PaymentsTab:
                     command=self.refresh).pack(side="right")
 
     def _clear(self) -> None:
-        self.f_trip.delete(0, "end")
-        self.f_student.delete(0, "end")
+        self.f_trip.set_choices(_trip_choices())
+        self.f_trip.set("")
+        self.f_student.set("")
         self.f_method.current(0)
         self.f_status.current(0)
-        self.f_from.delete(0, "end")
-        self.f_to.delete(0, "end")
+        self.f_from.set("")
+        self.f_to.set("")
         self.refresh()
 
     def refresh(self) -> None:

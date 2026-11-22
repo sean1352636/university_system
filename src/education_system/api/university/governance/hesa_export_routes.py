@@ -7,7 +7,7 @@ from datetime import datetime
 
 from flask import Blueprint, g, jsonify, request
 
-from education_system.platform.delivery.api.university.auth import token_required
+from education_system.platform.delivery.api.university.auth import staff_required, token_required
 from education_system.platform.delivery.api.university.pagination import get_pagination_params, paginated_response
 from education_system.systems.university.infrastructure.exceptions import ValidationError
 from education_system.systems.university.infrastructure.database.db import get_connection, transaction
@@ -16,6 +16,15 @@ from education_system.systems.university.infrastructure.activity_logger import l
 logger = logging.getLogger(__name__)
 
 hesa_export_bp = Blueprint("hesa_export", __name__, url_prefix="/api/hesa-export")
+
+# HESA statutory returns are staff-only: the XML export carries every
+# student's record. Callers' identity in created_by / performed_by is taken
+# from the token, never the body.
+#: Read returns, mappings, logs, statistics. Held by ``admin`` and ``staff``.
+HESA_VIEW_PERMISSION = "view_reports"
+#: Create / generate / change returns and mappings. Held by ``admin`` and
+#: ``staff``.
+HESA_MANAGE_PERMISSION = "generate_reports"
 
 
 def _row_to_dict(row) -> dict:
@@ -28,6 +37,7 @@ def _row_to_dict(row) -> dict:
 
 @hesa_export_bp.route("/returns", methods=["GET"])
 @token_required
+@staff_required(permission=HESA_VIEW_PERMISSION)
 def list_returns():
     status = request.args.get("status")
     return_type = request.args.get("return_type")
@@ -68,6 +78,7 @@ def list_returns():
 
 @hesa_export_bp.route("/returns/<int:return_id>", methods=["GET"])
 @token_required
+@staff_required(permission=HESA_VIEW_PERMISSION)
 def get_return(return_id: int):
     with get_connection() as conn:
         row = conn.execute(
@@ -81,6 +92,7 @@ def get_return(return_id: int):
 
 @hesa_export_bp.route("/returns", methods=["POST"])
 @token_required
+@staff_required(permission=HESA_MANAGE_PERMISSION)
 def create_return():
     data = request.get_json(silent=True) or {}
     for field in ["academic_year", "return_type"]:
@@ -93,7 +105,7 @@ def create_return():
                (academic_year, return_type, created_by, notes)
                VALUES (?, ?, ?, ?)""",
             (data["academic_year"], data["return_type"],
-             data.get("created_by", g.current_user.get("sub", "")),
+             g.current_user.get("sub", ""),
              data.get("notes", "")),
         )
         new_id = conn.execute("SELECT last_insert_rowid()").fetchone()[0]
@@ -109,6 +121,7 @@ def create_return():
 
 @hesa_export_bp.route("/returns/<int:return_id>/status", methods=["PUT"])
 @token_required
+@staff_required(permission=HESA_MANAGE_PERMISSION)
 def update_return_status(return_id: int):
     with get_connection() as conn:
         existing = conn.execute(
@@ -153,6 +166,7 @@ def update_return_status(return_id: int):
 
 @hesa_export_bp.route("/field-mappings", methods=["GET"])
 @token_required
+@staff_required(permission=HESA_VIEW_PERMISSION)
 def list_field_mappings():
     return_type = request.args.get("return_type")
 
@@ -175,6 +189,7 @@ def list_field_mappings():
 
 @hesa_export_bp.route("/field-mappings", methods=["POST"])
 @token_required
+@staff_required(permission=HESA_MANAGE_PERMISSION)
 def create_field_mapping():
     data = request.get_json(silent=True) or {}
     for field in ["return_type", "hesa_field", "local_field"]:
@@ -204,6 +219,7 @@ def create_field_mapping():
 
 @hesa_export_bp.route("/returns/<int:return_id>/log", methods=["GET"])
 @token_required
+@staff_required(permission=HESA_VIEW_PERMISSION)
 def get_submission_log(return_id: int):
     with get_connection() as conn:
         rows = conn.execute(
@@ -219,6 +235,7 @@ def get_submission_log(return_id: int):
 
 @hesa_export_bp.route("/statistics", methods=["GET"])
 @token_required
+@staff_required(permission=HESA_VIEW_PERMISSION)
 def get_statistics():
     with get_connection() as conn:
         total_returns = conn.execute("SELECT COUNT(*) FROM hesa_returns").fetchone()[0]
@@ -237,6 +254,7 @@ def get_statistics():
 
 @hesa_export_bp.route("/returns/<int:return_id>/generate-xml", methods=["POST"])
 @token_required
+@staff_required(permission=HESA_MANAGE_PERMISSION)
 def generate_xml_export(return_id: int):
     import defusedxml.ElementTree as ET
 
@@ -283,6 +301,7 @@ def generate_xml_export(return_id: int):
 
 @hesa_export_bp.route("/returns/<int:return_id>/log", methods=["POST"])
 @token_required
+@staff_required(permission=HESA_MANAGE_PERMISSION)
 def log_submission_action(return_id: int):
     with get_connection() as conn:
         existing = conn.execute(
@@ -301,7 +320,7 @@ def log_submission_action(return_id: int):
                (return_id, action, details, performed_by)
                VALUES (?, ?, ?, ?)""",
             (return_id, data["action"], data.get("details", ""),
-             data.get("performed_by", g.current_user.get("sub", ""))),
+             g.current_user.get("sub", "")),
         )
         new_id = conn.execute("SELECT last_insert_rowid()").fetchone()[0]
 

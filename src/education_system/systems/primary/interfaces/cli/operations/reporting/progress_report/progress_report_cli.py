@@ -172,7 +172,7 @@ def _cohort_overview() -> None:
               f"({ks2.get('at_or_above_exs_pct', 0.0):.1f}%)")
     rwm = s.get("ks2_rwm", {})
     if rwm:
-        print(f"  KS2 RWM combined: {rwm.get('exs_in_RWM', 0)} of "
+        print(f"  KS2 Reading, Maths & EGPS combined: {rwm.get('exs_in_RWM', 0)} of "
               f"{rwm.get('pupils_recorded', 0)} "
               f"({rwm.get('exs_in_RWM_pct', 0.0):.1f}%)")
     mtc = s.get("mtc", {})

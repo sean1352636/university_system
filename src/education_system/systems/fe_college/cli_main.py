@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import logging
 
+from education_system.platform.delivery.cli.cli_helpers import idle_session
 from education_system.systems.fe_college import SYSTEM_NAME, SYSTEM_SLUG
 from education_system.systems.fe_college.config import COLLEGE_NAME
 from education_system.systems.fe_college.interfaces.cli import menus
@@ -73,6 +74,16 @@ def _search(ctl: CollegeSession) -> None:
     _run_command(ctl, *matches[[m[0] for m in matches].index(chosen)])
 
 
+def _logout(auth) -> None:
+    """Sign out and return to login: the L key and the idle timeout both end here."""
+    from education_system import switch as _switch
+    try:
+        auth.logout()
+    except Exception:
+        logger.debug("Logout raised; returning to login anyway", exc_info=True)
+    _switch.request_logout("cli")
+
+
 def _main_menu(ctl: CollegeSession, auth) -> None:
     from education_system import switch as _switch
     from education_system.launcher.roles import is_superadmin
@@ -116,11 +127,7 @@ def _main_menu(ctl: CollegeSession, auth) -> None:
                 return
             continue
         if key == "l":
-            try:
-                auth.logout()
-            except Exception:
-                logger.debug("Logout raised; returning to login anyway", exc_info=True)
-            _switch.request_logout("cli")
+            _logout(auth)
             return
         if key == "q":
             if not sh.confirm(f"Shut down the {SYSTEM_NAME}?"):
@@ -142,7 +149,8 @@ def _main_menu(ctl: CollegeSession, auth) -> None:
 def run_authenticated(auth, user_info=None, role: str = "student") -> int:
     """Run the shell for an already-authenticated session."""
     ctl = CollegeSession(user_info or getattr(auth, "current_user", {}), role)
-    _main_menu(ctl, auth)
+    with idle_session(lambda: _logout(auth)):
+        _main_menu(ctl, auth)
     return 0
 
 

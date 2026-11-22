@@ -32,8 +32,12 @@ from pathlib import Path
 from typing import Any
 
 from education_system.systems.sixth_form.domain.academics.assignments import (
-    assignments as core,
     assignments_marking as marking,
+)
+from education_system.systems.sixth_form.domain.academics.assignments import (
+    models as assignments_models,
+    store as assignments_store,
+    submissions as assignments_submissions,
 )
 from education_system import paths
 
@@ -41,7 +45,7 @@ logger = logging.getLogger(__name__)
 
 DB_PATH = paths.SIXTH_FORM_ASSIGNMENTS_DB
 
-ValidationError = core.ValidationError
+ValidationError = assignments_models.ValidationError
 
 
 # ── Vocabularies ──────────────────────────────────────────────────
@@ -103,7 +107,7 @@ class Clash:
 
     week_start: str
     year_group: str | None
-    assignments: list[core.Assignment] = field(default_factory=list)
+    assignments: list[assignments_models.Assignment] = field(default_factory=list)
 
     @property
     def count(self) -> int:
@@ -135,7 +139,7 @@ class Clash:
 class DigestLine:
     """One assignment's line in a teacher's digest."""
 
-    assignment: core.Assignment
+    assignment: assignments_models.Assignment
     due_date: str | None
     cohort: int = 0
     submitted: int = 0
@@ -170,7 +174,7 @@ class Digest:
     upcoming: list[DigestLine] = field(default_factory=list)
     to_mark: list[DigestLine] = field(default_factory=list)
     missing: list[DigestLine] = field(default_factory=list)
-    covering_for: list[core.Assignment] = field(default_factory=list)
+    covering_for: list[assignments_models.Assignment] = field(default_factory=list)
 
     @property
     def total_unmarked(self) -> int:
@@ -282,7 +286,7 @@ def init_db() -> None:
     global _DB_READY
     if _DB_READY:
         return
-    core.init_db()
+    assignments_store.init_db()
     with _connect() as conn:
         conn.executescript(_SCHEMA)
         conn.commit()
@@ -322,9 +326,9 @@ def clashes(*, year_group: str | None = None,
     Grouped by year group rather than the whole college, because a
     Year 12 clash is invisible in a college-wide count.
     """
-    core.init_db()
+    assignments_store.init_db()
     buckets: dict[tuple[str, str | None], Clash] = {}
-    for a in core.list_assignments(year_group=year_group,
+    for a in assignments_store.list_assignments(year_group=year_group,
                                     open_only=True):
         if not a.due_date:
             continue
@@ -351,15 +355,15 @@ def student_clashes(student_id: str, *,
     More useful than the year-group view for a tutor: a student taking
     an unusual combination can hit a clash their year group does not.
     """
-    core.init_db()
+    assignments_store.init_db()
     buckets: dict[str, Clash] = {}
-    for sub in core.list_submissions(student_id=str(student_id).strip()):
+    for sub in assignments_store.list_submissions(student_id=str(student_id).strip()):
         if sub.is_done or sub.status == "Excused":
             continue
-        a = core.get_assignment(sub.assignment_id)
+        a = assignments_store.get_assignment(sub.assignment_id)
         if a is None:
             continue
-        due = core.effective_due_date(sub, a)
+        due = assignments_submissions.effective_due_date(sub, a)
         if not due:
             continue
         try:
@@ -383,7 +387,7 @@ def suggest_reschedule(clash: Clash) -> list[tuple[int, str, str]]:
         return []
     scored = []
     for a in clash.assignments:
-        cohort = len(core.list_submissions(
+        cohort = len(assignments_store.list_submissions(
             assignment_id=a.assignment_id))
         scored.append((cohort, a))
     scored.sort(key=lambda pair: pair[0])
@@ -411,20 +415,20 @@ def build_digest(teacher: str, *,
     if period not in DIGEST_PERIODS:
         raise ValidationError(
             f"Digest period must be one of: {', '.join(DIGEST_PERIODS)}")
-    day = core._validate_date(today, "today") or _today()
-    who = core._require(teacher, "Teacher").strip()
+    day = assignments_store._validate_date(today, "today") or _today()
+    who = assignments_store._require(teacher, "Teacher").strip()
     horizon = (_dt.date.fromisoformat(day)
                + _dt.timedelta(
                    days=DIGEST_HORIZON_DAYS[period])).isoformat()
 
     digest = Digest(teacher=who, period=period, generated_on=day)
-    for a in core.list_assignments():
+    for a in assignments_store.list_assignments():
         marker = a.marker_on(day)
         if marker != who:
             continue
         if a.teacher != who:
             digest.covering_for.append(a)
-        subs = core.list_submissions(assignment_id=a.assignment_id)
+        subs = assignments_store.list_submissions(assignment_id=a.assignment_id)
         line = DigestLine(assignment=a, due_date=a.due_date,
                            cohort=len(subs))
         for sub in subs:
@@ -484,9 +488,9 @@ def send_all_digests(*, period: str = DEFAULT_DIGEST_PERIOD,
                       notify: bool = True) -> dict[str, Digest]:
     """One digest per teacher who has something outstanding."""
     init_db()
-    day = core._validate_date(today, "today") or _today()
+    day = assignments_store._validate_date(today, "today") or _today()
     teachers: set[str] = set()
-    for a in core.list_assignments():
+    for a in assignments_store.list_assignments():
         marker = a.marker_on(day)
         if marker:
             teachers.add(marker)
@@ -519,7 +523,7 @@ def _email_digest(digest: Digest) -> bool:
     """Best-effort digest email. A failure must not lose the log row."""
     try:
         from education_system.systems.sixth_form import SYSTEM_NAME
-        from education_system.systems.sixth_form.domain.operations.communications.messages import (
+        from education_system.systems.sixth_form.domains.communications.domain.messages import (
             email_templates,
         )
         from education_system.systems.sixth_form.domain.staff import (
@@ -562,7 +566,7 @@ def assign_cover(assignment_id: int, *,
                   cover_marker: str,
                   cover_from: str | None = None,
                   cover_until: str | None = None,
-                  reason: str | None = None) -> core.Assignment:
+                  reason: str | None = None) -> assignments_models.Assignment:
     """Hand marking to a colleague for a period.
 
     The substantive teacher stays on the assignment. Editing
@@ -570,15 +574,15 @@ def assign_cover(assignment_id: int, *,
     nobody would remember it was ever covered.
     """
     init_db()
-    a = core.get_assignment(assignment_id)
+    a = assignments_store.get_assignment(assignment_id)
     if a is None:
         raise ValidationError(f"No assignment #{assignment_id}")
-    who = core._require(cover_marker, "Cover marker").strip()
+    who = assignments_store._require(cover_marker, "Cover marker").strip()
     if a.teacher and who == a.teacher:
         raise ValidationError(
             f"{who} already owns this assignment — cover is for "
             f"somebody else standing in")
-    out = core.update_assignment(assignment_id, {
+    out = assignments_store.update_assignment(assignment_id, {
         "cover_marker": who,
         "cover_from": cover_from or _today(),
         "cover_until": cover_until,
@@ -590,12 +594,12 @@ def assign_cover(assignment_id: int, *,
     return out
 
 
-def end_cover(assignment_id: int) -> core.Assignment:
+def end_cover(assignment_id: int) -> assignments_models.Assignment:
     """Return marking to the substantive teacher."""
     init_db()
-    if core.get_assignment(assignment_id) is None:
+    if assignments_store.get_assignment(assignment_id) is None:
         raise ValidationError(f"No assignment #{assignment_id}")
-    return core.update_assignment(assignment_id, {
+    return assignments_store.update_assignment(assignment_id, {
         "cover_marker": None, "cover_from": None,
         "cover_until": None, "cover_reason": None})
 
@@ -605,16 +609,16 @@ def cover_for_teacher(teacher: str, *,
                        absent: bool = False,
                        cover_marker: str | None = None,
                        cover_until: str | None = None,
-                       reason: str | None = None) -> list[core.Assignment]:
+                       reason: str | None = None) -> list[assignments_models.Assignment]:
     """Cover every open assignment a teacher owns, in one action.
 
     What an office actually needs when somebody phones in sick: one
     instruction, not one per assignment.
     """
     init_db()
-    day = core._validate_date(today, "today") or _today()
-    out: list[core.Assignment] = []
-    for a in core.list_assignments(teacher_like=teacher,
+    day = assignments_store._validate_date(today, "today") or _today()
+    out: list[assignments_models.Assignment] = []
+    for a in assignments_store.list_assignments(teacher_like=teacher,
                                     open_only=True):
         if a.teacher != teacher:
             continue
@@ -632,24 +636,24 @@ def cover_for_teacher(teacher: str, *,
     return out
 
 
-def list_covered(*, today: str | None = None) -> list[core.Assignment]:
+def list_covered(*, today: str | None = None) -> list[assignments_models.Assignment]:
     """Assignments currently being marked by somebody else."""
     init_db()
-    day = core._validate_date(today, "today") or _today()
-    return [a for a in core.list_assignments()
+    day = assignments_store._validate_date(today, "today") or _today()
+    return [a for a in assignments_store.list_assignments()
             if a.cover_marker and a.marker_on(day) == a.cover_marker]
 
 
 def expired_cover(*, today: str | None = None
-                   ) -> list[core.Assignment]:
+                   ) -> list[assignments_models.Assignment]:
     """Cover arrangements whose end date has passed but not been cleared.
 
     Harmless — :meth:`Assignment.marker_on` already ignores them — but
     worth tidying so the record reflects reality.
     """
     init_db()
-    day = core._validate_date(today, "today") or _today()
-    return [a for a in core.list_assignments()
+    day = assignments_store._validate_date(today, "today") or _today()
+    return [a for a in assignments_store.list_assignments()
             if a.cover_marker and a.cover_until
             and a.cover_until < day]
 
@@ -666,11 +670,11 @@ def export_marks(assignment_id: int | None = None, *,
     separate columns: an export showing only the final figure cannot be
     reconciled against the mark sheet later.
     """
-    core.init_db()
+    assignments_store.init_db()
     names = _student_names()
-    assignments = ([core.get_assignment(assignment_id)]
+    assignments = ([assignments_store.get_assignment(assignment_id)]
                    if assignment_id is not None
-                   else core.list_assignments(subject_name=subject_name))
+                   else assignments_store.list_assignments(subject_name=subject_name))
 
     buffer = io.StringIO()
     writer = csv.writer(buffer)
@@ -679,7 +683,7 @@ def export_marks(assignment_id: int | None = None, *,
     for a in assignments:
         if a is None:
             continue
-        for sub in core.list_submissions(assignment_id=a.assignment_id):
+        for sub in assignments_store.list_submissions(assignment_id=a.assignment_id):
             if released_only and not sub.feedback_released:
                 continue
             percent = (round(100.0 * sub.marks / a.max_marks, 1)
@@ -718,8 +722,8 @@ def export_template(assignment_id: int, *,
     Pre-filled with the cohort so a teacher marking on paper can type
     marks in and import them back without matching names by hand.
     """
-    core.init_db()
-    a = core.get_assignment(assignment_id)
+    assignments_store.init_db()
+    a = assignments_store.get_assignment(assignment_id)
     if a is None:
         raise ValidationError(f"No assignment #{assignment_id}")
     names = _student_names()
@@ -727,7 +731,7 @@ def export_template(assignment_id: int, *,
     writer = csv.writer(buffer)
     writer.writerow(["submission_id", "student_id", "student_name",
                       "marks", "grade", "feedback"])
-    for sub in core.list_submissions(assignment_id=assignment_id):
+    for sub in assignments_store.list_submissions(assignment_id=assignment_id):
         writer.writerow([sub.submission_id, sub.student_id,
                           names.get(sub.student_id, ""),
                           "" if sub.raw_marks is None else sub.raw_marks,
@@ -758,12 +762,12 @@ def parse_marks_csv(text: str, assignment_id: int) -> ImportResult:
     Always run before :func:`import_marks`: a spreadsheet with one bad
     row should be fixed and re-imported, not half-applied.
     """
-    core.init_db()
-    a = core.get_assignment(assignment_id)
+    assignments_store.init_db()
+    a = assignments_store.get_assignment(assignment_id)
     if a is None:
         raise ValidationError(f"No assignment #{assignment_id}")
     by_student = {s.student_id: s for s in
-                  core.list_submissions(assignment_id=assignment_id)}
+                  assignments_store.list_submissions(assignment_id=assignment_id)}
     by_id = {s.submission_id: s for s in by_student.values()}
 
     reader = csv.DictReader(io.StringIO(text))
@@ -838,7 +842,7 @@ def import_marks(text_or_path: str | Path, assignment_id: int, *,
     28 of 30 rows and reporting two errors leaves a spreadsheet nobody
     can safely re-import.
     """
-    core.init_db()
+    assignments_store.init_db()
     text = str(text_or_path)
     candidate = Path(text).expanduser() if len(text) < 4096 else None
     if candidate is not None and candidate.is_file():
@@ -917,11 +921,11 @@ def build_coversheet(submission_id: int, *,
     and it does not need a rendering library on a school desktop. The
     rubric breakdown is the part a moderator actually reads.
     """
-    core.init_db()
-    sub = core.get_submission(submission_id)
+    assignments_store.init_db()
+    sub = assignments_store.get_submission(submission_id)
     if sub is None:
         raise ValidationError(f"No submission #{submission_id}")
-    a = core.get_assignment(sub.assignment_id)
+    a = assignments_store.get_assignment(sub.assignment_id)
     if a is None:
         raise ValidationError(f"No assignment #{sub.assignment_id}")
     names = _student_names()
@@ -942,12 +946,12 @@ def build_coversheet(submission_id: int, *,
     if a.is_covered:
         lines.append(f"Marked by    : {a.cover_marker} (cover)")
     lines.append(f"Due          : "
-                 f"{core.effective_due_date(sub, a) or '—'}"
+                 f"{assignments_submissions.effective_due_date(sub, a) or '—'}"
                  + ("  [extension]" if sub.extended_due_date else ""))
     lines.append(f"Submitted    : {sub.submitted_on or 'not submitted'}"
                  f"  ({sub.status})")
     if sub.word_count is not None:
-        check = core.check_word_limit(a, sub.word_count)
+        check = assignments_submissions.check_word_limit(a, sub.word_count)
         lines.append(f"Word count   : "
                      f"{check.message or sub.word_count}")
     lines.append("")
@@ -1018,8 +1022,8 @@ def write_coversheets(assignment_id: int, *,
                        directory: str | Path | None = None,
                        include_feedback: bool = True) -> list[Path]:
     """Write one coversheet per student to disk, ready to print."""
-    core.init_db()
-    a = core.get_assignment(assignment_id)
+    assignments_store.init_db()
+    a = assignments_store.get_assignment(assignment_id)
     if a is None:
         raise ValidationError(f"No assignment #{assignment_id}")
     target = (Path(directory).expanduser() if directory
@@ -1027,7 +1031,7 @@ def write_coversheets(assignment_id: int, *,
               / f"assignment_{assignment_id}" / "coversheets")
     target.mkdir(parents=True, exist_ok=True)
     written: list[Path] = []
-    for sub in core.list_submissions(assignment_id=assignment_id):
+    for sub in assignments_store.list_submissions(assignment_id=assignment_id):
         path = target / f"coversheet_{sub.student_id}.txt"
         path.write_text(
             build_coversheet(sub.submission_id,
@@ -1045,8 +1049,8 @@ def build_sample_pack(assignment_id: int) -> str:
     What actually goes to a moderator: the standardisation sample with
     its marks and rubric breakdown, in one file rather than twelve.
     """
-    core.init_db()
-    a = core.get_assignment(assignment_id)
+    assignments_store.init_db()
+    a = assignments_store.get_assignment(assignment_id)
     if a is None:
         raise ValidationError(f"No assignment #{assignment_id}")
     samples = marking.list_samples(assignment_id=assignment_id)

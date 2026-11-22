@@ -3,6 +3,7 @@ Expense Menu - Expense claims and reimbursement CLI.
 """
 
 from datetime import datetime
+from education_system.systems.university.domains.staff.interfaces.cli.staff_hr.menus import _access as _hr
 from education_system.systems.university.domains.staff.domain.staff_hr.services.managers.expense_manager import ExpenseManager
 from education_system.systems.university.domains.staff.interfaces.cli.staff_hr.validators import (
     validate_date, validate_required, validate_choice, validate_currency,
@@ -228,7 +229,8 @@ def _view_reimbursement_status(user_id: str) -> None:
 
 def _review_approvals(approver_id: str) -> None:
     """Review and approve/reject claims."""
-    claims = ExpenseManager.get_pending_approvals(approver_id)
+    # Submitted claims this person may approve (reports' down the line, any for HR).
+    claims = _hr.approvable(ExpenseManager.get_pending_approvals())
 
     if not claims:
         print("\nNo claims pending your approval.")
@@ -253,12 +255,12 @@ def _review_approvals(approver_id: str) -> None:
             break
         elif action == 'A':
             comments = input("Comments (optional): ").strip()
-            ExpenseManager.approve_claim(c['claim_id'], approver_id, comments)
+            ExpenseManager.approve_claim(c['claim_id'], approver_id, comments=comments, actor=_hr.actor())
             print("Claim approved.")
         elif action == 'R':
             comments = input("Rejection reason: ").strip()
             if comments:
-                ExpenseManager.reject_claim(c['claim_id'], approver_id, comments)
+                ExpenseManager.reject_claim(c['claim_id'], approver_id, comments, actor=_hr.actor())
                 print("Claim rejected.")
             else:
                 print("Rejection requires a reason. Skipped.")

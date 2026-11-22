@@ -80,6 +80,7 @@ def get_profile(student_id: str):
 
 @early_warning_bp.route("/interventions", methods=["GET"])
 @token_required
+@staff_required
 def list_interventions():
     student_id = request.args.get("student_id")
     status = request.args.get("status")
@@ -159,6 +160,7 @@ def create_intervention():
 
 @early_warning_bp.route("/interventions/<int:intervention_id>", methods=["PUT"])
 @token_required
+@staff_required
 def update_intervention(intervention_id: int):
     with get_connection() as conn:
         existing = conn.execute(

@@ -258,224 +258,73 @@ def show_checkout(self):
 
 
 def process_checkout(self, payment_method, customer_name, customer_email):
-    """Process the checkout and create transaction"""
+    """Process the checkout and create transaction.
+
+    The local write, the student-account debit and the Finance posting all
+    happen in ``shop_management.sales.record_shop_sale`` (shared with the
+    CLI); this method only resolves the user and reports the outcome.
+    """
+    from education_system.systems.university.plugins.campus_commerce.domain.services.shop_management.sales import (
+        record_shop_sale,
+    )
     try:
-        if 'get_connection' in globals():
-            conn = get_connection()
-            cursor = conn.cursor()
+        total = sum(item['subtotal'] for item in self.cart_items)
 
-            # Generate transaction ID
-            transaction_id = f"T{int(time.time())}"
-            transaction_date = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        # Identifier the finance hub keys the account on: student_id, else
+        # username, else the student record matched by email.
+        user_identifier = self.current_user.get('student_id') or self.current_user.get('username', '')
+        if not user_identifier and self.current_user.get('email'):
+            with get_connection() as conn:
+                row = conn.execute(
+                    'SELECT student_id FROM students WHERE email_address = ? LIMIT 1',
+                    (self.current_user.get('email', ''),)).fetchone()
+                if row:
+                    user_identifier = row[0]
 
-            # Calculate total
-            total = sum(item['subtotal'] for item in self.cart_items)
-
-            # Process Student Account payment via finance system
-            if payment_method == "Student Account":
-                # Get user identifier for finance account lookup
-                # This could be student_id, username, or staff ID
-                user_identifier = self.current_user.get('student_id')
-
-                # If student_id not set, try username (for admin/staff users)
-                if not user_identifier:
-                    user_identifier = self.current_user.get('username', '')
-
-                # If still no identifier, try to look it up from students table
-                if not user_identifier:
-                    email = self.current_user.get('email', '')
-                    cursor.execute('''
-                        SELECT student_id FROM students
-                        WHERE email_address = ?
-                        LIMIT 1
-                    ''', (email,))
-                    result = cursor.fetchone()
-                    if result:
-                        user_identifier = result[0]
-
-                # Check if user has a finance account in student_finance_accounts table
-                # (This table stores accounts for students, staff, and admin users)
-                if user_identifier:
-                    cursor.execute('''
-                        SELECT account_id FROM student_finance_accounts
-                        WHERE student_id = ?
-                    ''', (user_identifier,))
-                    finance_account = cursor.fetchone()
-
-                    if finance_account:
-                        # Process payment from finance account
-                        success = self._process_student_account_payment(user_identifier, total, transaction_id, customer_name)
-                        if not success:
-                            raise Exception("Student account payment failed")
-                    else:
-                        raise Exception(f"No finance account found for user '{user_identifier}'. Please contact administration.")
-                else:
-                    raise Exception("Unable to identify user account. Please contact administration.")
-
-            # Set transaction status based on payment method
-            transaction_status = "Completed"
-            if payment_method == "Finance System":
-                transaction_status = "Pending Payment"  # Manual payment processing required
-
-            # Create transaction
-            cursor.execute("""
-                INSERT INTO transactions
-                (source_transaction_id, customer_id, student_id, total_amount, created_at, payment_method, status, notes, source_type)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'shop')
-            """, [
-                transaction_id,
-                self.current_user.get('id', 1),
-                self.current_user.get('student_id'),
-                total,
-                transaction_date,
-                payment_method,
-                transaction_status,
-                f"GUI Checkout - {customer_name}"
-            ])
-
-            # Create transaction items and update inventory
-            for item in self.cart_items:
-                cursor.execute("""
-                    INSERT INTO shop_transaction_items
-                    (transaction_id, product_id, quantity, price_per_item, subtotal)
-                    VALUES (?, ?, ?, ?, ?)
-                """, [
-                    transaction_id,
-                    item['product_id'],
-                    item['quantity'],
-                    item['price'],
-                    item['subtotal']
-                ])
-
-                # Update inventory
-                cursor.execute("""
-                    UPDATE shop_inventory
-                    SET quantity = quantity - ?
-                    WHERE product_id = ?
-                """, [item['quantity'], item['product_id']])
-
-            conn.commit()
-            conn.close()
-
-            # Open finance GUI for manual payment if selected
-            if payment_method == "Finance System":
-                logger.info(f"Opening finance system for manual payment of transaction {transaction_id}")
-                # Schedule opening finance GUI after a short delay to allow checkout window to close
-                self.root.after(500, lambda: self.open_finance_gui_for_payment(transaction_id, total))
-
-            # Send order confirmation email
-            self._send_shop_order_confirmation_email(transaction_id, customer_name, customer_email, total, payment_method)
-
-            return transaction_id
-        else:
-            # Fallback - just return a mock transaction ID
-            return f"T{int(time.time())}"
-
-    except Exception as e:
-        if 'conn' in locals():
-            conn.rollback()
-            conn.close()
-        raise Exception(f"Checkout processing failed: {e}")
-
-
-def _process_student_account_payment(self, student_id, total_amount, transaction_id, customer_name):
-    """Process payment through student's finance account balance"""
-    try:
-        # Use finance account integration if available
-        if FINANCE_ACCOUNT_AVAILABLE:
-            # Check balance first
-            current_balance = get_student_finance_account_balance(student_id)
+        if payment_method == "Student Account":
+            if not user_identifier:
+                raise Exception("Unable to identify user account. Please contact administration.")
+            current_balance = get_student_finance_account_balance(user_identifier) if FINANCE_ACCOUNT_AVAILABLE else None
             if current_balance is None:
-                messagebox.showerror(_t('gui.operations.commerce.shop_management_gui.checkout_manager.dialogs.error', default="Error"),
-                    f"No finance account found for student {student_id}.\n"
-                    "Please create a finance account first or use a different payment method.")
-                return False
-
-            if current_balance < total_amount:
+                raise Exception(f"No finance account found for user '{user_identifier}'. Please contact administration.")
+            if current_balance < total:
                 messagebox.showerror(_t('gui.operations.commerce.shop_management_gui.checkout_manager.dialogs.insufficient_balance', default="Insufficient Balance"),
                     f"Student finance account balance is insufficient.\n\n"
                     f"Current Balance: £{current_balance:.2f}\n"
-                    f"Required Amount: £{total_amount:.2f}\n\n"
+                    f"Required Amount: £{total:.2f}\n\n"
                     f"Please top up the account or use a different payment method.")
-                return False
+                raise Exception("Student account payment failed")
 
-            # Process the payment from finance account
-            processed_by = self.current_user.get('username', 'System')
-            payment_result = process_student_finance_account_payment(
-                student_id=student_id,
-                amount=total_amount,
-                description=f"Shop purchase #{transaction_id}",
-                transaction_source="Shop",
-                transaction_ref=transaction_id,
-                processed_by=processed_by,
-                check_balance=True,
-                send_low_balance_alert=True
-            )
+        outcome = record_shop_sale(
+            self.current_user.get('id', 1),
+            [{'product_id': it['product_id'], 'quantity': it['quantity'], 'price': it['price']}
+             for it in self.cart_items],
+            total,
+            payment_method,
+            student_id=self.current_user.get('student_id'),
+            finance_user_id=user_identifier or None,
+            processed_by=self.current_user.get('username', 'System'),
+            notes=f"GUI Checkout - {customer_name}",
+        )
+        transaction_id = outcome['transaction_id']
+        if not transaction_id:
+            raise Exception(outcome.get('error') or "Checkout failed")
+        if outcome.get('account_result'):
+            self._last_finance_payment_result = outcome['account_result']
 
-            if not payment_result['success']:
-                messagebox.showerror(_t('gui.operations.commerce.shop_management_gui.checkout_manager.dialogs.payment_failed', default="Payment Failed"), payment_result['message'])
-                return False
+        # Open finance GUI for manual payment if selected
+        if payment_method == "Finance System":
+            logger.info(f"Opening finance system for manual payment of transaction {transaction_id}")
+            # Schedule opening finance GUI after a short delay to allow checkout window to close
+            self.root.after(500, lambda: self.open_finance_gui_for_payment(transaction_id, total))
 
-            # Store payment result for later use
-            self._last_finance_payment_result = payment_result
+        # Send order confirmation email
+        self._send_shop_order_confirmation_email(transaction_id, customer_name, customer_email, total, payment_method)
 
-            new_balance = payment_result.get('new_balance', 0)
-            low_balance_email_sent = payment_result.get('email_sent', False)
-
-            print(f"Shop payment of £{total_amount:.2f} deducted from student finance account. New balance: £{new_balance:.2f}")
-
-            if low_balance_email_sent:
-                print(f"Low balance alert email sent to student {student_id}")
-
-            return True
-
-        # Fallback: Legacy method - add to student_fees without balance deduction
-        conn = sqlite3.connect(str(UNIVERSITY_DEFAULT_DB_PATH))
-        cursor = conn.cursor()
-
-        cursor.execute('SELECT first_name, last_name, email FROM students WHERE student_id = ?', (student_id,))
-        student_result = cursor.fetchone()
-        if not student_result:
-            messagebox.showerror(_t('gui.operations.commerce.shop_management_gui.checkout_manager.dialogs.error', default="Error"), f"Student ID {student_id} not found in system")
-            conn.close()
-            return False
-
-        first_name, last_name, email = student_result
-
-        # Note: a legacy INSERT into student_fees with non-existent columns
-        # was removed here — student_fees is tuition AR, not a commerce ledger.
-        # The unified record_payment() call below is the correct path.
-
-        # 8.117.104: unified record_payment() with source_type='shop'.
-        try:
-            from education_system.systems.university.domains.finance.domain.core.unified_payments import (
-                record_payment as _record_payment,
-            )
-            _record_payment(
-                student_id=student_id,
-                amount=total_amount,
-                payment_method='Student Account',
-                source_type='shop',
-                source_payment_id=str(transaction_id),
-                payment_type='purchase',
-                reference_type='shop_transaction',
-                reference_id=str(transaction_id),
-                department='shop',
-                description=f'Shop payment for transaction #{transaction_id}',
-            )
-        except Exception as e:
-            logger.warning(f"Could not record unified payment for transaction {transaction_id}: {e}")
-            # Fee is still recorded in student_fees, so transaction can continue
-
-        conn.commit()
-        conn.close()
-
-        print(f"Shop payment of £{total_amount:.2f} charged to {first_name} {last_name}'s student account (legacy)")
-        return True
+        return transaction_id
 
     except Exception as e:
-        print(f"Failed to process student account payment: {e}")
-        return False
+        raise Exception(f"Checkout processing failed: {e}")
 
 
 def open_finance_gui_for_payment(self, transaction_id=None, amount=None):
@@ -557,86 +406,6 @@ def add_finance_payment_option_to_checkout(self, payment_frame, payment_var, row
     except Exception as e:
         logger.error(f"Could not add finance payment option: {e}")
         return None
-
-
-def add_shop_refund_to_student_account(self, student_id, amount, refund_ref):
-    """Add refund amount to user's finance account (works for students, staff, and admin)"""
-    try:
-        # Use finance integration if available for better handling
-        if FINANCE_ACCOUNT_AVAILABLE:
-            try:
-                from education_system.systems.university.domains.finance.infrastructure.finance_integration import top_up_student_finance_account
-                result = top_up_student_finance_account(
-                    student_id=student_id,
-                    amount=amount,
-                    payment_method='Refund',
-                    processed_by=self.current_user.get('username', 'System'),
-                    description=f'Shop Purchase Refund - {refund_ref}'
-                )
-                if result.get('success'):
-                    logger.info(f"Refund credited to finance account for {student_id}: £{amount:.2f}")
-                    return True
-                else:
-                    logger.error(f"Finance integration failed: {result.get('message')}")
-                    # Fall through to manual method
-            except Exception as e:
-                logger.warning(f"Finance integration error, using fallback: {e}")
-                # Fall through to manual method
-
-        # Fallback: Direct database update using transaction context manager
-        from education_system.systems.university.infrastructure.database.db import transaction
-
-        with transaction() as conn:
-            cursor = conn.cursor()
-
-            # Check if finance account exists and get account_id and current balance
-            cursor.execute('SELECT account_id, balance FROM student_finance_accounts WHERE student_id = ?', (student_id,))
-            account = cursor.fetchone()
-
-            if not account:
-                # Create account with refund amount
-                cursor.execute('''
-                    INSERT INTO student_finance_accounts (student_id, balance, created_at)
-                    VALUES (?, ?, ?)
-                ''', (student_id, amount, datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
-
-                # Get the newly created account_id
-                cursor.execute('SELECT account_id FROM student_finance_accounts WHERE student_id = ?', (student_id,))
-                account = cursor.fetchone()
-                account_id = account[0]
-                balance_before = 0.0
-                balance_after = amount
-
-                logger.info(f"Created new finance account for {student_id} with refund of £{amount:.2f}")
-            else:
-                account_id = account[0]
-                balance_before = account[1]
-                balance_after = balance_before + amount
-
-                # Update existing account
-                cursor.execute('''
-                    UPDATE student_finance_accounts
-                    SET balance = ?, updated_at = CURRENT_TIMESTAMP
-                    WHERE student_id = ?
-                ''', (balance_after, student_id))
-                logger.info(f"Updated finance account for {student_id}: +£{amount:.2f}")
-
-            # Record transaction with correct schema
-            cursor.execute('''
-                INSERT INTO transactions
-                (source_type, account_id, student_id, transaction_type, amount, balance_before, balance_after,
-                 description, reference_id, processed_by, created_at)
-                VALUES ('student_finance', ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
-            ''', (account_id, student_id, 'credit', amount, balance_before, balance_after,
-                  'Shop Purchase Refund', refund_ref, self.current_user.get('username', 'System')))
-
-            # Transaction auto-commits on successful exit
-
-        return True
-
-    except Exception as e:
-        logger.error(f"Error adding refund to student account: {e}")
-        return False
 
 
 def notify_shop_finance_gui(self, transaction_id, amount, method, refund_ref, student_id):

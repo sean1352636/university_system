@@ -50,6 +50,9 @@ from education_system.systems.sixth_form.domain.academics.timetable import (
     timetable as tt,
 )
 from education_system import paths
+from education_system.systems.sixth_form.domain.academics.qualifications import (
+    grade_scales as _gs,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -72,6 +75,8 @@ NEGLIGIBLE: str = "Negligible"
 INSUFFICIENT: str = "Not enough data"
 
 # UK A-level grade points, for turning grades into something averageable.
+# The fallback when a grade's qualification type is unknown; known types
+# go through grade_scales (see grade_points).
 GRADE_POINTS: dict[str, float] = {
     "A*": 6.0, "A": 5.0, "B": 4.0, "C": 3.0, "D": 2.0, "E": 1.0, "U": 0.0,
     # BTEC and applied equivalents.
@@ -304,11 +309,47 @@ def _slope(xs: list[float], ys: list[float]) -> float | None:
     return numerator / denominator
 
 
-def grade_points(grade: str | None) -> float | None:
-    """Turn a grade into something averageable."""
+def grade_points(grade: str | None,
+                 qualification_type: str | None = None) -> float | None:
+    """Turn a grade into something averageable.
+
+    With a known qualification type the grade's position on that scale
+    is stretched onto the A-level 0-6 range (A level itself is unchanged:
+    A* 6 … U 0; a BTEC Diploma DM sits where its rank puts it), so a
+    college with BTEC, T Level and A level learners correlates on one
+    footing. Without a type, the old flat lookup.
+    """
     if not grade:
         return None
-    return GRADE_POINTS.get(str(grade).strip().upper())
+    g = str(grade).strip()
+    if qualification_type:
+        try:
+            scale = _gs.scale_for(qualification_type)
+        except ValueError:
+            scale = None
+        if scale is not None and _gs.is_valid_grade(g, qualification_type):
+            points = _gs.grade_points(g, qualification_type)
+            top = _gs.grade_points(scale.grades[0], qualification_type)
+            if points is not None and top:
+                return round(6.0 * points / top, 3)
+    return GRADE_POINTS.get(g, GRADE_POINTS.get(g.upper()))
+
+
+def _qualification_type(student_id: str, subject: str | None,
+                        recorded: str | None = None) -> str | None:
+    if recorded:
+        return recorded
+    if not subject or subject == "Unknown":
+        return None
+    try:
+        from education_system.systems.sixth_form.domain.academics.qualifications import (
+            learning_aims,
+        )
+        return learning_aims.qualification_type_for(student_id, subject)
+    except Exception:
+        logger.debug("Qualification type unavailable for %s / %s",
+                     student_id, subject, exc_info=True)
+        return None
 
 
 # ── Attainment correlation ──────────────────────────────────────────
@@ -331,12 +372,28 @@ def _grades_for_period(*, date_from: str, date_to: str
                       or getattr(source, "list_entries", None))
             if lister is None:
                 continue
+            mock_subjects: dict[int, str] = {}
+            if attr == "mock_exams":
+                mock_subjects = {m.mock_id: m.subject
+                                 for m in source.list_mocks()}
             for row in lister():
-                points = grade_points(getattr(row, "grade", None))
+                # exam_results rows carry the result (grade, type) inside
+                # ``row.result``; mock rows carry a grade and a mock id.
+                result = getattr(row, "result", None)
+                grade = (getattr(row, "grade", None)
+                         or getattr(result, "grade", None))
                 student_id = getattr(row, "student_id", None)
-                if points is None or not student_id:
+                if not grade or not student_id:
                     continue
-                subject = getattr(row, "subject", None) or "Unknown"
+                subject = (getattr(row, "subject", None)
+                           or mock_subjects.get(getattr(row, "mock_id", None))
+                           or "Unknown")
+                qtype = _qualification_type(
+                    student_id, subject,
+                    getattr(result, "qualification_type", None))
+                points = grade_points(grade, qtype)
+                if points is None:
+                    continue
                 out.setdefault(student_id, []).append((subject, points))
             if out:
                 return out

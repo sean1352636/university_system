@@ -292,7 +292,7 @@ class ExternalExaminerGUI:
         try:
             visit = self.service.get_visit(int(visit_id))
             modules_reviewed = (visit or {}).get("modules_reviewed") or ""
-            from education_system.systems.university.domains.academics.domain.curriculum_specification.services.curriculum_specification_service import CurriculumSpecificationService
+            from education_system.systems.university.domains.curriculum.domain.curriculum_specification.services.curriculum_specification_service import CurriculumSpecificationService
             curr = CurriculumSpecificationService()
             descriptors = curr.list_module_descriptors()
             matches = [d for d in descriptors if d["module_code"] in modules_reviewed]

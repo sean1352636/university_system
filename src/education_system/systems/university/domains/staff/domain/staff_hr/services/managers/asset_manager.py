@@ -12,6 +12,8 @@ import logging
 from datetime import datetime
 from typing import Any, Dict, List, Optional, Tuple
 
+from education_system.systems.university.domains.staff.domain.staff_hr import access
+from education_system.systems.university.domains.staff.domain.staff_hr.services.managers import _people as people
 from education_system.systems.university.infrastructure.database.db import get_connection, transaction
 from education_system.systems.university.infrastructure.sql_safety import validate_identifier  # nosec B608
 
@@ -493,6 +495,55 @@ class AssetManager:
             return [dict(row) for row in rows]
 
     @staticmethod
+    def get_open_issues(limit: int = 50) -> List[Dict[str, Any]]:
+        """Issues still being dealt with (open or in progress), newest first."""
+        with get_connection() as conn:
+            rows = conn.execute('''
+                SELECT i.*, a.name as asset_name, a.asset_tag
+                FROM asset_issues i
+                JOIN assets a ON i.asset_id = a.asset_id
+                WHERE i.status IN ('open', 'in_progress')
+                ORDER BY i.reported_date DESC LIMIT ?
+            ''', (limit,)).fetchall()
+            return [dict(row) for row in rows]
+
+    @staticmethod
+    def update_issue(issue_id: int, status: str, resolution: Optional[str] = None,
+                     resolved_by: Optional[str] = None,
+                     updated_by: Optional[str] = None) -> bool:
+        """Move an issue on. ``resolved`` and ``closed`` need ``resolved_by``
+        and go through :meth:`resolve_issue`, so the asset comes back from
+        repair; ``open`` and ``in_progress`` only change the issue. False when
+        there is no such issue."""
+        if status not in ('open', 'in_progress', 'resolved', 'closed'):
+            raise ValueError("Status must be open, in_progress, resolved or closed")
+        if status in ('resolved', 'closed'):
+            if not resolved_by:
+                raise ValueError("Who resolved the issue is required")
+            if not AssetManager.resolve_issue(issue_id, resolved_by, resolution or ''):
+                return False
+            if status == 'resolved':
+                return True
+        now = datetime.now().isoformat()
+        with transaction() as conn:
+            issue = conn.execute('SELECT asset_id FROM asset_issues WHERE issue_id = ?',
+                                 (issue_id,)).fetchone()
+            if not issue:
+                return False
+            conn.execute('''
+                UPDATE asset_issues
+                SET status = ?, resolution_notes = COALESCE(?, resolution_notes), updated_at = ?
+                WHERE issue_id = ?
+            ''', (status, resolution or None, now, issue_id))
+            actor = resolved_by or updated_by
+            if actor:
+                AssetManager._log_audit(conn, issue[0], 'issue_updated', actor,
+                                        new_values={'issue_id': issue_id, 'status': status})
+            log_activity('update', 'asset_issue', details={'issue_id': issue_id,
+                                                           'status': status})
+            return True
+
+    @staticmethod
     def resolve_issue(issue_id: int, resolved_by: str, resolution: str,
                       **data) -> bool:
         """Resolve an asset issue."""
@@ -710,6 +761,32 @@ class AssetManager:
             return request_id
 
     @staticmethod
+    def submit_request(requested_by: str, category_id: int,
+                       item_name: Optional[str] = None,
+                       justification: Optional[str] = None,
+                       priority: str = 'medium', **data) -> int:
+        """A member of staff asks for an asset. ``item_name`` defaults to the
+        category's name; ``priority`` low/medium/high is the request's urgency
+        (medium is ``normal``)."""
+        with get_connection() as conn:
+            category = conn.execute('SELECT name FROM asset_categories WHERE category_id = ?',
+                                    (category_id,)).fetchone()
+        if not category:
+            raise ValueError("No such asset category")
+        urgency = 'normal' if priority in (None, '', 'medium') else priority
+        if urgency not in ('critical', 'high', 'normal', 'low'):
+            raise ValueError("Priority must be low, medium or high")
+        return AssetManager.create_request(
+            requested_by, str(item_name or '').strip() or category[0], category_id,
+            justification=justification, urgency=urgency, **data)
+
+    @staticmethod
+    def get_user_requests(user_id: str, limit: int = 50) -> List[Dict[str, Any]]:
+        """One person's asset requests, newest first."""
+        return [{**row, 'request_date': row.get('created_at'), 'priority': row.get('urgency')}
+                for row in AssetManager.get_requests(requested_by=user_id, limit=limit)]
+
+    @staticmethod
     def get_requests(status: Optional[str] = None,
                      requested_by: Optional[str] = None,
                      department: Optional[str] = None,
@@ -744,11 +821,22 @@ class AssetManager:
             return [dict(row) for row in rows]
 
     @staticmethod
-    def approve_request(request_id: int, approved_by: str,
+    def approve_request(request_id: int, approved_by: Any = None,
                         approved_amount: Optional[float] = None,
-                        comments: Optional[str] = None) -> bool:
-        """Approve an asset request."""
+                        comments: Optional[str] = None,
+                        actor: Any = None) -> bool:
+        """Approve a pending asset request.
+
+        The requester's line manager (or anyone above them) or HR may
+        decide, never the requester (PermissionError). False when there is
+        no pending request with this id. ``approved_by`` is for older
+        callers and is ignored when the signed-in ``actor`` is given.
+        """
         with transaction() as conn:
+            found = AssetManager._decide(conn, request_id, approved_by, actor, 'approve')
+            if not found:
+                return False
+            who, requester = found
             conn.execute('''
                 UPDATE asset_requests
                 SET status = 'approved',
@@ -760,8 +848,8 @@ class AssetManager:
                     updated_at = ?
                 WHERE request_id = ? AND status = 'pending'
             ''', (
-                approved_by,
-                None,  # Could be populated from user lookup
+                who['username'],
+                access.display_name(who['username'], conn),
                 datetime.now().isoformat(),
                 approved_amount,
                 comments,
@@ -770,25 +858,34 @@ class AssetManager:
             ))
 
             log_activity('approve', 'asset_request', details={
-                'request_id': request_id
+                'request_id': request_id, 'approved_by': who['username'],
             })
+            access.audit(conn, who, 'asset_request_approved', requester, 'asset_requests',
+                         request_id, {'approved_amount': approved_amount})
             return True
 
     @staticmethod
-    def reject_request(request_id: int, rejected_by: str,
-                       reason: str) -> bool:
-        """Reject an asset request."""
+    def reject_request(request_id: int, rejected_by: Any = None,
+                       reason: str = '', actor: Any = None) -> bool:
+        """Reject a pending asset request (same deciders as
+        :meth:`approve_request`). False when there is no pending request."""
         with transaction() as conn:
+            found = AssetManager._decide(conn, request_id, rejected_by, actor, 'reject')
+            if not found:
+                return False
+            who, requester = found
             conn.execute('''
                 UPDATE asset_requests
                 SET status = 'rejected',
                     reviewed_by = ?,
+                    reviewed_by_name = ?,
                     review_date = ?,
                     rejection_reason = ?,
                     updated_at = ?
                 WHERE request_id = ? AND status = 'pending'
             ''', (
-                rejected_by,
+                who['username'],
+                access.display_name(who['username'], conn),
                 datetime.now().isoformat(),
                 reason,
                 datetime.now().isoformat(),
@@ -796,22 +893,42 @@ class AssetManager:
             ))
 
             log_activity('reject', 'asset_request', details={
-                'request_id': request_id
+                'request_id': request_id, 'rejected_by': who['username'],
             })
+            access.audit(conn, who, 'asset_request_rejected', requester, 'asset_requests',
+                         request_id, {'reason': reason})
             return True
+
+    @staticmethod
+    def _decide(conn, request_id: int, decided_by: Any, actor: Any,
+                verb: str) -> Optional[Tuple[dict, Optional[str]]]:
+        """(decider, requester) for a pending request; None when there is no
+        pending request with this id."""
+        row = conn.execute("SELECT requested_by FROM asset_requests "
+                           "WHERE request_id = ? AND status = 'pending'",
+                           (request_id,)).fetchone()
+        if not row:
+            return None
+        requester = people.key(row['requested_by'], conn)
+        who = people.require_approver(actor, decided_by, requester, conn,
+                                      f"{verb} this asset request")
+        return who, requester
 
     # ==================== AUDIT & REPORTING ====================
 
     @staticmethod
-    def get_audit_log(asset_id: int, limit: int = 100) -> List[Dict[str, Any]]:
-        """Get audit log for an asset."""
+    def get_audit_log(asset_id: Optional[int] = None,
+                      limit: int = 100) -> List[Dict[str, Any]]:
+        """Get the audit log for an asset, or for every asset."""
         with get_connection() as conn:
             rows = conn.execute('''
-                SELECT * FROM asset_audit_log
-                WHERE asset_id = ?
-                ORDER BY action_date DESC
+                SELECT l.*, l.action_date AS timestamp, a.name AS asset_name
+                FROM asset_audit_log l
+                LEFT JOIN assets a ON a.asset_id = l.asset_id
+                WHERE (? IS NULL OR l.asset_id = ?)
+                ORDER BY l.action_date DESC
                 LIMIT ?
-            ''', (asset_id, limit)).fetchall()
+            ''', (asset_id, asset_id, limit)).fetchall()
             return [dict(row) for row in rows]
 
     @staticmethod
@@ -861,6 +978,25 @@ class AssetManager:
             stats['upcoming_maintenance'] = row[0] or 0
 
             return stats
+
+    @staticmethod
+    def get_utilization_report() -> Dict[str, Any]:
+        """How the assets still in service are being used: out with someone,
+        available or being repaired (disposed, retired, lost and stolen ones
+        do not count)."""
+        with get_connection() as conn:
+            counts = {r[0]: r[1] for r in conn.execute(
+                'SELECT status, COUNT(*) FROM assets GROUP BY status').fetchall()}
+        gone = ('disposed', 'retired', 'lost', 'stolen', 'pending_disposal')
+        total = sum(n for status, n in counts.items() if status not in gone)
+        assigned = counts.get('assigned', 0) + counts.get('in_use', 0)
+        return {
+            'total_assets': total,
+            'assigned': assigned,
+            'available': counts.get('available', 0),
+            'under_repair': counts.get('in_repair', 0) + counts.get('in_maintenance', 0),
+            'utilization_rate': assigned * 100.0 / total if total else 0.0,
+        }
 
     # ==================== HELPER METHODS ====================
 

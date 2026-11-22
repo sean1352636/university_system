@@ -51,10 +51,11 @@ class CourseOption:
 
 
 def _prospectus():
-    """The university's published-facts port, or ``None`` if absent."""
+    """The university's published-facts port (its platform adapter), or
+    ``None`` if absent."""
     try:
-        from education_system.systems.university.application import prospectus
-        return prospectus
+        from education_system.platform.cross_system.adapters import route_support
+        return route_support.adapter_for("university")
     except Exception:
         logger.debug("University prospectus unavailable", exc_info=True)
         return None
@@ -79,8 +80,9 @@ def home_courses() -> list[CourseOption]:
         logger.info("University course catalogue unavailable — UCAS choices "
                     "will fall back to free text")
         return []
-    out = [CourseOption(code=c.code, name=c.name,
-                        min_tariff=c.min_tariff, duration=c.duration)
+    out = [CourseOption(code=c["code"], name=c["name"],
+                        min_tariff=c.get("min_tariff") or 0,
+                        duration=c.get("duration") or "")
            for c in port.published_courses()]
     logger.debug("Offering %d university course(s) as UCAS destinations",
                  len(out))

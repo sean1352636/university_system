@@ -24,78 +24,60 @@ class _ComposeMixin:
 
     @handle_exception
     def send_email_to_role(self, role, subject, body):
-        """Send email to all users with a specific role"""
+        """Send a bulk e-mail to everyone with ``role``, through the outbox.
+
+        Needs the bulk_sender or email_admin role (or an administrator).
+        Each recipient's unsubscribes and preferences apply, the message
+        carries an unsubscribe footer, and the send is audited."""
         if not self.auth or not self.auth.current_user:
             _out("You must be logged in to send emails.")
             return False
+        from education_system.systems.university.application.mail import admin as email_admin
+        from education_system.systems.university.infrastructure.database.db import get_connection
+        from education_system.systems.university.infrastructure.email import outbox_delivery
 
-        def _send_to_role(cursor):
-            # Get all users with the specified role
-            cursor.execute('''
-            SELECT id, email, first_name, last_name, username
-            FROM users
-            WHERE role = ?
-            ORDER BY first_name, last_name
-            ''', (role,))
-
-            users = cursor.fetchall()
-
-            if not users:
-                _out(f"No users found with role '{role}'.")
+        actor = self.auth.current_user.get('username')
+        actor_role = self.auth.current_user.get('role', '')
+        conn = get_connection(None, row_factory=False)
+        try:
+            if not email_admin.can_send_bulk(conn, actor, actor_role, "addresses"):
+                _out("You do not have permission to send bulk e-mail.")
                 return False
-
+            users = conn.execute(
+                "SELECT email, first_name, last_name FROM users WHERE role = ? "
+                "AND email IS NOT NULL AND TRIM(email) <> '' ORDER BY first_name, last_name",
+                (role,)).fetchall()
+            if not users:
+                _out(f"No users with an e-mail address found with role '{role}'.")
+                return False
             _out(f"Found {len(users)} users with role '{role}':")
-            for user in users[:5]:  # Show first 5
-                _out(f"  - {user[2]} {user[3]} ({user[1]})")
-
+            for address, first, last in users[:5]:
+                _out(f"  - {first} {last} ({address})")
             if len(users) > 5:
                 _out(f"  ... and {len(users) - 5} more")
-
-            confirm = input(f"\nSend email to all {len(users)} {role}s? (y/n): ")
-            if confirm.lower() != 'y':
+            if input(f"\nSend email to all {len(users)} {role}s? (y/n): ").strip().lower() != 'y':
                 _out("Email cancelled.")
                 return False
-
-            # Send emails
-            success_count = 0
-            failure_count = 0
-
-            for user in users:
-                try:
-                    success = queue_email(user[1], subject, body)
-                    if success:
-                        success_count += 1
-                    else:
-                        failure_count += 1
-                except Exception as e:
-                    log_event('error', f"Error processing email for {user[1]}: {e}")
-                    failure_count += 1
-
-            if config.get('database_only_mode', True):
-                _err(f"\nEmails stored in database: {success_count} successful, {failure_count} failed")
-            else:
-                _err(f"\nEmails queued: {success_count} successful, {failure_count} failed")
-
-            # Log the bulk send
-            current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-            cursor.execute('''
-            INSERT INTO email_log (recipient, subject, sent_date, status, related_to)
-            VALUES (?, ?, ?, ?, ?)
-            ''', (
-                f"Bulk to {role}s",
-                subject,
-                current_time,
-                'stored' if config.get('database_only_mode', True) else 'bulk_queued',
-                f"Bulk Email to {role}s from {self.auth.current_user['username']}"
-            ))
-
-            return True
-
-        try:
-            return execute_db_operation(_send_to_role)
-        except Exception as e:
-            log_event('error', f"Error sending bulk email to {role}: {e}")
+            result = email_admin.send_bulk(
+                conn, actor, actor_role, audience="addresses", subject=subject, body=body,
+                category="announcements", mode=outbox_delivery.delivery_mode(),
+                addresses=[u[0] for u in users])
+            conn.commit()
+        except (PermissionError, ValueError) as exc:
+            conn.rollback()
+            _out(str(exc))
             return False
+        except Exception as exc:
+            conn.rollback()
+            log_event('error', f"Error sending bulk email to {role}: {exc}")
+            return False
+        finally:
+            conn.close()
+        outbox_delivery.kick()
+        _err(f"\nBulk send {result['bulk_id']}: {result['recipients']} recipients, "
+             f"{result['queued']} queued, {result['stored']} kept in-app only, "
+             f"{result['suppressed']} not sent (unsubscribed or blocked)")
+        return True
 
     @handle_exception
     def compose_email_with_user_selection(self):

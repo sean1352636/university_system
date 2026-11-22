@@ -11,9 +11,17 @@ from pathlib import Path
 from typing import Any, Callable
 from education_system import paths
 from education_system.systems.sixth_form.domain.learners.advanced_search import (
-    advanced_search as data,
+    _db as search_db,
+    annotations as search_annotations,
+    engine as search_engine,
+    exports as search_exports,
+    history as search_history,
+    insights as search_insights,
+    matching as search_matching,
+    query as search_query,
+    sources as search_sources,
 )
-from education_system.systems.sixth_form.domain.learners.advanced_search.advanced_search import (
+from education_system.systems.sixth_form.domain.learners.advanced_search.models import (
     ALL_SCOPES,
     DEFAULT_LIMIT_PER_SCOPE,
     Hit,
@@ -41,41 +49,29 @@ class _UserAbort(Exception):
 
 # ── Overlay stores (shared with the GUI) ───────────────────────────
 #
-# Tags, flags, owners, notes, workflow assignments and watchlists are
-# advanced-search *overlay* metadata — deliberately NOT written into the
-# domain tables. They live in the same JSON documents the GUI uses, so a
+# Tags, flags, owners, notes and workflow assignments are advanced-search
+# *overlay* metadata — deliberately NOT written into the domain tables.
+# They live in the advanced-search database (domain ``annotations``), so a
 # flag added from the CLI is visible in the GUI and vice-versa.
+# Watchlists and pinned queries are per-user UI state in a JSON file.
 
-_ANN_STORE_NAME = "advanced_search_annotations.json"
 _UI_STORE_NAME = "advanced_search_ui.json"
-_ACTION_LOG_NAME = "advanced_search_action_log.json"
-
-
-def _ann_store_path() -> Path:
-    return paths.SIXTH_FORM_DATA_DIR / _ANN_STORE_NAME
 
 
 def _load_ann_store() -> dict:
-    try:
-        with open(_ann_store_path(), encoding="utf-8") as fh:
-            store = json.load(fh)
-        if isinstance(store, dict):
-            return store
-    except (OSError, ValueError):
-        pass
-    return {}
+    return search_annotations.load_all()
 
 
 def _save_ann_store(store: dict) -> None:
-    _save_json(_ann_store_path(), store)
+    search_annotations.save_all(store)
 
 
 def _ann_key(scope: str, entity_id: str) -> str:
-    return f"{scope}:{entity_id}"
+    return search_annotations.key(scope, entity_id)
 
 
 def _get_annotation(scope: str, entity_id: str) -> dict:
-    return _load_ann_store().get(_ann_key(scope, entity_id), {})
+    return search_annotations.get(scope, entity_id)
 
 
 def _ui_store_path() -> Path:
@@ -102,33 +98,11 @@ def _save_ui_store(store: dict) -> None:
 
 def _append_action_log(action: str, detail: str = "", count: int = 0) -> None:
     """Record an operator action (flag/message/export…) to the shared log."""
-    try:
-        path = paths.SIXTH_FORM_DATA_DIR / _ACTION_LOG_NAME
-        log: list = []
-        if path.exists():
-            with open(path, encoding="utf-8") as fh:
-                loaded = json.load(fh)
-            if isinstance(loaded, list):
-                log = loaded
-        log.append({
-            "ts": _dt.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            "action": action, "detail": detail, "count": count,
-        })
-        del log[:-500]
-        _save_json(path, log)
-    except (OSError, ValueError):
-        logger.warning("could not append action log", exc_info=True)
+    search_annotations.log_action(action, detail, count)
 
 
 def _read_action_log() -> list[dict]:
-    try:
-        with open(paths.SIXTH_FORM_DATA_DIR / _ACTION_LOG_NAME, encoding="utf-8") as fh:
-            loaded = json.load(fh)
-        if isinstance(loaded, list):
-            return loaded
-    except (OSError, ValueError):
-        pass
-    return []
+    return search_annotations.list_actions(500)
 
 
 def _save_json(path: Path, obj) -> None:
@@ -272,7 +246,10 @@ def _print_results(results: SearchResults) -> None:
         if results.suggestions:
             print(f"  Did you mean:  {results.suggestions[0]}")
         return
-    print(f"\n  {results.total} hit(s) for query {results.query!r}.")
+    more = (f" (of {results.matched_total} matching — raise the per-area "
+            f"limit to see the rest)" if getattr(results, "truncated", False)
+            else "")
+    print(f"\n  {results.total} hit(s){more} for query {results.query!r}.")
     for scope in results.scopes:
         hits = results.hits_by_scope.get(scope, [])
         if not hits:
@@ -292,13 +269,17 @@ def _print_saved(rows: list[SavedSearch]) -> None:
         print("\n  (no saved searches)")
         return
     print()
-    print(f"  {'#':>4}  {'Name':<24}  {'Query':<26}  Scopes")
-    print("  " + "-" * 90)
+    print(f"  {'#':>4}  {'Name':<24}  {'Query':<26}  {'Owner':<12}  "
+          f"{'Shared':<10}  Scopes")
+    print("  " + "-" * 100)
     for s in rows:
         scopes = ",".join(s.scopes) if s.scopes else "(all)"
         q = s.query or "(empty)"
+        shared = (",".join(s.role_acl) if s.visibility == "role"
+                  else s.visibility)
         print(f"  {s.saved_id:>4}  {s.name[:24]:<24}  "
-              f"{q[:26]:<26}  {scopes}")
+              f"{q[:26]:<26}  {(s.owner_actor or '—')[:12]:<12}  "
+              f"{shared[:10]:<10}  {scopes}")
     print(f"\n  {len(rows)} saved.")
 
 
@@ -307,10 +288,47 @@ def _print_saved(rows: list[SavedSearch]) -> None:
 def _hit_student_id(h: Hit) -> str:
     if h.scope == "students":
         return h.entity_id
-    if h.scope in data._STUDENT_KEYED_SCOPES:
+    if h.scope in search_matching._STUDENT_KEYED_SCOPES:
         doc = (h.extra or {}).get("_doc") or {}
-        return str(doc.get("name") or "").strip()
+        return search_query._doc_student_id(h.scope, doc)
     return ""
+
+
+def _me() -> str:
+    """The signed-in username (actor for pins, inbox, digest)."""
+    from education_system.systems.sixth_form.domain.governance.user_management import (
+        access,
+    )
+    return access.current().username or ""
+
+
+def _sharing_prompts(existing: SavedSearch | None = None) -> dict[str, Any]:
+    """Visibility, roles, folder, tags and filters for a saved search."""
+    vis = _input("Shared with (private/role/public)",
+                 default=(existing.visibility if existing else "private"))
+    roles = ""
+    if vis == "role":
+        roles = _input("Roles (comma-separated, e.g. Tutor, SENCO)",
+                       default=", ".join(existing.role_acl) if existing else "",
+                       allow_empty=False)
+    folder = _input("Folder", default=(existing.folder or "") if existing else "")
+    tags = _input("Tags (comma-separated)",
+                  default=", ".join(existing.tags) if existing else "")
+    cur = existing.filters if existing else {}
+    shown = ", ".join(f"{k}={v}" for k, v in sorted(cur.items()))
+    raw = _input("Filters as key=value, comma-separated (year_group, "
+                 "tutor_group, postcode_prefix, owned_by_staff, sen_only, "
+                 "include_archived; '-' = none)", default=shown)
+    filters: dict[str, Any] = {}
+    if raw and raw != "-":
+        for part in raw.split(","):
+            k, _, v = part.partition("=")
+            k, v = k.strip(), v.strip()
+            if k:
+                filters[k] = (True if v.lower() in ("y", "yes", "true", "1")
+                              and k in ("sen_only", "include_archived") else v)
+    return {"visibility": vis, "role_acl": roles, "folder": folder,
+            "tags": tags, "filters": filters}
 
 
 def _results_from_hits(hits: list[Hit], query: str) -> SearchResults:
@@ -370,7 +388,7 @@ def syntax_help() -> None:
     for line in QUERY_SYNTAX_HELP.splitlines():
         print(f"  {line}")
     print("\n  Examples (copy into the query bar):")
-    for desc, q in data.query_examples():
+    for desc, q in search_insights.query_examples():
         print(f"    {desc:<38} {q}")
     _pause()
 
@@ -384,7 +402,7 @@ def quick_search() -> None:
         print("\n  Cancelled / bad input.")
         return
     try:
-        r = _store_last(data.run_search(q, limit_per_scope=n))
+        r = _store_last(search_engine.run_search(q, limit_per_scope=n))
     except ValidationError as e:
         print(f"  ✗ {e}")
         _pause()
@@ -403,7 +421,7 @@ def scoped_search() -> None:
         print("\n  Cancelled / bad input.")
         return
     try:
-        r = _store_last(data.run_search(q, scopes=scopes, limit_per_scope=n))
+        r = _store_last(search_engine.run_search(q, scopes=scopes, limit_per_scope=n))
     except ValidationError as e:
         print(f"  ✗ {e}")
         _pause()
@@ -425,7 +443,7 @@ def search_one_scope() -> None:
     if not scopes:
         scopes = list(ALL_SCOPES)
     try:
-        r = _store_last(data.run_search(q, scopes=scopes, limit_per_scope=n))
+        r = _store_last(search_engine.run_search(q, scopes=scopes, limit_per_scope=n))
     except ValidationError as e:
         print(f"  ✗ {e}")
         _pause()
@@ -438,7 +456,7 @@ def search_one_scope() -> None:
 
 def list_saved() -> None:
     print("\n═══ Saved Searches ═══")
-    _print_saved(data.list_saved_searches())
+    _print_saved(search_history.list_saved_searches())
     _pause()
 
 
@@ -449,12 +467,14 @@ def new_saved() -> None:
         q = _input("Query")
         scopes = _pick_scopes()
         notes = _input("Notes")
+        sharing = _sharing_prompts()
     except _UserAbort:
         print("\n  Cancelled.")
         return
     try:
-        s = data.create_saved_search({
+        s = search_history.create_saved_search({
             "name": name, "query": q, "scopes": scopes, "notes": notes,
+            **sharing,
         })
     except ValidationError as e:
         print(f"\n  ✗ {e}")
@@ -471,7 +491,7 @@ def edit_saved() -> None:
     except (ValueError, _UserAbort):
         print("\n  Cancelled / bad input.")
         return
-    existing = data.get_saved_search(sid)
+    existing = search_history.get_saved_search(sid)
     if existing is None:
         print(f"  ✗ No saved search #{sid}")
         _pause()
@@ -481,12 +501,14 @@ def edit_saved() -> None:
         q = _input("Query", default=existing.query)
         scopes = _pick_scopes(default=existing.scopes)
         notes = _input("Notes", default=existing.notes or "")
+        sharing = _sharing_prompts(existing)
     except _UserAbort:
         print("\n  Cancelled.")
         return
     try:
-        data.update_saved_search(sid, {
+        search_history.update_saved_search(sid, {
             "name": name, "query": q, "scopes": scopes, "notes": notes,
+            **sharing,
         })
     except ValidationError as e:
         print(f"\n  ✗ {e}")
@@ -498,7 +520,7 @@ def edit_saved() -> None:
 
 def run_saved() -> None:
     print("\n═══ Run Saved Search ═══")
-    saved = data.list_saved_searches()
+    saved = search_history.list_saved_searches()
     if not saved:
         print("\n  (no saved searches yet)")
         _pause()
@@ -510,7 +532,7 @@ def run_saved() -> None:
         print("\n  Cancelled / bad input.")
         return
     try:
-        r = data.run_saved_search(sid)
+        r = search_history.run_saved_search(sid)
     except ValidationError as e:
         print(f"\n  ✗ {e}")
         _pause()
@@ -526,7 +548,7 @@ def delete_saved() -> None:
     except (ValueError, _UserAbort):
         print("\n  Cancelled / bad input.")
         return
-    if data.get_saved_search(sid) is None:
+    if search_history.get_saved_search(sid) is None:
         print(f"  ✗ No saved search #{sid}")
         _pause()
         return
@@ -534,16 +556,19 @@ def delete_saved() -> None:
               default="no").lower() != "yes":
         print("\n  Cancelled.")
         return
-    if data.delete_saved_search(sid):
-        print(f"\n  ✓ Deleted #{sid}")
+    try:
+        if search_history.delete_saved_search(sid):
+            print(f"\n  ✓ Deleted #{sid}")
+    except ValidationError as e:
+        print(f"\n  ✗ {e}")
     _pause()
 
 
 # ── History ───────────────────────────────────────────────────────
 
 def show_history() -> None:
-    print("\n═══ Search History ═══")
-    rows = data.list_history(limit=50)
+    print("\n═══ Your Search History ═══")
+    rows = search_history.list_history(limit=50)
     if not rows:
         print("\n  (no history)")
         _pause()
@@ -562,11 +587,11 @@ def show_history() -> None:
 
 def clear_history_flow() -> None:
     print("\n═══ Clear Search History ═══")
-    if _input("Clear all history? Type 'yes'",
+    if _input("Clear your search history? Type 'yes'",
               default="no").lower() != "yes":
         print("\n  Cancelled.")
         return
-    n = data.clear_history()
+    n = search_history.clear_history()
     print(f"\n  ✓ Cleared {n} entry/entries.")
     _pause()
 
@@ -584,9 +609,9 @@ def filtered_search() -> None:
     tg = _input("Tutor group name (blank=any)")
     if tg:
         filters["tutor_group"] = tg
-    role = _input("Role (e.g. tutor; blank=admin)")
-    if role:
-        filters["role"] = role
+    pc = _input("Home postcode starts with (blank=any)")
+    if pc:
+        filters["postcode_prefix"] = pc
     owner = _input("Owned by staff_id (blank=any)")
     if owner:
         filters["owned_by_staff"] = owner
@@ -597,11 +622,9 @@ def filtered_search() -> None:
                        default="n").lower().startswith("y")
     if inc_arch:
         filters["include_archived"] = True
-    actor = _input("Actor (for pinning boost; blank=none)")
     try:
-        results = _store_last(data.run_search(
-            q, scopes=scopes, filters=filters,
-            actor=actor or None, interleave=True))
+        results = _store_last(search_engine.run_search(
+            q, scopes=scopes, filters=filters, interleave=True))
     except ValidationError as e:
         print(f"\n  ✗ {e}")
         return
@@ -610,13 +633,13 @@ def filtered_search() -> None:
 
 
 def pin_flow() -> None:
-    actor = _input("Your actor id", allow_empty=False)
+    actor = _me() or _input("Your actor id", allow_empty=False)
     scope = _input(f"Scope (one of {','.join(ALL_SCOPES)})",
                     allow_empty=False)
     eid = _input("Entity id", allow_empty=False)
     label = _input("Label (optional)")
     try:
-        p = data.pin_result(actor, scope, eid, label=label)
+        p = search_history.pin_result(actor, scope, eid, label=label)
         print(f"\n  ✓ Pinned #{p.pin_id} ({p.scope}/{p.entity_id})")
     except ValidationError as e:
         print(f"\n  ✗ {e}")
@@ -624,8 +647,8 @@ def pin_flow() -> None:
 
 
 def list_pins_flow() -> None:
-    actor = _input("Actor (blank = all)")
-    pins = data.list_pinned(actor or None)
+    actor = _input("Actor (blank = all)", default=_me())
+    pins = search_history.list_pinned(actor or None)
     if not pins:
         print("\n  No pinned results.")
     else:
@@ -637,10 +660,10 @@ def list_pins_flow() -> None:
 
 
 def unpin_flow() -> None:
-    actor = _input("Actor", allow_empty=False)
+    actor = _me() or _input("Actor", allow_empty=False)
     scope = _input("Scope", allow_empty=False)
     eid = _input("Entity id", allow_empty=False)
-    ok = data.unpin_result(actor, scope, eid)
+    ok = search_history.unpin_result(actor, scope, eid)
     print(f"\n  {'✓ Unpinned' if ok else '✗ Not found'}")
     _pause()
 
@@ -648,9 +671,9 @@ def unpin_flow() -> None:
 def schedule_saved_flow() -> None:
     sid = _input("Saved-search id", allow_empty=False)
     cron = _input("Cron (e.g. daily/hourly)", default="daily")
-    actor = _input("Notify actor", allow_empty=False)
+    actor = _input("Notify actor", default=_me(), allow_empty=False)
     try:
-        s = data.schedule_saved_search(
+        s = search_history.schedule_saved_search(
             int(sid), cron=cron, notify_actor=actor)
         print(f"\n  ✓ Scheduled #{s.schedule_id} cron={s.cron}")
     except (ValueError, ValidationError) as e:
@@ -659,7 +682,7 @@ def schedule_saved_flow() -> None:
 
 
 def list_schedules_flow() -> None:
-    rows = data.list_scheduled_searches()
+    rows = search_history.list_scheduled_searches()
     if not rows:
         print("\n  No scheduled searches.")
     else:
@@ -673,7 +696,7 @@ def list_schedules_flow() -> None:
 
 
 def poll_subscriptions_flow() -> None:
-    fired = data.poll_subscriptions()
+    fired = search_history.poll_subscriptions()
     print(f"\n  Polled. {len(fired)} subscription(s) fired.")
     for s in fired:
         print(f"   • #{s.schedule_id} → {s.notify_actor}")
@@ -681,10 +704,10 @@ def poll_subscriptions_flow() -> None:
 
 
 def inbox_flow() -> None:
-    actor = _input("Actor", allow_empty=False)
+    actor = _input("Actor", default=_me(), allow_empty=False)
     unread = _input("Unread only? Y/n",
                      default="y").lower().startswith("y")
-    rows = data.list_subscription_notifications(actor, unread_only=unread)
+    rows = search_history.list_subscription_notifications(actor, unread_only=unread)
     if not rows:
         print("\n  (empty)")
     else:
@@ -699,7 +722,7 @@ def inbox_flow() -> None:
 
 def export_saved_flow() -> None:
     path = _input("Export file path (blank = print)")
-    text = data.export_saved_searches()
+    text = search_history.export_saved_searches()
     if path:
         try:
             with open(path, "w", encoding="utf-8") as fh:
@@ -719,7 +742,7 @@ def import_saved_flow() -> None:
     try:
         with open(path, "r", encoding="utf-8") as fh:
             text = fh.read()
-        counts = data.import_saved_searches(text, overwrite=overwrite)
+        counts = search_history.import_saved_searches(text, overwrite=overwrite)
         print(f"\n  ✓ {counts}")
     except (OSError, ValidationError) as e:
         print(f"\n  ✗ {e}")
@@ -727,7 +750,7 @@ def import_saved_flow() -> None:
 
 
 def telemetry_flow() -> None:
-    ts = data.telemetry_summary()
+    ts = search_insights.telemetry_summary()
     print(f"\n  Searches: {ts.total_searches}  "
           f"Zero-result: {ts.zero_result}")
     if ts.top_queries:
@@ -746,13 +769,13 @@ def telemetry_flow() -> None:
 
 
 def refresh_index_flow() -> None:
-    if not data._fts_available():
+    if not search_db._fts_available():
         print("\n  FTS5 is not available in this SQLite build.")
         _pause()
         return
     scopes = _pick_scopes()
     print("\n  Refreshing index...")
-    counts = data.refresh_index(scopes)
+    counts = search_insights.refresh_index(scopes)
     total = sum(counts.values())
     print(f"\n  ✓ Indexed {total} row(s) across "
           f"{len(counts)} scope(s).")
@@ -762,14 +785,14 @@ def refresh_index_flow() -> None:
 
 
 def clear_cache_flow() -> None:
-    data.clear_cache()
+    search_db.clear_cache()
     print("\n  ✓ Search cache cleared.")
     _pause()
 
 
 def suggest_flow() -> None:
     prefix = _input("Prefix")
-    out = data.suggest(prefix, limit=10)
+    out = search_insights.suggest(prefix, limit=10)
     if not out:
         print("\n  (no suggestions)")
     else:
@@ -785,7 +808,7 @@ _DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
 
 def list_cohorts_flow() -> None:
     print("\n═══ Cohorts ═══")
-    rows = data.list_cohorts()
+    rows = search_history.list_cohorts()
     if not rows:
         print("\n  (no cohorts yet)")
     else:
@@ -807,8 +830,8 @@ def save_cohort_flow() -> None:
         print("\n  Cancelled.")
         return
     try:
-        results = data.run_search(q, scopes=scopes, limit_per_scope=1000)
-        c = data.create_cohort_from_results(
+        results = search_engine.run_search(q, scopes=scopes, limit_per_scope=1000)
+        c = search_history.create_cohort_from_results(
             name, results, notes=notes or None)
     except ValidationError as e:
         print(f"\n  ✗ {e}")
@@ -821,7 +844,7 @@ def save_cohort_flow() -> None:
 
 def cohort_members_flow() -> None:
     name = _input("Cohort name or id", allow_empty=False)
-    members = data.cohort_members(name)
+    members = search_history.cohort_members(name)
     if not members:
         print("\n  (empty or unknown cohort)")
     else:
@@ -837,7 +860,7 @@ def delete_cohort_flow() -> None:
               default="no").lower() != "yes":
         print("\n  Cancelled.")
         return
-    print("\n  ✓ Deleted." if data.delete_cohort(name)
+    print("\n  ✓ Deleted." if search_history.delete_cohort(name)
           else "\n  ✗ Not found.")
     _pause()
 
@@ -845,7 +868,7 @@ def delete_cohort_flow() -> None:
 def family_flow() -> None:
     sid = _input("Student id", allow_empty=False)
     try:
-        rels = data.find_relatives(sid)
+        rels = search_sources.find_relatives(sid)
     except ValidationError as e:
         print(f"\n  ✗ {e}")
         _pause()
@@ -862,7 +885,7 @@ def family_flow() -> None:
 def group_rollup_flow() -> None:
     gid = _input("Class group id", allow_empty=False)
     try:
-        roll = data.group_rollup(int(gid))
+        roll = search_sources.group_rollup(int(gid))
     except (ValueError, ValidationError) as e:
         print(f"\n  ✗ {e}")
         _pause()
@@ -881,7 +904,7 @@ def ucas_peers_flow() -> None:
     uni = _input("University (substring)", allow_empty=False)
     course = _input("Course code (optional)")
     try:
-        peers = data.ucas_peers(uni, course or None)
+        peers = search_sources.ucas_peers(uni, course or None)
     except ValidationError as e:
         print(f"\n  ✗ {e}")
         _pause()
@@ -899,7 +922,7 @@ def ucas_peers_flow() -> None:
 def ucas_clusters_flow() -> None:
     by_course = _input("Cluster by course too? y/N",
                        default="n").lower().startswith("y")
-    cl = data.ucas_choice_clusters(by_course=by_course)
+    cl = search_sources.ucas_choice_clusters(by_course=by_course)
     if not cl:
         print("\n  No shared choices (min 2 applicants).")
     else:
@@ -913,7 +936,7 @@ def ucas_clusters_flow() -> None:
 
 
 def clashes_flow() -> None:
-    cl = data.timetable_clashes()
+    cl = search_sources.timetable_clashes()
     if not cl:
         print("\n  No timetable clashes detected.")
     else:
@@ -928,7 +951,7 @@ def clashes_flow() -> None:
 def similar_flow() -> None:
     sid = _input("Student id", allow_empty=False)
     try:
-        sim = data.similar_students(sid)
+        sim = search_sources.similar_students(sid)
     except ValidationError as e:
         print(f"\n  ✗ {e}")
         _pause()
@@ -948,7 +971,7 @@ def similar_flow() -> None:
 def schedule_delta_flow() -> None:
     sid = _input("Scheduled-search id", allow_empty=False)
     try:
-        d = data.schedule_delta(int(sid))
+        d = search_history.schedule_delta(int(sid))
     except (ValueError, ValidationError) as e:
         print(f"\n  ✗ {e}")
         _pause()
@@ -963,8 +986,8 @@ def schedule_delta_flow() -> None:
 
 
 def digest_flow() -> None:
-    actor = _input("Actor (blank = all)")
-    dg = data.build_digest(actor or None)
+    actor = _input("Actor (blank = all)", default=_me())
+    dg = search_history.build_digest(actor or None)
     print(f"\n  Digest — {dg.total_new} new across "
           f"{len(dg.lines)} scheduled search(es):")
     for line in dg.lines:
@@ -974,7 +997,7 @@ def digest_flow() -> None:
 
 
 def list_dashboards_flow() -> None:
-    rows = data.list_dashboards()
+    rows = search_history.list_dashboards()
     if not rows:
         print("\n  (no dashboards)")
     else:
@@ -989,7 +1012,7 @@ def create_dashboard_flow() -> None:
     ids = _input("Saved-search ids (comma-separated)")
     saved_ids = [int(x) for x in ids.replace(" ", "").split(",") if x.isdigit()]
     try:
-        d = data.create_dashboard(name, saved_ids)
+        d = search_history.create_dashboard(name, saved_ids)
         print(f"\n  ✓ Dashboard #{d.dashboard_id} with "
               f"{len(d.saved_ids)} panel(s).")
     except ValidationError as e:
@@ -1001,7 +1024,7 @@ def run_dashboard_flow() -> None:
     name = _input("Dashboard name or id", allow_empty=False)
     role = _input("Role (blank = admin)")
     try:
-        panels = data.run_dashboard(name, role=role or None)
+        panels = search_history.run_dashboard(name, role=role or None)
     except ValidationError as e:
         print(f"\n  ✗ {e}")
         _pause()
@@ -1015,21 +1038,23 @@ def run_dashboard_flow() -> None:
 
 def audit_flow() -> None:
     sens = _input("Sensitive only? y/N", default="n").lower().startswith("y")
-    rows = data.list_search_audit(limit=50, sensitive_only=sens)
+    rows = search_history.list_search_audit(limit=50, sensitive_only=sens)
     if not rows:
         print("\n  (no audit entries)")
     else:
         for e in rows:
             bg = "  [BREAK-GLASS]" if e.break_glass else ""
-            print(f"   {e.ts}  {e.actor or '—'}/{e.role or '—'}  "
-                  f"{e.query!r}  sens={','.join(e.sensitive_scopes)}{bg}")
+            count = f" ×{e.record_count}" if e.record_count is not None else ""
+            print(f"   {e.ts}  {e.action}{count}  "
+                  f"{e.actor or '—'}/{e.role or '—'}  "
+                  f"{e.query!r}  sens={','.join(e.sensitive_scopes) or '—'}{bg}")
             if e.reason:
                 print(f"       reason: {e.reason}")
     _pause()
 
 
 def duplicates_flow() -> None:
-    groups = data.find_duplicate_students()
+    groups = search_insights.find_duplicate_students()
     if not groups:
         print("\n  No likely duplicate students.")
     else:
@@ -1042,7 +1067,7 @@ def duplicates_flow() -> None:
 def data_gaps_flow() -> None:
     scope = _input("Scope", default="students")
     try:
-        gaps = data.find_data_gaps(scope)
+        gaps = search_insights.find_data_gaps(scope)
     except ValidationError as e:
         print(f"\n  ✗ {e}")
         _pause()
@@ -1062,9 +1087,13 @@ def export_search_flow() -> None:
     scopes = _pick_scopes()
     fmt = _input("Format (csv/tsv/json/html/md/xlsx/pdf)", default="csv")
     path = _input("Output file path", allow_empty=False)
+    details = _input("Include student details (name, status, year, UPN…)? "
+                     "y/N", default="n").lower().startswith("y")
+    columns = list(search_exports.EXPORT_COLUMNS) + (
+        list(search_exports.STUDENT_EXPORT_COLUMNS) if details else [])
     try:
-        r = data.run_search(q, scopes=scopes, limit_per_scope=1000)
-        data.export_results_file(r, path, fmt=fmt)
+        r = search_engine.run_search(q, scopes=scopes, limit_per_scope=1000)
+        search_exports.export_results_file(r, path, fmt=fmt, columns=columns)
         print(f"\n  ✓ Wrote {r.total} row(s) to {path}")
     except (ValidationError, OSError) as e:
         print(f"\n  ✗ {e}")
@@ -1076,9 +1105,9 @@ def contact_sheet_flow() -> None:
     scopes = _pick_scopes(default=["students"])
     path = _input("Output HTML path", allow_empty=False)
     try:
-        r = data.run_search(q, scopes=scopes, limit_per_scope=1000)
+        r = search_engine.run_search(q, scopes=scopes, limit_per_scope=1000)
         with open(path, "w", encoding="utf-8") as fh:
-            fh.write(data.contact_sheet(r))
+            fh.write(search_exports.contact_sheet(r))
         print(f"\n  ✓ Contact sheet written to {path}")
     except (ValidationError, OSError) as e:
         print(f"\n  ✗ {e}")
@@ -1087,19 +1116,19 @@ def contact_sheet_flow() -> None:
 
 def nl_query_flow() -> None:
     text = _input("Describe what you want", allow_empty=False)
-    q = data.nl_to_query(text)
+    q = search_insights.nl_to_query(text)
     if not q:
         print("\n  (couldn't translate — try the query syntax help)")
         _pause()
         return
     print(f"\n  Suggested query:  {q}")
     if _input("Run it? Y/n", default="y").lower().startswith("y"):
-        _print_results(data.run_search(q, limit_per_scope=DEFAULT_LIMIT_PER_SCOPE))
+        _print_results(search_engine.run_search(q, limit_per_scope=DEFAULT_LIMIT_PER_SCOPE))
     _pause()
 
 
 def index_status_flow() -> None:
-    rows = data.index_status()
+    rows = search_insights.index_status()
     print()
     for s in rows:
         flag = "STALE" if s.stale else "ok"
@@ -1108,14 +1137,14 @@ def index_status_flow() -> None:
               f"{s.last_refresh or '—'}")
     if _input("\n  Refresh stale scopes now? y/N",
               default="n").lower().startswith("y"):
-        counts = data.refresh_index(only_stale=True)
+        counts = search_insights.refresh_index(only_stale=True)
         print(f"\n  ✓ Refreshed {sum(counts.values())} row(s) across "
               f"{len(counts)} scope(s).")
     _pause()
 
 
 def cache_stats_flow() -> None:
-    st = data.cache_stats()
+    st = search_db.cache_stats()
     print(f"\n  Cache: {st['entries']}/{st['max_entries']} entries  ·  "
           f"hits {st['hits']}  misses {st['misses']}  "
           f"hit-rate {st['hit_rate']:.0%}  ·  TTL {st['ttl_seconds']}s")
@@ -1123,7 +1152,7 @@ def cache_stats_flow() -> None:
 
 
 def volume_flow() -> None:
-    rows = data.search_volume_by_day()
+    rows = search_insights.search_volume_by_day()
     if not rows:
         print("\n  (no search history)")
     else:
@@ -1143,8 +1172,12 @@ def boolean_builder_flow() -> None:
     """Build a query from field/value clauses without knowing the DSL."""
     print("\n═══ Boolean Query Builder ═══")
     print("  Enter clauses; blank field name finishes.")
+    # Only fields the parser knows; anything else would silently match
+    # nothing.
     fields = ["name", "status", "subject", "tutor_group", "year",
-              "email", "note", "keyword"]
+              "email", "upn", "uln", "postcode", "dob", "gender",
+              "preferred", "previous_school", "category", "type",
+              "description", "notes", "keyword"]
     print("  Fields: " + ", ".join(fields))
     parts: list[str] = []
     try:
@@ -1181,7 +1214,7 @@ def boolean_builder_flow() -> None:
     if _input("Run it? Y/n", default="y").lower().startswith("y"):
         try:
             _print_results(_store_last(
-                data.run_search(query, limit_per_scope=DEFAULT_LIMIT_PER_SCOPE)))
+                search_engine.run_search(query, limit_per_scope=DEFAULT_LIMIT_PER_SCOPE)))
         except ValidationError as e:
             print(f"\n  ✗ {e}")
     _pause()
@@ -1198,7 +1231,7 @@ def phonetic_search_flow() -> None:
         print("\n  Cancelled.")
         return
     try:
-        base = data.run_search("", scopes=scopes, limit_per_scope=1000)
+        base = search_engine.run_search("", scopes=scopes, limit_per_scope=1000)
     except ValidationError as e:
         print(f"\n  ✗ {e}")
         _pause()
@@ -1228,7 +1261,7 @@ def regex_search_flow() -> None:
         _pause()
         return
     try:
-        base = data.run_search("", scopes=scopes, limit_per_scope=1000)
+        base = search_engine.run_search("", scopes=scopes, limit_per_scope=1000)
     except ValidationError as e:
         print(f"\n  ✗ {e}")
         _pause()
@@ -1288,7 +1321,7 @@ def estimate_flow() -> None:
         print("\n  Cancelled.")
         return
     try:
-        preview = data.run_search(q, scopes=scopes, limit_per_scope=5,
+        preview = search_engine.run_search(q, scopes=scopes, limit_per_scope=5,
                                   record_history=False)
     except ValidationError as e:
         print(f"\n  ✗ {e}")
@@ -1308,7 +1341,7 @@ def facets_flow() -> None:
     res = _require_last()
     if res is None:
         return
-    fcs = data.facets(res, top=8)
+    fcs = search_insights.facets(res, top=8)
     if not fcs:
         print("\n  No facetable fields in the current results.")
         _pause()
@@ -1380,7 +1413,7 @@ def grouped_view_flow() -> None:
     gidx = {}
     if "year" in mode or "tutor" in mode:
         try:
-            gidx = data.student_group_index()
+            gidx = search_sources.student_group_index()
         except Exception:
             gidx = {}
 
@@ -1546,13 +1579,12 @@ def message_flow() -> None:
     send = _input("Send now (else draft only)? y/N",
                   default="n").lower().startswith("y")
     try:
-        r = data.mailmerge_results(res, subject=subject, body=body, send=send)
+        r = search_exports.mailmerge_results(res, subject=subject, body=body, send=send)
     except Exception as e:                       # noqa: BLE001
         print(f"\n  ✗ {e}")
         _pause()
         return
     verb = "Sent" if send else "Drafted"
-    _append_action_log("message", f"{verb}: {subject}", r.get("recipients", 0))
     print(f"\n  ✓ {verb} {r['created']} message(s) to "
           f"{r['recipients']} student(s) (thread {r['thread_id']}).")
     _pause()
@@ -1572,7 +1604,7 @@ def redacted_search_flow() -> None:
     if reason:
         filters["break_glass"] = reason
     try:
-        r = _store_last(data.run_search(
+        r = _store_last(search_engine.run_search(
             q, scopes=scopes, filters=filters, limit_per_scope=1000))
     except ValidationError as e:
         print(f"\n  ✗ {e}")
@@ -1591,7 +1623,8 @@ def action_log_flow() -> None:
         return
     print("\n  Operator action log (most recent last):")
     for r in rows[-100:]:
-        print(f"   {r.get('ts', ''):<20} {r.get('action', ''):<12} "
+        print(f"   {r.get('ts', ''):<20} {r.get('actor') or '—':<14} "
+              f"{r.get('action', ''):<12} "
               f"×{r.get('count', 0):<4} {r.get('detail', '')}")
     _pause()
 
@@ -1755,52 +1788,7 @@ def undo_annotation_flow() -> None:
     _pause()
 
 
-# ── Bulk student status change ─────────────────────────────────────
-
-def bulk_status_flow() -> None:
-    """Change the status of selected students in the current results."""
-    res = _require_last()
-    if res is None:
-        return
-    from education_system.systems.sixth_form.domain.learners.\
-        students.students import get_student, update_student, STATUSES
-    hits = [h for h in _pick_hits_from_last() if h.scope == "students"]
-    if not hits:
-        print("\n  No student records selected.")
-        _pause()
-        return
-    print("  Statuses: " + ", ".join(STATUSES))
-    new = _input("New status", allow_empty=False)
-    if new not in STATUSES:
-        print(f"\n  ✗ Unknown status {new!r}.")
-        _pause()
-        return
-    if _input(f"Set status to {new!r} for {len(hits)} student(s)? Type 'yes'",
-              default="no").lower() != "yes":
-        print("\n  Cancelled.")
-        return
-    ok = errs = 0
-    fields = ("first_name", "middle_name", "last_name", "title", "gender",
-              "date_of_birth", "phone", "emergency_contact_name",
-              "emergency_contact_phone", "emergency_contact_relation",
-              "subject_1", "subject_2", "subject_3", "status")
-    for h in hits:
-        try:
-            stu = get_student(h.entity_id)
-            if stu is None:
-                errs += 1
-                continue
-            payload = {f: getattr(stu, f) for f in fields}
-            payload["status"] = new
-            update_student(h.entity_id, payload)
-            ok += 1
-        except Exception:                        # noqa: BLE001
-            errs += 1
-    _append_action_log("bulk status", new, ok)
-    print(f"\n  ✓ Status → {new!r}: {ok} updated"
-          + (f", {errs} failed" if errs else "") + ".")
-    _pause()
-
+from . import advanced_search_records_cli as records_cli  # noqa: E402
 
 # ── Submenu ───────────────────────────────────────────────────────
 
@@ -1835,7 +1823,14 @@ _MENU: list[tuple[str, Callable[[], None]]] = [
     ("Annotate: assign to workflow", assign_workflow_flow),
     ("Annotate: view for a record", view_annotations_flow),
     ("Annotate: undo last change", undo_annotation_flow),
-    ("Bulk: change student status", bulk_status_flow),
+    ("Bulk: change student status", records_cli.bulk_status_flow),
+    ("Records: open a result",     records_cli.open_record_flow),
+    ("Records: edit a student inline", records_cli.inline_edit_flow),
+    ("Records: merge 2 duplicates", records_cli.merge_duplicates_flow),
+    ("Shortlist: add from results", records_cli.shortlist_add_flow),
+    ("Shortlist: show / use",      records_cli.shortlist_show_flow),
+    ("Shortlist: remove",          records_cli.shortlist_remove_flow),
+    ("Shortlist: save as cohort",  records_cli.shortlist_cohort_flow),
     ("Watchlists: add current",    watchlist_add_flow),
     ("Watchlists: list",           watchlist_list_flow),
     ("Watchlists: load",           watchlist_load_flow),
@@ -1885,7 +1880,7 @@ _MENU: list[tuple[str, Callable[[], None]]] = [
     ("Subscription digest",        digest_flow),
     ("Schedule delta (what changed)", schedule_delta_flow),
     ("Search volume by day",       volume_flow),
-    ("Sensitive-access audit log", audit_flow),
+    ("Search & export audit log",  audit_flow),
     ("─" * 6,                      lambda: None),
     ("Export search → file",       export_search_flow),
     ("Contact sheet → HTML",       contact_sheet_flow),

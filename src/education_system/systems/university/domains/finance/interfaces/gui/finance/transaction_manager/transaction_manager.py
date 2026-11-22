@@ -81,7 +81,7 @@ class TransactionManager(
         stats_frame.pack(fill='x', padx=20, pady=10)
 
         self.stats_labels = {}
-        self.update_quick_stats(stats_frame)
+        self.gui.dashboard.update_quick_stats(stats_frame)
 
         canvas.pack(side="left", fill="both", expand=True)
         scrollbar.pack(side="right", fill="y")

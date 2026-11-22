@@ -102,18 +102,19 @@ class CarRentalGUI:
                     messagebox.showerror(_t("common.error"), _t('gui.operations.commerce.carrental.carrental_gui_parts.carrentalgui_return_vehicle_with_payment.dialogs.insufficient_balance_in_student_account', default="Insufficient balance in student account"))
                     return
 
-                # Process student account payment
-                result = process_student_finance_account_payment(
-                    student_id=student_id,
-                    amount=total_amount,
-                    description=f"Car rental return - {rental.get('rental_number', '')}",
-                    transaction_source='CarRental',
-                    transaction_ref=rental.get('rental_number', str(rental_id)),
-                    processed_by=self.current_user.get('username')
-                )
-                if not result.get('success'):
-                    messagebox.showerror(_t("common.error"), result.get('message', 'Payment failed'))
-                    return
+            # Record payment in rental system (the domain service posts to Finance;
+            # a finance-account debit that is refused returns None before any local write)
+            trans_id = TransactionManager.record_payment(
+                rental_id=rental_id,
+                customer_id=student_id,
+                amount=total_amount,
+                payment_method=actual_method,
+                processed_by=self.current_user.get('username'),
+                description=f"Car rental return - {rental.get('rental_number', '')}",
+            )
+            if not trans_id:
+                messagebox.showerror(_t("common.error"), _t("carrental.errors.payment_failed"))
+                return
 
             # Complete the return
             if not RentalManager.complete_rental(
@@ -126,18 +127,6 @@ class CarRentalGUI:
             ):
                 messagebox.showerror(_t("common.error"), _t('gui.operations.commerce.carrental.carrental_gui_parts.carrentalgui_return_vehicle_with_payment.dialogs.failed_to_complete_return', default="Failed to complete return"))
                 return
-
-            # Record payment in rental system
-            trans_id = TransactionManager.record_payment(
-                rental_id=rental_id,
-                customer_id=student_id,
-                amount=total_amount,
-                payment_method=actual_method,
-                processed_by=self.current_user.get('username')
-            )
-
-            # Record revenue to central finance
-            self.record_revenue_to_finance(rental_id, total_amount, actual_method)
 
             # Send receipt email
             self.send_receipt_email(rental_id)
@@ -243,19 +232,7 @@ class CarRentalGUI:
                         _t("carrental.errors.insufficient_balance"))
                     return
 
-                result = process_student_finance_account_payment(
-                    student_id=student_id,
-                    amount=amount,
-                    description=f"Car rental payment - {rental.get('rental_number', '')}",
-                    transaction_source='CarRental',
-                    transaction_ref=rental.get('rental_number', str(rental_id)),
-                    processed_by=self.current_user.get('username')
-                )
-                if not result.get('success'):
-                    messagebox.showerror(_t("common.error"), result.get('message', 'Payment failed'))
-                    return
-
-            # Record payment in rental system
+            # Record payment in rental system (the domain service posts to Finance)
             trans_id = TransactionManager.record_payment(
                 rental_id=rental_id,
                 customer_id=student_id,
@@ -263,9 +240,6 @@ class CarRentalGUI:
                 payment_method=actual_method,
                 processed_by=self.current_user.get('username')
             )
-
-            # Record revenue to central finance system
-            self.record_revenue_to_finance(rental_id, amount, actual_method)
 
             if trans_id:
                 messagebox.showinfo(_t("common.success"),
@@ -278,29 +252,6 @@ class CarRentalGUI:
 
         ttk.Button(dialog, text=_t("carrental.btn.confirm_payment"),
                    command=confirm_payment).pack(pady=20)
-
-    def record_revenue_to_finance(self, rental_id: int, amount: float, payment_method: str):
-        """Record car rental revenue to the central finance system"""
-        try:
-            rental = RentalManager.get_rental(rental_id)
-            if not rental:
-                return
-
-            payment_id = record_payment_to_finance(
-                student_id=rental.get('customer_id', 'EXTERNAL'),
-                amount=amount,
-                payment_method=payment_method,
-                transaction_source='CarRental',
-                transaction_ref=rental.get('rental_number', str(rental_id)),
-                notes=f"Car rental: {rental.get('make', '')} {rental.get('model', '')}",
-                created_by=self.current_user.get('username')
-            )
-            if payment_id:
-                logger.info(f"Revenue recorded to finance: £{amount:.2f} for rental {rental.get('rental_number')}")
-            return payment_id
-        except Exception as e:
-            logger.error(f"Failed to record revenue to finance: {e}")
-            return None
 
     def cancel_rental(self):
         """Cancel a rental"""

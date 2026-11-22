@@ -402,8 +402,8 @@ def _notify_new_instructor_assignment(instructor_id: int, module_info: dict, sch
         with get_connection() as conn:
             cursor = conn.cursor()
             cursor.execute('''
-                SELECT COUNT(*) FROM enrollments
-                WHERE module_code = ? AND status = 'enrolled'
+                SELECT COUNT(*) FROM student_modules
+                WHERE module_code = ? AND LOWER(status) = 'enrolled'
             ''', (module_info['module_code'],))
             row = cursor.fetchone()
             if row:

@@ -614,12 +614,19 @@ def delete_flow() -> None:
     except _UserAbort:
         print("\n  Cancelled.")
         return
-    if _input(f"Delete case #{c.case_id}? Type 'yes'",
+    print("  Records are archived, not deleted (UK retention): hidden "
+          "from lists, who/when/why recorded, restorable.")
+    if _input(f"Archive case #{c.case_id}? Type 'yes'",
               default="no").lower() != "yes":
         print("\n  Cancelled.")
         return
-    if data.delete_case(c.case_id):
-        print(f"\n  ✓ Deleted #{c.case_id}")
+    try:
+        reason = _input("Reason for archiving (optional)", default="")
+    except _UserAbort:
+        print("\n  Cancelled.")
+        return
+    if data.delete_case(c.case_id, reason=reason or None):
+        print(f"\n  ✓ Archived #{c.case_id}")
     _pause()
 
 
@@ -674,7 +681,15 @@ _MENU: list[tuple[str, Callable[[], None]]] = [
     ("Delete",                delete_flow),
     ("─" * 6,                 lambda: None),
     ("Summary",               summary_flow),
+    ("Appeals, panels & LA notifications ▸", lambda: _hearings()),
 ]
+
+
+def _hearings() -> None:
+    from education_system.systems.sixth_form.interfaces.cli.pastoral.disciplinary import (
+        hearings_cli,
+    )
+    hearings_cli.run()
 
 
 def run() -> None:

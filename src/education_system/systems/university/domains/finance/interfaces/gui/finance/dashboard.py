@@ -337,14 +337,14 @@ class DashboardManager:
         """Load initial data for all tabs"""
         try:
             self.refresh_dashboard()
-            self.refresh_payments()
-            self.refresh_fees()
-            self.refresh_students()
-            self.refresh_collections()
-            self.refresh_financial_aid()
-            self.refresh_budget()
-            self.load_exchange_rates()
-            self.load_notification_templates()
+            self.gui.transactions.refresh_payments()
+            self.gui.expenses.refresh_fees()
+            self.gui.refresh_students()
+            self.gui.collections.refresh_collections()
+            self.gui.settings.refresh_financial_aid()
+            self.gui.budgets.refresh_budget()
+            self.gui.settings.load_exchange_rates()
+            self.gui.settings.load_notification_templates()
         except Exception as e:
             print(f"Error loading initial data: {e}")
 

@@ -51,10 +51,36 @@ class Apprentice:
     notes: str | None
     created_at: str
     updated_at: str
+    # Personal, address, emergency-contact and needs details. Defaulted so
+    # code that builds a record without them keeps working.
+    middle_name: str | None = None
+    preferred_name: str | None = None
+    gender: str | None = None
+    address_line1: str | None = None
+    address_line2: str | None = None
+    town: str | None = None
+    postcode: str | None = None
+    emergency_contact_name: str | None = None
+    emergency_contact_relationship: str | None = None
+    emergency_contact_phone: str | None = None
+    has_lldd: bool = False
+    has_ehcp: bool = False
+    medical_notes: str | None = None
 
     @property
     def full_name(self) -> str:
         return f"{self.given_name} {self.family_name}".strip()
+
+    @property
+    def legal_name(self) -> str:
+        """First, middle and last name, as on official documents."""
+        return " ".join(p for p in (self.given_name, self.middle_name, self.family_name) if p)
+
+    @property
+    def address(self) -> str | None:
+        """The address on one line, or None if none is recorded."""
+        parts = [self.address_line1, self.address_line2, self.town, self.postcode]
+        return ", ".join(p for p in parts if p) or None
 
     @property
     def is_active(self) -> bool:

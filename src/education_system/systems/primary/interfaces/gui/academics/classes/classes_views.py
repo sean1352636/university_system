@@ -17,6 +17,8 @@ from education_system.systems.primary.domain.academics.classes.classes import (
 from education_system.systems.primary.domain.learners.pupils.pupils import (
     ValidationError, YEAR_GROUPS,
 )
+from education_system.platform.delivery.gui.parented_dialogs import make_toplevel
+from education_system.systems.primary.interfaces.gui import kit
 
 logger = logging.getLogger(__name__)
 
@@ -49,32 +51,37 @@ def _safe_view(func: Callable[..., None]) -> Callable[..., None]:
 @_safe_view
 def open_classes(host) -> None:
     logger.debug("GUI: open_classes")
+    kit.show_page(host, "Classes", lambda parent: _draw_classes(parent, host))
 
-    win = tk.Toplevel(host.root)
-    win.title("Classes")
-    win.transient(host.root)
-    win.geometry("960x560")
 
-    top = ttk.Frame(win, padding=10)
+def _draw_classes(parent, host) -> None:
+    kit.page_heading(parent, "Classes",
+                     "Classes by year group, their teacher, room, capacity and pupils.")
+    win = parent.winfo_toplevel()
+
+    top = ttk.Frame(parent, padding=(0, 0, 0, 6))
     top.pack(fill="x")
     summary_var = tk.StringVar()
     ttk.Label(top, textvariable=summary_var,
               font=("Segoe UI", 10, "bold")).pack(side="left")
 
-    filt = ttk.Frame(win, padding=(10, 0, 10, 6))
+    filt = ttk.Frame(parent, padding=(0, 0, 0, 6))
     filt.pack(fill="x")
     ttk.Label(filt, text="Year:").pack(side="left")
     year_var = tk.StringVar(value="All")
-    ttk.Combobox(filt, textvariable=year_var,
-                 values=["All"] + list(YEAR_GROUPS),
-                 state="readonly", width=6).pack(side="left", padx=(4, 12))
+    kit.ChoiceField(filt, year_var, width=10,
+                    choices=[("All", "All")] + [(y, kit.YEAR_GROUP_LABELS.get(y, y))
+                                                for y in YEAR_GROUPS]
+                    ).pack(side="left", padx=(4, 12))
     active_var = tk.BooleanVar(value=False)
     ttk.Checkbutton(filt, text="Active only",
                     variable=active_var).pack(side="left")
 
     cols = ("class_id", "name", "year", "teacher", "room",
             "capacity", "enrolled", "active")
-    tree = ttk.Treeview(win, columns=cols, show="headings", height=15)
+    tree_box = ttk.Frame(parent)
+    tree_box.pack(fill="both", expand=True, pady=(0, 6))
+    tree = ttk.Treeview(tree_box, columns=cols, show="headings", height=15)
     for col, label, width, anchor in [
         ("class_id", "ID", 50, "center"),
         ("name", "Name", 180, "w"),
@@ -87,9 +94,12 @@ def open_classes(host) -> None:
     ]:
         tree.heading(col, text=label)
         tree.column(col, width=width, anchor=anchor)
-    tree.pack(fill="both", expand=True, padx=10, pady=(0, 6))
+    sb = ttk.Scrollbar(tree_box, orient="vertical", command=tree.yview)
+    tree.configure(yscrollcommand=sb.set)
+    tree.pack(side="left", fill="both", expand=True)
+    sb.pack(side="right", fill="y")
 
-    btns = ttk.Frame(win, padding=10)
+    btns = ttk.Frame(parent, padding=(0, 4))
     btns.pack(fill="x")
 
     def _refresh() -> None:
@@ -205,7 +215,8 @@ def open_classes(host) -> None:
         side="left", padx=(8, 0))
     ttk.Button(btns, text="Refresh", command=_refresh).pack(
         side="left", padx=(8, 0))
-    ttk.Button(btns, text="Close", command=win.destroy).pack(side="right")
+    ttk.Button(btns, text="Close",
+               command=lambda: kit.close_page(host, parent)).pack(side="right")
 
     tree.bind("<Double-Button-1>", lambda _e: _edit())
     year_var.trace_add("write", lambda *_: _refresh())
@@ -240,10 +251,9 @@ def _open_form_dialog(parent, *, class_id: int | None,
                                  parent=parent)
             return
 
-    dlg = tk.Toplevel(parent)
+    dlg = make_toplevel(parent)
     dlg.title("Class" if existing else "New class")
-    dlg.transient(parent)
-    dlg.geometry("440x380")
+    dlg.geometry("520x380")
     try:
         dlg.wait_visibility()
         dlg.grab_set()
@@ -265,9 +275,16 @@ def _open_form_dialog(parent, *, class_id: int | None,
                 v.set(val or "")
         vars_[key] = v
         if key == "year_group":
-            ttk.Combobox(frm, textvariable=v, values=list(YEAR_GROUPS),
-                         state="readonly", width=28).grid(
+            kit.ChoiceField(frm, v, width=28,
+                            choices=[(y, kit.YEAR_GROUP_LABELS.get(y, y))
+                                     for y in YEAR_GROUPS]).grid(
                 row=i, column=1, sticky="ew", pady=3)
+        elif key == "teacher":
+            kit.StaffPicker(frm, v, by="name", width=34).grid(
+                row=i, column=1, sticky="ew", pady=3)
+        elif key == "capacity":
+            kit.NumberField(frm, v, from_=0, to=200).grid(
+                row=i, column=1, sticky="w", pady=3)
         else:
             ttk.Entry(frm, textvariable=v, width=30).grid(
                 row=i, column=1, sticky="ew", pady=3)
@@ -314,9 +331,8 @@ def _open_pupils_dialog(parent, cls: SchoolClass) -> None:
                              parent=parent)
         return
 
-    dlg = tk.Toplevel(parent)
+    dlg = make_toplevel(parent)
     dlg.title(f"Pupils in {cls.name}")
-    dlg.transient(parent)
     dlg.geometry("520x440")
     try:
         dlg.wait_visibility()

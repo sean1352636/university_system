@@ -11,7 +11,7 @@ Tests the Data Science student model class including:
 
 import pytest
 from datetime import datetime
-from education_system.systems.university.domains.academics.domain.services.attendance.DSstudent import DSStudent
+from education_system.systems.university.domains.teaching.domain.attendance.DSstudent import DSStudent
 
 
 class TestDSStudentInitialization:

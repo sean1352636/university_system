@@ -1,3 +1,4 @@
+from education_system.systems.university.plugins.campus_commerce.domain.services.restaurant.operations.user_access import can as restaurant_can
 from education_system.systems.university.infrastructure.auth import UserAuth, display_auth_menu
 from education_system.systems.university.infrastructure.database.data_backup import display_backup_menu, backup_before_operation
 from education_system.systems.university.infrastructure.email import send_confirmation_email
@@ -173,7 +174,7 @@ def add_new_staff():
         print("You must be logged in to add staff.")
         return
 
-    if not auth.check_permission('manage_takeaway_restaurants'):
+    if not restaurant_can(auth, 'manage_takeaway_restaurants'):
         print("You don't have permission to add staff.")
         return
 
@@ -289,7 +290,7 @@ def update_staff_info():
         print("You must be logged in to update staff.")
         return
 
-    if not auth.check_permission('manage_takeaway_restaurants'):
+    if not restaurant_can(auth, 'manage_takeaway_restaurants'):
         print("You don't have permission to update staff.")
         return
 
@@ -438,7 +439,7 @@ def delete_staff():
         print("You must be logged in to delete staff.")
         return
 
-    if not auth.check_permission('manage_takeaway_restaurants'):
+    if not restaurant_can(auth, 'manage_takeaway_restaurants'):
         print("You don't have permission to delete staff.")
         return
 
@@ -477,6 +478,10 @@ def delete_staff():
                 {'name': staff[0], 'role': staff[1]},
                 {'status': 'Terminated'}
             )
+
+            # A leaver loses restaurant access; their staff record stays.
+            from education_system.systems.university.plugins.campus_commerce.domain.services.restaurant.operations.user_access import remove_for_leaver
+            remove_for_leaver(staff_id, auth.current_user.get('username'))
         else:
             print("Deletion cancelled.")
 
@@ -629,10 +634,10 @@ def supplier_performance():
 
         # Top performing suppliers
         cursor.execute('''
-            SELECT s.name, s.rating, COUNT(po.po_id) as order_count,
+            SELECT s.name, s.rating, COUNT(po.order_id) as order_count,
                    SUM(po.total_amount) as total_value,
-                   AVG(CASE WHEN po.actual_delivery IS NOT NULL AND po.expected_delivery IS NOT NULL
-                       THEN julianday(po.actual_delivery) - julianday(po.expected_delivery)
+                   AVG(CASE WHEN po.actual_delivery IS NOT NULL AND po.expected_delivery_date IS NOT NULL
+                       THEN julianday(po.actual_delivery) - julianday(po.expected_delivery_date)
                        ELSE NULL END) as avg_delay
             FROM restaurant_suppliers s
             LEFT JOIN restaurant_purchase_orders po ON s.supplier_id = po.supplier_id
@@ -660,12 +665,12 @@ def supplier_performance():
         # Delivery performance by supplier
         cursor.execute('''
             SELECT s.name,
-                   COUNT(po.po_id) as total_orders,
-                   COUNT(CASE WHEN po.actual_delivery <= po.expected_delivery THEN 1 END) as on_time,
-                   COUNT(CASE WHEN po.actual_delivery > po.expected_delivery THEN 1 END) as late
+                   COUNT(po.order_id) as total_orders,
+                   COUNT(CASE WHEN po.actual_delivery <= po.expected_delivery_date THEN 1 END) as on_time,
+                   COUNT(CASE WHEN po.actual_delivery > po.expected_delivery_date THEN 1 END) as late
             FROM restaurant_suppliers s
             JOIN restaurant_purchase_orders po ON s.supplier_id = po.supplier_id
-            WHERE po.actual_delivery IS NOT NULL AND po.expected_delivery IS NOT NULL
+            WHERE po.actual_delivery IS NOT NULL AND po.expected_delivery_date IS NOT NULL
             GROUP BY s.supplier_id, s.name
             HAVING total_orders >= 3
             ORDER BY (CAST(on_time AS FLOAT) / total_orders) DESC
@@ -697,7 +702,7 @@ def create_staff_schedule():
         print("You must be logged in to create schedules.")
         return
 
-    if not auth.check_permission('manage_takeaway_restaurants'):
+    if not restaurant_can(auth, 'manage_takeaway_restaurants'):
         print("You don't have permission to create schedules.")
         return
 
@@ -825,7 +830,7 @@ def update_staff_schedule():
         print("You must be logged in to update schedules.")
         return
 
-    if not auth.check_permission('manage_takeaway_restaurants'):
+    if not restaurant_can(auth, 'manage_takeaway_restaurants'):
         print("You don't have permission to update schedules.")
         return
 
@@ -931,7 +936,7 @@ def delete_staff_schedule():
         print("You must be logged in to delete schedules.")
         return
 
-    if not auth.check_permission('manage_takeaway_restaurants'):
+    if not restaurant_can(auth, 'manage_takeaway_restaurants'):
         print("You don't have permission to delete schedules.")
         return
 
@@ -1116,7 +1121,7 @@ def update_performance_scores():
         print("You must be logged in to update performance scores.")
         return
 
-    if not auth.check_permission('manage_takeaway_restaurants'):
+    if not restaurant_can(auth, 'manage_takeaway_restaurants'):
         print("You don't have permission to update performance scores.")
         return
 

@@ -6,7 +6,12 @@ import logging
 
 from flask import Blueprint, g, jsonify, request
 
-from education_system.platform.delivery.api.university.auth import token_required
+from education_system.platform.delivery.api.university.auth import (
+    current_subject_id,
+    is_staff,
+    staff_required,
+    token_required,
+)
 from education_system.platform.delivery.api.university.pagination import get_pagination_params, paginated_response
 from education_system.platform.delivery.api.university.validators import validate_mentorship_create, validate_mentorship_session_create
 from education_system.systems.university.infrastructure.exceptions import ValidationError
@@ -16,6 +21,28 @@ from education_system.systems.university.infrastructure.activity_logger import l
 logger = logging.getLogger(__name__)
 
 mentorship_bp = Blueprint("mentorship", __name__, url_prefix="/api/mentorship")
+
+#: Pairing a mentor with a mentee needs ``manage_students`` (admin,
+#: instructor, staff). After that a relationship and its sessions are the
+#: two participants' (``mentor_id`` / ``mentee_id`` are TEXT, the JWT
+#: ``sub``) and any staff role's - nobody else's.
+MENTORING_MANAGE = "manage_students"
+
+
+def _deny_unless_participant(relationship_id):
+    """403 unless the caller is staff or a party to the relationship."""
+    if is_staff():
+        return None
+    me = current_subject_id()
+    with get_connection() as conn:
+        row = conn.execute(
+            "SELECT mentor_id, mentee_id FROM mentorship_relationships "
+            "WHERE relationship_id = ?", (relationship_id,),
+        ).fetchone()
+    if me is None or row is None or me not in (str(row["mentor_id"] or ""),
+                                                str(row["mentee_id"] or "")):
+        return jsonify({"error": "Forbidden", "status": 403}), 403
+    return None
 
 
 def _row_to_dict(row) -> dict:
@@ -36,6 +63,13 @@ def list_relationships():
     with get_connection() as conn:
         conditions = []
         params: list = []
+        if not is_staff():
+            # Pin to the caller's own relationships before any filter.
+            me = current_subject_id()
+            if me is None:
+                return jsonify({"error": "Forbidden", "status": 403}), 403
+            conditions.append("(mentor_id = ? OR mentee_id = ?)")
+            params.extend([me, me])
         if mentor_id:
             conditions.append("mentor_id = ?")
             params.append(mentor_id)
@@ -69,6 +103,9 @@ def list_relationships():
 @mentorship_bp.route("/relationships/<int:relationship_id>", methods=["GET"])
 @token_required
 def get_relationship(relationship_id: int):
+    denial = _deny_unless_participant(relationship_id)
+    if denial is not None:
+        return denial
     with get_connection() as conn:
         row = conn.execute(
             "SELECT * FROM mentorship_relationships WHERE relationship_id = ?",
@@ -82,6 +119,7 @@ def get_relationship(relationship_id: int):
 
 @mentorship_bp.route("/relationships", methods=["POST"])
 @token_required
+@staff_required(permission=MENTORING_MANAGE)
 def create_relationship():
     data = request.get_json(silent=True) or {}
     validate_mentorship_create(data)
@@ -112,6 +150,9 @@ def create_relationship():
 @mentorship_bp.route("/relationships/<int:relationship_id>", methods=["PUT"])
 @token_required
 def update_relationship(relationship_id: int):
+    denial = _deny_unless_participant(relationship_id)
+    if denial is not None:
+        return denial
     with get_connection() as conn:
         existing = conn.execute(
             "SELECT 1 FROM mentorship_relationships WHERE relationship_id = ?",
@@ -157,6 +198,9 @@ def update_relationship(relationship_id: int):
 @mentorship_bp.route("/relationships/<int:relationship_id>/sessions", methods=["GET"])
 @token_required
 def list_sessions(relationship_id: int):
+    denial = _deny_unless_participant(relationship_id)
+    if denial is not None:
+        return denial
     with get_connection() as conn:
         rows = conn.execute(
             "SELECT * FROM mentorship_sessions WHERE relationship_id = ? ORDER BY session_date DESC",
@@ -172,6 +216,9 @@ def list_sessions(relationship_id: int):
 def create_session():
     data = request.get_json(silent=True) or {}
     validate_mentorship_session_create(data)
+    denial = _deny_unless_participant(data["relationship_id"])
+    if denial is not None:
+        return denial
 
     with transaction() as conn:
         conn.execute(

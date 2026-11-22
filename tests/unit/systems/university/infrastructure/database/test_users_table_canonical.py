@@ -156,9 +156,9 @@ _EXEMPT = {"infrastructure/auth/migration_to_shared.py"}
 # through platform.identity.auth, which is a behaviour change rather than a
 # schema one. The list is a ratchet: it may shrink, never grow.
 _KNOWN_LOCAL_ACCOUNT_ADMIN = {
-    "domains/pastoral/interfaces/gui/helpdesk/user_management.py",
-    "domains/pastoral/interfaces/gui/student_union_gui/core/profile.py",
-    "domains/pastoral/interfaces/gui/student_support/reports_export.py",
+    "domains/student_support/interfaces/gui/helpdesk/user_management.py",
+    "domains/student_life/interfaces/gui/student_union_gui/core/profile.py",
+    "domains/student_support/interfaces/gui/student_support/reports_export.py",
     "shell/api/routes/user_routes.py",
     "shell/gui/main/admin/user_management_gui.py",
 }

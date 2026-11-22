@@ -65,7 +65,12 @@ ValidationError = core.ValidationError
 ROOM: str = "room"
 ENTRANCE: str = "entrance"
 ROAMING: str = "roaming"
-DEVICE_MODES: tuple[str, ...] = (ROOM, ENTRANCE, ROAMING)
+# A `signout` device sits at reception: a tap signs the learner out of
+# site (free period off site) or, if they are out, back in. Anything
+# needing a reason or a parent's permission is done at the desk through
+# :mod:`attendance_signout` instead.
+SIGN_OUT_DESK: str = "signout"
+DEVICE_MODES: tuple[str, ...] = (ROOM, ENTRANCE, ROAMING, SIGN_OUT_DESK)
 
 # How a tap is recorded, so a scanned badge and a typed card number stay
 # distinguishable in the data source column.
@@ -86,10 +91,13 @@ EXPIRED: str = "Token expired"
 LOCKED: str = "Register submitted"
 REFUSED: str = "Refused"
 DEVICE_INACTIVE: str = "Device inactive"
+SIGNED_OUT: str = "Signed out"
+SIGNED_IN: str = "Signed back in"
 
 OUTCOMES: tuple[str, ...] = (
     MARKED, DUPLICATE, ON_SITE, NO_LESSON, WRONG_ROOM, UNKNOWN_TOKEN,
-    REVOKED, EXPIRED, LOCKED, REFUSED, DEVICE_INACTIVE,
+    REVOKED, EXPIRED, LOCKED, REFUSED, DEVICE_INACTIVE, SIGNED_OUT,
+    SIGNED_IN,
 )
 
 # How early a learner may tap in for a lesson, and how long after the
@@ -232,7 +240,8 @@ class CheckIn:
     @property
     def ok(self) -> bool:
         """Whether the tap resulted in something being recorded."""
-        return self.outcome in (MARKED, ON_SITE, DUPLICATE)
+        return self.outcome in (MARKED, ON_SITE, DUPLICATE, SIGNED_OUT,
+                                SIGNED_IN)
 
     @property
     def message(self) -> str:
@@ -246,6 +255,10 @@ class CheckIn:
             return f"{who} — already checked in for this lesson."
         if self.outcome == ON_SITE:
             return f"{who} — welcome in, {self.time}."
+        if self.outcome == SIGNED_OUT:
+            return f"{who} — signed out at {self.time}. Tap again when back."
+        if self.outcome == SIGNED_IN:
+            return f"{who} — welcome back, signed in at {self.time}."
         if self.outcome == NO_LESSON:
             return f"{who} — no lesson timetabled right now."
         if self.outcome == WRONG_ROOM:
@@ -871,9 +884,36 @@ def check_in_student(
                        student_id=student_id, student_name=name,
                        event_id=event_id, **kwargs)
 
+    # A reception sign-out terminal toggles the learner off / on site.
+    if device is not None and device.mode == SIGN_OUT_DESK:
+        from education_system.systems.sixth_form.domain.academics.attendance import (  # noqa: E501
+            attendance_signout as _signout,
+        )
+        try:
+            direction, trip = _signout.toggle(student_id, via=device.name,
+                                              at_time=at_time)
+        except ValidationError as e:
+            return event(REFUSED, detail=str(e))
+        if direction == "in":
+            return event(SIGNED_IN, detail=f"Out since {trip.out_time}")
+        return event(SIGNED_OUT, detail=trip.reason)
+
     # An entrance terminal is not marking a lesson — it is recording
     # that somebody is in the building, which is what a roll call needs.
+    # Coming through the door also closes an open sign-out.
     if device is not None and device.is_entrance:
+        try:
+            from education_system.systems.sixth_form.domain.academics.attendance import (  # noqa: E501
+                attendance_signout as _signout,
+            )
+            back = _signout.sign_in_if_out(student_id, via=device.name,
+                                           at_time=at_time)
+        except Exception:                   # pragma: no cover - never at the door
+            logger.exception("Sign-in from entrance tap failed")
+            back = None
+        if back is not None:
+            return event(SIGNED_IN, detail=f"Out since {back.out_time} "
+                                           f"({back.reason})")
         return event(ON_SITE, detail=device.location or device.name)
 
     room = device.room if (device and device.mode == ROOM) else None

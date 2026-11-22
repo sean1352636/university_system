@@ -231,22 +231,37 @@ def _default_entity_id(cur):
     return row[0]
 
 
-def _period_for_date(cur, journal_date):
-    """Return (period_id, status) for the period containing journal_date.
-
-    Raises if no period covers the date — caller should ensure
-    seed_current_fiscal_year_periods() has been run for the relevant FY.
-    """
+def _find_period(cur, journal_date):
     cur.execute(
         "SELECT period_id, status FROM gl_periods "
         "WHERE start_date <= ? AND end_date >= ? "
         "LIMIT 1",
         (journal_date, journal_date),
     )
-    row = cur.fetchone()
+    return cur.fetchone()
+
+
+def _period_for_date(cur, journal_date):
+    """Return (period_id, status) for the period containing journal_date.
+
+    The ledger rolls forward on its own: when no period covers the date and
+    it falls in the current or next fiscal year (and no later year exists),
+    that year's twelve periods are opened (``periods.ensure_periods_for``).
+    Any other date — an older year never opened, or a gap before a later
+    year — is refused: finance opens it deliberately (``open_fiscal_year``).
+    """
+    row = _find_period(cur, journal_date)
+    if not row:
+        from education_system.systems.university.domains.finance.domain.ledger.periods import (
+            ensure_periods_for,
+        )
+        if ensure_periods_for(cur.connection, journal_date):
+            row = _find_period(cur, journal_date)
     if not row:
         raise PeriodClosedError(
-            f"No period covers {journal_date!r}. Seed periods for the relevant fiscal year first."
+            f"No period covers {journal_date!r}, and its fiscal year is not one the ledger "
+            "opens on its own (the current or next year). Open the fiscal year in Ledger → "
+            "Periods first."
         )
     return row[0], row[1]
 

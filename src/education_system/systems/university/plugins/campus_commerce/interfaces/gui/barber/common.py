@@ -18,12 +18,14 @@ from education_system.systems.university.infrastructure.activity_logger import l
 
 # Authentication imports
 try:
-    from education_system.systems.university.infrastructure.shared_context import get_auth, _DummyAuth
+    from education_system.systems.university.infrastructure.shared_context import get_auth
     AUTH_AVAILABLE = True
 except ImportError:
     AUTH_AVAILABLE = False
     get_auth = None
-    _DummyAuth = None
+
+# shared_context never hands out a stand-in auth; kept for the checks that test it.
+_DummyAuth = None
 
 # Finance integration imports
 try:

@@ -6,29 +6,27 @@ This document describes the Flask REST API for the Primary School Management Sys
 
 ## Server Setup
 
-The API uses a Flask **app factory** pattern defined in `shared/api/primary/api_server.py`:
+The Primary School has no API server of its own. The unified server in `src/education_system/platform/delivery/api/unified_server.py` hosts every system, and mounts the blueprints from `src/education_system/api/primary/routes/` (its `ALL_BLUEPRINTS`):
 
 ```python
-from education_system.shared.api.primary.api_server import create_app
+from education_system.platform.delivery.api.unified_server import create_unified_app
 
-app = create_app(db_path)
+app = create_unified_app()
 ```
 
 **Starting the server:**
 
 ```bash
-python -m education_system primary --api
-# or
-python -m education_system.primary_school --api
+python -m education_system --primary --api
 ```
 
-Default: `http://localhost:5003/api`
+Default: `http://localhost:5000/api/v1/primary` (set the port with `API_PORT`)
 
 ---
 
 ## Authentication
 
-All endpoints (except `/api/auth/login`) require a JWT token in the `Authorization` header:
+All endpoints require a JWT token in the `Authorization` header. Login itself is served by the unified server, not under the primary prefix:
 
 ```
 Authorization: Bearer <token>
@@ -37,7 +35,7 @@ Authorization: Bearer <token>
 ### Login
 
 ```
-POST /api/auth/login
+POST /api/v1/auth/login
 Content-Type: application/json
 
 {
@@ -46,17 +44,7 @@ Content-Type: application/json
 }
 ```
 
-**Response:**
-```json
-{
-    "token": "eyJ...",
-    "user": {
-        "id": 1,
-        "username": "admin3",
-        "role": "admin"
-    }
-}
-```
+The response carries the token to send on later requests.
 
 ---
 
@@ -81,22 +69,19 @@ All errors return JSON with an `error` key:
 
 ---
 
-## Pagination
+## List Responses
 
-List endpoints support pagination via query parameters:
+Primary list endpoints are not paginated. They filter through query parameters and return the matching records with a count:
 
 ```
-GET /api/pupils?page=1&per_page=25
+GET /api/v1/primary/clubs?active_only=1
 ```
 
 **Response includes:**
 ```json
 {
     "items": [...],
-    "total": 120,
-    "page": 1,
-    "per_page": 25,
-    "pages": 5
+    "count": 12
 }
 ```
 
@@ -104,91 +89,154 @@ GET /api/pupils?page=1&per_page=25
 
 ## API Endpoints
 
+Every path below is relative to `/api/v1/primary`. Each is a blueprint in `src/education_system/api/primary/routes/`; see that module for its methods and sub-routes.
+
+### Pupils and Admissions
+
+| Endpoint | Description |
+|----------|-------------|
+| `/pupils` | Pupil records |
+| `/admissions` | Applications |
+| `/enrolment` | Year group enrolment |
+| `/parent-contacts` | Parent and guardian contacts |
+
 ### Academics
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET/POST | `/api/pupils` | List / create pupils |
-| GET/PUT/DELETE | `/api/pupils/<id>` | Get / update / delete pupil |
-| GET/POST | `/api/subjects` | List / create subjects |
-| GET/POST | `/api/classes` | List / create classes |
-| GET/POST | `/api/assessment` | List / record assessments |
-| GET/POST | `/api/attendance` | List / record attendance |
-| GET/POST | `/api/timetable` | List / create timetable slots |
-| GET/POST | `/api/homework` | List / create homework |
-| GET/POST | `/api/sats` | List / record SATs results |
-| GET/POST | `/api/phonics` | List / record phonics screening |
-| GET/POST | `/api/reading-records` | List / create reading records |
-| GET | `/api/progress/<pupil_id>` | Get pupil progress |
-| GET/POST | `/api/class-groups` | List / manage class groups |
+| Endpoint | Description |
+|----------|-------------|
+| `/academic-year` | Academic years and terms |
+| `/calendar` | Calendar events |
+| `/year-groups` | Year groups |
+| `/classes` | Classes |
+| `/subjects` | Subjects |
+| `/timetable` | Timetable slots |
+| `/attendance` | Attendance registers |
+| `/lesson-plans` | Lesson plans |
+| `/homework` | Homework |
+| `/library` | Library items and loans |
+| `/clubs` | Clubs and memberships |
 
-### Pastoral Care
+### Assessment and Progress
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET/POST | `/api/behaviour` | List / record behaviour incidents |
-| GET/POST | `/api/rewards` | List / award rewards |
-| GET/POST | `/api/pastoral` | List / create pastoral notes |
-| GET/POST | `/api/safeguarding` | List / create safeguarding concerns |
-| GET/POST | `/api/send` | List / create SEND records |
+| Endpoint | Description |
+|----------|-------------|
+| `/assessment` | Assessment records |
+| `/phonics` | Phonics tracking |
+| `/phonics-screening` | Phonics screening check |
+| `/reading-levels` | Reading levels |
+| `/mtc` | Multiplication tables check |
+| `/ks1-sats` | KS1 SATs results |
+| `/ks2-sats` | KS2 SATs results |
+| `/eyfs-profile` | EYFS profile results |
+| `/target-setting` | Pupil targets |
+| `/intervention-tracking` | Interventions |
+| `/early-warning` | Early warning alerts |
+| `/observations` | Observations |
+| `/progress` | Progress reviews |
+| `/progress-report` | Progress reporting |
+| `/pupil-reports` | Pupil reports |
+
+### Pastoral and Wellbeing
+
+| Endpoint | Description |
+|----------|-------------|
+| `/behaviour` | Behaviour incidents |
+| `/house-points` | House points |
+| `/safeguarding` | Safeguarding concerns |
+| `/prevent-duty` | Prevent referrals |
+| `/send` | SEND records |
+| `/pupil-premium` | Pupil premium |
+| `/accessibility` | Accessibility arrangements |
+| `/wellbeing` | Wellbeing check-ins |
+| `/pupil-support` | Support plans |
+| `/attendance-concerns` | Attendance concerns |
+| `/absence-requests` | Absence requests |
+| `/first-aid` | First aid incidents |
+| `/medical-records` | Medical records |
+| `/emergency` | Emergency events |
+| `/equality-diversity` | Equality and diversity incidents |
+| `/complaints` | Complaints |
+| `/feedback` | Feedback |
+| `/surveys` | Surveys |
+| `/school-council` | School council |
+| `/wraparound` | Breakfast and after-school clubs |
+| `/transport` | Transport |
 
 ### Staff
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET/POST | `/api/hr/staff` | List / create staff |
-| GET/POST | `/api/cpd` | List / create CPD records |
-| GET/POST | `/api/cover` | List / create cover arrangements |
-| GET | `/api/staff-directory` | Staff directory listing |
-
-### Admin
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET/POST | `/api/admissions` | List / create applications |
-| GET/POST | `/api/finance` | List / create transactions |
-| GET/POST | `/api/policies` | List / create policies |
-| GET/POST | `/api/documents` | List / upload documents |
-| GET | `/api/audit-log` | Audit log entries |
-| GET/POST | `/api/users` | List / create user accounts |
-| GET/PUT | `/api/settings` | Get / update system settings |
-| POST | `/api/data-export` | Export data |
+| Endpoint | Description |
+|----------|-------------|
+| `/staff` | Staff directory |
+| `/class-teachers` | Class teacher assignments |
+| `/teaching-assistants` | Teaching assistants |
+| `/staff-hr` | HR records |
+| `/staff-absence` | Staff absence |
+| `/staff-wellbeing` | Staff wellbeing |
+| `/recruitment` | Recruitment |
+| `/appraisals` | Appraisals |
+| `/cpd` | CPD records |
+| `/dbs-checks` | DBS checks |
+| `/cover` | Cover arrangements |
+| `/departments` | Departments |
 
 ### Communication
 
+| Endpoint | Description |
+|----------|-------------|
+| `/announcements` | Announcements |
+| `/notifications` | Notifications |
+| `/activity-feed` | Activity feed |
+| `/messages` | Messages |
+| `/newsletters` | Newsletters |
+| `/parents-evenings` | Parents' evenings and bookings |
+| `/letter-templates` | Letter templates |
+| `/document-hub` | Documents |
+| `/attachments` | Attachments |
+| `/visitors` | Visitors |
+
+### Finance
+
+| Endpoint | Description |
+|----------|-------------|
+| `/dinner-money` | Dinner money ledger |
+| `/trips` | Trips and payments |
+| `/receipts` | Receipts |
+| `/expense-claims` | Expense claims |
+| `/funding` | Funding streams and allocations |
+| `/census` | School census returns |
+
+### Reports
+
+| Endpoint | Description |
+|----------|-------------|
+| `/attendance-report` | Attendance reporting |
+| `/kpi-dashboard` | KPI dashboard |
+| `/data-dashboard` | Data dashboard |
+| `/mobile-dashboard` | Mobile dashboard |
+| `/audit-reports` | Audit reports |
+| `/data-export` | Data export |
+| `/custom-export` | Custom export |
+
+### Governance and System
+
+| Endpoint | Description |
+|----------|-------------|
+| `/compliance` | Compliance items |
+| `/governance` | Governors and meetings |
+| `/policies` | Policies |
+| `/gdpr` | GDPR requests, consents and breaches |
+| `/risk-management` | Risks |
+| `/health-safety` | Health and safety incidents |
+| `/assets` | Assets |
+| `/user-management` | User accounts |
+| `/todo` | To-do items |
+| `/menu/<category>` | Routes that back each main-menu category |
+
+### Server
+
+These are served by the unified server, outside the primary prefix.
+
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| GET/POST | `/api/announcements` | List / create announcements |
-| GET/POST | `/api/calendar` | List / create calendar events |
-| GET/POST | `/api/email` | List / send emails |
-| GET/POST | `/api/notifications` | List / create notifications |
-| GET/POST | `/api/parents-evening` | List / create evening bookings |
-| GET/POST | `/api/communication-log` | List / create comms log entries |
-
-### Pupil Life
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET/POST | `/api/clubs` | List / create clubs |
-| GET/POST | `/api/library` | List / manage library items |
-| GET/POST | `/api/meals` | List / manage meal choices |
-| GET/POST | `/api/transport` | List / manage transport |
-| GET/POST | `/api/trips` | List / create trips |
-| GET/POST | `/api/medical` | List / create medical records |
-| GET/POST | `/api/consent` | List / manage consent forms |
-
-### Facilities
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET/POST | `/api/room-booking` | List / create room bookings |
-| GET/POST | `/api/assets` | List / manage assets |
-| GET/POST | `/api/visitors` | List / register visitors |
-| GET/POST | `/api/incidents` | List / report incidents |
-
-### System
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/system/health` | Health check |
-| GET | `/api/system/version` | System version info |
+| GET | `/api/v1/health` | Health check |
+| GET | `/api/v1/systems` | Mounted systems and any mount errors |

@@ -27,14 +27,6 @@ from education_system.systems.university.domains.learners.domain.alumni.models i
 # Database initialization
 from education_system.systems.university.domains.learners.domain.alumni.database import init_alumni_db, init_default_enhanced_data
 
-# Profile management
-from education_system.systems.university.domains.learners.domain.alumni.profiles import (
-    setup_alumni_directory,
-    register_alumni,
-    view_alumni,
-    view_alumni_details,
-    update_alumni,
-)
 
 # Events
 from education_system.systems.university.domains.learners.domain.alumni.events import (
@@ -52,33 +44,8 @@ from education_system.systems.university.domains.learners.domain.alumni.events i
     process_event_checkin,
 )
 
-# Donations & Fundraising
-from education_system.systems.university.domains.learners.domain.alumni.donations import (
-    record_donation,
-    view_donations,
-    create_fundraising_campaign,
-    view_fundraising_campaigns,
-    view_campaign_performance,
-    manage_donor_recognition,
-    update_donor_recognition_levels,
-    generate_recognition_report,
-    manage_campaigns,
-)
 
-# Mentorship
-from education_system.systems.university.domains.learners.domain.alumni.mentorship import (
-    setup_mentorship,
-    view_mentorships,
-    smart_mentorship_matching,
-    create_recommended_mentorships,
-)
 
-# Stories
-from education_system.systems.university.domains.learners.domain.alumni.stories import (
-    create_alumni_story,
-    view_alumni_stories,
-    read_full_story,
-)
 
 # Reunions
 from education_system.systems.university.domains.learners.domain.alumni.reunions import (
@@ -90,19 +57,9 @@ from education_system.systems.university.domains.learners.domain.alumni.reunions
     _send_simple_reunion_email,
 )
 
-# Regional Chapters
-from education_system.systems.university.domains.learners.domain.alumni.chapters import (
-    view_my_chapters,
-    admin_manage_chapters,
-    manage_regional_chapters,
-    view_regional_chapters,
-    create_regional_chapter,
-    join_regional_chapter,
-)
 
 # Directory & Networking
 from education_system.systems.university.domains.learners.domain.alumni.directory import (
-    search_alumni_directory,
     send_connection_request,
     view_connection_requests,
     update_business_listing,
@@ -112,11 +69,6 @@ from education_system.systems.university.domains.learners.domain.alumni.director
     search_business_directory,
 )
 
-# Communications
-from education_system.systems.university.domains.learners.domain.alumni.communications import (
-    create_newsletter,
-    send_newsletter_now,
-)
 
 # Forum
 from education_system.systems.university.domains.learners.domain.alumni.forum import (
@@ -159,16 +111,9 @@ from education_system.systems.university.domains.learners.domain.alumni.photos i
 # Reports
 from education_system.systems.university.domains.learners.domain.alumni.reports import generate_alumni_report, get_engagement_dashboard
 
-# Menu & GUI
-from education_system.systems.university.domains.learners.domain.alumni.menu import (
-    display_alumni_menu,
-    display_alumni_relations_menu,
-    launch_alumni_relations_gui,
-)
 
 __all__ = [
-    'display_alumni_menu',
-    'display_alumni_relations_menu',
-    'launch_alumni_relations_gui',
+    'init_alumni_db',
+    'set_auth',
     'setup_alumni_permissions',
 ]

@@ -6,7 +6,9 @@ from education_system.systems.sixth_form.interfaces.gui._ui import grab_when_vie
 import datetime as _dt
 import logging
 import tkinter as tk
-from tkinter import messagebox, ttk
+from tkinter import ttk
+from education_system.systems.sixth_form.interfaces.gui._sidebar import SidebarBook
+from education_system.platform.delivery.gui.parented_dialogs import messagebox
 from education_system.platform import branding
 from education_system.systems.sixth_form.domain.staff.staff_absence import (
     staff_absence as data,
@@ -52,7 +54,7 @@ def open_staff_absence_window(parent=None) -> None:
     win.geometry(WIN_GEOMETRY)
     win.minsize(*WIN_MINSIZE)
 
-    nb = ttk.Notebook(win)
+    nb = SidebarBook(win)
     nb.pack(fill="both", expand=True, padx=10, pady=10)
 
     AbsenceTab(nb, scope="active_today",      label="Active Today")
@@ -162,6 +164,7 @@ class AbsenceTab:
                 ("Cancel",        self._cancel),
                 ("Change status", self._set_status),
                 ("Delete",        self._delete),
+                ("Lessons to cover", self._lessons),
                 ("Refresh",       self.refresh),
         ):
             ttk.Button(actions, text=label,
@@ -242,6 +245,40 @@ class AbsenceTab:
     def _new(self) -> None:
         if AbsenceEditor(self.frame).result is not None:
             self.refresh()
+
+    def _lessons(self) -> None:
+        """The cover requests this absence created from the timetable."""
+        a = self._selected()
+        if a is None:
+            return
+        try:
+            from education_system.systems.sixth_form.domain.academics.cover import (
+                cover as _cover,
+            )
+            res = _cover.sync_absence(a)
+            rows = _cover.requests_for_absence(a.absence_id)
+        except Exception as e:
+            logger.exception("Cover look-up failed")
+            messagebox.showerror("Lessons to cover", str(e),
+                                 parent=self.frame)
+            return
+        if not rows:
+            messagebox.showinfo(
+                "Lessons to cover",
+                f"No cover requests for absence #{a.absence_id}."
+                + (f"\n{res.note}" if res.note else ""),
+                parent=self.frame)
+            return
+        lines = [f"Absence #{a.absence_id} — {len(rows)} lesson(s):", ""]
+        for r in rows:
+            lines.append(
+                f"#{r.cover_id}  {r.absent_date}  P{r.periods or '?'}  "
+                f"{r.class_group_label or '—':<10} {r.subject or '—':<16} "
+                f"[{r.status}] {r.cover_label}")
+        lines.append("")
+        lines.append("Allocate cover in the Cover window.")
+        messagebox.showinfo("Lessons to cover", "\n".join(lines),
+                            parent=self.frame)
 
     def _edit(self) -> None:
         a = self._selected()

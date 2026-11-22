@@ -2,6 +2,7 @@
 
 One row per applicant. Applicants progress through a status workflow:
 
+    (Online - unverified →)   public web form; staff verify first
     Submitted → Under Review → Interview Scheduled → Interviewed
               → Offer Made → Offer Accepted | Offer Declined
               → Enrolled (once converted to a `students` row)
@@ -24,20 +25,28 @@ from dataclasses import dataclass
 from typing import Any
 from education_system import paths
 from education_system.systems.sixth_form.domain.admissions import (
-    admissions as data,
+    _guard,
+    status_rules,
 )
 
 logger = logging.getLogger(__name__)
 
 DB_PATH = paths.SIXTH_FORM_ADMISSIONS_DB
 
+#: Status of an application that arrived through the public online form
+#: (api/sixth_form/routes/applications_routes.py) and has not yet been
+#: checked by staff. Verification moves it to "Submitted".
+ONLINE_UNVERIFIED: str = "Online - unverified"
+
 STATUSES: tuple[str, ...] = (
+    ONLINE_UNVERIFIED,
     "Submitted",
     "Under Review",
     "Interview Scheduled",
     "Interviewed",
     "Offer Made",
     "Offer Accepted",
+    "Deferred",
     "Offer Declined",
     "Waitlisted",
     "Rejected",
@@ -45,9 +54,13 @@ STATUSES: tuple[str, ...] = (
     "Enrolled",
 )
 DEFAULT_STATUS: str = "Submitted"
+#: Statuses a new application may start in (anything later is reached
+#: through the workflow so each decision is recorded).
+INITIAL_STATUSES: tuple[str, ...] = (ONLINE_UNVERIFIED, "Submitted",
+                                     "Under Review")
 OPEN_STATUSES: tuple[str, ...] = (
-    "Submitted", "Under Review", "Interview Scheduled",
-    "Interviewed", "Offer Made", "Waitlisted",
+    ONLINE_UNVERIFIED, "Submitted", "Under Review", "Interview Scheduled",
+    "Interviewed", "Offer Made", "Waitlisted", "Deferred",
 )
 TERMINAL_STATUSES: tuple[str, ...] = (
     "Offer Declined", "Rejected", "Withdrawn", "Enrolled",
@@ -97,6 +110,7 @@ DECISION_REASONS: tuple[str, ...] = (
     "Better suited to another pathway",
     "Withdrawn by applicant",
     "Capacity reached",
+    "Offer conditions not met",
     "Other",
 )
 
@@ -109,9 +123,10 @@ REQUIRED_FIELDS: tuple[tuple[str, str], ...] = (
     ("email",              "Email"),
     ("phone",              "Phone"),
     ("predicted_gcses",    "Predicted GCSEs"),
+    # One choice is enough: a BTEC, T Level or two-A-level programme is a
+    # complete application. "Subject 1" is also satisfied by a non-empty
+    # ``programme_choices`` list (see missing_required).
     ("subject_1",          "Subject 1"),
-    ("subject_2",          "Subject 2"),
-    ("subject_3",          "Subject 3"),
     ("application_source", "Application source"),
     ("submitted_at",       "Submitted date"),
 )
@@ -202,6 +217,41 @@ CREATE TABLE IF NOT EXISTS admissions_interview_scores (
     comments        TEXT,
     at              TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
+-- Every qualification the applicant wants to study (any mix: A levels,
+-- a fourth A level, BTEC, T Level, EPQ, Core Maths, GCSE resits). The
+-- subject_1..3 columns mirror the first three A-level-type choices so
+-- every older screen keeps working.
+CREATE TABLE IF NOT EXISTS admissions_programme_choices (
+    id                  INTEGER PRIMARY KEY AUTOINCREMENT,
+    applicant_id        TEXT NOT NULL,
+    qualification_type  TEXT NOT NULL,
+    subject             TEXT NOT NULL,
+    sort_order          INTEGER NOT NULL DEFAULT 0,
+    notes               TEXT,
+    UNIQUE (applicant_id, qualification_type, subject),
+    FOREIGN KEY (applicant_id) REFERENCES admissions_applicants(applicant_id)
+        ON DELETE CASCADE
+);
+CREATE INDEX IF NOT EXISTS idx_adm_choice_aid
+    ON admissions_programme_choices(applicant_id);
+
+-- One row per converted applicant: what convert_to_student carried
+-- across and the outcome of each step (enrolment, aims, prior
+-- attainment, photo, onboarding), so nothing is lost silently.
+CREATE TABLE IF NOT EXISTS admissions_conversions (
+    applicant_id   TEXT PRIMARY KEY,
+    student_id     TEXT NOT NULL,
+    converted_at   TEXT NOT NULL DEFAULT (datetime('now')),
+    converted_by   TEXT,
+    academic_year  TEXT,
+    enrolment_id   INTEGER,
+    checklist_id   INTEGER,
+    carried_json   TEXT,
+    steps_json     TEXT,
+    FOREIGN KEY (applicant_id) REFERENCES admissions_applicants(applicant_id)
+        ON DELETE CASCADE
+);
 """
 
 
@@ -241,6 +291,37 @@ class Applicant:
     waitlist_rank: int | None = None
     decision_reason: str | None = None
     follow_up: bool = False
+    uln: str | None = None
+    upn: str | None = None
+    # Profile, eligibility and lifecycle columns (see PROFILE_COLUMNS);
+    # written by applicant_details / record_safety, never by the form.
+    intake_year: str | None = None
+    sex: str | None = None
+    ethnicity: str | None = None
+    nationality: str | None = None
+    first_language: str | None = None
+    residency_status: str | None = None
+    lldd: bool = False
+    ehcp: bool = False
+    looked_after: bool = False
+    care_leaver: bool = False
+    young_carer: bool = False
+    fsm_eligible: bool = False
+    bursary_interest: bool = False
+    guaranteed_place: bool = False
+    consent_contact_school: bool = False
+    parent_consent: bool = False
+    withdrawal_reason: str | None = None
+    deferred_from: str | None = None
+    archived_at: str | None = None
+    archived_by: str | None = None
+    archive_reason: str | None = None
+    merged_into: str | None = None
+    converting_at: str | None = None
+
+    @property
+    def is_archived(self) -> bool:
+        return bool(self.archived_at)
 
     @property
     def full_name(self) -> str:
@@ -267,6 +348,7 @@ class Event:
     at: str
     kind: str
     detail: str
+    actor: str | None = None
 
 
 @dataclass
@@ -304,6 +386,33 @@ class InterviewScore:
         vals = [v for v in (self.motivation, self.subject_fit,
                             self.attainment) if v is not None]
         return round(sum(vals) / len(vals), 1) if vals else None
+
+
+@dataclass
+class ProgrammeChoice:
+    id: int | None              # None = derived from the subject slots
+    applicant_id: str
+    qualification_type: str
+    subject: str
+    sort_order: int
+    notes: str | None = None
+
+    @property
+    def label(self) -> str:
+        return f"{self.qualification_type} {self.subject}"
+
+
+@dataclass
+class ConversionRecord:
+    applicant_id: str
+    student_id: str
+    converted_at: str
+    converted_by: str | None
+    academic_year: str | None
+    enrolment_id: int | None
+    checklist_id: int | None
+    carried: dict[str, Any]
+    steps: list[dict[str, str]]
 
 
 @dataclass
@@ -348,6 +457,37 @@ def init_db() -> None:
     _DB_READY = True
 
 
+#: Columns added for the admissions cycle, ILR/safeguarding profile,
+#: eligibility flags and record lifecycle. Flags are 0/1 integers.
+PROFILE_COLUMNS: dict[str, str] = {
+    "intake_year":            "TEXT",
+    "sex":                    "TEXT",
+    "ethnicity":              "TEXT",
+    "nationality":            "TEXT",
+    "first_language":         "TEXT",
+    "residency_status":       "TEXT",
+    "lldd":                   "INTEGER NOT NULL DEFAULT 0",
+    "ehcp":                   "INTEGER NOT NULL DEFAULT 0",
+    "looked_after":           "INTEGER NOT NULL DEFAULT 0",
+    "care_leaver":            "INTEGER NOT NULL DEFAULT 0",
+    "young_carer":            "INTEGER NOT NULL DEFAULT 0",
+    "fsm_eligible":           "INTEGER NOT NULL DEFAULT 0",
+    "bursary_interest":       "INTEGER NOT NULL DEFAULT 0",
+    "guaranteed_place":       "INTEGER NOT NULL DEFAULT 0",
+    "consent_contact_school": "INTEGER NOT NULL DEFAULT 0",
+    "parent_consent":         "INTEGER NOT NULL DEFAULT 0",
+    "withdrawal_reason":      "TEXT",
+    "deferred_from":          "TEXT",
+    "archived_at":            "TEXT",
+    "archived_by":            "TEXT",
+    "archive_reason":         "TEXT",
+    "merged_into":            "TEXT",
+    "converting_at":          "TEXT",
+}
+FLAG_COLUMNS: tuple[str, ...] = tuple(
+    k for k, v in PROFILE_COLUMNS.items() if v.startswith("INTEGER"))
+
+
 def _migrate(conn: sqlite3.Connection) -> None:
     """Add columns introduced after the original schema (idempotent)."""
     cols = {r["name"] for r in conn.execute(
@@ -358,6 +498,11 @@ def _migrate(conn: sqlite3.Connection) -> None:
         "waitlist_rank":    "INTEGER",
         "decision_reason":  "TEXT",
         "follow_up":        "INTEGER NOT NULL DEFAULT 0",
+        # Learner identifiers carried through to the student record at
+        # conversion (ULN) and used to match a Year 11 CTF (UPN).
+        "uln":              "TEXT",
+        "upn":              "TEXT",
+        **PROFILE_COLUMNS,
     }
     changed = False
     for name, ddl in additions.items():
@@ -365,6 +510,14 @@ def _migrate(conn: sqlite3.Connection) -> None:
             conn.execute(
                 f"ALTER TABLE admissions_applicants ADD COLUMN {name} {ddl}")
             changed = True
+    # Who did it: every timeline event is stamped with the signed-in user.
+    evt_cols = {r["name"] for r in conn.execute(
+        "PRAGMA table_info(admissions_events)").fetchall()}
+    if "actor" not in evt_cols:
+        conn.execute("ALTER TABLE admissions_events ADD COLUMN actor TEXT")
+        changed = True
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_adm_intake "
+                 "ON admissions_applicants(intake_year)")
     if changed:
         conn.commit()
 
@@ -412,6 +565,10 @@ def _row(r: sqlite3.Row) -> Applicant:
                          if "decision_reason" in r.keys() else None),
         follow_up=bool(r["follow_up"])
         if "follow_up" in r.keys() else False,
+        uln=r["uln"] if "uln" in r.keys() else None,
+        upn=r["upn"] if "upn" in r.keys() else None,
+        **{k: (bool(r[k]) if k in FLAG_COLUMNS else r[k])
+           for k in PROFILE_COLUMNS if k in r.keys()},
     )
 
 
@@ -419,6 +576,17 @@ def _row(r: sqlite3.Row) -> Applicant:
 
 class ValidationError(ValueError):
     pass
+
+
+class PossibleDuplicate(ValidationError):
+    """The new application matches one already on file. ``matches`` holds
+    them; pass ``allow_duplicate=True`` once a person has checked."""
+
+    def __init__(self, matches: list["Applicant"]):
+        self.matches = matches
+        names = ", ".join(f"{m.applicant_id} {m.full_name} ({m.status})"
+                          for m in matches[:5])
+        super().__init__(f"Possible duplicate of: {names}")
 
 
 def _require(value, label: str):
@@ -440,6 +608,8 @@ def missing_required(payload: dict[str, Any]) -> list[str]:
     """
     missing: list[str] = []
     for key, label in REQUIRED_FIELDS:
+        if key == "subject_1" and payload.get("programme_choices"):
+            continue
         if _is_blank(payload.get(key)):
             missing.append(label)
     return missing
@@ -595,10 +765,55 @@ def generate_applicant_id() -> str:
 
 # ── CRUD ──────────────────────────────────────────────────────────
 
-def create_applicant(payload: dict[str, Any]) -> Applicant:
+def default_intake_year(today: _dt.date | None = None) -> str:
+    """The September intake a new application is for: applications made
+    from September onwards are for next September; January–August ones
+    are for this coming September. The admissions cycles set up in
+    :mod:`cycles` take precedence where one is open."""
+    d = today or _dt.date.today()
+    try:
+        from education_system.systems.sixth_form.domain.admissions import (
+            cycles as _cycles,
+        )
+        open_cycle = _cycles.open_cycle_for(d)
+        if open_cycle:
+            return open_cycle
+    except ImportError:
+        pass
+    y = d.year + 1 if d.month >= 9 else d.year
+    return f"{y}/{str(y + 1)[-2:]}"
+
+def create_applicant(payload: dict[str, Any], *,
+                     allow_duplicate: bool = False,
+                     incomplete_ok: bool = False) -> Applicant:
+    """Create an application. It starts in one of
+    :data:`INITIAL_STATUSES` (later statuses are reached through the
+    workflow) and is checked against existing applicants first: a match on
+    e-mail, or name + date of birth, raises :class:`PossibleDuplicate`
+    unless ``allow_duplicate``.
+
+    ``incomplete_ok`` skips the completeness check for a record that
+    arrives from another system (e.g. a Year 11 handover from Secondary,
+    which carries no contact details or subject choices yet); the gaps
+    are filled in by admissions staff."""
     init_db()
-    require_complete(payload)
+    _guard.require("creating applications")
+    if not incomplete_ok:
+        require_complete(payload)
     p = _validate_payload(payload)
+    if p["status"] not in INITIAL_STATUSES:
+        raise ValidationError(
+            "A new application starts as one of: "
+            f"{', '.join(INITIAL_STATUSES)}")
+    if p["converted_student_id"]:
+        raise ValidationError(
+            "A new application cannot be linked to a student; convert it.")
+    if not allow_duplicate:
+        dups = [d for d in find_duplicates(
+            email=p["email"], first_name=p["first_name"],
+            last_name=p["last_name"], dob=p["dob"]) if not d.is_archived]
+        if dups:
+            raise PossibleDuplicate(dups)
     aid = generate_applicant_id()
     with _connect() as conn:
         conn.execute(
@@ -630,7 +845,14 @@ def create_applicant(payload: dict[str, Any]) -> Applicant:
         _log_event(conn, aid,
                    f"Application created (source: {p['application_source']}, "
                    f"status: {p['status']})", kind="create")
+        intake = (payload.get("intake_year") or "").strip() or None
+        if intake is None:
+            intake = default_intake_year()
+        conn.execute("UPDATE admissions_applicants SET intake_year = ? "
+                     "WHERE applicant_id = ?", (intake, aid))
         conn.commit()
+    if payload.get("programme_choices"):
+        set_programme_choices(aid, payload["programme_choices"])
     out = get_applicant(aid)
     assert out is not None
     logger.info("Created applicant %s %s %s (source=%s, status=%s)",
@@ -641,6 +863,7 @@ def create_applicant(payload: dict[str, Any]) -> Applicant:
 
 def get_applicant(applicant_id: str) -> Applicant | None:
     init_db()
+    _guard.require("applicant records")
     with _connect() as conn:
         r = conn.execute(
             "SELECT * FROM admissions_applicants WHERE applicant_id = ?",
@@ -658,9 +881,19 @@ def list_applicants(
     search: str | None = None,
     date_from: str | None = None,
     date_to: str | None = None,
+    intake_year: str | None = None,
+    include_archived: bool = False,
 ) -> list[Applicant]:
+    """Applicants matching the filters. Archived (and merged) records are
+    left out unless ``include_archived``."""
     init_db()
+    _guard.require("applicant records")
     clauses, args = [], []
+    if not include_archived:
+        clauses.append("archived_at IS NULL")
+    if intake_year:
+        clauses.append("intake_year = ?")
+        args.append(intake_year.strip())
     if status:
         if status not in STATUSES:
             raise ValidationError(
@@ -697,12 +930,14 @@ def list_applicants(
     where = ("WHERE " + " AND ".join(clauses)) if clauses else ""
     sql = (f"SELECT * FROM admissions_applicants {where} "
            "ORDER BY CASE status "
+           "  WHEN 'Online - unverified' THEN -1 "
            "  WHEN 'Submitted'           THEN 0 "
            "  WHEN 'Under Review'        THEN 1 "
            "  WHEN 'Interview Scheduled' THEN 2 "
            "  WHEN 'Interviewed'         THEN 3 "
            "  WHEN 'Offer Made'          THEN 4 "
            "  WHEN 'Offer Accepted'      THEN 5 "
+           "  WHEN 'Deferred'            THEN 5 "
            "  WHEN 'Waitlisted'          THEN 6 "
            "  WHEN 'Offer Declined'      THEN 7 "
            "  WHEN 'Rejected'            THEN 8 "
@@ -717,6 +952,7 @@ def list_applicants(
 def update_applicant(applicant_id: str,
                      payload: dict[str, Any]) -> Applicant:
     init_db()
+    _guard.require("changing applications")
     existing = get_applicant(applicant_id)
     if existing is None:
         raise ValidationError(f"No applicant {applicant_id!r}")
@@ -769,6 +1005,17 @@ def update_applicant(applicant_id: str,
         "notes":                payload.get("notes", existing.notes),
     }
     p = _validate_payload(merged)
+    try:
+        status_rules.check(existing.status, p["status"])
+    except status_rules.TransitionError as e:
+        raise ValidationError(str(e)) from e
+    if (p["converted_student_id"] != existing.converted_student_id
+            and not status_rules.is_converting()):
+        raise ValidationError(
+            "The student link is set only by converting the applicant.")
+    if existing.is_archived and not status_rules.is_converting():
+        raise ValidationError(
+            f"{applicant_id} is archived; restore it before changing it.")
     with _connect() as conn:
         conn.execute(
             """UPDATE admissions_applicants SET
@@ -797,8 +1044,19 @@ def update_applicant(applicant_id: str,
         for detail in _describe_changes(existing, p):
             _log_event(conn, applicant_id, detail, kind="update")
         conn.commit()
+    slots_before = [existing.subject_1, existing.subject_2, existing.subject_3]
+    slots_after = [p["subject_1"], p["subject_2"], p["subject_3"]]
+    if slots_before != slots_after:
+        _reconcile_choices_with_slots(applicant_id, slots_after)
     out = get_applicant(applicant_id)
     assert out is not None
+    if out.status != existing.status:
+        # A pupil sent by a secondary school: tell the school's post-16
+        # board (best effort; no-op for anyone else).
+        from education_system.systems.sixth_form.domain.admissions import (
+            secondary_handover,
+        )
+        secondary_handover.report_status(applicant_id, out.status)
     logger.info("Updated applicant %s (status=%s)",
                 applicant_id, out.status)
     return out
@@ -818,14 +1076,83 @@ def set_status(applicant_id: str, status: str, *,
                                     or _dt.date.today().isoformat())
     if decision_by is not None:
         payload["decision_by"] = decision_by
+    elif status in TERMINAL_STATUSES or status.startswith("Offer"):
+        payload["decision_by"] = _guard.actor()
     if decision_notes is not None:
         payload["decision_notes"] = decision_notes
     return update_applicant(applicant_id, payload)
 
 
+def reopen_application(applicant_id: str, *, reason: str) -> Applicant:
+    """Reopen a declined, rejected or withdrawn application (to Under
+    Review). Needs a reason, which goes on the timeline."""
+    _guard.require("reopening applications")
+    reason = (reason or "").strip()
+    if not reason:
+        raise ValidationError("Give a reason for reopening the application.")
+    a = get_applicant(applicant_id)
+    if a is None:
+        raise ValidationError(f"No applicant {applicant_id!r}")
+    if a.status not in status_rules.REOPENABLE:
+        raise ValidationError(
+            f"Only a closed application can be reopened (this one is "
+            f"{a.status}).")
+    with status_rules.reopening():
+        out = update_applicant(applicant_id,
+                               {"status": status_rules.REOPEN_TO})
+    with _connect() as conn:
+        _log_event(conn, applicant_id, f"Application reopened: {reason}",
+                   kind="status")
+        conn.commit()
+    return out
+
+
+def allowed_statuses(applicant_id: str) -> tuple[str, ...]:
+    """Statuses this applicant may be moved to next (for pickers)."""
+    a = get_applicant(applicant_id)
+    return status_rules.allowed_next(a.status) if a else ()
+
+
+def _slots():
+    from education_system.systems.sixth_form.domain.admissions import (
+        interviews,
+    )
+    return interviews
+
+
+def _future_date(value: Any, label: str) -> str:
+    d = _validate_date(value, label, required=True)
+    assert d is not None
+    if d < _dt.date.today().isoformat():
+        raise ValidationError(f"{label} {d} is in the past")
+    return d
+
+
 def schedule_interview(applicant_id: str, *,
-                        interview_date: str,
-                        interviewer: str | None = None) -> Applicant:
+                        interview_date: str | None = None,
+                        interviewer: str | None = None,
+                        slot_id: int | None = None) -> Applicant:
+    """Schedule the applicant's interview.
+
+    With ``slot_id`` the applicant is booked into that interview slot
+    (:func:`interviews.book` — capacity, clash and double-booking checks)
+    and the date / panel come from the slot. Without it a bare date is
+    set; a past date is refused, and so is an applicant already booked
+    into a slot (reschedule or cancel that booking instead).
+    """
+    interviews = _slots()
+    if slot_id is not None and not interviews.driving():
+        interviews.book(applicant_id, int(slot_id))
+        out = get_applicant(applicant_id)
+        assert out is not None
+        return out
+    interview_date = _future_date(interview_date, "Interview date")
+    if not interviews.driving():
+        b = interviews.active_booking(applicant_id)
+        if b is not None:
+            raise ValidationError(
+                f"{applicant_id} is booked into interview slot "
+                f"#{b.slot_id}; reschedule or cancel that booking instead")
     return update_applicant(applicant_id, {
         "interview_date": interview_date,
         "interviewer": interviewer,
@@ -835,34 +1162,120 @@ def schedule_interview(applicant_id: str, *,
 
 def record_interview(applicant_id: str, *,
                       interview_notes: str | None = None) -> Applicant:
-    return update_applicant(applicant_id, {
+    """Record that the interview took place (the slot booking, if any,
+    becomes Attended)."""
+    out = update_applicant(applicant_id, {
         "interview_notes": interview_notes,
         "status": "Interviewed",
     })
+    _slots().close_booking(applicant_id, "Attended")
+    return out
 
 
 def make_offer(applicant_id: str, *,
                 offer_type: str = DEFAULT_OFFER_TYPE,
                 conditions: str | None = None,
-                decided_by: str | None = None) -> Applicant:
+                decided_by: str | None = None,
+                override_capacity: bool = False) -> Applicant:
+    """Offer a place. A real offer (Conditional / Unconditional) is
+    checked against the places set for each programme the applicant
+    chose in their cycle (:mod:`capacity`): when one is full this raises
+    ``capacity.CapacityFull`` unless ``override_capacity``, and an
+    override is noted on the timeline. Where the cycle sets an offer
+    response time and the applicant has no live expiry date, the offer
+    expiry is set from it."""
     if offer_type not in OFFER_TYPES:
         raise ValidationError(
             f"Offer type must be one of: {', '.join(OFFER_TYPES)}")
-    return update_applicant(applicant_id, {
+    from education_system.systems.sixth_form.domain.admissions import (
+        capacity as _capacity,
+        cycles as _cycles,
+    )
+    full: list[str] = []
+    if offer_type in ("Conditional", "Unconditional"):
+        full = _capacity.check_offer_capacity(applicant_id)
+        if full and not override_capacity:
+            raise _capacity.CapacityFull(applicant_id, full)
+    out = update_applicant(applicant_id, {
         "status": "Offer Made",
         "offer_type": offer_type,
         "offer_conditions": conditions,
         "decision_by": decided_by,
         "decision_date": _dt.date.today().isoformat(),
     })
+    if full:
+        with _connect() as conn:
+            _log_event(conn, applicant_id,
+                       "Capacity override: offer made although "
+                       f"{', '.join(full)} {'is' if len(full) == 1 else 'are'}"
+                       " full", kind="offer")
+            conn.commit()
+        logger.warning("Capacity override for %s by %s (%s)", applicant_id,
+                       _guard.actor(), ", ".join(full))
+    today = _dt.date.today()
+    if not out.offer_expiry or out.offer_expiry < today.isoformat():
+        days = _cycles.offer_response_days(out.intake_year)
+        if days:
+            out = set_offer_expiry(
+                applicant_id, (today + _dt.timedelta(days=days)).isoformat())
+    return out
 
 
 def accept_offer(applicant_id: str) -> Applicant:
     return set_status(applicant_id, "Offer Accepted")
 
 
-def decline_offer(applicant_id: str) -> Applicant:
-    return set_status(applicant_id, "Offer Declined")
+def decline_offer(applicant_id: str, *,
+                  reason: str | None = None) -> Applicant:
+    if reason and reason not in WITHDRAWAL_REASONS:
+        raise ValidationError(
+            f"Reason must be one of: {', '.join(WITHDRAWAL_REASONS)}")
+    out = set_status(applicant_id, "Offer Declined")
+    if reason:
+        _set_profile(applicant_id, withdrawal_reason=reason,
+                     event=f"Declined: {reason}")
+        out = get_applicant(applicant_id) or out
+    return out
+
+
+def defer(applicant_id: str, *, to_intake: str,
+          reason: str | None = None) -> Applicant:
+    """Hold an offer over to a later intake year (status Deferred)."""
+    a = get_applicant(applicant_id)
+    if a is None:
+        raise ValidationError(f"No applicant {applicant_id!r}")
+    to_intake = (to_intake or "").strip()
+    if not re.match(r"^\d{4}/\d{2}$", to_intake):
+        raise ValidationError("Intake year must look like '2027/28'")
+    if a.intake_year and to_intake <= a.intake_year:
+        raise ValidationError("Defer to a later intake year.")
+    out = set_status(applicant_id, "Deferred", decision_notes=reason)
+    _set_profile(applicant_id, deferred_from=a.intake_year,
+                 intake_year=to_intake,
+                 event=f"Deferred from {a.intake_year or '—'} to {to_intake}"
+                       + (f" ({reason})" if reason else ""))
+    return get_applicant(applicant_id) or out
+
+
+def _set_profile(applicant_id: str, *, event: str | None = None,
+                 **fields: Any) -> None:
+    """Write profile/lifecycle columns (see PROFILE_COLUMNS)."""
+    bad = set(fields) - set(PROFILE_COLUMNS)
+    if bad:
+        raise ValidationError(f"Unknown column(s): {', '.join(sorted(bad))}")
+    if not fields:
+        return
+    sets = ", ".join(f"{k} = ?" for k in fields)
+    vals = [int(bool(v)) if k in FLAG_COLUMNS else v
+            for k, v in fields.items()]
+    with _connect() as conn:
+        conn.execute(
+            f"UPDATE admissions_applicants SET {sets}, "  # noqa: S608 — keys checked above
+            "updated_at = datetime('now') WHERE applicant_id = ?",
+            (*vals, applicant_id))
+        if event:
+            _log_event(conn, applicant_id, event, kind="update")
+        conn.commit()
 
 
 def reject(applicant_id: str, *, decided_by: str | None = None,
@@ -871,78 +1284,68 @@ def reject(applicant_id: str, *, decided_by: str | None = None,
                        decision_by=decided_by, decision_notes=notes)
 
 
-def withdraw(applicant_id: str, *, notes: str | None = None) -> Applicant:
-    return set_status(applicant_id, "Withdrawn",
-                       decision_notes=notes)
+#: Why an applicant withdrew or declined (reporting and ILR destinations).
+WITHDRAWAL_REASONS: tuple[str, ...] = (
+    "Accepted a place elsewhere (sixth form/college)",
+    "Apprenticeship or employment",
+    "Moved away",
+    "Course not running / not offered",
+    "Did not meet entry requirements",
+    "Changed mind about subjects",
+    "Personal or family reasons",
+    "No response from applicant",
+    "Other",
+)
+
+
+def withdraw(applicant_id: str, *, notes: str | None = None,
+             reason: str | None = None) -> Applicant:
+    if reason and reason not in WITHDRAWAL_REASONS:
+        raise ValidationError(
+            f"Reason must be one of: {', '.join(WITHDRAWAL_REASONS)}")
+    out = set_status(applicant_id, "Withdrawn", decision_notes=notes)
+    if reason:
+        _set_profile(applicant_id, withdrawal_reason=reason,
+                     event=f"Withdrawal reason: {reason}")
+        out = get_applicant(applicant_id) or out
+    return out
+
+
+#: Statuses an applicant can be deleted outright from (nothing decided
+#: yet). Anything further along is archived instead, so its history,
+#: decisions and any student link survive.
+DELETABLE_STATUSES: tuple[str, ...] = (ONLINE_UNVERIFIED, "Submitted")
+
+
+class HasHistory(ValidationError):
+    """Delete refused: the record has progressed; archive it instead."""
 
 
 def delete_applicant(applicant_id: str) -> bool:
+    """Delete an application entered by mistake.
+
+    Only one that has not progressed (``DELETABLE_STATUSES``, never
+    converted, no references/results/conversion) can be deleted; the
+    rest raise :class:`HasHistory` — archive them with
+    :func:`record_safety.archive_applicant`. Its notes, events,
+    documents (and files), scores and choices go with it."""
     init_db()
-    with _connect() as conn:
-        cur = conn.execute(
-            "DELETE FROM admissions_applicants WHERE applicant_id = ?",
-            (applicant_id,))
-        conn.commit()
-        if cur.rowcount:
-            logger.info("Deleted applicant %s", applicant_id)
-            return True
-        return False
-
-
-# ── Conversion to a Student ────────────────────────────────────────
-
-def convert_to_student(applicant_id: str) -> tuple[Applicant, str]:
-    """Create a `students` row from the applicant. Returns the updated
-    applicant and the new student_id.
-
-    Requires:
-      - status is Offer Accepted (or already Enrolled — idempotent)
-      - all three subject choices set and valid against the catalogue
-      - email present (the students table uses it as a unique key)
-    """
-    init_db()
+    _guard.require("deleting applications")
     a = get_applicant(applicant_id)
     if a is None:
-        raise ValidationError(f"No applicant {applicant_id!r}")
-    if a.is_enrolled:
-        logger.info(
-            "Applicant %s already enrolled as %s — no-op",
-            applicant_id, a.converted_student_id)
-        return a, a.converted_student_id  # type: ignore[return-value]
-    if a.status not in ("Offer Accepted", "Enrolled"):
-        raise ValidationError(
-            "Applicant must be in 'Offer Accepted' status to convert "
-            "(current: " + a.status + ")")
-    if not (a.subject_1 and a.subject_2 and a.subject_3):
-        raise ValidationError(
-            "All three A-Level subjects must be set on the applicant "
-            "before conversion")
-    if not a.email:
-        raise ValidationError(
-            "Applicant must have an email address to convert to a "
-            "student record")
-
-    from education_system.systems.sixth_form.domain.learners.students import (
-        students as _students,
+        return False
+    from education_system.systems.sixth_form.domain.admissions import (
+        record_safety,
     )
-    student = _students.create_student({
-        "first_name":               a.first_name,
-        "last_name":                a.last_name,
-        "phone":                    a.phone,
-        "email":                    a.email,
-        "subject_1":                a.subject_1,
-        "subject_2":                a.subject_2,
-        "subject_3":                a.subject_3,
-    })
-
-    updated = update_applicant(applicant_id, {
-        "status": "Enrolled",
-        "converted_student_id": student.student_id,
-        "decision_date": _dt.date.today().isoformat(),
-    })
-    logger.info("Converted applicant %s → student %s",
-                applicant_id, student.student_id)
-    return updated, student.student_id
+    blockers = record_safety.delete_blockers(a)
+    if blockers:
+        raise HasHistory(
+            f"{applicant_id} cannot be deleted ({'; '.join(blockers)}). "
+            "Archive it instead.")
+    record_safety.purge_applicant_rows(applicant_id)
+    logger.info("Deleted applicant %s (by %s)", applicant_id,
+                _guard.actor())
+    return True
 
 
 # ── Activity timeline ─────────────────────────────────────────────
@@ -951,8 +1354,8 @@ def _log_event(conn: sqlite3.Connection, applicant_id: str,
                 detail: str, *, kind: str = "event") -> None:
     """Append a timeline event. Uses the caller's open connection."""
     conn.execute(
-        "INSERT INTO admissions_events (applicant_id, kind, detail) "
-        "VALUES (?, ?, ?)", (applicant_id, kind, detail))
+        "INSERT INTO admissions_events (applicant_id, kind, detail, actor) "
+        "VALUES (?, ?, ?, ?)", (applicant_id, kind, detail, _guard.actor()))
 
 
 def _describe_changes(existing: Applicant, p: dict[str, Any]) -> list[str]:
@@ -969,7 +1372,34 @@ def _describe_changes(existing: Applicant, p: dict[str, Any]) -> list[str]:
     if (p["converted_student_id"] != existing.converted_student_id
             and p["converted_student_id"]):
         out.append(f"Enrolled as student {p['converted_student_id']}")
+    for key, label in _AUDITED_FIELDS:
+        old, new = getattr(existing, key), p.get(key)
+        if (old or None) == (new or None):
+            continue
+        if key in _LONG_TEXT_FIELDS:
+            out.append(f"{label} edited")
+        else:
+            out.append(f"{label}: {old or '—'} → {new or '—'}")
     return out
+
+
+#: Fields whose every change goes on the timeline (status, offer,
+#: interview and conversion are described above).
+_AUDITED_FIELDS: tuple[tuple[str, str], ...] = (
+    ("first_name", "First name"), ("last_name", "Last name"),
+    ("dob", "Date of birth"), ("email", "Email"), ("phone", "Phone"),
+    ("address", "Address"), ("previous_school", "Previous school"),
+    ("predicted_gcses", "Predicted GCSEs"),
+    ("subject_1", "Subject 1"), ("subject_2", "Subject 2"),
+    ("subject_3", "Subject 3"),
+    ("reference_name", "Referee"), ("reference_contact", "Referee contact"),
+    ("application_source", "Source"), ("submitted_at", "Submitted on"),
+    ("offer_conditions", "Offer conditions"),
+    ("interview_notes", "Interview notes"),
+    ("decision_notes", "Decision notes"), ("notes", "Notes"),
+)
+_LONG_TEXT_FIELDS = {"interview_notes", "decision_notes", "notes",
+                     "predicted_gcses", "offer_conditions"}
 
 
 def list_events(applicant_id: str) -> list[Event]:
@@ -979,7 +1409,8 @@ def list_events(applicant_id: str) -> list[Event]:
             "SELECT * FROM admissions_events WHERE applicant_id = ? "
             "ORDER BY at DESC, id DESC", (applicant_id,)).fetchall()
     return [Event(id=r["id"], applicant_id=r["applicant_id"],
-                  at=r["at"], kind=r["kind"], detail=r["detail"])
+                  at=r["at"], kind=r["kind"], detail=r["detail"],
+                  actor=r["actor"] if "actor" in r.keys() else None)
             for r in rows]
 
 
@@ -1074,6 +1505,7 @@ def get_photo(applicant_id: str) -> Document | None:
 
 def remove_document(doc_id: int) -> bool:
     init_db()
+    _guard.require("removing applicant documents")
     from pathlib import Path
     with _connect() as conn:
         r = conn.execute("SELECT * FROM admissions_documents WHERE id = ?",
@@ -1096,7 +1528,11 @@ def remove_document(doc_id: int) -> bool:
 # ── References ────────────────────────────────────────────────────
 
 def set_reference_status(applicant_id: str, status: str) -> Applicant:
+    """Hand-set the reference status. Once the applicant has tracked
+    references (:mod:`references`) the status follows the tracker, and a
+    value that disagrees with it is refused."""
     init_db()
+    _guard.require("changing applications")
     if status not in REFERENCE_STATUSES:
         raise ValidationError(
             f"Reference status must be one of: "
@@ -1104,6 +1540,14 @@ def set_reference_status(applicant_id: str, status: str) -> Applicant:
     existing = get_applicant(applicant_id)
     if existing is None:
         raise ValidationError(f"No applicant {applicant_id!r}")
+    from education_system.systems.sixth_form.domain.admissions import (
+        references as _refs,
+    )
+    tracked = _refs.tracker_status(applicant_id)
+    if tracked is not None and tracked != status:
+        raise ValidationError(
+            f"References for {applicant_id} are tracked (status "
+            f"{tracked}); update the reference itself in References.")
     with _connect() as conn:
         conn.execute(
             "UPDATE admissions_applicants SET reference_status = ?, "
@@ -1220,17 +1664,22 @@ def find_duplicates(*, email: str | None = None,
 # ── Lightweight column setters (preserved across update_applicant) ──
 
 _EXTRA_COLS = ("offer_expiry", "waitlist_rank", "decision_reason",
-               "follow_up")
+               "follow_up", "uln", "upn")
 
 
 def _set_extra(applicant_id: str, *, event: str | None = None,
                 event_kind: str = "update", **fields: Any) -> Applicant:
     init_db()
+    _guard.require("changing applications")
     bad = set(fields) - set(_EXTRA_COLS)
     if bad:
         raise ValidationError(f"Unknown column(s): {', '.join(bad)}")
-    if get_applicant(applicant_id) is None:
+    existing = get_applicant(applicant_id)
+    if existing is None:
         raise ValidationError(f"No applicant {applicant_id!r}")
+    if existing.is_archived:
+        raise ValidationError(
+            f"{applicant_id} is archived; restore it before changing it.")
     sets = ", ".join(f"{k} = ?" for k in fields)
     with _connect() as conn:
         conn.execute(
@@ -1247,13 +1696,30 @@ def _set_extra(applicant_id: str, *, event: str | None = None,
 
 # ── Interview lifecycle (items 26, 27) ────────────────────────────
 
-def reschedule_interview(applicant_id: str, *, new_date: str,
+def reschedule_interview(applicant_id: str, *, new_date: str | None = None,
                           reason: str | None = None,
-                          interviewer: str | None = None) -> Applicant:
+                          interviewer: str | None = None,
+                          slot_id: int | None = None) -> Applicant:
+    """Move the interview. With ``slot_id`` the slot booking moves
+    (:func:`interviews.reschedule`, history kept). A bare ``new_date``
+    must not be in the past, and is refused while the applicant holds a
+    slot booking (choose another slot instead)."""
+    interviews = _slots()
+    if slot_id is not None and not interviews.driving():
+        interviews.reschedule(applicant_id, int(slot_id), reason=reason)
+        out = get_applicant(applicant_id)
+        assert out is not None
+        return out
     a = get_applicant(applicant_id)
     if a is None:
         raise ValidationError(f"No applicant {applicant_id!r}")
-    new_date = _validate_date(new_date, "Interview date", required=True)
+    new_date = _future_date(new_date, "Interview date")
+    if not interviews.driving():
+        b = interviews.active_booking(applicant_id)
+        if b is not None:
+            raise ValidationError(
+                f"{applicant_id} is booked into interview slot "
+                f"#{b.slot_id}; choose another slot to reschedule")
     payload: dict[str, Any] = {"interview_date": new_date,
                                "status": "Interview Scheduled"}
     if interviewer is not None:
@@ -1270,6 +1736,16 @@ def reschedule_interview(applicant_id: str, *, new_date: str,
 
 def cancel_interview(applicant_id: str, *,
                       reason: str | None = None) -> Applicant:
+    """Cancel the interview; a slot booking is cancelled too (kept in the
+    booking history)."""
+    interviews = _slots()
+    if not interviews.driving():
+        b = interviews.active_booking(applicant_id)
+        if b is not None:
+            interviews.cancel_booking(b.booking_id, reason=reason)
+            out = get_applicant(applicant_id)
+            assert out is not None
+            return out
     a = get_applicant(applicant_id)
     if a is None:
         raise ValidationError(f"No applicant {applicant_id!r}")
@@ -1285,9 +1761,17 @@ def cancel_interview(applicant_id: str, *,
 
 
 def mark_no_show(applicant_id: str, *, follow_up: bool = True) -> Applicant:
+    """Record a missed interview (the slot booking, if any, becomes
+    No-show) and optionally flag the applicant for follow-up."""
+    init_db()
+    _guard.require("recording interviews")
     a = get_applicant(applicant_id)
     if a is None:
         raise ValidationError(f"No applicant {applicant_id!r}")
+    if a.is_archived:
+        raise ValidationError(
+            f"{applicant_id} is archived; restore it before changing it.")
+    _slots().close_booking(applicant_id, "No-show")
     with _connect() as conn:
         conn.execute(
             "UPDATE admissions_applicants SET follow_up = ?, "
@@ -1338,76 +1822,26 @@ def set_offer_expiry(applicant_id: str, expiry: str | None) -> Applicant:
                               else "Offer expiry cleared"), event_kind="offer")
 
 
-def list_expiring_offers(*, within_days: int = 7) -> list[Applicant]:
-    today = _dt.date.today()
-    horizon = (today + _dt.timedelta(days=within_days)).isoformat()
-    return [a for a in list_applicants()
-            if a.status == "Offer Made" and a.offer_expiry
-            and a.offer_expiry <= horizon]
-
-
-def render_offer_letter(applicant_id: str) -> str:
-    a = get_applicant(applicant_id)
-    if a is None:
-        raise ValidationError(f"No applicant {applicant_id!r}")
-    today = _dt.date.today().isoformat()
-    cond = a.offer_conditions or "(no specific conditions)"
-    kind = a.offer_type or "Conditional"
-    body = [
-        f"Date: {today}",
-        f"Our ref: {a.applicant_id}",
-        "",
-        f"Dear {a.first_name} {a.last_name},",
-        "",
-        f"Following the review of your application, we are pleased to make "
-        f"you a {kind.lower()} offer of a place in our Sixth Form to study:",
-        "  " + (", ".join(a.subjects) if a.subjects else "(subjects TBC)"),
-        "",
-        f"Conditions of offer: {cond}",
-    ]
-    if a.offer_expiry:
-        body.append(f"This offer must be accepted by {a.offer_expiry}.")
-    body += [
-        "",
-        "We look forward to welcoming you.",
-        "",
-        "Yours sincerely,",
-        "Admissions Team",
-    ]
-    return "\n".join(body)
-
-
-def render_status_email(applicant_id: str) -> tuple[str, str]:
-    """Return (subject, body) acknowledgement/decision email text."""
-    a = get_applicant(applicant_id)
-    if a is None:
-        raise ValidationError(f"No applicant {applicant_id!r}")
-    name = a.first_name
-    s = a.status
-    if s == "Offer Made":
-        sub = "Your Sixth Form offer"
-        msg = (f"Dear {name},\n\nWe are delighted to offer you a place. "
-               f"Conditions: {a.offer_conditions or 'none'}.")
-        if a.offer_expiry:
-            msg += f"\nPlease respond by {a.offer_expiry}."
-    elif s == "Rejected":
-        sub = "Your Sixth Form application"
-        msg = (f"Dear {name},\n\nThank you for applying. On this occasion "
-               f"we are unable to offer you a place.")
-        if a.decision_reason:
-            msg += f"\nReason: {a.decision_reason}."
-    elif s == "Interview Scheduled":
-        sub = "Your Sixth Form interview"
-        msg = (f"Dear {name},\n\nYour interview is scheduled for "
-               f"{a.interview_date} with {a.interviewer or 'our team'}.")
-    elif s in ("Offer Accepted", "Enrolled"):
-        sub = "Welcome to Sixth Form"
-        msg = (f"Dear {name},\n\nThank you for accepting your place. "
-               f"We look forward to seeing you.")
-    else:
-        sub = "Your Sixth Form application — update"
-        msg = (f"Dear {name},\n\nYour application status is now: {s}.")
-    return sub, msg + "\n\nKind regards,\nAdmissions Team"
+def list_expiring_offers(*, within_days: int = 7,
+                         include_expired: bool = True,
+                         today: _dt.date | None = None) -> list[Applicant]:
+    """Offers still waiting for an answer (Offer Made) whose expiry is
+    within *within_days* of *today* — including ones already past expiry
+    unless ``include_expired`` is False. Soonest first."""
+    init_db()
+    _guard.require("applicant records")
+    day = today or _dt.date.today()
+    horizon = (day + _dt.timedelta(days=within_days)).isoformat()
+    sql = ("SELECT * FROM admissions_applicants WHERE status = 'Offer Made' "
+           "AND archived_at IS NULL AND offer_expiry IS NOT NULL "
+           "AND offer_expiry <> '' AND offer_expiry <= ?")
+    args: list[Any] = [horizon]
+    if not include_expired:
+        sql += " AND offer_expiry >= ?"
+        args.append(day.isoformat())
+    with _connect() as conn:
+        return [_row(r) for r in conn.execute(
+            sql + " ORDER BY offer_expiry, last_name", args).fetchall()]
 
 
 # ── Waitlist (item 34) ────────────────────────────────────────────
@@ -1467,10 +1901,14 @@ def pre_conversion_check(applicant_id: str) -> list[str]:
     if a is None:
         return ["Applicant not found"]
     issues: list[str] = []
-    if a.status not in ("Offer Accepted", "Enrolled"):
+    if a.is_enrolled:
+        return []
+    if a.status != "Offer Accepted":
         issues.append(f"Status is '{a.status}', not 'Offer Accepted'")
-    if not (a.subject_1 and a.subject_2 and a.subject_3):
-        issues.append("Fewer than three A-Level subjects selected")
+    if a.is_archived:
+        issues.append("The application is archived")
+    if not list_programme_choices(applicant_id):
+        issues.append("No programme choices (subjects / qualifications)")
     if not a.email:
         issues.append("No email address on file")
     if a.offer_expiry and a.offer_expiry < _dt.date.today().isoformat() \
@@ -1479,255 +1917,36 @@ def pre_conversion_check(applicant_id: str) -> list[str]:
     return issues
 
 
-# ── GCSE-vs-conditions heuristic (item 14) ────────────────────────
-
-_GRADE_RE = re.compile(r"\b([1-9])\b")
-
-
-def gcse_concern(predicted: str | None,
-                  conditions: str | None) -> str | None:
-    """Best-effort flag when predicted GCSEs look below offer conditions.
-
-    Extracts the highest single-digit grade required in the conditions and
-    checks the predicted grades clear it. Returns a warning string, or None
-    when nothing obvious is amiss / unparseable.
-    """
-    if not predicted or not conditions:
-        return None
-    req = [int(g) for g in _GRADE_RE.findall(conditions)]
-    pred = [int(g) for g in _GRADE_RE.findall(predicted)]
-    if not req or not pred:
-        return None
-    needed = max(req)
-    below = sorted(g for g in pred if g < needed)
-    if below:
-        return (f"Predicted grades include {below} below the highest "
-                f"required grade ({needed}) in the offer conditions.")
-    return None
-
-
-# ── Analytics (items 41–45) ───────────────────────────────────────
-
-_HAPPY_PATH: tuple[str, ...] = (
-    "Submitted", "Under Review", "Interview Scheduled",
-    "Interviewed", "Offer Made", "Offer Accepted", "Enrolled",
-)
-
-
-def funnel() -> list[tuple[str, int]]:
-    """Count applicants who *reached* each happy-path stage, using the
-    transition events plus current status (monotonic)."""
-    init_db()
-    idx = {s: i for i, s in enumerate(_HAPPY_PATH)}
-    reached_counts = [0] * len(_HAPPY_PATH)
-    with _connect() as conn:
-        events_by = {}
-        for e in conn.execute(
-                "SELECT applicant_id, detail FROM admissions_events "
-                "WHERE detail LIKE 'Status:%'"):
-            events_by.setdefault(e["applicant_id"], []).append(e["detail"])
-    for a in list_applicants():
-        max_i = idx.get(a.status, -1)
-        for detail in events_by.get(a.applicant_id, []):
-            tgt = detail.split("→")[-1].strip()
-            if tgt in idx:
-                max_i = max(max_i, idx[tgt])
-        # Everyone was at least Submitted.
-        max_i = max(max_i, 0)
-        for i in range(max_i + 1):
-            reached_counts[i] += 1
-    return list(zip(_HAPPY_PATH, reached_counts))
-
-
-def source_effectiveness() -> list[dict[str, Any]]:
-    rows = list_applicants()
-    out = []
-    for src in SOURCES:
-        sub = [a for a in rows if a.application_source == src]
-        if not sub:
-            continue
-        enrolled = sum(1 for a in sub if a.status == "Enrolled")
-        offers = sum(1 for a in sub if a.status in (
-            "Offer Made", "Offer Accepted", "Offer Declined", "Enrolled"))
-        out.append({
-            "source": src, "total": len(sub), "offers": offers,
-            "enrolled": enrolled,
-            "conversion": round(100 * enrolled / len(sub), 1),
-        })
-    return sorted(out, key=lambda d: -d["conversion"])
-
-
-def time_to_decision_stats() -> dict[str, Any]:
-    days = []
-    for a in list_applicants():
-        if a.decision_date and a.submitted_at:
-            d0 = _try_date(a.submitted_at)
-            d1 = _try_date(a.decision_date)
-            if d0 and d1 and d1 >= d0:
-                days.append((d1 - d0).days)
-    if not days:
-        return {"count": 0, "avg": None, "median": None,
-                "min": None, "max": None}
-    days.sort()
-    n = len(days)
-    median = (days[n // 2] if n % 2 else
-              (days[n // 2 - 1] + days[n // 2]) / 2)
-    return {"count": n, "avg": round(sum(days) / n, 1),
-            "median": median, "min": days[0], "max": days[-1]}
-
-
-def applications_by_week() -> list[tuple[str, int]]:
-    counts: dict[str, int] = {}
-    for a in list_applicants():
-        d = _try_date(a.submitted_at)
-        if d is None:
-            continue
-        iso = d.isocalendar()
-        key = f"{iso[0]}-W{iso[1]:02d}"
-        counts[key] = counts.get(key, 0) + 1
-    return sorted(counts.items())
-
-
-def subject_demand() -> list[tuple[str, int]]:
-    counts: dict[str, int] = {}
-    for a in list_applicants():
-        for s in a.subjects:
-            counts[s] = counts.get(s, 0) + 1
-    return sorted(counts.items(), key=lambda kv: (-kv[1], kv[0]))
-
-
-def _try_date(value: str | None) -> "_dt.date | None":
-    if not value:
-        return None
-    try:
-        return _dt.date.fromisoformat(value[:10])
-    except ValueError:
-        return None
-
-
-# ── CSV import / export (items 47, 48) ────────────────────────────
-
-_CSV_FIELDS = (
-    "applicant_id", "first_name", "last_name", "dob", "email", "phone",
-    "address", "previous_school", "predicted_gcses",
-    "subject_1", "subject_2", "subject_3", "reference_name",
-    "reference_contact", "application_source", "submitted_at", "status",
-    "offer_type", "offer_conditions", "interview_date", "interviewer",
-    "decision_by", "decision_date", "decision_reason", "reference_status",
-)
-
-
-def export_csv(path: str, applicants: list[Applicant] | None = None) -> int:
-    import csv
-    rows = applicants if applicants is not None else list_applicants()
-    with open(path, "w", newline="", encoding="utf-8") as fh:
-        w = csv.DictWriter(fh, fieldnames=_CSV_FIELDS)
-        w.writeheader()
-        for a in rows:
-            w.writerow({f: getattr(a, f, "") or "" for f in _CSV_FIELDS})
-    logger.info("Exported %d applicants to %s", len(rows), path)
-    return len(rows)
-
-
-def import_csv(path: str) -> tuple[int, list[str]]:
-    """Create applicants from a CSV. Returns (created_count, errors)."""
-    import csv
-    init_db()
-    created, errors = 0, []
-    with open(path, newline="", encoding="utf-8-sig") as fh:
-        reader = csv.DictReader(fh)
-        for i, row in enumerate(reader, start=2):
-            try:
-                payload = {k: (row.get(k) or "").strip()
-                           for k in _CSV_FIELDS if k != "applicant_id"}
-                if not payload.get("submitted_at"):
-                    payload["submitted_at"] = _dt.date.today().isoformat()
-                create_applicant(payload)
-                created += 1
-            except Exception as e:  # noqa: BLE001 — report per row
-                errors.append(f"Row {i}: {e}")
-    logger.info("Imported %d applicants from %s (%d errors)",
-                created, path, len(errors))
-    return created, errors
-
-
-# ── GDPR export / erasure (item 50) ───────────────────────────────
-
-def gdpr_export(applicant_id: str) -> dict[str, Any]:
-    a = get_applicant(applicant_id)
-    if a is None:
-        raise ValidationError(f"No applicant {applicant_id!r}")
-    from dataclasses import asdict
-    score = get_interview_score(applicant_id)
-    return {
-        "applicant": asdict(a),
-        "notes": [asdict(n) for n in list_notes(applicant_id)],
-        "events": [asdict(e) for e in list_events(applicant_id)],
-        "documents": [asdict(d) for d in list_documents(applicant_id)],
-        "interview_score": asdict(score) if score else None,
-    }
-
+# ── GDPR erasure (export, reports and letters: applicant_reports) ──
 
 def erase_applicant(applicant_id: str) -> bool:
-    """Hard-delete the applicant and ALL related records/files (GDPR)."""
-    init_db()
-    import shutil
-    from pathlib import Path
-    if get_applicant(applicant_id) is None:
-        return False
-    for d in list_documents(applicant_id):
-        try:
-            Path(d.path).unlink(missing_ok=True)
-        except OSError:
-            pass
-    doc_dir = _documents_dir() / applicant_id
-    if doc_dir.exists():
-        shutil.rmtree(doc_dir, ignore_errors=True)
-    with _connect() as conn:
-        for tbl in ("admissions_events", "admissions_notes",
-                     "admissions_documents", "admissions_interview_scores",
-                     "admissions_applicants"):
-            conn.execute(f"DELETE FROM {tbl} WHERE applicant_id = ?",
-                          (applicant_id,))
-        conn.commit()
-    logger.info("GDPR erase: removed all data for %s", applicant_id)
-    return True
-
-
-# ── Summary ───────────────────────────────────────────────────────
-
-def summary(*, upcoming_window_days: int = 14) -> Summary:
-    init_db()
-    today = _dt.date.today().isoformat()
-    horizon = (_dt.date.today()
-                + _dt.timedelta(days=upcoming_window_days)).isoformat()
-
-    rows = list_applicants()
-    by_status = {s: 0 for s in STATUSES}
-    by_source = {s: 0 for s in SOURCES}
-    upcoming_interviews = 0
-    for a in rows:
-        by_status[a.status] = by_status.get(a.status, 0) + 1
-        by_source[a.application_source] = by_source.get(
-            a.application_source, 0) + 1
-        if a.interview_date and today <= a.interview_date <= horizon:
-            upcoming_interviews += 1
-
-    open_count = sum(by_status.get(s, 0) for s in OPEN_STATUSES)
-    awaiting = (by_status.get("Under Review", 0)
-                 + by_status.get("Interviewed", 0))
-    pending_offers = by_status.get("Offer Made", 0)
-    converted = by_status.get("Enrolled", 0)
-    rejected = by_status.get("Rejected", 0)
-
-    return Summary(
-        total=len(rows),
-        by_status=by_status,
-        by_source=by_source,
-        open_count=open_count,
-        awaiting_decision=awaiting,
-        pending_offers=pending_offers,
-        converted=converted,
-        rejected=rejected,
-        upcoming_interviews=upcoming_interviews,
+    """GDPR erasure. Needs an erasure request approved by a second person
+    (see :mod:`record_safety`); refuses an applicant who became a student
+    (their data is now the student record's, erased through student
+    GDPR). Returns False when there is no such applicant."""
+    from education_system.systems.sixth_form.domain.admissions import (
+        record_safety,
     )
+    return record_safety.erase_if_approved(applicant_id)
+
+
+# ── Split-out modules (re-exported so existing callers keep working) ──
+# Imported last: they import names defined above from this module.
+from education_system.systems.sixth_form.domain.admissions.programme_choices import (  # noqa: E402
+    ONE_YEAR_TYPES,
+    _a_level_types,
+    _normalise_choice,
+    _reconcile_choices_with_slots,
+    _stored_choices,
+    add_programme_choice,
+    list_programme_choices,
+    programme_types,
+    remove_programme_choice,
+    set_programme_choices,
+)
+from education_system.systems.sixth_form.domain.admissions.conversion import (  # noqa: E402
+    conversion_for_student,
+    convert_to_student,
+    default_academic_year,
+    get_conversion,
+)

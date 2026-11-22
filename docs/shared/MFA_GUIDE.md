@@ -1,6 +1,6 @@
 # Multi-Factor Authentication (MFA) Guide
 
-This guide covers MFA as implemented in the shared authentication module (`education_system/shared/auth/mfa_service.py`), which is used by all four systems.
+This guide covers MFA as implemented in the shared authentication module (`src/education_system/platform/identity/auth/mfa_service.py`), which is used by all seven systems.
 
 ---
 

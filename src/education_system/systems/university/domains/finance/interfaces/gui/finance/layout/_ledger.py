@@ -412,6 +412,32 @@ class LedgerMixin:
                    command=reopen_action).pack(side='left', padx=5)
         ttk.Button(action_frame, text=_("finance_gui.ledger.lock_period", default="Lock"),
                    command=lock_action).pack(side='left', padx=5)
+        def open_year_action():
+            from tkinter import simpledialog
+            from education_system.systems.university.domains.finance.domain.ledger import (
+                open_fiscal_year,
+            )
+            fy = simpledialog.askinteger(
+                _t('gui.finance.finance.layout.ledger.dialogs.open_year', default="Open fiscal year"),
+                "Fiscal years run 1 August – 31 July and are named by the year they end in.\n"
+                "The current and next year open on their own when something is posted.\n\n"
+                "Fiscal year to open (e.g. 2027):",
+                parent=frame, minvalue=2000, maxvalue=2100)
+            if fy is None:
+                return
+            try:
+                created = open_fiscal_year(fy, opened_by=_resolve_user())
+            except Exception as e:
+                messagebox.showerror(_t('gui.finance.finance.layout.ledger.dialogs.open_year_failed', default="Could not open the year"), str(e))
+                return
+            messagebox.showinfo(
+                _t('gui.finance.finance.layout.ledger.dialogs.open_year', default="Open fiscal year"),
+                f"Fiscal year {fy}: {created} period(s) opened." if created
+                else f"Fiscal year {fy} already has its periods; nothing changed.")
+            reload_periods()
+
+        ttk.Button(action_frame, text=_("finance_gui.ledger.open_fiscal_year", default="Open fiscal year…"),
+                   command=open_year_action).pack(side='left', padx=5)
         ttk.Button(action_frame, text=_("common.refresh", default="Refresh"),
                    command=reload_periods).pack(side='right', padx=5)
 

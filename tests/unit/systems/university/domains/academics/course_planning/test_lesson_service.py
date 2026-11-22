@@ -2,7 +2,7 @@
 
 import pytest
 
-from education_system.systems.university.domains.academics.domain.course_planning.services import (
+from education_system.systems.university.domains.curriculum.domain.course_planning.services import (
     lesson_service as svc,
 )
 

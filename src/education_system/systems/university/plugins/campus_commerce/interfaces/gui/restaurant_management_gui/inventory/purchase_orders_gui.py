@@ -76,6 +76,22 @@ def init_purchase_orders_tables():
             )
         ''')
 
+        # Line items for the purchase_orders dialogs (inventory/purchase_orders.py)
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS purchase_order_items (
+                po_item_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                po_id INTEGER NOT NULL,
+                item_name TEXT NOT NULL,
+                description TEXT,
+                quantity REAL NOT NULL,
+                unit TEXT,
+                unit_price REAL NOT NULL,
+                total_price REAL NOT NULL,
+                received_quantity REAL DEFAULT 0,
+                FOREIGN KEY (po_id) REFERENCES purchase_orders(order_id) ON DELETE CASCADE
+            )
+        ''')
+
         conn.commit()
         conn.close()
         print("✓ Purchase orders tables initialized successfully")

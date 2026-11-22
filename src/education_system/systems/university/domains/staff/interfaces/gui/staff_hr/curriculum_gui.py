@@ -13,6 +13,7 @@ from __future__ import annotations
 
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 
+from education_system.systems.university.domains.staff.interfaces.gui.staff_hr import _access as _hr
 import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext
 from datetime import datetime
@@ -54,7 +55,7 @@ class CurriculumGUI:
 
     def _get_user_id(self):
         """Get user ID from current user dict."""
-        return self.current_user.get('id') or self.current_user.get('username')
+        return _hr.user_key(self)
 
     def create_as_tab(self, notebook: ttk.Notebook):
         """Create as a tab in parent notebook."""
@@ -66,7 +67,8 @@ class CurriculumGUI:
         """Create as standalone window."""
         self.window = tk.Toplevel(self.root)
         self.window.title(_t('gui.staff.staff_hr.curriculum.windows.curriculum_design_tools', default="Curriculum Design Tools"))
-        self.window.geometry("1200x700")
+        self.window.geometry("1400x900")
+        self.window.minsize(1200, 800)
         self.window.minsize(1000, 600)
 
         bottom_frame = ttk.Frame(self.window)
@@ -91,7 +93,7 @@ class CurriculumGUI:
         self._create_outcomes_tab()
         self._create_syllabus_tab()
 
-        if self.current_user.get('role') in ['admin', 'Admin', 'administrator', 'staff']:
+        if _hr.can(self, 'manager'):
             self._create_approvals_tab()
 
     # ==================== TAB 1: PROGRAMMES ====================

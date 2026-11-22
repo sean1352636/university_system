@@ -6,7 +6,9 @@ from education_system.systems.sixth_form.interfaces.gui._ui import grab_when_vie
 import datetime as _dt
 import logging
 import tkinter as tk
-from tkinter import messagebox, ttk
+from tkinter import ttk
+from education_system.systems.sixth_form.interfaces.gui._sidebar import SidebarBook
+from education_system.platform.delivery.gui.parented_dialogs import messagebox
 from typing import Callable
 from education_system.platform import branding
 from education_system.systems.sixth_form.domain.assessment.early_warning import (
@@ -42,7 +44,7 @@ def open_early_warning_window(parent=None) -> None:
     win.geometry(WIN_GEOMETRY)
     win.minsize(*WIN_MINSIZE)
 
-    nb = ttk.Notebook(win)
+    nb = SidebarBook(win)
     nb.pack(fill="both", expand=True, padx=10, pady=10)
 
     AlertsTab(nb, scope="open",     label="Open Alerts")
@@ -176,6 +178,9 @@ class AlertsTab:
         ttk.Button(actions, text="Delete",
                     command=self._delete_selected).pack(side="left",
                                                           padx=4)
+        ttk.Button(actions, text="Open intervention",
+                    command=self._open_intervention).pack(
+                        side="left", padx=(16, 4))
         ttk.Button(actions, text="Refresh",
                     command=self.refresh).pack(side="right")
 
@@ -275,8 +280,11 @@ class AlertsTab:
         if a.linked_ilp_id:
             lines.append(f"Linked ILP      : #{a.linked_ilp_id}")
         if a.linked_intervention_id:
+            iv = data.linked_intervention(a.alert_id)
             lines.append(
-                f"Linked iv'tion  : #{a.linked_intervention_id}")
+                f"Linked iv'tion  : #{a.linked_intervention_id}"
+                + (f" — {iv.title} ({iv.status})" if iv else
+                   " (no longer exists)"))
         if a.description:
             lines.extend(["", "Description:", a.description])
         if a.action_taken:
@@ -352,6 +360,32 @@ class AlertsTab:
             return
         StatusDialog(self.frame.winfo_toplevel(),
                        a, on_save=self.refresh)
+
+    def _open_intervention(self) -> None:
+        """Open an intervention for the selected alert — or show the one
+        it already opened; never creates a second."""
+        a = self._selected()
+        if a is None:
+            messagebox.showinfo("Open intervention",
+                                  "Select an alert first.")
+            return
+        try:
+            iv, created = data.open_intervention(a.alert_id)
+        except ValidationError as e:
+            messagebox.showerror("Open intervention", str(e))
+            return
+        if created:
+            messagebox.showinfo(
+                "Open intervention",
+                f"Intervention #{iv.intervention_id} opened "
+                f"({iv.intervention_type}): {iv.title}\n\n"
+                "Complete its details in Intervention Tracking.")
+        else:
+            messagebox.showinfo(
+                "Open intervention",
+                f"This alert already has intervention "
+                f"#{iv.intervention_id}: {iv.title} ({iv.status}).")
+        self.refresh()
 
     def _delete_selected(self) -> None:
         a = self._selected()
@@ -464,6 +498,13 @@ class ScanTab:
             lines.append("By source:")
             for src, n in result.sources.items():
                 lines.append(f"  {src}: {n}")
+        if result.errors:
+            lines.append("")
+            lines.append("✗ Not checked (scan failed):")
+            lines.extend(f"  {err}" for err in result.errors)
+            messagebox.showwarning(
+                "Scan", "Some scan sources failed, so their alerts were "
+                "not checked:\n\n" + "\n".join(result.errors))
         self.status_var.set("\n".join(lines))
 
 

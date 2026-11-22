@@ -72,7 +72,7 @@ def open_ks2_sats() -> None:
         print("   2) Filter results")
         print("   3) View pupil's results")
         print("   4) Summary (by outcome)")
-        print("   5) RWM combined summary (year)")
+        print("   5) Reading, Maths & EGPS combined summary (year)")
         print("   6) Record result")
         print("   7) Update result")
         print("   8) Delete result")
@@ -164,7 +164,7 @@ def _rwm_summary() -> None:
     if not ay:
         return
     s = data.cohort_combined_summary(ay)
-    print(f"\n  -- RWM combined ({s['academic_year']}) --")
+    print(f"\n  -- Reading, Maths & EGPS combined ({s['academic_year']}) --")
     print(f"  Pupils with any KS2 record: {s['pupils_recorded']}")
     print(f"  Achieved >=EXS in Reading, Maths, EGPS: "
           f"{s['exs_in_RWM']} ({s['exs_in_RWM_pct']:.1f}%)")

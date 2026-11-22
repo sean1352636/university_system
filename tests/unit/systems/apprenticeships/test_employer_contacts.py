@@ -16,12 +16,12 @@ from education_system.systems.apprenticeships.domain.employers.contacts import (
     ContactLogEntry,
     EmployerCommitment,
 )
-from education_system.systems.apprenticeships.services import (
-    apprentice_service,
+from education_system.systems.apprenticeships.application.apprentices import apprentice_service
+from education_system.systems.apprenticeships.application.employers import (
     employer_contact_service,
     employer_service,
 )
-from education_system.systems.apprenticeships.services.access import Actor, PermissionDenied
+from education_system.systems.apprenticeships.application.security.access import Actor, PermissionDenied
 
 TODAY = date.today()
 

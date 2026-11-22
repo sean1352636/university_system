@@ -8,10 +8,10 @@ import time
 from datetime import datetime
 from unittest.mock import Mock, patch, MagicMock
 
-from education_system.systems.university.domains.pastoral.domain.health.records.db import audit as _audit_mod
-from education_system.systems.university.domains.pastoral.domain.health.records.db import schema as _schema_mod
-from education_system.systems.university.domains.pastoral.domain.health.records.db.audit import log_audit_event
-from education_system.systems.university.domains.pastoral.domain.health.records.db.schema import init_enhanced_health_db
+from education_system.systems.university.domains.health.domain.health.records.db import audit as _audit_mod
+from education_system.systems.university.domains.health.domain.health.records.db import schema as _schema_mod
+from education_system.systems.university.domains.health.domain.health.records.db.audit import log_audit_event
+from education_system.systems.university.domains.health.domain.health.records.db.schema import init_enhanced_health_db
 from education_system.systems.university.infrastructure.database.db import get_connection
 
 @pytest.fixture
@@ -125,7 +125,7 @@ class TestLogAuditEvent:
             None  # Success on retry
         ]
 
-        with patch('education_system.systems.university.domains.pastoral.domain.health.records.db.audit.get_connection', return_value=mock_conn):
+        with patch('education_system.systems.university.domains.health.domain.health.records.db.audit.get_connection', return_value=mock_conn):
             with patch('time.sleep'):  # Mock sleep to speed up test
                 log_audit_event(
                     user_id='user123',
@@ -141,7 +141,7 @@ class TestLogAuditEvent:
     def test_log_audit_event_failure_handling(self, clean_db):
         """Test that audit logging failures don't break the flow."""
         # This should not raise an exception even if logging fails
-        with patch('education_system.systems.university.domains.pastoral.domain.health.records.db.audit.get_connection', side_effect=Exception("DB Error")):
+        with patch('education_system.systems.university.domains.health.domain.health.records.db.audit.get_connection', side_effect=Exception("DB Error")):
             with patch('builtins.print') as mock_print:
                 log_audit_event(
                     user_id='user123',
@@ -420,7 +420,7 @@ class TestErrorHandling:
 
     def test_database_connection_error_handling(self, clean_db):
         """Test handling of database connection errors."""
-        with patch('education_system.systems.university.domains.pastoral.domain.health.records.db.audit.get_connection', side_effect=Exception("Connection failed")):
+        with patch('education_system.systems.university.domains.health.domain.health.records.db.audit.get_connection', side_effect=Exception("Connection failed")):
             with patch('builtins.print') as mock_print:
                 # Should not raise exception
                 log_audit_event('user', 'test', 'test', 'test')

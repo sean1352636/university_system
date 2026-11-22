@@ -1,0 +1,33 @@
+{
+  "name": "complaint_acknowledgement",
+  "description": "Acknowledgement of a complaint, with the date a response is due.",
+  "subject": "{headline} (ref {reference})",
+  "body": [
+    "Dear {recipient_name},",
+    "",
+    "Complaint reference: {reference} - {complaint_subject}",
+    "",
+    "{intro}",
+    "",
+    "{details}",
+    "",
+    "If you have any questions, please contact the school office quoting the reference above.",
+    "",
+    "Yours sincerely,",
+    "{sender_name}",
+    "{school_name}"
+  ],
+  "placeholders": {
+    "recipient_name": "The complainant's name",
+    "headline": "What this letter is",
+    "reference": "The complaint number",
+    "complaint_subject": "The complaint's subject",
+    "intro": "The opening paragraph",
+    "details": "Dates, the response or the panel details, and next steps",
+    "sender_name": "The member of staff sending it",
+    "school_name": "The school's name"
+  },
+  "defaults": {
+    "school_name": "Secondary School"
+  }
+}

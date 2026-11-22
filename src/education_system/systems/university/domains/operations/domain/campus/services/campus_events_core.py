@@ -313,13 +313,13 @@ class EventAnnouncementManager:
                 return result['email_address'] if result else None
             elif user_type == 'staff':
                 result = conn.execute(
-                    'SELECT email FROM staff WHERE staff_id = ?',
-                    (user_id,)
+                    'SELECT email FROM staff WHERE id = ? OR username = ?',
+                    (user_id, user_id)
                 ).fetchone()
                 return result['email'] if result else None
             elif user_type == 'faculty':
                 result = conn.execute(
-                    'SELECT email FROM faculty WHERE faculty_id = ?',
+                    'SELECT email FROM instructors WHERE id = ?',
                     (user_id,)
                 ).fetchone()
                 return result['email'] if result else None

@@ -241,10 +241,6 @@ class PortfolioService:
                 CREATE INDEX IF NOT EXISTS idx_endorsements_skill
                 ON skill_endorsements(skill_id)
             """)
-            conn.execute("""
-                CREATE INDEX IF NOT EXISTS idx_public_profiles_url
-                ON public_profiles(public_url)
-            """)
 
     def _migrate_database(self):
         """Migrate database schema to add missing columns and remove foreign key constraints."""

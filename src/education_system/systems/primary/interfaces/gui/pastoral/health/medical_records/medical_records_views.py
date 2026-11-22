@@ -8,6 +8,8 @@ import tkinter as tk
 from tkinter import messagebox, ttk
 from typing import Callable
 
+from education_system.systems.primary.interfaces.gui import kit
+
 from education_system.systems.primary.domain.pastoral.health.medical_records import (
     medical_records as data,
 )
@@ -52,19 +54,20 @@ def _safe_view(func: Callable[..., None]) -> Callable[..., None]:
 @_safe_view
 def open_medical(host) -> None:
     logger.debug("GUI: open_medical")
+    kit.show_page(host, "Medical Records", lambda parent: _draw_medical(parent, host))
 
-    win = tk.Toplevel(host.root)
-    win.title("Medical Records")
-    win.transient(host.root)
-    win.geometry("1180x640")
 
-    top = ttk.Frame(win, padding=10)
+def _draw_medical(page, host) -> None:
+    win = page.winfo_toplevel()
+    kit.page_heading(page, "Medical Records")
+
+    top = ttk.Frame(page, padding=(0, 0, 0, 6))
     top.pack(fill="x")
     summary_var = tk.StringVar()
     ttk.Label(top, textvariable=summary_var,
               font=("Segoe UI", 10, "bold")).pack(side="left")
 
-    filt = ttk.Frame(win, padding=(10, 0, 10, 6))
+    filt = ttk.Frame(page, padding=(0, 0, 0, 6))
     filt.pack(fill="x")
     ttk.Label(filt, text="Type:").pack(side="left")
     type_var = tk.StringVar(value="All")
@@ -94,7 +97,7 @@ def open_medical(host) -> None:
 
     cols = ("record_id", "pupil_id", "name", "year", "record_type",
             "severity", "title", "active", "contact")
-    tree = ttk.Treeview(win, columns=cols, show="headings", height=16)
+    tree = ttk.Treeview(page, columns=cols, show="headings", height=16)
     for col, label, width, anchor in [
         ("record_id", "#", 50, "center"),
         ("pupil_id", "Pupil ID", 90, "w"),
@@ -110,9 +113,9 @@ def open_medical(host) -> None:
         tree.column(col, width=width, anchor=anchor)
     tree.tag_configure("critical", background="#fdecea", foreground="#a32118")
     tree.tag_configure("high", background="#fff4e5")
-    tree.pack(fill="both", expand=True, padx=10, pady=(0, 6))
+    tree.pack(fill="both", expand=True, pady=(0, 6))
 
-    btns = ttk.Frame(win, padding=10)
+    btns = ttk.Frame(page, padding=(0, 6))
     btns.pack(fill="x")
 
     def _refresh() -> None:
@@ -239,7 +242,8 @@ def open_medical(host) -> None:
         side="left", padx=(8, 0))
     ttk.Button(btns, text="Refresh", command=_refresh).pack(
         side="left", padx=(8, 0))
-    ttk.Button(btns, text="Close", command=win.destroy).pack(side="right")
+    ttk.Button(btns, text="Close",
+               command=lambda: kit.close_page(host, page)).pack(side="right")
 
     tree.bind("<Double-Button-1>", lambda _e: _view())
     for v in (type_var, sev_var, py_var, active_var, critical_var, search_var):
@@ -277,23 +281,22 @@ def _open_form_dialog(parent, *, record_id: int | None,
     dlg = tk.Toplevel(parent)
     dlg.title("Medical record" if existing else "New medical record")
     dlg.transient(parent)
-    dlg.geometry("640x640")
+    dlg.geometry("680x640")
     try:
         dlg.wait_visibility()
         dlg.grab_set()
     except tk.TclError:
         logger.debug("grab_set skipped", exc_info=True)
 
-    frm = ttk.Frame(dlg, padding=12)
-    frm.pack(fill="both", expand=True)
+    frm, footer = kit.scrolled_form(dlg)
 
     pupil_var = tk.StringVar(value=existing.pupil_id if existing else "")
     pupil_label = tk.StringVar(value="")
-    ttk.Label(frm, text="Pupil ID *").grid(row=0, column=0, sticky="w", pady=3)
-    ttk.Entry(frm, textvariable=pupil_var, width=14).grid(
-        row=0, column=1, sticky="w", pady=3)
-    ttk.Label(frm, textvariable=pupil_label, foreground="#666").grid(
-        row=0, column=2, sticky="w", padx=(8, 0))
+    ttk.Label(frm, text="Pupil *").grid(row=0, column=0, sticky="w", pady=3)
+    pupil_box = ttk.Frame(frm)
+    pupil_box.grid(row=0, column=1, columnspan=2, sticky="w", pady=3)
+    kit.PupilPicker(pupil_box, pupil_var, width=40).pack(anchor="w")
+    ttk.Label(pupil_box, textvariable=pupil_label, foreground="#666").pack(anchor="w")
 
     def _lookup_pupil(*_a) -> None:
         pid = pupil_var.get().strip()
@@ -328,17 +331,17 @@ def _open_form_dialog(parent, *, record_id: int | None,
                  state="readonly", width=10).grid(
         row=3, column=1, sticky="w", pady=3)
 
-    ttk.Label(frm, text="Start date (YYYY-MM-DD)").grid(
+    ttk.Label(frm, text="Start date").grid(
         row=4, column=0, sticky="w", pady=3)
     sd_var = tk.StringVar(value=existing.start_date or "" if existing else "")
-    ttk.Entry(frm, textvariable=sd_var, width=14).grid(
-        row=4, column=1, sticky="w", pady=3)
+    kit.DateField(frm, sd_var).grid(
+        row=4, column=1, columnspan=2, sticky="w", pady=3)
 
-    ttk.Label(frm, text="End date (YYYY-MM-DD)").grid(
+    ttk.Label(frm, text="End date").grid(
         row=5, column=0, sticky="w", pady=3)
     ed_var = tk.StringVar(value=existing.end_date or "" if existing else "")
-    ttk.Entry(frm, textvariable=ed_var, width=14).grid(
-        row=5, column=1, sticky="w", pady=3)
+    kit.DateField(frm, ed_var).grid(
+        row=5, column=1, columnspan=2, sticky="w", pady=3)
 
     ttk.Label(frm, text="Contact name").grid(
         row=6, column=0, sticky="w", pady=3)
@@ -412,10 +415,8 @@ def _open_form_dialog(parent, *, record_id: int | None,
         on_saved()
         dlg.destroy()
 
-    btn_row = ttk.Frame(frm)
-    btn_row.grid(row=12, column=0, columnspan=3, sticky="ew", pady=(14, 0))
-    ttk.Button(btn_row, text="Save", command=_save).pack(side="right")
-    ttk.Button(btn_row, text="Cancel",
+    ttk.Button(footer, text="Save", command=_save).pack(side="right")
+    ttk.Button(footer, text="Cancel",
                command=dlg.destroy).pack(side="right", padx=(0, 8))
 
 

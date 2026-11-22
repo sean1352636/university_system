@@ -32,6 +32,8 @@ MENUS: dict[str, list[tuple[str, list[tuple[str, str]]]]] = {
         ]),
         ("Cross-System", [
             ("University Progression", "cross_system:university_progression"),
+            ("FE College Referrals", "cross_system:fe_referrals"),
+            ("Training Provider Requests", "cross_system:training_requests"),
             ("Learner Journey (360)", "cross_system:learner_journey"),
         ]),
         ("Delivery", [
@@ -89,6 +91,8 @@ MENUS: dict[str, list[tuple[str, list[tuple[str, str]]]]] = {
         # Read-only dashboard for staff; submitting needs admission.decide.
         ("Cross-System", [
             ("University Progression", "cross_system:university_progression"),
+            ("FE College Referrals", "cross_system:fe_referrals"),
+            ("Training Provider Requests", "cross_system:training_requests"),
             ("Learner Journey (360)", "cross_system:learner_journey"),
         ]),
         ("Delivery", [

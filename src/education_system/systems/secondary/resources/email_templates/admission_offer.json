@@ -1,0 +1,34 @@
+{
+  "name": "admission_offer",
+  "description": "Sent to the parent when a place is offered (including after an upheld appeal).",
+  "subject": "Offer of a place for {child_first_name} ({application_ref})",
+  "body": [
+    "Dear {parent_name},",
+    "",
+    "We are pleased to offer {child_first_name} a place in Year {year_group} for {academic_year}.",
+    "",
+    "Please let us know whether you accept this place by {offer_expires}. If we have not heard from you by then, the offer will lapse and the place may be offered to another child.",
+    "",
+    "If you accept, {child_first_name} can start from {start_date}.",
+    "",
+    "Your reference is {application_ref}.",
+    "",
+    "Yours sincerely,",
+    "Admissions, {school_name}"
+  ],
+  "placeholders": {
+    "parent_name": "The parent/carer's name",
+    "child_first_name": "The child's preferred or first name",
+    "child_name": "The child's preferred first name and surname",
+    "application_ref": "The application reference, e.g. APP00012",
+    "year_group": "The year group applied for",
+    "academic_year": "The academic year applied for, e.g. 2026/27",
+    "route": "Year 7 normal round or In-year",
+    "school_name": "The school's name",
+    "offer_expires": "The date the parent must reply by",
+    "start_date": "The earliest start date"
+  },
+  "defaults": {
+    "school_name": "Secondary School"
+  }
+}

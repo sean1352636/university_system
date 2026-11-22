@@ -25,6 +25,22 @@ _SYSTEM = "apprenticeships"
 _CATEGORY = "Approvals"
 
 
+@approvals_menu_bp.route("/action-plans", methods=["GET"])
+@token_required
+@staff_required
+def approvals_action_plans():
+    """Action Plans"""
+    return feature_pending("Action Plans", _SYSTEM, category=_CATEGORY)
+
+
+@approvals_menu_bp.route("/awaiting-signature", methods=["GET"])
+@token_required
+@staff_required
+def approvals_awaiting_signature():
+    """Awaiting Signature"""
+    return feature_pending("Awaiting Signature", _SYSTEM, category=_CATEGORY)
+
+
 @approvals_menu_bp.route("/off-the-job-hours", methods=["GET"])
 @token_required
 @staff_required
@@ -47,4 +63,12 @@ def approvals_progress_reviews():
 def approvals_employer_evidence():
     """employer.evidence"""
     return feature_pending("employer.evidence", _SYSTEM, category=_CATEGORY)
+
+
+@approvals_menu_bp.route("/shared-documents", methods=["GET"])
+@token_required
+@staff_required
+def approvals_shared_documents():
+    """shared.documents"""
+    return feature_pending("shared.documents", _SYSTEM, category=_CATEGORY)
 

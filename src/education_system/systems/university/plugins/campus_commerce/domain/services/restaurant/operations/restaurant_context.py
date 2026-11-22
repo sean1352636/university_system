@@ -96,9 +96,9 @@ def export_payroll_report():
     return exports.export_payroll_report()
 
 def user_management():
-    """Manage users."""
-    from education_system.systems.university.plugins.campus_commerce.domain.services.restaurant.operations import users
-    return users.user_management()
+    """Manage who has restaurant access and which role they hold."""
+    from education_system.systems.university.plugins.campus_commerce.domain.services.restaurant.operations.user_access_cli import run_menu
+    return run_menu(auth if auth is not None else get_auth())
 
 def system_maintenance():
     """System maintenance."""

@@ -61,6 +61,34 @@ from education_system.systems.university.infrastructure.database.db import get_c
 logger = logging.getLogger(__name__)
 
 
+def _secret_file():
+    from education_system import paths
+    return paths.PLATFORM_AUDIT_LOG_SECRET_FILE
+
+
+def _read_secret_file() -> str:
+    try:
+        return _secret_file().read_text(encoding="utf-8").strip()
+    except OSError:
+        return ""
+
+
+def _create_secret_file() -> str:
+    """Create the owner-only secret file once; return its contents (another
+    process that created it first wins)."""
+    import secrets as _secrets
+    path = _secret_file()
+    path.parent.mkdir(parents=True, exist_ok=True)
+    value = _secrets.token_hex(32)
+    try:
+        fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+    except FileExistsError:
+        return _read_secret_file()
+    with os.fdopen(fd, "w", encoding="utf-8") as fh:
+        fh.write(value)
+    return value
+
+
 class ImmutableAuditLog:
     """
     Blockchain-style immutable audit log.
@@ -114,25 +142,31 @@ class ImmutableAuditLog:
             if ImmutableAuditLog._SECRET_KEY is not None:
                 return
 
-            key = secret_key or os.getenv('AUDIT_LOG_SECRET')
+            # Where the secret comes from, in order: the caller, the
+            # AUDIT_LOG_SECRET environment variable, then the owner-only file
+            # var/secrets/audit_log_secret (like the platform's other secrets).
+            key = secret_key or os.getenv('AUDIT_LOG_SECRET') or _read_secret_file()
             if key:
                 ImmutableAuditLog._SECRET_KEY = key.encode('utf-8')
-            else:
-                app_env = os.getenv("APP_ENV", "production").strip().lower()
-                if app_env not in ("development", "dev", "local", "test", "testing"):
-                    # A per-process random key makes every prior entry fail
-                    # verification after each restart — the chain becomes
-                    # unverifiable exactly where verification matters.
-                    raise RuntimeError(
-                        "AUDIT_LOG_SECRET must be set in production: an "
-                        "ephemeral key silently breaks audit chain "
-                        "verification across restarts."
-                    )
-                logger.warning(
-                    "AUDIT_LOG_SECRET not configured. Generating random key. "
-                    "Set AUDIT_LOG_SECRET environment variable for production!"
+                return
+            app_env = os.getenv("APP_ENV", "production").strip().lower()
+            if app_env not in ("development", "dev", "local", "test", "testing"):
+                # Fail closed: production never invents a key. A per-process
+                # random key makes every prior entry fail verification after
+                # each restart, so the secret must be configured.
+                raise RuntimeError(
+                    "AUDIT_LOG_SECRET must be configured in production: set the "
+                    "environment variable or create the owner-only file "
+                    f"{_secret_file()} (an ephemeral key silently breaks audit "
+                    "chain verification across restarts)."
                 )
-                ImmutableAuditLog._SECRET_KEY = os.urandom(32)
+            # Development: create the file once and keep it, so the chain still
+            # verifies after a restart (it used to be a new random key per run).
+            created = _create_secret_file()
+            logger.warning("Created the development audit secret in %s (first run; "
+                           "later runs read it from there). Keep this file: "
+                           "existing audit entries are signed with it.", _secret_file())
+            ImmutableAuditLog._SECRET_KEY = created.encode('utf-8')
 
     def _create_schema(self, conn) -> None:
         """Table, indexes and append-only triggers, on *conn*.

@@ -14,7 +14,7 @@ display and runs in the default suite.
 """
 from __future__ import annotations
 
-from education_system.systems.university.domains.academics.interfaces.gui.grade_tracking.assessment_manager import (
+from education_system.systems.university.domains.assessment.interfaces.gui.grade_tracking.assessment_manager import (
     _merge_assessment_sources,
 )
 

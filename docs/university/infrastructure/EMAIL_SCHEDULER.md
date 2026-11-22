@@ -38,31 +38,31 @@ The scheduler automatically handles the following tasks:
 #### Start the Scheduler (Background)
 
 ```bash
-python -m university_system.scripts.email_scheduler_control start
+python tools/university/email_scheduler_control.py start
 ```
 
 #### Check Scheduler Status
 
 ```bash
-python -m university_system.scripts.email_scheduler_control status
+python tools/university/email_scheduler_control.py status
 ```
 
 #### Stop the Scheduler
 
 ```bash
-python -m university_system.scripts.email_scheduler_control stop
+python tools/university/email_scheduler_control.py stop
 ```
 
 #### Run in Foreground (Testing)
 
 ```bash
-python -m university_system.scripts.email_scheduler_control run
+python tools/university/email_scheduler_control.py run
 ```
 
 Or directly:
 
 ```bash
-python -m university_system.infrastructure.email.email_scheduler
+python -m education_system.systems.university.infrastructure.email.email_scheduler
 ```
 
 ### Production Deployment - Systemd Service
@@ -82,9 +82,9 @@ After=network.target
 Type=simple
 User=www-data
 Group=www-data
-WorkingDirectory=/path/to/university_system
-Environment="PYTHONPATH=/path/to/university_system"
-ExecStart=/path/to/venv/bin/python -m university_system.infrastructure.email.email_scheduler
+WorkingDirectory=/path/to/education-system
+Environment="PYTHONPATH=/path/to/education-system/src"
+ExecStart=/path/to/venv/bin/python -m education_system.systems.university.infrastructure.email.email_scheduler
 Restart=always
 RestartSec=10
 StandardOutput=journal
@@ -95,7 +95,7 @@ WantedBy=multi-user.target
 ```
 
 **Important**: Update the paths:
-- `/path/to/university_system` → Your project directory
+- `/path/to/education-system` → Your project directory
 - `/path/to/venv/bin/python` → Your Python virtual environment
 
 #### 2. Enable and Start the Service
@@ -138,10 +138,9 @@ If using Docker, add the scheduler as a separate service in `docker-compose.yml`
 services:
   email-scheduler:
     build: .
-    command: python -m university_system.infrastructure.email.email_scheduler
+    command: python -m education_system.systems.university.infrastructure.email.email_scheduler
     volumes:
-      - ./data:/app/data
-      - ./logs:/app/logs
+      - ./var:/app/var
     environment:
       - SMTP_HOST=${SMTP_HOST}
       - SMTP_PORT=${SMTP_PORT}
@@ -156,7 +155,7 @@ services:
 
 ### Adjusting Schedule Times
 
-Edit `university_system/infrastructure/email/email_scheduler.py`:
+Edit `src/education_system/systems/university/infrastructure/email/email_scheduler.py`:
 
 ```python
 def setup_schedules():
@@ -233,20 +232,20 @@ LIMIT 10;
 
 1. Check if another instance is running:
    ```bash
-   python -m university_system.scripts.email_scheduler_control status
+   python tools/university/email_scheduler_control.py status
    ```
 
 2. Check for port conflicts or database locks
 
 3. Verify database connectivity:
    ```bash
-   python -c "from university_system.infrastructure.database.db import get_connection; get_connection()"
+   python -c "from education_system.systems.university.infrastructure.database.db import get_connection; get_connection()"
    ```
 
 ### Emails Not Sending
 
 1. Check SMTP configuration in `.env` file
-2. Verify email templates exist in `data/email_templates/`
+2. Verify email templates exist in `src/education_system/systems/university/assets/templates/email/`
 3. Check email queue worker threads are running
 4. Review logs for specific errors
 
@@ -272,7 +271,7 @@ If the scheduler is using too much CPU:
 Add to your Flask app initialization:
 
 ```python
-from university_system.infrastructure.email.email_scheduler import start_scheduler
+from education_system.systems.university.infrastructure.email.email_scheduler import start_scheduler
 
 @app.before_first_request
 def start_email_scheduler():
@@ -284,7 +283,7 @@ def start_email_scheduler():
 Add to your main CLI entry point:
 
 ```python
-from university_system.infrastructure.email.email_scheduler import start_scheduler
+from education_system.systems.university.infrastructure.email.email_scheduler import start_scheduler
 import atexit
 
 # Start scheduler
@@ -299,7 +298,7 @@ atexit.register(stop_scheduler)
 You can manually trigger any scheduled task for testing:
 
 ```python
-from university_system.infrastructure.email.email_scheduler import (
+from education_system.systems.university.infrastructure.email.email_scheduler import (
     send_daily_satisfaction_surveys,
     check_book_return_reminders,
     check_overdue_books,

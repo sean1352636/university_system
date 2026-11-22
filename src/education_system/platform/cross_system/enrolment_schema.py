@@ -384,8 +384,10 @@ from education_system.platform.cross_system.identity_service import (  # noqa: E
 # learner or an apprentice would end up with no enrolment row derived for
 # them, which is exactly the gap this backfill exists to close.
 _PHASE_ORDER: tuple[str, ...] = (
-    "nursery", "primary", "secondary", "sixth_form", "fe_college",
-    "apprenticeships", "university")
+    "local_authority", "nursery", "primary", "secondary", "alternative_provision",
+    "special_education",
+    "sixth_form",
+    "fe_college", "adult_education", "training_provider", "apprenticeships", "university")
 
 
 def backfill_enrolments(*, db_path: str | None = None) -> dict[str, int]:

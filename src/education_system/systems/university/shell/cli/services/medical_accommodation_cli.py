@@ -330,6 +330,9 @@ class MedicalAccommodationCLI:
 
                 accommodation_id = cursor.lastrowid
                 conn.commit()
+                # Carry it to exams, assessments and module staff (consent-gated).
+                from education_system.systems.university.services.bus import accommodation_bus
+                accommodation_bus.after_change()
 
             # Log action
             if SERVICE_AVAILABLE:
@@ -577,6 +580,9 @@ class MedicalAccommodationCLI:
                 ''', (student_id, acc_type, description, start_date, end_date,
                       status, notes, now, acc_id))
                 conn.commit()
+                # Carry it to exams, assessments and module staff (consent-gated).
+                from education_system.systems.university.services.bus import accommodation_bus
+                accommodation_bus.after_change()
 
             # Log action
             if SERVICE_AVAILABLE:
@@ -643,6 +649,9 @@ class MedicalAccommodationCLI:
                 # Delete accommodation
                 cursor.execute('DELETE FROM accommodations WHERE id = ?', (acc_id,))
                 conn.commit()
+                # Carry it to exams, assessments and module staff (consent-gated).
+                from education_system.systems.university.services.bus import accommodation_bus
+                accommodation_bus.after_change()
 
             # Log action
             if SERVICE_AVAILABLE:
@@ -727,6 +736,9 @@ class MedicalAccommodationCLI:
                     WHERE id = ?
                 ''', (new_status, approver, now, reason, now, acc_id))
                 conn.commit()
+                # Carry it to exams, assessments and module staff (consent-gated).
+                from education_system.systems.university.services.bus import accommodation_bus
+                accommodation_bus.after_change()
 
             # Log action
             if SERVICE_AVAILABLE:
@@ -1195,6 +1207,9 @@ class MedicalAccommodationCLI:
 
                 accommodation_id = cursor.lastrowid
                 conn.commit()
+                # Carry it to exams, assessments and module staff (consent-gated).
+                from education_system.systems.university.services.bus import accommodation_bus
+                accommodation_bus.after_change()
 
             # Log action
             if SERVICE_AVAILABLE:

@@ -15,16 +15,18 @@ from education_system.systems.university.domains.operations.domain.campus.housin
 
 # Import finance integration if available
 try:
-    from education_system.systems.university.domains.finance.domain.core.account_management import (
+    from education_system.systems.university.domains.finance.infrastructure.finance_integration import (
         get_student_finance_account_balance,
         process_student_finance_account_payment
     )
     FINANCE_ACCOUNT_AVAILABLE = True
 except ImportError:
     FINANCE_ACCOUNT_AVAILABLE = False
-def get_student_finance_account_balance(student_id):
+
+    def get_student_finance_account_balance(student_id):
         return None
-def process_student_finance_account_payment(*args, **kwargs):
+
+    def process_student_finance_account_payment(*args, **kwargs):
         return {'success': False, 'message': 'Finance account service not available'}
 
 # Import email service if available
@@ -34,9 +36,11 @@ try:
     EMAIL_SERVICE_AVAILABLE = True
 except ImportError:
     EMAIL_SERVICE_AVAILABLE = False
-def render_template(*args, **kwargs):
+
+    def render_template(*args, **kwargs):
         return ("", "")
-def send_email_as_system(*args, **kwargs):
+
+    def send_email_as_system(*args, **kwargs):
         return False
 
 # Import immutable audit logging if available
@@ -44,7 +48,7 @@ try:
     from education_system.systems.university.infrastructure.security.immutable_audit_log import (
         AuditAction, log_security_event
     )
-    from education_system.systems.university.infrastructure.utils.gui_context import get_gui_context
+    from education_system.systems.university.infrastructure.security.audit_helpers import get_gui_context
     IMMUTABLE_AUDIT_AVAILABLE = True
 
     def safe_log_security_event(*args, **kwargs):

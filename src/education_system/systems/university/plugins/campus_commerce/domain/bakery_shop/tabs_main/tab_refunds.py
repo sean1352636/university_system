@@ -319,31 +319,20 @@ class RefundsTabMixin:
 
         payment_method = order.get("payment_method") or "cash"
 
-        # Re-credit student account if that was the original method.
-        if payment_method == "student_account":
-            try:
-                from education_system.systems.university.domains.finance.infrastructure.finance_integration import (
-                    top_up_student_finance_account,
-                )
-                result = top_up_student_finance_account(
-                    student_id=str(order.get("user")),
-                    amount=float(amount),
-                    payment_method="Bakery Refund",
-                    processed_by=self.current_user or "system",
-                    description=f"Bakery refund for {order['order_id']}",
-                )
-                if not result.get("success"):
-                    messagebox.showerror(
-                        "Refund Failed",
-                        result.get("message",
-                                   "Could not credit student account."),
-                    )
-                    return
-            except Exception as e:
-                logger.exception("Student account refund failed")
-                messagebox.showerror("Refund Failed",
-                                     f"Could not credit student account: {e}")
-                return
+        # Re-credit the student account (if that was the original method)
+        # and record the refund in Finance through the shared domain helper.
+        from education_system.systems.university.plugins.campus_commerce.domain.bakery_shop.services.bakery_service import (
+            credit_refund_to_finance,
+        )
+        credit = credit_refund_to_finance(
+            order, float(amount), full_refund=full_refund,
+            reason=reason, reason_category=reason_category,
+            admin_notes=admin_notes, requested_by=self.current_user or "system",
+        )
+        if not credit.get("success"):
+            messagebox.showerror("Refund Failed",
+                                 credit.get("message") or "Could not credit student account.")
+            return
 
         # Re-credit gift card if used
         if order.get("gift_card_code"):
@@ -354,26 +343,6 @@ class RefundsTabMixin:
                                        txn_type="refund")
             except Exception:
                 logger.exception("Gift card refund credit failed")
-
-        # Record refund against finance system (best-effort, non-blocking).
-        try:
-            from education_system.systems.university.domains.finance.infrastructure.finance_integration import (
-                record_refund_to_finance,
-            )
-            record_refund_to_finance(
-                student_id=str(order.get("user") or ""),
-                refund_amount=float(amount),
-                original_payment_id=None,
-                refund_reason=reason or f"Refund for {order['order_id']}",
-                refund_type="full" if full_refund else "partial",
-                transaction_source="Bakery",
-                transaction_ref=order["order_id"],
-                refund_method=payment_method.replace("_", " ").title(),
-                requested_by=self.current_user or "system",
-                notes=f"{reason_category} • {admin_notes}".strip(" •"),
-            )
-        except Exception:
-            logger.debug("record_refund_to_finance failed", exc_info=True)
 
         # Restore stock for the refunded items
         for item_name, qty in items.items():

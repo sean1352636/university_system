@@ -10,10 +10,11 @@ from education_system.systems.university.infrastructure.i18n import get_text as 
 
 import logging
 import os
-import threading
 import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
 from typing import TYPE_CHECKING, Optional
+
+from education_system.platform.delivery.gui.tk_threads import start_thread, ui
 
 if TYPE_CHECKING:
     from education_system.systems.university.infrastructure.auth import UserAuth
@@ -257,8 +258,7 @@ class PDFExportGUI:
                 logger.error(error_msg)
                 self._safe_after(lambda: self._update_preview(error_msg))
 
-        thread = threading.Thread(target=load_in_thread, daemon=True)
-        thread.start()
+        start_thread(self.export_window, load_in_thread)
 
     def _update_preview(self, text: str):
         """Update the preview text widget."""
@@ -300,6 +300,10 @@ class PDFExportGUI:
         self.progress_var.set(0)
         self.status_var.set(_t("pdf_export.starting_export", default="Starting export..."))
 
+        # Read Tk variables here on the main thread; the worker must not touch Tk.
+        include_data = self.include_data_var.get()
+        include_charts = self.include_charts_var.get()
+
         def export_thread():
             try:
                 from education_system.systems.university.services.pdf_export import PDFExportManager
@@ -318,8 +322,8 @@ class PDFExportGUI:
 
                 result_path = manager.export_full_database(
                     output_filename=os.path.basename(output_path),
-                    include_data=self.include_data_var.get(),
-                    include_charts=self.include_charts_var.get(),
+                    include_data=include_data,
+                    include_charts=include_charts,
                     max_rows_per_table=max_rows,
                     progress_callback=progress_callback,
                 )
@@ -331,8 +335,7 @@ class PDFExportGUI:
                 logger.error(f"Export failed: {error_msg}")
                 self._safe_after(lambda: self._export_failed(error_msg))
 
-        thread = threading.Thread(target=export_thread, daemon=True)
-        thread.start()
+        start_thread(self.export_window, export_thread)
 
     def _update_progress(self, message: str, percent: int):
         """Update progress bar and status."""
@@ -387,14 +390,21 @@ class PDFExportGUI:
         Returns:
             True if callback was scheduled, False if window is gone.
         """
-        try:
-            if self.export_window and self.export_window.winfo_exists():
-                self.export_window.after(0, callback)
-                return True
-        except tk.TclError:
-            # Window was destroyed
-            pass
-        return False
+        window = self.export_window
+        if window is None:
+            return False
+
+        def _run():
+            # Runs on the main thread; skip if the window was closed meanwhile.
+            try:
+                if self.export_window and self.export_window.winfo_exists():
+                    callback()
+            except tk.TclError:
+                # Window was destroyed
+                pass
+
+        ui(window, _run)
+        return True
 
     def _close_window(self):
         """Close the export window."""

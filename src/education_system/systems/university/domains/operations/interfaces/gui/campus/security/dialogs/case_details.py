@@ -255,7 +255,7 @@ class CaseDetailsDialog(tk.Toplevel):
             from education_system.systems.university.infrastructure.database.db import get_connection
             with get_connection() as conn:
                 result = conn.execute(
-                    "SELECT first_name, last_name, email FROM students WHERE student_id = ?",
+                    "SELECT first_name, last_name, email_address FROM students WHERE student_id = ?",
                     (student_id,)
                 ).fetchone()
 

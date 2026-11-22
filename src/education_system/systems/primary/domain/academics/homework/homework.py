@@ -136,7 +136,7 @@ def init_db() -> None:
     except sqlite3.Error:
         logger.exception("Failed to initialise homework tables")
         raise
-    logger.info("Secondary homework tables ready")
+    logger.info("Primary homework tables ready")
     _DB_READY = True
 
 
@@ -489,7 +489,8 @@ def seed_submissions(assignment_id: int) -> int:
     pupils = pupils_data.list_pupils()
     pupils = [p for p in pupils if p.year_group == a.year_group]
     if a.form_group:
-        pupils = [p for p in pupils if p.form_group == a.form_group]
+        # Pupil records hold the class as ``class_name``.
+        pupils = [p for p in pupils if p.class_name == a.form_group]
     added = 0
     try:
         with _connect() as conn:
@@ -524,6 +525,11 @@ def upsert_submission(assignment_id: int,
     if a is None:
         raise ValidationError(f"No homework assignment #{assignment_id}")
     payload = _validate_submission(data)
+    from education_system.systems.primary.domain.learners.pupils import (
+        pupils as pupils_data,
+    )
+    if pupils_data.get_pupil(payload["pupil_id"]) is None:
+        raise ValidationError(f"No pupil with id {payload['pupil_id']}")
     try:
         with _connect() as conn:
             row = conn.execute(

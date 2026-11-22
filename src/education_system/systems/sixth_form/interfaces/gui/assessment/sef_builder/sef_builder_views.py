@@ -6,7 +6,9 @@ from education_system.systems.sixth_form.interfaces.gui._ui import grab_when_vie
 import datetime as _dt
 import logging
 import tkinter as tk
-from tkinter import messagebox, ttk
+from tkinter import ttk
+from education_system.systems.sixth_form.interfaces.gui._sidebar import SidebarBook
+from education_system.platform.delivery.gui.parented_dialogs import messagebox
 from education_system.platform import branding
 from education_system.systems.sixth_form.domain.assessment.sef_builder import (
     sef_builder as data,
@@ -44,7 +46,7 @@ def open_sef_builder_window(parent=None) -> None:
     win.geometry(WIN_GEOMETRY)
     win.minsize(*WIN_MINSIZE)
 
-    nb = ttk.Notebook(win)
+    nb = SidebarBook(win)
     nb.pack(fill="both", expand=True, padx=10, pady=10)
 
     SectionsTab(nb, scope="open",      label="Open")
@@ -136,11 +138,62 @@ class SectionsTab:
                 ("Change status",     self._set_status),
                 ("Delete",            self._delete),
                 ("Refresh",           self.refresh),
+                ("Pull evidence",     self._pull_evidence),
+                ("Pull evidence (cycle)", self._pull_cycle),
         ):
             ttk.Button(actions, text=label,
                         command=cmd).pack(side="left", padx=4)
         self.count = ttk.Label(actions, text="")
         self.count.pack(side="right")
+
+    def _pull_evidence(self) -> None:
+        """Insert today's data into the selected section's evidence."""
+        s = self._selected()
+        if not s:
+            return
+        year = _prompt_text(self.frame, "Academic year for the data "
+                                        "(blank = current)", initial="")
+        if year is None:
+            return
+        self.frame.config(cursor="watch")
+        self.frame.update_idletasks()
+        try:
+            data.pull_evidence(s.section_id, academic_year=year or None)
+        except (ValidationError, ValueError, PermissionError) as e:
+            messagebox.showerror("SEF", str(e), parent=self.frame)
+            return
+        finally:
+            self.frame.config(cursor="")
+        messagebox.showinfo(
+            "SEF", "Evidence pulled into the section as a dated block. "
+                   "Your own text is unchanged; pulling again replaces "
+                   "the block.", parent=self.frame)
+        self.refresh()
+
+    def _pull_cycle(self) -> None:
+        """Pull evidence into every open section of a cycle."""
+        from education_system.systems.sixth_form.domain.assessment.sef_builder import (
+            sef_evidence,
+        )
+        s = self._selected()
+        cycle = _prompt_text(self.frame, "Cycle",
+                             initial=s.cycle if s else "")
+        if not cycle:
+            return
+        self.frame.config(cursor="watch")
+        self.frame.update_idletasks()
+        try:
+            done, skipped = sef_evidence.pull_evidence_for_cycle(cycle)
+        except (ValidationError, ValueError, PermissionError) as e:
+            messagebox.showerror("SEF", str(e), parent=self.frame)
+            return
+        finally:
+            self.frame.config(cursor="")
+        msg = f"Evidence pulled into {done} open section(s)."
+        if skipped:
+            msg += "\nSkipped (not open): " + ", ".join(skipped)
+        messagebox.showinfo("SEF", msg, parent=self.frame)
+        self.refresh()
 
     def _clear(self) -> None:
         self.f_cycle.delete(0, "end")

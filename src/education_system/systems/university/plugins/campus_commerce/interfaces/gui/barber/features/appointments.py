@@ -288,46 +288,23 @@ class AppointmentsMixin:
                             f"Required: £{total_amount:.2f}")
                         return
 
-                    # Process student account payment
-                    result = process_student_finance_account_payment(
-                        student_id=customer_id,
-                        amount=total_amount,
+                # Record the payment; the service posts it to Finance
+                # (student-account debit or cash/card payment) - shared
+                # with the CLIs, so nothing posts twice.
+                try:
+                    TransactionManager.process_payment(
+                        appointment_id=appt['appointment_id'],
+                        amount=appt['price'],
+                        payment_method=method,
+                        customer_id=customer_id,
+                        tip_amount=tip,
+                        reference_number=transaction_ref,
+                        processed_by=self.current_user.get('username', 'system'),
                         description=f"Barber service: {appt['service_name']}",
-                        transaction_source="Barber",
-                        transaction_ref=transaction_ref,
-                        processed_by=self.current_user.get('username', 'system')
                     )
-
-                    if not result.get('success'):
-                        messagebox.showerror(_t('gui.operations.commerce.barber.features.appointments.dialogs.payment_failed', default="Payment Failed"), result.get('message', 'Unknown error'))
-                        return
-
-                    payment_id = result.get('transaction_id')
-
-                else:
-                    # Cash or Card payment - record to central finance
-                    if FINANCE_AVAILABLE:
-                        payment_id = record_payment_to_finance(
-                            student_id=customer_id,
-                            amount=total_amount,
-                            payment_method=method.title(),
-                            transaction_source="Barber",
-                            transaction_ref=transaction_ref,
-                            notes=f"Service: {appt['service_name']}" + (f", Tip: £{tip:.2f}" if tip > 0 else ""),
-                            created_by=self.current_user.get('username', 'system')
-                        )
-                    else:
-                        payment_id = None
-
-                # Record in barber transactions table
-                local_trans_id = TransactionManager.process_payment(
-                    appointment_id=appt['appointment_id'],
-                    amount=appt['price'],
-                    payment_method=method,
-                    customer_id=customer_id,
-                    tip_amount=tip,
-                    processed_by=self.current_user.get('username')
-                )
+                except ValueError as declined:
+                    messagebox.showerror(_t('gui.operations.commerce.barber.features.appointments.dialogs.payment_failed', default="Payment Failed"), str(declined))
+                    return
 
                 # Send receipt email if requested
                 if send_receipt_var.get() and customer_email and EMAIL_AVAILABLE:
@@ -374,7 +351,7 @@ class AppointmentsMixin:
             from education_system.systems.university.infrastructure.email.template_utils import render_template
 
             # Render email from template
-            subject, body = render_template('commerce/barber/payment_receipt', {
+            subject, body = render_template('finance_commerce/commerce/barber/payment_receipt', {
                 'customer_name': customer_name,
                 'appointment_number': appt['appointment_number'],
                 'service_name': appt['service_name'],
@@ -536,7 +513,7 @@ class AppointmentsMixin:
                             old_formatted_date = appt['appointment_date']
 
                         # Render email from template
-                        subject, body = render_template('commerce/barber/appointment_rescheduled', {
+                        subject, body = render_template('finance_commerce/commerce/barber/appointment_rescheduled', {
                             'customer_name': appt['customer_name'],
                             'old_date': old_formatted_date,
                             'old_time': appt['appointment_time'],
@@ -825,7 +802,7 @@ class AppointmentsMixin:
                                 from education_system.systems.university.infrastructure.email.email_service import send_email
                                 from education_system.systems.university.infrastructure.email.template_utils import render_template
 
-                                subject, body = render_template('commerce/barber/appointment_cancelled', {
+                                subject, body = render_template('finance_commerce/commerce/barber/appointment_cancelled', {
                                     'customer_name': appt['customer_name'],
                                     'appointment_date': date_var.get(),
                                     'appointment_time': appt['appointment_time'],

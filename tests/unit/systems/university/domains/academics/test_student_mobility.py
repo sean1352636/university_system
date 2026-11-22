@@ -13,10 +13,10 @@ from datetime import date, timedelta
 
 import pytest
 
-from education_system.systems.university.domains.academics.domain.student_mobility._db_init import (
+from education_system.systems.university.domains.curriculum.domain.student_mobility._db_init import (
     ensure_student_mobility_schema,
 )
-from education_system.systems.university.domains.academics.domain.student_mobility.services.student_mobility_service import (
+from education_system.systems.university.domains.curriculum.domain.student_mobility.services.student_mobility_service import (
     MobilityError,
     StudentMobilityService,
 )

@@ -309,7 +309,7 @@ def list_details() -> list[TripDetail]:
 
 def _finance():
     try:
-        from education_system.systems.sixth_form.domain.finance.trips import (
+        from education_system.systems.sixth_form.domains.finance.domain.trips import (
             trips as fin,
         )
         return fin

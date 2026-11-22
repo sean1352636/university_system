@@ -8,6 +8,7 @@ from education_system.api.apprenticeships.routes.menu.approvals_routes import ap
 from education_system.api.apprenticeships.routes.menu.assessment_routes import assessment_menu_bp
 from education_system.api.apprenticeships.routes.menu.assurance_routes import assurance_menu_bp
 from education_system.api.apprenticeships.routes.menu.communication_routes import communication_menu_bp
+from education_system.api.apprenticeships.routes.menu.cross_system_routes import cross_system_menu_bp
 from education_system.api.apprenticeships.routes.menu.delivery_routes import delivery_menu_bp
 from education_system.api.apprenticeships.routes.menu.feedback_routes import feedback_menu_bp
 from education_system.api.apprenticeships.routes.menu.finishing_routes import finishing_menu_bp
@@ -15,12 +16,17 @@ from education_system.api.apprenticeships.routes.menu.my_apprenticeship_routes i
 from education_system.api.apprenticeships.routes.menu.my_evidence_routes import my_evidence_menu_bp
 from education_system.api.apprenticeships.routes.menu.overview_routes import overview_menu_bp
 from education_system.api.apprenticeships.routes.menu.people_routes import people_menu_bp
+from education_system.api.apprenticeships.routes.menu.progress_routes import progress_menu_bp
+from education_system.api.apprenticeships.routes.menu.quality_routes import quality_menu_bp
+from education_system.api.apprenticeships.routes.menu.support_routes import support_menu_bp
+from education_system.api.apprenticeships.routes.menu.support_feedback_routes import support_feedback_menu_bp
 
 MENU_BLUEPRINTS = [
     approvals_menu_bp,
     assessment_menu_bp,
     assurance_menu_bp,
     communication_menu_bp,
+    cross_system_menu_bp,
     delivery_menu_bp,
     feedback_menu_bp,
     finishing_menu_bp,
@@ -28,6 +34,10 @@ MENU_BLUEPRINTS = [
     my_evidence_menu_bp,
     overview_menu_bp,
     people_menu_bp,
+    progress_menu_bp,
+    quality_menu_bp,
+    support_menu_bp,
+    support_feedback_menu_bp,
 ]
 
 __all__ = ["MENU_BLUEPRINTS"]

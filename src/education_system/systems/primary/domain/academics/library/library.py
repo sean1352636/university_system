@@ -136,7 +136,7 @@ def init_db() -> None:
     except sqlite3.Error:
         logger.exception("Failed to initialise library tables")
         raise
-    logger.info("Secondary library tables ready")
+    logger.info("Primary library tables ready")
     _DB_READY = True
 
 

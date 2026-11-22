@@ -18,6 +18,314 @@ except ImportError:
     _t = lambda key, **kwargs: key if "default" not in kwargs else kwargs.get("default")
 
 
+# ----------------------------------------------------------------------
+# Real recipient selection and delivery.
+#
+# The standalone ``notifications`` table was retired (the Hub is an inbox
+# over ``messages``), so Document Manager notices are delivered the way the
+# rest of the university does it: e-mail through ``email_service.send_email``
+# (the outbox, which honours the delivery mode, unsubscribes and retries)
+# and the in-app copy through ``messages_inbox.deliver_inbox_message``.
+# SMS goes through ``communication.sms_service`` only when a real provider
+# is configured in ``sms_config``; otherwise it is reported as skipped.
+# ----------------------------------------------------------------------
+
+# Join documents to their student whichever schema shape wrote the row
+# (``owner_id`` + source_type='student' from upload, legacy ``student_id``).
+_DOC_OWNER = "COALESCE(NULLIF(d.owner_id, ''), d.student_id)"
+
+RECIPIENT_FILTERS = {
+    "all_students": None,
+    "pending_docs": "d.verification_status = 'Pending'",
+    "rejected_docs": "d.verification_status = 'Rejected'",
+    "expiring_docs": ("d.expiry_date IS NOT NULL AND d.expiry_date != '' "
+                      "AND date(d.expiry_date) > date('now') "
+                      "AND date(d.expiry_date) <= date('now', '+30 days')"),
+    "expired_or_expiring": ("d.expiry_date IS NOT NULL AND d.expiry_date != '' "
+                            "AND date(d.expiry_date) <= date('now', '+30 days')"),
+}
+
+
+def resolve_student_recipients(option, custom_ids=None):
+    """Students selected by a recipient option, with their affected documents.
+
+    Returns a list of dicts: student_id, name, email, phone, documents
+    (list of "Type (status)" strings for the documents that matched), and
+    pending_count (that student's documents awaiting review).
+    """
+    with get_connection() as conn:
+        cur = conn.cursor()
+        params = []
+        if option == "custom":
+            ids = [i.strip() for i in (custom_ids or []) if str(i).strip()]
+            if not ids:
+                return []
+            marks = ",".join("?" * len(ids))
+            # db-audit: ignore[DBW001] - only module-constant SQL fragments / placeholder joins are interpolated
+            cur.execute(f"SELECT student_id, first_name, last_name, email_address, phone "
+                        f"FROM students WHERE student_id IN ({marks})", ids)
+        elif option == "missing_docs":
+            # db-audit: ignore[DBW001] - only module-constant SQL fragments / placeholder joins are interpolated
+            cur.execute(f"""
+                SELECT s.student_id, s.first_name, s.last_name, s.email_address, s.phone
+                FROM students s
+                WHERE NOT EXISTS (SELECT 1 FROM documents d WHERE {_DOC_OWNER} = s.student_id)
+            """)
+        elif option in RECIPIENT_FILTERS and RECIPIENT_FILTERS[option]:
+            # db-audit: ignore[DBW001] - only module-constant SQL fragments / placeholder joins are interpolated
+            cur.execute(f"""
+                SELECT DISTINCT s.student_id, s.first_name, s.last_name, s.email_address, s.phone
+                FROM students s
+                JOIN documents d ON {_DOC_OWNER} = s.student_id
+                WHERE COALESCE(d.is_current_version, 1) = 1 AND {RECIPIENT_FILTERS[option]}
+            """)
+        else:
+            cur.execute("SELECT student_id, first_name, last_name, email_address, phone FROM students")
+        students = [tuple(r) for r in cur.fetchall()]
+
+        doc_filter = RECIPIENT_FILTERS.get(option) or "1=1"
+        recipients = []
+        for sid, first, last, email, phone in students:
+            # db-audit: ignore[DBW001] - only module-constant SQL fragments / placeholder joins are interpolated
+            cur.execute(f"""
+                SELECT COALESCE(dt.type_name, d.document_type, d.original_filename, 'Document'),
+                       COALESCE(d.verification_status, d.status, ''), d.expiry_date
+                FROM documents d
+                LEFT JOIN document_types dt
+                       ON dt.type_id = COALESCE(d.type_id, d.document_type_id)
+                WHERE {_DOC_OWNER} = ? AND COALESCE(d.is_current_version, 1) = 1
+                  AND {doc_filter}
+                ORDER BY d.upload_date DESC
+            """, (sid,))
+            docs = []
+            for name, status, expiry in cur.fetchall():
+                label = f"{name} ({status})" if status else str(name)
+                if option in ("expiring_docs", "expired_or_expiring") and expiry:
+                    label += f" - expires {expiry}"
+                docs.append(label)
+            # db-audit: ignore[DBW001] - only module-constant SQL fragments / placeholder joins are interpolated
+            cur.execute(f"SELECT COUNT(*) FROM documents d WHERE {_DOC_OWNER} = ? "
+                        "AND d.verification_status = 'Pending' "
+                        "AND COALESCE(d.is_current_version, 1) = 1", (sid,))
+            pending = cur.fetchone()[0]
+            recipients.append({
+                'student_id': str(sid),
+                'name': f"{first or ''} {last or ''}".strip() or str(sid),
+                'email': (email or '').strip(),
+                'phone': (phone or '').strip(),
+                'documents': docs,
+                'pending_count': pending,
+            })
+        return recipients
+
+
+def render_for_student(text, recipient):
+    """Fill the {{placeholder}} tokens the campaign editor advertises."""
+    values = {
+        'student_name': recipient['name'],
+        'student_id': recipient['student_id'],
+        'pending_count': str(recipient['pending_count']),
+        'document_list': "\n".join(f"- {d}" for d in recipient['documents']) or "- (none)",
+    }
+    for key, value in values.items():
+        text = text.replace("{{" + key + "}}", value)
+    return text
+
+
+def _configured_sms_service():
+    """An SMSService on the configured real provider, or None."""
+    try:
+        from education_system.systems.university.infrastructure.auth.sms_provider import (
+            load_sms_config,
+        )
+        from education_system.systems.university.infrastructure.communication.sms_service import (
+            SMSProvider, SMSService,
+        )
+        provider = SMSProvider(str(load_sms_config().get('primary_provider') or '').lower())
+    except Exception:
+        return None
+    if provider == SMSProvider.MOCK:
+        return None
+    return SMSService(provider)
+
+
+def deliver_to_students(recipients, subject, body, *, email=True, inbox=True, sms=False,
+                        sender_id=None, kind="bulk", category="documents"):
+    """Deliver a notice to each recipient on the chosen channels.
+
+    Returns counts: email_sent, email_failed, no_email, inbox_sent,
+    inbox_failed (no university account), sms_sent, sms_failed, no_phone,
+    sms_unavailable (bool).
+    """
+    stats = {'email_sent': 0, 'email_failed': 0, 'no_email': 0,
+             'inbox_sent': 0, 'inbox_failed': 0,
+             'sms_sent': 0, 'sms_failed': 0, 'no_phone': 0, 'sms_unavailable': False}
+    send_email = deliver_inbox_message = None
+    if email:
+        from education_system.systems.university.infrastructure.email.email_service import send_email
+    if inbox:
+        from education_system.systems.university.infrastructure.email.messages_inbox import deliver_inbox_message
+    sms_service = _configured_sms_service() if sms else None
+    if sms and sms_service is None:
+        stats['sms_unavailable'] = True
+
+    for r in recipients:
+        r_subject = render_for_student(subject, r)
+        r_body = render_for_student(body, r)
+        if email:
+            if not r['email']:
+                stats['no_email'] += 1
+            else:
+                try:
+                    ok = send_email(r['email'], r_subject, r_body, kind=kind,
+                                    category=category, to_ref=r['student_id'])
+                except Exception as exc:
+                    logger.warning("Document notice e-mail to %s failed: %s", r['email'], exc)
+                    ok = False
+                stats['email_sent' if ok else 'email_failed'] += 1
+        if inbox:
+            msg_id = deliver_inbox_message(r['student_id'], r_subject, r_body, sender_id=sender_id)
+            stats['inbox_sent' if msg_id else 'inbox_failed'] += 1
+        if sms_service is not None:
+            if not r['phone']:
+                stats['no_phone'] += 1
+            else:
+                ok = sms_service.send_sms(r['phone'], f"{r_subject}: {r_body}"[:1600],
+                                          student_id=r['student_id'], related_to='document_manager')
+                stats['sms_sent' if ok else 'sms_failed'] += 1
+    return stats
+
+
+def delivery_summary(stats, recipient_count, email=True, inbox=True, sms=False):
+    """Human-readable result lines for a deliver_to_students() run."""
+    lines = [f"Recipients: {recipient_count}"]
+    if email:
+        line = f"E-mail queued: {stats['email_sent']}"
+        if stats['email_failed']:
+            line += f", failed: {stats['email_failed']}"
+        if stats['no_email']:
+            line += f", no address: {stats['no_email']}"
+        lines.append(line)
+    if inbox:
+        line = f"Portal inbox messages: {stats['inbox_sent']}"
+        if stats['inbox_failed']:
+            line += f" ({stats['inbox_failed']} without a portal account)"
+        lines.append(line)
+    if sms:
+        if stats['sms_unavailable']:
+            lines.append("SMS: not sent - no SMS provider is configured")
+        else:
+            line = f"SMS sent: {stats['sms_sent']}"
+            if stats['sms_failed']:
+                line += f", failed: {stats['sms_failed']}"
+            if stats['no_phone']:
+                line += f", no phone: {stats['no_phone']}"
+            lines.append(line)
+    return "\n".join(lines)
+
+
+def _sender_id(gui):
+    user = getattr(gui, 'current_user', None) or {}
+    return user.get('id') if isinstance(user, dict) else None
+
+
+# The notification queue is the university outbox, limited to the
+# e-mails this module sends (category 'documents').
+_QUEUE_FILTERS = {
+    'All': None,
+    'Pending': "status IN ('queued', 'sending')",
+    'Sent': "status IN ('sent', 'stored')",
+    'Failed': "status IN ('failed', 'bounced', 'suppressed', 'cancelled')",
+}
+
+
+def queue_rows(status_filter='Pending', limit=500):
+    """(id, recipient, channel, subject, created, kind, status) outbox rows."""
+    where = _QUEUE_FILTERS.get(status_filter)
+    sql = ("SELECT message_id, COALESCE(NULLIF(to_ref, ''), to_address), 'E-mail', subject, "
+           "created_at, kind, status FROM email_outbox WHERE category = 'documents'")
+    if where:
+        # db-audit: ignore[DBW001] - only module-constant SQL fragments / placeholder joins are interpolated
+        sql += f" AND {where}"
+    sql += " ORDER BY message_id DESC LIMIT ?"
+    with get_connection() as conn:
+        # db-audit: ignore[DBW001] - only module-constant SQL fragments are interpolated
+        return [tuple(r) for r in conn.execute(sql, (int(limit),)).fetchall()]
+
+
+def queue_counts():
+    """pending / sent today / failed counts for the documents outbox."""
+    with get_connection() as conn:
+        # db-audit: ignore[DBW001] - only module-constant SQL fragments are interpolated
+        pending = conn.execute("SELECT COUNT(*) FROM email_outbox WHERE category = 'documents' "
+                               f"AND {_QUEUE_FILTERS['Pending']}").fetchone()[0]
+        sent_today = conn.execute("SELECT COUNT(*) FROM email_outbox WHERE category = 'documents' "
+                                  "AND status IN ('sent', 'stored') "
+                                  "AND date(COALESCE(sent_at, created_at)) = date('now')").fetchone()[0]
+        # db-audit: ignore[DBW001] - only module-constant SQL fragments are interpolated
+        failed = conn.execute("SELECT COUNT(*) FROM email_outbox WHERE category = 'documents' "
+                              f"AND {_QUEUE_FILTERS['Failed']}").fetchone()[0]
+    return pending, sent_today, failed
+
+
+def _actor(gui):
+    user = getattr(gui, 'current_user', None) or {}
+    return user.get('username') or 'unknown', user.get('role') or ''
+
+
+def queue_send(gui, message_ids):
+    """Retry failed/cancelled messages and start a delivery pass.
+
+    Returns (requeued, already_queued, refused) where refused is a list of
+    "id: reason" strings.
+    """
+    from education_system.systems.university.application.mail import outbox as email_outbox
+    from education_system.systems.university.infrastructure.email import outbox_delivery
+    actor, role = _actor(gui)
+    requeued, waiting, refused = 0, 0, []
+    with get_connection() as conn:
+        for mid in message_ids:
+            row = conn.execute("SELECT status FROM email_outbox WHERE message_id = ?", (mid,)).fetchone()
+            if not row:
+                refused.append(f"{mid}: not found")
+                continue
+            if row[0] in ('queued', 'sending'):
+                waiting += 1
+                continue
+            try:
+                email_outbox.retry(conn, actor, role, mid)
+                requeued += 1
+            except (PermissionError, ValueError) as exc:
+                refused.append(f"{mid}: {exc}")
+        conn.commit()
+    outbox_delivery.kick()
+    return requeued, waiting, refused
+
+
+def queue_cancel(gui, message_ids):
+    """Cancel queued messages. Returns (cancelled, refused)."""
+    from education_system.systems.university.application.mail import outbox as email_outbox
+    actor, role = _actor(gui)
+    cancelled, refused = 0, []
+    with get_connection() as conn:
+        for mid in message_ids:
+            try:
+                email_outbox.cancel(conn, actor, role, mid)
+                cancelled += 1
+            except (PermissionError, ValueError) as exc:
+                refused.append(f"{mid}: {exc}")
+        conn.commit()
+    return cancelled, refused
+
+
+def _refused_text(refused):
+    if not refused:
+        return ""
+    shown = "\n".join(refused[:10])
+    more = f"\n... and {len(refused) - 10} more" if len(refused) > 10 else ""
+    return f"\n\nNot changed:\n{shown}{more}"
+
+
 class NotificationManager:
     """Manages notification center, templates, bulk sends, and notification campaigns."""
 
@@ -144,34 +452,25 @@ class NotificationManager:
         ttk.Button(main_frame, text=_t('gui.shell.document_manager.notifications.buttons.close', default="Close"), command=dialog.destroy).pack()
 
     def load_notifications(self):
-        """Load pending notifications"""
+        """Load pending notifications (queued Document Manager e-mails)"""
         if hasattr(self, 'notifications_tree'):
             try:
-                conn = get_connection()
-                cursor = conn.cursor()
-
-                cursor.execute('''
-                SELECT notification_id, user_id, channel, title,
-                       created_at, priority, CASE WHEN is_read THEN 'Read' ELSE 'Unread' END as status
-                FROM notifications
-                WHERE is_read = 0
-                ORDER BY created_at DESC
-                LIMIT 100
-                ''')
-
-                notifications = cursor.fetchall()
-                conn.close()
+                rows = queue_rows('Pending', limit=100)
 
                 # Clear existing items
                 for item in self.notifications_tree.get_children():
                     self.notifications_tree.delete(item)
 
-                # Insert new items
-                for notification in notifications:
-                    self.notifications_tree.insert('', 'end', values=tuple(notification))
+                if not rows:
+                    self.notifications_tree.insert('', 'end', values=(
+                        '', _t('gui.shell.document_manager.notifications.labels.queue_empty',
+                               default="Nothing waiting to be sent"), '', '', '', '', ''))
+                    return
+                for row in rows:
+                    self.notifications_tree.insert('', 'end', values=row)
 
             except Exception as e:
-                print(f"Error loading notifications: {e}")
+                logger.error("Error loading notifications: %s", e)
 
     def send_custom_notification(self):
         """Send custom notification"""
@@ -187,21 +486,20 @@ class NotificationManager:
 
         try:
             # Extract recipient ID
-            recipient_id = recipient.split(' - ')[0]
+            recipient_id = recipient.split(' - ')[0].strip()
+            recipients = resolve_student_recipients("custom", [recipient_id])
+            if not recipients:
+                messagebox.showerror(_t('gui.shell.document_manager.notifications.dialogs.error', default="Error"),
+                                     f"No student with ID {recipient_id}.", parent=self.notif_title.winfo_toplevel())
+                return
+            subject = f"[{priority.upper()}] {title}" if priority in ('high', 'urgent') else title
+            stats = deliver_to_students(recipients, subject, message, email=True, inbox=True,
+                                        sender_id=_sender_id(self.gui), kind="transactional")
+            self.gui.log_event('send', 'notification', details={
+                'recipient_id': recipient_id, 'type': notif_type, 'priority': priority, 'stats': stats})
 
-            conn = get_connection()
-            cursor = conn.cursor()
-
-            cursor.execute('''
-            INSERT INTO notifications (user_id, channel, priority, title, message,
-                                     source_system)
-            VALUES (?, ?, ?, ?, ?, ?)
-            ''', (recipient_id, notif_type, priority, title, message, 'document_manager'))
-
-            conn.commit()
-            conn.close()
-
-            messagebox.showinfo(_t('gui.shell.document_manager.notifications.dialogs.success', default="Success"), _t('gui.shell.document_manager.notifications.dialogs.notification_created_successfully', default="Notification created successfully!"))
+            messagebox.showinfo(_t('gui.shell.document_manager.notifications.dialogs.success', default="Success"),
+                                delivery_summary(stats, 1), parent=self.notif_title.winfo_toplevel())
 
             # Clear form
             self.notif_title.delete(0, 'end')
@@ -209,90 +507,76 @@ class NotificationManager:
             self.load_notifications()
 
         except Exception as e:
-            messagebox.showerror(_t('gui.shell.document_manager.notifications.dialogs.error', default="Error"), f"Failed to create notification: {str(e)}")
+            messagebox.showerror(_t('gui.shell.document_manager.notifications.dialogs.error', default="Error"), f"Failed to send notification: {str(e)}")
+
+    def _selected_queue_ids(self, tree):
+        ids = []
+        for item in tree.selection():
+            values = tree.item(item).get('values') or []
+            if values and str(values[0]).isdigit():
+                ids.append(int(values[0]))
+        return ids
 
     def send_selected_notifications(self):
-        """Send selected notifications"""
-        selection = self.notifications_tree.selection()
-        if not selection:
-            messagebox.showwarning(_t('gui.shell.document_manager.notifications.dialogs.no_selection', default="No Selection"), _t('gui.shell.document_manager.notifications.dialogs.please_select_notifications_to_send_variant_2', default="Please select notifications to send."))
+        """Send selected notifications (retry failed ones, then deliver)"""
+        ids = self._selected_queue_ids(self.notifications_tree)
+        if not ids:
+            messagebox.showwarning(_t('gui.shell.document_manager.notifications.dialogs.no_selection', default="No Selection"), _t('gui.shell.document_manager.notifications.dialogs.please_select_notifications_to_send_variant_2', default="Please select notifications to send."),
+                                   parent=self.notifications_tree.winfo_toplevel())
             return
 
         try:
-            conn = get_connection()
-            cursor = conn.cursor()
-
-            sent_count = 0
-            for item in selection:
-                notif_id = self.notifications_tree.item(item)['values'][0]
-
-                # Mark as sent
-                cursor.execute('''
-                UPDATE notifications
-                SET is_read = 1, read_at = ?
-                WHERE notification_id = ?
-                ''', (datetime.now().strftime('%Y-%m-%d %H:%M:%S'), notif_id))
-
-                sent_count += 1
-
-            conn.commit()
-            conn.close()
-
-            messagebox.showinfo(_t('gui.shell.document_manager.notifications.dialogs.success', default="Success"), f"Sent {sent_count} notifications successfully!")
+            requeued, waiting, refused = queue_send(self.gui, ids)
+            messagebox.showinfo(_t('gui.shell.document_manager.notifications.dialogs.success', default="Success"),
+                                f"Re-queued: {requeued}\nAlready queued: {waiting}\n"
+                                "A delivery pass has been started (no e-mail leaves while the "
+                                "outbox is in inbox-only mode)." + _refused_text(refused),
+                                parent=self.notifications_tree.winfo_toplevel())
             self.load_notifications()
 
         except Exception as e:
             messagebox.showerror(_t('gui.shell.document_manager.notifications.dialogs.error', default="Error"), f"Failed to send notifications: {str(e)}")
 
     def mark_notifications_sent(self):
-        """Mark selected notifications as sent without actually sending"""
-        selection = self.notifications_tree.selection()
-        if not selection:
-            messagebox.showwarning(_t('gui.shell.document_manager.notifications.dialogs.no_selection', default="No Selection"), _t('gui.shell.document_manager.notifications.dialogs.please_select_notifications_to_mark_as_sent', default="Please select notifications to mark as sent."))
+        """Mark selected notifications as handled so they are not e-mailed"""
+        ids = self._selected_queue_ids(self.notifications_tree)
+        parent = self.notifications_tree.winfo_toplevel()
+        if not ids:
+            messagebox.showwarning(_t('gui.shell.document_manager.notifications.dialogs.no_selection', default="No Selection"), _t('gui.shell.document_manager.notifications.dialogs.please_select_notifications_to_mark_as_sent', default="Please select notifications to mark as sent."),
+                                   parent=parent)
             return
 
-        if messagebox.askyesno(_t('gui.shell.document_manager.notifications.dialogs.confirm', default="Confirm"), _t('gui.shell.document_manager.notifications.dialogs.mark_selected_notifications_as_sent', default="Mark selected notifications as sent?")):
+        if messagebox.askyesno(_t('gui.shell.document_manager.notifications.dialogs.confirm', default="Confirm"),
+                               _t('gui.shell.document_manager.notifications.dialogs.mark_handled_confirm',
+                                  default="Mark the selected notifications as handled?\n\n"
+                                          "They will be taken out of the queue and not e-mailed. "
+                                          "The student's portal inbox copy is kept."),
+                               parent=parent):
             try:
-                conn = get_connection()
-                cursor = conn.cursor()
-
-                for item in selection:
-                    notif_id = self.notifications_tree.item(item)['values'][0]
-                    cursor.execute('''
-                    UPDATE notifications
-                    SET is_read = 1, read_at = ?
-                    WHERE notification_id = ?
-                    ''', (datetime.now().strftime('%Y-%m-%d %H:%M:%S'), notif_id))
-
-                conn.commit()
-                conn.close()
-
-                messagebox.showinfo(_t('gui.shell.document_manager.notifications.dialogs.success', default="Success"), _t('gui.shell.document_manager.notifications.dialogs.notifications_marked_as_sent', default="Notifications marked as sent!"))
+                cancelled, refused = queue_cancel(self.gui, ids)
+                messagebox.showinfo(_t('gui.shell.document_manager.notifications.dialogs.success', default="Success"),
+                                    f"Marked handled: {cancelled}" + _refused_text(refused), parent=parent)
                 self.load_notifications()
 
             except Exception as e:
                 messagebox.showerror(_t('gui.shell.document_manager.notifications.dialogs.error', default="Error"), f"Failed to mark notifications: {str(e)}")
 
     def delete_notifications(self):
-        """Delete selected notifications"""
-        selection = self.notifications_tree.selection()
-        if not selection:
-            messagebox.showwarning(_t('gui.shell.document_manager.notifications.dialogs.no_selection', default="No Selection"), _t('gui.shell.document_manager.notifications.dialogs.please_select_notifications_to_delete_variant_2', default="Please select notifications to delete."))
+        """Delete (cancel) selected queued notifications"""
+        ids = self._selected_queue_ids(self.notifications_tree)
+        parent = self.notifications_tree.winfo_toplevel()
+        if not ids:
+            messagebox.showwarning(_t('gui.shell.document_manager.notifications.dialogs.no_selection', default="No Selection"), _t('gui.shell.document_manager.notifications.dialogs.please_select_notifications_to_delete_variant_2', default="Please select notifications to delete."),
+                                   parent=parent)
             return
 
-        if messagebox.askyesno(_t('gui.shell.document_manager.notifications.dialogs.confirm_delete', default="Confirm Delete"), f"Delete {len(selection)} selected notifications?"):
+        if messagebox.askyesno(_t('gui.shell.document_manager.notifications.dialogs.confirm_delete', default="Confirm Delete"),
+                               f"Cancel {len(ids)} selected notification(s)? They will not be sent; "
+                               "the outbox keeps a cancelled record for audit.", parent=parent):
             try:
-                conn = get_connection()
-                cursor = conn.cursor()
-
-                for item in selection:
-                    notif_id = self.notifications_tree.item(item)['values'][0]
-                    cursor.execute('DELETE FROM notifications WHERE notification_id = ?', (notif_id,))
-
-                conn.commit()
-                conn.close()
-
-                messagebox.showinfo(_t('gui.shell.document_manager.notifications.dialogs.success', default="Success"), _t('gui.shell.document_manager.notifications.dialogs.notifications_deleted_successfully', default="Notifications deleted successfully!"))
+                cancelled, refused = queue_cancel(self.gui, ids)
+                messagebox.showinfo(_t('gui.shell.document_manager.notifications.dialogs.success', default="Success"),
+                                    f"Cancelled: {cancelled}" + _refused_text(refused), parent=parent)
                 self.load_notifications()
 
             except Exception as e:
@@ -300,6 +584,14 @@ class NotificationManager:
 
     def use_notification_template(self, title, message):
         """Use notification template"""
+        title_entry = getattr(self, 'notif_title', None)
+        try:
+            alive = title_entry is not None and title_entry.winfo_exists()
+        except tk.TclError:
+            alive = False
+        if not alive:
+            # Open the Send Notification form so the template has somewhere to go.
+            self.notification_center()
         self.notif_title.delete(0, 'end')
         self.notif_title.insert(0, title)
 
@@ -363,10 +655,18 @@ class NotificationManager:
             button_frame = ttk.Frame(templates_window)
             button_frame.pack(pady=10)
 
+            def use_selected():
+                selection = template_listbox.curselection()
+                if not selection:
+                    messagebox.showwarning(_t('gui.shell.document_manager.notifications.dialogs.no_selection', default="No Selection"),
+                                           _t('gui.shell.document_manager.notifications.dialogs.select_a_template', default="Select a template first."),
+                                           parent=templates_window)
+                    return
+                name, text = templates[selection[0]]
+                self.use_notification_template(name, text)
+
             ttk.Button(button_frame, text=_t('gui.shell.document_manager.notifications.buttons.use_template', default="Use Template"),
-                      command=lambda: self.use_notification_template(
-                          templates[template_listbox.curselection()[0]][1] if template_listbox.curselection() else None
-                      )).pack(side='left', padx=5)
+                      command=use_selected).pack(side='left', padx=5)
             ttk.Button(button_frame, text=_t('gui.shell.document_manager.notifications.buttons.close', default="Close"), command=templates_window.destroy).pack(side='left', padx=5)
 
         except Exception as e:
@@ -375,10 +675,10 @@ class NotificationManager:
     def create_notification(self, recipient_id, title, message, notification_type='info',
                           priority='normal', related_document_id=None):
         """
-        Create a notification for a user
+        Notify a student (portal inbox + e-mail) or a user (portal inbox)
 
         Args:
-            recipient_id: User ID to send notification to
+            recipient_id: Student ID, username or users.id
             title: Notification title
             message: Notification message
             notification_type: Type of notification (info, warning, error, success)
@@ -386,33 +686,32 @@ class NotificationManager:
             related_document_id: Related document ID (optional)
 
         Returns:
-            notification_id if successful, None otherwise
+            the portal inbox message id if delivered, None otherwise
         """
         try:
-            conn = get_connection()
-            cursor = conn.cursor()
+            recipients = resolve_student_recipients("custom", [str(recipient_id)])
+            if recipients:
+                stats = deliver_to_students(recipients, title, message, email=True, inbox=True,
+                                            sender_id=_sender_id(self.gui), kind="transactional")
+                delivered = stats['inbox_sent'] or stats['email_sent']
+                notification_id = related_document_id if delivered else None
+            else:
+                from education_system.systems.university.infrastructure.email.messages_inbox import deliver_inbox_message
+                notification_id = deliver_inbox_message(recipient_id, title, message,
+                                                        sender_id=_sender_id(self.gui))
+                delivered = notification_id is not None
 
-            cursor.execute('''
-            INSERT INTO notifications
-            (user_id, channel, priority, title, message, source_system, source_id)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
-            ''', (recipient_id, notification_type, priority, title, message,
-                 'document_manager', related_document_id))
-
-            notification_id = cursor.lastrowid
-            conn.commit()
-            conn.close()
-
-            self.gui.log_event('create', 'notification', notification_id, {
+            self.gui.log_event('create', 'notification', related_document_id, {
                 'recipient_id': recipient_id,
                 'type': notification_type,
-                'priority': priority
+                'priority': priority,
+                'delivered': bool(delivered),
             })
 
-            return notification_id
+            return notification_id if delivered else None
 
         except Exception as e:
-            print(f"Error creating notification: {e}")
+            logger.error("Error creating notification: %s", e)
             return None
 
     def view_pending_notifications(self):
@@ -437,25 +736,7 @@ class NotificationManager:
             summary_frame.pack(fill='x', pady=(0, 20))
 
             try:
-                conn = get_connection()
-                cursor = conn.cursor()
-
-                # Unread
-                cursor.execute('SELECT COUNT(*) FROM notifications WHERE is_read = 0')
-                pending = cursor.fetchone()[0]
-
-                # Read today
-                cursor.execute('''
-                SELECT COUNT(*) FROM notifications
-                WHERE is_read = 1 AND date(created_at) = date('now')
-                ''')
-                sent_today = cursor.fetchone()[0]
-
-                # Archived
-                cursor.execute("SELECT COUNT(*) FROM notifications WHERE is_archived = 1")
-                failed = cursor.fetchone()[0]
-
-                conn.close()
+                pending, sent_today, failed = queue_counts()
 
                 self.gui.create_stat_card(summary_frame, "Pending", pending, '#f39c12', 0)
                 self.gui.create_stat_card(summary_frame, "Sent Today", sent_today, '#27ae60', 1)
@@ -500,35 +781,12 @@ class NotificationManager:
             def load_notifications():
                 notif_tree.delete(*notif_tree.get_children())
                 try:
-                    conn = get_connection()
-                    cursor = conn.cursor()
-
-                    status_filter = filter_status.get()
-                    query = '''
-                    SELECT notification_id, user_id, channel, title,
-                           created_at, CASE WHEN is_read = 1 THEN 'Read' ELSE 'Unread' END as status,
-                           priority
-                    FROM notifications
-                    '''
-
-                    if status_filter == 'Pending':
-                        query += ' WHERE is_read = 0'
-                    elif status_filter == 'Sent':
-                        query += ' WHERE is_read = 1'
-                    elif status_filter == 'Failed':
-                        query += ' WHERE is_archived = 1'
-
-                    query += ' ORDER BY created_at DESC LIMIT 500'
-
-                    cursor.execute(query)
-                    notifications = cursor.fetchall()
-                    conn.close()
-
-                    for notif in notifications:
-                        notif_tree.insert('', 'end', values=tuple(notif))
+                    for notif in queue_rows(filter_status.get()):
+                        notif_tree.insert('', 'end', values=notif)
 
                 except Exception as e:
-                    messagebox.showerror(_t('gui.shell.document_manager.notifications.dialogs.error', default="Error"), f"Failed to load notifications: {e}")
+                    messagebox.showerror(_t('gui.shell.document_manager.notifications.dialogs.error', default="Error"), f"Failed to load notifications: {e}",
+                                         parent=dialog)
 
             load_notifications()
             filter_status.bind('<<ComboboxSelected>>', lambda e: load_notifications())
@@ -538,57 +796,47 @@ class NotificationManager:
             action_frame.pack(fill='x', pady=(20, 0))
 
             def send_selected():
-                selection = notif_tree.selection()
-                if not selection:
-                    messagebox.showwarning(_t('gui.shell.document_manager.notifications.dialogs.warning', default="Warning"), _t('gui.shell.document_manager.notifications.dialogs.please_select_notifications_to_send', default="Please select notifications to send"))
+                ids = self._selected_queue_ids(notif_tree)
+                if not ids:
+                    messagebox.showwarning(_t('gui.shell.document_manager.notifications.dialogs.warning', default="Warning"), _t('gui.shell.document_manager.notifications.dialogs.please_select_notifications_to_send', default="Please select notifications to send"),
+                                           parent=dialog)
                     return
 
                 response = messagebox.askyesno(_t('gui.shell.document_manager.notifications.dialogs.confirm_send', default="Confirm Send"),
-                                             f"Send {len(selection)} selected notifications?")
+                                             f"Send {len(ids)} selected notifications?", parent=dialog)
                 if response:
                     try:
-                        conn = get_connection()
-                        cursor = conn.cursor()
-
-                        for item in selection:
-                            notif_id = notif_tree.item(item)['values'][0]
-                            cursor.execute('UPDATE notifications SET is_read = 1, read_at = ? WHERE notification_id = ?',
-                                         (datetime.now().strftime('%Y-%m-%d %H:%M:%S'), notif_id))
-
-                        conn.commit()
-                        conn.close()
-
-                        messagebox.showinfo(_t('gui.shell.document_manager.notifications.dialogs.success', default="Success"), f"Sent {len(selection)} notifications")
+                        requeued, waiting, refused = queue_send(self.gui, ids)
+                        messagebox.showinfo(_t('gui.shell.document_manager.notifications.dialogs.success', default="Success"),
+                                            f"Re-queued: {requeued}\nAlready queued: {waiting}\n"
+                                            "A delivery pass has been started." + _refused_text(refused),
+                                            parent=dialog)
                         load_notifications()
 
                     except Exception as e:
-                        messagebox.showerror(_t('gui.shell.document_manager.notifications.dialogs.error', default="Error"), f"Failed to send notifications: {e}")
+                        messagebox.showerror(_t('gui.shell.document_manager.notifications.dialogs.error', default="Error"), f"Failed to send notifications: {e}",
+                                             parent=dialog)
 
             def delete_selected():
-                selection = notif_tree.selection()
-                if not selection:
-                    messagebox.showwarning(_t('gui.shell.document_manager.notifications.dialogs.warning', default="Warning"), _t('gui.shell.document_manager.notifications.dialogs.please_select_notifications_to_delete', default="Please select notifications to delete"))
+                ids = self._selected_queue_ids(notif_tree)
+                if not ids:
+                    messagebox.showwarning(_t('gui.shell.document_manager.notifications.dialogs.warning', default="Warning"), _t('gui.shell.document_manager.notifications.dialogs.please_select_notifications_to_delete', default="Please select notifications to delete"),
+                                           parent=dialog)
                     return
 
                 response = messagebox.askyesno(_t('gui.shell.document_manager.notifications.dialogs.confirm_delete', default="Confirm Delete"),
-                                             f"Delete {len(selection)} selected notifications?")
+                                             f"Cancel {len(ids)} selected notifications? They will not be sent.",
+                                             parent=dialog)
                 if response:
                     try:
-                        conn = get_connection()
-                        cursor = conn.cursor()
-
-                        for item in selection:
-                            notif_id = notif_tree.item(item)['values'][0]
-                            cursor.execute('DELETE FROM notifications WHERE notification_id = ?', (notif_id,))
-
-                        conn.commit()
-                        conn.close()
-
-                        messagebox.showinfo(_t('gui.shell.document_manager.notifications.dialogs.success', default="Success"), f"Deleted {len(selection)} notifications")
+                        cancelled, refused = queue_cancel(self.gui, ids)
+                        messagebox.showinfo(_t('gui.shell.document_manager.notifications.dialogs.success', default="Success"),
+                                            f"Cancelled: {cancelled}" + _refused_text(refused), parent=dialog)
                         load_notifications()
 
                     except Exception as e:
-                        messagebox.showerror(_t('gui.shell.document_manager.notifications.dialogs.error', default="Error"), f"Failed to delete notifications: {e}")
+                        messagebox.showerror(_t('gui.shell.document_manager.notifications.dialogs.error', default="Error"), f"Failed to delete notifications: {e}",
+                                             parent=dialog)
 
             ttk.Button(action_frame, text=_t('gui.shell.document_manager.notifications.buttons.send_selected', default="Send Selected"), command=send_selected).pack(side='left', padx=5)
             ttk.Button(action_frame, text=_t('gui.shell.document_manager.notifications.buttons.delete_selected', default="Delete Selected"), command=delete_selected).pack(side='left', padx=5)
@@ -652,48 +900,34 @@ class NotificationManager:
                     messagebox.showwarning(_t('gui.shell.document_manager.notifications.dialogs.warning', default="Warning"), _t('gui.shell.document_manager.notifications.dialogs.please_enter_both_subject_and_message', default="Please enter both subject and message"))
                     return
 
+                channel = notification_type.get()
                 try:
-                    conn = get_connection()
-                    cursor = conn.cursor()
-
-                    # Get recipients based on selection
-                    recipient_type = recipient_var.get()
-                    if recipient_type == "all_students":
-                        cursor.execute('SELECT student_id, email_address FROM students WHERE email_address IS NOT NULL')
-                    elif recipient_type == "expiring_docs":
-                        cursor.execute('''
-                            SELECT DISTINCT s.student_id, s.email_address
-                            FROM students s
-                            JOIN documents sd ON s.student_id = sd.owner_id AND sd.source_type = 'student'
-                            WHERE sd.expiry_date <= date('now', '+30 days')
-                                AND sd.expiry_date > date('now')
-                                AND s.email_address IS NOT NULL
-                        ''')
-                    elif recipient_type == "missing_docs":
-                        cursor.execute('''
-                            SELECT DISTINCT s.student_id, s.email_address
-                            FROM students s
-                            LEFT JOIN documents sd ON s.student_id = sd.owner_id AND sd.source_type = 'student'
-                            WHERE sd.document_id IS NULL AND s.email_address IS NOT NULL
-                        ''')
-
-                    recipients = cursor.fetchall()
-
-                    # Log notifications (in real system, would send actual emails/SMS)
-                    for student_id, email in recipients:
-                        cursor.execute('''
-                            INSERT INTO notifications (user_id, channel, priority, title, message, source_system)
-                            VALUES (?, ?, ?, ?, ?, ?)
-                        ''', (student_id, notification_type.get(), 'normal', subject, message, 'document_manager'))
-
-                    conn.commit()
-                    conn.close()
-
-                    messagebox.showinfo(_t('gui.shell.document_manager.notifications.dialogs.success', default="Success"), f"Notifications sent to {len(recipients)} recipient(s)")
+                    recipients = resolve_student_recipients(recipient_var.get())
+                    if not recipients:
+                        messagebox.showinfo(_t('gui.shell.document_manager.notifications.dialogs.no_recipients', default="No Recipients"),
+                                            _t('gui.shell.document_manager.notifications.dialogs.no_students_match', default="No students match the selected recipients."),
+                                            parent=dialog)
+                        return
+                    if not messagebox.askyesno(_t('gui.shell.document_manager.notifications.dialogs.confirm_send', default="Confirm Send"),
+                                               f"Send '{subject}' by {channel} to {len(recipients)} student(s)?",
+                                               parent=dialog):
+                        return
+                    use_email, use_sms, use_inbox = channel == 'Email', channel == 'SMS', channel == 'In-App'
+                    stats = deliver_to_students(recipients, subject, message, email=use_email,
+                                                inbox=use_inbox, sms=use_sms,
+                                                sender_id=_sender_id(self.gui))
+                    summary = delivery_summary(stats, len(recipients), email=use_email,
+                                               inbox=use_inbox, sms=use_sms)
+                    self.gui.log_event('send', 'bulk_notification',
+                                       details={'recipients': recipient_var.get(), 'channel': channel,
+                                                'count': len(recipients), 'stats': stats})
+                    messagebox.showinfo(_t('gui.shell.document_manager.notifications.dialogs.bulk_send_result', default="Bulk Send Result"),
+                                        summary, parent=dialog)
                     dialog.destroy()
 
                 except Exception as e:
-                    messagebox.showerror(_t('gui.shell.document_manager.notifications.dialogs.error', default="Error"), f"Failed to send notifications: {e}")
+                    messagebox.showerror(_t('gui.shell.document_manager.notifications.dialogs.error', default="Error"),
+                                         f"Failed to send notifications: {e}", parent=dialog)
 
             # Buttons
             button_frame = ttk.Frame(main_frame)
@@ -787,71 +1021,97 @@ Administration""")
         button_frame = ttk.Frame(campaign_window)
         button_frame.pack(fill='x', padx=10, pady=10)
 
+        def campaign_recipients():
+            custom = custom_ids_entry.get().split(',') if recipient_option.get() == "custom" else None
+            return resolve_student_recipients(recipient_option.get(), custom)
+
         def preview_campaign():
-            """Preview campaign details"""
-            option = recipient_option.get()
-            recipient_count_map = {
-                "all_students": "All registered students",
-                "pending_docs": "Students with pending documents",
-                "expiring_docs": "Students with expiring documents",
-                "rejected_docs": "Students with rejected documents",
-                "custom": f"Custom list: {custom_ids_entry.get()}"
-            }
+            """Preview campaign details against the real recipient list"""
+            try:
+                recipients = campaign_recipients()
+            except Exception as e:
+                messagebox.showerror(_t('gui.shell.document_manager.notifications.dialogs.error', default="Error"),
+                                     f"Could not load recipients: {e}", parent=campaign_window)
+                return
+            body = message_text.get('1.0', 'end-1c')
+            with_email = sum(1 for r in recipients if r['email'])
+            preview_text = (f"Recipients: {len(recipients)} student(s) "
+                            f"({with_email} with an e-mail address)\n"
+                            f"Delivery: e-mail {'yes' if send_email_var.get() else 'no'}, "
+                            f"SMS {'yes' if send_sms_var.get() else 'no'}, "
+                            f"portal alert {'yes' if create_portal_alert_var.get() else 'no'}\n\n")
+            if recipients:
+                first = recipients[0]
+                preview_text += (f"As sent to {first['name']} ({first['student_id']}):\n\n"
+                                 f"Subject: {render_for_student(subject_entry.get(), first)}\n\n"
+                                 f"{render_for_student(body, first)}")
+            else:
+                preview_text += "No students match this selection - nothing would be sent."
 
-            preview_text = f"""Campaign Preview:
-
-Recipients: {recipient_count_map.get(option, 'Unknown')}
-Subject: {subject_entry.get()}
-
-Delivery Methods:
-- Email: {'Yes' if send_email_var.get() else 'No'}
-- SMS: {'Yes' if send_sms_var.get() else 'No'}
-- Portal Alert: {'Yes' if create_portal_alert_var.get() else 'No'}
-
-This is a preview. Click 'Send Campaign' to execute."""
-
-            messagebox.showinfo(_t('gui.shell.document_manager.notifications.dialogs.campaign_preview', default="Campaign Preview"), preview_text)
+            preview = tk.Toplevel(campaign_window)
+            preview.title(_t('gui.shell.document_manager.notifications.dialogs.campaign_preview', default="Campaign Preview"))
+            preview.geometry("640x520")
+            preview.transient(campaign_window)
+            text = tk.Text(preview, wrap='word')
+            text.insert('1.0', preview_text)
+            text.config(state='disabled')
+            text.pack(fill='both', expand=True, padx=10, pady=10)
+            ttk.Button(preview, text=_t('gui.shell.document_manager.notifications.buttons.close', default="Close"),
+                       command=preview.destroy).pack(pady=(0, 10))
 
         def send_campaign():
             """Send the notification campaign"""
+            use_email = send_email_var.get()
+            use_sms = send_sms_var.get()
+            use_inbox = create_portal_alert_var.get()
+            if not (use_email or use_sms or use_inbox):
+                messagebox.showwarning(_t('gui.shell.document_manager.notifications.dialogs.warning', default="Warning"),
+                                       _t('gui.shell.document_manager.notifications.dialogs.choose_a_delivery_method', default="Choose at least one delivery method."),
+                                       parent=campaign_window)
+                return
+            subject = subject_entry.get().strip()
+            body = message_text.get('1.0', 'end-1c').strip()
+            if not subject or not body:
+                messagebox.showwarning(_t('gui.shell.document_manager.notifications.dialogs.warning', default="Warning"),
+                                       _t('gui.shell.document_manager.notifications.dialogs.please_enter_both_subject_and_message', default="Please enter both subject and message"),
+                                       parent=campaign_window)
+                return
+            try:
+                recipients = campaign_recipients()
+            except Exception as e:
+                messagebox.showerror(_t('gui.shell.document_manager.notifications.dialogs.send_error', default="Send Error"),
+                                     f"Could not load recipients: {e}", parent=campaign_window)
+                return
+            if not recipients:
+                messagebox.showinfo(_t('gui.shell.document_manager.notifications.dialogs.no_recipients', default="No Recipients"),
+                                    _t('gui.shell.document_manager.notifications.dialogs.no_students_match', default="No students match the selected recipients."),
+                                    parent=campaign_window)
+                return
             if not messagebox.askyesno(_t('gui.shell.document_manager.notifications.dialogs.confirm_send', default="Confirm Send"),
-                                      _t('gui.shell.document_manager.notifications.dialogs.send_this_notification_campaign_all_selected_recipients_will_rec', default="Send this notification campaign?\n\n"
-                                      "All selected recipients will receive the notification.")):
+                                      f"Send this notification campaign to {len(recipients)} student(s)?",
+                                      parent=campaign_window):
                 return
 
             try:
-                # Simulate sending campaign
                 option = recipient_option.get()
-
-                # Get recipient count based on option
-                if option == "all_students":
-                    recipient_count = 150  # Simulated
-                elif option == "pending_docs":
-                    recipient_count = 45
-                elif option == "expiring_docs":
-                    recipient_count = 23
-                elif option == "rejected_docs":
-                    recipient_count = 12
-                elif option == "custom":
-                    ids = [id.strip() for id in custom_ids_entry.get().split(',') if id.strip()]
-                    recipient_count = len(ids)
-                else:
-                    recipient_count = 0
-
-                messagebox.showinfo(_t('gui.shell.document_manager.notifications.dialogs.campaign_sent', default="Campaign Sent"),
-                                  f"Notification campaign sent successfully!\n\n"
-                                  f"Recipients: {recipient_count}\n"
-                                  f"Subject: {subject_entry.get()}\n\n"
-                                  "Notifications are being processed.")
+                stats = deliver_to_students(recipients, subject, body, email=use_email,
+                                            inbox=use_inbox, sms=use_sms,
+                                            sender_id=_sender_id(self.gui))
+                summary = delivery_summary(stats, len(recipients), email=use_email,
+                                           inbox=use_inbox, sms=use_sms)
 
                 # Log activity
                 self.gui.log_event('send', 'bulk_notification_campaign',
-                              details=f'Sent campaign to {recipient_count} recipients: {option}')
+                              details={'recipients': option, 'count': len(recipients),
+                                       'subject': subject, 'stats': stats})
 
+                messagebox.showinfo(_t('gui.shell.document_manager.notifications.dialogs.campaign_sent', default="Campaign Sent"),
+                                    f"Subject: {subject}\n\n{summary}", parent=campaign_window)
                 campaign_window.destroy()
 
             except Exception as e:
-                messagebox.showerror(_t('gui.shell.document_manager.notifications.dialogs.send_error', default="Send Error"), f"Failed to send campaign: {e}")
+                messagebox.showerror(_t('gui.shell.document_manager.notifications.dialogs.send_error', default="Send Error"),
+                                     f"Failed to send campaign: {e}", parent=campaign_window)
 
         ttk.Button(button_frame, text=_t('gui.shell.document_manager.notifications.buttons.preview_campaign', default="Preview Campaign"),
                   command=preview_campaign).pack(side='left', padx=5)

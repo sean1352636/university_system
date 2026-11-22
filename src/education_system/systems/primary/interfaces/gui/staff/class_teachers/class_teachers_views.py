@@ -20,6 +20,7 @@ from education_system.systems.primary.domain.academics.classes import (
 from education_system.systems.primary.domain.learners.pupils.pupils import (
     ValidationError,
 )
+from education_system.systems.primary.interfaces.gui import kit
 
 logger = logging.getLogger(__name__)
 
@@ -65,22 +66,38 @@ def _load_class_choices() -> tuple[list[str], dict[str, int]]:
     return labels, mapping
 
 
+def _staff_lookup() -> tuple[dict[str, str], dict[str, str]]:
+    """(full name -> staff id, staff id -> full name) for linking the
+    form's name and id pickers."""
+    try:
+        from education_system.systems.primary.domain.staff import staff as staff_data
+        rows = staff_data.list_staff(active_only=False)
+    except Exception:
+        logger.exception("staff list for class teachers failed")
+        return {}, {}
+    return ({s.full_name: s.staff_id for s in rows},
+            {s.staff_id: s.full_name for s in rows})
+
+
 @_safe_view
 def open_class_teachers(host) -> None:
     logger.debug("GUI: open_class_teachers")
+    kit.show_page(host, "Class Teachers", lambda parent: _draw_class_teachers(parent, host))
 
-    win = tk.Toplevel(host.root)
-    win.title("Class Teachers")
-    win.transient(host.root)
-    win.geometry("1080x600")
 
-    top = ttk.Frame(win, padding=10)
+def _draw_class_teachers(parent, host) -> None:
+    kit.page_heading(parent, "Class Teachers",
+                     "Who teaches each class in each academic year, and which "
+                     "teacher is the primary class teacher.")
+    win = parent.winfo_toplevel()
+
+    top = ttk.Frame(parent, padding=(0, 0, 0, 6))
     top.pack(fill="x")
     summary_var = tk.StringVar()
     ttk.Label(top, textvariable=summary_var,
               font=("Segoe UI", 10, "bold")).pack(side="left")
 
-    filt = ttk.Frame(win, padding=(10, 0, 10, 6))
+    filt = ttk.Frame(parent, padding=(0, 0, 0, 6))
     filt.pack(fill="x")
     ttk.Label(filt, text="Year:").pack(side="left")
     year_var = tk.StringVar(value="All")
@@ -94,12 +111,14 @@ def open_class_teachers(host) -> None:
                  state="readonly", width=16).pack(side="left", padx=(4, 10))
     ttk.Label(filt, text="Staff contains:").pack(side="left")
     staff_var = tk.StringVar()
-    ttk.Entry(filt, textvariable=staff_var, width=18).pack(
+    # Pick a name from the directory, or type part of one (old records).
+    kit.ChoiceField(filt, staff_var, choices=sorted(_staff_lookup()[0]),
+                    blank=True, editable=True, width=24).pack(
         side="left", padx=(4, 10))
 
     cols = ("assignment_id", "class_name", "year", "academic_year",
             "role", "staff_name", "primary", "start", "end")
-    tree = ttk.Treeview(win, columns=cols, show="headings", height=15)
+    tree = ttk.Treeview(parent, columns=cols, show="headings", height=15)
     for col, label, width, anchor in [
         ("assignment_id", "#", 50, "center"),
         ("class_name", "Class", 180, "w"),
@@ -113,9 +132,9 @@ def open_class_teachers(host) -> None:
     ]:
         tree.heading(col, text=label)
         tree.column(col, width=width, anchor=anchor)
-    tree.pack(fill="both", expand=True, padx=10, pady=(0, 6))
+    tree.pack(fill="both", expand=True, pady=(0, 6))
 
-    btns = ttk.Frame(win, padding=10)
+    btns = ttk.Frame(parent, padding=(0, 4))
     btns.pack(fill="x")
 
     def _refresh() -> None:
@@ -212,7 +231,8 @@ def open_class_teachers(host) -> None:
         side="left", padx=(8, 0))
     ttk.Button(btns, text="Refresh", command=_refresh).pack(
         side="left", padx=(8, 0))
-    ttk.Button(btns, text="Close", command=win.destroy).pack(side="right")
+    ttk.Button(btns, text="Close",
+               command=lambda: kit.close_page(host, parent)).pack(side="right")
 
     tree.bind("<Double-Button-1>", lambda _e: _edit())
     for v in (year_var, role_var, staff_var):
@@ -241,7 +261,7 @@ def _open_form_dialog(parent, *, assignment_id: int | None,
     dlg = tk.Toplevel(parent)
     dlg.title("Assignment" if existing else "New assignment")
     dlg.transient(parent)
-    dlg.geometry("500x460")
+    dlg.geometry("620x480")
     try:
         dlg.wait_visibility()
         dlg.grab_set()
@@ -265,30 +285,33 @@ def _open_form_dialog(parent, *, assignment_id: int | None,
                              state="readonly", width=42)
     class_box.grid(row=0, column=1, columnspan=2, sticky="ew", pady=3)
 
+    name_to_id, id_to_name = _staff_lookup()
+
     ttk.Label(frm, text="Staff name *").grid(row=1, column=0, sticky="w", pady=3)
     name_var = tk.StringVar(value=existing.staff_name if existing else "")
-    ttk.Entry(frm, textvariable=name_var, width=30).grid(
-        row=1, column=1, columnspan=2, sticky="ew", pady=3)
+    name_pick = kit.StaffPicker(frm, name_var, by="name", active_only=False)
+    name_pick.grid(row=1, column=1, columnspan=2, sticky="ew", pady=3)
 
     ttk.Label(frm, text="Staff ID (optional)").grid(
         row=2, column=0, sticky="w", pady=3)
     staff_id_var = tk.StringVar(value=existing.staff_id or "" if existing else "")
-    ttk.Entry(frm, textvariable=staff_id_var, width=20).grid(
-        row=2, column=1, sticky="w", pady=3)
+    id_pick = kit.StaffPicker(frm, staff_id_var, active_only=False)
+    id_pick.grid(row=2, column=1, columnspan=2, sticky="ew", pady=3)
+
+    # Picking one fills the other, so the name and id always agree.
+    name_pick.bind_change(lambda name: staff_id_var.set(name_to_id.get(name, "")))
+    id_pick.bind_change(
+        lambda sid: name_var.set(id_to_name[sid]) if sid in id_to_name else None)
 
     ttk.Label(frm, text="Academic year *").grid(
         row=3, column=0, sticky="w", pady=3)
     ay_var = tk.StringVar(value=existing.academic_year if existing else "")
-    ttk.Entry(frm, textvariable=ay_var, width=14).grid(
-        row=3, column=1, sticky="w", pady=3)
-    ttk.Label(frm, text="e.g. 2025-26", foreground="#888").grid(
-        row=3, column=2, sticky="w", padx=(8, 0))
+    kit.AcademicYearPicker(frm, ay_var).grid(row=3, column=1, sticky="w", pady=3)
 
     ttk.Label(frm, text="Role *").grid(row=4, column=0, sticky="w", pady=3)
     role_var = tk.StringVar(
         value=existing.role if existing else ROLES[0])
-    ttk.Combobox(frm, textvariable=role_var, values=list(ROLES),
-                 state="readonly", width=22).grid(
+    kit.ChoiceField(frm, role_var, choices=ROLES, width=22).grid(
         row=4, column=1, sticky="w", pady=3)
 
     primary_var = tk.BooleanVar(value=existing.is_primary if existing else False)
@@ -296,17 +319,15 @@ def _open_form_dialog(parent, *, assignment_id: int | None,
                     variable=primary_var).grid(
         row=5, column=1, columnspan=2, sticky="w", pady=3)
 
-    ttk.Label(frm, text="Start date (YYYY-MM-DD)").grid(
+    ttk.Label(frm, text="Start date").grid(
         row=6, column=0, sticky="w", pady=3)
     start_var = tk.StringVar(value=existing.start_date or "" if existing else "")
-    ttk.Entry(frm, textvariable=start_var, width=14).grid(
-        row=6, column=1, sticky="w", pady=3)
+    kit.DateField(frm, start_var).grid(row=6, column=1, columnspan=2, sticky="w", pady=3)
 
-    ttk.Label(frm, text="End date (YYYY-MM-DD)").grid(
+    ttk.Label(frm, text="End date").grid(
         row=7, column=0, sticky="w", pady=3)
     end_var = tk.StringVar(value=existing.end_date or "" if existing else "")
-    ttk.Entry(frm, textvariable=end_var, width=14).grid(
-        row=7, column=1, sticky="w", pady=3)
+    kit.DateField(frm, end_var).grid(row=7, column=1, columnspan=2, sticky="w", pady=3)
 
     ttk.Label(frm, text="Notes").grid(row=8, column=0, sticky="w", pady=3)
     notes_var = tk.StringVar(value=existing.notes or "" if existing else "")

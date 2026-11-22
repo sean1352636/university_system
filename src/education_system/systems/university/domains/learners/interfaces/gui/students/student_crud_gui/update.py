@@ -153,8 +153,11 @@ def update_student_dialog(self, student_id):
 
         # Gender
         ttk.Label(personal_frame, text=_t("student.gender_label")).grid(row=4, column=0, sticky=tk.W, pady=5)
-        gender_options = ['male', 'female', 'other']
-        gender_value = (student[6] or '').strip().lower()
+        from education_system.systems.university.application.students.lifecycle import (
+            GENDER_OPTIONS, gender_label,
+        )
+        gender_options = list(GENDER_OPTIONS)
+        gender_value = gender_label((student[6] or '').strip())
         if gender_value not in gender_options:
             gender_value = ''
         fields['gender'] = ttk.Combobox(personal_frame, values=gender_options,
@@ -191,6 +194,41 @@ def update_student_dialog(self, student_id):
                   foreground="gray").grid(row=8, column=1, sticky=tk.W,
                                           padx=(10, 0))
 
+        # Contact and study details (validated by the lifecycle service).
+        from education_system.systems.university.application.students import (
+            record_rules as _record_rules,
+        )
+        # Address lines: split from the one address for records made
+        # before the lines were held separately.
+        _lines = tuple(_sval(k) or '' for k in _record_rules.ADDRESS_LINE_FIELDS)
+        if not any(_lines) and _sval('address'):
+            _lines = tuple(p or '' for p in _record_rules.split_address(_sval('address')))
+        _line_values = dict(zip(_record_rules.ADDRESS_LINE_FIELDS, _lines))
+        for row, (key, label) in enumerate((("phone", "Phone"), ("personal_email", "Personal email"),
+                                            ("address_line1", "Address line 1"),
+                                            ("address_line2", "Address line 2"),
+                                            ("town", "Town"),
+                                            ("postcode", "Postcode"),
+                                            ("nationality", "Nationality"),
+                                            ("preferred_name", "Preferred name"),
+                                            ("notes", "Notes")), 9):
+            ttk.Label(personal_frame, text=label).grid(row=row, column=0, sticky=tk.W, pady=5)
+            fields[key] = ttk.Entry(personal_frame, width=30)
+            fields[key].grid(row=row, column=1, pady=5, padx=(10, 0))
+            _safe_entry_insert(fields[key], _line_values.get(key, _sval(key)))
+        for row, (key, label, values) in enumerate((
+                ("mode_of_study", "Mode of study", _record_rules.MODES),
+                ("fee_status", "Fee status", _record_rules.FEE_STATUSES)), 18):
+            ttk.Label(personal_frame, text=label).grid(row=row, column=0, sticky=tk.W, pady=5)
+            fields[key] = ttk.Combobox(personal_frame, values=list(values), state='readonly',
+                                       width=27)
+            fields[key].grid(row=row, column=1, pady=5, padx=(10, 0), sticky=tk.W)
+            _safe_set_combobox(fields[key], str(_sval(key) or '').lower())
+        ttk.Label(personal_frame, text="Reason for these changes *").grid(
+            row=20, column=0, sticky=tk.W, pady=(12, 5))
+        fields['reason'] = ttk.Entry(personal_frame, width=30)
+        fields['reason'].grid(row=20, column=1, pady=(12, 5), padx=(10, 0))
+
         # Academic Information
         academic_frame = ttk.LabelFrame(scrollable_frame, text=_t("student.academic_info"), padding=15)
         academic_frame.grid(row=3, column=0, columnspan=2, sticky=(tk.W, tk.E), pady=(0, 10))
@@ -200,16 +238,17 @@ def update_student_dialog(self, student_id):
         course_frame = ttk.Frame(academic_frame)
         course_frame.grid(row=0, column=1, pady=5, padx=(10, 0), sticky=tk.W)
 
-        from education_system.systems.university.domains.academics.domain.services.admissions_selection import list_active_courses
+        from education_system.systems.university.domains.admissions.domain.services.admissions_selection import list_active_courses
         course_choices = [row['code'] for row in list_active_courses()]
         if student[9] and student[9] not in course_choices:
             course_choices.insert(0, student[9])
-        course_var = tk.StringVar(value=student[9] or '')
-        course_picker = ttk.Combobox(
-            course_frame, textvariable=course_var, values=course_choices,
-            state='readonly', width=24,
-        )
-        course_picker.pack(side=tk.LEFT)
+        # A course change is a transfer: old modules are kept as
+        # 'Transferred' (with their marks) and the new curriculum is added.
+        ttk.Label(course_frame, text=student[9] or '—', width=12).pack(side=tk.LEFT)
+        ttk.Button(course_frame, text="Transfer to another course…",
+                   command=lambda: _transfer_course_dialog(
+                       self, dialog, student_id, student[9], course_choices)).pack(
+            side=tk.LEFT, padx=(8, 0))
 
         # Email (read-only display)
         ttk.Label(academic_frame, text=_t("student.email_label")).grid(row=1, column=0, sticky=tk.W, pady=5)
@@ -243,7 +282,7 @@ def update_student_dialog(self, student_id):
         module_buttons_frame.pack(fill=tk.X, pady=(10, 0))
 
         ttk.Button(module_buttons_frame, text=_t("student.reassign_optional_modules"),
-                  command=lambda: self.reassign_modules(student_id, 'optional')).pack(side=tk.LEFT, padx=5)
+                  command=lambda: self.reassign_modules(student_id, 'optional', parent=dialog)).pack(side=tk.LEFT, padx=5)
 
         # Validation feedback
         validation_label = ttk.Label(scrollable_frame, text="", foreground="red")
@@ -284,292 +323,62 @@ def update_student_dialog(self, student_id):
             return errors
 
         def update_student():
-            """Update student with form data and random course assignment if selected"""
+            """Save the edits through the lifecycle service, with a reason;
+            only fields that actually changed are sent (and recorded)."""
             if not require_student_permission(self, "update_any_student", "update"):
                 return
-            update_conn = None
+            errors = validate_update_form()
+            if not fields['reason'].get().strip():
+                errors.append("Give a reason for the changes")
+            if errors:
+                validation_label.config(text="; ".join(errors))
+                return
+            validation_label.config(text="")
+            from education_system.systems.university.application.students.lifecycle import (
+                StudentLifecycleService,
+                StudentValidationError,
+            )
+            keys = ('title', 'first_name', 'middle_name', 'last_name', 'gender', 'dob',
+                    'pronouns', 'emergency_contact', 'phone', 'personal_email',
+                    'nationality', 'mode_of_study', 'fee_status', 'preferred_name',
+                    'postcode', 'notes', 'address_line1', 'address_line2', 'town')
+            changes = {}
+            for key in keys:
+                value = fields[key].get().strip() if hasattr(fields[key].get(), 'strip') \
+                    else fields[key].get()
+                if key == 'gender':
+                    value = value.lower()
+                if (value or None) != (str(_sval(key)).strip() or None):
+                    changes[key] = value or None
+            if not changes and not password_var.get():
+                validation_label.config(text="Nothing has changed.")
+                return
+            actor = str((getattr(self.auth, 'current_user', {}) or {}).get('id', 'unknown'))
             try:
-                # Validate form
-                errors = validate_update_form()
-                if errors:
-                    validation_label.config(text="; ".join(errors))
-                    return
-
-                validation_label.config(text="")
-
-                # Get updated data
-                new_title = fields['title'].get()
-                new_first_name = fields['first_name'].get().strip()
-                new_middle_name = fields['middle_name'].get().strip()
-                new_last_name = fields['last_name'].get().strip()
-                new_gender = fields['gender'].get()
-                new_dob = fields['dob'].get().strip()
-                if not new_dob:
-                    new_dob = None
-                # Empty clears the field rather than writing ''.
-                new_pronouns = fields['pronouns'].get().strip() or None
-                new_emergency = fields['emergency_contact'].get().strip() or None
-
-                # Determine new course
-                current_course = student[9]
-                new_course = course_var.get().strip()
-                course_changed = new_course != current_course
-
-                # Calculate new age if DOB changed
-                if new_dob:
-                    if student[7] != new_dob:
-                        dob_date = datetime.strptime(new_dob, "%Y-%m-%d")
-                        new_age = _compute_age(dob_date)
-                    else:
-                        new_age = student[8]
-                else:
-                    new_age = None
-
-                from education_system.systems.university.application.student_lifecycle_service import StudentLifecycleService
-                actor = str((getattr(self.auth, 'current_user', {}) or {}).get('id', 'unknown'))
-                changes = {
-                    'title': new_title, 'first_name': new_first_name,
-                    'middle_name': new_middle_name, 'last_name': new_last_name,
-                    'gender': new_gender,
-                }
-                if new_dob:
-                    changes['dob'] = new_dob
-                if course_changed:
-                    changes['course'] = new_course
-                # Only send these when they actually changed, so the audit
-                # payload records a real edit rather than a no-op rewrite.
-                if new_pronouns != (_sval('pronouns') or None):
-                    changes['pronouns'] = new_pronouns
-                if new_emergency != (_sval('emergency_contact') or None):
-                    changes['emergency_contact'] = new_emergency
-                lifecycle = StudentLifecycleService()
-                lifecycle.update(
-                    str(student_id), changes, actor_id=actor,
-                    reason="Student records GUI update",
-                    idempotency_key=f"gui:update:{student_id}:{secrets.token_urlsafe(18)}",
-                )
+                if changes:
+                    StudentLifecycleService().update(
+                        str(student_id), changes, actor_id=actor,
+                        reason=fields['reason'].get().strip(),
+                        idempotency_key=f"gui:update:{student_id}:{secrets.token_urlsafe(18)}",
+                    )
                 if password_var.get():
                     from education_system.systems.university.services.student_provisioning import send_student_activation
                     send_student_activation(student[1])
-                messagebox.showinfo(
-                    _t("common.success"),
-                    _t("student.student_updated_success", student_id=student_id),
-                    parent=dialog,
-                )
-                if hasattr(self, 'view_students'):
-                    self.view_students()
-                self.refresh_advanced_search()
-                dialog.destroy()
+            except StudentValidationError as exc:
+                validation_label.config(text="; ".join(f"{k}: {v}" for k, v in exc.errors.items()))
                 return
-
-                # Create new database connection for update
-                update_conn = get_db_connection()
-                update_cursor = update_conn.cursor()
-
-                # Update database
-                update_cursor.execute('''
-                    UPDATE students
-                    SET title = ?, first_name = ?, middle_name = ?, last_name = ?,
-                        gender = ?, dob = ?, age = ?, course = ?,
-                        pronouns = ?, emergency_contact = ?
-                    WHERE student_id = ?
-                ''', (new_title, new_first_name, new_middle_name, new_last_name,
-                      new_gender, new_dob, new_age, new_course,
-                      new_pronouns, new_emergency, student_id))
-
-                # Update user profile if exists
-                update_cursor.execute('SELECT id FROM users WHERE student_id = ?', (student_id,))
-                user_record = update_cursor.fetchone()
-
-                if user_record:
-                    user_id = user_record[0]
-                    timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-
-                    update_cursor.execute('''
-                        UPDATE users
-                        SET first_name = ?, last_name = ?, updated_at = ?
-                        WHERE id = ?
-                    ''', (new_first_name, new_last_name, timestamp, user_id))
-
-                    # Send a single-use activation/reset link if requested.
-                    if password_var.get():
-                        update_cursor.execute('''
-                            UPDATE user_accounts
-                            SET password_reset_required = 1, updated_at = ?
-                            WHERE user_id = ?
-                        ''', (timestamp, user_id))
-
-                # Handle course change — drop the old curriculum and enrol the
-                # student in the new course's full 18-module curriculum
-                # (6/year x 3), the same set the single-create and CLI paths
-                # use (rather than a hand-picked 6).
-                if course_changed:
-                    from education_system.systems.university.domains.academics.domain.services.admissions_selection import (
-                        enrol_student_in_curriculum,
-                    )
-
-                    # Capture the modules being dropped so we can cancel unpaid
-                    # enrolment fees, release holds, and sync chat rooms below.
-                    dropped_modules = [
-                        r[0] for r in update_cursor.execute(
-                            'SELECT module_code FROM student_modules '
-                            'WHERE student_id = ?', (student_id,)
-                        ).fetchall()
-                    ]
-
-                    # Remove the old modules, then enrol the full new
-                    # curriculum on the same cursor (atomic with the update).
-                    update_cursor.execute(
-                        'DELETE FROM student_modules WHERE student_id = ?',
-                        (student_id,))
-                    curriculum = enrol_student_in_curriculum(
-                        update_cursor, student_id, new_course, new_course)
-                    selected_modules = [m['module_code'] for m in curriculum]
-
-                # Commit the module insert/delete BEFORE running the
-                # cross-domain bus calls below — same fix as 8.117.39
-                # in the create flow. SQLite serialises writers, so
-                # bus calls (which open their own connections) deadlock
-                # waiting for this transaction to commit while we wait
-                # for them to return.
-                update_conn.commit()
-
-                if password_var.get():
-                    from education_system.systems.university.services.student_provisioning import (
-                        send_student_activation,
-                    )
-                    send_student_activation(student[1])
-
-                # ── Bus side effects, on fresh connections ──────────
-                # Only relevant when the course actually changed (which
-                # is when ``selected_modules`` and ``dropped_modules``
-                # are defined). Best-effort: a failure here can't roll
-                # back the module update — that's already committed.
-                if course_changed:
-                    try:
-                        from education_system.systems.university.domains.finance.domain.services.enrolment_fees import (
-                            cancel_module_enrolment_fee,
-                            assess_module_enrolment_fee,
-                        )
-                        for code in dropped_modules:
-                            if code not in selected_modules:
-                                cancel_module_enrolment_fee(student_id, code)
-                        for code in selected_modules:
-                            assess_module_enrolment_fee(student_id, code)
-                    except Exception as exc:
-                        print(f"Note: could not sync enrolment fees: {exc}")
-
-                    try:
-                        from education_system.systems.university.plugins.campus_commerce.domain.textbooks.services.library_holds import (
-                            place_holds_for_enrolment,
-                            release_holds_for_drop,
-                        )
-                        for code in dropped_modules:
-                            if code not in selected_modules:
-                                release_holds_for_drop(student_id, code)
-                        for code in selected_modules:
-                            place_holds_for_enrolment(student_id, code)
-                    except Exception as exc:
-                        print(f"Note: could not sync library holds: {exc}")
-
-                    try:
-                        from education_system.systems.university.domains.academics.domain.services.course_management.timetable_sync import (
-                            sync_for_student_enrolment,
-                            clear_for_student_drop,
-                        )
-                        for code in dropped_modules:
-                            if code not in selected_modules:
-                                clear_for_student_drop(student_id, code)
-                        for code in selected_modules:
-                            sync_for_student_enrolment(student_id, code)
-                    except Exception as exc:
-                        print(f"Note: could not sync timetables: {exc}")
-
-                    # Sync module chat-room membership to the new curriculum:
-                    # leave the dropped modules' rooms and join (creating if
-                    # needed) the new ones. Emails the student a summary.
-                    try:
-                        removed = [c for c in dropped_modules
-                                   if c not in selected_modules]
-                        added = [c for c in selected_modules
-                                 if c not in dropped_modules]
-                        _sync_module_chat_rooms(student_id, removed, added)
-                    except Exception as exc:
-                        print(f"Note: could not sync module chat rooms: {exc}")
-
-                # Send update confirmation email via email_service
-                try:
-                    # Get student email
-                    update_cursor.execute('SELECT email_address FROM students WHERE student_id = ?', (student_id,))
-                    email_result = update_cursor.fetchone()
-
-                    if email_result:
-                        student_email = email_result[0]
-                        # Determine what fields were updated
-                        updated_fields = []
-                        if new_title != student[2]:
-                            updated_fields.append('title')
-                        if new_first_name != student[3]:
-                            updated_fields.append('first name')
-                        if new_middle_name != student[4]:
-                            updated_fields.append('middle name')
-                        if new_last_name != student[5]:
-                            updated_fields.append('last name')
-                        if new_gender != student[6]:
-                            updated_fields.append('gender')
-                        if new_dob and new_dob != student[7]:
-                            updated_fields.append('date of birth')
-                        if course_changed:
-                            updated_fields.append('course')
-                        if password_var.get():
-                            updated_fields.append('password')
-
-                        if updated_fields:
-                            from education_system.systems.university.infrastructure.email.email_service import send_update_confirmation
-                            send_update_confirmation(student_email, updated_fields)
-                except Exception as e:
-                    import logging
-                    logging.warning(f"Failed to send update confirmation email: {e}")
-
-                success_msg = _t("student.student_updated_success", student_id=student_id)
-                if course_changed:
-                    success_msg += "\n" + _t("student.course_changed", old_course=student[9], new_course=new_course)
-                if password_var.get():
-                    success_msg += "\nA single-use password setup link was sent to the student's email address."
-
-                messagebox.showinfo(_t("common.success"), success_msg)
-
-                # Send email notification about changes
-                self._send_student_update_email(
-                    student_id=student_id,
-                    old_data=student,
-                    new_data={
-                        'title': new_title,
-                        'first_name': new_first_name,
-                        'middle_name': new_middle_name,
-                        'last_name': new_last_name,
-                        'gender': new_gender,
-                        'dob': new_dob,
-                        'age': new_age,
-                        'course': new_course
-                    },
-                    course_changed=course_changed,
-                    password_reset=password_var.get()
-                )
-
-                # Refresh views and close dialog
-                if hasattr(self, 'view_students'):
-                    self.view_students()
-                self.refresh_advanced_search()
-
-                dialog.destroy()
-
             except Exception as e:
                 messagebox.showerror(_t("common.error"), _t("student.failed_update_student", error=str(e)))
-            finally:
-                # Close the update connection
-                if update_conn:
-                    update_conn.close()
+                return
+            messagebox.showinfo(
+                _t("common.success"),
+                _t("student.student_updated_success", student_id=student_id),
+                parent=dialog,
+            )
+            if hasattr(self, 'view_students'):
+                self.view_students()
+            self.refresh_advanced_search()
+            dialog.destroy()
 
         # Buttons
         button_frame = ttk.Frame(scrollable_frame)
@@ -599,3 +408,45 @@ def update_student_dialog(self, student_id):
         logging.exception("Failed to load student data for student_id=%s", student_id)
         messagebox.showerror(_t("common.error"), _t("student.failed_load_student_data", error=str(e)))
         dialog.destroy()
+
+
+def _transfer_course_dialog(self, parent, student_id, current, choices):
+    """Ask for the new course and a reason, then transfer through the
+    lifecycle service (old modules kept as 'Transferred', marks untouched)."""
+    win = tk.Toplevel(parent)
+    _install_clean_close(win)
+    win.title(f"Transfer {student_id}")
+    win.transient(parent)
+    body = ttk.Frame(win, padding=12)
+    body.pack(fill=tk.BOTH, expand=True)
+    ttk.Label(body, text=f"Current course: {current or '—'}").grid(row=0, column=0, columnspan=2,
+                                                                  sticky=tk.W)
+    ttk.Label(body, text="New course").grid(row=1, column=0, sticky=tk.W, pady=4)
+    course = ttk.Combobox(body, values=[c for c in choices if c != current], state='readonly',
+                          width=20)
+    course.grid(row=1, column=1, sticky=tk.W, pady=4)
+    ttk.Label(body, text="Reason *").grid(row=2, column=0, sticky=tk.W, pady=4)
+    reason = ttk.Entry(body, width=40)
+    reason.grid(row=2, column=1, sticky=tk.W, pady=4)
+
+    def go():
+        from education_system.systems.university.application.students.lifecycle import (
+            StudentLifecycleService,
+            StudentValidationError,
+        )
+        actor = str((getattr(self.auth, 'current_user', {}) or {}).get('id', 'unknown'))
+        try:
+            StudentLifecycleService().transfer_course(
+                str(student_id), course.get(), actor_id=actor, reason=reason.get().strip(),
+                idempotency_key=f"gui:transfer:{student_id}:{secrets.token_urlsafe(18)}")
+        except StudentValidationError as exc:
+            messagebox.showerror("Transfer", "; ".join(f"{k}: {v}" for k, v in exc.errors.items()),
+                                 parent=win)
+            return
+        messagebox.showinfo("Transfer", f"{student_id} moved to {course.get()}.", parent=win)
+        win.destroy()
+        parent.destroy()
+        if hasattr(self, 'view_students'):
+            self.view_students()
+    ttk.Button(body, text="Transfer", command=go).grid(row=3, column=1, sticky=tk.W, pady=8)
+

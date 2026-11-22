@@ -33,6 +33,22 @@ def overview_admissions_queue():
     return feature_pending("Admissions Queue", _SYSTEM, category=_CATEGORY)
 
 
+@overview_menu_bp.route("/awaiting-signature", methods=["GET"])
+@token_required
+@staff_required
+def overview_awaiting_signature():
+    """Awaiting Signature"""
+    return feature_pending("Awaiting Signature", _SYSTEM, category=_CATEGORY)
+
+
+@overview_menu_bp.route("/learning-plans", methods=["GET"])
+@token_required
+@staff_required
+def overview_learning_plans():
+    """Learning Plans"""
+    return feature_pending("Learning Plans", _SYSTEM, category=_CATEGORY)
+
+
 @overview_menu_bp.route("/my-apprentices", methods=["GET"])
 @token_required
 @staff_required
@@ -47,6 +63,30 @@ def overview_my_apprentices():
 def overview_my_caseload():
     """My Caseload"""
     return feature_pending("My Caseload", _SYSTEM, category=_CATEGORY)
+
+
+@overview_menu_bp.route("/my-tasks", methods=["GET"])
+@token_required
+@staff_required
+def overview_my_tasks():
+    """My Tasks"""
+    return feature_pending("My Tasks", _SYSTEM, category=_CATEGORY)
+
+
+@overview_menu_bp.route("/skills-matrix", methods=["GET"])
+@token_required
+@staff_required
+def overview_skills_matrix():
+    """Skills Matrix"""
+    return feature_pending("Skills Matrix", _SYSTEM, category=_CATEGORY)
+
+
+@overview_menu_bp.route("/support-adjustments", methods=["GET"])
+@token_required
+@staff_required
+def overview_support_adjustments():
+    """Support & Adjustments"""
+    return feature_pending("Support & Adjustments", _SYSTEM, category=_CATEGORY)
 
 
 @overview_menu_bp.route("/admin-dashboard", methods=["GET"])
@@ -79,6 +119,38 @@ def overview_employer_dashboard():
 def overview_end_point_assessor_dashboard():
     """end_point_assessor.dashboard"""
     return feature_pending("end_point_assessor.dashboard", _SYSTEM, category=_CATEGORY)
+
+
+@overview_menu_bp.route("/shared-calendar", methods=["GET"])
+@token_required
+@staff_required
+def overview_shared_calendar():
+    """shared.calendar"""
+    return feature_pending("shared.calendar", _SYSTEM, category=_CATEGORY)
+
+
+@overview_menu_bp.route("/shared-qualifications", methods=["GET"])
+@token_required
+@staff_required
+def overview_shared_qualifications():
+    """shared.qualifications"""
+    return feature_pending("shared.qualifications", _SYSTEM, category=_CATEGORY)
+
+
+@overview_menu_bp.route("/shared-search", methods=["GET"])
+@token_required
+@staff_required
+def overview_shared_search():
+    """shared.search"""
+    return feature_pending("shared.search", _SYSTEM, category=_CATEGORY)
+
+
+@overview_menu_bp.route("/shared-workload", methods=["GET"])
+@token_required
+@staff_required
+def overview_shared_workload():
+    """shared.workload"""
+    return feature_pending("shared.workload", _SYSTEM, category=_CATEGORY)
 
 
 @overview_menu_bp.route("/staff-dashboard", methods=["GET"])

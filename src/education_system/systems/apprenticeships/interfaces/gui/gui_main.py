@@ -26,8 +26,8 @@ from tkinter import messagebox, ttk
 from education_system.platform import branding
 from education_system.platform.delivery.gui import window_sizing
 from education_system.systems.apprenticeships import SYSTEM_NAME, VERSION, config
-from education_system.systems.apprenticeships.services import preferences
-from education_system.systems.apprenticeships.services.access import Actor, resolve
+from education_system.systems.apprenticeships.application.workspace import preferences
+from education_system.systems.apprenticeships.application.security.access import Actor, resolve
 
 logger = logging.getLogger(__name__)
 
@@ -75,12 +75,15 @@ NAV_BY_ROLE: dict[str, list[tuple[str, list[tuple[str, str]]]]] = {
         ]),
         ("Cross-System", [
             ("University Progression", "shared.university_progression"),
+            ("FE College Referrals", "shared.fe_referrals"),
+            ("Training Provider Requests", "shared.training_requests"),
             ("Learner Journey (360)", "shared.learner_journey"),
         ]),
         ("Delivery", [
             ("Programmes & KSBs", "admin.programmes"),
             ("Learning Plans", "shared.learning_plan"),
-            ("Degree Apprenticeships", "admin.degree_apprenticeships"),
+            ("Degree Apprenticeships", "shared.degree_apprenticeships"),
+            ("Training Sessions", "staff.training"),
         ]),
         ("Progress", [
             ("Action Plans", "shared.actions"),
@@ -94,6 +97,18 @@ NAV_BY_ROLE: dict[str, list[tuple[str, list[tuple[str, str]]]]] = {
             ("Welfare & Risk", "shared.welfare"),
         ]),
         ("Assurance", [
+            # The provider-side screens tutors use, opened across the whole
+            # cohort: the services scope an admin to everyone.
+            ("Off-the-Job Hours", "staff.assessments"),
+            ("Portfolios", "staff.portfolios"),
+            ("Progress Reviews", "staff.reviews"),
+            ("Gateway", "staff.gateway_checks"),
+            # EPA: admin may book and arrange resits; grading stays with
+            # the independent assessor (config.EPAO_EXCLUSIVE).
+            ("EPA Bookings", "end_point_assessor.bookings"),
+            ("EPA Results", "end_point_assessor.results"),
+            ("EPA Resits", "end_point_assessor.resits"),
+            ("Assessment Organisations", "admin.assessment_organisations"),
             ("Funding", "admin.funding"),
             ("Compliance", "admin.compliance"),
             ("Documents", "shared.documents"),
@@ -126,10 +141,13 @@ NAV_BY_ROLE: dict[str, list[tuple[str, list[tuple[str, str]]]]] = {
         # Read-only board for staff; submitting needs admission.decide.
         ("Cross-System", [
             ("University Progression", "shared.university_progression"),
+            ("FE College Referrals", "shared.fe_referrals"),
+            ("Training Provider Requests", "shared.training_requests"),
             ("Learner Journey (360)", "shared.learner_journey"),
         ]),
         ("Delivery", [
             ("Learning Plans", "shared.learning_plan"),
+            ("Degree Apprenticeships", "shared.degree_apprenticeships"),
             ("Training Sessions", "staff.training"),
             ("Off-the-Job Approvals", "staff.assessments"),
         ]),
@@ -166,6 +184,7 @@ NAV_BY_ROLE: dict[str, list[tuple[str, list[tuple[str, str]]]]] = {
             ("Calendar", "shared.calendar"),
             ("Search", "shared.search"),
             ("My Details", "apprentice.profile"),
+            ("University Degree", "shared.degree_apprenticeships"),
             ("Learning Plan", "shared.learning_plan"),
         ]),
         ("My Evidence", [

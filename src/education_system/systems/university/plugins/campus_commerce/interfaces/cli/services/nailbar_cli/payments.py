@@ -136,6 +136,31 @@ def complete_appointment():
         # Process payment
         receipt_number = generate_receipt_number()
 
+        # ``user_id`` on the appointment row is the student_id Finance is
+        # tagged with. Posting goes through the nail bar service so the
+        # GUI and this CLI share one call.
+        from education_system.systems.university.plugins.campus_commerce.domain.nailbar.services.nailbar_core import TransactionManager
+        with get_connection() as _conn:
+            row = _conn.execute(
+                "SELECT user_id FROM nailbar_appointments "
+                "WHERE booking_ref = ?", (booking_ref,)
+            ).fetchone()
+            user_id = row[0] if row else None
+        finance_description = f"Nail Bar: {treatments}"
+        finance_notes = f"tip £{tip_amount:.2f}; receipt {receipt_number}" if tip_amount else f"receipt {receipt_number}"
+
+        if payment_method == 'student_account':
+            # The debit is the payment: take it before recording the sale.
+            posted = TransactionManager.post_payment_to_finance(
+                user_id or customer, float(final_amount), payment_method, receipt_number,
+                description=finance_description, processed_by=_pkg.get_current_user().get('username') if _pkg.get_current_user() else None,
+                notes=finance_notes,
+            )
+            if not posted['success']:
+                print(f"❌ Payment declined: {posted['message']}")
+                input("\nPress Enter to continue...")
+                return
+
         with transaction() as conn:
             # Update appointment
             conn.execute('''
@@ -157,51 +182,14 @@ def complete_appointment():
                 receipt_number
             ))
 
-        # 8.117.103: mirror into the unified ``payments`` table.
-        # nailbar_payments stays canonical for nailbar-specific
-        # fields (tip_amount, technician info, receipt_number); the
-        # mirror is for cross-domain reports. ``user_id`` on the
-        # appointment row is the student_id we tag the unified row
-        # with.
-        try:
-            from education_system.systems.university.domains.finance.domain.core.unified_payments import (
-                record_payment,
+        if payment_method != 'student_account':
+            # Cash/card: post the completed sale (failure is logged by the
+            # service and never undoes the local payment row).
+            TransactionManager.post_payment_to_finance(
+                user_id or customer, float(final_amount), payment_method, receipt_number,
+                description=finance_description, processed_by=_pkg.get_current_user().get('username') if _pkg.get_current_user() else None,
+                notes=finance_notes,
             )
-            with get_connection() as _conn:
-                row = _conn.execute(
-                    "SELECT user_id FROM nailbar_appointments "
-                    "WHERE booking_ref = ?", (booking_ref,)
-                ).fetchone()
-                user_id = row[0] if row else None
-            if user_id:
-                record_payment(
-                    student_id=user_id,
-                    amount=float(final_amount),
-                    payment_method=payment_method,
-                    source_type='nailbar',
-                    source_payment_id=receipt_number,
-                    payment_type='service',
-                    reference_type='nailbar_booking',
-                    reference_id=booking_ref,
-                    department='nailbar',
-                    description=f"Nail Bar service (technician: {tech_name})",
-                    notes=(f"tip £{tip_amount:.2f}; receipt {receipt_number}"
-                           if tip_amount else f"receipt {receipt_number}"),
-                )
-        except Exception as exc:
-            logger.warning(f"Unified payment mirror failed (nailbar): {exc}")
-
-        # Record to finance system if available
-        if _pkg.FINANCE_AVAILABLE:
-            try:
-                _pkg.record_payment_to_finance(
-                    transaction_type='nail_bar_service',
-                    amount=final_amount,
-                    description=f"Nail Bar: {treatments}",
-                    reference=receipt_number
-                )
-            except Exception as e:
-                logger.error(f"Error recording to finance: {e}")
 
         # Print receipt
         print("\n" + "=" * 70)

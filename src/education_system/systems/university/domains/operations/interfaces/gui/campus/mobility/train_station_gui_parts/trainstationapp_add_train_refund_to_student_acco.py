@@ -8,6 +8,8 @@ from education_system.systems.university.infrastructure.i18n import get_text as 
 from .. import train_station_gui_shared as _shared
 globals().update({name: value for name, value in _shared.__dict__.items() if not name.startswith("__")})
 
+from education_system.systems.university.domains.operations.domain.campus.mobility.services import train_station_service
+
 
 class TrainStationApp:
     def add_train_refund_to_student_account(self, ticket_number, amount, student_id):
@@ -23,97 +25,18 @@ class TrainStationApp:
             return
 
         try:
-            from education_system.systems.university.domains.finance.infrastructure.finance_integration import ensure_student_finance_account_exists
-            from education_system.systems.university.infrastructure.database.db import get_db_connection as get_central_db, transaction as central_transaction
-
-            # Ensure student account exists
-            ensure_student_finance_account_exists(student_id)
-
-            # Generate refund reference
-            refund_ref = f"TRAIN-REFUND-{datetime.now().strftime('%Y%m%d%H%M%S')}"
-
-            # Update ticket in local database
-            conn = self.db.get_connection()
-            cursor = conn.cursor()
-
-            # Add status column if it doesn't exist (optional - status is now derived from unified_refunds)
-            try:
-                cursor.execute("ALTER TABLE train_station_tickets ADD COLUMN status TEXT DEFAULT 'active'")
-            except Exception:
-                logger.debug("Suppressed exception", exc_info=True)
-
-            # Update status if column exists (optional - status is now derived from unified_refunds)
-            try:
-                cursor.execute("""
-                    UPDATE train_station_tickets
-                    SET status = 'refunded'
-                    WHERE ticket_number = ?
-                """, (ticket_number,))
-            except Exception:
-                logger.debug("Suppressed exception", exc_info=True)
-
-            # Get processed_by info
             processed_by = None
             if self.current_user:
                 processed_by = self.current_user.get('username') or self.current_user.get('id', '')
 
-            # Insert refund record into unified_refunds in local database
-            cursor.execute("""
-                INSERT INTO unified_refunds
-                (source_type, reference_id, reference_type, student_id, amount, refund_method, refund_reference, refund_date, processed_by)
-                VALUES ('train', ?, 'ticket', ?, ?, 'student_account', ?, CURRENT_TIMESTAMP, ?)
-            """, (ticket_number, student_id, amount, refund_ref, processed_by))
-
-            conn.commit()
-            conn.close()
-
-            # Process in central database
-            central_refund_id = None
-            with central_transaction() as conn:
-                cursor = conn.cursor()
-
-                # Create refund record in central database
-                cursor.execute("""
-                    INSERT INTO unified_refunds
-                    (source_type, reference_id, reference_type, student_id, amount, refund_method, refund_reference, refund_date, processed_by, status)
-                    VALUES ('train', ?, 'ticket', ?, ?, 'student_account', ?, CURRENT_TIMESTAMP, ?, 'processed')
-                """, (ticket_number, student_id, amount, refund_ref, processed_by))
-                central_refund_id = cursor.lastrowid
-
-                # Add to student finance account
-                cursor.execute("""
-                    UPDATE student_finance_accounts
-                    SET balance = balance + ?
-                    WHERE student_id = ?
-                """, (amount, student_id))
-
-                # Get new balance and account_id after update
-                cursor.execute("SELECT account_id, balance FROM student_finance_accounts WHERE student_id = ?", (student_id,))
-                result = cursor.fetchone()
-                if result:
-                    account_id, new_balance = result
-                else:
-                    account_id, new_balance = None, amount
-
-                # Log transaction in transactions table
-                cursor.execute("""
-                    INSERT INTO transactions
-                    (source_type, account_id, student_id, transaction_type, amount, balance_after, description,
-                     reference_id, processed_by, created_at)
-                    VALUES ('student_finance', ?, ?, 'credit', ?, ?, ?, ?, ?, ?)
-                """, (account_id, student_id, amount, new_balance, f'Train ticket refund - {refund_ref}',
-                      refund_ref, processed_by, datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
-
-            # Auto-post to GL using the central DB's refund_id (cash has moved). Never raises.
-            if central_refund_id is not None:
-                try:
-                    from education_system.systems.university.domains.finance.domain.ledger import notify_ledger
-                    notify_ledger('refund', central_refund_id, posted_by=processed_by or 'train_station')
-                except Exception:
-                    import logging
-                    logging.getLogger(__name__).exception(
-                        "ledger hook failed for train refund %s", central_refund_id,
-                    )
+            # The service credits the student account, writes the refund once
+            # and posts it to Finance.
+            outcome = train_station_service.process_refund(
+                ticket_number, amount, 'student_account', student_id=student_id,
+                processed_by=processed_by,
+            )
+            refund_ref = outcome['refund_ref']
+            new_balance = outcome['new_balance'] or 0.0
 
             # Send receipt
             self.send_train_refund_receipt(student_id, amount, 'student_account', refund_ref, ticket_number, new_balance)
@@ -264,7 +187,7 @@ University Train Station
                     t.price_paid,
                     t.payment_method,
                     t.purchase_date,
-                    CASE WHEN r.id IS NOT NULL THEN 'refunded' ELSE 'active' END as status,
+                    CASE WHEN r.refund_id IS NOT NULL THEN 'refunded' ELSE 'active' END as status,
                     s.service_number,
                     s.departure_station,
                     s.arrival_station,

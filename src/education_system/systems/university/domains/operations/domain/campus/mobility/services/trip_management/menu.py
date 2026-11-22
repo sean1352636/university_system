@@ -8,12 +8,16 @@ from education_system.systems.university.domains.operations.domain.campus.mobili
     cancel_trip_registration,
 )
 from education_system.systems.university.domains.operations.domain.campus.mobility.services.trip_management.reports import generate_trip_report
+from education_system.systems.university.domains.operations.domain.campus.mobility.services.trip_management.itinerary import add_trip_itinerary, view_trip_itinerary
+from education_system.systems.university.domains.operations.domain.campus.mobility.services.trip_management.expenses import manage_trip_expenses
+from education_system.systems.university.domains.operations.domain.campus.mobility.services.trip_management.staff import assign_trip_staff
+from education_system.systems.university.domains.operations.domain.campus.mobility.services.trip_management.cli_features import menu_sections
 
 
 @log_menu_navigation(description="Displaying trip management menu")
 def display_trip_management_menu():
     """Display the main trip management menu with calendar integration"""
-    auth = _common.auth
+    auth = _common.get_auth()
 
     if not auth or not auth.current_user:
         print(get_text("mobility.trip_management.auth.must_login_access", "You must be logged in to access trip management."))
@@ -47,12 +51,17 @@ def display_trip_management_menu():
             options.append(('create_trip', create_trip))
             option_num += 1
 
-        if auth.check_permission('manage_trips'):
+        # Creators and leaders update their own trips (update_trip offers
+        # only those); manage_trips covers every trip.
+        if auth.check_permission('manage_trips') or auth.check_permission('create_trips'):
             print(f"{option_num}. " + get_text("mobility.trip_management.menu.update_trip", "Update Trip"))
             options.append(('update_trip', update_trip))
             option_num += 1
 
-            print(f"{option_num}. " + get_text("mobility.trip_management.menu.delete_trip", "Delete Trip"))
+        if auth.check_permission('manage_trips'):
+            # Trips are archived, never deleted (participants and payments
+            # are kept); this is the menu slot "Delete Trip" used to fill.
+            print(f"{option_num}. " + get_text("mobility.trip_management.menu.archive_trip", "Archive Trip"))
             options.append(('delete_trip', delete_trip))
             option_num += 1
 
@@ -79,6 +88,39 @@ def display_trip_management_menu():
         if auth.check_permission('generate_trip_reports'):
             print(f"{option_num}. " + get_text("mobility.trip_management.menu.generate_report", "Generate Trip Report"))
             options.append(('generate_report', generate_trip_report))
+            option_num += 1
+
+        # Itinerary, expenses and staff screens existed but were never listed.
+        if auth.check_permission('manage_trips') or auth.check_permission('create_trips'):
+            print(f"{option_num}. " + get_text("mobility.trip_management.menu.add_itinerary", "Add Trip Itinerary"))
+            options.append(('add_itinerary', add_trip_itinerary))
+            option_num += 1
+
+        if auth.check_permission('view_trips'):
+            print(f"{option_num}. " + get_text("mobility.trip_management.menu.view_itinerary", "View Trip Itinerary"))
+            options.append(('view_itinerary', view_trip_itinerary))
+            option_num += 1
+
+        if auth.check_permission('manage_trip_expenses') or auth.check_permission('manage_trips'):
+            print(f"{option_num}. " + get_text("mobility.trip_management.menu.manage_expenses", "Manage Trip Expenses"))
+            options.append(('manage_expenses', manage_trip_expenses))
+            option_num += 1
+
+        if auth.check_permission('manage_trips'):
+            print(f"{option_num}. " + get_text("mobility.trip_management.menu.assign_staff", "Assign Trip Staff"))
+            options.append(('assign_staff', assign_trip_staff))
+            option_num += 1
+
+        # The grouped screens (cli_features): approvals, risk, incidents,
+        # safeguarding, overseas, academic, places, health, comms, the day,
+        # money, evaluations and the trip life cycle.
+        sections = [(key, label, func) for key, label, func, perms in menu_sections()
+                    if any(auth.check_permission(p) for p in perms)]
+        if sections:
+            print("\n" + get_text("mobility.trip_management.menu.operations_section", "TRIP OPERATIONS:"))
+        for key, label, func in sections:
+            print(f"{option_num}. " + get_text(f"mobility.trip_management.menu.section_{key}", label))
+            options.append((key, func))
             option_num += 1
 
         # Calendar integration is automatic: creating, updating or deleting a

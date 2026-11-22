@@ -8,7 +8,10 @@ from datetime import datetime, timedelta
 from flask import Blueprint, g, jsonify, request
 
 from education_system.platform.delivery.api.university.auth import (
-    deny_unless_owner_or_staff,
+    authorize_object,
+    current_subject_id,
+    is_staff,
+    require_staff,
     staff_required,
     token_required,
 )
@@ -21,6 +24,28 @@ from education_system.systems.university.infrastructure.activity_logger import l
 logger = logging.getLogger(__name__)
 
 accessibility_bp = Blueprint("accessibility", __name__, url_prefix="/api/accessibility")
+
+# Disability data is special-category: a student sees their own records; staff
+# need the accommodations capability, not merely a staff role (instructors are
+# staff but hold neither). student_id is TEXT, so ownership keys on JWT ``sub``.
+#: Read anybody's requests / accommodations / documentation. Held by ``admin``
+#: and ``staff`` (plus the health roles, which the API's staff set does not
+#: yet recognise).
+ACCESS_VIEW_PERMISSION = "view_accommodations"
+#: Decide requests, grant / end / renew accommodations. Held by ``admin``
+#: (and ``health_admin``).
+ACCESS_MANAGE_PERMISSION = "manage_accommodations"
+
+
+def _pin_or_deny(student_id):
+    """Staff with ACCESS_VIEW_PERMISSION keep their filter; everyone else is
+    pinned to their own subject. Returns ``(student_id, denial)``."""
+    if is_staff():
+        return student_id, require_staff(permission=ACCESS_VIEW_PERMISSION)
+    me = current_subject_id()
+    if not me:
+        return None, (jsonify({"error": "Forbidden", "status": 403}), 403)
+    return me, None
 
 
 def _row_to_dict(row) -> dict:
@@ -37,14 +62,20 @@ def list_requests():
     search = request.args.get("search")
     student_id = request.args.get("student_id")
     status = request.args.get("status")
+    student_id, denial = _pin_or_deny(student_id)
+    if denial is not None:
+        return denial
 
     with get_connection() as conn:
         if search:
             pattern = f"%{escape_like(search)}%"
-            rows = conn.execute(
-                "SELECT * FROM accommodation_requests WHERE student_name LIKE ? OR description LIKE ?",
-                (pattern, pattern),
-            ).fetchall()
+            sql = ("SELECT * FROM accommodation_requests"
+                   " WHERE (student_name LIKE ? OR description LIKE ?)")
+            sql_params: list = [pattern, pattern]
+            if student_id:
+                sql += " AND student_id = ?"
+                sql_params.append(student_id)
+            rows = conn.execute(sql, sql_params).fetchall()
             items = [_row_to_dict(r) for r in rows]
             return jsonify({"items": items, "total": len(items)})
 
@@ -86,7 +117,7 @@ def get_request(request_id: int):
         ).fetchone()
     if not row:
         raise ValidationError(f"requests {request_id} not found")
-    denial = deny_unless_owner_or_staff(_row_to_dict(row).get("student_id"))
+    denial = authorize_object(_row_to_dict(row).get("student_id"), permission=ACCESS_VIEW_PERMISSION)
     if denial:
         return denial
     log_activity("view", "accommodation_requests", user=g.current_user.get("sub"))
@@ -99,6 +130,9 @@ def create_request():
     for field in ["student_id", "student_name", "accommodation_type", "description"]:
         if field not in data:
             raise ValidationError(f"Missing required field: {field}")
+    denial = authorize_object(data["student_id"], permission=ACCESS_VIEW_PERMISSION)
+    if denial is not None:
+        return denial
 
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     with transaction() as conn:
@@ -126,14 +160,19 @@ def list_accommodations():
     search = request.args.get("search")
     student_id = request.args.get("student_id")
     is_active = request.args.get("is_active")
+    student_id, denial = _pin_or_deny(student_id)
+    if denial is not None:
+        return denial
 
     with get_connection() as conn:
         if search:
             pattern = f"%{escape_like(search)}%"
-            rows = conn.execute(
-                "SELECT * FROM accommodations WHERE description LIKE ?",
-                (pattern),
-            ).fetchall()
+            sql = "SELECT * FROM accommodations WHERE description LIKE ?"
+            sql_params: list = [pattern]
+            if student_id:
+                sql += " AND student_id = ?"
+                sql_params.append(student_id)
+            rows = conn.execute(sql, sql_params).fetchall()
             items = [_row_to_dict(r) for r in rows]
             return jsonify({"items": items, "total": len(items)})
 
@@ -175,7 +214,7 @@ def get_accommodation(accommodation_id: int):
         ).fetchone()
     if not row:
         raise ValidationError(f"accommodations {accommodation_id} not found")
-    denial = deny_unless_owner_or_staff(_row_to_dict(row).get("student_id"))
+    denial = authorize_object(_row_to_dict(row).get("student_id"), permission=ACCESS_VIEW_PERMISSION)
     if denial:
         return denial
     log_activity("view", "accommodations", user=g.current_user.get("sub"))
@@ -183,6 +222,7 @@ def get_accommodation(accommodation_id: int):
 
 @accessibility_bp.route("/accommodations", methods=["POST"])
 @token_required
+@staff_required(permission=ACCESS_MANAGE_PERMISSION)
 def create_accommodation():
     data = request.get_json(silent=True) or {}
     for field in ["request_id", "student_id", "accommodation_type"]:
@@ -212,7 +252,7 @@ def create_accommodation():
 
 @accessibility_bp.route("/requests/<int:request_id>/status", methods=["PUT"])
 @token_required
-@staff_required
+@staff_required(permission=ACCESS_MANAGE_PERMISSION)
 def update_request_status(request_id: int):
     data = request.get_json(silent=True) or {}
     if "status" not in data:
@@ -253,7 +293,7 @@ def update_request_status(request_id: int):
 
 @accessibility_bp.route("/requests/<int:request_id>/approve", methods=["POST"])
 @token_required
-@staff_required
+@staff_required(permission=ACCESS_MANAGE_PERMISSION)
 def approve_request(request_id: int):
     data = request.get_json(silent=True) or {}
 
@@ -307,6 +347,9 @@ def approve_request(request_id: int):
 def list_expiring_accommodations():
     days = int(request.args.get("days", 30))
     student_id = request.args.get("student_id")
+    student_id, denial = _pin_or_deny(student_id)
+    if denial is not None:
+        return denial
     threshold_date = (datetime.now() + timedelta(days=days)).strftime("%Y-%m-%d")
 
     with get_connection() as conn:
@@ -351,7 +394,7 @@ def upload_documentation(request_id: int):
             "SELECT * FROM accommodation_requests WHERE request_id = ?", (request_id,)
         ).fetchone()
     if row is not None:
-        denial = deny_unless_owner_or_staff(_row_to_dict(row).get("student_id"))
+        denial = authorize_object(_row_to_dict(row).get("student_id"), permission=ACCESS_VIEW_PERMISSION)
         if denial:
             return denial
     if not row:
@@ -363,7 +406,7 @@ def upload_documentation(request_id: int):
             """INSERT INTO accommodation_documentation
                (request_id, student_id, filename, file_path, upload_date, document_type)
                VALUES (?, ?, ?, ?, ?, ?)""",
-            (request_id, data["student_id"], data["filename"],
+            (request_id, row["student_id"], data["filename"],
              data.get("file_path", ""), now, data.get("document_type", "Medical Documentation")),
         )
         new_id = conn.execute("SELECT last_insert_rowid()").fetchone()[0]
@@ -387,7 +430,7 @@ def get_documentation(request_id: int):
         ).fetchone()
     if not row:
         raise ValidationError(f"Request {request_id} not found")
-    denial = deny_unless_owner_or_staff(_row_to_dict(row).get("student_id"))
+    denial = authorize_object(_row_to_dict(row).get("student_id"), permission=ACCESS_VIEW_PERMISSION)
     if denial:
         return denial
 
@@ -414,7 +457,7 @@ def get_documentation(request_id: int):
 
 @accessibility_bp.route("/accommodations/<int:accommodation_id>", methods=["DELETE"])
 @token_required
-@staff_required
+@staff_required(permission=ACCESS_MANAGE_PERMISSION)
 def deactivate_accommodation(accommodation_id: int):
     data = request.get_json(silent=True) or {}
 
@@ -441,6 +484,7 @@ def deactivate_accommodation(accommodation_id: int):
 
 @accessibility_bp.route("/requests/pending", methods=["GET"])
 @token_required
+@staff_required(permission=ACCESS_VIEW_PERMISSION)
 def list_pending_requests():
     with get_connection() as conn:
         page, per_page, offset = get_pagination_params()
@@ -465,6 +509,7 @@ def list_pending_requests():
 
 @accessibility_bp.route("/statistics", methods=["GET"])
 @token_required
+@staff_required(permission=ACCESS_VIEW_PERMISSION)
 def get_statistics():
     with get_connection() as conn:
         total_requests = conn.execute(
@@ -514,7 +559,7 @@ def request_renewal(request_id: int):
         ).fetchone()
     if not row:
         raise ValidationError(f"Request {request_id} not found")
-    denial = deny_unless_owner_or_staff(_row_to_dict(row).get("student_id"))
+    denial = authorize_object(_row_to_dict(row).get("student_id"), permission=ACCESS_VIEW_PERMISSION)
     if denial:
         return denial
     req = _row_to_dict(row)
@@ -557,6 +602,9 @@ def request_renewal(request_id: int):
 def list_renewals():
     student_id = request.args.get("student_id")
     status = request.args.get("status")
+    student_id, denial = _pin_or_deny(student_id)
+    if denial is not None:
+        return denial
 
     with get_connection() as conn:
         conditions = []
@@ -595,7 +643,7 @@ def list_renewals():
 
 @accessibility_bp.route("/renewals/<int:renewal_id>", methods=["PUT"])
 @token_required
-@staff_required
+@staff_required(permission=ACCESS_MANAGE_PERMISSION)
 def process_renewal(renewal_id: int):
     data = request.get_json(silent=True) or {}
     if "status" not in data:

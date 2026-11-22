@@ -584,108 +584,28 @@ def init_parking_tables():
 
 
 def init_travel_tables():
-    """Initialize travel system database tables"""
+    """Initialize travel system database tables.
+
+    The trip tables are declared once, by Trip Management
+    (``trip_management.database.apply``); this runs that DDL.
+    """
+    conn = None
     try:
+        from education_system.systems.university.domains.operations.domain.campus.mobility.services.trip_management import (
+            database as trip_database,
+        )
         conn = get_connection()
-        cursor = conn.cursor()
-
         print(_t("schemas.initializing", name="travel"))
-
-        # Create trip_expenses table
-        cursor.execute('''
-        CREATE TABLE IF NOT EXISTS trip_expenses (
-                        id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        trip_id INTEGER NOT NULL,
-                        category TEXT NOT NULL,
-                        description TEXT NOT NULL,
-                        amount REAL NOT NULL,
-                        date TEXT NOT NULL,
-                        recorded_by INTEGER,
-                        FOREIGN KEY (trip_id) REFERENCES trips (id) ON DELETE CASCADE,
-                        FOREIGN KEY (recorded_by) REFERENCES users (id)
-                    )
-        ''')
-
-        # Create trip_itinerary table
-        cursor.execute('''
-        CREATE TABLE IF NOT EXISTS trip_itinerary (
-                        id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        trip_id INTEGER NOT NULL,
-                        day_number INTEGER NOT NULL,
-                        activity TEXT NOT NULL,
-                        location TEXT,
-                        start_time TEXT,
-                        end_time TEXT,
-                        notes TEXT,
-                        FOREIGN KEY (trip_id) REFERENCES trips (id) ON DELETE CASCADE,
-                        UNIQUE (trip_id, day_number, start_time)
-                    )
-        ''')
-
-        # Create trip_participants table
-        cursor.execute('''
-        CREATE TABLE IF NOT EXISTS trip_participants (
-                        id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        trip_id INTEGER NOT NULL,
-                        student_id TEXT,
-                        user_id INTEGER,
-                        registration_date TEXT NOT NULL,
-                        payment_status TEXT DEFAULT 'pending',
-                        emergency_contact TEXT,
-                        medical_info TEXT,
-                        dietary_requirements TEXT,
-                        status TEXT DEFAULT 'registered',
-                        FOREIGN KEY (trip_id) REFERENCES trips (id) ON DELETE CASCADE,
-                        FOREIGN KEY (student_id) REFERENCES students (student_id),
-                        FOREIGN KEY (user_id) REFERENCES users (id),
-                        UNIQUE (trip_id, student_id),
-                        CHECK (payment_status IN ('pending', 'partial', 'paid', 'refunded')),
-                        CHECK (status IN ('registered', 'waitlist', 'cancelled', 'attended'))
-                    )
-        ''')
-
-        # Create trip_staff table
-        cursor.execute('''
-        CREATE TABLE IF NOT EXISTS trip_staff (
-                        id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        trip_id INTEGER NOT NULL,
-                        staff_user_id INTEGER NOT NULL,
-                        role TEXT DEFAULT 'supervisor',
-                        assigned_date TEXT NOT NULL,
-                        FOREIGN KEY (trip_id) REFERENCES trips (id) ON DELETE CASCADE,
-                        FOREIGN KEY (staff_user_id) REFERENCES users (id),
-                        UNIQUE (trip_id, staff_user_id),
-                        CHECK (role IN ('supervisor', 'coordinator', 'medical', 'transport'))
-                    )
-        ''')
-
-        # Create trips table
-        cursor.execute('''
-        CREATE TABLE IF NOT EXISTS trips (
-                        id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        trip_name TEXT NOT NULL,
-                        description TEXT,
-                        destination TEXT NOT NULL,
-                        start_date TEXT NOT NULL,
-                        end_date TEXT NOT NULL,
-                        max_participants INTEGER DEFAULT 50,
-                        cost REAL DEFAULT 0.0,
-                        status TEXT DEFAULT 'planning',
-                        created_by INTEGER,
-                        created_at TEXT NOT NULL,
-                        updated_at TEXT NOT NULL,
-                        FOREIGN KEY (created_by) REFERENCES users (id),
-                        CHECK (status IN ('planning', 'open', 'full', 'cancelled', 'completed'))
-                    )
-        ''')
-
+        trip_database.apply(conn.execute)
         conn.commit()
-        conn.close()
         print(_t("schemas.initialized_success", name="travel"))
 
     except sqlite3.Error as e:
+        if conn is not None:
+            conn.rollback()
         print(_t("schemas.init_error", name="travel", error=str(e)))
-        if 'conn' in locals():
+    finally:
+        if conn is not None:
             conn.close()
 
 

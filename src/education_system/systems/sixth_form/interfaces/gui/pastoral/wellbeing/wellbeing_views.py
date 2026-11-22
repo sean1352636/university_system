@@ -6,6 +6,9 @@ A 5-tab notebook:
 * Flags
 * Per-student
 * Summary
+
+plus Care Records, Young Carers, Vulnerable Groups (register) and
+Mental Health Referrals / MH Waiting List tabs.
 """
 
 from __future__ import annotations
@@ -14,7 +17,9 @@ from education_system.systems.sixth_form.interfaces.gui._ui import grab_when_vie
 import logging
 import tkinter as tk
 from datetime import date as _date
-from tkinter import messagebox, ttk
+from tkinter import ttk
+from education_system.systems.sixth_form.interfaces.gui._sidebar import SidebarBook
+from education_system.platform.delivery.gui.parented_dialogs import messagebox
 from typing import Any, Callable
 from education_system.systems.sixth_form.domain.learners.students import students
 from education_system.systems.sixth_form.domain.learners.students import students as student_data
@@ -48,7 +53,7 @@ def open_wellbeing_window(parent=None) -> None:
     win.geometry(WIN_GEOMETRY)
     win.minsize(*WIN_MINSIZE)
 
-    nb = ttk.Notebook(win)
+    nb = SidebarBook(win)
     nb.pack(fill="both", expand=True, padx=10, pady=10)
 
     CheckInTab(nb)
@@ -56,6 +61,16 @@ def open_wellbeing_window(parent=None) -> None:
     FlagTab(nb)
     PerStudentTab(nb)
     SummaryTab(nb)
+    # Vulnerable groups (care records, young carers, register) and
+    # external mental-health referrals.
+    from education_system.systems.sixth_form.interfaces.gui.pastoral.wellbeing.vulnerable_groups_tabs import (
+        add_vulnerable_groups_tabs,
+    )
+    add_vulnerable_groups_tabs(nb)
+    from education_system.systems.sixth_form.interfaces.gui.pastoral.student_support.mh_referrals_tabs import (
+        add_mh_referral_tabs,
+    )
+    add_mh_referral_tabs(nb)
 
 
 # ── Shared helpers ────────────────────────────────────────────────
@@ -125,12 +140,14 @@ class CheckInTab:
         # Table
         table_frame = ttk.Frame(self.frame)
         table_frame.pack(fill="both", expand=True, padx=8, pady=4)
+        # "energy" and "source" arrived when the student journal (Student
+        # Wellbeing) moved into this table: source is staff or self.
         cols = ("id", "student", "name", "date", "mood", "stress",
-                "sleep", "by", "notes")
+                "sleep", "energy", "source", "by", "notes")
         self.tree = ttk.Treeview(table_frame, columns=cols, show="headings")
         widths = {"id": 60, "student": 90, "name": 200, "date": 100,
-                  "mood": 60, "stress": 60, "sleep": 60, "by": 130,
-                  "notes": 360}
+                  "mood": 60, "stress": 60, "sleep": 60, "energy": 60,
+                  "source": 60, "by": 130, "notes": 300}
         for c in cols:
             self.tree.heading(c, text=c.capitalize())
             self.tree.column(c, width=widths[c], anchor="w")
@@ -193,7 +210,10 @@ class CheckInTab:
                 c.checkin_date,
                 "—" if c.mood_score is None else c.mood_score,
                 "—" if c.stress_score is None else c.stress_score,
-                "—" if c.sleep_score is None else c.sleep_score,
+                ("—" if c.sleep_score is None else c.sleep_score)
+                if c.sleep_hours is None else f"{c.sleep_hours:g}h",
+                "—" if c.energy_score is None else c.energy_score,
+                c.source,
                 c.recorded_by or "—",
                 (c.notes or "").replace("\n", " ⏎ "),
             ))

@@ -74,7 +74,7 @@ def __getattr__(name):
         'ASYNC_UTILS_AVAILABLE', 'ML_AVAILABLE',
     }
 
-    ml_exports = {'get_course_recommender', 'get_essay_grader', 'get_plagiarism_detector'}
+    ml_exports = {'get_course_recommender', 'get_essay_grader'}
 
     if name in infrastructure_exports:
         from education_system.systems.university import infrastructure
@@ -95,15 +95,13 @@ def _get_ml_exports():
     """Lazy load ML exports."""
     from education_system.systems.university.infrastructure import ML_AVAILABLE
     if ML_AVAILABLE:
-        from education_system.systems.university.infrastructure.ml import (
+        from education_system.systems.university.shared.ai.ml import (
             get_course_recommender,
             get_essay_grader,
-            get_plagiarism_detector,
         )
         return {
             'get_course_recommender': get_course_recommender,
             'get_essay_grader': get_essay_grader,
-            'get_plagiarism_detector': get_plagiarism_detector,
         }
     return {}
 
@@ -164,5 +162,4 @@ __all__.extend([
     # ML exports (if available)
     'get_course_recommender',
     'get_essay_grader',
-    'get_plagiarism_detector',
 ])

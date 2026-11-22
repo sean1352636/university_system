@@ -17,12 +17,17 @@ def update_business_listing():
         conn = get_db_connection()
         cursor = conn.cursor()
 
+        # Listings belong to an alumni id, which is the user's username
+        # (same rule as add_business_listing).
+        alumni_id = str(auth.current_user.get('username') or '')
+
         # Find user's existing listings
         cursor.execute('''
-            SELECT listing_id, business_name, category, description
-            FROM alumni_business_listings
-            WHERE user_id = ?
-        ''', (auth.current_user['user_id'],))
+            SELECT business_id, business_name, industry,
+                   COALESCE(business_description, description)
+            FROM business_directory
+            WHERE alumni_id = ?
+        ''', (alumni_id,))
 
         listings = cursor.fetchall()
 
@@ -42,7 +47,7 @@ def update_business_listing():
             return
 
         selected = listings[int(choice) - 1]
-        listing_id = selected[0]
+        business_id = selected[0]
 
         print(f"\nUpdating: {selected[1]}")
         new_name = input(f"New business name (current: {selected[1]}, press Enter to skip): ")
@@ -50,14 +55,12 @@ def update_business_listing():
         new_description = input(f"New description (current: {selected[3]}, press Enter to skip): ")
 
         if new_name:
-            cursor.execute('UPDATE alumni_business_listings SET business_name = ? WHERE listing_id = ?', (new_name, listing_id))
+            cursor.execute('UPDATE business_directory SET business_name = ? WHERE business_id = ?', (new_name, business_id))
         if new_category:
-            cursor.execute('UPDATE alumni_business_listings SET category = ? WHERE listing_id = ?', (new_category, listing_id))
+            cursor.execute('UPDATE business_directory SET industry = ? WHERE business_id = ?', (new_category, business_id))
         if new_description:
-            cursor.execute('UPDATE alumni_business_listings SET description = ? WHERE listing_id = ?', (new_description, listing_id))
-
-        cursor.execute('UPDATE alumni_business_listings SET updated_date = ? WHERE listing_id = ?',
-                      (datetime.now().strftime('%Y-%m-%d %H:%M:%S'), listing_id))
+            cursor.execute('UPDATE business_directory SET business_description = ?, description = ? WHERE business_id = ?',
+                           (new_description, new_description, business_id))
 
         conn.commit()
         conn.close()
@@ -66,200 +69,6 @@ def update_business_listing():
         print(f"Error updating business listing: {e}")
 
 
-def search_alumni_directory():
-    """Advanced alumni directory search"""
-    global auth
-
-    if not auth or not auth.current_user:
-        print("You must be logged in to search the alumni directory.")
-        return
-
-    if not auth.check_permission('access_alumni_directory'):
-        print("You don't have permission to access the alumni directory.")
-        return
-
-    conn = get_connection()
-    cursor = conn.cursor()
-
-    print("\nAlumni Directory Search")
-    print("=======================")
-    print("1. Search by name")
-    print("2. Search by graduation year")
-    print("3. Search by industry")
-    print("4. Search by location")
-    print("5. Search by skills")
-    print("6. Advanced search")
-
-    choice = input("Select search type: ")
-
-    if choice == '1':
-        # Search by name
-        name = input("Enter name (partial match allowed): ")
-        cursor.execute('''
-            SELECT a.*, ads.* FROM alumni a
-            LEFT JOIN alumni_directory_settings ads ON a.alumni_id = ads.alumni_id
-            WHERE (ads.searchable = 1 OR ads.searchable IS NULL)
-            AND (a.first_name LIKE ? OR a.last_name LIKE ?)
-            ORDER BY a.last_name, a.first_name
-        ''', (f'%{name}%', f'%{name}%'))
-
-    elif choice == '2':
-        # Search by graduation year
-        try:
-            year = int(input("Enter graduation year: "))
-            cursor.execute('''
-                SELECT a.*, ads.* FROM alumni a
-                LEFT JOIN alumni_directory_settings ads ON a.alumni_id = ads.alumni_id
-                WHERE (ads.searchable = 1 OR ads.searchable IS NULL)
-                AND a.graduation_year = ?
-                ORDER BY a.last_name, a.first_name
-            ''', (year,))
-        except ValueError:
-            print("Invalid year format.")
-            conn.close()
-            return
-
-    elif choice == '3':
-        # Search by industry
-        industry = input("Enter industry: ")
-        cursor.execute('''
-            SELECT a.*, ads.* FROM alumni a
-            LEFT JOIN alumni_directory_settings ads ON a.alumni_id = ads.alumni_id
-            WHERE (ads.searchable = 1 OR ads.searchable IS NULL)
-            AND a.industry LIKE ?
-            ORDER BY a.last_name, a.first_name
-        ''', (f'%{industry}%',))
-
-    elif choice == '4':
-        # Search by location
-        location = input("Enter city or country: ")
-        cursor.execute('''
-            SELECT a.*, ads.* FROM alumni a
-            LEFT JOIN alumni_directory_settings ads ON a.alumni_id = ads.alumni_id
-            WHERE (ads.searchable = 1 OR ads.searchable IS NULL)
-            AND (a.city LIKE ? OR a.country LIKE ?)
-            ORDER BY a.last_name, a.first_name
-        ''', (f'%{location}%', f'%{location}%'))
-
-    elif choice == '5':
-        # Search by skills
-        skills = input("Enter skills (comma-separated): ")
-        skill_list = [skill.strip() for skill in skills.split(',')]
-        skill_conditions = " OR ".join(["a.skills LIKE ?" for _ in skill_list])
-        skill_params = [f'%{skill}%' for skill in skill_list]
-
-        cursor.execute('''
-            SELECT a.*, ads.* FROM alumni a
-            LEFT JOIN alumni_directory_settings ads ON a.alumni_id = ads.alumni_id
-            WHERE (ads.searchable = 1 OR ads.searchable IS NULL)
-            AND (''' + skill_conditions + ''')
-            ORDER BY a.last_name, a.first_name
-        ''', skill_params)
-
-    elif choice == '6':
-        # Advanced search
-        print("\nAdvanced Search - Enter criteria (leave blank to skip):")
-        name = input("Name: ")
-        year_from = input("Graduation year from: ")
-        year_to = input("Graduation year to: ")
-        industry = input("Industry: ")
-        location = input("Location: ")
-        company = input("Company: ")
-
-        # Build dynamic query
-        conditions = ["(ads.searchable = 1 OR ads.searchable IS NULL)"]
-        params = []
-
-        if name:
-            conditions.append("(a.first_name LIKE ? OR a.last_name LIKE ?)")
-            params.extend([f'%{name}%', f'%{name}%'])
-
-        if year_from:
-            try:
-                year_from = int(year_from)
-                conditions.append("a.graduation_year >= ?")
-                params.append(year_from)
-            except ValueError:
-                pass
-
-        if year_to:
-            try:
-                year_to = int(year_to)
-                conditions.append("a.graduation_year <= ?")
-                params.append(year_to)
-            except ValueError:
-                pass
-
-        if industry:
-            conditions.append("a.industry LIKE ?")
-            params.append(f'%{industry}%')
-
-        if location:
-            conditions.append("(a.city LIKE ? OR a.country LIKE ?)")
-            params.extend([f'%{location}%', f'%{location}%'])
-
-        if company:
-            conditions.append("a.current_employer LIKE ?")
-            params.append(f'%{company}%')
-
-        query = f'''
-            SELECT a.*, ads.* FROM alumni a
-            LEFT JOIN alumni_directory_settings ads ON a.alumni_id = ads.alumni_id
-            WHERE {" AND ".join(conditions)}
-            ORDER BY a.last_name, a.first_name
-        '''
-
-        cursor.execute(query, params)
-    else:
-        print("Invalid choice.")
-        conn.close()
-        return
-
-    results = cursor.fetchall()
-
-    if not results:
-        print("No alumni found matching your search criteria.")
-    else:
-        print(f"\nFound {len(results)} alumni:")
-        print("-" * 80)
-
-        for i, alumni in enumerate(results, 1):
-            settings = alumni[23:] if len(alumni) > 23 else [1, 1, 1, 1, 1, 0]  # Default settings
-
-            print(f"{i}. {alumni[4]} {alumni[6]} ({alumni[0]})")
-            print(f"   Graduated: {alumni[9]} - {alumni[10]}")
-
-            if len(settings) > 2 and settings[2]:  # show_employment
-                print(f"   Current: {alumni[12]} at {alumni[11]}")
-                print(f"   Industry: {alumni[13]}")
-
-            if len(settings) > 1 and settings[1]:  # show_contact_info
-                print(f"   Location: {alumni[15]}, {alumni[16]}")
-                print(f"   Email: {alumni[2]}")
-
-            if len(settings) > 5 and settings[5]:  # mentor_available
-                print("   Available as Mentor")
-
-            if len(settings) > 4 and settings[4]:  # networking_available
-                print("   Available for Networking")
-
-            print("-" * 80)
-
-        # Option to connect with someone
-        if auth.check_permission('access_alumni_directory'):
-            connect_choice = input("\nWould you like to send a connection request to someone? (y/n): ").lower()
-            if connect_choice == 'y':
-                try:
-                    selection = int(input(f"Enter number (1-{len(results)}): "))
-                    if 1 <= selection <= len(results):
-                        selected_alumni = results[selection - 1]
-                        send_connection_request(selected_alumni[0])  # alumni_id
-                    else:
-                        print("Invalid selection.")
-                except ValueError:
-                    print("Invalid input.")
-
-    conn.close()
 
 def send_connection_request(recipient_id):
     """Send a networking connection request"""
@@ -489,7 +298,7 @@ def manage_business_directory():
     elif choice == '2':
         add_business_listing(cursor)
     elif choice == '3':
-        update_business_listing(cursor)
+        update_business_listing()
     elif choice == '4':
         search_business_directory(cursor)
     else:

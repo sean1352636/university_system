@@ -115,6 +115,9 @@ def add_accommodation():
             ''', (student_id, accommodation_type, description, start_date, end_date, status, notes, now, now))
             aid = cursor.lastrowid
             conn.commit()
+            # Carry it to exams, assessments and module staff (consent-gated).
+            from education_system.systems.university.services.bus import accommodation_bus
+            accommodation_bus.after_change()
 
         print(get_text("housing.accommodation.success.added", "Accommodation added successfully."))
 
@@ -380,6 +383,9 @@ def update_accommodation():
                     WHERE id = ?
                 ''', (accommodation_type, description, start_date, end_date, status, notes, now, accommodation_id))
                 conn.commit()
+                # Carry it to exams, assessments and module staff (consent-gated).
+                from education_system.systems.university.services.bus import accommodation_bus
+                accommodation_bus.after_change()
 
             print(get_text("housing.accommodation.success.updated", "Accommodation updated successfully."))
             log_action('update', accommodation_id, f"Updated accommodation for student {student_id}")
@@ -470,6 +476,9 @@ def remove_accommodation():
                     WHERE id = ?
                 ''', (f"Expired: {reason}", f"Expired: {reason}", now, accommodation_id))
                 conn.commit()
+                # Carry it to exams, assessments and module staff (consent-gated).
+                from education_system.systems.university.services.bus import accommodation_bus
+                accommodation_bus.after_change()
 
             print(get_text("housing.accommodation.success.marked_expired", "Accommodation marked as expired."))
 
@@ -487,6 +496,9 @@ def remove_accommodation():
                 # Then remove the accommodation record
                 cursor.execute('DELETE FROM accommodations WHERE id = ?', (accommodation_id,))
                 conn.commit()
+                # Carry it to exams, assessments and module staff (consent-gated).
+                from education_system.systems.university.services.bus import accommodation_bus
+                accommodation_bus.after_change()
 
             print(get_text("housing.accommodation.success.permanently_deleted", "Accommodation permanently deleted."))
 

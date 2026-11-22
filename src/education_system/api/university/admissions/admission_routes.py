@@ -6,7 +6,11 @@ import logging
 
 from flask import Blueprint, g, jsonify, request
 
-from education_system.platform.delivery.api.university.auth import admin_required, token_required
+from education_system.platform.delivery.api.university.auth import (
+    admin_required,
+    staff_required,
+    token_required,
+)
 from education_system.platform.delivery.api.university.pagination import get_pagination_params, paginated_response
 from education_system.platform.delivery.api.university.validators import validate_admission_application_create
 from education_system.systems.university.infrastructure.exceptions import ValidationError
@@ -20,6 +24,13 @@ from education_system.systems.university.domains.admissions.domain.services impo
 logger = logging.getLogger(__name__)
 
 admission_bp = Blueprint("admissions", __name__, url_prefix="/api/admissions")
+
+#: Applicant records have no applicant login behind them, so they are
+#: admissions-office data. Reading one needs ``view_all_applications``
+#: (admin, instructor, staff); creating one or accepting a choice on an
+#: applicant's behalf needs ``approve_applications`` (admin, staff).
+ADMISSIONS_READ = "view_all_applications"
+ADMISSIONS_DECIDE = "approve_applications"
 
 
 def _row_to_dict(row) -> dict:
@@ -135,6 +146,7 @@ def list_applications():
 
 @admission_bp.route("/applications", methods=["POST"])
 @token_required
+@staff_required(permission=ADMISSIONS_DECIDE)
 def create_application():
     data = request.get_json(silent=True) or {}
     validate_admission_application_create(data)
@@ -229,6 +241,7 @@ def update_application(application_id: int):
 
 @admission_bp.route("/applications/<int:application_id>", methods=["GET"])
 @token_required
+@staff_required(permission=ADMISSIONS_READ)
 def get_application_lifecycle(application_id: int):
     """Return the authoritative application, checklist and status history."""
     try:
@@ -270,6 +283,7 @@ def add_application_choice(application_id: int):
     methods=["POST"],
 )
 @token_required
+@staff_required(permission=ADMISSIONS_DECIDE)
 def accept_application_choice(application_id: int, choice_id: int):
     try:
         admissions_lifecycle.accept_choice(application_id, choice_id)
@@ -401,6 +415,7 @@ def transition_application(application_id: int):
     "/applications/<int:application_id>/readiness", methods=["GET"]
 )
 @token_required
+@staff_required(permission=ADMISSIONS_READ)
 def application_readiness(application_id: int):
     try:
         issues = admissions_lifecycle.readiness_issues(application_id)

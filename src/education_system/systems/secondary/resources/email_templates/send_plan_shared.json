@@ -1,0 +1,32 @@
+{
+  "name": "send_plan_shared",
+  "description": "A pupil's SEN support plan or pupil passport, shared with contacts with parental responsibility.",
+  "subject": "{plan_kind} - {pupil_name}",
+  "body": [
+    "Dear {recipient_name},",
+    "",
+    "Here is {pupil_name}'s {plan_kind}, setting out what we know, the outcomes we are working towards and the support in place.",
+    "",
+    "{plan_text}",
+    "",
+    "{note}",
+    "",
+    "If you have any questions or would like to add anything, please contact the school's SENCO.",
+    "",
+    "Best wishes,",
+    "{sender_name}",
+    "{school_name}"
+  ],
+  "placeholders": {
+    "recipient_name": "The contact's name",
+    "pupil_name": "The pupil's preferred first name and surname",
+    "plan_kind": "SEN support plan / Pupil passport / ...",
+    "plan_text": "The plan as text",
+    "note": "An optional message",
+    "sender_name": "The member of staff sending it",
+    "school_name": "The school's name"
+  },
+  "defaults": {
+    "school_name": "Secondary School"
+  }
+}

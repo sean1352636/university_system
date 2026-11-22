@@ -400,12 +400,12 @@ class DocumentsManager:
 
                 # Create notification (non-critical, don't block upload on failure)
                 try:
-                    cursor.execute('''
-                    INSERT INTO notifications (user_id, channel, priority, title, message, source_system, source_id)
-                    VALUES (?, ?, ?, ?, ?, ?, ?)
-                    ''', (student_id, 'system', 'normal', 'Document Uploaded',
-                          'Your document has been uploaded and is pending verification.',
-                          'document_manager', str(document_id)))
+                    from education_system.systems.university.infrastructure.email.messages_inbox import (
+                        deliver_inbox_message_on,
+                    )
+                    deliver_inbox_message_on(
+                        conn, student_id, '[Documents] Document Uploaded',
+                        'Your document has been uploaded and is pending verification.')
                 except Exception as notify_err:
                     logger.warning(f"Failed to create upload notification: {notify_err}")
 
@@ -918,7 +918,7 @@ Notes:
                     d.upload_date,
                     d.verification_status,
                     d.expiry_date,
-                    d.version,
+                    d.version_number,
                     d.notes
                 FROM documents d
                 LEFT JOIN students s ON d.owner_id = s.student_id

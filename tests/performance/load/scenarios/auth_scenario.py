@@ -19,11 +19,17 @@ from locust import HttpUser, task, between
 # Constants
 # ---------------------------------------------------------------------------
 
+# Demo accounts from docs/reference/DEFAULT_ACCOUNTS.md; the server needs
+# EDU_DEV_SEED=true.
 _VALID_CREDENTIALS = [
-    {"username": "Admin@College",    "password": "Admin@College123"},
-    {"username": "Staff@College",    "password": "Staff@College123"},
-    {"username": "Admin@University", "password": "Admin@University123"},
+    {"username": "admin1", "password": "admin1234"},
+    {"username": "staff1", "password": "staff1234"},
+    {"username": "admin", "password": "admin123"},
 ]
+
+# Three wrong passwords lock an account for 15 minutes, so wrong-password logins
+# only ever use accounts the valid-login tasks don't need.
+_LOCKABLE_USERNAMES = ["parent1", "parent2", "parent3"]
 
 _WRONG_PASSWORD = "WrongPassword999!"
 
@@ -56,13 +62,13 @@ class AuthUser(HttpUser):
         self._do_login(random.choice(_VALID_CREDENTIALS))
 
     def _do_login(self, creds: dict) -> bool:
-        """POST /api/auth/login and cache the returned token. Returns True on success."""
+        """POST /api/v1/auth/login and cache the returned token. Returns True on success."""
         with self.client.post(
-            "/api/auth/login",
+            "/api/v1/auth/login",
             json=creds,
             headers={"Content-Type": "application/json"},
             catch_response=True,
-            name="POST /api/auth/login (valid)",
+            name="POST /api/v1/auth/login (valid)",
         ) as resp:
             if resp.status_code == 200:
                 data = resp.json()
@@ -75,8 +81,8 @@ class AuthUser(HttpUser):
                 }
                 resp.success()
                 return True
-            elif resp.status_code in (400, 401, 429):
-                # Acceptable — wrong creds or rate-limited
+            elif resp.status_code == 429:
+                # Login allows 10 requests a minute per IP, so expect this.
                 resp.success()
                 return False
             else:
@@ -101,11 +107,11 @@ class AuthUser(HttpUser):
             return
 
         with self.client.post(
-            "/api/auth/refresh",
+            "/api/v1/auth/refresh",
             json={"refresh_token": self._refresh_token},
             headers=self._headers,
             catch_response=True,
-            name="POST /api/auth/refresh",
+            name="POST /api/v1/auth/refresh",
         ) as resp:
             if resp.status_code == 200:
                 data = resp.json()
@@ -123,10 +129,10 @@ class AuthUser(HttpUser):
     def logout(self) -> None:
         """Log out and immediately re-login to maintain an active session."""
         with self.client.post(
-            "/api/auth/logout",
+            "/api/v1/auth/logout",
             headers=self._headers,
             catch_response=True,
-            name="POST /api/auth/logout",
+            name="POST /api/v1/auth/logout",
         ) as resp:
             if resp.status_code in (200, 204, 401):
                 resp.success()
@@ -144,20 +150,17 @@ class AuthUser(HttpUser):
         Verifies the server correctly rejects bad credentials without crashing
         or leaking information, even under concurrent load.
         """
-        creds = dict(random.choice(_VALID_CREDENTIALS))
-        creds["password"] = _WRONG_PASSWORD
+        creds = {"username": random.choice(_LOCKABLE_USERNAMES), "password": _WRONG_PASSWORD}
 
         with self.client.post(
-            "/api/auth/login",
+            "/api/v1/auth/login",
             json=creds,
             headers={"Content-Type": "application/json"},
             catch_response=True,
-            name="POST /api/auth/login (wrong password → 401)",
+            name="POST /api/v1/auth/login (wrong password → 401)",
         ) as resp:
-            if resp.status_code == 401:
-                resp.success()
-            elif resp.status_code == 429:
-                # Rate-limited — also an acceptable response
+            if resp.status_code in (401, 403, 423, 429):
+                # Rejected, the account locked, or rate-limited
                 resp.success()
             else:
                 resp.failure(
@@ -178,11 +181,11 @@ class AuthUser(HttpUser):
         }
 
         with self.client.post(
-            "/api/auth/login",
+            "/api/v1/auth/login",
             json=fake_creds,
             headers={"Content-Type": "application/json"},
             catch_response=True,
-            name="POST /api/auth/login (nonexistent user → 401)",
+            name="POST /api/v1/auth/login (nonexistent user → 401)",
         ) as resp:
             if resp.status_code in (401, 429):
                 resp.success()
@@ -204,11 +207,11 @@ class AuthUser(HttpUser):
 
         for _ in range(3):
             with self.client.post(
-                "/api/auth/login",
+                "/api/v1/auth/login",
                 json=creds,
                 headers={"Content-Type": "application/json"},
                 catch_response=True,
-                name="POST /api/auth/login (concurrent)",
+                name="POST /api/v1/auth/login (concurrent)",
             ) as resp:
                 responses.append(resp.status_code)
                 if resp.status_code in (200, 401, 429):

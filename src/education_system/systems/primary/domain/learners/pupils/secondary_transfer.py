@@ -12,6 +12,14 @@ primary pupil. It now runs the platform's seven-step transition:
 * the primary adapter records the leaver and takes the pupil off roll.
   The pupil row is kept, never deleted.
 
+A pupil whose move was prepared in **Year 6 Transition**
+(``year6_transition``) already has an open transition — expected, applied,
+offered, accepted or handover-approved. ``route_support.transfer`` finds
+that open transition on the pupil's journey and carries on from its
+current step, so the final move never opens a second one. Unless the
+caller says otherwise, the consent, destination name and safeguarding
+pointer recorded there are used, and the Year 6 record is closed as moved.
+
 The primary school never imports the secondary system.
 """
 
@@ -23,6 +31,7 @@ from dataclasses import dataclass
 from education_system.platform.cross_system import route_support
 from education_system.platform.cross_system.adapters.base import AdapterError
 from education_system.systems.primary.domain.learners.pupils import pupils as primary_pupils
+from education_system.systems.primary.domain.learners.pupils import year6_transition
 from education_system.systems.primary.domain.learners.pupils.cross_system_adapter import (
     leaver_id_for,
 )
@@ -36,8 +45,7 @@ SECONDARY_ENTRY_YEAR = "7"
 DEFAULT_DESTINATION = "Secondary School System"
 
 #: The sensitive fields on this boundary a parent may consent to share.
-CONSENT_FIELDS = ("send_provision", "support_indicators",
-                  "current_interventions", "medical_requirements")
+CONSENT_FIELDS = year6_transition.CONSENT_FIELDS
 
 
 @dataclass(frozen=True)
@@ -52,6 +60,14 @@ class SecondaryTransferResult:
     transition_id: str | None = None
     withheld: tuple[str, ...] = ()
     warnings: tuple[str, ...] = ()
+
+
+def _year6_record(pupil_id: str) -> year6_transition.Year6Record | None:
+    try:
+        return year6_transition.latest_record(pupil_id)
+    except Exception:  # noqa: BLE001 - the move does not depend on Year 6 records
+        logger.exception("Could not read the Year 6 transition record for %s", pupil_id)
+        return None
 
 
 def _ensure_not_already_leaver(pupil_id: str) -> None:
@@ -76,6 +92,12 @@ def move_to_secondary_school(
     The generated password is returned once, when the secondary created a
     new login, so the operator can pass it on. A retried move that finds
     the login already made returns ``password=None``.
+
+    With a Year 6 Transition record: ``consent=None`` uses the consent
+    recorded there, ``destination_school=None`` its destination name and
+    ``safeguarding_reference=None`` the DSL transfer pointer. A pupil
+    recorded as going to an external school is refused here (Year 6
+    Transition records that move instead).
     """
     pupil_id = (pupil_id or "").strip()
     if not pupil_id:
@@ -87,6 +109,22 @@ def move_to_secondary_school(
     if pupil.roll_status == "left":
         raise ValidationError(f"Pupil {pupil_id} has already left the school")
     _ensure_not_already_leaver(pupil_id)
+
+    y6 = _year6_record(pupil.pupil_id)
+    if y6 is not None:
+        if y6.destination_type == year6_transition.DESTINATION_EXTERNAL:
+            raise ValidationError(
+                f"{pupil.full_name} is recorded in Year 6 Transition as going to "
+                f"{y6.destination_school}, not the platform's secondary school. "
+                f"Record that move in Year 6 Transition, or change the destination "
+                f"there first")
+        if consent is None and y6.consented_fields:
+            consent = set(y6.consented_fields)
+        if not destination_school and y6.destination_school:
+            destination_school = y6.destination_school
+        if not safeguarding_reference:
+            safeguarding_reference = year6_transition.safeguarding_reference_for(
+                pupil.pupil_id, y6.academic_year)
 
     def _leaver_details(outcome: route_support.TransferOutcome) -> dict:
         return {
@@ -110,6 +148,14 @@ def move_to_secondary_school(
 
     enrolment = outcome.enrolment
     secondary_id = outcome.local_student_id or ""
+    if y6 is not None:
+        try:
+            year6_transition.mark_moved(
+                pupil.pupil_id, secondary_pupil_id=secondary_id or None,
+                transition_id=outcome.transition.get("transition_id"))
+        except Exception:  # noqa: BLE001 - the move itself has succeeded
+            logger.exception("Could not close the Year 6 transition record for %s",
+                             pupil.pupil_id)
     logger.info("Moved primary pupil %s to secondary pupil %s via transition %s",
                 pupil.pupil_id, secondary_id,
                 outcome.transition.get("transition_id"))

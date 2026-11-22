@@ -2,6 +2,7 @@
 from education_system.systems.university.shell.gui import report_view as _rv
 
 import threading
+from education_system.platform.delivery.gui.tk_threads import start_thread, ui
 import tkinter as tk
 from tkinter import ttk, messagebox
 from tkinter.scrolledtext import ScrolledText
@@ -64,13 +65,11 @@ class AdminMixin:
 
                 def initialize():
                     init_enhanced_finance_db()
-                    messagebox.showinfo(_("finance_gui.settings.success_title"), _("finance_gui.settings.system_initialized"))
-                    self.update_system_status()
-                    self.update_status(_("finance_gui.settings.system_initialization_completed"))
+                    ui(self.root, messagebox.showinfo, _("finance_gui.settings.success_title"), _("finance_gui.settings.system_initialized"))
+                    ui(self.root, self.update_system_status)
+                    ui(self.root, self.update_status, _("finance_gui.settings.system_initialization_completed"))
 
-                thread = threading.Thread(target=initialize)
-                thread.daemon = True
-                thread.start()
+                start_thread(self.root, initialize)
 
             except Exception as e:
                 messagebox.showerror(_("finance_gui.settings.error_title"), _("finance_gui.settings.system_initialization_failed", error=str(e)))

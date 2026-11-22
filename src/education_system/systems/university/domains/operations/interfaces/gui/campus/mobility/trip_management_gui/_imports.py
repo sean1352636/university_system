@@ -37,24 +37,19 @@ except ImportError as e:
 
 # Academic calendar is optional - may not be available if dependencies missing
 try:
-    from education_system.systems.university.domains.academics.domain.services.academic_calendar.calendar_core import AcademicCalendarManager
-    from education_system.systems.university.domains.academics.domain.services.academic_calendar.config import CalendarConfig
+    from education_system.systems.university.domains.teaching.domain.academic_calendar.calendar_core import AcademicCalendarManager
+    from education_system.systems.university.domains.teaching.domain.academic_calendar.config import CalendarConfig
     CALENDAR_AVAILABLE = True
 except ImportError as e:
     CALENDAR_AVAILABLE = False
     # Use debug level since this is expected when optional dependencies are missing
     logging.debug(f"Academic calendar module not available (optional): {e}")
 
-try:
-    from reportlab.lib.pagesizes import letter, A4
-    from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
-    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-    from reportlab.lib.units import inch
-    from reportlab.lib import colors
-    from reportlab.lib.enums import TA_CENTER, TA_LEFT, TA_RIGHT
-    PDF_AVAILABLE = True
-except ImportError:
-    PDF_AVAILABLE = False
+# ReportLab is only imported where a PDF is built (the domain's report
+# generator); here we only need to know whether it is installed.
+import importlib.util as _importlib_util
+PDF_AVAILABLE = _importlib_util.find_spec("reportlab") is not None
+if not PDF_AVAILABLE:
     logging.warning("ReportLab not available. PDF generation will be disabled.")
 
 try:

@@ -7,7 +7,14 @@ from datetime import datetime
 
 from flask import Blueprint, g, jsonify, request
 
-from education_system.platform.delivery.api.university.auth import token_required
+from education_system.platform.delivery.api.university.auth import (
+    authorize_object,
+    current_subject_id,
+    is_staff,
+    require_staff,
+    staff_required,
+    token_required,
+)
 from education_system.platform.delivery.api.university.pagination import get_pagination_params, paginated_response
 from education_system.systems.university.infrastructure.exceptions import ValidationError
 from education_system.systems.university.infrastructure.sql_safety import escape_like
@@ -17,6 +24,14 @@ from education_system.systems.university.infrastructure.activity_logger import l
 logger = logging.getLogger(__name__)
 
 scholarship_finder_bp = Blueprint("scholarship_finder", __name__, url_prefix="/api/scholarship-finder")
+
+# The opportunity catalogue is reference data: any signed-in user may read it.
+# Adding to it, and reading another student's applications, are staff work.
+#: Maintain the scholarship catalogue. Held by ``admin`` only.
+CATALOGUE_MANAGE_PERMISSION = "manage_financial_aid"
+#: Read / submit scholarship applications for somebody else. Held by
+#: ``admin`` and ``staff``.
+APPLICATION_VIEW_PERMISSION = "manage_students_finance"
 
 
 def _row_to_dict(row) -> dict:
@@ -91,6 +106,7 @@ def get_opportunitie(scholarship_id: int):
 
 @scholarship_finder_bp.route("/opportunities", methods=["POST"])
 @token_required
+@staff_required(permission=CATALOGUE_MANAGE_PERMISSION)
 def create_opportunitie():
     data = request.get_json(silent=True) or {}
     for field in ["scholarship_name", "organization", "award_amount_min"]:
@@ -123,6 +139,15 @@ def list_applications():
     scholarship_id = request.args.get("scholarship_id")
     student_id = request.args.get("student_id")
     status = request.args.get("status")
+    if is_staff():
+        denial = require_staff(permission=APPLICATION_VIEW_PERMISSION)
+        if denial is not None:
+            return denial
+    else:
+        # Pinned to the caller, whatever student_id they sent.
+        student_id = current_subject_id()
+        if not student_id:
+            return jsonify({"error": "Forbidden", "status": 403}), 403
 
     with get_connection() as conn:
         conditions = []
@@ -166,6 +191,9 @@ def get_application(application_id: int):
         ).fetchone()
     if not row:
         raise ValidationError(f"applications {application_id} not found")
+    denial = authorize_object(row["student_id"], permission=APPLICATION_VIEW_PERMISSION)
+    if denial is not None:
+        return denial
     log_activity("view", "student_scholarship_applications", user=g.current_user.get("sub"))
     return jsonify(_row_to_dict(row))
 
@@ -176,6 +204,9 @@ def create_application():
     for field in ["scholarship_id", "student_id"]:
         if field not in data:
             raise ValidationError(f"Missing required field: {field}")
+    denial = authorize_object(data["student_id"], permission=APPLICATION_VIEW_PERMISSION)
+    if denial is not None:
+        return denial
 
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     with transaction() as conn:

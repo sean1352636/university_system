@@ -89,7 +89,7 @@ def _designated_safeguarding_lead() -> str | None:
     try:
         with get_connection() as conn:
             row = conn.execute(
-                "SELECT user_id FROM users "
+                "SELECT id FROM users "
                 "WHERE LOWER(role) IN ('safeguarding_lead', 'dsl', 'designated_lead') "
                 "AND email IS NOT NULL LIMIT 1"
             ).fetchone()

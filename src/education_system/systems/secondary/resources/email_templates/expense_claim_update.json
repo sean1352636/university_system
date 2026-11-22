@@ -1,0 +1,31 @@
+{
+  "name": "expense_claim_update",
+  "description": "Tells a member of staff that their expense claim was approved, rejected or paid.",
+  "subject": "Expense claim {claim_ref}: {status}",
+  "body": [
+    "Dear {recipient_name},",
+    "",
+    "Your expense claim {claim_ref} ({title}, {total}) has been {status}.",
+    "",
+    "{details}",
+    "",
+    "You can see your claims under Expense Claims > My claims.",
+    "",
+    "Kind regards,",
+    "{sender_name}",
+    "{school_name}"
+  ],
+  "placeholders": {
+    "recipient_name": "The claimant's name",
+    "claim_ref": "The claim reference, e.g. EXP-2026-0004",
+    "title": "The claim's title",
+    "status": "approved / rejected / paid",
+    "total": "The claim total, e.g. £42.50",
+    "details": "What happens next (approver, rejection reason or payment details)",
+    "sender_name": "The finance officer or budget holder",
+    "school_name": "The school's name"
+  },
+  "defaults": {
+    "school_name": "Secondary School"
+  }
+}

@@ -16,7 +16,7 @@ def send_receipt_email(recipient_email, recipient_name, amount, donation_type, t
         from education_system.systems.university.infrastructure.email.email_service import send_email
 
         from education_system.systems.university.infrastructure.email.template_utils import render_template
-        subject, body = render_template("community/church_donation_receipt", {
+        subject, body = render_template("campus_services/community/church_donation_receipt", {
             "recipient_name": recipient_name,
             "transaction_ref": transaction_ref,
             "donation_date": datetime.now().strftime('%Y-%m-%d %H:%M:%S'),

@@ -20,6 +20,7 @@ from education_system.systems.primary.domain.learners.pupils import (
 from education_system.systems.primary.domain.learners.pupils.pupils import (
     ValidationError, YEAR_GROUPS,
 )
+from education_system.systems.primary.interfaces.gui import kit
 
 logger = logging.getLogger(__name__)
 
@@ -52,19 +53,22 @@ def _safe_view(func: Callable[..., None]) -> Callable[..., None]:
 @_safe_view
 def open_pupil_reports(host) -> None:
     logger.debug("GUI: open_pupil_reports")
+    kit.show_page(host, "Pupil Reports",
+                  lambda parent: _draw_pupil_reports(parent, host))
 
-    win = tk.Toplevel(host.root)
-    win.title("Pupil Reports")
-    win.transient(host.root)
-    win.geometry("1140x620")
 
-    top = ttk.Frame(win, padding=10)
+def _draw_pupil_reports(parent: ttk.Frame, host) -> None:
+    win = parent.winfo_toplevel()
+    kit.page_heading(parent, "Pupil Reports",
+                     "Termly reports to parents: draft, publish, revert.")
+
+    top = ttk.Frame(parent, padding=(0, 0, 0, 6))
     top.pack(fill="x")
     summary_var = tk.StringVar()
     ttk.Label(top, textvariable=summary_var,
               font=("Segoe UI", 10, "bold")).pack(side="left")
 
-    filt = ttk.Frame(win, padding=(10, 0, 10, 6))
+    filt = ttk.Frame(parent, padding=(0, 0, 0, 6))
     filt.pack(fill="x")
     ttk.Label(filt, text="Year:").pack(side="left")
     year_var = tk.StringVar(value="All")
@@ -83,13 +87,14 @@ def open_pupil_reports(host) -> None:
                  state="readonly", width=10).pack(side="left", padx=(4, 10))
     ttk.Label(filt, text="Pupil year:").pack(side="left")
     py_var = tk.StringVar(value="All")
-    ttk.Combobox(filt, textvariable=py_var,
-                 values=["All"] + list(YEAR_GROUPS),
-                 state="readonly", width=6).pack(side="left", padx=(4, 10))
+    kit.ChoiceField(filt, py_var,
+                    choices=[("All", "All")] + [
+                        (y, kit.YEAR_GROUP_LABELS.get(y, y)) for y in YEAR_GROUPS],
+                    width=10).pack(side="left", padx=(4, 10))
 
     cols = ("report_id", "pupil_id", "name", "year", "academic_year",
             "term", "status", "attendance", "published_on", "authored_by")
-    tree = ttk.Treeview(win, columns=cols, show="headings", height=15)
+    tree = ttk.Treeview(parent, columns=cols, show="headings", height=15)
     for col, label, width, anchor in [
         ("report_id", "#", 50, "center"),
         ("pupil_id", "Pupil ID", 90, "w"),
@@ -104,9 +109,9 @@ def open_pupil_reports(host) -> None:
     ]:
         tree.heading(col, text=label)
         tree.column(col, width=width, anchor=anchor)
-    tree.pack(fill="both", expand=True, padx=10, pady=(0, 6))
+    tree.pack(fill="both", expand=True, pady=(0, 6))
 
-    btns = ttk.Frame(win, padding=10)
+    btns = ttk.Frame(parent, padding=(0, 6))
     btns.pack(fill="x")
 
     def _refresh() -> None:
@@ -240,7 +245,8 @@ def open_pupil_reports(host) -> None:
         side="left", padx=(8, 0))
     ttk.Button(btns, text="Refresh", command=_refresh).pack(
         side="left", padx=(8, 0))
-    ttk.Button(btns, text="Close", command=win.destroy).pack(side="right")
+    ttk.Button(btns, text="Close",
+               command=lambda: kit.close_page(host, parent)).pack(side="right")
 
     tree.bind("<Double-Button-1>", lambda _e: _view())
     for v in (year_var, term_var, status_var, py_var):
@@ -284,23 +290,23 @@ def _open_form_dialog(parent, *, report_id: int | None,
     dlg = tk.Toplevel(parent)
     dlg.title("Report" if existing else "New report")
     dlg.transient(parent)
-    dlg.geometry("680x680")
+    dlg.geometry("760x680")
     try:
         dlg.wait_visibility()
         dlg.grab_set()
     except tk.TclError:
         logger.debug("grab_set skipped", exc_info=True)
 
-    frm = ttk.Frame(dlg, padding=12)
-    frm.pack(fill="both", expand=True)
+    frm, footer = kit.scrolled_form(dlg)
 
     pupil_var = tk.StringVar(value=existing.pupil_id if existing else "")
     pupil_label = tk.StringVar(value="")
-    ttk.Label(frm, text="Pupil ID *").grid(row=0, column=0, sticky="w", pady=3)
-    ttk.Entry(frm, textvariable=pupil_var, width=14).grid(
-        row=0, column=1, sticky="w", pady=3)
-    ttk.Label(frm, textvariable=pupil_label, foreground="#666").grid(
-        row=0, column=2, sticky="w", padx=(8, 0))
+    ttk.Label(frm, text="Pupil *").grid(row=0, column=0, sticky="w", pady=3)
+    pupil_box = ttk.Frame(frm)
+    pupil_box.grid(row=0, column=1, columnspan=2, sticky="w", pady=3)
+    kit.PupilPicker(pupil_box, pupil_var, width=40).pack(anchor="w")
+    # Still names the pupil when the record belongs to one no longer on roll.
+    ttk.Label(pupil_box, textvariable=pupil_label, foreground="#666").pack(anchor="w")
 
     def _lookup_pupil(*_a) -> None:
         pid = pupil_var.get().strip()
@@ -320,10 +326,8 @@ def _open_form_dialog(parent, *, report_id: int | None,
     ttk.Label(frm, text="Academic year *").grid(
         row=1, column=0, sticky="w", pady=3)
     ay_var = tk.StringVar(value=existing.academic_year if existing else "")
-    ttk.Entry(frm, textvariable=ay_var, width=14).grid(
+    kit.AcademicYearPicker(frm, ay_var, width=10).grid(
         row=1, column=1, sticky="w", pady=3)
-    ttk.Label(frm, text="e.g. 2025-26", foreground="#888").grid(
-        row=1, column=2, sticky="w", padx=(8, 0))
 
     ttk.Label(frm, text="Term *").grid(row=2, column=0, sticky="w", pady=3)
     term_var = tk.StringVar(value=existing.term if existing else TERMS[0])
@@ -340,15 +344,15 @@ def _open_form_dialog(parent, *, report_id: int | None,
         row=4, column=0, sticky="w", pady=3)
     author_var = tk.StringVar(
         value=existing.authored_by or "" if existing else "")
-    ttk.Entry(frm, textvariable=author_var, width=30).grid(
-        row=4, column=1, sticky="w", pady=3)
+    kit.StaffPicker(frm, author_var, by="name", width=36).grid(
+        row=4, column=1, columnspan=2, sticky="w", pady=3)
 
     ttk.Label(frm, text="Attendance %").grid(
         row=5, column=0, sticky="w", pady=3)
     att_var = tk.StringVar(
         value="" if not existing or existing.attendance_pct is None
         else f"{existing.attendance_pct:g}")
-    ttk.Entry(frm, textvariable=att_var, width=8).grid(
+    kit.NumberField(frm, att_var, from_=0, to=100, increment=0.1, width=8).grid(
         row=5, column=1, sticky="w", pady=3)
 
     ttk.Label(frm, text="Behaviour").grid(row=6, column=0, sticky="w", pady=3)
@@ -413,8 +417,7 @@ def _open_form_dialog(parent, *, report_id: int | None,
         on_saved()
         dlg.destroy()
 
-    btn_row = ttk.Frame(frm)
-    btn_row.grid(row=11, column=0, columnspan=3, sticky="ew", pady=(12, 0))
+    btn_row = footer
     ttk.Button(btn_row, text="Save draft", command=_save).pack(side="right")
     ttk.Button(btn_row, text="Save & publish",
                command=lambda: _save(then_publish=True)).pack(

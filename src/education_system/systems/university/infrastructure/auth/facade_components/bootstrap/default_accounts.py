@@ -55,18 +55,8 @@ class AuthBootstrapDefaultAccountsMixin:
                 # the three default accounts). Skip it by default; opt in with
                 # EDU_SYNC_DEFAULT_PASSWORDS=1 to force the dev-convenience
                 # "reset default passwords on boot" behaviour.
-                if os.environ.get("EDU_SYNC_DEFAULT_PASSWORDS") == "1":
-                    try:
-                        salt, password_hash = self._hash_password(account_info['password'])
-                        cursor.execute(
-                            'UPDATE user_accounts SET password_hash = ?, salt = ?, updated_at = ? WHERE username = ?',
-                            (password_hash, salt, timestamp, username),
-                        )
-                    except sqlite3.Error as exc:
-                        logging.error(
-                            f"Failed to sync password for '{username}': {exc}"
-                        )
-
+                # Default passwords are seeded in the shared auth (EDU_DEV_SEED);
+                # the university keeps no password copy to re-sync.
                 # Check for role inconsistencies, user_id mismatch, and missing user profiles
                 cursor.execute(
                     'SELECT id, role FROM users WHERE username = ?', (username,),
@@ -159,8 +149,7 @@ class AuthBootstrapDefaultAccountsMixin:
 
             user_id = user_result[0]
 
-            # Hash password
-            salt, password_hash = self._hash_password(account_info['password'])
+            salt, password_hash = "", ""  # passwords are kept only in the shared auth (auth.db)
 
             # Create account
             cursor.execute('''
@@ -198,11 +187,9 @@ class AuthBootstrapDefaultAccountsMixin:
             logger.info(f"Found {len(orphaned_users)} users without accounts. Creating accounts...")
 
             for user_id, username, email, first_name, last_name, role in orphaned_users:
-                password = self._generate_temp_password()
-
-                # Create the account
+                # Create the account record (no local password)
                 timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-                salt, password_hash = self._hash_password(password)
+                salt, password_hash = "", ""  # passwords are kept only in the shared auth (auth.db)
 
                 cursor.execute('''
                 INSERT INTO user_accounts
@@ -211,7 +198,7 @@ class AuthBootstrapDefaultAccountsMixin:
                 ''', (username, password_hash, salt, user_id, timestamp, timestamp))
 
                 identifier = username or email or f"user-{user_id}"
-                logger.info(f"Created account for {identifier} with temporary password")
+                logger.info(f"Created account record for {identifier} (sign-in is in the shared auth)")
 
             conn.commit()
             conn.close()

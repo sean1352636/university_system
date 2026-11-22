@@ -27,7 +27,9 @@ _STUDENT_COLUMNS = (
     "student_id, first_name, last_name, date_of_birth, uln, email, phone, address, "
     "postcode, learner_type, mode_of_study, status, tutor_group, personal_tutor, "
     "start_date, end_date, prior_attainment, has_ehcp, learning_support, "
-    "emergency_contact_name, emergency_contact_phone, notes"
+    "emergency_contact_name, emergency_contact_phone, notes, middle_name, "
+    "preferred_name, gender, address_line2, town, has_lldd, medical_notes, "
+    "emergency_contact_relationship"
 )
 
 
@@ -113,6 +115,29 @@ def create(student: Student) -> Student:
     except sqlite3.IntegrityError as exc:
         raise ValidationError(_integrity_message(exc, student)) from exc
     return student
+
+
+def find_possible_duplicates(student: Student) -> list[Student]:
+    """Learners that look like the same person: same name and date of birth,
+    or the same email address. Names and email ignore case."""
+    clauses, params = [], []
+    if student.date_of_birth:
+        clauses.append("(LOWER(TRIM(first_name)) = LOWER(?) AND LOWER(TRIM(last_name)) = LOWER(?) "
+                       "AND date_of_birth = ?)")
+        params += [student.first_name.strip(), student.last_name.strip(),
+                   student.date_of_birth.isoformat()]
+    if student.email.strip():
+        clauses.append("LOWER(TRIM(email)) = LOWER(?)")
+        params.append(student.email.strip())
+    if not clauses:
+        return []
+    sql = f"SELECT {_STUDENT_COLUMNS} FROM students WHERE ({' OR '.join(clauses)})"
+    if student.student_id.strip():
+        sql += " AND student_id <> ?"
+        params.append(student.student_id.strip())
+    with read_only() as conn:
+        rows = conn.execute(sql + " ORDER BY student_id", params).fetchall()
+    return [Student.from_row(r) for r in rows]
 
 
 def update(student: Student) -> Student:

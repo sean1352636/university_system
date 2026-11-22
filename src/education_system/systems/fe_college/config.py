@@ -46,6 +46,15 @@ ACTIVE_STUDENT_STATUSES = ("enrolled",)
 
 MODES_OF_STUDY = ("Full-time", "Part-time", "Evening", "Distance", "Blended")
 
+# Personal details on the learner record: the same identity, address,
+# emergency-contact and needs details the other systems collect on add.
+GENDERS = ("Female", "Male", "Non-binary", "Other", "Prefer not to say")
+EMERGENCY_RELATIONSHIPS = (
+    "Parent", "Carer", "Guardian", "Partner", "Spouse", "Sibling", "Grandparent",
+    "Other relative", "Friend", "Other",
+)
+MEDICAL_NOTES_MAX_LENGTH = 2000
+
 # ── Curriculum ──────────────────────────────────────────────────────────────
 
 # The qualification families an FE college actually delivers. Each maps to a

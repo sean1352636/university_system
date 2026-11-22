@@ -31,8 +31,11 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from education_system.systems.sixth_form.domain.academics.assignments import (
-    assignments as core,
     assignments_marking as marking,
+)
+from education_system.systems.sixth_form.domain.academics.assignments import (
+    models as assignments_models,
+    store as assignments_store,
 )
 from education_system import paths
 
@@ -40,7 +43,7 @@ logger = logging.getLogger(__name__)
 
 DB_PATH = paths.SIXTH_FORM_ASSIGNMENTS_DB
 
-ValidationError = core.ValidationError
+ValidationError = assignments_models.ValidationError
 
 
 # ── Vocabularies ──────────────────────────────────────────────────
@@ -416,15 +419,15 @@ def _today() -> str:
     return _dt.date.today().isoformat()
 
 
-def _require_submission(submission_id: int) -> core.Submission:
-    sub = core.get_submission(submission_id)
+def _require_submission(submission_id: int) -> assignments_models.Submission:
+    sub = assignments_store.get_submission(submission_id)
     if sub is None:
         raise ValidationError(f"No submission #{submission_id}")
     return sub
 
 
-def _require_assignment(assignment_id: int) -> core.Assignment:
-    a = core.get_assignment(assignment_id)
+def _require_assignment(assignment_id: int) -> assignments_models.Assignment:
+    a = assignments_store.get_assignment(assignment_id)
     if a is None:
         raise ValidationError(f"No assignment #{assignment_id}")
     return a
@@ -502,19 +505,19 @@ def add_question(assignment_id: int,
     """
     init_db()
     _require_assignment(assignment_id)
-    prompt = core._require(payload.get("prompt"), "Prompt").strip()
-    answer_key = core._require(payload.get("answer_key"),
+    prompt = assignments_store._require(payload.get("prompt"), "Prompt").strip()
+    answer_key = assignments_store._require(payload.get("answer_key"),
                                 "Answer key").strip()
     kind = (payload.get("question_type")
              or DEFAULT_QUESTION_TYPE).strip()
     if kind not in QUESTION_TYPES:
         raise ValidationError(
             f"Question type must be one of: {', '.join(QUESTION_TYPES)}")
-    marks = core._validate_number(payload.get("marks", 1),
+    marks = assignments_store._validate_number(payload.get("marks", 1),
                                    "Question marks", min_val=0)
     if marks is None:
         marks = 1.0
-    tolerance = core._validate_number(payload.get("tolerance"),
+    tolerance = assignments_store._validate_number(payload.get("tolerance"),
                                        "Tolerance", min_val=0)
 
     options = (payload.get("options") or "").strip() or None
@@ -531,7 +534,7 @@ def add_question(assignment_id: int,
                     f"Numeric answer key {key.strip()!r} is not a "
                     f"number") from None
 
-    position = core._validate_number(payload.get("position"),
+    position = assignments_store._validate_number(payload.get("position"),
                                       "Position", min_val=0)
     if position is None:
         with _connect() as conn:
@@ -729,9 +732,9 @@ def override_answer(submission_id: int, question_id: int, *,
     question = get_question(question_id)
     if question is None:
         raise ValidationError(f"No question #{question_id}")
-    value = core._validate_number(marks, "Marks", min_val=0,
+    value = assignments_store._validate_number(marks, "Marks", min_val=0,
                                    max_val=question.marks)
-    who = core._require(overridden_by, "Overridden by").strip()
+    who = assignments_store._require(overridden_by, "Overridden by").strip()
     with _connect() as conn:
         cur = conn.execute(
             """UPDATE coursework_answers SET
@@ -817,7 +820,7 @@ def auto_mark_assignment(assignment_id: int) -> dict[str, Any]:
     _require_assignment(assignment_id)
     marked = 0
     total = 0.0
-    for sub in core.list_submissions(assignment_id=assignment_id):
+    for sub in assignments_store.list_submissions(assignment_id=assignment_id):
         result = auto_mark(sub.submission_id)
         if result.answered:
             marked += 1
@@ -867,7 +870,7 @@ def create_group(assignment_id: int, name: str, *,
         logger.info(
             "Assignment #%d is not flagged as a group assignment — "
             "creating group %r anyway", assignment_id, name)
-    group_name = core._require(name, "Group name").strip()
+    group_name = assignments_store._require(name, "Group name").strip()
     with _connect() as conn:
         if conn.execute(
                 "SELECT 1 FROM coursework_groups "
@@ -942,7 +945,7 @@ def add_group_member(group_id: int, submission_id: int, *,
     if role_value not in GROUP_ROLES:
         raise ValidationError(
             f"Group role must be one of: {', '.join(GROUP_ROLES)}")
-    delta = core._validate_number(adjustment, "Adjustment")
+    delta = assignments_store._validate_number(adjustment, "Adjustment")
     if delta is None:
         delta = 0.0
 
@@ -1002,7 +1005,7 @@ def set_member_adjustment(submission_id: int, *,
     if row is None:
         raise ValidationError(
             f"Submission #{submission_id} is not in a group")
-    delta = core._validate_number(adjustment, "Adjustment")
+    delta = assignments_store._validate_number(adjustment, "Adjustment")
     if delta is None:
         delta = 0.0
     with _connect() as conn:
@@ -1056,7 +1059,7 @@ def set_group_marks(group_id: int, marks: float, *,
     if group is None:
         raise ValidationError(f"No group #{group_id}")
     a = _require_assignment(group.assignment_id)
-    value = core._validate_number(marks, "Group marks", min_val=0)
+    value = assignments_store._validate_number(marks, "Group marks", min_val=0)
     if value is not None and a.max_marks is not None \
             and value > a.max_marks:
         raise ValidationError(
@@ -1077,7 +1080,7 @@ def set_group_marks(group_id: int, marks: float, *,
 
 def apply_group_marks(group_id: int, *,
                        marked_by: str | None = None
-                       ) -> list[core.Submission]:
+                       ) -> list[assignments_models.Submission]:
     """Push the group mark plus each member's adjustment onto their row.
 
     Routes through the marking pipeline, so a group member who handed
@@ -1093,7 +1096,7 @@ def apply_group_marks(group_id: int, *,
             "Set the group's mark before applying it to members")
     a = _require_assignment(detail.group.assignment_id)
 
-    out: list[core.Submission] = []
+    out: list[assignments_models.Submission] = []
     for member in detail.members:
         value = member.effective_marks(detail.group.group_marks)
         if value is None:
@@ -1115,7 +1118,7 @@ def apply_group_marks(group_id: int, *,
     return out
 
 
-def ungrouped_submissions(assignment_id: int) -> list[core.Submission]:
+def ungrouped_submissions(assignment_id: int) -> list[assignments_models.Submission]:
     """Students on a group assignment who aren't in a group yet."""
     init_db()
     with _connect() as conn:
@@ -1126,7 +1129,7 @@ def ungrouped_submissions(assignment_id: int) -> list[core.Submission]:
             "WHERE s.assignment_id = ? AND m.membership_id IS NULL "
             "ORDER BY s.student_id ASC",
             (int(assignment_id),)).fetchall()
-    return [core._row_submission(r) for r in rows]
+    return [assignments_store._row_submission(r) for r in rows]
 
 
 # ── Peer assessment (item 27) ─────────────────────────────────────
@@ -1144,7 +1147,7 @@ def record_peer_review(submission_id: int, *,
     """
     init_db()
     sub = _require_submission(submission_id)
-    reviewer = core._require(reviewer_student, "Reviewer").strip()
+    reviewer = assignments_store._require(reviewer_student, "Reviewer").strip()
     if reviewer == sub.student_id:
         raise ValidationError(
             "A student cannot peer-review their own work — record that "
@@ -1161,12 +1164,12 @@ def record_peer_review(submission_id: int, *,
                 f"assignment")
         ceiling = criterion.max_marks
     else:
-        a = core.get_assignment(sub.assignment_id)
+        a = assignments_store.get_assignment(sub.assignment_id)
         ceiling = a.max_marks if a else None
 
-    value = core._validate_number(marks, "Peer marks", min_val=0,
+    value = assignments_store._validate_number(marks, "Peer marks", min_val=0,
                                    max_val=ceiling)
-    when = core._validate_date(submitted_on, "Submitted on") or _today()
+    when = assignments_store._validate_date(submitted_on, "Submitted on") or _today()
 
     # Upserted by hand rather than with ON CONFLICT: an overall review
     # has criterion_id NULL, and SQLite treats NULLs as distinct in a
@@ -1320,7 +1323,7 @@ def apply_peer_blend(submission_id: int, *,
                       teacher_marks: float,
                       marked_by: str | None = None,
                       mode: str = DEFAULT_PEER_SCORE_MODE
-                      ) -> core.Submission:
+                      ) -> assignments_models.Submission:
     """Write the blended teacher/peer mark through the pipeline."""
     blended = blended_marks(submission_id, teacher_marks=teacher_marks,
                              mode=mode)
@@ -1343,7 +1346,7 @@ def apply_peer_blend(submission_id: int, *,
 def peer_review_coverage(assignment_id: int) -> dict[str, int]:
     """Who has reviewed and who still owes reviews."""
     init_db()
-    subs = core.list_submissions(assignment_id=assignment_id)
+    subs = assignments_store.list_submissions(assignment_id=assignment_id)
     ids = {s.submission_id for s in subs}
     reviewed = set()
     reviewers = set()
@@ -1363,7 +1366,7 @@ def record_self_assessment(submission_id: int, *,
                             predicted_marks: float,
                             note: str | None = None,
                             assessed_on: str | None = None
-                            ) -> core.Submission:
+                            ) -> assignments_models.Submission:
     """Record the student's own prediction before it is marked.
 
     Refuses once the mark is visible: a prediction made after seeing
@@ -1372,7 +1375,7 @@ def record_self_assessment(submission_id: int, *,
     init_db()
     sub = _require_submission(submission_id)
     a = _require_assignment(sub.assignment_id)
-    value = core._validate_number(predicted_marks, "Predicted marks",
+    value = assignments_store._validate_number(predicted_marks, "Predicted marks",
                                    min_val=0, max_val=a.max_marks)
     if value is None:
         raise ValidationError("A predicted mark is required")
@@ -1391,7 +1394,7 @@ def record_self_assessment(submission_id: int, *,
         logger.debug("Could not check release state for self-assessment",
                       exc_info=True)
 
-    when = core._validate_date(assessed_on, "Assessed on") or _today()
+    when = assignments_store._validate_date(assessed_on, "Assessed on") or _today()
     with _connect() as conn:
         conn.execute(
             "UPDATE coursework_submissions SET self_predicted_marks = ?, "
@@ -1416,7 +1419,7 @@ def self_assessment_report(assignment_id: int
     """Every student's prediction against their actual mark."""
     init_db()
     return [get_self_assessment(s.submission_id)
-            for s in core.list_submissions(assignment_id=assignment_id)
+            for s in assignments_store.list_submissions(assignment_id=assignment_id)
             if s.self_predicted_marks is not None]
 
 
@@ -1444,11 +1447,11 @@ def calibration_summary(assignment_id: int) -> dict[str, Any]:
 
 
 def missing_self_assessments(assignment_id: int
-                              ) -> list[core.Submission]:
+                              ) -> list[assignments_models.Submission]:
     """Students who owe a self-assessment on an assignment requiring one."""
     init_db()
     a = _require_assignment(assignment_id)
     if not a.self_assessment_required:
         return []
-    return [s for s in core.list_submissions(assignment_id=assignment_id)
+    return [s for s in assignments_store.list_submissions(assignment_id=assignment_id)
             if s.self_predicted_marks is None]

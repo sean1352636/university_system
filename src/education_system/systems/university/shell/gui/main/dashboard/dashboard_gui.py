@@ -278,7 +278,7 @@ def show_integrated_dashboard(self):
     # Role-specific "My Dashboard" tab (inserted first)
     role = self.auth.current_user.get('role', '')
     try:
-        from education_system.systems.university.services.dashboard.dashboard_service import DashboardService
+        from education_system.systems.university.shared.analytics.dashboard.dashboard_service import DashboardService
         dash_service = DashboardService()
         my_dash_frame = ttk.Frame(notebook)
 
@@ -320,7 +320,7 @@ def show_integrated_dashboard(self):
     # Admin-only tabs
     if role == 'admin':
         try:
-            from education_system.systems.university.services.dashboard.dashboard_service import DashboardService as _DS
+            from education_system.systems.university.shared.analytics.dashboard.dashboard_service import DashboardService as _DS
             _admin_svc = _DS()
 
             # Login Analytics tab (Feature 13)
@@ -333,7 +333,7 @@ def show_integrated_dashboard(self):
             operations_frame = ttk.Frame(notebook)
             notebook.add(operations_frame, text=_t('gui.shell.main.dashboard.dashboard.tabs.operations', default="Operations"))
             from education_system.systems.university.shell.gui.main.dashboard.operations_dashboard import create_operations_tab
-            create_operations_tab(operations_frame, _admin_svc)
+            create_operations_tab(operations_frame, _admin_svc, self.auth)
 
             # System Health (enhanced) tab (Feature 15)
             sys_health_frame = ttk.Frame(notebook)
@@ -959,15 +959,40 @@ def create_health_tab(self, parent):
         selftest_vars[label] = var
 
     def _run_self_tests():
+        # Checks run on worker threads, but Tk variables may only be touched
+        # from the main thread: workers post results to a queue that the Tk
+        # loop drains via after().
+        import queue
+        results = queue.Queue()
+        pending = {"n": len(selftest_checks)}
+
         for lbl, fn in selftest_checks:
-            v = selftest_vars[lbl]
-            v.set("Checking…")
-            def _runner(label=lbl, func=fn, var=v):
+            selftest_vars[lbl].set("Checking…")
+            def _runner(label=lbl, func=fn):
                 try:
-                    var.set("✅ OK" if func() else "❌ FAIL")
+                    text = "✅ OK" if func() else "❌ FAIL"
                 except Exception as e:
-                    var.set(f"❌ ERROR: {str(e)[:50]}")
+                    text = f"❌ ERROR: {str(e)[:50]}"
+                results.put((label, text))
             threading.Thread(target=_runner, daemon=True).start()
+
+        def _drain():
+            try:
+                if not selftest_frame.winfo_exists():
+                    return
+            except tk.TclError:
+                return
+            while True:
+                try:
+                    label, text = results.get_nowait()
+                except queue.Empty:
+                    break
+                selftest_vars[label].set(text)
+                pending["n"] -= 1
+            if pending["n"] > 0:
+                selftest_frame.after(100, _drain)
+
+        selftest_frame.after(100, _drain)
 
     _start_time = datetime.now()
 

@@ -38,6 +38,7 @@ from education_system.systems.university.infrastructure.email.email_service impo
     wait_for_email_queue,
 )
 from education_system.systems.university.infrastructure.utils.config import test_email_configuration
+from education_system.systems.university.infrastructure.email import permissions
 
 
 @handle_exception
@@ -893,6 +894,24 @@ def display_admin_message_management_menu(dashboard):
 
 
 
+def _show_outbox_status():
+    """The e-mail outbox: delivery mode and message counts."""
+    from education_system.systems.university.application.mail import admin as email_admin
+    from education_system.systems.university.infrastructure.database.db import get_connection
+    from education_system.systems.university.infrastructure.email import outbox_delivery
+    st = outbox_delivery.status()
+    conn = get_connection(None, row_factory=False)
+    try:
+        summary = email_admin.summary(conn)
+        conn.commit()
+    finally:
+        conn.close()
+    _out(f"\nDelivery mode: {st['mode']}   live ready: {'yes' if st['live_ready'] else 'no'}")
+    counts = summary["counts"]
+    _out("Outbox: " + (", ".join(f"{k} {v}" for k, v in sorted(counts.items())) or "empty"))
+    _out(f"Waiting: {summary['waiting']}   problems (failed/bounced): {summary['problems']}")
+
+
 def display_communication_dashboard(auth=None):
     """Display the integrated communication dashboard menu with enhanced logging"""
     # Lazy import to avoid circular dependency
@@ -974,6 +993,10 @@ def display_communication_dashboard(auth=None):
             display_chat_rooms_menu(dashboard)
         elif choice == '4':
             display_preferences_menu(dashboard)
+        elif choice in ('5', '6', '7', '9', '10') and not permissions.is_email_admin(auth):
+            _out(permissions.DENIED)
+        elif choice == '8' and not permissions.can_send_bulk(auth):
+            _out(permissions.DENIED_BULK)
         elif choice == '5':
             configure_email_settings()
         elif choice == '6':
@@ -1002,51 +1025,7 @@ def display_communication_dashboard(auth=None):
         elif choice == '9':
             schedule_email_form()
         elif choice == '10':
-            if config.get('database_only_mode', True):
-                # Show stored emails info instead of queue
-                emails_data = get_stored_emails(limit=1)
-                _out(f"\nStored emails in database: {emails_data['total_count']}")
-
-                if emails_data['total_count'] > 0:
-                    _out("Recent stored emails:")
-                    recent_emails = get_stored_emails(limit=5)
-                    for email in recent_emails['emails']:
-                        _out(f"  - To: {email['recipient_email']}, Subject: {email['subject'][:50]}...")
-            else:
-                queue_size = email_queue.qsize()
-                _out(f"\nCurrent email queue size: {queue_size}")
-                if queue_size > 0:
-                    wait = input("Wait for all emails to be sent? (y/n): ")
-                    if wait.lower() == 'y':
-                        wait_for_email_queue()
-
-                # Show scheduled emails
-                def _get_scheduled_emails(cursor):
-                    cursor.execute('''
-                    SELECT id, template_name, recipient_email, scheduled_date, status
-                    FROM scheduled_emails
-                    WHERE status = 'pending'
-                    ORDER BY scheduled_date
-                    ''')
-
-                    return cursor.fetchall()
-
-                try:
-                    scheduled = execute_db_operation(_get_scheduled_emails)
-
-                    if scheduled:
-                        _out("\nPending Scheduled Emails:")
-                        _out(f"{'ID':<5}{'Template':<25}{'Recipient':<30}{'Scheduled Date':<20}{'Status'}")
-                        _out("-" * 80)
-
-                        for email in scheduled:
-                            _out(f"{email[0]:<5}{email[1]:<25}{email[2]:<30}{email[3]:<20}{email[4]}")
-                    else:
-                        _out("\nNo pending scheduled emails.")
-                except Exception as e:
-                    log_event('error', f"Error getting scheduled emails: {e}")
-                    _err("\nError retrieving scheduled emails.")
-
+            _show_outbox_status()
             input("\nPress Enter to continue...")
         elif choice == '11':
             generate_report_form()

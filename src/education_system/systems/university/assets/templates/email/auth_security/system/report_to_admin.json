@@ -1,0 +1,13 @@
+{
+  "subject": "Report: $report_title",
+  "body": "Dear Administrator,\n\n$sent_by has sent you a $report_kind from $institution_name.\n\nREPORT DETAILS:\n================================================================================\nTitle: $report_title\nScreen: $source_window\nGenerated: $generated_at\nAttachment: $attachment_name\n================================================================================\n\n$preview\n\nThe full $report_kind is attached to this e-mail.\n\n$signature",
+  "variables": {
+    "report_title": "Title of the report or chart window",
+    "report_kind": "\"report\" or \"chart\"",
+    "sent_by": "Username of the person who pressed \"Email to admin\"",
+    "source_window": "The window the report came from",
+    "generated_at": "Date and time the report was sent",
+    "attachment_name": "File name of the attached report or chart",
+    "preview": "The first lines of a text report (empty for a chart)"
+  }
+}

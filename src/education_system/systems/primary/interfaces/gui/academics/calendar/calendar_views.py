@@ -1,4 +1,4 @@
-"""Tkinter views for Sixth Form Calendar.
+"""Tkinter views for Primary School Calendar.
 
 Notebook with 4 tabs:
 * Upcoming  — events from today onwards, with date-range presets.
@@ -12,9 +12,11 @@ from __future__ import annotations
 import datetime as _dt
 import logging
 import tkinter as tk
-from tkinter import messagebox, ttk
+from tkinter import ttk
 from typing import Callable
 from education_system.platform import branding
+from education_system.platform.delivery.gui.parented_dialogs import make_toplevel, messagebox
+from education_system.systems.primary.interfaces.gui import kit
 from education_system.systems.primary.domain.academics.calendar import (
     calendar as data,
 )
@@ -37,14 +39,24 @@ WIN_MINSIZE = (1200, 800)
 
 def open_calendar_window(parent=None) -> None:
     data.init_db()
-    master = getattr(parent, "root", parent)
-    win = tk.Toplevel(master) if master is not None else tk.Tk()
-    win.title(f"Calendar — {branding.SYSTEM_NAME}")
-    win.geometry(WIN_GEOMETRY)
-    win.minsize(*WIN_MINSIZE)
+    if parent is None:
+        # Stand-alone use (no main window): a root of its own.
+        root = tk.Tk()
+        root.title(f"Calendar — {branding.SYSTEM_NAME}")
+        root.geometry(WIN_GEOMETRY)
+        root.minsize(*WIN_MINSIZE)
+        frame = ttk.Frame(root, padding=10)
+        frame.pack(fill="both", expand=True)
+        _draw_calendar(frame, root)
+        return
+    kit.show_page(parent, "Calendar", lambda page: _draw_calendar(page, parent))
 
-    nb = ttk.Notebook(win)
-    nb.pack(fill="both", expand=True, padx=10, pady=10)
+
+def _draw_calendar(parent, host) -> None:
+    kit.page_heading(parent, "Calendar",
+                     "School events: upcoming, all events, a single day and a summary.")
+    nb = ttk.Notebook(parent)
+    nb.pack(fill="both", expand=True)
 
     EventsTab(nb, upcoming_only=True, label="Upcoming")
     EventsTab(nb, upcoming_only=False, label="All Events")
@@ -54,6 +66,19 @@ def open_calendar_window(parent=None) -> None:
 
 def _today() -> str:
     return _dt.date.today().isoformat()
+
+
+def _staff_names() -> list[tuple[str, str]]:
+    """(full name, label) for staff, for name fields that may also hold
+    someone who is not on the staff list (e.g. "PTA")."""
+    try:
+        from education_system.systems.primary.domain.staff import staff
+        rows = staff.list_staff(active_only=True)
+    except Exception:  # noqa: BLE001 - a typed name still works
+        logger.debug("staff list failed", exc_info=True)
+        return []
+    rows.sort(key=lambda s: (s.last_name.lower(), s.first_name.lower()))
+    return [(s.full_name, s.full_name) for s in rows]
 
 
 # ══ Events tab ════════════════════════════════════════════════════
@@ -94,12 +119,11 @@ class EventsTab:
         self.f_title.pack(side="left", padx=(2, 8))
 
         ttk.Label(bar, text="From:").pack(side="left")
-        self.f_from = ttk.Entry(bar, width=12)
-        if self.upcoming_only:
-            self.f_from.insert(0, _today())
+        self.f_from = kit.DateField(
+            bar, tk.StringVar(value=_today() if self.upcoming_only else ""))
         self.f_from.pack(side="left", padx=(2, 8))
         ttk.Label(bar, text="To:").pack(side="left")
-        self.f_to = ttk.Entry(bar, width=12)
+        self.f_to = kit.DateField(bar, tk.StringVar())
         self.f_to.pack(side="left", padx=(2, 8))
 
         ttk.Button(bar, text="Apply",
@@ -172,11 +196,8 @@ class EventsTab:
 
     def _preset(self, days: int) -> None:
         today = _dt.date.today()
-        self.f_from.delete(0, "end")
-        self.f_from.insert(0, today.isoformat())
-        self.f_to.delete(0, "end")
-        self.f_to.insert(0,
-                          (today + _dt.timedelta(days=days)).isoformat())
+        self.f_from.set(today.isoformat())
+        self.f_to.set((today + _dt.timedelta(days=days)).isoformat())
         self.refresh()
 
     def _clear(self) -> None:
@@ -184,10 +205,8 @@ class EventsTab:
         self.f_audience.current(0)
         self.f_status.current(0)
         self.f_title.delete(0, "end")
-        self.f_from.delete(0, "end")
-        if self.upcoming_only:
-            self.f_from.insert(0, _today())
-        self.f_to.delete(0, "end")
+        self.f_from.set(_today() if self.upcoming_only else "")
+        self.f_to.set("")
         self.refresh()
 
     def refresh(self) -> None:
@@ -304,8 +323,7 @@ class DayTab:
         bar = ttk.Frame(self.frame)
         bar.pack(fill="x", padx=8, pady=(8, 4))
         ttk.Label(bar, text="Date:").pack(side="left")
-        self.date_e = ttk.Entry(bar, width=14)
-        self.date_e.insert(0, _today())
+        self.date_e = kit.DateField(bar, tk.StringVar(value=_today()))
         self.date_e.pack(side="left", padx=(2, 8))
         ttk.Button(bar, text="Apply",
                     command=self.refresh).pack(side="left")
@@ -346,8 +364,7 @@ class DayTab:
                    anchor="w").pack(fill="x", padx=8, pady=(0, 8))
 
     def _today(self) -> None:
-        self.date_e.delete(0, "end")
-        self.date_e.insert(0, _today())
+        self.date_e.set(_today())
         self.refresh()
 
     def _shift(self, days: int) -> None:
@@ -356,8 +373,7 @@ class DayTab:
         except ValueError:
             d = _dt.date.today()
         d = d + _dt.timedelta(days=days)
-        self.date_e.delete(0, "end")
-        self.date_e.insert(0, d.isoformat())
+        self.date_e.set(d.isoformat())
         self.refresh()
 
     def refresh(self) -> None:
@@ -408,8 +424,8 @@ class SummaryTab:
         bar = ttk.Frame(self.frame)
         bar.pack(fill="x", padx=8, pady=(8, 4))
         ttk.Label(bar, text="Upcoming window (days):").pack(side="left")
-        self.window_e = ttk.Entry(bar, width=6)
-        self.window_e.insert(0, "14")
+        self.window_e = kit.NumberField(bar, tk.StringVar(value="14"),
+                                        from_=1, to=365, width=6)
         self.window_e.pack(side="left", padx=(2, 10))
         ttk.Button(bar, text="Apply",
                     command=self.refresh).pack(side="left")
@@ -462,7 +478,7 @@ class SummaryTab:
 
 class EventDetailDialog:
     def __init__(self, parent: tk.Misc, event: Event) -> None:
-        self.win = tk.Toplevel(parent)
+        self.win = make_toplevel(parent.winfo_toplevel())
         self.win.title(f"Event #{event.event_id}")
         self.win.transient(parent)
         self.win.geometry("700x520")
@@ -523,7 +539,7 @@ class StatusDialog:
                  on_save: Callable[[], None]) -> None:
         self.existing = existing
         self.on_save = on_save
-        self.win = tk.Toplevel(parent)
+        self.win = make_toplevel(parent.winfo_toplevel())
         self.win.title(f"Status — event #{existing.event_id}")
         self.win.transient(parent)
         self.win.after_idle(self.win.grab_set)
@@ -557,15 +573,15 @@ class EventDialog:
                  on_save: Callable[[], None]) -> None:
         self.existing = existing
         self.on_save = on_save
-        self.win = tk.Toplevel(parent)
+        self.win = make_toplevel(parent.winfo_toplevel())
         self.win.title("Edit Event" if existing else "New Event")
         self.win.transient(parent)
         self.win.after_idle(self.win.grab_set)
         self._build()
 
     def _build(self) -> None:
-        form = ttk.Frame(self.win, padding=12)
-        form.pack(fill="both", expand=True)
+        form, footer = kit.scrolled_form(self.win)
+        self.win.geometry("760x620")
         r = 0
 
         ttk.Label(form, text="Title:").grid(row=r, column=0,
@@ -595,15 +611,13 @@ class EventDialog:
         r += 1
         ttk.Label(form, text="Start date:").grid(row=r, column=0,
                                                     sticky="e", pady=4)
-        self.start_e = ttk.Entry(form, width=14)
-        self.start_e.insert(0, (self.existing.start_date
-                                  if self.existing else _today()))
+        self.start_e = kit.DateField(form, tk.StringVar(
+            value=self.existing.start_date if self.existing else _today()))
         self.start_e.grid(row=r, column=1, sticky="w", padx=6)
         ttk.Label(form, text="End date:").grid(row=r, column=2,
                                                   sticky="e", pady=4)
-        self.end_e = ttk.Entry(form, width=14)
-        self.end_e.insert(0, (self.existing.end_date
-                                if self.existing else ""))
+        self.end_e = kit.DateField(form, tk.StringVar(
+            value=(self.existing.end_date or "") if self.existing else ""))
         self.end_e.grid(row=r, column=3, sticky="w", padx=6)
 
         r += 1
@@ -616,15 +630,13 @@ class EventDialog:
         r += 1
         ttk.Label(form, text="Start time:").grid(row=r, column=0,
                                                     sticky="e", pady=4)
-        self.stime_e = ttk.Entry(form, width=10)
-        if self.existing and self.existing.start_time:
-            self.stime_e.insert(0, self.existing.start_time[:5])
+        self.stime_e = kit.TimeField(form, tk.StringVar(
+            value=(self.existing.start_time or "")[:5] if self.existing else ""))
         self.stime_e.grid(row=r, column=1, sticky="w", padx=6)
         ttk.Label(form, text="End time:").grid(row=r, column=2,
                                                   sticky="e", pady=4)
-        self.etime_e = ttk.Entry(form, width=10)
-        if self.existing and self.existing.end_time:
-            self.etime_e.insert(0, self.existing.end_time[:5])
+        self.etime_e = kit.TimeField(form, tk.StringVar(
+            value=(self.existing.end_time or "")[:5] if self.existing else ""))
         self.etime_e.grid(row=r, column=3, sticky="w", padx=6)
 
         r += 1
@@ -639,9 +651,10 @@ class EventDialog:
         r += 1
         ttk.Label(form, text="Organiser:").grid(row=r, column=0,
                                                    sticky="e", pady=4)
-        self.organiser_e = ttk.Entry(form, width=30)
-        if self.existing and self.existing.organiser:
-            self.organiser_e.insert(0, self.existing.organiser)
+        self.organiser_e = kit.ChoiceField(
+            form, tk.StringVar(value=(self.existing.organiser or "")
+                               if self.existing else ""),
+            choices=_staff_names(), blank=True, editable=True, width=28)
         self.organiser_e.grid(row=r, column=1, sticky="w", padx=6)
         ttk.Label(form, text="Status:").grid(row=r, column=2,
                                                 sticky="e", pady=4)
@@ -654,15 +667,17 @@ class EventDialog:
         r += 1
         ttk.Label(form, text="Capacity:").grid(row=r, column=0,
                                                   sticky="e", pady=4)
-        self.cap_e = ttk.Entry(form, width=10)
-        if self.existing and self.existing.capacity is not None:
-            self.cap_e.insert(0, str(self.existing.capacity))
+        self.cap_e = kit.NumberField(form, tk.StringVar(
+            value=str(self.existing.capacity)
+            if self.existing and self.existing.capacity is not None else ""),
+            from_=0, to=9999, width=8)
         self.cap_e.grid(row=r, column=1, sticky="w", padx=6)
         ttk.Label(form, text="Cost:").grid(row=r, column=2,
                                               sticky="e", pady=4)
-        self.cost_e = ttk.Entry(form, width=10)
-        if self.existing and self.existing.cost is not None:
-            self.cost_e.insert(0, f"{self.existing.cost:.2f}")
+        self.cost_e = kit.NumberField(form, tk.StringVar(
+            value=f"{self.existing.cost:.2f}"
+            if self.existing and self.existing.cost is not None else ""),
+            from_=0, to=99999, increment=0.01, width=10)
         self.cost_e.grid(row=r, column=3, sticky="w", padx=6)
 
         r += 1
@@ -691,12 +706,9 @@ class EventDialog:
         self.notes_t.grid(row=r, column=1, columnspan=3,
                             sticky="w", padx=6)
 
-        r += 1
-        bar = ttk.Frame(form)
-        bar.grid(row=r, column=0, columnspan=4, pady=(12, 0))
-        ttk.Button(bar, text="Save", command=self._save).pack(side="left")
-        ttk.Button(bar, text="Cancel",
-                    command=self.win.destroy).pack(side="left", padx=8)
+        ttk.Button(footer, text="Cancel",
+                    command=self.win.destroy).pack(side="right", padx=(6, 0))
+        ttk.Button(footer, text="Save", command=self._save).pack(side="right")
 
     def _collect(self) -> dict:
         return {

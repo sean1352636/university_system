@@ -20,8 +20,8 @@ from functools import partial
 from education_system.systems.apprenticeships import config
 from education_system.systems.apprenticeships.interfaces.cli import prompts
 from education_system.systems.apprenticeships.interfaces.cli.commands import apprentices
-from education_system.systems.apprenticeships.services import review_service
-from education_system.systems.apprenticeships.services.access import Actor
+from education_system.systems.apprenticeships.application.learning import review_service
+from education_system.systems.apprenticeships.application.security.access import Actor
 
 logger = logging.getLogger(__name__)
 
@@ -350,7 +350,7 @@ def _employer_names(actor: Actor) -> dict[int, str]:
     employers still sees their own ratings, so a refusal here falls back
     to bare ids rather than emptying the table.
     """
-    from education_system.systems.apprenticeships.services import employer_service
+    from education_system.systems.apprenticeships.application.employers import employer_service
 
     try:
         return {

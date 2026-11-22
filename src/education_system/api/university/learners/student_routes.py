@@ -22,7 +22,7 @@ from education_system.platform.delivery.api.university.pagination import (
     get_pagination_params,
     paginated_response,
 )
-from education_system.systems.university.application.student_lifecycle_service import (
+from education_system.systems.university.application.students.lifecycle import (
     Gender,
     PurgeControlError,
     StudentCommand,
@@ -195,6 +195,14 @@ def create_student():
             email_address=data.get("email_address"),
             entry_qualifications=data.get("entry_qualifications", "") or "",
             ucas_tariff=data.get("ucas_tariff"),
+            **{key: str(data.get(key) or "") for key in (
+                "phone", "address", "personal_email", "nationality", "mode_of_study",
+                "fee_status", "entry_route", "entry_override_reason",
+                "preferred_name", "postcode", "notes", "emergency_contact_name",
+                "address_line1", "address_line2", "town",
+                "emergency_contact_relationship", "emergency_contact_phone",
+                "medical_notes")},
+            allow_duplicate=bool(data.get("allow_duplicate")),
         )
         created = _lifecycle().create(
             command,
@@ -272,6 +280,28 @@ def update_student(student_id: str):
         "event_id": result.event_id,
         "changed_fields": list(result.changed_fields),
     })
+
+
+@student_bp.route("/<student_id>/transfer", methods=["POST"])
+@token_required
+def transfer_student(student_id: str):
+    """Move a student to another course (``{"course": ..., "reason": ...}``):
+    old modules become 'Transferred', the new curriculum is added."""
+    denied = authorize_object("staff-boundary", permission="manage_students")
+    if denied is not None:
+        return denied
+    data = request.get_json(silent=True) or {}
+    try:
+        result = _lifecycle().transfer_course(
+            student_id, str(data.get("course") or ""), actor_id=_actor_id(),
+            reason=str(data.get("reason") or ""),
+            idempotency_key=_idempotency_key("transfer", student_id),
+        )
+    except StudentValidationError as exc:
+        return _validation_error(exc)
+    log_activity("update", "student", user=g.current_user.get("sub"))
+    return jsonify({"student_id": result.student_id, "status": str(result.status),
+                    "event_id": result.event_id})
 
 
 @student_bp.route("/<student_id>", methods=["DELETE"])

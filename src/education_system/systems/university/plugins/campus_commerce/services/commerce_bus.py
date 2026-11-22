@@ -219,7 +219,7 @@ def resolve_student(*, email: str | None = None,
                     logger.debug("Suppressed exception", exc_info=True)
             if email:
                 row = conn.execute(
-                    "SELECT student_id FROM students WHERE email = ? "
+                    "SELECT student_id FROM students WHERE email_address = ? "
                     "LIMIT 1",
                     (email,),
                 ).fetchone()

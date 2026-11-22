@@ -45,6 +45,16 @@ KNOWN_VIOLATIONS: set[tuple[str, str]] = {
         "domain/portfolio/__init__.py",
         f"{_UNI}.domains.progression.interfaces.cli.portfolio.portfolio_cli",
     ),
+    # Carried from Academics/Pastoral when they were split into areas (2026-10-24):
+    # inside one slice these were not cross-domain reaches.
+    ('domain/degree_audit/degree_audit_core.py',
+     f"{_UNI}.domains.curriculum.interfaces.gui.course_management_gui.degree_audit_gui"),
+    ('domain/degree_audit/graduation_ceremony.py',
+     f"{_UNI}.domains.finance.domain.ledger"),
+    ('domain/degree_audit/graduation_ceremony.py',
+     'sqlite3'),
+    ('interfaces/gui/blockchain_credentials_gui.py',
+     f"{_UNI}.domains.finance.domain.blockchain.services"),
 }
 
 

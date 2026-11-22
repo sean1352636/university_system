@@ -1,6 +1,8 @@
 from datetime import datetime
 
 from education_system.systems.university.infrastructure.database.db import sqlite3, get_connection
+from education_system.systems.university.application.exams import marking as exam_marking
+from education_system.systems.university.application.assessment import module_results
 from education_system.systems.university.domains.assessment.domain.grading.grade_calculation.constants import GRADE_SYSTEMS
 from education_system.systems.university.domains.assessment.domain.grading.grade_calculation.conversions import (
     percentage_to_letter,
@@ -13,77 +15,24 @@ from education_system.systems.university.domains.assessment.domain.grading.grade
 
 
 def update_module_grade(cursor, student_id, module_code):
-    """Update the final grade for a student in a module based on all assessment grades"""
+    """Recalculate a student's module result.
+
+    Delegates to the single calculation in ``application/assessment/module_results``,
+    which counts exams/tests *and* assignments. This used to compute from
+    exams and tests alone and overwrite the assignment roll-up (and vice
+    versa), so each calculation erased the other's half of the result.
+    """
+    from education_system.systems.university.application.assessment import module_results
     try:
-        # Get all assessments for this module
-        cursor.execute('''
-        SELECT assessment_id, weight, max_points
-        FROM assessments
-        WHERE module_code = ?
-        ''', (module_code,))
-
-        assessments = cursor.fetchall()
-
-        if not assessments:
-            return
-
-        total_weighted_score = 0
-        total_weight = 0
-
-        # Calculate weighted score for each assessment
-        for assessment_id, weight, max_points in assessments:
-            cursor.execute('''
-            SELECT score
-            FROM grades
-            WHERE student_id = ? AND assessment_id = ?
-            ''', (student_id, assessment_id))
-
-            grade = cursor.fetchone()
-
-            if grade:
-                # Calculate percentage score for this assessment
-                percentage = (grade[0] / max_points) * 100
-                weighted_score = percentage * (weight / 100)
-
-                total_weighted_score += weighted_score
-                total_weight += weight
-
-        # Only update if at least one grade exists
-        if total_weight > 0:
-            # Adjust score based on total weight recorded so far
-            if total_weight < 100:
-                final_score = total_weighted_score * (100 / total_weight)
-            else:
-                final_score = total_weighted_score
-
-            final_grade = percentage_to_letter(final_score)
-            completion_date = datetime.now().strftime('%Y-%m-%d')
-
-            # Check if a module grade already exists
-            cursor.execute('''
-            SELECT id
-            FROM module_grades
-            WHERE student_id = ? AND module_code = ?
-            ''', (student_id, module_code))
-
-            existing_grade = cursor.fetchone()
-
-            if existing_grade:
-                # Update existing grade
-                cursor.execute('''
-                UPDATE module_grades
-                SET final_score = ?, final_grade = ?, completion_date = ?
-                WHERE id = ?
-                ''', (final_score, final_grade, completion_date, existing_grade[0]))
-            else:
-                # Insert new grade
-                cursor.execute('''
-                INSERT INTO module_grades (student_id, module_code, final_score, final_grade, completion_date)
-                VALUES (?, ?, ?, ?, ?)
-                ''', (student_id, module_code, final_score, final_grade, completion_date))
-
+        module_results.recompute(cursor.connection, student_id, module_code)
     except sqlite3.Error as e:
         print(f"Error updating module grade: {e}")
+
+
+def _is_resit(cursor, assessment_id):
+    row = cursor.execute("SELECT reassessment_of FROM assessments WHERE assessment_id = ?",
+                         (assessment_id,)).fetchone()
+    return bool(row and row[0] is not None)
 
 
 def record_assessment_grades():
@@ -138,6 +87,10 @@ def record_assessment_grades():
             return
 
         print(f"\nFound {len(students)} students enrolled in this module.")
+        anonymous = exam_marking.is_anonymised(conn, assessment_id)
+        if anonymous:
+            print("Anonymous marking: students are shown by candidate number.")
+        print(f"Enter a score, or {' / '.join(exam_marking.ABSENCE_CODES)} for an absence.")
 
         # Ask for grading method
         grade_method = input("\nEnter grading method (1 for points, 2 for letter grades): ").strip()
@@ -153,7 +106,11 @@ def record_assessment_grades():
         for student in students:
             student_id, first_name, middle_name, last_name = student
             middle_initial = middle_name[0] + ". " if middle_name else ""
-            full_name = f"{first_name} {middle_initial}{last_name}"
+            full_name = exam_marking.marker_label(conn, assessment_id, student_id,
+                                                  f"{first_name} {middle_initial}{last_name}")
+            if module_results.is_locked(conn, student_id, module_code) and not _is_resit(cursor, assessment_id):
+                print(f"\n{full_name}: module result ratified by an exam board — skipped.")
+                continue
 
             # Check if grade already exists
             cursor.execute('''
@@ -170,6 +127,14 @@ def record_assessment_grades():
 
                 if update_this != 'y':
                     continue
+                reason = input("Reason for changing this mark (required): ").strip()
+                if not reason:
+                    print("A reason is required; mark left unchanged.")
+                    continue
+                exam_marking.log_change(conn, source="grades", record_id=existing_grade[0],
+                                        student_id=student_id, module_code=module_code,
+                                        old_value=existing_grade[1], new_value="re-entered",
+                                        reason=reason)
 
                 # Delete existing grade
                 cursor.execute('''
@@ -182,6 +147,11 @@ def record_assessment_grades():
             if grade_method == '1':
                 # Points method
                 score = input(f"Points (max {max_points}): ").strip()
+                if score.upper() in exam_marking.ABSENCE_CODES:
+                    exam_marking.record_absence(conn, assessment_id, student_id, score.upper(),
+                                                reason=input("Note (optional): ").strip() or None)
+                    grades_recorded += 1
+                    continue
 
                 try:
                     score = float(score)
@@ -224,8 +194,8 @@ def record_assessment_grades():
 
             grades_recorded += 1
 
-            # Update final module grade
-            update_module_grade(cursor, student_id, module_code)
+            # Referral cap, moderation, module result
+            exam_marking.after_mark(conn, cursor.lastrowid)
 
         conn.commit()
         print(f"\nSuccessfully recorded {grades_recorded} grades for {assessment_name}.")
@@ -309,6 +279,14 @@ def update_grades():
             assessment_name = selected_grade[1]
             max_points = selected_grade[7]
             module_code = selected_grade[3]
+            if module_results.is_locked(conn, student_id, module_code):
+                resit = cursor.execute("SELECT a.reassessment_of FROM grades g JOIN assessments a "
+                                       "ON a.assessment_id = g.assessment_id WHERE g.grade_id = ?",
+                                       (grade_id,)).fetchone()
+                if not resit or resit[0] is None:
+                    print("This module result was ratified by an exam board. Reopen the board to change it.")
+                    conn.close()
+                    return
 
             # Get the assessment ID for this grade
             cursor.execute('''
@@ -381,6 +359,15 @@ def update_grades():
             if not comments and current_comments:
                 comments = current_comments
 
+            reason = input("Reason for changing this mark (required): ").strip()
+            if not reason:
+                print("A reason is required; mark left unchanged.")
+                conn.close()
+                return
+            exam_marking.log_change(conn, source="grades", record_id=grade_id, student_id=student_id,
+                                    module_code=module_code, old_value=selected_grade[5],
+                                    new_value=score, reason=reason)
+
             # Update submission date
             submission_date = datetime.now().strftime('%Y-%m-%d')
 
@@ -391,8 +378,8 @@ def update_grades():
             WHERE grade_id = ?
             ''', (score, letter_grade, submission_date, comments, grade_id))
 
-            # Update final module grade
-            update_module_grade(cursor, student_id, module_code)
+            # Referral cap, moderation, module result
+            exam_marking.after_mark(conn, grade_id)
 
             conn.commit()
             print(f"\nSuccessfully updated grade for {assessment_name} to {letter_grade} ({score}).")

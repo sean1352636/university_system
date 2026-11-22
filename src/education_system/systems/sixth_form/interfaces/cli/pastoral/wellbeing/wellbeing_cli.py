@@ -732,7 +732,23 @@ _MENU: list[tuple[str, Callable[[], None]]] = [
     ("Delete Flag",               delete_flag),
     ("Per-Student",               per_student),
     ("Summary",                   summary),
+    ("Vulnerable Groups ▸",        lambda: _vulnerable_groups()),
+    ("Mental Health Referrals ▸",  lambda: _mh_referrals()),
 ]
+
+
+def _vulnerable_groups() -> None:
+    from education_system.systems.sixth_form.interfaces.cli.pastoral.wellbeing import (
+        vulnerable_groups_cli,
+    )
+    vulnerable_groups_cli.run()
+
+
+def _mh_referrals() -> None:
+    from education_system.systems.sixth_form.interfaces.cli.pastoral.student_support import (
+        mh_referrals_cli,
+    )
+    mh_referrals_cli.run()
 
 
 def run() -> None:

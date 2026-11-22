@@ -109,7 +109,7 @@ def _create_fallback_chatbot(auth_instance):
         def __init__(self):
             self.enabled = False
 
-        def process_message(self, msg, user, session_id=None, voice=False):
+        def process_message(self, msg, user, session_id=None, voice=False, **kwargs):
             return "Chatbot temporarily unavailable. Please try again later."
 
         def run_authenticated_console_interface(self):
@@ -218,97 +218,36 @@ def create_chatbot_session(auth_instance, username: str) -> Optional[str]:
     return session_token
 
 def get_chatbot_conversation_history(auth_instance, username: str, limit: int = 50) -> List[Dict[str, Any]]:
-    """Get chatbot conversation history for a user - IMPROVED VERSION
+    """The signed-in person's own chatbot conversations, from the
+    conversation log (``chatbot_knowledge.history``). Nobody reads another
+    person's conversations here; staff see counts only.
 
     Args:
         auth_instance: UserAuth instance
-        username: Username to get history for
+        username: Username to get history for (must be the signed-in user)
         limit: Maximum number of conversations to return
 
     Returns:
         List[Dict[str, Any]]: List of conversation entries
     """
-    if not auth_instance.current_user:
+    if not auth_instance.current_user or auth_instance.current_user['username'] != username:
         return []
 
-    # Check permissions
-    can_view = False
-    if auth_instance.current_user['username'] == username:
-        can_view = True
-    elif 'view_all_conversations' in auth_instance.current_user['permissions']:
-        can_view = True
-    elif 'view_student_conversations' in auth_instance.current_user['permissions']:
-        can_view = True
-
-    if not can_view:
-        return []
-
-    conversations = []
-
-    # First, try to get from activity_log (most reliable)
+    from education_system.systems.university.application.chatbot import (
+        knowledge as chatbot_knowledge,
+    )
+    from education_system.systems.university.infrastructure.database.db import get_connection
+    conn = get_connection(row_factory=False)
     try:
-        with auth_instance.db_manager.get_connection() as conn:
-            cursor = conn.cursor()
-
-            cursor.execute('''
-                SELECT timestamp, action, details
-                FROM activity_log
-                WHERE username = ? AND action = 'Chatbot interaction'
-                ORDER BY timestamp DESC
-                LIMIT ?
-            ''', (username, limit))
-
-            for row in cursor.fetchall():
-                timestamp, action, details = row
-
-                # Extract message and response from details if possible
-                message_text = "Chat interaction"
-                if details:
-                    try:
-                        # Try to parse "Q: ... A: ..." format
-                        if 'Q:' in details and 'A:' in details:
-                            parts = details.split('A:')
-                            if len(parts) >= 1:
-                                q_part = parts[0].replace('Q:', '').strip()
-                                message_text = q_part[:100] + '...' if len(q_part) > 100 else q_part
-                        else:
-                            message_text = details[:50] + '...' if len(details) > 50 else details
-                    except (IndexError, AttributeError, TypeError) as e:
-                        logger.warning(f"Failed to parse chat details: {e}")
-                        message_text = "Chat interaction"
-
-                conversations.append({
-                    'timestamp': timestamp,
-                    'message': message_text,
-                    'details': details or 'Chatbot interaction',
-                    'type': 'database'
-                })
-
+        rows = chatbot_knowledge.history(conn, username, limit)
+        conn.commit()
     except sqlite3.Error as e:
         logger.error(f"Database error getting conversation history: {e}")
-
-    # Also get from chatbot's in-memory history if available
-    try:
-        if hasattr(auth_instance, 'chatbot') and auth_instance.chatbot and hasattr(auth_instance.chatbot, 'conversation_history'):
-            user_history = auth_instance.chatbot.conversation_history.get(username, [])
-            for conv in user_history:
-                conversations.append({
-                    'timestamp': conv.get('timestamp', 'Recent'),
-                    'message': conv.get('message', 'N/A'),
-                    'response': conv.get('response', 'N/A'),
-                    'type': 'session'
-                })
-    except Exception as e:
-        logger.error(f"Session history error: {e}")
-
-    # Sort by timestamp and return most recent
-    try:
-        conversations.sort(key=lambda x: x['timestamp'], reverse=True)
-    except (KeyError, TypeError, ValueError) as e:
-        logger.warning(f"Failed to sort conversations by timestamp: {e}")
-        logger.debug("Returning unsorted conversations")
-
-    return conversations[:limit]
+        return []
+    finally:
+        conn.close()
+    return [{'timestamp': r['timestamp'], 'message': r['message'], 'response': r['response'],
+             'type': 'database'} for r in rows]
 
 def generate_chatbot_analytics(auth_instance) -> Dict[str, Any]:
     """Generate chatbot usage analytics
@@ -322,42 +261,39 @@ def generate_chatbot_analytics(auth_instance) -> Dict[str, Any]:
     if not auth_instance.current_user or 'chatbot_admin' not in auth_instance.current_user['permissions']:
         return {}
 
+    from education_system.systems.university.application.chatbot import (
+        knowledge as chatbot_knowledge,
+    )
+    from education_system.systems.university.infrastructure.database.db import get_connection
+    conn = get_connection(row_factory=False)
     try:
-        with auth_instance.db_manager.get_connection() as conn:
-            cursor = conn.cursor()
-
-            # Total interactions
-            cursor.execute('SELECT COUNT(*) FROM chatbot_conversations')
-            total_interactions = cursor.fetchone()[0]
-
-            # Unique users
-            cursor.execute('SELECT COUNT(DISTINCT username) FROM chatbot_conversations')
-            unique_users = cursor.fetchone()[0]
-
-            # Recent activity (last 7 days)
-            cursor.execute('''
-                SELECT DATE(timestamp) as date, COUNT(*) as count
-                FROM chatbot_conversations
-                WHERE timestamp >= datetime('now', '-7 days')
-                GROUP BY DATE(timestamp)
-                ORDER BY date
-            ''')
-            daily_interactions = dict(cursor.fetchall())
-
-            return {
-                'total_interactions': total_interactions,
-                'unique_users': unique_users,
-                'daily_interactions': daily_interactions,
-                'status': 'active' if is_chatbot_available() else 'limited',
-                'generated_at': datetime.now().isoformat()
-            }
-
+        stats = chatbot_knowledge.stats(conn)
+        unique_users = conn.execute(
+            'SELECT COUNT(DISTINCT username) FROM chatbot_conversations').fetchone()[0]
+        daily_interactions = dict(conn.execute(
+            "SELECT DATE(timestamp), COUNT(*) FROM chatbot_conversations "
+            "WHERE timestamp >= datetime('now', '-7 days') GROUP BY DATE(timestamp) ORDER BY 1"
+        ).fetchall())
+        conn.commit()
+        return {
+            'total_interactions': stats['turns'],
+            'unique_users': unique_users,
+            'daily_interactions': daily_interactions,
+            'answered_pct': stats['answered_pct'],
+            'helpful_pct': stats['helpful_pct'],
+            'open_cases': stats['open_cases'],
+            'open_unanswered': stats['open_unanswered'],
+            'status': 'active' if is_chatbot_available() else 'limited',
+            'generated_at': datetime.now().isoformat()
+        }
     except sqlite3.Error as e:
         logger.error(f"Database error generating chatbot analytics: {e}")
         return {'error': str(e), 'error_type': 'database'}
     except (KeyError, TypeError) as e:
         logger.error(f"Data error generating chatbot analytics: {e}")
         return {'error': str(e), 'error_type': 'data'}
+    finally:
+        conn.close()
 
 def launch_chatbot_interface(auth_instance):
     """Launch the chatbot interface for the current user
@@ -525,60 +461,29 @@ def display_chatbot_integration_menu(auth):
                 print(f"Error generating analytics: {e}")
 
         elif choice_num == all_conversations_option and all_conversations_option:
-            # View all conversations - FIXED VERSION
-            print("\nAll User Conversations:")
+            # Counts per person only; nobody reads another person's messages here.
+            print("\nChatbot use by person:")
             print("=" * 50)
+            from education_system.systems.university.infrastructure.database.db import (
+                get_connection,
+            )
+            conn = get_connection(row_factory=False)
             try:
-                with auth.db_manager.get_connection() as conn:
-                    cursor = conn.cursor()
-
-                    # Try to get from activity_log table (more likely to exist)
-                    cursor.execute('''
-                        SELECT username, COUNT(*) as count, MAX(timestamp) as last_chat
-                        FROM activity_log
-                        WHERE action = 'Chatbot interaction'
-                        GROUP BY username
-                        ORDER BY last_chat DESC
-                        LIMIT 20
-                    ''')
-
-                    all_conversations = cursor.fetchall()
-                    if all_conversations:
-                        print(f"{'Username':<15} {'Interactions':<12} {'Last Activity':<20}")
-                        print("-" * 50)
-                        for username, count, last_chat in all_conversations:
-                            print(f"{username:<15} {count:<12} {last_chat:<20}")
-                    else:
-                        print("No conversations found in activity log.")
-
-                        # Try alternative table if it exists
-                        try:
-                            cursor.execute('''
-                                SELECT name FROM sqlite_master
-                                WHERE type='table' AND name='chatbot_conversations'
-                            ''')
-                            if cursor.fetchone():
-                                cursor.execute('''
-                                    SELECT username, COUNT(*) as count, MAX(timestamp) as last_chat
-                                    FROM chatbot_conversations
-                                    GROUP BY username
-                                    ORDER BY last_chat DESC
-                                    LIMIT 20
-                                ''')
-                                alt_conversations = cursor.fetchall()
-                                if alt_conversations:
-                                    print("Found conversations in chatbot_conversations table:")
-                                    for username, count, last_chat in alt_conversations:
-                                        print(f"{username}: {count} conversations (Last: {last_chat})")
-                                else:
-                                    print("No conversations found in chatbot_conversations table either.")
-                            else:
-                                print("No chatbot-specific conversation tables found.")
-                        except Exception as alt_e:
-                            print(f"Error checking alternative tables: {alt_e}")
-
-            except Exception as e:
+                rows = conn.execute(
+                    "SELECT username, COUNT(*), MAX(timestamp) FROM chatbot_conversations "
+                    "GROUP BY username ORDER BY MAX(timestamp) DESC LIMIT 20").fetchall()
+            except sqlite3.Error as e:
+                rows = []
                 print(f"Error retrieving conversations: {e}")
+            finally:
+                conn.close()
+            if rows:
+                print(f"{'Username':<15} {'Turns':<12} {'Last Activity':<20}")
+                print("-" * 50)
+                for username, count, last_chat in rows:
+                    print(f"{username or 'anonymous':<15} {count:<12} {last_chat or '':<20}")
+            else:
+                print("No conversations found.")
 
         elif choice_num == test_option:
             # Test integration
@@ -605,6 +510,14 @@ def process_message(chatbot_instance, message, user_id, is_voice=False):
     Returns:
         str: Bot response
     """
+    from education_system.systems.university.shared.ai.chatbot import (
+        care_bridge,
+    )
+    username = str(user_id or 'anonymous')
+    crisis = care_bridge.crisis_check(chatbot_instance, message, username)
+    if crisis:
+        return crisis
+
     message_lower = message.lower()
 
     # Basic responses (keep existing logic)
@@ -630,38 +543,9 @@ def process_message(chatbot_instance, message, user_id, is_voice=False):
     else:
         response = "I'm here to help with university-related questions. You can ask about courses, grades, fees, or registration."
 
-    # ADD CONVERSATION TRACKING HERE:
-    # Initialize user history if not exists
-    if not hasattr(chatbot_instance, 'conversation_history'):
-        chatbot_instance.conversation_history = {}
-
-    if user_id not in chatbot_instance.conversation_history:
-        chatbot_instance.conversation_history[user_id] = []
-
-    # Add this conversation
-    chatbot_instance.conversation_history[user_id].append({
-        'timestamp': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
-        'message': message,
-        'response': response,
-        'type': 'voice' if is_voice else 'text'
-    })
-
-    # Keep only last 50 conversations per user
-    if len(chatbot_instance.conversation_history[user_id]) > 50:
-        chatbot_instance.conversation_history[user_id] = chatbot_instance.conversation_history[user_id][-50:]
-
-    # Also log to auth system if available
-    if hasattr(chatbot_instance, 'auth_system') and chatbot_instance.auth_system and hasattr(chatbot_instance.auth_system, '_log_activity'):
-        try:
-            chatbot_instance.auth_system._log_activity(
-                user_id,
-                'Chatbot interaction',
-                f"Q: {message[:50]}... A: {response[:50]}...",
-                getattr(chatbot_instance.auth_system.current_user, 'id', None) if chatbot_instance.auth_system.current_user else None
-            )
-        except Exception as e:
-            logger.debug(f"Failed to log chatbot interaction: {e}")
-
+    # One log for every turn: the database, with retention, export and erasure.
+    care_bridge.log_turn(chatbot_instance, username, message, response,
+                         intent='voice' if is_voice else None)
     return response
 
 def test_chatbot_integration(auth):
@@ -747,15 +631,17 @@ def create_sample_chatbot_data(auth_instance):
     import json
 
     try:
-        with auth_instance.db_manager.get_connection() as conn:
-            conn.row_factory = sqlite3.Row
+        from education_system.systems.university.infrastructure.database.db import (
+            get_connection,
+        )
+        with get_connection() as conn:
             cursor = conn.cursor()
             cursor.execute(
                 """
-                SELECT username, details, timestamp
-                FROM activity_log
-                WHERE action = 'Chatbot interaction'
-                ORDER BY timestamp DESC
+                SELECT username, intent, timestamp, LENGTH(message) AS message_length,
+                       LENGTH(response) AS response_length
+                FROM chatbot_conversations
+                ORDER BY id DESC
                 LIMIT 10
                 """
             )
@@ -767,17 +653,9 @@ def create_sample_chatbot_data(auth_instance):
 
             print("✓ Retrieved chatbot interactions from the database:")
             for row in records:
-                details = row["details"]
-                parsed_details = {}
-                if details:
-                    try:
-                        parsed_details = json.loads(details)
-                    except json.JSONDecodeError:
-                        parsed_details = {"raw_details": details}
-
-                intent = parsed_details.get("intent") or parsed_details.get("interaction_type")
-                message_len = parsed_details.get("message_length")
-                response_len = parsed_details.get("response_length")
+                intent = row["intent"]
+                message_len = row["message_length"]
+                response_len = row["response_length"]
                 summary_parts = [
                     f"user={row['username']}",
                     f"timestamp={row['timestamp']}",
@@ -789,8 +667,6 @@ def create_sample_chatbot_data(auth_instance):
                     summary_parts.append(f"message_length={message_len}")
                 if response_len is not None:
                     summary_parts.append(f"response_length={response_len}")
-                if not summary_parts:
-                    summary_parts.append(f"details={details}")
 
                 print(f"  • {' | '.join(summary_parts)}")
     except Exception as error:

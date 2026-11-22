@@ -363,5 +363,5 @@ The Gym & Fitness Center system manages memberships, fitness class bookings, equ
 ---
 
 **Last Updated**: February 2026
-**Module**: `university_system/modules/domain/gym/gui/gym_gui.py`
+**Module**: `src/education_system/systems/university/plugins/campus_commerce/interfaces/gui/gym/gym_gui.py`
 **Support**: fitness@university.edu | (555) 123-GYMS

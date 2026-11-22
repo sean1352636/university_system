@@ -1,0 +1,196 @@
+import logging
+
+logger = logging.getLogger(__name__)
+
+import tkinter as tk
+from tkinter import ttk, filedialog, scrolledtext
+
+from ._dialogs import make_toplevel, messagebox, filedialog
+import tkinter.font as tkFont
+from datetime import datetime, timedelta
+import json
+import os
+import threading
+import webbrowser
+from typing import Dict, List, Optional, Any
+from education_system.systems.university.infrastructure.database.db import sqlite3
+from pathlib import Path
+import logging
+from education_system import paths
+
+# Import i18n for language support
+from education_system.systems.university.infrastructure.i18n import (
+    init_i18n,
+    get_text as _t,
+    get_current_language,
+)
+from education_system.systems.university.infrastructure.utils.gui_language_selector import (
+    show_gui_language_selector,
+    create_language_menu_button,
+)
+
+# Import activity logger for audit trail
+try:
+    from education_system.systems.university.infrastructure.activity_logger import log_activity
+    ACTIVITY_LOGGER_AVAILABLE = True
+except ImportError:
+    ACTIVITY_LOGGER_AVAILABLE = False
+    log_activity = lambda *args, **kwargs: None
+
+# Import email service for notifications
+try:
+    from education_system.systems.university.infrastructure.email.email_service import send_email
+    from education_system.systems.university.infrastructure.email.templates import load_template, render_template
+    EMAIL_SERVICE_AVAILABLE = True
+except ImportError:
+    EMAIL_SERVICE_AVAILABLE = False
+    send_email = lambda *args, **kwargs: False
+    load_template = lambda *args, **kwargs: None
+    render_template = lambda *args, **kwargs: (None, None)
+
+# Use centralized path configuration
+DEFAULT_DB_PATH = paths.UNIVERSITY_DEFAULT_DB_PATH
+_CENTRALDEFAULT_DB_PATH = paths.UNIVERSITY_DEFAULT_DB_PATH
+
+
+# Import all functionality from student_support module (it's a single monolithic file)
+try:
+    # Import everything from the single student_support module
+    from education_system.systems.university.domains.student_support.domain.student_support import (
+        # Core constants and enums
+        SUPPORT_CATEGORIES, TICKET_PRIORITIES, TICKET_STATUSES,
+        NotificationType, TicketSentiment, FileType,
+        # Main classes
+        EnhancedStudentSupport, SupportConfig,
+        # Utility functions
+        setup_enhanced_logging, audit_action, set_auth,
+        # Display functions
+        display_support_menu, display_enhanced_faqs, display_enhanced_resources,
+        # Ticket management functions
+        view_my_tickets_enhanced, view_all_tickets_enhanced,
+        create_enhanced_ticket, display_ticket_details_enhanced,
+        # Admin functions
+        manage_templates_menu, manage_knowledge_base_menu, show_template_statistics,
+        # Helper functions
+        format_ticket_status_display, format_priority_display, format_file_size,
+        truncate_text, handle_support_error, validate_ticket_permissions
+    )
+
+    # Auth handling - auth is now managed differently in the new structure
+    auth = None  # Will be set via set_auth_instance()
+
+except ImportError:
+    # Backwards compatibility - if module structure changes or imports fail
+    try:
+        from education_system.systems.university.domains.student_support.domain.student_support import (
+            SUPPORT_CATEGORIES, TICKET_PRIORITIES, TICKET_STATUSES,
+            EnhancedStudentSupport, SupportConfig, display_support_menu, set_auth
+        )
+        auth = None
+    except ImportError:
+        # If even the fallback import fails, define minimal stubs
+        auth = None
+        SUPPORT_CATEGORIES = []
+        TICKET_PRIORITIES = []
+        TICKET_STATUSES = []
+        EnhancedStudentSupport = None
+        SupportConfig = None
+        display_support_menu = None
+
+    # Define fallback functions if not available
+    display_enhanced_faqs = None
+    display_enhanced_resources = None
+    view_my_tickets_enhanced = None
+    view_all_tickets_enhanced = None
+    create_enhanced_ticket = None
+    display_ticket_details_enhanced = None
+    manage_templates_menu = None
+    manage_knowledge_base_menu = None
+    show_template_statistics = None
+
+    # Define fallback enum types
+    from enum import Enum
+    class NotificationType(str, Enum):
+        INFO = 'info'
+        WARNING = 'warning'
+        ERROR = 'error'
+
+    class TicketSentiment(str, Enum):
+        POSITIVE = 'positive'
+        NEUTRAL = 'neutral'
+        NEGATIVE = 'negative'
+
+    class FileType(str, Enum):
+        IMAGE = 'image'
+        DOCUMENT = 'document'
+        OTHER = 'other'
+
+    # Define fallback helper functions
+    setup_enhanced_logging = lambda: None
+    audit_action = lambda *args, **kwargs: None
+    set_auth = lambda x: None  # Fallback if set_auth not available
+    validate_ticket_permissions = lambda *args, **kwargs: True
+    format_ticket_status_display = lambda x: str(x)
+    format_priority_display = lambda x: str(x)
+    format_file_size = lambda x: f"{x} bytes"
+    truncate_text = lambda x, length=100: x[:length] if len(x) > length else x
+    handle_support_error = lambda *args, **kwargs: None
+
+from education_system.systems.university.domains.student_support.interfaces.gui.student_support.base import StudentSupportGUIBase
+
+def launch_student_support_gui(auth_system=None):
+    """Run the portal in a window of its own, for the signed-in session
+    (``auth_system``, else the shared context's). Without a signed-in user
+    it says so and returns rather than opening an empty portal."""
+    from education_system.systems.university.domains.student_support.interfaces.gui.student_support import StudentSupportGUI
+
+    if auth_system is None:
+        from education_system.systems.university.infrastructure.shared_context import get_auth
+        auth_system = get_auth()
+    user = getattr(auth_system, 'current_user', None) if auth_system is not None else None
+    if not isinstance(user, dict) or not user.get('username'):
+        messagebox.showerror(_t('gui.pastoral.student_support.base.dialogs.authentication_required', default="Authentication Required"),
+                             _t('gui.pastoral.student_support.base.dialogs.please_log_in_through_the_main_university_system_gui_run_python', default="Please log in through the main University System GUI.\n\n"
+                                "Run: python -m education_system --gui"))
+        return None
+
+    from education_system.platform.delivery.gui import window_sizing
+    window_sizing.install()
+    root = tk.Tk()
+    app = StudentSupportGUI(root, auth_system=auth_system)
+    root.mainloop()
+    return app
+
+
+class SupportPortalLauncher:
+    """
+    Utility class to launch support portal in GUI mode.
+    Provides a clean interface for integration with other systems.
+    """
+
+    def __init__(self, auth_system=None):
+        self.auth = auth_system
+        self.app = None
+
+    def launch_gui(self):
+        """Launch GUI interface"""
+        self.app = launch_student_support_gui(self.auth)
+        return self.app
+
+    def launch(self):
+        """Launch the GUI interface"""
+        return self.launch_gui()
+
+    def return_to_main_menu(self):
+        """Close the portal window this launcher opened (its own
+        ``return_to_main_menu`` decides what to show next)."""
+        if self.app is not None:
+            self.app.return_to_main_menu()
+
+    def is_gui_available(self):
+        """Check if GUI is available"""
+        try:
+            import tkinter  # noqa: F401
+            return True
+        except ImportError:
+            return False

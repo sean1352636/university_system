@@ -20,11 +20,11 @@ from education_system.systems.university.infrastructure.i18n import get_text as 
 import csv
 import logging
 import statistics
-import threading
 import tkinter as tk
 from datetime import datetime
 from tkinter import filedialog, messagebox, ttk
 
+from education_system.platform.delivery.gui.tk_threads import start_thread, ui
 from education_system.systems.university.infrastructure.database.db import get_connection, transaction
 from education_system.systems.university.infrastructure.utils.activity_logger import log_activity
 
@@ -714,11 +714,11 @@ class GradesBreakdownGUI:
                 stats = self._fetch_class_stats([r.get('assessment_id') for r in rows])
             except Exception as e:
                 logger.exception("Worker failed")
-                self.window.after(0, lambda err=e: self._on_load_error(err))
+                ui(self.window, self._on_load_error, e)
                 return
-            self.window.after(0, lambda: self._on_load_complete(module_code, rows, stats))
+            ui(self.window, self._on_load_complete, module_code, rows, stats)
 
-        threading.Thread(target=worker, daemon=True).start()
+        start_thread(self.window, worker)
 
     def _fetch_assignments_sql(self, module_code: str) -> list[dict]:
         weight_col = (
@@ -814,11 +814,11 @@ class GradesBreakdownGUI:
                 stats = self._fetch_class_stats(ids)
             except Exception as e:
                 logger.exception("All-modules worker failed")
-                self.window.after(0, lambda err=e: self._on_load_error(err))
+                ui(self.window, self._on_load_error, e)
                 return
-            self.window.after(0, lambda: self._on_all_modules_complete(aggregated, stats))
+            ui(self.window, self._on_all_modules_complete, aggregated, stats)
 
-        threading.Thread(target=worker, daemon=True).start()
+        start_thread(self.window, worker)
 
     def _on_all_modules_complete(self, rows: list[dict], stats: dict[int, dict]):
         self._set_loading(False)
@@ -1418,13 +1418,28 @@ class GradesBreakdownGUI:
         if not path:
             return
         try:
-            # Best-effort: use the shared pdf_export ExportManager when present.
-            from education_system.systems.university.services.pdf_export.export_manager import (
-                ExportManager,
+            # Best-effort: use the shared pdf_export PDFGenerator when present.
+            from education_system.systems.university.services.pdf_export.pdf_generator import (
+                PDFGenerator,
             )
-            mgr = ExportManager()
             data = self._build_transcript_data()
-            mgr.export_to_pdf(data, path, title='Grade Transcript')
+            pdf = PDFGenerator(path)
+            pdf.add_title_page('Grade Transcript',
+                               subtitle=f"{data['name']} ({data['student_id']})")
+            for m in data['modules']:
+                rows = []
+                for r in m['rows']:
+                    pct = self._row_percentage(r)
+                    rows.append((r.get('title'),
+                                 f"{pct:.1f}%" if pct is not None else '—'))
+                pdf.add_data_table(
+                    ['Assessment', 'Percentage'], rows,
+                    table_name=f"{m['code']} — {m['name']}",
+                    description=f"{m.get('credits') or 0} credits",
+                    max_rows=len(rows) or 1,
+                )
+            if not pdf.save():
+                raise RuntimeError(f'Could not write {path}')
         except ImportError:
             # Fallback: write a plain-text version with .pdf extension warning.
             messagebox.showinfo(
@@ -1482,7 +1497,7 @@ class GradesBreakdownGUI:
     def _email_advisor(self):
         try:
             # Prefer the shared communications hub.
-            from education_system.platform.integrations.email.email_service import send_email
+            from education_system.systems.university.infrastructure.email.email_service import send_email
         except Exception:
             messagebox.showinfo(
                 _t('grades.email', 'Email advisor'),
@@ -1490,15 +1505,15 @@ class GradesBreakdownGUI:
                 parent=self.window,
             )
             return
-        # Stub: gather advisor address from the user record if present.
+        # The student's personal tutor, when their tutor group names one.
         advisor = None
         try:
+            from education_system.systems.university.application.modules.registration import personal_tutor
             with get_connection() as conn:
-                row = conn.execute(
-                    "SELECT advisor_email FROM users WHERE student_id = ?",
-                    (self.student_id,),
-                ).fetchone()
-                advisor = row['advisor_email'] if row and 'advisor_email' in row.keys() else None
+                tutor = personal_tutor(conn, self.student_id)
+                row = conn.execute("SELECT email FROM users WHERE username = ?",
+                                   (tutor,)).fetchone() if tutor else None
+                advisor = row['email'] if row else None
         except Exception:
             logger.debug("Suppressed exception", exc_info=True)
         if not advisor:
@@ -1517,7 +1532,7 @@ class GradesBreakdownGUI:
 
         def go():
             try:
-                send_email(to=email_var.get(),
+                send_email(recipient_email=email_var.get(),
                            subject=f'Grades — {self.display_name}',
                            body=body.get('1.0', 'end'))
                 self.refresh_var.set(f'Emailed {email_var.get()}')

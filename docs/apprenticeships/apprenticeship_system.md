@@ -49,7 +49,7 @@ everything, cannot do those two things. This is load-bearing: do not
 
 ### Scope is not the same as permission
 
-`services/access.py` defines an `Actor` carrying both the role and the
+`application/security/access.py` defines an `Actor` carrying both the role and the
 records it resolves to (`apprentice_id`, `employer_id`, `staff_id`).
 Permission answers *may you do this at all*; scope answers *to whom*.
 
@@ -137,14 +137,17 @@ because completion is the event the provider is paid for.
 
 ```
 education_system/systems/apprenticeships/
-├── config.py                 # Roles, permissions and every closed vocabulary
+├── config/                   # __init__.py: roles, permissions, every closed vocabulary
 ├── manifest.py               # Key, display name, interfaces
 ├── domain/                   # Pure rules, one package per area: apprentices,
 │                             #   admissions, programmes, employers, training,
 │                             #   portfolio, reviews, progress, learner_support,
 │                             #   records, quality, workspace, end_point_assessment,
 │                             #   funding, compliance, staff, degree_apprenticeships
-├── services/                 # Actor-first orchestration; the only write path
+├── application/              # Actor-first use cases, one package per area; the only
+│                             #   write path: apprentices, employers, programmes,
+│                             #   learning, assessments, funding, compliance, support,
+│                             #   quality, records, communications, workspace, security
 ├── infrastructure/
 │   ├── persistence/          # One SQLite file, schema.py, repositories/
 │   ├── storage/              # Uploaded documents, under var/ (never in git)
@@ -241,7 +244,7 @@ one file for every table — the screens are join-heavy by nature, so
 splitting them would buy nothing. Paths come from
 `education_system/paths.py` under the `APPRENTICESHIPS_` prefix.
 
-The schema is created by `infrastructure/persistence/schema.py`, not by
+The schema is created by `src/education_system/systems/apprenticeships/infrastructure/persistence/schema.py`, not by
 Alembic. `init_db()` is idempotent and every public service calls it, so
 no caller has to bootstrap.
 
@@ -261,8 +264,42 @@ Demo logins (`--demo`, weak passwords, dev machines only): `admin5`,
 
 Note that `RoleManager.grant_system_access` validates against the school
 role hierarchy, which has no entry for apprentice, employer or
-end-point assessor — so `services/account_service.py` writes
+end-point assessor — so `application/security/account_service.py` writes
 `user_systems` directly rather than going through it.
+
+### Adding an apprentice
+
+The enrol form (Apprentices → New, or "Enrol an apprentice" in the CLI)
+collects the same details as the other systems' add-learner forms:
+
+- **Identity:** legal first, middle and last name, preferred name, date of
+  birth, gender (`config.GENDERS`), ULN.
+- **Contact and home address:** email, phone, address lines, town, postcode
+  (checked as a UK postcode and stored as `LS1 1AA`).
+- **Emergency contact:** name, relationship and phone. A name without a
+  phone, or the other way round, is refused.
+- **Needs and medical:** learning difficulty or disability, EHC plan,
+  support needs, medical notes (2000 characters at most).
+
+Before saving, the forms check for a possible duplicate: the same name
+and date of birth, or the same email. Staff can still save, because twins
+match. `create_apprentice(..., check_duplicate=True)` raises
+`DuplicateApprentice`. The check is off by default, so cross-system
+handovers, which match on the learner journey, are never blocked.
+
+**Login:** the form has a "Create their login" tick box, which is on by
+default. Apprentices → Create Login does the same for an existing record.
+`account_service.create_apprentice_login`:
+
+- takes the record's username, or makes one (first initial + surname,
+  numbered if taken);
+- creates the shared account with the `apprentice` role and a random
+  12-character temporary password;
+- shows the password to the admin once, and e-mails it to the apprentice
+  with the `apprentice_login` template.
+
+It refuses to touch a username that already has an account. Change one of
+those from **System → User Accounts**.
 
 ### Login ↔ learner record
 
@@ -274,7 +311,7 @@ This system supplies two things:
 - **The pairing:** `ApprenticeshipsAdapter.learner_ids_for_login` matches
   the apprentice record whose `username` is the login's, the same rule
   sign-in uses.
-- **The hooks:** `services/login_links.py` calls the platform at the
+- **The hooks:** `application/security/login_links.py` calls the platform at the
   moments that pairing can change.
 
 - **When it runs:**
@@ -296,7 +333,7 @@ This system supplies two things:
 
 ## Preferences
 
-`services/preferences.py` holds three per-login settings, each chosen
+`application/workspace/preferences.py` holds three per-login settings, each chosen
 because it has exactly one place it can take effect:
 
 | Setting | Where it lands |

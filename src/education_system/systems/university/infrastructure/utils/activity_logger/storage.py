@@ -164,6 +164,17 @@ class DatabaseLogger:
             detail_parts['metadata'] = log_entry.metadata
         return json.dumps(detail_parts) if detail_parts else None
 
+    @staticmethod
+    def _user_fk(user_id):
+        """``activity_log.user_id`` references ``users.id`` (INTEGER). A
+        non-numeric id - ``'system'`` for health alerts, a username - would
+        break that foreign key, so it is stored as NULL; the username column
+        still says who acted."""
+        if isinstance(user_id, int):
+            return user_id
+        text = str(user_id or "").strip()
+        return int(text) if text.isdigit() else None
+
     def insert_log(self, log_entry: LogEntry):
         """Insert log entry into the activity_log table."""
         query = '''
@@ -172,7 +183,7 @@ class DatabaseLogger:
             ) VALUES (?, ?, ?, ?, ?, ?)
         '''
         params = (
-            log_entry.user_id, log_entry.username, log_entry.action,
+            self._user_fk(log_entry.user_id), log_entry.username, log_entry.action,
             self._build_details(log_entry), log_entry.timestamp,
             log_entry.ip_address,
         )
@@ -187,7 +198,7 @@ class DatabaseLogger:
         '''
         params_list = [
             (
-                e.user_id, e.username, e.action,
+                self._user_fk(e.user_id), e.username, e.action,
                 self._build_details(e), e.timestamp,
                 e.ip_address,
             )

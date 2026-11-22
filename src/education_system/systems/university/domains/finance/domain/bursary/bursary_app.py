@@ -26,12 +26,81 @@ except ImportError:
 
 
 class _Frame(tk.Frame):
-    def __init__(self, parent):
+    """Bursary Management. With ``student_id`` it is the applicant view: open
+    funds, Apply, and that student's own applications, evidence and award
+    (no fund or decision controls, nobody else's data)."""
+
+    def __init__(self, parent, student_id=None):
         super().__init__(parent, bg="#ecf0f1")
         logger.info("Opening Bursary Management UI")
         self._svc = BursaryService()
-        self._build()
+        self._student_id = str(student_id) if student_id else None
+        if self._student_id:
+            self._build_student()
+        else:
+            self._build()
         self._refresh_funds(); self._refresh_apps()
+
+    def _build_student(self):
+        hdr = tk.Frame(self, bg="#2c3e50", height=44)
+        hdr.pack(fill="x"); hdr.pack_propagate(False)
+        tk.Label(hdr, text="Bursaries",
+                 font=("Helvetica", 14, "bold"), bg="#2c3e50", fg="white").pack(
+            side="left", padx=20, pady=8)
+
+        nb = ttk.Notebook(self); nb.pack(fill="both", expand=True, padx=10, pady=8)
+
+        ft = tk.Frame(nb, bg="#ecf0f1"); nb.add(ft, text="Open Funds")
+        ctrl = tk.Frame(ft, bg="#ecf0f1"); ctrl.pack(fill="x", pady=4)
+        tk.Button(ctrl, text="Apply", command=self._apply).pack(side="left", padx=4)
+        tk.Button(ctrl, text="Refresh", command=self._refresh_funds).pack(side="left", padx=4)
+        cols = ("id", "name", "type")
+        self._funds = ttk.Treeview(ft, columns=cols, show="headings", height=10)
+        for c in cols: self._funds.heading(c, text=c.title()); self._funds.column(c, width=160)
+        self._funds.pack(fill="both", expand=True, padx=4, pady=4)
+
+        at = tk.Frame(nb, bg="#ecf0f1"); nb.add(at, text="My Applications")
+        ctrl = tk.Frame(at, bg="#ecf0f1"); ctrl.pack(fill="x", pady=4)
+        tk.Button(ctrl, text="Add Evidence", command=self._add_evidence).pack(side="left", padx=4)
+        tk.Button(ctrl, text="List Evidence", command=self._list_evidence).pack(side="left", padx=4)
+        tk.Button(ctrl, text="Summary", command=self._application_summary).pack(side="left", padx=4)
+        tk.Button(ctrl, text="Refresh", command=self._refresh_apps).pack(side="left", padx=4)
+        cols = ("id", "student", "fund", "requested", "status", "decided_at")
+        self._apps = ttk.Treeview(at, columns=cols, show="headings", height=12)
+        for c in cols: self._apps.heading(c, text=c.title()); self._apps.column(c, width=120)
+        self._apps.pack(fill="both", expand=True, padx=4, pady=4)
+
+    def _apply(self):
+        fid = self._selected_fund_id()
+        if fid is None: return
+        amt = simpledialog.askfloat("Apply", "Amount you are asking for:", parent=self)
+        if amt is None: return
+        income = simpledialog.askfloat("Apply", "Household income (Cancel to skip):", parent=self)
+        circumstances = simpledialog.askstring(
+            "Apply", "Tell us about your circumstances:", parent=self) or ""
+        try:
+            aid = self._svc.submit_application(self._student_id, fid, amt,
+                                               household_income=income,
+                                               circumstances=circumstances)
+            messagebox.showinfo("Applied", f"Application #{aid} submitted. You can add evidence "
+                                "to it on My Applications.")
+            self._refresh_apps()
+        except BursaryError as e:
+            logger.warning("Bursary GUI action failed: %s", e)
+            messagebox.showerror("Error", str(e))
+
+    def _owns(self, application_id) -> bool:
+        """Staff own everything; a student only their own applications."""
+        if not self._student_id:
+            return True
+        try:
+            app = self._svc.get_application(application_id)
+        except BursaryError:
+            return False
+        if str(app.get("student_id")) != self._student_id:
+            messagebox.showerror("Error", "That is not one of your applications.")
+            return False
+        return True
 
     def _build(self):
         hdr = tk.Frame(self, bg="#2c3e50", height=44)
@@ -87,6 +156,11 @@ class _Frame(tk.Frame):
     def _refresh_funds(self):
         for r in self._funds.get_children(): self._funds.delete(r)
         try:
+            if self._student_id:
+                for f in self._svc.list_funds(status="open"):
+                    self._funds.insert("", "end", values=(
+                        f["fund_id"], f.get("name"), f.get("fund_type")))
+                return
             for f in self._svc.list_funds():
                 self._funds.insert("", "end", values=(
                     f["fund_id"], f.get("name"), f.get("fund_type"),
@@ -99,7 +173,7 @@ class _Frame(tk.Frame):
     def _refresh_apps(self):
         for r in self._apps.get_children(): self._apps.delete(r)
         try:
-            for a in self._svc.list_applications():
+            for a in self._svc.list_applications(student_id=self._student_id):
                 self._apps.insert("", "end", values=(
                     a["application_id"], a.get("student_id"), a.get("fund_id"),
                     a.get("requested_amount"), a.get("status"), a.get("decided_at", "-"),
@@ -198,7 +272,7 @@ class _Frame(tk.Frame):
 
     def _add_evidence(self):
         aid = self._selected_app_id()
-        if aid is None: return
+        if aid is None or not self._owns(aid): return
         etype = simpledialog.askstring("Add Evidence", "Evidence type (e.g. payslip/bank_statement):", parent=self)
         if not etype: return
         filename = simpledialog.askstring("Add Evidence", "Filename (blank=none):", parent=self) or ""
@@ -224,7 +298,7 @@ class _Frame(tk.Frame):
 
     def _list_evidence(self):
         aid = self._selected_app_id()
-        if aid is None: return
+        if aid is None or not self._owns(aid): return
         try:
             rows = self._svc.list_evidence(aid)
         except BursaryError as e:
@@ -269,7 +343,7 @@ class _Frame(tk.Frame):
 
     def _application_summary(self):
         aid = self._selected_app_id()
-        if aid is None: return
+        if aid is None or not self._owns(aid): return
         try:
             s = self._svc.get_application_summary(aid)
         except BursaryError as e:

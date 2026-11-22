@@ -3,6 +3,8 @@
 from .. import train_station_gui_shared as _shared
 globals().update({name: value for name, value in _shared.__dict__.items() if not name.startswith("__")})
 
+from education_system.systems.university.domains.operations.domain.campus.mobility.services import train_station_service
+
 
 class Database:
     """Handle all database operations using university system database"""
@@ -115,35 +117,16 @@ class Database:
         conn.close()
         return result
 
-    def purchase_ticket(self, service_id, passenger_name, payment_method, price_paid):
-        """Create a new ticket purchase"""
-        conn = self.get_connection()
-        cursor = conn.cursor()
-
-        ticket_number = "TKT" + ''.join(random.choices(string.ascii_uppercase + string.digits, k=8))
-        purchase_date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-
-        cursor.execute('''
-            INSERT INTO train_station_tickets (ticket_number, service_id, passenger_name, payment_method, price_paid, purchase_date)
-            VALUES (?, ?, ?, ?, ?, ?)
-        ''', (ticket_number, service_id, passenger_name, payment_method, price_paid, purchase_date))
-
-        ticket_id = cursor.lastrowid
-
-        # Update available seats
-        cursor.execute('''
-            UPDATE train_station_services SET available_seats = available_seats - 1 WHERE id = ?
-        ''', (service_id,))
-
-        # Create receipt
-        receipt_number = "RCP" + ''.join(random.choices(string.ascii_uppercase + string.digits, k=8))
-        cursor.execute('''
-            INSERT INTO train_station_receipts (receipt_number, ticket_id, total_amount, payment_method, transaction_date)
-            VALUES (?, ?, ?, ?, ?)
-        ''', (receipt_number, ticket_id, price_paid, payment_method, purchase_date))
-
-        conn.commit()
-        conn.close()
+    def purchase_ticket(self, service_id, passenger_name, payment_method, price_paid,
+                        student_id=None, processed_by=None):
+        """Sell a ticket via the train station domain service (which takes the
+        money and posts it to Finance). Returns (ticket_number, receipt_number)."""
+        _, ticket_number, receipt_number = train_station_service.purchase_ticket(
+            service_id, passenger_name, payment_method, price_paid,
+            student_id=student_id, processed_by=processed_by,
+        )
+        if not ticket_number:
+            raise RuntimeError("Ticket purchase failed (payment declined or database error)")
         return ticket_number, receipt_number
 
     def get_all_tickets(self):

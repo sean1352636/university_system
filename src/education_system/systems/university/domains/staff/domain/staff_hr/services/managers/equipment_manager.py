@@ -8,6 +8,8 @@ category management, and usage reporting.
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 
+from education_system.systems.university.domains.staff.domain.staff_hr import access
+from education_system.systems.university.domains.staff.domain.staff_hr.services.managers import _people as people
 from education_system.systems.university.infrastructure.database.db import get_connection, transaction
 from education_system.systems.university.infrastructure.activity_logger import log_activity
 from education_system.systems.university.infrastructure.sql_safety import validate_identifier  # nosec B608
@@ -89,7 +91,7 @@ class EquipmentManager:
         """Add a new piece of equipment."""
         with transaction() as conn:
             cursor = conn.execute('''
-                INSERT INTO equipment (
+                INSERT INTO lab_equipment (
                     name, category_id, location, building, room_number,
                     serial_number, model, manufacturer,
                     max_booking_hours, min_booking_hours,
@@ -114,7 +116,7 @@ class EquipmentManager:
         """Get a single piece of equipment by ID."""
         with get_connection() as conn:
             row = conn.execute('''
-                SELECT * FROM equipment WHERE equipment_id = ?
+                SELECT * FROM lab_equipment WHERE equipment_id = ?
             ''', (equipment_id,)).fetchone()
             return dict(row) if row else None
 
@@ -124,7 +126,7 @@ class EquipmentManager:
                           location: Optional[str] = None) -> List[Dict[str, Any]]:
         """Get all equipment with optional filters."""
         with get_connection() as conn:
-            query = 'SELECT * FROM equipment WHERE 1=1'
+            query = 'SELECT * FROM lab_equipment WHERE 1=1'
             params = []
 
             if category_id is not None:
@@ -168,7 +170,7 @@ class EquipmentManager:
 
         with transaction() as conn:
             conn.execute(
-                'UPDATE equipment SET ' + ', '.join(fields)
+                'UPDATE lab_equipment SET ' + ', '.join(fields)
                 + ' WHERE equipment_id = ?',
                 values)
             log_activity('update', 'equipment', details={
@@ -197,7 +199,7 @@ class EquipmentManager:
 
             # Determine initial status based on equipment approval requirement
             equip = conn.execute('''
-                SELECT requires_approval FROM equipment WHERE equipment_id = ?
+                SELECT requires_approval FROM lab_equipment WHERE equipment_id = ?
             ''', (equipment_id,)).fetchone()
 
             status = 'pending' if equip and equip['requires_approval'] else 'approved'
@@ -268,25 +270,38 @@ class EquipmentManager:
             return [dict(row) for row in rows]
 
     @staticmethod
-    def approve_booking(booking_id: int, approved_by: str) -> None:
-        """Approve a pending booking."""
+    def approve_booking(booking_id: int, approved_by: Any = None,
+                        actor: Any = None) -> None:
+        """Approve a pending booking.
+
+        The booker's line manager (or anyone above them) or HR may decide,
+        never the booker (PermissionError); only a pending booking can be
+        decided (ValueError). ``approved_by`` is for older callers and is
+        ignored when the signed-in ``actor`` is given.
+        """
         with transaction() as conn:
+            who, booker = EquipmentManager._decide(conn, booking_id, approved_by, actor, 'approve')
             conn.execute('''
                 UPDATE equipment_bookings
                 SET status = 'approved',
                     approved_by = ?,
+                    approved_date = ?,
                     updated_at = ?
                 WHERE booking_id = ?
-            ''', (approved_by, datetime.now().isoformat(), booking_id))
+            ''', (who['username'], datetime.now().isoformat(),
+                  datetime.now().isoformat(), booking_id))
             log_activity('approve', 'equipment_booking', details={
-                'booking_id': booking_id, 'approved_by': approved_by,
+                'booking_id': booking_id, 'approved_by': who['username'],
             })
+            access.audit(conn, who, 'equipment_booking_approved', booker,
+                         'equipment_bookings', booking_id)
 
     @staticmethod
-    def reject_booking(booking_id: int, approved_by: str,
-                       notes: Optional[str] = None) -> None:
-        """Reject a pending booking."""
+    def reject_booking(booking_id: int, approved_by: Any = None,
+                       notes: Optional[str] = None, actor: Any = None) -> None:
+        """Reject a pending booking (same deciders as :meth:`approve_booking`)."""
         with transaction() as conn:
+            who, booker = EquipmentManager._decide(conn, booking_id, approved_by, actor, 'reject')
             conn.execute('''
                 UPDATE equipment_bookings
                 SET status = 'rejected',
@@ -294,10 +309,26 @@ class EquipmentManager:
                     notes = ?,
                     updated_at = ?
                 WHERE booking_id = ?
-            ''', (approved_by, notes, datetime.now().isoformat(), booking_id))
+            ''', (who['username'], notes, datetime.now().isoformat(), booking_id))
             log_activity('reject', 'equipment_booking', details={
-                'booking_id': booking_id, 'approved_by': approved_by,
+                'booking_id': booking_id, 'approved_by': who['username'],
             })
+            access.audit(conn, who, 'equipment_booking_rejected', booker,
+                         'equipment_bookings', booking_id, {'notes': notes} if notes else None)
+
+    @staticmethod
+    def _decide(conn, booking_id: int, approved_by: Any, actor: Any, verb: str):
+        """Who is deciding a pending booking, and whose booking it is."""
+        row = conn.execute('SELECT user_id, status FROM equipment_bookings WHERE booking_id = ?',
+                           (booking_id,)).fetchone()
+        if not row:
+            raise ValueError(f"Booking {booking_id} not found")
+        if row['status'] != 'pending':
+            raise ValueError(f"Booking {booking_id} is {row['status']}, not pending")
+        booker = people.key(row['user_id'], conn)
+        who = people.require_approver(actor, approved_by, booker, conn,
+                                      f"{verb} this equipment booking")
+        return who, booker
 
     @staticmethod
     def cancel_booking(booking_id: int) -> None:
@@ -366,7 +397,7 @@ class EquipmentManager:
 
             # Set equipment status to maintenance
             conn.execute('''
-                UPDATE equipment
+                UPDATE lab_equipment
                 SET status = 'maintenance', updated_at = ?
                 WHERE equipment_id = ?
             ''', (datetime.now().isoformat(), equipment_id))
@@ -399,21 +430,19 @@ class EquipmentManager:
                     completed_date = ?,
                     performed_by = ?,
                     next_due_date = ?,
-                    notes = ?,
-                    updated_at = ?
+                    notes = ?
                 WHERE maintenance_id = ?
             ''', (
                 datetime.now().isoformat(),
                 performed_by,
                 next_due_date,
                 notes,
-                datetime.now().isoformat(),
                 maintenance_id,
             ))
 
             # Restore equipment status to available
             conn.execute('''
-                UPDATE equipment
+                UPDATE lab_equipment
                 SET status = 'available', updated_at = ?
                 WHERE equipment_id = ?
             ''', (datetime.now().isoformat(), maint['equipment_id']))

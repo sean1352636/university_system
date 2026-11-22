@@ -6,16 +6,17 @@ bookings, concessions, and event scheduling.
 """
 
 from education_system.systems.university.plugins.campus_commerce.domain.cinema.services import CinemaService
-from education_system.systems.university.plugins.campus_commerce.interfaces.cli.cinema import CinemaCLI
 
 __all__ = ['CinemaService', 'CinemaCLI', 'CinemaApp']
 
-# The GUI classes live in the interfaces layer, which imports back into this
-# domain package, so an eager re-export here is a circular import. PEP 562
-# lazy lookup keeps these names on the package's public surface without the
-# cycle: the interfaces module is only imported on first attribute access.
+# The GUI and CLI classes live in the interfaces layer, which imports back
+# into this domain package, so an eager re-export here is a circular import
+# (importing the CLI package first failed). PEP 562 lazy lookup keeps these
+# names on the package's public surface without the cycle: the interfaces
+# module is only imported on first attribute access.
 _LAZY_GUI_EXPORTS = {
     "CinemaApp": "education_system.systems.university.plugins.campus_commerce.interfaces.gui.cinema",
+    "CinemaCLI": "education_system.systems.university.plugins.campus_commerce.interfaces.cli.cinema",
 }
 
 

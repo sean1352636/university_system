@@ -25,12 +25,12 @@ _SYSTEM = "sixth_form"
 _CATEGORY = "Assessment & Grades"
 
 
-@assessment_grades_menu_bp.route("/open-gradebook", methods=["GET"])
+@assessment_grades_menu_bp.route("/gradebook", methods=["GET"])
 @token_required
 @staff_required
-def assessment_grades_open_gradebook():
-    """open_gradebook"""
-    return feature_pending("open_gradebook", _SYSTEM, category=_CATEGORY)
+def assessment_grades_gradebook():
+    """Gradebook"""
+    return feature_pending("Gradebook", _SYSTEM, category=_CATEGORY)
 
 
 @assessment_grades_menu_bp.route("/predicted-grades", methods=["GET"])
@@ -57,12 +57,12 @@ def assessment_grades_target_setting():
     return feature_pending("Target Setting", _SYSTEM, category=_CATEGORY)
 
 
-@assessment_grades_menu_bp.route("/open-ilp", methods=["GET"])
+@assessment_grades_menu_bp.route("/ilp", methods=["GET"])
 @token_required
 @staff_required
-def assessment_grades_open_ilp():
-    """open_ilp"""
-    return feature_pending("open_ilp", _SYSTEM, category=_CATEGORY)
+def assessment_grades_ilp():
+    """ILP"""
+    return feature_pending("ILP", _SYSTEM, category=_CATEGORY)
 
 
 @assessment_grades_menu_bp.route("/intervention-tracking", methods=["GET"])
@@ -121,12 +121,36 @@ def assessment_grades_results_day():
     return feature_pending("Results Day", _SYSTEM, category=_CATEGORY)
 
 
-@assessment_grades_menu_bp.route("/open-observations", methods=["GET"])
+@assessment_grades_menu_bp.route("/exams-office", methods=["GET"])
 @token_required
 @staff_required
-def assessment_grades_open_observations():
-    """open_observations"""
-    return feature_pending("open_observations", _SYSTEM, category=_CATEGORY)
+def assessment_grades_exams_office():
+    """Exams Office"""
+    return feature_pending("Exams Office", _SYSTEM, category=_CATEGORY)
+
+
+@assessment_grades_menu_bp.route("/report-cards", methods=["GET"])
+@token_required
+@staff_required
+def assessment_grades_report_cards():
+    """Report Cards"""
+    return feature_pending("Report Cards", _SYSTEM, category=_CATEGORY)
+
+
+@assessment_grades_menu_bp.route("/study-programme", methods=["GET"])
+@token_required
+@staff_required
+def assessment_grades_study_programme():
+    """Study Programme"""
+    return feature_pending("Study Programme", _SYSTEM, category=_CATEGORY)
+
+
+@assessment_grades_menu_bp.route("/observations", methods=["GET"])
+@token_required
+@staff_required
+def assessment_grades_observations():
+    """Observations"""
+    return feature_pending("Observations", _SYSTEM, category=_CATEGORY)
 
 
 @assessment_grades_menu_bp.route("/self-assessment", methods=["GET"])

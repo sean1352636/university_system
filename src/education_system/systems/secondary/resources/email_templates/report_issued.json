@@ -1,0 +1,29 @@
+{
+  "name": "report_issued",
+  "description": "Sent to each contact with parental responsibility when a pupil's report to parents is issued.",
+  "subject": "{report_name} for {pupil_name}",
+  "body": [
+    "Dear {recipient_name},",
+    "",
+    "{pupil_first_name}'s {report_name} is ready. You can read it in the parent portal under Reports, and a copy is below.",
+    "",
+    "{report}",
+    "",
+    "If you have any questions, please contact {pupil_first_name}'s form tutor{tutor_line}.",
+    "",
+    "Best wishes,",
+    "{school_name}"
+  ],
+  "placeholders": {
+    "recipient_name": "The contact's name",
+    "pupil_name": "The pupil's preferred first name and surname",
+    "pupil_first_name": "The pupil's preferred or first name",
+    "report_name": "The report, e.g. Autumn report 2026/27",
+    "report": "The report as text",
+    "tutor_line": "The tutor's name and e-mail in brackets, or nothing",
+    "school_name": "The school's name"
+  },
+  "defaults": {
+    "school_name": "Secondary School"
+  }
+}

@@ -106,7 +106,7 @@ def _query(db_path, sql, params=()):
 # ---------------------------------------------------------------------------
 
 def test_attendance_record_auto_flags_low_pct(tmp_db):
-    from education_system.systems.university.domains.academics.domain.services.attendance import records as att_records
+    from education_system.systems.university.domains.teaching.domain.attendance import records as att_records
 
     # Seed history: 8 absent, 2 present out of 10 → 20% before this batch.
     for i in range(8):
@@ -137,7 +137,7 @@ def test_attendance_record_auto_flags_low_pct(tmp_db):
 
 
 def test_attendance_record_no_flag_above_threshold(tmp_db):
-    from education_system.systems.university.domains.academics.domain.services.attendance import records as att_records
+    from education_system.systems.university.domains.teaching.domain.attendance import records as att_records
 
     # 9 of 10 present → 90% — above 70%
     for i in range(9):
@@ -237,9 +237,8 @@ def test_enrolment_invokes_match_suggestions(tmp_db):
             return 1
 
     with patch(
-        "education_system.systems.university.domains.academics.domain."
-        "study_matching.services.study_matching_service."
-        "StudyMatchingService",
+        "education_system.systems.university.domains.student_life."
+        "domain.study_hub.services.matching.StudyMatchingService",
         return_value=FakeSvc(),
     ):
         integration_bus.publish_enrolment_added("S1", "CS101")

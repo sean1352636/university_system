@@ -4,8 +4,9 @@ Uses the autouse ``_isolate_db`` fixture: ``HESAExportService()`` builds its
 tables (hesa_returns / hesa_field_mappings / hesa_submission_log) via
 ``transaction()`` against the isolated default DB.
 
-NOTE: ``generate_xml_export`` is NOT exercised here — see the module-level
-note at the bottom of this file for the source bug it hits.
+``generate_xml_export`` builds the return with the standard library's
+ElementTree (it used ``defusedxml.ElementTree``, which has no
+``Element``/``SubElement``, so every export raised AttributeError).
 """
 
 import pytest
@@ -105,13 +106,30 @@ class TestStatistics:
         assert stats["by_status"] == {}
 
 
-# ---------------------------------------------------------------------------
-# SOURCE BUG (not tested): HESAExportService.generate_xml_export() calls
-# ET.Element / ET.SubElement where ET is ``defusedxml.ElementTree``.
-# defusedxml.ElementTree does not export Element/SubElement (only parsing
-# helpers + tostring), so the method raises AttributeError. Left untested
-# rather than editing source.
-# ---------------------------------------------------------------------------
+class TestXmlExport:
+    def test_missing_return_gives_empty_string(self, svc):
+        assert svc.generate_xml_export(999999) == ""
+
+    def test_staff_return_xml_is_built_and_stored(self, svc):
+        import xml.etree.ElementTree as ET  # nosec B405 - parses our own output
+
+        rid = svc.create_return("2024/25", "Staff")
+        xml = svc.generate_xml_export(rid)
+        assert xml.startswith("<?xml")
+        root = ET.fromstring(xml)  # nosec B314 - our own output
+        assert root.tag == "HESAReturn"
+        assert root.get("AcademicYear") == "2024/25"
+        assert root.get("ReturnType") == "Staff"
+        assert root.find("Institution/UKPRN") is not None
+        assert svc.get_return(rid)["xml_data"] == xml
+
+    def test_student_return_has_student_records(self, svc):
+        import xml.etree.ElementTree as ET  # nosec B405 - parses our own output
+
+        rid = svc.create_return("2024/25", "Student")
+        root = ET.fromstring(svc.generate_xml_export(rid))  # nosec B314 - our own output
+        assert root.find("StudentRecords") is not None
+
 
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])

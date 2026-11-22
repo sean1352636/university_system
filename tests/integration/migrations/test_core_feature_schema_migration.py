@@ -50,9 +50,9 @@ def test_feature_schema_upgrade_and_downgrade(tmp_path) -> None:
 def test_feature_services_contain_no_runtime_schema_ddl() -> None:
     modules = (
         "education_system.systems.university.domains.assessment.domain.boards.service",
-        "education_system.systems.university.domains.academics.domain."
-        "programme_governance.service",
-        "education_system.systems.university.domains.academics.domain.research.pgr.service",
+        "education_system.systems.university.domains.curriculum."
+        "domain.programme_governance.service",
+        "education_system.systems.university.domains.research.domain.research.pgr.service",
     )
     for name in modules:
         module = importlib.import_module(name)

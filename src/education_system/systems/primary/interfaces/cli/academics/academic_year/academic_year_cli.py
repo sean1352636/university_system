@@ -1,4 +1,4 @@
-"""CLI flows for Sixth Form Academic Year."""
+"""CLI flows for Primary School Academic Year."""
 
 from __future__ import annotations
 

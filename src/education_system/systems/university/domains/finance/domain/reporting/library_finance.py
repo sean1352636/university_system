@@ -624,7 +624,7 @@ def send_payment_receipt_email(user_info, fine_amount, payment_amount, payment_m
         "Best regards,\nUniversity Library System\n"
     )
     return _send_templated(
-        "library/payment_receipt",
+        "campus_services/library/payment_receipt",
         {
             "student_name": user_info["full_name"],
             "transaction_id": transaction_id,

@@ -15,6 +15,7 @@ logger = logging.getLogger(__name__)
 
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 
+from education_system.systems.university.domains.staff.interfaces.gui.staff_hr import _access as _hr
 import tkinter as tk
 from tkinter import ttk, messagebox
 from datetime import datetime
@@ -52,7 +53,7 @@ class EquipmentGUI:
             self.create_main_window()
 
     def _get_user_id(self):
-        return self.current_user.get('id') or self.current_user.get('username')
+        return _hr.user_key(self)
 
     def create_as_tab(self, notebook: ttk.Notebook):
         """Create as a tab in parent notebook."""
@@ -64,7 +65,8 @@ class EquipmentGUI:
         """Create as standalone window."""
         self.window = tk.Toplevel(self.root)
         self.window.title(_t('gui.staff.staff_hr.equipment.windows.lab_equipment_booking', default="Lab/Equipment Booking"))
-        self.window.geometry("1200x700")
+        self.window.geometry("1400x900")
+        self.window.minsize(1200, 800)
         self.window.minsize(1000, 600)
         bottom_frame = ttk.Frame(self.window)
         bottom_frame.pack(side=tk.BOTTOM, fill=tk.X, padx=10, pady=5)
@@ -84,8 +86,9 @@ class EquipmentGUI:
         self._create_my_bookings_tab()
         self._create_book_tab()
 
-        if self.current_user.get('role') in ['admin', 'Admin', 'administrator', 'staff']:
+        if _hr.can(self, 'operations'):
             self._create_maintenance_tab()
+        if _hr.can(self, 'operations'):
             self._create_reports_tab()
 
     # ==================== HELPER METHODS ====================

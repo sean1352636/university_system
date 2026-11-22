@@ -42,6 +42,21 @@ Admission also records a ``sixth_form -> university`` transition on the
 journey, so the applicant is visible in the learner's cross-system
 history rather than only in the admissions tables.
 
+Reroutes and deferrals
+----------------------
+A handover that arrives for a journey which already has an application
+does not stop at "already held": the routing it carries — Firm, Insurance,
+Clearing, Adjustment or Extra, the course and the entry year — is applied
+to that application by ``sixthform_handover_records.apply_routing``, so a
+learner who missed their Firm and came in on their Insurance has the one
+application *updated* (new course, audit row) rather than a second one
+created. ``ucas.handover.rerouted`` (:func:`handle_handover_rerouted`)
+carries routing only; when it says the learner has gone elsewhere the
+application is marked withdrawn-by-reroute — declined, never deleted. A
+deferred entry records its year and is held back from this year's
+conversion. Contextual flags are stored on their own, admissions-only
+table.
+
 Drained by :func:`drain_intake`, which the launcher calls on university
 startup (and which a scheduled job could call too).
 """
@@ -53,6 +68,9 @@ from datetime import datetime
 
 from education_system.platform.cross_system import handover, identity_service
 from education_system.platform.integrations.external import cross_system_bus
+from education_system.systems.university.domains.admissions.domain import (
+    sixthform_handover_records as handover_records,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -149,6 +167,24 @@ def _age_from_dob(dob: str | None) -> int | None:
 
 _schema_ready = False
 
+#: Routing columns joined onto an application lookup. Selected only when
+#: the routing table exists: a lookup that failed on a missing join would
+#: read as "no application" and stage a second one for the same learner.
+_ROUTING_COLUMNS = """,
+                          r.route AS handover_route,
+                          r.deferred AS deferred_entry,
+                          r.entry_year AS handover_entry_year,
+                          r.routing_status, r.reroute_reason"""
+_ROUTING_JOIN = """
+                     LEFT JOIN admission_handover_routing r
+                       ON r.application_id = a.application_id"""
+
+
+def _routing_sql() -> tuple[str, str]:
+    if handover_records.ensure_tables():
+        return _ROUTING_COLUMNS, _ROUTING_JOIN
+    return "", ""
+
 
 def ensure_schema() -> bool:
     """Idempotently add the lifecycle columns this boundary reads.
@@ -173,6 +209,7 @@ def ensure_schema() -> bool:
             init_admissions_crm_system_db,
         )
         init_admissions_crm_system_db()
+        handover_records.ensure_tables()
         _schema_ready = True
     except Exception:
         logger.exception("Could not prepare the admissions CRM schema")
@@ -195,15 +232,17 @@ def find_application_for_journey(journey_id: str) -> dict | None:
     if not journey_id or not ensure_schema():
         return None
     try:
+        columns, join = _routing_sql()
         with get_connection() as conn:
+            # db-audit: ignore[DBW001] - splices module constants only
             row = conn.execute(
-                """SELECT application_id, external_reference, status,
-                          converted_student_id, program_applied,
-                          academic_year
-                     FROM admission_applications
-                    WHERE journey_id = ?
-                    ORDER BY application_id
-                    LIMIT 1""",
+                f"""SELECT a.application_id, a.external_reference, a.status,
+                          a.converted_student_id, a.program_applied,
+                          a.academic_year{columns}
+                     FROM admission_applications a{join}
+                    WHERE a.journey_id = ?
+                    ORDER BY a.application_id
+                    LIMIT 1""",  # nosec B608
                 (journey_id,),
             ).fetchone()
         return dict(row) if row else None
@@ -241,6 +280,7 @@ def find_applications_for_journeys(journey_ids, *,
                 "The university's admissions schema is unavailable")
         return {}
     out: dict[str, dict] = {}
+    columns, join = _routing_sql()
     try:
         with get_connection() as conn:
             # Chunked below SQLITE_MAX_VARIABLE_NUMBER; ordered so the
@@ -251,12 +291,13 @@ def find_applications_for_journeys(journey_ids, *,
                 placeholders = ",".join("?" * len(chunk))
                 # db-audit: ignore[DBW001] - join of placeholders
                 rows = conn.execute(
-                    f"""SELECT application_id, journey_id, external_reference,
-                               status, converted_student_id, program_applied,
-                               academic_year
-                          FROM admission_applications
-                         WHERE journey_id IN ({placeholders})
-                         ORDER BY application_id DESC""",  # nosec B608
+                    f"""SELECT a.application_id, a.journey_id,
+                               a.external_reference, a.status,
+                               a.converted_student_id, a.program_applied,
+                               a.academic_year{columns}
+                          FROM admission_applications a{join}
+                         WHERE a.journey_id IN ({placeholders})
+                         ORDER BY a.application_id DESC""",  # nosec B608
                     chunk).fetchall()
                 for row in rows:
                     out[str(row["journey_id"])] = dict(row)
@@ -270,12 +311,44 @@ def find_applications_for_journeys(journey_ids, *,
     return out
 
 
-def _create_applicant(journey_id: str, payload: dict) -> tuple[int, bool]:
+def _record_handover_details(application_id: int, journey_id: str,
+                             payload: dict, *, reason: str = "",
+                             source_event_id: str | None = None) -> str:
+    """Apply the routing and store the contextual section. Never raises:
+    the application exists either way, and admissions can see the gap."""
+    action = "unavailable"
+    try:
+        routing = handover_records.routing_from_payload(payload)
+        if routing:
+            action = handover_records.apply_routing(
+                application_id, routing, journey_id=journey_id,
+                offer_conditions=payload.get("offer_conditions") or None,
+                reason=reason, source_event_id=source_event_id)
+    except Exception:
+        logger.exception("Could not apply handover routing to application %s",
+                         application_id)
+    if payload.get("handover_boundary") or payload.get("contextual_flags"):
+        try:
+            handover_records.store_contextual(
+                application_id, payload, journey_id=journey_id,
+                source_event_id=source_event_id)
+        except Exception:
+            logger.exception("Could not store contextual flags for "
+                             "application %s", application_id)
+    return action
+
+
+def _create_applicant(journey_id: str, payload: dict, *,
+                      source_event_id: str | None = None
+                      ) -> tuple[int, bool]:
     """Create (or return) the CRM application for a sixth-form handover.
 
     Returns ``(application_id, created)`` — the caller records a journey
     transition only for a genuinely new applicant, so a redelivered event
     does not append a second identical row to the learner's history.
+
+    An application already held for the journey is *updated* from the
+    handover's routing (see the module docstring) rather than duplicated.
     """
     from education_system.systems.university.infrastructure.database.schemas.admissions_schemas import (
         init_admissions_crm_system_db,
@@ -290,7 +363,7 @@ def _create_applicant(journey_id: str, payload: dict) -> tuple[int, bool]:
 
     init_admissions_crm_system_db()
     global _schema_ready
-    _schema_ready = True
+    _schema_ready = handover_records.ensure_tables()
     fields = _read_handover(payload)
     external_reference = str(
         fields["ucas_id"]
@@ -310,6 +383,11 @@ def _create_applicant(journey_id: str, payload: dict) -> tuple[int, bool]:
                 "rather than staging a second one for the same learner.",
                 journey_id, existing["application_id"], held,
                 external_reference)
+        reroute = payload.get("handover_reroute") or {}
+        _record_handover_details(
+            int(existing["application_id"]), journey_id, payload,
+            reason=reroute.get("reason") or "",
+            source_event_id=source_event_id)
         return int(existing["application_id"]), False
 
     # Nothing under this journey — but the offer route gets here first and
@@ -327,6 +405,8 @@ def _create_applicant(journey_id: str, payload: dict) -> tuple[int, bool]:
     # different person's, whatever reference it happens to quote.
     adopted = _adopt_application_by_reference(journey_id, external_reference)
     if adopted is not None:
+        _record_handover_details(adopted, journey_id, payload,
+                                 source_event_id=source_event_id)
         return adopted, False
 
     journey = identity_service.get(journey_id) or {}
@@ -403,6 +483,8 @@ def _create_applicant(journey_id: str, payload: dict) -> tuple[int, bool]:
     # carrying them here is what makes "confirmation against offer
     # conditions promotes an applicant to a student" enforceable at all.
     _apply_offer_conditions(application_id, fields["offer_conditions"])
+    _record_handover_details(application_id, journey_id, payload,
+                             source_event_id=source_event_id)
 
     logger.info(
         "Created university application %s for journey %s (%s%s)",
@@ -538,7 +620,8 @@ def handle_progression_completed(envelope: dict) -> None:
                 "what arrived; the gaps stay for admissions to chase.",
                 journey_id, "; ".join(problems))
 
-    application_id, created = _create_applicant(journey_id, payload)
+    application_id, created = _create_applicant(
+        journey_id, payload, source_event_id=envelope.get("event_id"))
     if created:
         # Put the applicant on the journey's own timeline. Without this the
         # only record that the learner reached the university was a row in
@@ -565,11 +648,57 @@ def handle_progression_completed(envelope: dict) -> None:
                 "staged as" if created else "already held as", application_id)
 
 
+def handle_handover_rerouted(envelope: dict) -> None:
+    """Bus handler for ``ucas.handover.rerouted``.
+
+    Routing only — the dataset, when the learner is still coming here,
+    follows as a fresh progression handover and is applied by
+    :func:`handle_progression_completed`. Here:
+
+    * going elsewhere → the journey's application is marked withdrawn by
+      reroute (declined, reason recorded, not deleted);
+    * coming here by another route → the application is moved to the new
+      course / route / entry year now, so a route that never sends a
+      progression event (the platform's college application board) is
+      corrected too.
+
+    Idempotent (both writes compare before they act) and silent for a
+    journey with no application here.
+    """
+    target = envelope.get("target_system")
+    if target is not None and target != CONSUMER_SYSTEM:
+        return
+    journey_id = envelope.get("journey_id")
+    payload = envelope.get("payload") or {}
+    if not journey_id:
+        return
+    existing = find_application_for_journey(journey_id)
+    if not existing:
+        logger.debug("Reroute for journey %s: no application here",
+                     journey_id)
+        return
+    application_id = int(existing["application_id"])
+    reason = payload.get("reason") or ""
+    event_id = envelope.get("event_id")
+    if payload.get("to_home"):
+        action = handover_records.apply_routing(
+            application_id, handover_records.routing_from_reroute(payload),
+            journey_id=journey_id, reason=reason, source_event_id=event_id)
+    else:
+        action = handover_records.withdraw_by_reroute(
+            application_id, reason=reason,
+            to_institution=payload.get("to_institution"),
+            to_route=payload.get("to_route"), journey_id=journey_id,
+            source_event_id=event_id)
+    logger.info("Reroute for journey %s applied to application %s: %s",
+                journey_id, application_id, action)
+
+
 _registered = False
 
 
 def register_intake_consumer() -> None:
-    """Idempotently subscribe the intake handler to the bus."""
+    """Idempotently subscribe the intake handlers to the bus."""
     global _registered
     if _registered:
         return
@@ -577,6 +706,10 @@ def register_intake_consumer() -> None:
         cross_system_bus.EVENT_STUDENT_PROGRESSION_COMPLETED,
         handle_progression_completed,
         handler_name="university.admissions.sixthform_intake")
+    cross_system_bus.subscribe(
+        handover.EVENT_UCAS_HANDOVER_REROUTED,
+        handle_handover_rerouted,
+        handler_name="university.admissions.sixthform_intake.rerouted")
     _registered = True
     logger.debug("Registered sixth-form intake consumer")
 

@@ -43,6 +43,10 @@ from education_system.systems.university.shell.cli.ai.ai_detector.analytics impo
     export_visualization_pack_cli,
 )
 from education_system.systems.university.shell.cli.ai.ai_detector.demo import ultimate_demo, main
+from education_system.systems.university.shell.cli.ai.ai_detector.review_operations import (
+    alerts_cli, batch_cli, model_cli, federated_cli, audit_chain_cli, realtime_cli, bias_cli,
+    predictive_cli, privacy_cli, settings_cli, self_check_preview_cli,
+)
 
 __all__ = [
     'integrate_ai_detector_with_main', 'create_minimal_ai_detector',
@@ -62,4 +66,6 @@ __all__ = [
     'cluster_similar_submissions_cli', 'generate_department_comparison_cli',
     'show_weekly_trends_cli', 'export_visualization_pack_cli',
     'ultimate_demo', 'main',
+    'alerts_cli', 'batch_cli', 'model_cli', 'federated_cli', 'audit_chain_cli', 'realtime_cli',
+    'bias_cli', 'predictive_cli', 'privacy_cli', 'settings_cli', 'self_check_preview_cli',
 ]

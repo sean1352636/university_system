@@ -85,7 +85,7 @@ def _view_org_chart() -> None:
             for dept, employees in org_data.items():
                 print(f"\n{dept}:")
                 for emp in employees:
-                    print(f"  - {emp.get('name', 'N/A')} ({emp.get('job_title', 'N/A')})")
+                    print(f"  - {emp.get('name', 'N/A')} ({emp.get('job_title') or 'N/A'})")
         else:
             print("No organization data available.")
     except Exception as e:
@@ -104,9 +104,9 @@ def _display_results(results: list) -> None:
     print(f"\n--- Found {len(results)} staff member(s) ---")
     for i, emp in enumerate(results, 1):
         print(f"\n{i}. {emp.get('name', 'N/A')}")
-        print(f"   Department: {emp.get('department', 'N/A')}")
-        print(f"   Job Title: {emp.get('job_title', 'N/A')}")
-        print(f"   Email: {emp.get('email', 'N/A')}")
-        print(f"   Office: {emp.get('office_location', 'N/A')}")
+        print(f"   Department: {emp.get('department') or 'N/A'}")
+        print(f"   Job Title: {emp.get('job_title') or 'N/A'}")
+        print(f"   Email: {emp.get('email') or 'N/A'}")
+        print(f"   Office: {emp.get('office_location') or 'N/A'}")
 
     input("\nPress Enter to continue...")

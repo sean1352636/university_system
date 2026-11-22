@@ -7,7 +7,7 @@ the university tests conftest), so no extra table setup is required.
 
 import pytest
 
-from education_system.systems.university.domains.pastoral.domain.achievement_badges.services.achievement_badge_service import (
+from education_system.systems.university.domains.student_life.domain.achievement_badges.services.achievement_badge_service import (
     AchievementBadgeService,
 )
 

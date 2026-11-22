@@ -659,6 +659,27 @@ def summary_flow() -> None:
     _pause()
 
 
+def lessons_to_cover_flow() -> None:
+    print("\n═══ Lessons to Cover ═══")
+    try:
+        a = _pick_absence()
+    except _UserAbort:
+        return
+    from education_system.systems.sixth_form.domain.academics.cover import (
+        cover as _cover,
+    )
+    res = _cover.sync_absence(a)
+    rows = _cover.requests_for_absence(a.absence_id)
+    if not rows:
+        print(f"\n  No cover requests." + (f" ({res.note})"
+                                           if res.note else ""))
+    for r in rows:
+        print(f"    #{r.cover_id:<5} {r.absent_date}  P{r.periods or '?':<3} "
+              f"{(r.class_group_label or '—')[:10]:<10} "
+              f"{(r.subject or '—')[:16]:<16} [{r.status}] {r.cover_label}")
+    _pause()
+
+
 _MENU: list[tuple[str, Callable[[], None]]] = [
     ("List all",          list_all),
     ("Open only",         list_open),
@@ -683,6 +704,7 @@ _MENU: list[tuple[str, Callable[[], None]]] = [
     ("Delete",            delete_flow),
     ("─" * 6,             lambda: None),
     ("Summary",           summary_flow),
+    ("Lessons to cover",  lessons_to_cover_flow),
 ]
 
 

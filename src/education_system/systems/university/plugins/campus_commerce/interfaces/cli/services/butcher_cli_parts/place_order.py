@@ -192,16 +192,21 @@ def place_order():
             input("\nPress Enter to continue...")
             return
 
+        order_number = f"BO-{datetime.now().strftime('%Y%m%d%H%M%S')}"
+
         # Process payment if using finance account
         if payment_method == 'finance_account' and FINANCE_AVAILABLE:
             try:
-                success = process_student_finance_account_payment(
-                    user.get('username'),
-                    total,
-                    'Butcher Shop Purchase'
+                charge = process_student_finance_account_payment(
+                    student_id=str(user.get('student_id') or user.get('username')),
+                    amount=total,
+                    description='Butcher Shop Purchase',
+                    transaction_source='Butcher Shop',
+                    transaction_ref=order_number,
+                    processed_by=user.get('username') or 'System',
                 )
-                if not success:
-                    print("❌ Payment failed. Insufficient funds or finance account error.")
+                if not charge.get('success'):
+                    print(f"❌ Payment failed. {charge.get('message') or 'Insufficient funds or finance account error.'}")
                     input("\nPress Enter to continue...")
                     return
             except Exception as e:
@@ -211,7 +216,6 @@ def place_order():
                 return
 
         # Create order
-        order_number = f"BO-{datetime.now().strftime('%Y%m%d%H%M%S')}"
 
         with transaction() as conn:
             # Insert order

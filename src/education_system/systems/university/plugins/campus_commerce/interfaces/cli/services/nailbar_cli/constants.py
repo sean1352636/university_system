@@ -1,7 +1,7 @@
 """Fallback nail bar catalogue.
 
-Used when ``nailbar_core`` is unavailable; ``schema`` decides which definition
-of ``NAIL_TREATMENTS`` wins.
+``nailbar_core`` keeps its treatments in the database and defines no catalogue,
+so ``schema`` uses this one to seed when the core is unavailable.
 """
 
 NAIL_TREATMENTS = {

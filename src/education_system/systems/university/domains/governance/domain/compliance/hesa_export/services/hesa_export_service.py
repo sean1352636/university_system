@@ -1,6 +1,5 @@
 """HESA data export service for statutory XML returns."""
 
-import defusedxml.ElementTree as ET
 from datetime import datetime
 from typing import Dict, List, Optional
 
@@ -85,44 +84,31 @@ class HESAExportService:
             conn.commit()
             return True
 
-    def generate_xml_export(self, return_id: int) -> str:
-        """Generate HESA XML from student/staff data."""
+    def generate_xml_export(self, return_id: int, actor: Optional[dict] = None) -> str:
+        """Build the return's XML from the student records.
+
+        A ``Student`` return is the HESA Data Futures build in
+        ``application/statutory/hesa_return`` (institution UKPRN and HESA
+        provider id required, validation report stored on the return, upload
+        file written to the hesa_jisc connector folder when there are no
+        errors). ``actor`` is the signed-in user (admin or registry).
+        The staff return is built in Staff HR (HESA staff return); other
+        return types are not produced by this system, so they are refused
+        rather than filled with placeholder data.
+        """
         ret = self.get_return(return_id)
         if not ret:
             return ""
-
-        root = ET.Element("HESAReturn")
-        root.set("AcademicYear", ret['academic_year'])
-        root.set("ReturnType", ret['return_type'])
-        root.set("GeneratedAt", datetime.now().isoformat())
-
-        institution = ET.SubElement(root, "Institution")
-        ET.SubElement(institution, "UKPRN").text = "10000001"
-        ET.SubElement(institution, "InstitutionName").text = "University"
-
-        if ret['return_type'] == 'Student':
-            students_elem = ET.SubElement(root, "StudentRecords")
-            with get_connection() as conn:
-                try:
-                    rows = conn.execute("SELECT * FROM students LIMIT 1000").fetchall()
-                    for row in rows:
-                        s = dict(row)
-                        student_elem = ET.SubElement(students_elem, "Student")
-                        ET.SubElement(student_elem, "StudentID").text = str(s.get('student_id', ''))
-                        ET.SubElement(student_elem, "FirstName").text = str(s.get('first_name', s.get('name', '')))
-                        ET.SubElement(student_elem, "LastName").text = str(s.get('last_name', ''))
-                        ET.SubElement(student_elem, "Course").text = str(s.get('course', s.get('program', '')))
-                        ET.SubElement(student_elem, "YearOfStudy").text = str(s.get('year_of_study', ''))
-                except Exception:
-                    ET.SubElement(students_elem, "Error").text = "Could not retrieve student data"
-
-        xml_str = ET.tostring(root, encoding='unicode', xml_declaration=True)
-
-        with transaction() as conn:
-            conn.execute("UPDATE hesa_returns SET xml_data = ? WHERE id = ?", (xml_str, return_id))
-            conn.commit()
-
-        return xml_str
+        if ret['return_type'] == 'Staff':
+            raise ValueError("The HESA staff return is built in Staff HR → Compliance "
+                             "(HESA staff return)")
+        if ret['return_type'] != 'Student':
+            raise ValueError(f"{ret['return_type']} returns are not produced by this system")
+        from education_system.systems.university.application.statutory import hesa_return
+        hesa_return.build(actor, ret['academic_year'], ret.get('period_start'),
+                          ret.get('period_end'), ret.get('reference_period') or "",
+                          return_id=return_id)
+        return self.get_return(return_id).get('xml_data') or ""
 
     def add_field_mapping(self, return_type: str, hesa_field: str, local_field: str, transform_rule: str = None) -> int:
         with transaction() as conn:

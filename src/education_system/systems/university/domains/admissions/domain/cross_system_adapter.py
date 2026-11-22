@@ -14,7 +14,9 @@ joining somebody else's programme.
 from __future__ import annotations
 
 import logging
-import sqlite3
+# The university database layer's sqlite3 (for its error types): the domain
+# layer doesn't import the SQL driver itself.
+from education_system.systems.university.infrastructure.database.db import sqlite3
 from typing import Any
 
 from education_system.platform.cross_system.adapters import registry
@@ -204,6 +206,47 @@ class UniversityAdapter(PhaseAdapter):
         admissions_lifecycle.transition(
             application_id, admissions_lifecycle.ACCEPTED, force=True,
             reason=f"Firm choice selected by {accepted_by}")
+
+
+    # ── Published facts and records other systems may ask for ──────────
+
+    def institution_name(self) -> str | None:
+        """What this university calls itself (the prospectus's name)."""
+        from education_system.systems.university.application.programmes import prospectus
+
+        return prospectus.institution_name()
+
+    def published_courses(self) -> list[dict]:
+        """The courses the prospectus publishes, as plain dicts."""
+        from education_system.systems.university.application.programmes import prospectus
+
+        return [{"code": c.code, "name": c.name, "min_tariff": c.min_tariff,
+                 "duration": c.duration} for c in prospectus.published_courses()]
+
+    def offer_terms_for_choices(self, choice_ids: list[int]) -> dict[int, dict]:
+        """``{choice_id: terms}`` for the offer terms this university issued."""
+        from education_system.systems.university.domains.admissions.domain.ucas import (
+            offer_terms,
+        )
+
+        fields = ("terms_id", "grade_requirement", "grade_alternative", "reply_deadline",
+                  "expiry_date", "scholarship", "accommodation_guaranteed", "notes",
+                  "issued_at", "updated_at", "issued_by")
+        out: dict[int, dict] = {}
+        for cid, t in offer_terms.terms_for_choices(list(choice_ids)).items():
+            row = {f: getattr(t, f, None) for f in fields}
+            row["conditions"] = list(getattr(t, "conditions", None) or [])
+            out[cid] = row
+        return out
+
+    def record_school_visit(self, tour: dict, attendees: list[dict]) -> dict:
+        """File a school's visit in the Admissions CRM (tour, prospects,
+        registrations); see :mod:`.school_visits`."""
+        from education_system.systems.university.domains.admissions.domain import (
+            school_visits,
+        )
+
+        return school_visits.record_school_visit(tour, attendees)
 
 
 ADAPTER = UniversityAdapter()

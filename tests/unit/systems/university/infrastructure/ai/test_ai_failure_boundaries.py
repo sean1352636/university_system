@@ -1,6 +1,6 @@
-from education_system.systems.university.infrastructure.ai.university_chatbot import fallbacks
-from education_system.systems.university.infrastructure.ai.university_chatbot.minimal_chatbot import MinimalChatbot
-from education_system.systems.university.infrastructure.ai.university_chatbot.nlp_processor import fallback_processing
+from education_system.systems.university.shared.ai.chatbot import fallbacks
+from education_system.systems.university.shared.ai.chatbot.minimal_chatbot import MinimalChatbot
+from education_system.systems.university.shared.ai.chatbot.nlp_processor import fallback_processing
 
 
 def test_fallback_nlp_is_deterministic_for_unknown_and_voice_input():

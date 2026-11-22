@@ -20,14 +20,19 @@ from education_system.systems.sixth_form.interfaces.gui._ui import grab_when_vie
 
 import logging
 import tkinter as tk
-from tkinter import messagebox, ttk
+from tkinter import ttk
+from education_system.platform.delivery.gui.parented_dialogs import messagebox
 from typing import Callable
 
 from education_system.systems.sixth_form.domain.academics.assignments import (
-    assignments as data,
     assignments_assessment as assess,
     assignments_feedback as feedback,
     assignments_marking as marking,
+)
+from education_system.systems.sixth_form.domain.academics.assignments import (
+    crud as assignments_crud,
+    models as assignments_models,
+    store as assignments_store,
 )
 from education_system.systems.sixth_form.domain.academics.assignments.assignments_assessment import (
     GROUP_ROLES,
@@ -123,7 +128,7 @@ class WorkflowTab:
     # ── Shared state ──────────────────────────────────────────────
     def refresh(self) -> None:
         try:
-            rows = data.list_assignments()
+            rows = assignments_store.list_assignments()
         except Exception as e:
             messagebox.showerror("Workflow", str(e))
             return
@@ -154,7 +159,7 @@ class WorkflowTab:
     def assignment(self):
         if self._selected_id is None:
             return None
-        return data.get_assignment(self._selected_id)
+        return assignments_store.get_assignment(self._selected_id)
 
     def need_assignment(self, action: str):
         a = self.assignment()
@@ -246,7 +251,7 @@ class ReleasePane:
         names = _names()
         report = feedback.turnaround_report(assignment_id=a.assignment_id)
         by_id = {r.submission.submission_id: r for r in report.rows}
-        for sub in data.list_submissions(assignment_id=a.assignment_id):
+        for sub in assignments_store.list_submissions(assignment_id=a.assignment_id):
             row = by_id.get(sub.submission_id)
             tags: list[str] = []
             visible = feedback.is_visible_to_student(sub, a)
@@ -281,7 +286,7 @@ class ReleasePane:
         if not sel:
             messagebox.showinfo(action, "Select a student first.")
             return None
-        return data.get_submission(int(sel[0]))
+        return assignments_store.get_submission(int(sel[0]))
 
     def _release_all(self) -> None:
         a = self.owner.need_assignment("Release")
@@ -418,7 +423,7 @@ class ReleasePolicyDialog:
 
         ttk.Label(form, text="Policy:").grid(row=0, column=0, sticky="e",
                                                 pady=4)
-        self.policy_cb = ttk.Combobox(form, values=data.RELEASE_POLICIES,
+        self.policy_cb = ttk.Combobox(form, values=assignments_models.RELEASE_POLICIES,
                                         state="readonly", width=14)
         self.policy_cb.set(assignment.release_policy)
         self.policy_cb.grid(row=0, column=1, sticky="w", padx=6)
@@ -467,7 +472,7 @@ class ReleasePolicyDialog:
 
     def _save(self) -> None:
         try:
-            data.update_assignment(self.assignment.assignment_id, {
+            assignments_store.update_assignment(self.assignment.assignment_id, {
                 "release_policy": self.policy_cb.get(),
                 "release_on": self.date_e.get().strip() or None,
                 "marking_sla_days": self.sla_e.get().strip() or None,
@@ -535,7 +540,7 @@ class AppealsPane:
                                       open_only=self.open_var.get())
         names = _names()
         for appeal in rows:
-            sub = data.get_submission(appeal.submission_id)
+            sub = assignments_store.get_submission(appeal.submission_id)
             sid = sub.student_id if sub else "?"
             tags = ["open"] if appeal.is_open else []
             if appeal.status in ("Upheld", "Partly upheld"):
@@ -621,7 +626,7 @@ class RaiseAppealDialog:
         outer = ttk.Frame(self.win, padding=12)
         outer.pack(fill="both", expand=True)
 
-        self._subs = [s for s in data.list_submissions(
+        self._subs = [s for s in assignments_store.list_submissions(
             assignment_id=assignment.assignment_id)
             if feedback.is_visible_to_student(s, assignment)]
         names = _names()
@@ -1015,7 +1020,7 @@ class AnswerEntryDialog:
         self.win.transient(parent)
         grab_when_viewable(self.win)
         self._entries: dict[int, ttk.Entry] = {}
-        self._subs = data.list_submissions(
+        self._subs = assignments_store.list_submissions(
             assignment_id=assignment.assignment_id)
         self._build()
 
@@ -1186,7 +1191,7 @@ class GroupsPane:
                         _fmt(group.group_marks), detail.message))
             for member in detail.members:
                 effective = member.effective_marks(group.group_marks)
-                sub = data.get_submission(member.submission_id)
+                sub = assignments_store.get_submission(member.submission_id)
                 self.tree.insert(
                     node, "end", iid=f"m{member.submission_id}",
                     text="", values=(
@@ -1212,7 +1217,7 @@ class GroupsPane:
         iid = sel[0]
         if iid.startswith("g"):
             return int(iid[1:])
-        sub = data.get_submission(int(iid[1:]))
+        sub = assignments_store.get_submission(int(iid[1:]))
         return sub.group_id if sub else None
 
     def _selected_submission_id(self) -> int | None:
@@ -1387,7 +1392,7 @@ class AdjustmentDialog:
         grab_when_viewable(self.win)
         form = ttk.Frame(self.win, padding=12)
         form.pack(fill="both", expand=True)
-        sub = data.get_submission(submission_id)
+        sub = assignments_store.get_submission(submission_id)
         ttk.Label(
             form,
             text="Three students who did the work and one who didn't\n"
@@ -1551,7 +1556,7 @@ class PeerPane:
             return
         names = _names()
         mode = self.mode_cb.get() or assess.DEFAULT_PEER_SCORE_MODE
-        for sub in data.list_submissions(assignment_id=a.assignment_id):
+        for sub in assignments_store.list_submissions(assignment_id=a.assignment_id):
             peer = assess.peer_summary(sub.submission_id, mode=mode,
                                         store=False)
             self_row = assess.get_self_assessment(sub.submission_id)
@@ -1586,7 +1591,7 @@ class PeerPane:
         if not sel:
             messagebox.showinfo(action, "Select a student first.")
             return None
-        return data.get_submission(int(sel[0]))
+        return assignments_store.get_submission(int(sel[0]))
 
     def _record_peer(self) -> None:
         a = self.owner.need_assignment("Peer review")
@@ -1643,7 +1648,7 @@ class PeerReviewDialog:
         form.pack(fill="both", expand=True)
         names = _names()
 
-        peers = [s for s in data.list_submissions(
+        peers = [s for s in assignments_store.list_submissions(
             assignment_id=assignment.assignment_id)
             if s.student_id != submission.student_id]
         self._peer_ids = [s.student_id for s in peers]
@@ -1893,10 +1898,10 @@ class ComponentsPane:
             self.structure_var.set("")
             self.summary_var.set("")
             return
-        components = data.list_components(a.assignment_id)
+        components = assignments_store.list_components(a.assignment_id)
         if not components:
             if a.parent_assignment_id:
-                parent = data.get_assignment(a.parent_assignment_id)
+                parent = assignments_store.get_assignment(a.parent_assignment_id)
                 self.structure_var.set(
                     f"This is a component of #{a.parent_assignment_id} "
                     f"{parent.title if parent else ''} "
@@ -1907,7 +1912,7 @@ class ComponentsPane:
             self.summary_var.set("")
             return
 
-        weights = data.component_weights(a.assignment_id)
+        weights = assignments_crud.component_weights(a.assignment_id)
         parts = ", ".join(
             f"#{c.assignment_id} {c.title} "
             f"({weights.get(c.assignment_id, 0):g}%)"
@@ -1920,8 +1925,8 @@ class ComponentsPane:
 
         names = _names()
         complete = 0
-        for sub in data.list_submissions(assignment_id=a.assignment_id):
-            roll = data.component_rollup(a.assignment_id,
+        for sub in assignments_store.list_submissions(assignment_id=a.assignment_id):
+            roll = assignments_crud.component_rollup(a.assignment_id,
                                           sub.student_id)
             if roll.complete:
                 complete += 1
@@ -1951,7 +1956,7 @@ class ComponentsPane:
         a = self.owner.need_assignment("Components")
         if a is None:
             return
-        components = data.list_components(a.assignment_id)
+        components = assignments_store.list_components(a.assignment_id)
         if not components:
             messagebox.showinfo("Components",
                                   "This assignment has no components.")
@@ -1965,7 +1970,7 @@ class ComponentsPane:
         a = self.owner.need_assignment("Rollup")
         if a is None:
             return
-        if not data.list_components(a.assignment_id):
+        if not assignments_store.list_components(a.assignment_id):
             messagebox.showinfo("Rollup",
                                   "This assignment has no components.")
             return
@@ -1975,7 +1980,7 @@ class ComponentsPane:
                 "this assignment?\n\nStudents with unmarked components "
                 "are skipped."):
             return
-        result = data.rollup_all(a.assignment_id)
+        result = assignments_crud.rollup_all(a.assignment_id)
         messagebox.showinfo(
             "Rollup",
             f"Applied to {result['applied']} student(s).\n"
@@ -2004,10 +2009,10 @@ class LinkComponentDialog:
                                                  sticky="w",
                                                  pady=(0, 8))
         self._candidates = [
-            a for a in data.list_assignments()
+            a for a in assignments_store.list_assignments()
             if a.assignment_id != parent_a.assignment_id
             and a.parent_assignment_id is None
-            and not data.list_components(a.assignment_id)]
+            and not assignments_store.list_components(a.assignment_id)]
         ttk.Label(form, text="Component:").grid(row=1, column=0,
                                                    sticky="e", pady=4)
         self.child_cb = ttk.Combobox(
@@ -2044,7 +2049,7 @@ class LinkComponentDialog:
             messagebox.showerror("Link", "Pick a component.")
             return
         try:
-            data.update_assignment(
+            assignments_store.update_assignment(
                 self._candidates[idx].assignment_id, {
                     "parent_assignment_id":
                         self.parent_a.assignment_id,
@@ -2087,7 +2092,7 @@ class UnlinkDialog:
         idx = self.cb.current()
         if idx < 0:
             return
-        data.update_assignment(
+        assignments_store.update_assignment(
             self.components[idx].assignment_id,
             {"parent_assignment_id": None, "component_weight": None})
         self.win.destroy()

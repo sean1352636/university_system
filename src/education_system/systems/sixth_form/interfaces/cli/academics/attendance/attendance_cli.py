@@ -27,6 +27,45 @@ from education_system.systems.sixth_form.domain.academics.timetable.timetable im
 
 logger = logging.getLogger(__name__)
 
+_DOMAIN = "education_system.systems.sixth_form.domain.academics.attendance"
+
+
+class _LazyModule:
+    """A domain module that is imported the first time it is used.
+
+    The attendance submenus each lean on four to seven domain modules;
+    importing them all when the menu module loads made opening
+    Attendance pay for every screen in it. Each submenu binds its
+    modules through :func:`lazy_domain` instead, so a module is loaded
+    on the first selection that actually calls into it.
+    """
+
+    __slots__ = ("_lazy_name", "_lazy_mod")
+
+    def __init__(self, name: str) -> None:
+        object.__setattr__(self, "_lazy_name", name)
+        object.__setattr__(self, "_lazy_mod", None)
+
+    def _lazy_load(self):
+        mod = object.__getattribute__(self, "_lazy_mod")
+        if mod is None:
+            import importlib
+            mod = importlib.import_module(
+                object.__getattribute__(self, "_lazy_name"))
+            object.__setattr__(self, "_lazy_mod", mod)
+        return mod
+
+    def __getattr__(self, attr: str):
+        return getattr(self._lazy_load(), attr)
+
+    def __repr__(self) -> str:
+        return f"<lazy {object.__getattribute__(self, '_lazy_name')}>"
+
+
+def lazy_domain(module: str) -> _LazyModule:
+    """``module`` from the attendance domain package, imported on first use."""
+    return _LazyModule(f"{_DOMAIN}.{module}")
+
 
 class _UserAbort(Exception):
     """Raised when the user hits Ctrl-C / EOF or types ``cancel``."""
@@ -508,7 +547,7 @@ def _row_action_loop(rows: list) -> None:
 def register_tools() -> None:
     """Hand off to the register-lifecycle submenu (imported late to
     avoid a cycle — that module borrows this one's prompt helpers)."""
-    from education_system.systems.sixth_form.domain.academics.attendance import (
+    from education_system.systems.sixth_form.interfaces.cli.academics.attendance import (
         attendance_register_cli,
     )
     attendance_register_cli.run()
@@ -516,7 +555,7 @@ def register_tools() -> None:
 
 def code_tools() -> None:
     """Mark codes, absence reasons, authorisation, off-site and audit."""
-    from education_system.systems.sixth_form.domain.academics.attendance import (
+    from education_system.systems.sixth_form.interfaces.cli.academics.attendance import (
         attendance_codes_cli,
     )
     attendance_codes_cli.run()
@@ -524,7 +563,7 @@ def code_tools() -> None:
 
 def session_tools() -> None:
     """Expected lessons, coverage gaps and AM/PM statutory marks."""
-    from education_system.systems.sixth_form.domain.academics.attendance import (
+    from education_system.systems.sixth_form.interfaces.cli.academics.attendance import (
         attendance_sessions_cli,
     )
     attendance_sessions_cli.run()
@@ -532,7 +571,7 @@ def session_tools() -> None:
 
 def capture_tools() -> None:
     """Kiosk check-in, offline sync, cover registers and bulk import."""
-    from education_system.systems.sixth_form.domain.academics.attendance import (
+    from education_system.systems.sixth_form.interfaces.cli.academics.attendance import (
         attendance_capture_cli,
     )
     attendance_capture_cli.run()
@@ -540,7 +579,7 @@ def capture_tools() -> None:
 
 def offtimetable_tools() -> None:
     """Activity, work-placement and exam-room registers."""
-    from education_system.systems.sixth_form.domain.academics.attendance import (
+    from education_system.systems.sixth_form.interfaces.cli.academics.attendance import (
         attendance_offtimetable_cli,
     )
     attendance_offtimetable_cli.run()
@@ -548,7 +587,7 @@ def offtimetable_tools() -> None:
 
 def policy_tools() -> None:
     """Roll call, the A/B week cycle and the amendment window."""
-    from education_system.systems.sixth_form.domain.academics.attendance import (
+    from education_system.systems.sixth_form.interfaces.cli.academics.attendance import (
         attendance_policy_cli,
     )
     attendance_policy_cli.run()
@@ -556,7 +595,7 @@ def policy_tools() -> None:
 
 def absence_tools() -> None:
     """Absence reports, self-certification, leave, evidence and appeals."""
-    from education_system.systems.sixth_form.domain.academics.attendance import (
+    from education_system.systems.sixth_form.interfaces.cli.academics.attendance import (
         attendance_absence_cli,
     )
     attendance_absence_cli.run()
@@ -564,7 +603,7 @@ def absence_tools() -> None:
 
 def comms_tools() -> None:
     """First-day calling, notifications, register nudges and letters."""
-    from education_system.systems.sixth_form.domain.academics.attendance import (
+    from education_system.systems.sixth_form.interfaces.cli.academics.attendance import (
         attendance_comms_cli,
     )
     attendance_comms_cli.run()
@@ -572,7 +611,7 @@ def comms_tools() -> None:
 
 def intervention_tools() -> None:
     """Cases, punctuality, cohorts, safeguarding, bursary and rewards."""
-    from education_system.systems.sixth_form.domain.academics.attendance import (
+    from education_system.systems.sixth_form.interfaces.cli.academics.attendance import (
         attendance_intervention_cli,
     )
     attendance_intervention_cli.run()
@@ -580,7 +619,7 @@ def intervention_tools() -> None:
 
 def insight_tools() -> None:
     """Analytics, anomalies, the governor report, returns and settings."""
-    from education_system.systems.sixth_form.domain.academics.attendance import (
+    from education_system.systems.sixth_form.interfaces.cli.academics.attendance import (
         attendance_insight_cli,
     )
     attendance_insight_cli.run()

@@ -44,15 +44,15 @@ def planning_service(tmp_path, monkeypatch):
     )
     # Keep the schema-ready guard from short-circuiting init for this path,
     # and don't leak our temp path into other tests' state.
-    from education_system.systems.university.domains.academics.domain.course_planning.services.planning_service import (
+    from education_system.systems.university.domains.curriculum.domain.course_planning.services.planning_service import (
         PlanningService,
     )
 
     PlanningService._schema_ready.discard(db_path)
     # log_activity would write to a separate activity store; neutralise it.
     monkeypatch.setattr(
-        "education_system.systems.university.domains.academics.domain."
-        "course_planning.services.planning_service.log_activity",
+        "education_system.systems.university.domains.curriculum."
+        "domain.course_planning.services.planning_service.log_activity",
         lambda *a, **k: None,
     )
 

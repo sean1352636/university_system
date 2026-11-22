@@ -13,7 +13,10 @@ from typing import Any
 from education_system.platform.cross_system import (
     enrolments, handover, route_support, transitions,
 )
-from education_system.platform.cross_system.adapters.base import HandoverRequest
+from education_system.platform.cross_system.adapters.base import (
+    AdapterNotImplemented,
+    HandoverRequest,
+)
 from education_system.platform.identity.auth.db import connect
 from education_system.platform.integrations.external import cross_system_bus
 
@@ -332,6 +335,166 @@ def enrol_confirmed(transition_id: str, *, start_date: str | None = None,
     return update_status(transition_id, "Enrolled / On Programme", db_path=db_path)
 
 
+def destination_update(journey_id: str, destination: str, stage: str, *,
+                       details: str = "", local_student_id: str | None = None,
+                       end_date: str | None = None,
+                       db_path: str | None = None) -> dict | None:
+    """A destination reports progress on a learner Secondary sent it.
+
+    Finds the open application for *journey_id* at *destination* and moves
+    it to *stage*; returns None when there is none (the learner did not
+    come through this board). "Enrolled / On Programme" means the
+    destination has already made the learner its own (e.g. converted the
+    applicant): the destination is confirmed, the handover approved, the
+    transition completed and Secondary closes the pupil off roll.
+    """
+    if stage not in STAGES:
+        raise Post16Error(f"Unknown stage {stage!r}")
+    open_apps = [a for a in list_applications(destination=destination, db_path=db_path)
+                 if a["journey_id"] == journey_id
+                 and a["stage"] not in {"Declined", "Withdrawn", "Enrolled / On Programme"}]
+    if not open_apps:
+        return None
+    app = open_apps[0]
+    tid = app["transition_id"]
+    if stage != "Enrolled / On Programme":
+        if app["stage"] == stage:
+            return app
+        return update_status(tid, stage, details=details, db_path=db_path)
+    conn = connect(db_path)
+    try:
+        other = conn.execute(
+            "SELECT transition_id FROM post16_destination_application "
+            "WHERE journey_id = ? AND confirmed = 1 AND transition_id <> ?",
+            (journey_id, tid)).fetchone()
+        if other:
+            raise Post16Error("This learner already has a confirmed destination")
+        conn.execute(
+            "UPDATE post16_destination_application SET confirmed = 1, "
+            "updated_at = datetime('now') WHERE transition_id = ?", (tid,))
+        conn.commit()
+    finally:
+        conn.close()
+    row = transitions.get_transition(tid, db_path=db_path)
+    if row and row["status"] == "applied":
+        transitions.offer_place(tid, destination_enrolment_id=row["destination_enrolment_id"],
+                                conditions="Enrolled", db_path=db_path)
+        row = transitions.get_transition(tid, db_path=db_path)
+    if row and row["status"] == "offered":
+        transitions.accept_place(tid, accepted_by="learner", db_path=db_path)
+        row = transitions.get_transition(tid, db_path=db_path)
+    if row and row["status"] == "accepted":
+        transitions.approve_handover(
+            tid, json.loads(app["handover_json"]),
+            consent_reference=app.get("consent_reference"), db_path=db_path)
+    row = transitions.get_transition(tid, db_path=db_path)
+    if row and row["status"] == "handover_approved":
+        transitions.admit(tid, local_student_id=local_student_id,
+                          year_group="12" if destination == "sixth_form" else None,
+                          start_date=end_date, db_path=db_path)
+    row = transitions.get_transition(tid, db_path=db_path)
+    if row and row["status"] == "admitted":
+        transitions.complete(
+            tid, start_date=end_date, close_source=True,
+            source_exit_reason=f"Confirmed post-16 destination: {destination}",
+            db_path=db_path)
+    _source_adapter().close_enrolment(
+        app["pupil_id"], f"Progressed to {destination}", end_date=end_date)
+    return update_status(tid, stage, details=details, db_path=db_path)
+
+
+def update_results(pupil_id: str, destination: str, *, gcse_results: list[dict],
+                   gcse_entries: list[dict] | None = None,
+                   db_path: str | None = None) -> dict:
+    """Secondary's exam results changed after the pupil was sent.
+
+    Replaces ``gcse_results`` and ``gcse_entries`` in the pupil's latest open
+    application at *destination* (so a later handover approval carries
+    them) and passes them to the destination's applicant record. Both are
+    routine handover fields. Raises Post16Error when there is no open
+    application or the destination can't take results.
+    """
+    apps = [a for a in list_applications(pupil_id=pupil_id, destination=destination,
+                                         db_path=db_path)
+            if a["stage"] not in {"Declined", "Withdrawn"}]
+    if not apps:
+        raise Post16Error("No open application")
+    app = apps[0]
+    payload = json.loads(app["handover_json"] or "{}")
+    payload["gcse_results"] = list(gcse_results or [])
+    if gcse_entries is not None:
+        payload["gcse_entries"] = list(gcse_entries)
+    adapter = _destination_adapter(destination)
+    try:
+        adapter.update_applicant_results(HandoverRequest(
+            journey_id=app["journey_id"], source_system=SOURCE,
+            destination_system=destination,
+            payload={k: payload[k] for k in ("gcse_results", "gcse_entries")
+                     if k in payload},
+            transition_id=app["transition_id"],
+            consent_reference=app.get("consent_reference")))
+    except AdapterNotImplemented as exc:
+        raise Post16Error(f"{destination} can't receive exam results yet") from exc
+    conn = connect(db_path)
+    try:
+        conn.execute(
+            "UPDATE post16_destination_application SET handover_json = ?, "
+            "updated_at = datetime('now') WHERE transition_id = ?",
+            (json.dumps(payload, default=str), app["transition_id"]))
+        conn.commit()
+    finally:
+        conn.close()
+    try:
+        cross_system_bus.publish_cross_system(
+            "post16.application.results_updated", source_system=SOURCE,
+            source_module="platform.cross_system.secondary_post16",
+            journey_id=app["journey_id"], target_system=destination, db_path=db_path,
+            transition_id=app["transition_id"], results=len(payload["gcse_results"]))
+    except Exception:
+        pass
+    return get_application(app["transition_id"], db_path=db_path)
+
+
+def update_choices(pupil_id: str, destination: str, *, subjects: list[str],
+                   db_path: str | None = None) -> dict:
+    """The pupil's subject choices changed after they were sent (e.g. to
+    courses their results meet). Rewrites ``application_details`` /
+    ``subject_recommendations`` and the programme label of the latest open
+    application and passes the choices to the destination's applicant.
+    Raises Post16Error when there is no open application or the destination
+    can't take them."""
+    apps = [a for a in list_applications(pupil_id=pupil_id, destination=destination,
+                                         db_path=db_path)
+            if a["stage"] not in {"Declined", "Withdrawn", "Enrolled / On Programme"}]
+    if not apps:
+        raise Post16Error("No open application")
+    app = apps[0]
+    choices = [s.strip() for s in subjects or [] if s and s.strip()]
+    payload = json.loads(app["handover_json"] or "{}")
+    details = dict(payload.get("application_details") or {})
+    details["subjects"] = choices
+    payload["application_details"] = details
+    payload["subject_recommendations"] = choices
+    try:
+        _destination_adapter(destination).update_applicant_choices(HandoverRequest(
+            journey_id=app["journey_id"], source_system=SOURCE,
+            destination_system=destination, payload={"application_details": details},
+            transition_id=app["transition_id"],
+            consent_reference=app.get("consent_reference")))
+    except AdapterNotImplemented as exc:
+        raise Post16Error(f"{destination} can't receive changed choices yet") from exc
+    conn = connect(db_path)
+    try:
+        conn.execute(
+            "UPDATE post16_destination_application SET handover_json = ?, "
+            "programme_label = ?, updated_at = datetime('now') WHERE transition_id = ?",
+            (json.dumps(payload, default=str), ", ".join(choices), app["transition_id"]))
+        conn.commit()
+    finally:
+        conn.close()
+    return get_application(app["transition_id"], db_path=db_path)
+
+
 def get_application(transition_id: str, *, db_path: str | None = None) -> dict | None:
     _ensure(db_path)
     conn = connect(db_path)
@@ -386,5 +549,5 @@ def _consent_reference(record: dict | None) -> str | None:
 __all__ = [
     "Post16Error", "Preview", "DESTINATIONS", "STAGES", "preview", "submit",
     "update_status", "confirm_destination", "approve_handover",
-    "enrol_confirmed", "get_application", "list_applications",
+    "enrol_confirmed", "update_results", "update_choices", "get_application", "list_applications",
 ]

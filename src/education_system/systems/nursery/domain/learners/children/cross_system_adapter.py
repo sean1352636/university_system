@@ -99,17 +99,28 @@ class NurseryAdapter(PhaseAdapter):
 
         guardian = {
             "name": child.parent_name, "phone": child.parent_phone,
-            "email": child.parent_email, "relationship": "Parent/Carer",
+            "email": child.parent_email,
+            "relationship": child.parent_relationship or "Parent/Carer",
             "parental_responsibility": True,
         }
         has_guardian = any((child.parent_name, child.parent_phone,
                             child.parent_email))
         record: dict[str, Any] = {
+            # The same identity and address the schools' Add Pupil asks for,
+            # so Reception starts from the record the nursery already holds.
             "child_identity": {
                 "first_name": child.first_name,
+                "middle_names": child.middle_names,
                 "last_name": child.last_name,
+                "preferred_name": child.preferred_name,
                 "date_of_birth": child.date_of_birth,
+                "gender": child.gender,
+                "upn": child.upn,
                 "nursery_child_id": child.pupil_id,
+                "address_line1": child.address_line1,
+                "address_line2": child.address_line2,
+                "town": child.town,
+                "postcode": child.postcode,
             },
             "guardians": [guardian] if has_guardian else None,
             # The nursery records one contact per child; the parent is the
@@ -127,6 +138,12 @@ class NurseryAdapter(PhaseAdapter):
                 "medical_notes": (child.medical_notes or "").strip() or None,
             },
             "attendance_summary": _attendance_summary(child),
+            # Sensitive on this boundary: present only when the nursery has
+            # recorded something, and still consent-gated by build_handover.
+            "send_support": ({"sen_status": child.sen_status,
+                              "sen_label": child.sen_label}
+                             if child.sen_status else None),
+            "communication_needs": ({"eal": True} if child.eal else None),
         }
         logger.info("Exported nursery child %s for handover to %s",
                     child.pupil_id, destination_system or "(unspecified)")
@@ -146,7 +163,9 @@ class NurseryAdapter(PhaseAdapter):
             logger.info("Nursery child %s has already left — not re-closing",
                         local_student_id)
             return
-        children.set_status(local_student_id, "left")
+        children.set_status(local_student_id, "left",
+                            left_date=details.get("end_date"),
+                            exit_reason="Moved to school")
         logger.info("Nursery child %s taken off roll (%s)", local_student_id, reason)
 
 

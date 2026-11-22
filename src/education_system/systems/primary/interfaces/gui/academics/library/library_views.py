@@ -2,9 +2,11 @@
 
 from __future__ import annotations
 
+import datetime as _dt
 import functools
 import logging
 import tkinter as tk
+import types
 from tkinter import messagebox, simpledialog, ttk
 from typing import Any, Callable
 
@@ -17,6 +19,8 @@ from education_system.systems.primary.domain.academics.library.library import (
 from education_system.systems.primary.domain.learners.pupils.pupils import (
     ValidationError,
 )
+from education_system.platform.delivery.gui.parented_dialogs import make_toplevel
+from education_system.systems.primary.interfaces.gui import kit
 
 logger = logging.getLogger(__name__)
 
@@ -48,10 +52,9 @@ def _safe_view(func: Callable[..., None]) -> Callable[..., None]:
 
 def _book_dialog(host, title: str, initial: dict[str, Any] | None = None
                  ) -> dict[str, Any] | None:
-    dlg = tk.Toplevel(host.root)
+    dlg = make_toplevel(host.root)
     dlg.title(title)
-    dlg.transient(host.root)
-    dlg.geometry("500x500")
+    dlg.geometry("540x520")
     dlg.update_idletasks()
     try:
         dlg.wait_visibility()
@@ -83,8 +86,9 @@ def _book_dialog(host, title: str, initial: dict[str, Any] | None = None
         ("Category:",  ttk.Combobox(frm, textvariable=cat_var,
                                      values=list(CATEGORIES),
                                      state="readonly", width=14)),
-        ("Year published:", ttk.Entry(frm, textvariable=year_var,
-                                       width=8)),
+        ("Year published:", kit.NumberField(frm, year_var, from_=1000,
+                                             to=_dt.date.today().year + 1,
+                                             width=8)),
         ("Total copies:",   ttk.Spinbox(frm, from_=1, to=10000,
                                          textvariable=copies_var,
                                          width=8)),
@@ -95,7 +99,7 @@ def _book_dialog(host, title: str, initial: dict[str, Any] | None = None
     for i, (label, widget) in enumerate(rows):
         ttk.Label(frm, text=label).grid(row=i, column=0, sticky="w",
                                          pady=2)
-        widget.grid(row=i, column=1, sticky="ew", pady=2)
+        widget.grid(row=i, column=1, sticky="w", pady=2)
     frm.columnconfigure(1, weight=1)
 
     ttk.Label(frm, text="Notes:").grid(row=len(rows), column=0,
@@ -134,10 +138,17 @@ def _book_dialog(host, title: str, initial: dict[str, Any] | None = None
 @_safe_view
 def open_library(host) -> None:
     logger.debug("GUI: open_library")
-    host._clear_content()
-    root = host.content_frame
-    ttk.Label(root, text="Library",
-              font=("", 16, "bold")).pack(anchor="w", pady=(0, 8))
+    kit.show_page(host, "Library", lambda parent: _draw_library(parent, host))
+
+
+def _draw_library(root, main_host) -> None:
+    kit.page_heading(root, "Library", "The book catalogue and pupils' loans.")
+    # The helpers below take a "host" for their pop-up parent and status
+    # line: use this page's window (the main window or a pop-out).
+    host = types.SimpleNamespace(
+        root=root.winfo_toplevel(),
+        status_var=getattr(main_host, "status_var", None) or tk.StringVar(master=root),
+    )
 
     summary_var = tk.StringVar()
     ttk.Label(root, textvariable=summary_var, foreground="#666").pack(
@@ -193,18 +204,13 @@ def open_library(host) -> None:
 
     book_cols = ("id", "title", "author", "cat", "year", "copies",
                  "isbn", "location", "active")
-    book_tree = ttk.Treeview(cat_tab, columns=book_cols,
-                              show="headings", height=14)
-    for c, label, w in [
+    book_tree = kit.tree(cat_tab, [
         ("id", "ID", 50), ("title", "Title", 250),
         ("author", "Author", 160), ("cat", "Cat", 90),
         ("year", "Yr", 50), ("copies", "Avail/Tot", 80),
         ("isbn", "ISBN", 130), ("location", "Loc", 90),
         ("active", "Act", 50),
-    ]:
-        book_tree.heading(c, text=label)
-        book_tree.column(c, width=w, anchor="w")
-    book_tree.pack(fill="both", expand=True)
+    ], height=14, stretch=("title",))
 
     # ── Loans tab ───────────────────────────────────
     loan_tab = ttk.Frame(nb, padding=4)
@@ -219,7 +225,8 @@ def open_library(host) -> None:
                  width=10).pack(side="left", padx=(0, 6))
     ttk.Label(l_bar, text="Pupil:").pack(side="left", padx=(0, 4))
     loan_pupil_var = tk.StringVar(value="")
-    ttk.Entry(l_bar, textvariable=loan_pupil_var, width=14).pack(
+    kit.PupilPicker(l_bar, loan_pupil_var, include_off_roll=True, width=36,
+                    on_change=lambda _v: _refresh_loans()).pack(
         side="left", padx=(0, 8))
     ttk.Button(l_bar, text="Apply",
                command=lambda: _refresh_loans()).pack(side="left", padx=2)
@@ -236,18 +243,13 @@ def open_library(host) -> None:
 
     loan_cols = ("id", "date", "due", "ret", "pupil", "book", "status",
                  "od")
-    loan_tree = ttk.Treeview(loan_tab, columns=loan_cols,
-                              show="headings", height=14)
-    for c, label, w in [
+    loan_tree = kit.tree(loan_tab, [
         ("id", "ID", 50), ("date", "Loan", 90),
         ("due", "Due", 90), ("ret", "Returned", 90),
         ("pupil", "Pupil", 90),
         ("book", "Book", 240), ("status", "Status", 80),
         ("od", "Days OD", 70),
-    ]:
-        loan_tree.heading(c, text=label)
-        loan_tree.column(c, width=w, anchor="w")
-    loan_tree.pack(fill="both", expand=True)
+    ], height=14, stretch=("book",))
 
     def _refresh_summary() -> None:
         try:
@@ -430,10 +432,9 @@ def _lend(host, tree: ttk.Treeview, *, on_done=None) -> None:
                              parent=host.root)
         return
 
-    dlg = tk.Toplevel(host.root)
+    dlg = make_toplevel(host.root)
     dlg.title(f"Lend — {book.title}")
-    dlg.transient(host.root)
-    dlg.geometry("400x240")
+    dlg.geometry("720x260")
     dlg.update_idletasks()
     try:
         dlg.wait_visibility()
@@ -448,11 +449,9 @@ def _lend(host, tree: ttk.Treeview, *, on_done=None) -> None:
     ddate_var = tk.StringVar(value="")
     notes_var = tk.StringVar(value="")
     rows: list[tuple[str, tk.Widget]] = [
-        ("Pupil ID:", ttk.Entry(frm, textvariable=pid_var, width=14)),
-        ("Loan date (blank = today):",
-                       ttk.Entry(frm, textvariable=ldate_var, width=14)),
-        ("Due date (blank = +14d):",
-                       ttk.Entry(frm, textvariable=ddate_var, width=14)),
+        ("Pupil:", kit.PupilPicker(frm, pid_var)),
+        ("Loan date (blank = today):", kit.DateField(frm, ldate_var)),
+        ("Due date (blank = +14d):", kit.DateField(frm, ddate_var)),
         ("Notes:", ttk.Entry(frm, textvariable=notes_var, width=24)),
     ]
     for label, widget in rows:

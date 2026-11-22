@@ -8,11 +8,11 @@ Last Updated: March 2026
 
 ## Pupils
 
-Manage pupil records with unique **PRI-prefixed IDs** (PRI0001, PRI0002, etc.).
+Manage pupil records with unique **IDs with the prefix `P`** followed by digits.
 
 | Field | Description |
 |---|---|
-| Pupil ID | Auto-generated PRI prefix |
+| Pupil ID | Auto-generated, prefix `P` |
 | Name | First name, surname |
 | Date of Birth | Used for year group calculation |
 | Year Group | Reception, Year 1–6 |
@@ -26,28 +26,13 @@ Manage pupil records with unique **PRI-prefixed IDs** (PRI0001, PRI0002, etc.).
 - **Transfer year group** — Use the Year Group field to move a pupil at the start of a new academic year. Bulk promotion is available via Settings.
 - **View profile** — Click a pupil row to see their full profile including attendance, assessments, and pastoral notes.
 
-### Viewing Pupil Details (Double-Click)
+### Editing a Pupil (Double-Click)
 
-In the GUI, **admin / staff / teacher / instructor** users can
-double-click any row in the Pupils treeview to open a read-only details
-window for that pupil. This mirrors the equivalent feature in the
-University System.
-
-The details window has two tabs:
-
-| Tab | Contents |
-|---|---|
-| Personal | Pupil ID, names, preferred name, DOB, gender, ethnicity, first language, year/class/key stage, SEN status, EAL/Pupil Premium/Free School Meals/Looked After/Photo Consent flags, status, address, medical notes, dietary requirements, created/updated timestamps |
-| Contacts | Parent/Guardian 1 (name/email/phone), Parent/Guardian 2 (name/email/phone), Emergency Contact (name/phone) |
-
-Footer buttons: `Close` is always present; `admin` users also see an
-`Edit` button that closes the details window and opens the full edit
-dialog (the same flow as the toolbar `Edit Selected` button).
-
-Other roles (parents, students) silently no-op on double-click. The
+In the GUI, double-click any row in the Pupil Directory to open the edit
+dialog for that pupil (the same flow as the toolbar edit button). The
 behaviour is implemented in
-`primary_school/modules/domain/academics/pupils/gui/pupil_gui.py`
-via `_on_double_click_pupil` and `_show_pupil_details`.
+`src/education_system/systems/primary/interfaces/gui/learners/pupils/pupil_views.py`
+via `_edit_selected` and `open_edit_pupil`.
 
 ---
 
@@ -80,10 +65,10 @@ Record assessments using the four-tier scale aligned to national expectations.
 
 | Level | Meaning |
 |---|---|
-| **Emerging** | Working towards the expected standard |
-| **Developing** | Some elements of the expected standard met |
-| **Expected** | Meeting the expected standard for age |
-| **Greater Depth** | Exceeding the expected standard |
+| **BLW** | Working below the expected standard |
+| **WTS** | Working towards the expected standard |
+| **EXS** | Meeting the expected standard |
+| **GDS** | Working at greater depth |
 
 **How to record assessments:**
 1. Select the class and subject.
@@ -197,16 +182,18 @@ Monitor pupil progress across subjects and terms.
 
 ## Quick Reference
 
+> Student and parent logins cannot open these screens yet; see [SECURITY.md](../security/SECURITY.md#role-based-access-control-rbac). This table describes the intended access.
+
 | Module | Access Path | Key Roles |
 |---|---|---|
-| Pupils | Sidebar → Academics → Pupils | admin, teacher |
-| Subjects | Sidebar → Academics → Subjects | admin |
-| Classes | Sidebar → Academics → Classes | admin, teacher |
-| Assessment | Sidebar → Academics → Assessment | admin, teacher |
-| Attendance | Sidebar → Academics → Attendance | admin, teacher |
-| Timetable | Sidebar → Academics → Timetable | admin |
-| Homework | Sidebar → Academics → Homework | admin, teacher |
-| SATs | Sidebar → Academics → SATs | admin, teacher |
-| Phonics | Sidebar → Academics → Phonics | admin, teacher |
-| Reading Records | Sidebar → Academics → Reading Records | admin, teacher, parent |
-| Progress | Sidebar → Academics → Progress | admin, teacher |
+| Pupils | Sidebar → Pupil Management → Pupil Directory | admin, teacher |
+| Subjects | Sidebar → Academic Management → Subjects | admin |
+| Classes | Sidebar → Academic Management → Classes | admin, teacher |
+| Assessment | Sidebar → Assessment & Progress → Assessment Records | admin, teacher |
+| Attendance | Sidebar → Academic Management → Attendance Register | admin, teacher |
+| Timetable | Sidebar → Academic Management → Timetable | admin |
+| Homework | Sidebar → Academic Management → Homework / Reading Log | admin, teacher |
+| SATs | Sidebar → Assessment & Progress → KS1 SATs, KS2 SATs | admin, teacher |
+| Phonics | Sidebar → Academic Management → Phonics Tracking | admin, teacher |
+| Reading Records | Sidebar → Academic Management → Reading Levels | admin, teacher, parent |
+| Progress | Sidebar → Reports & Analytics → Progress Report | admin, teacher |

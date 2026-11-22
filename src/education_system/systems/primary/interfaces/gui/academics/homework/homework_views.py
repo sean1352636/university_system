@@ -5,7 +5,8 @@ from __future__ import annotations
 import functools
 import logging
 import tkinter as tk
-from tkinter import messagebox, simpledialog, ttk
+import types
+from tkinter import messagebox, ttk
 from typing import Any, Callable
 
 from education_system.systems.primary.domain.academics.homework import (
@@ -20,6 +21,8 @@ from education_system.systems.primary.domain.academics.subjects import (
 from education_system.systems.primary.domain.learners.pupils.pupils import (
     ValidationError, YEAR_GROUPS,
 )
+from education_system.platform.delivery.gui.parented_dialogs import make_toplevel
+from education_system.systems.primary.interfaces.gui import kit
 
 logger = logging.getLogger(__name__)
 
@@ -52,10 +55,9 @@ def _safe_view(func: Callable[..., None]) -> Callable[..., None]:
 def _assignment_dialog(host, title: str,
                        initial: dict[str, Any] | None = None
                        ) -> dict[str, Any] | None:
-    dlg = tk.Toplevel(host.root)
+    dlg = make_toplevel(host.root)
     dlg.title(title)
-    dlg.transient(host.root)
-    dlg.geometry("520x540")
+    dlg.geometry("600x620")
     dlg.update_idletasks()
     try:
         dlg.wait_visibility()
@@ -64,11 +66,11 @@ def _assignment_dialog(host, title: str,
         logger.debug("grab_set skipped — dialog not viewable", exc_info=True)
 
     initial = initial or {}
-    frm = ttk.Frame(dlg, padding=12)
-    frm.pack(fill="both", expand=True)
+    frm, footer = kit.scrolled_form(dlg)
 
+    default_year = "7" if "7" in YEAR_GROUPS else ""
     title_var    = tk.StringVar(value=str(initial.get("title") or ""))
-    year_var     = tk.StringVar(value=str(initial.get("year_group") or "7"))
+    year_var     = tk.StringVar(value=str(initial.get("year_group") or default_year))
     form_var     = tk.StringVar(value=str(initial.get("form_group") or ""))
     setby_var    = tk.StringVar(value=str(initial.get("set_by") or ""))
     setdate_var  = tk.StringVar(value=str(initial.get("set_date") or ""))
@@ -95,14 +97,14 @@ def _assignment_dialog(host, title: str,
         ("Subject:",  ttk.Combobox(frm, textvariable=subject_var,
                                     values=subject_labels,
                                     state="readonly", width=42)),
-        ("Year:",     ttk.Combobox(frm, textvariable=year_var,
-                                    values=list(YEAR_GROUPS),
-                                    state="readonly", width=8)),
-        ("Form:",     ttk.Entry(frm, textvariable=form_var, width=12)),
-        ("Set by:",   ttk.Entry(frm, textvariable=setby_var, width=30)),
-        ("Set date:", ttk.Entry(frm, textvariable=setdate_var, width=14)),
-        ("Due date:", ttk.Entry(frm, textvariable=duedate_var, width=14)),
-        ("Points:",   ttk.Entry(frm, textvariable=points_var, width=8)),
+        ("Year:",     kit.ChoiceField(frm, year_var, width=12,
+                                      choices=[(y, kit.YEAR_GROUP_LABELS.get(y, y))
+                                               for y in YEAR_GROUPS])),
+        ("Form:",     kit.ClassPicker(frm, form_var)),
+        ("Set by:",   kit.StaffPicker(frm, setby_var, by="name")),
+        ("Set date:", kit.DateField(frm, setdate_var)),
+        ("Due date:", kit.DateField(frm, duedate_var)),
+        ("Points:",   kit.NumberField(frm, points_var, from_=0, to=1000)),
         ("Status:",   ttk.Combobox(frm, textvariable=status_var,
                                     values=list(ASSIGNMENT_STATUSES),
                                     state="readonly", width=12)),
@@ -110,7 +112,7 @@ def _assignment_dialog(host, title: str,
     for i, (label, widget) in enumerate(rows):
         ttk.Label(frm, text=label).grid(row=i, column=0, sticky="nw",
                                          pady=2)
-        widget.grid(row=i, column=1, sticky="ew", pady=2)
+        widget.grid(row=i, column=1, sticky="w", pady=2)
     frm.columnconfigure(1, weight=1)
 
     ttk.Label(frm, text="Instructions:").grid(row=len(rows), column=0,
@@ -150,12 +152,9 @@ def _assignment_dialog(host, title: str,
         }
         dlg.destroy()
 
-    btns = ttk.Frame(frm)
-    btns.grid(row=len(rows) + 2, column=0, columnspan=2, sticky="e",
-              pady=(12, 0))
-    ttk.Button(btns, text="Cancel",
+    ttk.Button(footer, text="Cancel",
                command=dlg.destroy).pack(side="right", padx=4)
-    ttk.Button(btns, text="Save", command=_save).pack(side="right")
+    ttk.Button(footer, text="Save", command=_save).pack(side="right")
 
     dlg.wait_window()
     return result
@@ -165,10 +164,9 @@ def _submission_dialog(host, assignment: data.Assignment,
                        existing: data.Submission | None,
                        initial_pupil: str | None = None
                        ) -> dict[str, Any] | None:
-    dlg = tk.Toplevel(host.root)
+    dlg = make_toplevel(host.root)
     dlg.title(f"Submission — assignment #{assignment.assignment_id}")
-    dlg.transient(host.root)
-    dlg.geometry("440x360")
+    dlg.geometry("620x420")
     dlg.update_idletasks()
     try:
         dlg.wait_visibility()
@@ -195,15 +193,16 @@ def _submission_dialog(host, assignment: data.Assignment,
               font=("", 10, "bold")).pack(anchor="w", pady=(0, 8))
 
     rows: list[tuple[str, tk.Widget]] = [
-        ("Pupil ID:",  ttk.Entry(frm, textvariable=pupil_var, width=14,
-                                  state=("readonly" if existing
-                                          else "normal"))),
+        ("Pupil:",     (ttk.Entry(frm, textvariable=pupil_var, width=14,
+                                   state="readonly") if existing
+                        else kit.PupilPicker(frm, pupil_var,
+                                             year_group=assignment.year_group or None))),
         ("Status:",    ttk.Combobox(frm, textvariable=status_var,
                                      values=list(SUBMISSION_STATUSES),
                                      state="readonly", width=12)),
-        ("Submitted:", ttk.Entry(frm, textvariable=subdate_var, width=14)),
+        ("Submitted:", kit.DateField(frm, subdate_var)),
         ("Grade:",     ttk.Entry(frm, textvariable=grade_var, width=10)),
-        ("Mark %:",    ttk.Entry(frm, textvariable=pct_var, width=8)),
+        ("Mark %:",    kit.NumberField(frm, pct_var, from_=0, to=100)),
     ]
     for i, (label, widget) in enumerate(rows):
         row = ttk.Frame(frm)
@@ -243,10 +242,18 @@ def _submission_dialog(host, assignment: data.Assignment,
 @_safe_view
 def open_homework(host) -> None:
     logger.debug("GUI: open_homework")
-    host._clear_content()
-    root = host.content_frame
-    ttk.Label(root, text="Homework",
-              font=("", 16, "bold")).pack(anchor="w", pady=(0, 8))
+    kit.show_page(host, "Homework", lambda parent: _draw_homework(parent, host))
+
+
+def _draw_homework(root, main_host) -> None:
+    kit.page_heading(root, "Homework",
+                     "Assignments by year and status, with each pupil's submission.")
+    # The helpers below take a "host" for their pop-up parent and status
+    # line: use this page's window (the main window or a pop-out).
+    host = types.SimpleNamespace(
+        root=root.winfo_toplevel(),
+        status_var=getattr(main_host, "status_var", None) or tk.StringVar(master=root),
+    )
 
     summary_var = tk.StringVar()
     ttk.Label(root, textvariable=summary_var, foreground="#666").pack(
@@ -256,9 +263,9 @@ def open_homework(host) -> None:
     bar.pack(fill="x", pady=(0, 6))
     ttk.Label(bar, text="Year:").pack(side="left", padx=(0, 4))
     year_var = tk.StringVar(value="")
-    ttk.Combobox(bar, textvariable=year_var,
-                 values=["", *YEAR_GROUPS], state="readonly", width=5).pack(
-        side="left", padx=(0, 6))
+    kit.ChoiceField(bar, year_var, blank=True, width=10,
+                    choices=[(y, kit.YEAR_GROUP_LABELS.get(y, y)) for y in YEAR_GROUPS]
+                    ).pack(side="left", padx=(0, 6))
     ttk.Label(bar, text="Status:").pack(side="left", padx=(0, 4))
     status_var = tk.StringVar(value="")
     ttk.Combobox(bar, textvariable=status_var,
@@ -290,16 +297,12 @@ def open_homework(host) -> None:
 
     cols = ("id", "due", "year", "form", "subj", "title", "by",
             "pts", "status")
-    tree = ttk.Treeview(root, columns=cols, show="headings", height=18)
-    for c, label, w in [
+    tree = kit.tree(root, [
         ("id", "ID", 50), ("due", "Due", 100),
         ("year", "Yr", 50), ("form", "Form", 60),
         ("subj", "Subject", 90), ("title", "Title", 240),
         ("by", "Set by", 140), ("pts", "Pts", 50), ("status", "Status", 80),
-    ]:
-        tree.heading(c, text=label)
-        tree.column(c, width=w, anchor="w")
-    tree.pack(fill="both", expand=True)
+    ], height=18, stretch=("title",))
 
     def _refresh() -> None:
         for i in tree.get_children():
@@ -414,9 +417,8 @@ def _status_assignment(host, tree: ttk.Treeview, *, on_done=None) -> None:
     a = data.get_assignment(aid)
     if a is None:
         return
-    dlg = tk.Toplevel(host.root)
+    dlg = make_toplevel(host.root)
     dlg.title(f"Status — #{aid}")
-    dlg.transient(host.root)
     dlg.geometry("320x140")
     dlg.update_idletasks()
     try:
@@ -514,9 +516,8 @@ def _open_submissions(host, tree: ttk.Treeview) -> None:
     if a is None:
         return
 
-    dlg = tk.Toplevel(host.root)
+    dlg = make_toplevel(host.root)
     dlg.title(f"Submissions — {a.title}")
-    dlg.transient(host.root)
     dlg.geometry("780x520")
     dlg.update_idletasks()
     try:
@@ -605,11 +606,6 @@ def _open_submissions(host, tree: ttk.Treeview) -> None:
                 existing = data.get_submission(int(sel))
             except Exception:
                 logger.exception("get_submission failed")
-                return
-        else:
-            initial_pupil = simpledialog.askstring(
-                "Pupil ID", "Pupil ID:", parent=dlg)
-            if not initial_pupil:
                 return
         fields = _submission_dialog(host, a, existing,
                                      initial_pupil=initial_pupil)

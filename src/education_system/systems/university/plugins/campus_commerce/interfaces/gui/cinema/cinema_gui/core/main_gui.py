@@ -80,7 +80,7 @@ except ImportError:
         return None
 
 try:
-    from education_system.systems.university.infrastructure.auth import hash_password
+    from education_system.systems.university.infrastructure.auth.managers.password_manager import hash_password
     HASH_AVAILABLE = True
 except ImportError:
     HASH_AVAILABLE = False
@@ -165,7 +165,7 @@ class CinemaApp:
                     try:
                         conn = sqlite3.connect(DB_FILE)
                         cursor = conn.cursor()
-                        cursor.execute("SELECT email FROM students WHERE student_id = ?", (student_id,))
+                        cursor.execute("SELECT email_address FROM students WHERE student_id = ?", (student_id,))
                         result = cursor.fetchone()
                         if result:
                             email = result[0]
@@ -190,7 +190,7 @@ class CinemaApp:
             return False
         try:
             # Render email from template
-            subject, body = render_template('commerce/cinema/booking_confirmation', {
+            subject, body = render_template('finance_commerce/commerce/cinema/booking_confirmation', {
                 'customer_name': customer_name,
                 'booking_ref': booking_ref,
                 'movie_title': movie_title,

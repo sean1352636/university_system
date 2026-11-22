@@ -20,7 +20,8 @@ from __future__ import annotations
 import logging
 import tkinter as tk
 from datetime import date as _date, timedelta as _timedelta
-from tkinter import messagebox, simpledialog, ttk
+from tkinter import ttk
+from education_system.platform.delivery.gui.parented_dialogs import messagebox, simpledialog
 
 from education_system.systems.sixth_form.domain.academics.attendance import (
     attendance as data,

@@ -19,7 +19,9 @@ from education_system.systems.apprenticeships.infrastructure.integrations.univer
     UniversityGateway,
     UniversityRegistration,
 )
-from education_system.systems.apprenticeships.services import degree_apprenticeship_service
+from education_system.systems.apprenticeships.application.programmes import (
+    degree_apprenticeship_service,
+)
 from education_system.systems.university.services.bus import (
     degree_apprenticeship_events as university_degree_events,
 )

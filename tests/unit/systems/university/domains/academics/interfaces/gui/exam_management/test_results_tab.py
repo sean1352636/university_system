@@ -4,7 +4,7 @@ from unittest.mock import MagicMock
 
 import tkinter as tk
 
-from education_system.systems.university.domains.academics.interfaces.gui.exam_management.tabs.results_tab import (
+from education_system.systems.university.domains.assessment.interfaces.gui.exam_management.tabs.results_tab import (
     _grab_when_viewable,
 )
 

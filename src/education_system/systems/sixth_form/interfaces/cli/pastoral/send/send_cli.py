@@ -504,12 +504,19 @@ def delete_flow() -> None:
     except _UserAbort:
         print("\n  Cancelled.")
         return
-    if _input(f"Delete entry #{e.entry_id}? Type 'yes'",
+    print("  Records are archived, not deleted (UK retention): hidden "
+          "from lists, who/when/why recorded, restorable.")
+    if _input(f"Archive entry #{e.entry_id}? Type 'yes'",
               default="no").lower() != "yes":
         print("\n  Cancelled.")
         return
-    if data.delete_entry(e.entry_id):
-        print(f"\n  ✓ Deleted #{e.entry_id}")
+    try:
+        reason = _input("Reason for archiving (optional)", default="")
+    except _UserAbort:
+        print("\n  Cancelled.")
+        return
+    if data.delete_entry(e.entry_id, reason=reason or None):
+        print(f"\n  ✓ Archived #{e.entry_id}")
     _pause()
 
 
@@ -561,7 +568,13 @@ _MENU: list[tuple[str, Callable[[], None]]] = [
     ("Delete",              delete_flow),
     ("─" * 6,               lambda: None),
     ("Summary",             summary_flow),
+    ("EHCP (reviews, LA, funding) ▸", lambda: _ehcp()),
 ]
+
+
+def _ehcp() -> None:
+    from education_system.systems.sixth_form.interfaces.cli.pastoral.send import ehcp_cli
+    ehcp_cli.run()
 
 
 def run() -> None:

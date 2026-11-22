@@ -1,751 +1,489 @@
 # Adding New Domain Modules
 
-Last Updated: March 2026
+Last Updated: October 2026
 
-This guide walks through creating a new domain module for the Primary School Management System. Each module follows the same structure: a service layer for business logic, a GUI frame for the tkinter interface, and a CLI menu for terminal access.
+This guide walks through creating a new domain module for the Primary School Management System. Each module follows the same structure: a data layer for business logic, a tkinter window for the GUI, a CLI handler for terminal access, and a blueprint for the REST API.
+
+`src/education_system/systems/primary/domain/academics/enrichment/clubs/` is a complete working module; read it alongside this guide.
 
 ---
 
-## Step 1: Choose the Domain Category
+## Step 1: Choose the Domain Area
 
-Modules are grouped into seven categories under `modules/domain/`:
+Modules are grouped into areas under `src/education_system/systems/primary/domain/`:
 
-| Category          | Path                      | Examples                                    |
-|-------------------|---------------------------|---------------------------------------------|
-| `academics`       | `modules/domain/academics/`       | pupils, subjects, assessment, attendance    |
-| `pastoral_care`   | `modules/domain/pastoral_care/`   | behaviour, rewards, safeguarding, send      |
-| `staff`           | `modules/domain/staff/`           | hr, cpd, cover, staff_directory             |
-| `admin`           | `modules/domain/admin/`           | users, settings, admissions, finance        |
-| `pupil_life`      | `modules/domain/pupil_life/`      | clubs, meals, transport, trips, library     |
-| `communication`   | `modules/domain/communication/`   | email, notifications, calendar              |
-| `facilities`      | `modules/domain/facilities/`      | room_booking, assets, visitors, incidents   |
+| Area            | Examples                                                  |
+|-----------------|-----------------------------------------------------------|
+| `academics`     | academic_year, attendance, classes, homework, timetable   |
+| `admissions`    | admissions, enrolment                                     |
+| `assessment`    | phonics, ks1_sats, ks2_sats, mtc, eyfs_profile, progress  |
+| `finance`       | dinner_money, funding, pupil_premium, receipts, trips     |
+| `governance`    | compliance, gdpr, mfa, policies, risk_management          |
+| `learners`      | pupils (with onboarding, leavers, bulk_operations)        |
+| `operations`    | assets, communications, document_hub, reporting, visitors |
+| `pastoral`      | behaviour, house_points, send, transport, wellbeing       |
+| `safeguarding`  | safeguarding, prevent_duty                                |
+| `staff`         | appraisals, cover, cpd, departments, staff_hr             |
 
-Place your new module in the category that best fits its domain.
+Place your new module in the area that best fits its domain.
 
 ---
 
 ## Step 2: Create the Directory Structure
 
-For a module called `enrichment` in the `pupil_life` category:
+Domain rules and screens live in separate trees. For an `activities` module in `academics/enrichment`, beside the existing `clubs`:
 
 ```
-modules/domain/pupil_life/enrichment/
-├── __init__.py
-├── services/
+src/education_system/systems/primary/
+├── domain/academics/enrichment/activities/
 │   ├── __init__.py
-│   └── enrichment_service.py
-└── gui/
-    ├── __init__.py
-    └── enrichment_gui.py
+│   └── activities.py              # Schema, dataclasses, validation, queries
+└── interfaces/
+    ├── cli/academics/enrichment/activities/
+    │   ├── __init__.py
+    │   └── activities_cli.py      # Terminal menus
+    └── gui/academics/enrichment/activities/
+        ├── __init__.py
+        └── activities_views.py    # tkinter windows
+
+src/education_system/api/primary/routes/
+└── activities_routes.py           # Flask blueprint
 ```
 
 Create the directories:
 
 ```bash
-mkdir -p education_system/primary_school/modules/domain/pupil_life/enrichment/{services,gui}
-touch education_system/primary_school/modules/domain/pupil_life/enrichment/__init__.py
-touch education_system/primary_school/modules/domain/pupil_life/enrichment/services/__init__.py
-touch education_system/primary_school/modules/domain/pupil_life/enrichment/gui/__init__.py
+cd src/education_system/systems/primary
+mkdir -p domain/academics/enrichment/activities
+mkdir -p interfaces/cli/academics/enrichment/activities
+mkdir -p interfaces/gui/academics/enrichment/activities
+touch domain/academics/enrichment/activities/__init__.py
+touch interfaces/cli/academics/enrichment/activities/__init__.py
+touch interfaces/gui/academics/enrichment/activities/__init__.py
 ```
+
+Domain modules must stay free of Tkinter, Flask and CLI code. Some `domain/` folders still hold `*_cli.py` and `*_views.py` files; those are `layout-shim` forwarders to `interfaces/`, so do not add new ones.
 
 ---
 
 ## Step 3: Define the Database Schema
 
-Add a `CREATE TABLE IF NOT EXISTS` statement to `infrastructure/database/schema.py` in the `TABLES` dictionary:
+Each module owns its tables. There is no central schema file and these tables are not managed by Alembic: a module declares a `_SCHEMA` string and creates it from its own `init_db()`, using `CREATE TABLE IF NOT EXISTS`.
+
+All primary modules share one database, `var/data/primary/primary.db`, so a module normally borrows the pupils module's connection. That connection has `row_factory = sqlite3.Row` and foreign keys switched on.
 
 ```python
-# In infrastructure/database/schema.py, add to the TABLES dict:
+# In domain/academics/enrichment/activities/activities.py
 
-"enrichment_activities": """
-    CREATE TABLE IF NOT EXISTS enrichment_activities (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name TEXT NOT NULL,
-        category TEXT NOT NULL,
-        description TEXT,
-        day_of_week TEXT,
-        time_slot TEXT,
-        max_capacity INTEGER DEFAULT 30,
-        year_groups TEXT,
-        staff_id TEXT,
-        term TEXT,
-        is_active INTEGER DEFAULT 1,
-        created_at TEXT DEFAULT (datetime('now')),
-        updated_at TEXT DEFAULT (datetime('now'))
-    )
-""",
-
-"enrichment_enrollments": """
-    CREATE TABLE IF NOT EXISTS enrichment_enrollments (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        activity_id INTEGER NOT NULL REFERENCES enrichment_activities(id),
-        pupil_id TEXT NOT NULL,
-        enrolled_date TEXT DEFAULT (date('now')),
-        status TEXT DEFAULT 'Active',
-        notes TEXT,
-        UNIQUE(activity_id, pupil_id)
-    )
-""",
+_SCHEMA = """
+CREATE TABLE IF NOT EXISTS enrichment_activities (
+    activity_id    INTEGER PRIMARY KEY AUTOINCREMENT,
+    name           TEXT NOT NULL UNIQUE,
+    category       TEXT NOT NULL,
+    max_capacity   INTEGER DEFAULT 30,
+    is_active      INTEGER NOT NULL DEFAULT 1,
+    created_at     TEXT DEFAULT (datetime('now'))
+);
+CREATE TABLE IF NOT EXISTS enrichment_enrollments (
+    enrollment_id  INTEGER PRIMARY KEY AUTOINCREMENT,
+    activity_id    INTEGER NOT NULL,
+    pupil_id       TEXT NOT NULL,
+    enrolled_date  TEXT DEFAULT (date('now')),
+    status         TEXT NOT NULL DEFAULT 'active',
+    UNIQUE(activity_id, pupil_id),
+    FOREIGN KEY(activity_id) REFERENCES enrichment_activities(activity_id) ON DELETE CASCADE,
+    FOREIGN KEY(pupil_id) REFERENCES pupils(pupil_id) ON DELETE CASCADE
+);
+"""
 ```
 
-The `initialise_database()` function in `schema.py` iterates over `TABLES` and creates them all. No additional registration is needed for schema creation.
+To add a column to a table that already exists in live databases, add an `ALTER TABLE` step as `_migrate()` does in `domain/learners/pupils/pupils.py`.
 
 ---
 
-## Step 4: Add a Domain Exception
+## Step 4: Handle Validation Errors
 
-Add an exception class to `core/exceptions.py` under the appropriate section:
+There is no system-wide exception hierarchy. Primary modules raise `ValidationError`, which each module defines or imports. Modules that depend on pupils import the one in `domain/learners/pupils/pupils.py`, and the screens and routes catch it to show the message to the user.
 
-```python
-# In core/exceptions.py, add under the "Pupil life" section:
-
-class EnrichmentError(SchoolSystemError):
-    """Error related to enrichment activity operations."""
-```
-
-All module exceptions must inherit from `SchoolSystemError`.
+Reusable validators are in `src/education_system/platform/kernel/validation/validators.py`.
 
 ---
 
-## Step 5: Create the Service Layer
+## Step 5: Create the Data Layer
 
-The service class contains all business logic and database operations. This is the most important file in the module.
+The data layer is a module of plain functions, not a service class. It contains all business logic and database operations, and it is the most important file in the module.
 
-### `services/enrichment_service.py`
+### `domain/academics/enrichment/activities/activities.py`
 
 ```python
-"""Enrichment activity service for the Primary School Management System."""
+"""Enrichment activities data layer."""
+
+from __future__ import annotations
 
 import logging
-from education_system.primary_school.infrastructure.database.db import connect
-from education_system.primary_school.infrastructure.validation.validators import (
-    validate_non_empty,
+import sqlite3
+from dataclasses import dataclass
+from typing import Any
+
+from education_system.systems.primary.domain.learners.pupils import (
+    pupils as pupils_data,
 )
-from education_system.primary_school.core.exceptions import EnrichmentError
+from education_system.systems.primary.domain.learners.pupils.pupils import (
+    ValidationError, _connect as _pupils_connect,
+)
 
 logger = logging.getLogger(__name__)
 
+# _SCHEMA from Step 3 goes here.
 
-class EnrichmentService:
-    """CRUD operations for enrichment activities."""
 
-    def __init__(self, db_path=None):
-        self._db_path = db_path
+@dataclass
+class Activity:
+    activity_id: int
+    name: str
+    category: str
+    max_capacity: int | None
+    is_active: bool
 
-    def _conn(self):
-        """Create a database connection using the configured path."""
-        return connect(self._db_path)
 
-    # ── Create ────────────────────────────────────────────────────────
+_DB_READY = False
 
-    def create_activity(self, name, category, **kwargs):
-        """Create a new enrichment activity.
 
-        Args:
-            name: Activity name (required).
-            category: Activity category (required).
-            **kwargs: Optional fields (description, day_of_week, etc.).
+def _connect() -> sqlite3.Connection:
+    return _pupils_connect()
 
-        Returns:
-            The new row ID.
 
-        Raises:
-            EnrichmentError: If validation fails or DB operation errors.
-        """
-        name = validate_non_empty(name, "Activity name")
-        category = validate_non_empty(category, "Category")
+def init_db() -> None:
+    global _DB_READY
+    if _DB_READY:
+        return
+    pupils_data.init_db()
+    with _connect() as conn:
+        conn.executescript(_SCHEMA)
+    _DB_READY = True
 
-        conn = self._conn()
-        try:
-            cursor = conn.cursor()
-            cursor.execute(
-                """INSERT INTO enrichment_activities
-                    (name, category, description, day_of_week, time_slot,
-                     max_capacity, year_groups, staff_id, term)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
-                (
-                    name,
-                    category,
-                    kwargs.get("description"),
-                    kwargs.get("day_of_week"),
-                    kwargs.get("time_slot"),
-                    kwargs.get("max_capacity", 30),
-                    kwargs.get("year_groups"),
-                    kwargs.get("staff_id"),
-                    kwargs.get("term"),
-                ),
+
+def _row(r: sqlite3.Row) -> Activity:
+    return Activity(
+        activity_id=r["activity_id"],
+        name=r["name"],
+        category=r["category"],
+        max_capacity=r["max_capacity"],
+        is_active=bool(r["is_active"]),
+    )
+
+
+def create(data: dict[str, Any]) -> Activity:
+    init_db()
+    name = (data.get("name") or "").strip()
+    category = (data.get("category") or "").strip()
+    if not name:
+        raise ValidationError("Activity name is required")
+    if not category:
+        raise ValidationError("Category is required")
+    try:
+        with _connect() as conn:
+            cur = conn.execute(
+                "INSERT INTO enrichment_activities (name, category, max_capacity) "
+                "VALUES (?, ?, ?)",
+                (name, category, data.get("max_capacity", 30)),
             )
+            activity_id = cur.lastrowid
             conn.commit()
-            logger.info("Created enrichment activity: %s", name)
-            return cursor.lastrowid
-        except Exception as e:
-            logger.error("Failed to create enrichment activity: %s", e)
-            raise EnrichmentError(f"Failed to create activity: {e}") from e
-        finally:
-            conn.close()
+    except sqlite3.IntegrityError as exc:
+        raise ValidationError(f"Activity {name!r} already exists") from exc
+    logger.info("Created enrichment activity #%d %s", activity_id, name)
+    rec = get(activity_id)
+    assert rec is not None
+    return rec
 
-    # ── Read ──────────────────────────────────────────────────────────
 
-    def list_activities(self, active_only=True):
-        """Return all enrichment activities."""
-        conn = self._conn()
-        try:
-            cursor = conn.cursor()
-            if active_only:
-                cursor.execute(
-                    "SELECT * FROM enrichment_activities WHERE is_active = 1 "
-                    "ORDER BY name"
-                )
-            else:
-                cursor.execute(
-                    "SELECT * FROM enrichment_activities ORDER BY name"
-                )
-            return cursor.fetchall()
-        finally:
-            conn.close()
+def get(activity_id: int) -> Activity | None:
+    init_db()
+    with _connect() as conn:
+        r = conn.execute(
+            "SELECT * FROM enrichment_activities WHERE activity_id = ?",
+            (activity_id,),
+        ).fetchone()
+    return _row(r) if r else None
 
-    def get_activity(self, activity_id):
-        """Return a single activity by ID."""
-        conn = self._conn()
-        try:
-            cursor = conn.cursor()
-            cursor.execute(
-                "SELECT * FROM enrichment_activities WHERE id = ?",
-                (activity_id,),
-            )
-            return cursor.fetchone()
-        finally:
-            conn.close()
 
-    # ── Update ────────────────────────────────────────────────────────
-
-    def update_activity(self, activity_id, **kwargs):
-        """Update an existing enrichment activity."""
-        if not kwargs:
-            return
-
-        allowed = {
-            "name", "category", "description", "day_of_week", "time_slot",
-            "max_capacity", "year_groups", "staff_id", "term", "is_active",
-        }
-        fields = {k: v for k, v in kwargs.items() if k in allowed}
-        if not fields:
-            return
-
-        set_clause = ", ".join(f"{k} = ?" for k in fields)
-        values = list(fields.values()) + [activity_id]
-
-        conn = self._conn()
-        try:
-            cursor = conn.cursor()
-            cursor.execute(
-                f"UPDATE enrichment_activities SET {set_clause}, "
-                f"updated_at = datetime('now') WHERE id = ?",
-                values,
-            )
-            conn.commit()
-            logger.info("Updated enrichment activity %s", activity_id)
-        except Exception as e:
-            logger.error("Failed to update enrichment activity: %s", e)
-            raise EnrichmentError(f"Failed to update activity: {e}") from e
-        finally:
-            conn.close()
-
-    # ── Delete ────────────────────────────────────────────────────────
-
-    def delete_activity(self, activity_id):
-        """Delete an enrichment activity and its enrollments."""
-        conn = self._conn()
-        try:
-            cursor = conn.cursor()
-            cursor.execute(
-                "DELETE FROM enrichment_enrollments WHERE activity_id = ?",
-                (activity_id,),
-            )
-            cursor.execute(
-                "DELETE FROM enrichment_activities WHERE id = ?",
-                (activity_id,),
-            )
-            conn.commit()
-            logger.info("Deleted enrichment activity %s", activity_id)
-        except Exception as e:
-            logger.error("Failed to delete enrichment activity: %s", e)
-            raise EnrichmentError(f"Failed to delete activity: {e}") from e
-        finally:
-            conn.close()
+def list_all(*, active_only: bool = False) -> list[Activity]:
+    init_db()
+    sql = "SELECT * FROM enrichment_activities"
+    if active_only:
+        sql += " WHERE is_active = 1"
+    with _connect() as conn:
+        rows = conn.execute(sql + " ORDER BY name").fetchall()
+    return [_row(r) for r in rows]
 ```
 
-### Key Service Patterns
+### Key Data Layer Patterns
 
-- **`__init__`** accepts an optional `db_path` for testability.
-- **`_conn()`** wraps `connect()` with the configured path.
-- Every method opens its own connection and closes it in a `finally` block.
+- **`init_db()`** runs at the top of every public function and is guarded by `_DB_READY`, so it does its work once.
+- **`_connect()`** returns a connection to the shared database. Paths come from `education_system.paths`; never hardcode them.
 - Use `?` parameterized queries exclusively -- never string interpolation.
-- Validate inputs at the top of each method before touching the database.
-- Raise domain-specific exceptions (e.g., `EnrichmentError`), not generic ones.
-- Log meaningful messages at `info` (success) and `error` (failure) levels.
+- Validate inputs at the top of each function before touching the database.
+- Raise `ValidationError` with a message fit to show the user.
+- Return dataclasses, so `dataclasses.asdict()` can serialise them for the API.
+- Log meaningful messages at `info` (success) and `exception` (failure) levels.
 
 ---
 
-## Step 6: Create the GUI Frame
+## Step 6: Create the GUI Window
 
-The GUI frame is a `tk.Frame` subclass that gets loaded into the main window's content area when the user clicks the sidebar.
+A view is a function that takes the main window as `host` and opens a `tk.Toplevel` over `host.root`.
 
-### `gui/enrichment_gui.py`
+### `interfaces/gui/academics/enrichment/activities/activities_views.py`
 
 ```python
-"""Enrichment activity GUI for the Primary School Management System."""
+"""Tk views for enrichment activities."""
+
+from __future__ import annotations
 
 import tkinter as tk
-from tkinter import ttk, messagebox
+from tkinter import ttk
 
-from education_system.primary_school.modules.domain.pupil_life.enrichment.services.enrichment_service import (
-    EnrichmentService,
+from education_system.systems.primary.domain.academics.enrichment.activities import (
+    activities as data,
 )
 
 
-class _ActivityDialog(tk.Toplevel):
-    """Add / Edit activity dialog."""
+def open_activities(host) -> None:
+    win = tk.Toplevel(host.root)
+    win.title("Enrichment Activities")
+    win.transient(host.root)
+    win.geometry("800x500")
 
-    def __init__(self, parent, db_path, activity=None):
-        super().__init__(parent)
-        self.result = None
-        self._activity = activity
-        self.title("Edit Activity" if activity else "Add Activity")
-        self.geometry("420x350")
-        self.resizable(False, False)
-        self.grab_set()
+    cols = ("id", "name", "category", "capacity")
+    tree = ttk.Treeview(win, columns=cols, show="headings", height=14)
+    for col in cols:
+        tree.heading(col, text=col.title())
+    tree.pack(fill="both", expand=True, padx=10, pady=10)
 
-        self._entries = {}
-
-        frm = tk.Frame(self, padx=15, pady=15)
-        frm.pack(fill="both", expand=True)
-
-        fields = [
-            ("name", "Name *"),
-            ("category", "Category *"),
-            ("description", "Description"),
-            ("day_of_week", "Day of Week"),
-            ("time_slot", "Time Slot"),
-            ("max_capacity", "Max Capacity"),
-            ("year_groups", "Year Groups"),
-            ("term", "Term"),
-        ]
-        for key, label in fields:
-            row = tk.Frame(frm)
-            row.pack(fill="x", pady=2)
-            tk.Label(row, text=label, width=18, anchor="w").pack(side="left")
-            entry = tk.Entry(row, width=30)
-            entry.pack(side="left", fill="x", expand=True)
-            self._entries[key] = entry
-
-        # Pre-fill for edit
-        if activity:
-            for key, widget in self._entries.items():
-                val = activity.get(key)
-                if val is not None:
-                    widget.delete(0, tk.END)
-                    widget.insert(0, str(val))
-
-        btn_frame = tk.Frame(frm)
-        btn_frame.pack(fill="x", pady=10)
-        tk.Button(btn_frame, text="Save", command=self._save, width=12).pack(
-            side="left", padx=5
-        )
-        tk.Button(btn_frame, text="Cancel", command=self.destroy, width=12).pack(
-            side="right", padx=5
-        )
-
-        self.transient(parent)
-        self.wait_visibility()
-        self.grab_set()
-
-    def _save(self):
-        data = {k: w.get().strip() for k, w in self._entries.items()}
-        if not data.get("name"):
-            messagebox.showwarning("Validation", "Name is required.", parent=self)
-            return
-        if not data.get("category"):
-            messagebox.showwarning("Validation", "Category is required.", parent=self)
-            return
-        self.result = data
-        self.destroy()
-
-
-class EnrichmentFrame(tk.Frame):
-    """Main enrichment activity management screen."""
-
-    HEADER_BG = "#1a5276"
-
-    def __init__(self, parent, db_path, auth=None):
-        super().__init__(parent)
-        self._db_path = db_path
-        self._auth = auth
-        self._service = EnrichmentService(db_path)
-
-        # Header
-        header = tk.Frame(self, bg=self.HEADER_BG, height=40)
-        header.pack(fill="x")
-        header.pack_propagate(False)
-        tk.Label(
-            header,
-            text="Enrichment Activities",
-            fg="white",
-            bg=self.HEADER_BG,
-            font=("Helvetica", 14, "bold"),
-        ).pack(side="left", padx=15)
-
-        # Toolbar
-        toolbar = tk.Frame(self, bg="#d5dbdb", padx=5, pady=5)
-        toolbar.pack(fill="x")
-        tk.Button(toolbar, text="Add Activity", command=self._on_add).pack(
-            side="left", padx=3
-        )
-        tk.Button(toolbar, text="Edit Selected", command=self._on_edit).pack(
-            side="left", padx=3
-        )
-        tk.Button(toolbar, text="Delete Selected", command=self._on_delete).pack(
-            side="left", padx=3
-        )
-
-        # Treeview
-        columns = ("id", "name", "category", "day_of_week", "time_slot", "max_capacity")
-        tree_frame = tk.Frame(self)
-        tree_frame.pack(fill="both", expand=True, padx=5, pady=5)
-        self._tree = ttk.Treeview(
-            tree_frame, columns=columns, show="headings", selectmode="browse"
-        )
-        for col in columns:
-            self._tree.heading(col, text=col.replace("_", " ").title())
-            self._tree.column(col, width=120)
-        self._tree.column("id", width=50)
-        vsb = ttk.Scrollbar(tree_frame, orient="vertical", command=self._tree.yview)
-        self._tree.configure(yscrollcommand=vsb.set)
-        self._tree.pack(side="left", fill="both", expand=True)
-        vsb.pack(side="right", fill="y")
-
-        self._load_data()
-
-    def _load_data(self):
-        """Refresh the Treeview with current data."""
-        for item in self._tree.get_children():
-            self._tree.delete(item)
-        try:
-            for row in self._service.list_activities():
-                self._tree.insert(
-                    "",
-                    "end",
-                    iid=row["id"],
-                    values=(
-                        row["id"],
-                        row["name"],
-                        row["category"],
-                        row["day_of_week"] or "",
-                        row["time_slot"] or "",
-                        row["max_capacity"],
-                    ),
-                )
-        except Exception as e:
-            messagebox.showerror("Error", str(e), parent=self)
-
-    def _on_add(self):
-        dlg = _ActivityDialog(self, self._db_path)
-        self.wait_window(dlg)
-        if dlg.result:
-            try:
-                self._service.create_activity(**dlg.result)
-                self._load_data()
-            except Exception as e:
-                messagebox.showerror("Error", str(e), parent=self)
-
-    def _on_edit(self):
-        sel = self._tree.selection()
-        if not sel:
-            messagebox.showwarning("Select", "Select an activity first.", parent=self)
-            return
-        activity = dict(self._service.get_activity(int(sel[0])))
-        dlg = _ActivityDialog(self, self._db_path, activity=activity)
-        self.wait_window(dlg)
-        if dlg.result:
-            try:
-                self._service.update_activity(int(sel[0]), **dlg.result)
-                self._load_data()
-            except Exception as e:
-                messagebox.showerror("Error", str(e), parent=self)
-
-    def _on_delete(self):
-        sel = self._tree.selection()
-        if not sel:
-            messagebox.showwarning("Select", "Select an activity first.", parent=self)
-            return
-        if messagebox.askyesno("Confirm", "Delete this activity?", parent=self):
-            try:
-                self._service.delete_activity(int(sel[0]))
-                self._load_data()
-            except Exception as e:
-                messagebox.showerror("Error", str(e), parent=self)
+    for rec in data.list_all(active_only=True):
+        tree.insert("", "end", values=(
+            rec.activity_id, rec.name, rec.category, rec.max_capacity,
+        ))
 ```
 
 ### Key GUI Patterns
 
-- **`__init__` signature**: `(self, parent, db_path, auth=None)` -- all frames receive these three arguments.
-- Instantiate the service in `__init__` and delegate all logic to it.
-- Use `_ActivityDialog(tk.Toplevel)` for add/edit forms with `grab_set()` for modality.
-- `Treeview` with a vertical scrollbar for list views.
-- `_load_data()` clears and repopulates the Treeview.
-- Wrap service calls in `try/except` and show `messagebox.showerror()` on failure.
+- All SQL and rules stay in the data layer; views only call it.
+- Wrap entry points in a decorator like `_safe_view` in `clubs_views.py`, which reports `ValidationError` and logs anything unexpected.
+- Open forms in their own dialog, as `_open_form_dialog()` in `clubs_views.py` does.
 
 ---
 
-## Step 7: Create the CLI Menu
+## Step 7: Create the CLI Handler
 
-Add a file at `cli/menus/enrichment_cli.py`:
+A CLI module exposes `dispatch(label)`, which runs the handler for a menu label and returns `True`, or returns `False` if the label is not its own.
+
+### `interfaces/cli/academics/enrichment/activities/activities_cli.py`
 
 ```python
-"""Enrichment CLI menu."""
+"""CLI handlers for enrichment activities."""
 
-from education_system.primary_school.infrastructure.database.db import get_db_path
+from __future__ import annotations
+
+from education_system.systems.primary.domain.academics.enrichment.activities import (
+    activities as data,
+)
 
 
-def enrichment_menu(auth):
-    """Enrichment activities management menu."""
-    from education_system.primary_school.cli.cli_main import (
-        print_header,
-        print_menu,
-        get_choice,
-    )
-    from education_system.primary_school.modules.domain.pupil_life.enrichment.services.enrichment_service import (
-        EnrichmentService,
-    )
+def _list() -> None:
+    rows = data.list_all(active_only=True)
+    if not rows:
+        print("  No activities.")
+        return
+    for rec in rows:
+        print(f"  {rec.activity_id:>4}  {rec.name}  ({rec.category})")
 
-    svc = EnrichmentService(get_db_path())
 
-    while True:
-        print_header("Enrichment Activities")
-        print_menu([
-            ("1", "List activities"),
-            ("2", "View details"),
-            ("3", "Add activity"),
-            ("4", "Update activity"),
-            ("5", "Delete activity"),
-            ("0", "Back"),
-        ])
+_DISPATCH = {
+    "Enrichment Activities": _list,
+}
 
-        choice = get_choice()
-        if choice == "0":
-            break
-        elif choice == "1":
-            items = svc.list_activities()
-            if not items:
-                print("\n  No activities found.")
-            else:
-                for item in items:
-                    print(f"  {dict(item)}")
-        elif choice == "2":
-            pk = input("  Enter ID: ").strip()
-            try:
-                item = svc.get_activity(int(pk))
-                if item:
-                    for k, v in dict(item).items():
-                        print(f"  {k}: {v}")
-                else:
-                    print("\n  Not found.")
-            except Exception as e:
-                print(f"\n  Error: {e}")
-        elif choice == "3":
-            name = input("  Name: ").strip()
-            category = input("  Category: ").strip()
-            description = input("  Description: ").strip()
-            try:
-                svc.create_activity(name, category, description=description)
-                print("\n  Activity created.")
-            except Exception as e:
-                print(f"\n  Error: {e}")
-        elif choice == "4":
-            pk = input("  Enter ID to update: ").strip()
-            name = input("  Name: ").strip()
-            category = input("  Category: ").strip()
-            try:
-                svc.update_activity(int(pk), name=name, category=category)
-                print("\n  Activity updated.")
-            except Exception as e:
-                print(f"\n  Error: {e}")
-        elif choice == "5":
-            pk = input("  Enter ID to delete: ").strip()
-            try:
-                svc.delete_activity(int(pk))
-                print("\n  Activity deleted.")
-            except Exception as e:
-                print(f"\n  Error: {e}")
+
+def dispatch(label: str) -> bool:
+    handler = _DISPATCH.get(label)
+    if handler is None:
+        return False
+    handler()
+    return True
 ```
 
 ### Key CLI Patterns
 
-- Function name follows `<module>_menu(auth)` convention.
-- Import service and CLI helpers lazily inside the function to avoid circular imports.
-- Use `get_db_path()` to obtain the active database path.
-- Wrap all service calls in `try/except` and print errors to the console.
-- Always provide a "Back" option (`"0"`) to return to the parent menu.
+- Read input through a small `_prompt()` helper that treats `EOFError` and `KeyboardInterrupt` as empty input.
+- Wrap handlers in a decorator like `_safe` in `clubs_cli.py`, so `ValidationError` prints a message instead of ending the menu.
 
 ---
 
-## Step 8: Register the Module
+## Step 8: Create the API Blueprint
 
-### 8a. Add to the GUI Sidebar
+Routes are not in the system package. Each module gets a blueprint in `src/education_system/api/primary/routes/`.
 
-In `main_gui.py`, add the module to the sidebar navigation. Locate the section where sidebar buttons are created and add an entry:
-
-```python
-# In main_gui.py, in the sidebar button definitions:
-("Enrichment", "pupil_life", self._show_enrichment),
-```
-
-Then add the handler method:
+### `src/education_system/api/primary/routes/activities_routes.py`
 
 ```python
-def _show_enrichment(self):
-    from education_system.primary_school.modules.domain.pupil_life.enrichment.gui.enrichment_gui import (
-        EnrichmentFrame,
-    )
-    self._show_frame(EnrichmentFrame)
-```
+"""REST API for Primary Enrichment Activities."""
 
-### 8b. Add to the CLI Menu
+from __future__ import annotations
 
-In `cli/cli_main.py`, add the module to the appropriate submenu. Locate the pupil life menu items and add:
-
-```python
-("enrichment", "Enrichment Activities", lambda: enrichment_menu(auth)),
-```
-
-With the import at the top of the menu function:
-
-```python
-from education_system.primary_school.cli.menus.enrichment_cli import enrichment_menu
-```
-
-### 8c. Export from `__init__.py`
-
-In `modules/domain/pupil_life/enrichment/__init__.py`:
-
-```python
-"""Enrichment activities module."""
-```
-
-In `modules/domain/pupil_life/enrichment/services/__init__.py`:
-
-```python
-from .enrichment_service import EnrichmentService
-
-__all__ = ["EnrichmentService"]
-```
-
-In `modules/domain/pupil_life/enrichment/gui/__init__.py`:
-
-```python
-from .enrichment_gui import EnrichmentFrame
-
-__all__ = ["EnrichmentFrame"]
-```
-
----
-
-## Step 9: Write Tests
-
-Create a test file at `tests/test_enrichment_service.py`:
-
-```python
-"""Tests for the EnrichmentService."""
-
+import dataclasses
+import functools
 import os
-import sqlite3
-import tempfile
+
+from flask import Blueprint, g, jsonify, request
+
+activities_bp = Blueprint("pri_activities", __name__, url_prefix="/api/activities")
+
+
+def _token_required(view):
+    try:
+        from education_system.platform.delivery.api.auth import token_required
+        return token_required(view)
+    except Exception:
+        @functools.wraps(view)
+        def wrapper(*args, **kwargs):
+            expected = os.environ.get("PRIMARY_API_TOKEN")
+            got = request.headers.get("X-Primary-Token")
+            if expected and got and got == expected:
+                g.current_user = {"sub": "service", "role": "service"}
+                return view(*args, **kwargs)
+            return jsonify({"error": "Unauthorized"}), 401
+        return wrapper
+
+
+def _data():
+    from education_system.systems.primary.domain.academics.enrichment.activities import (
+        activities as data,
+    )
+    return data
+
+
+@activities_bp.route("", methods=["GET"])
+@_token_required
+def list_activities():
+    data = _data()
+    rows = data.list_all(active_only=request.args.get("active_only") == "1")
+    return jsonify({"items": [dataclasses.asdict(r) for r in rows], "count": len(rows)})
+
+
+@activities_bp.route("", methods=["POST"])
+@_token_required
+def create_activity():
+    data = _data()
+    try:
+        rec = data.create(request.get_json(silent=True) or {})
+    except data.ValidationError as exc:
+        return jsonify({"error": str(exc)}), 400
+    return jsonify(dataclasses.asdict(rec)), 201
+```
+
+The unified server rewrites the prefix, so this blueprint is served at `/api/v1/primary/activities`.
+
+---
+
+## Step 9: Register the Module
+
+### 9a. Add to the GUI Sidebar
+
+In `src/education_system/systems/primary/gui_main.py`, add a `(label, method name)` entry to the right group in `NAV_CATEGORIES`:
+
+```python
+("Academic Management", [
+    ...
+    ("Clubs & Activities", "open_clubs"),
+    ("Enrichment Activities", "open_activities"),
+]),
+```
+
+Then add the method to `PrimarySchoolMainGUI`, importing lazily to keep startup fast:
+
+```python
+def open_activities(self) -> None:
+    from education_system.systems.primary.interfaces.gui.academics.enrichment.activities import (
+        activities_views,
+    )
+    activities_views.open_activities(self)
+```
+
+### 9b. Add to the CLI Menu
+
+In `src/education_system/systems/primary/cli_main.py`, add the label to the same group in `CATEGORIES`:
+
+```python
+("Academic Management", [
+    ...
+    "Clubs & Activities",
+    "Enrichment Activities",
+]),
+```
+
+Then, in `_submenu()`, import the handler and add it to the dispatch chain:
+
+```python
+from education_system.systems.primary.interfaces.cli.academics.enrichment.activities import activities_cli
+...
+or clubs_cli.dispatch(label)
+or activities_cli.dispatch(label)
+```
+
+### 9c. Register the Blueprint
+
+In `src/education_system/api/primary/routes/__init__.py`, import the blueprint and add it to `__all__` and to `ALL_BLUEPRINTS`:
+
+```python
+from education_system.api.primary.routes.activities_routes import (
+    activities_bp,
+)
+```
+
+The mount table in `src/education_system/platform/delivery/api/registry.py` already serves everything in `ALL_BLUEPRINTS`, so it needs no change.
+
+---
+
+## Step 10: Write Tests
+
+Create `tests/unit/systems/primary/test_activities.py`. Redirect the database to a temporary file so a test can never touch `var/data/primary/primary.db`:
+
+```python
+"""Tests for the enrichment activities data layer."""
+
 import pytest
 
-from education_system.primary_school.modules.domain.pupil_life.enrichment.services.enrichment_service import (
-    EnrichmentService,
+from education_system.systems.primary.domain.academics.enrichment.activities import (
+    activities as data,
 )
-from education_system.primary_school.core.exceptions import EnrichmentError
+from education_system.systems.primary.domain.learners.pupils import pupils
+from education_system.systems.primary.domain.learners.pupils.pupils import ValidationError
 
 
-@pytest.fixture
-def db_path():
-    """Create a temporary database with the enrichment schema."""
-    fd, path = tempfile.mkstemp(suffix=".db")
-    os.close(fd)
-    conn = sqlite3.connect(path)
-    conn.execute("""
-        CREATE TABLE enrichment_activities (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            name TEXT NOT NULL,
-            category TEXT NOT NULL,
-            description TEXT,
-            day_of_week TEXT,
-            time_slot TEXT,
-            max_capacity INTEGER DEFAULT 30,
-            year_groups TEXT,
-            staff_id TEXT,
-            term TEXT,
-            is_active INTEGER DEFAULT 1,
-            created_at TEXT DEFAULT (datetime('now')),
-            updated_at TEXT DEFAULT (datetime('now'))
-        )
-    """)
-    conn.execute("""
-        CREATE TABLE enrichment_enrollments (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            activity_id INTEGER NOT NULL REFERENCES enrichment_activities(id),
-            pupil_id TEXT NOT NULL,
-            enrolled_date TEXT DEFAULT (date('now')),
-            status TEXT DEFAULT 'Active',
-            notes TEXT,
-            UNIQUE(activity_id, pupil_id)
-        )
-    """)
-    conn.commit()
-    conn.close()
-    yield path
-    os.unlink(path)
+@pytest.fixture(autouse=True)
+def temp_db(tmp_path, monkeypatch):
+    monkeypatch.setattr(pupils, "DB_PATH", tmp_path / "primary.db")
+    monkeypatch.setattr(pupils, "_DATA_DIR", tmp_path)
+    monkeypatch.setattr(pupils, "_DB_READY", False)
+    monkeypatch.setattr(data, "_DB_READY", False)
 
 
-@pytest.fixture
-def service(db_path):
-    """Return an EnrichmentService wired to the temp DB."""
-    return EnrichmentService(db_path)
+def test_create_activity():
+    rec = data.create({"name": "Chess", "category": "Games"})
+    assert rec.activity_id > 0
+    assert data.get(rec.activity_id).name == "Chess"
 
 
-class TestEnrichmentService:
+def test_create_requires_name():
+    with pytest.raises(ValidationError):
+        data.create({"name": "", "category": "Games"})
 
-    def test_create_activity(self, service):
-        row_id = service.create_activity("Chess Club", "Academic")
-        assert row_id == 1
 
-    def test_list_activities(self, service):
-        service.create_activity("Chess Club", "Academic")
-        service.create_activity("Football", "Sport")
-        activities = service.list_activities()
-        assert len(activities) == 2
-
-    def test_get_activity(self, service):
-        row_id = service.create_activity("Chess Club", "Academic", description="Weekly chess")
-        activity = service.get_activity(row_id)
-        assert activity["name"] == "Chess Club"
-        assert activity["description"] == "Weekly chess"
-
-    def test_update_activity(self, service):
-        row_id = service.create_activity("Chess Club", "Academic")
-        service.update_activity(row_id, name="Chess Society")
-        activity = service.get_activity(row_id)
-        assert activity["name"] == "Chess Society"
-
-    def test_delete_activity(self, service):
-        row_id = service.create_activity("Chess Club", "Academic")
-        service.delete_activity(row_id)
-        assert service.get_activity(row_id) is None
-
-    def test_create_activity_empty_name_raises(self, service):
-        with pytest.raises(Exception):
-            service.create_activity("", "Academic")
+def test_duplicate_name_rejected():
+    data.create({"name": "Chess", "category": "Games"})
+    with pytest.raises(ValidationError):
+        data.create({"name": "Chess", "category": "Games"})
 ```
 
 See the [Testing Guide](TESTING_GUIDE.md) for full testing patterns and conventions.
@@ -756,14 +494,14 @@ See the [Testing Guide](TESTING_GUIDE.md) for full testing patterns and conventi
 
 Before submitting a new module, verify:
 
-- [ ] Directory structure follows `module_name/{__init__.py, services/, gui/}` pattern
-- [ ] Schema added to `infrastructure/database/schema.py` using `CREATE TABLE IF NOT EXISTS`
-- [ ] Exception class added to `core/exceptions.py` inheriting from `SchoolSystemError`
-- [ ] Service class uses `_conn()` / `try/finally` pattern with parameterized queries
-- [ ] GUI frame inherits `tk.Frame` with `(parent, db_path, auth=None)` signature
-- [ ] CLI menu follows `<module>_menu(auth)` convention
-- [ ] Module registered in sidebar (`main_gui.py`) and CLI menus (`cli_main.py`)
-- [ ] `__init__.py` files export key classes
-- [ ] Tests written with temporary database fixture
-- [ ] Code formatted with Black and linted with Ruff
-- [ ] Docstrings on module, class, and public methods
+- [ ] Domain code is under `domain/<area>/`, with screens under `interfaces/{cli,gui}/<area>/`
+- [ ] The module declares `_SCHEMA` using `CREATE TABLE IF NOT EXISTS`, and creates it from `init_db()`
+- [ ] Invalid input raises `ValidationError`
+- [ ] All queries are parameterized
+- [ ] The domain module imports no Tkinter, Flask or CLI code
+- [ ] View exposes `open_<module>(host)`; CLI exposes `dispatch(label)`
+- [ ] Module registered in `NAV_CATEGORIES` (`gui_main.py`) and `CATEGORIES` (`cli_main.py`)
+- [ ] Blueprint added to `ALL_BLUEPRINTS` in `api/primary/routes/__init__.py`
+- [ ] Tests written with a temporary database fixture
+- [ ] Code formatted and linted with Ruff (`make format`, `make lint`)
+- [ ] Docstrings on module and public functions

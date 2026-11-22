@@ -27,8 +27,8 @@ from education_system.systems.apprenticeships.domain.learner_support.skills_asse
 from education_system.systems.apprenticeships.infrastructure.persistence.repositories import (
     compliance_repository,
 )
-from education_system.systems.apprenticeships.services import skills_service
-from education_system.systems.apprenticeships.services.access import Actor, PermissionDenied
+from education_system.systems.apprenticeships.application.assessments import skills_service
+from education_system.systems.apprenticeships.application.security.access import Actor, PermissionDenied
 
 TODAY = date(2026, 9, 10)
 

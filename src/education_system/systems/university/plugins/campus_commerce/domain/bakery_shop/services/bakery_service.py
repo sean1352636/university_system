@@ -34,6 +34,15 @@ from datetime import datetime, timedelta
 from typing import Any, Optional
 
 from education_system.systems.university.infrastructure.database.db import get_connection
+# Finance hub: the ONLY way the bakery may touch finance tables. Both the
+# GUI (domain/bakery_shop/services/checkout.py, tabs_main/tab_refunds.py)
+# and the CLI (OrderManager) post through the helpers below.
+from education_system.systems.university.domains.finance.infrastructure.finance_integration import (
+    process_student_finance_account_payment,
+    record_refund_to_finance,
+    record_revenue_to_finance,
+    top_up_student_finance_account,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -281,6 +290,106 @@ class MenuManager:
 # --------------------------------------------------------------------------- #
 # Orders / POS  (bakery_orders)
 # --------------------------------------------------------------------------- #
+FINANCE_SOURCE = "Bakery"
+STUDENT_ACCOUNT_METHOD = "student_account"
+
+
+def charge_student_account(finance_user_id: str, amount: float, *,
+                           processed_by: Optional[str] = None) -> dict:
+    """Debit a bakery purchase from a finance account.
+
+    ``process_student_finance_account_payment`` records the payment row and
+    GL journal itself, so a sale charged this way must NOT also be posted
+    with :func:`post_sale_to_finance`.
+    """
+    return process_student_finance_account_payment(
+        student_id=str(finance_user_id), amount=float(amount),
+        description="Bakery Shop purchase",
+        transaction_source=FINANCE_SOURCE,
+        transaction_ref=f"BAKERY_{datetime.now().strftime('%Y%m%d%H%M%S')}",
+        processed_by=processed_by or "system",
+    )
+
+
+def post_sale_to_finance(order_id: str, amount: float, payment_method: str,
+                         finance_user_id: Optional[str]) -> Optional[int]:
+    """Record a completed bakery sale as revenue in Finance.
+
+    Skipped for ``student_account`` sales (already recorded by the debit).
+    Never raises: a posting failure is logged and ``None`` returned so the
+    local order is never rolled back.
+    """
+    if payment_method == STUDENT_ACCOUNT_METHOD:
+        return None
+    try:
+        return record_revenue_to_finance(
+            student_id=str(finance_user_id or ""),
+            amount=float(amount),
+            revenue_category="Bakery Sales",
+            transaction_source=FINANCE_SOURCE,
+            transaction_ref=order_id,
+            payment_method=str(payment_method).replace("_", " ").title(),
+            notes="University Bakery Shop purchase",
+        )
+    except Exception:
+        logger.exception("record_revenue_to_finance failed for bakery order %s", order_id)
+        return None
+
+
+def credit_refund_to_finance(order: dict, amount: float, *, full_refund: bool = True,
+                             reason: str = "", reason_category: str = "",
+                             admin_notes: str = "",
+                             requested_by: Optional[str] = None) -> dict:
+    """Refund a bakery order through Finance.
+
+    ``student_account`` orders are re-credited with
+    ``top_up_student_finance_account`` first; if that fails the refund is
+    abandoned (``success`` False). The refund is then recorded with
+    ``record_refund_to_finance`` (unified_refunds + ledger); a failure there
+    is logged but does not block the local refund.
+
+    ``order`` needs ``order_id``, ``payment_method`` and ``user``/``username``.
+    """
+    payment_method = order.get("payment_method") or "cash"
+    user = order.get("user") or order.get("username") or ""
+    order_id = order.get("order_id")
+    result = {"success": False, "refund_id": None, "message": ""}
+
+    if payment_method == STUDENT_ACCOUNT_METHOD:
+        try:
+            topup = top_up_student_finance_account(
+                student_id=str(user), amount=float(amount),
+                payment_method="Bakery Refund",
+                processed_by=requested_by or "system",
+                description=f"Bakery refund for {order_id}",
+            )
+        except Exception as e:
+            logger.exception("Student account refund failed")
+            result["message"] = f"Could not credit student account: {e}"
+            return result
+        if not topup.get("success"):
+            result["message"] = topup.get("message", "Could not credit student account.")
+            return result
+
+    result["success"] = True
+    try:
+        result["refund_id"] = record_refund_to_finance(
+            student_id=str(user),
+            refund_amount=float(amount),
+            original_payment_id=None,
+            refund_reason=reason or f"Refund for {order_id}",
+            refund_type="full" if full_refund else "partial",
+            transaction_source=FINANCE_SOURCE,
+            transaction_ref=str(order_id),
+            refund_method=str(payment_method).replace("_", " ").title(),
+            requested_by=requested_by or "system",
+            notes=f"{reason_category} • {admin_notes}".strip(" •"),
+        )
+    except Exception:
+        logger.exception("record_refund_to_finance failed for bakery order %s", order_id)
+    return result
+
+
 class OrderManager:
     @staticmethod
     def list_orders(limit: int = 30, include_refunded: bool = True) -> list[dict]:
@@ -301,12 +410,16 @@ class OrderManager:
 
     @staticmethod
     def create_order(username: str, user_type: str, line_items: list[dict], *,
-                     discount: float = 0.0, payment_method: str = "cash") -> dict:
-        """Persist a POS sale.
+                     discount: float = 0.0, payment_method: str = "cash",
+                     processed_by: Optional[str] = None) -> dict:
+        """Persist a POS sale and post it to Finance.
 
         ``line_items`` is a list of ``{"name", "qty", "unit_price"}`` dicts.
         The stored ``items_json`` is ``{name: qty}`` (the shape the GUI's
-        ``load_data`` expects). Returns ``{"id", "order_id", "total"}``.
+        ``load_data`` expects). ``student_account`` debits the customer's
+        finance account first (``ValueError`` if that fails); any other
+        method is posted as revenue after the write. Returns
+        ``{"id", "order_id", "total", "finance_payment_id"}``.
         """
         if not line_items:
             raise ValueError("An order needs at least one line item.")
@@ -324,6 +437,10 @@ class OrderManager:
             raise ValueError("No positive-quantity line items supplied.")
         discount = max(0.0, float(discount))
         total = max(0.0, subtotal - discount)
+        if payment_method == STUDENT_ACCOUNT_METHOD:
+            charge = charge_student_account(username, total, processed_by=processed_by or username)
+            if not charge.get("success"):
+                raise ValueError(charge.get("message", "Could not charge student finance account."))
         # order_id mirrors the GUI's human-friendly counter style.
         count = _one("SELECT COUNT(*) AS c FROM bakery_orders")["c"]
         order_id = f"ORD-{count + 1001}"
@@ -338,11 +455,28 @@ class OrderManager:
         )
         logger.info("Bakery order created %s (id=%s) total=%.2f",
                     order_id, pk, total)
-        return {"id": pk, "order_id": order_id, "total": round(total, 2)}
+        finance_payment_id = post_sale_to_finance(order_id, total, payment_method, username)
+        return {"id": pk, "order_id": order_id, "total": round(total, 2),
+                "finance_payment_id": finance_payment_id}
 
     @staticmethod
-    def refund_order(pk: int, refund_ref: Optional[str] = None) -> bool:
+    def refund_order(pk: int, refund_ref: Optional[str] = None, *,
+                     reason: str = "", processed_by: Optional[str] = None) -> bool:
+        """Full refund of an un-refunded order, posted to Finance.
+
+        Credits the student account first for ``student_account`` orders
+        (``ValueError`` if that fails), then marks the row refunded and
+        records the refund with ``record_refund_to_finance``.
+        """
+        order = OrderManager.get_order(pk)
+        if not order or order.get("refunded"):
+            return False
         ref = refund_ref or f"REF-{datetime.now().strftime('%Y%m%d%H%M%S')}"
+        credit = credit_refund_to_finance(
+            order, float(order.get("total") or 0), full_refund=True,
+            reason=reason, requested_by=processed_by)
+        if not credit.get("success"):
+            raise ValueError(credit.get("message") or "Refund could not be credited.")
         conn = _conn()
         try:
             cur = conn.execute(

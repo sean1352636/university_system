@@ -24,11 +24,11 @@ This guide covers the campus navigation system including building directory, rou
 The Campus Navigation module provides building directory search, route planning with step-by-step directions, proximity-based location discovery using the Haversine formula, accessibility-aware routing, user favorites, navigation history, and analytics on popular routes.
 
 **Key files:**
-- Navigation Service: `modules/domain/campus_navigation/services/navigation_service.py`
-- Navigation GUI: `modules/domain/campus_navigation/gui/navigation_gui.py`
-- Navigation CLI: `modules/domain/campus_navigation/cli/navigation_cli.py`
-- Examples: `modules/domain/campus_navigation/examples.py`
-- Public API: `modules/domain/campus_navigation/__init__.py`
+- Navigation Service: `src/education_system/systems/university/domains/operations/domain/campus/campus_navigation/services/navigation_service.py`
+- Navigation GUI: `src/education_system/systems/university/domains/operations/interfaces/gui/campus/campus_navigation/navigation_gui.py`
+- Navigation CLI: `src/education_system/systems/university/domains/operations/interfaces/cli/campus/campus_navigation/navigation_cli.py`
+- Examples: `src/education_system/systems/university/domains/operations/domain/campus/campus_navigation/examples.py`
+- Public API: `src/education_system/systems/university/domains/operations/domain/campus/campus_navigation/__init__.py`
 
 ## Architecture
 
@@ -65,7 +65,7 @@ The Campus Navigation module provides building directory search, route planning 
 ### Viewing All Buildings
 
 ```python
-from university_system.modules.domain.campus_navigation.services.navigation_service import (
+from education_system.systems.university.domains.operations.domain.campus.campus_navigation.services.navigation_service import (
     NavigationService
 )
 

@@ -36,16 +36,36 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from education_system import paths
+from education_system.systems.sixth_form.domain.academics.qualifications import (
+    grade_scales,
+)
 
 logger = logging.getLogger(__name__)
 
 DB_PATH = paths.SIXTH_FORM_RISK_ANALYTICS_DB
 
-# ── A-Level grade scale ──────────────────────────────────────────────
-# Shared ordering/points used for every grade comparison in this module.
+# ── Grade scales ─────────────────────────────────────────────────────
+# Grades are compared on the scale of the learner's own qualification
+# for each subject (A level, BTEC, T Level, GCSE resit ...) via
+# grade_scales. The A-level constants stay for callers that import them.
 LETTER_GRADES: tuple[str, ...] = ("A*", "A", "B", "C", "D", "E", "U")
 GRADE_POINTS: dict[str, int] = {"A*": 6, "A": 5, "B": 4, "C": 3, "D": 2, "E": 1, "U": 0}
 _POINTS_TO_GRADE: dict[int, str] = {v: k for k, v in GRADE_POINTS.items()}
+
+
+def _pts(grade: str | None, qualification_type: str | None) -> int | None:
+    return grade_scales.grade_points(grade, qualification_type)
+
+
+def _on_scale(grade: str | None, qualification_type: str | None) -> str | None:
+    """*grade* if it belongs to the subject's scale, else None."""
+    return grade if _pts(grade, qualification_type) is not None else None
+
+
+def _grade_for_points(points: int, qualification_type: str | None) -> str:
+    grades = grade_scales.grades_for(qualification_type)
+    top = len(grades) - 1
+    return grades[top - max(0, min(top, points))]
 
 # ── Risk bands ───────────────────────────────────────────────────────
 BANDS: tuple[str, ...] = ("Low", "Medium", "High", "Critical")
@@ -94,6 +114,7 @@ class SubjectPrediction:
     latest_mock_grade: str | None
     forecast_grade: str | None
     on_target: bool | None
+    qualification_type: str | None = None
 
 
 @dataclass
@@ -107,6 +128,10 @@ class RiskAssessment:
     factors: list[Factor] = field(default_factory=list)
     predictions: list[SubjectPrediction] = field(default_factory=list)
     computed_at: str = ""
+    # What is already being done about it: open early-warning alerts and
+    # open interventions for this student at the time of the assessment.
+    open_alerts: int = 0
+    open_interventions: int = 0
 
 
 # ── DB plumbing ──────────────────────────────────────────────────────
@@ -149,6 +174,12 @@ def init_db() -> None:
     _students.init_db()
     with _connect() as conn:
         conn.executescript(_SCHEMA)
+        cols = {r[1] for r in conn.execute(
+            "PRAGMA table_info(risk_snapshots)").fetchall()}
+        for col in ("open_alerts", "open_interventions"):
+            if col not in cols:
+                conn.execute(f"ALTER TABLE risk_snapshots "
+                             f"ADD COLUMN {col} INTEGER NOT NULL DEFAULT 0")
     _DB_READY = True
     logger.debug("Risk-analytics schema ready at %s", DB_PATH)
 
@@ -164,6 +195,16 @@ def _window_start(days: int) -> str:
 
 
 def _student_subjects(conn: sqlite3.Connection, student_id: str) -> list[str]:
+    """Subjects the learner is on: active learning aims, else the old slots."""
+    try:
+        from education_system.systems.sixth_form.domain.academics.qualifications import (
+            learning_aims,
+        )
+        subjects = [a.subject for a in learning_aims.active_aims(student_id)]
+        if subjects:
+            return list(dict.fromkeys(subjects))
+    except Exception:
+        logger.debug("learning aims unavailable for %s", student_id, exc_info=True)
     row = conn.execute(
         "SELECT subject_1, subject_2, subject_3 FROM students WHERE student_id=?",
         (student_id,),
@@ -248,8 +289,10 @@ def _grade_gap_factor(predictions: list[SubjectPrediction]) -> Factor | None:
     """Risk from predicted grades sitting below the minimum target."""
     gaps = []
     for p in predictions:
-        if p.predicted_grade in GRADE_POINTS and p.target_grade in GRADE_POINTS:
-            gap = GRADE_POINTS[p.target_grade] - GRADE_POINTS[p.predicted_grade]
+        target = _pts(p.target_grade, p.qualification_type)
+        predicted = _pts(p.predicted_grade, p.qualification_type)
+        if target is not None and predicted is not None:
+            gap = target - predicted
             if gap > 0:
                 gaps.append((p.subject, gap))
     if not gaps:
@@ -266,8 +309,10 @@ def _mock_factor(predictions: list[SubjectPrediction]) -> Factor | None:
     """Risk from latest mock grades trailing the predicted grade."""
     gaps = []
     for p in predictions:
-        if p.latest_mock_grade in GRADE_POINTS and p.predicted_grade in GRADE_POINTS:
-            gap = GRADE_POINTS[p.predicted_grade] - GRADE_POINTS[p.latest_mock_grade]
+        predicted = _pts(p.predicted_grade, p.qualification_type)
+        mock = _pts(p.latest_mock_grade, p.qualification_type)
+        if predicted is not None and mock is not None:
+            gap = predicted - mock
             if gap > 0:
                 gaps.append((p.subject, gap))
     if not gaps:
@@ -282,7 +327,8 @@ def _mock_factor(predictions: list[SubjectPrediction]) -> Factor | None:
 # ── Outcome prediction ───────────────────────────────────────────────
 
 def _latest_mock_grade(conn: sqlite3.Connection, student_id: str,
-                       subject: str) -> str | None:
+                       subject: str,
+                       qualification_type: str | None = None) -> str | None:
     if not (_table_exists(conn, "mock_results") and _table_exists(conn, "mock_exams")):
         return None
     row = conn.execute(
@@ -296,11 +342,12 @@ def _latest_mock_grade(conn: sqlite3.Connection, student_id: str,
         """,
         (student_id, subject),
     ).fetchone()
-    return row["grade"] if row and row["grade"] in GRADE_POINTS else None
+    return _on_scale(row["grade"], qualification_type) if row else None
 
 
 def _forecast(baseline: str | None, mock: str | None,
-              predicted: str | None) -> str | None:
+              predicted: str | None,
+              qualification_type: str | None = None) -> str | None:
     """Blend available signals into a single forecast grade.
 
     Weighting favours hard evidence: latest mock 50%, teacher prediction
@@ -308,31 +355,43 @@ def _forecast(baseline: str | None, mock: str | None,
     weights renormalised. Returns None when nothing is known.
     """
     parts = [(mock, 0.50), (predicted, 0.35), (baseline, 0.15)]
-    usable = [(GRADE_POINTS[g], w) for g, w in parts if g in GRADE_POINTS]
+    usable = [(_pts(g, qualification_type), w) for g, w in parts]
+    usable = [(p, w) for p, w in usable if p is not None]
     if not usable:
         return None
     total_w = sum(w for _, w in usable)
     pts = sum(p * w for p, w in usable) / total_w
-    return _POINTS_TO_GRADE[max(0, min(6, round(pts)))]
+    return _grade_for_points(round(pts), qualification_type)
+
+
+def _qualification_type(student_id: str, subject: str) -> str | None:
+    try:
+        from education_system.systems.sixth_form.domain.academics.qualifications import (
+            learning_aims,
+        )
+        return learning_aims.qualification_type_for(student_id, subject)
+    except Exception:
+        return None
 
 
 def _predictions_for(conn: sqlite3.Connection, student_id: str) -> list[SubjectPrediction]:
     out: list[SubjectPrediction] = []
     for subject in _student_subjects(conn, student_id):
+        qtype = _qualification_type(student_id, subject)
         predicted = None
         if _table_exists(conn, "predicted_grades"):
             r = conn.execute(
                 "SELECT grade FROM predicted_grades WHERE student_id=? AND subject=?",
                 (student_id, subject),
             ).fetchone()
-            predicted = r["grade"] if r and r["grade"] in GRADE_POINTS else None
+            predicted = _on_scale(r["grade"], qtype) if r else None
         target = None
         if _table_exists(conn, "targets"):
             r = conn.execute(
                 "SELECT mte_grade FROM targets WHERE student_id=? AND subject_name=?",
                 (student_id, subject),
             ).fetchone()
-            target = r["mte_grade"] if r and r["mte_grade"] in GRADE_POINTS else None
+            target = _on_scale(r["mte_grade"], qtype) if r else None
         baseline = None
         if _table_exists(conn, "baseline_records"):
             r = conn.execute(
@@ -343,16 +402,17 @@ def _predictions_for(conn: sqlite3.Connection, student_id: str) -> list[SubjectP
                 """,
                 (student_id, subject),
             ).fetchone()
-            baseline = r["baseline_grade"] if r and r["baseline_grade"] in GRADE_POINTS else None
-        mock = _latest_mock_grade(conn, student_id, subject)
-        forecast = _forecast(baseline, mock, predicted)
+            baseline = _on_scale(r["baseline_grade"], qtype) if r else None
+        mock = _latest_mock_grade(conn, student_id, subject, qtype)
+        forecast = _forecast(baseline, mock, predicted, qtype)
         on_target = None
-        if forecast in GRADE_POINTS and target in GRADE_POINTS:
-            on_target = GRADE_POINTS[forecast] >= GRADE_POINTS[target]
+        if forecast and target:
+            on_target = _pts(forecast, qtype) >= _pts(target, qtype)
         out.append(SubjectPrediction(
             subject=subject, baseline_grade=baseline, target_grade=target,
             predicted_grade=predicted, latest_mock_grade=mock,
-            forecast_grade=forecast, on_target=on_target))
+            forecast_grade=forecast, on_target=on_target,
+            qualification_type=qtype))
     return out
 
 
@@ -381,14 +441,79 @@ def assess_student(student_id: str, *, window_days: int = DEFAULT_WINDOW_DAYS,
 
         factors = [f for f in (att_factor, beh_factor, gap_factor, mock_factor) if f]
         score = round(min(100.0, sum(f.points for f in factors)), 1)
+        open_alerts, open_ivs = _open_action_counts(conn, student_id)
         return RiskAssessment(
             student_id=student_id, full_name=full_name, score=score,
             band=band_for(score), attendance_pct=att_pct,
             behaviour_points=beh_points, factors=factors,
-            predictions=predictions, computed_at=_dt.datetime.now().isoformat(timespec="seconds"))
+            predictions=predictions, computed_at=_dt.datetime.now().isoformat(timespec="seconds"),
+            open_alerts=open_alerts, open_interventions=open_ivs)
     finally:
         if own:
             conn.close()
+
+
+# Open statuses as the owning modules define them (early_warning /
+# intervention_tracking). Kept here as SQL literals because the scan runs
+# on one shared connection.
+_OPEN_ALERT_STATUSES = ("Open", "Acknowledged", "Escalated")
+_OPEN_INTERVENTION_STATUSES = ("Planned", "Active", "Paused")
+
+
+def _open_action_counts(conn: sqlite3.Connection,
+                        student_id: str) -> tuple[int, int]:
+    alerts = ivs = 0
+    if _table_exists(conn, "early_warning_alerts"):
+        ph = ",".join("?" * len(_OPEN_ALERT_STATUSES))
+        alerts = conn.execute(
+            f"SELECT COUNT(*) FROM early_warning_alerts "
+            f"WHERE student_id=? AND status IN ({ph})",
+            (student_id, *_OPEN_ALERT_STATUSES)).fetchone()[0]
+    if _table_exists(conn, "interventions"):
+        ph = ",".join("?" * len(_OPEN_INTERVENTION_STATUSES))
+        ivs = conn.execute(
+            f"SELECT COUNT(*) FROM interventions "
+            f"WHERE student_id=? AND status IN ({ph})",
+            (student_id, *_OPEN_INTERVENTION_STATUSES)).fetchone()[0]
+    return alerts, ivs
+
+
+@dataclass
+class RiskPicture:
+    """A student's risk score next to what is being done about it."""
+    assessment: RiskAssessment
+    latest_snapshot: dict[str, Any] | None
+    open_alerts: list[Any] = field(default_factory=list)
+    open_interventions: list[Any] = field(default_factory=list)
+
+    @property
+    def unanswered_alerts(self) -> list[Any]:
+        """Open alerts that have not opened (or been linked to) an
+        intervention yet."""
+        live = {iv.intervention_id for iv in self.open_interventions}
+        return [a for a in self.open_alerts
+                if a.linked_intervention_id not in live]
+
+
+def student_risk_picture(student_id: str, *,
+                         window_days: int = DEFAULT_WINDOW_DAYS) -> RiskPicture:
+    """Live assessment + latest snapshot + open alerts and interventions,
+    read from the early-warning and intervention modules (no copies)."""
+    from education_system.systems.sixth_form.domain.assessment.early_warning import (
+        early_warning as _ew,
+    )
+    from education_system.systems.sixth_form.domain.assessment.intervention_tracking import (
+        intervention_tracking as _iv,
+    )
+    assessment = assess_student(student_id, window_days=window_days)
+    snap = next((s for s in latest_snapshots() if s["student_id"] == student_id),
+                None)
+    return RiskPicture(
+        assessment=assessment,
+        latest_snapshot=snap,
+        open_alerts=[a for a in _ew.alerts_for_student(student_id) if a.is_open],
+        open_interventions=_iv.open_interventions_for_student(student_id),
+    )
 
 
 def _active_student_ids(conn: sqlite3.Connection) -> list[str]:
@@ -400,31 +525,40 @@ def _active_student_ids(conn: sqlite3.Connection) -> list[str]:
 
 
 def scan_all(*, window_days: int = DEFAULT_WINDOW_DAYS,
-             persist: bool = True) -> list[RiskAssessment]:
+             persist: bool = True,
+             errors: list[str] | None = None) -> list[RiskAssessment]:
     """Assess every active student. When ``persist`` is set, write one
     snapshot row per student into ``risk_snapshots`` (highest risk first
-    is the natural read order via the band/score indexes)."""
+    is the natural read order via the band/score indexes).
+
+    A student whose assessment fails is left out of the results; pass a
+    list as ``errors`` to get one line per failure (the scheduled scan
+    does, so failures show in the job history instead of vanishing)."""
     init_db()
     results: list[RiskAssessment] = []
     with _connect() as conn:
         for sid in _active_student_ids(conn):
             try:
                 results.append(assess_student(sid, window_days=window_days, conn=conn))
-            except Exception:
+            except Exception as e:
                 logger.exception("Risk assessment failed for %s", sid)
+                if errors is not None:
+                    errors.append(f"{sid}: {type(e).__name__}: {e}")
         if persist:
             for r in results:
                 conn.execute(
                     """
                     INSERT INTO risk_snapshots
                         (student_id, score, band, attendance_pct,
-                         behaviour_points, factors_json, predictions_json)
-                    VALUES (?,?,?,?,?,?,?)
+                         behaviour_points, factors_json, predictions_json,
+                         open_alerts, open_interventions)
+                    VALUES (?,?,?,?,?,?,?,?,?)
                     """,
                     (r.student_id, r.score, r.band, r.attendance_pct,
                      r.behaviour_points,
                      json.dumps([f.__dict__ for f in r.factors]),
-                     json.dumps([p.__dict__ for p in r.predictions])),
+                     json.dumps([p.__dict__ for p in r.predictions]),
+                     r.open_alerts, r.open_interventions),
                 )
             conn.commit()
     results.sort(key=lambda r: r.score, reverse=True)
@@ -462,6 +596,8 @@ def latest_snapshots(*, band: str | None = None, limit: int = 500) -> list[dict[
             "factors": json.loads(r["factors_json"] or "[]"),
             "predictions": json.loads(r["predictions_json"] or "[]"),
             "computed_at": r["computed_at"],
+            "open_alerts": r["open_alerts"],
+            "open_interventions": r["open_interventions"],
         })
     return out[:limit]
 

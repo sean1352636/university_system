@@ -6,7 +6,9 @@ from education_system.systems.sixth_form.interfaces.gui._ui import grab_when_vie
 import datetime as _dt
 import logging
 import tkinter as tk
-from tkinter import messagebox, ttk
+from tkinter import ttk
+from education_system.systems.sixth_form.interfaces.gui._sidebar import SidebarBook
+from education_system.platform.delivery.gui.parented_dialogs import messagebox, simpledialog
 
 from education_system.platform import branding
 from education_system.systems.sixth_form.domain.safeguarding.prevent_duty import (
@@ -81,7 +83,7 @@ def open_prevent_duty_window(parent=None) -> None:
     win.geometry(WIN_GEOMETRY)
     win.minsize(*WIN_MINSIZE)
 
-    nb = ttk.Notebook(win)
+    nb = SidebarBook(win)
     nb.pack(fill="both", expand=True, padx=10, pady=10)
 
     ConcernsTab(nb)
@@ -167,7 +169,7 @@ class ConcernsTab:
                    command=self._add_referral).pack(side="left", padx=4)
         ttk.Button(actions, text="Close",
                    command=self._close).pack(side="left", padx=4)
-        ttk.Button(actions, text="Delete",
+        ttk.Button(actions, text="Close (retain)",
                    command=self._delete).pack(side="left", padx=4)
 
         cols = ("id", "date", "student", "type", "risk", "status",
@@ -271,14 +273,19 @@ class ConcernsTab:
         if cid is None:
             messagebox.showinfo("Delete", "Select a concern first.")
             return
-        refs = data.list_referrals(concern_id=cid)
-        extra = (f"\nThis will also delete {len(refs)} referral(s)."
-                  if refs else "")
-        if not messagebox.askyesno("Delete",
-                                    f"Delete concern #{cid}?{extra}"):
+        # Prevent records are retained, never deleted (KCSIE).
+        reason = simpledialog.askstring(
+            "Close concern (retain)",
+            f"Close concern #{cid}? It and its referrals are kept.\n\n"
+            "Reason for closing:", parent=self.frame)
+        if not reason or not reason.strip():
             return
-        if data.delete_concern(cid):
-            self.refresh()
+        try:
+            data.archive_concern(cid, reason=reason)
+        except Exception as e:
+            messagebox.showerror("Error", str(e), parent=self.frame)
+            return
+        self.refresh()
 
 
 class _ConcernDialog:
@@ -457,7 +464,7 @@ class ReferralsTab:
                    command=self._add).pack(side="left")
         ttk.Button(actions, text="Edit",
                    command=self._edit).pack(side="left", padx=4)
-        ttk.Button(actions, text="Delete",
+        ttk.Button(actions, text="Close (retain)",
                    command=self._delete).pack(side="left", padx=4)
 
         cols = ("id", "concern", "date", "student", "authority",
@@ -542,10 +549,18 @@ class ReferralsTab:
         if rid is None:
             messagebox.showinfo("Delete", "Select a referral first.")
             return
-        if not messagebox.askyesno("Delete", f"Delete referral #{rid}?"):
+        reason = simpledialog.askstring(
+            "Close referral (retain)",
+            f"Close referral #{rid}? It is kept on file.\n\nReason:",
+            parent=self.frame)
+        if not reason or not reason.strip():
             return
-        if data.delete_referral(rid):
-            self.refresh()
+        try:
+            data.archive_referral(rid, reason=reason)
+        except Exception as e:
+            messagebox.showerror("Error", str(e), parent=self.frame)
+            return
+        self.refresh()
 
 
 def _ask_int(parent, title: str, prompt: str) -> int | None:
@@ -809,11 +824,20 @@ class TrainingTab:
             messagebox.showinfo("Delete",
                                 "Select a training record first.")
             return
-        if not messagebox.askyesno("Delete",
-                                    f"Delete training record #{tid}?"):
+        # Training is compliance evidence: archived, never deleted.
+        reason = simpledialog.askstring(
+            "Archive training (retain)",
+            f"Archive training record #{tid}? It leaves the register and "
+            "compliance counts but is kept on file.\n\nReason:",
+            parent=self.frame)
+        if not reason or not reason.strip():
             return
-        if data.delete_training(tid):
-            self.refresh()
+        try:
+            data.archive_training(tid, reason=reason)
+        except Exception as e:
+            messagebox.showerror("Error", str(e), parent=self.frame)
+            return
+        self.refresh()
 
 
 class _TrainingDialog:

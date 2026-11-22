@@ -7,7 +7,9 @@ import logging
 import tkinter as tk
 from datetime import datetime as _dt
 from pathlib import Path
-from tkinter import filedialog, messagebox, ttk
+from tkinter import ttk
+from education_system.systems.sixth_form.interfaces.gui._sidebar import SidebarBook
+from education_system.platform.delivery.gui.parented_dialogs import filedialog, messagebox
 from typing import Any
 
 from education_system.platform import branding
@@ -34,7 +36,7 @@ def open_data_export_window(parent=None) -> None:
     win.title(f"Data Export — {branding.SYSTEM_NAME}")
     win.geometry(WIN_GEOMETRY)
     win.minsize(*WIN_MINSIZE)
-    nb = ttk.Notebook(win)
+    nb = SidebarBook(win)
     nb.pack(fill="both", expand=True, padx=10, pady=10)
     RunTab(nb)
     PresetsTab(nb)
@@ -505,10 +507,26 @@ class JobsTab:
         if jid is None:
             messagebox.showinfo("Delete", "Pick a job first.")
             return
-        remove = messagebox.askyesno(
-            "Delete files too?",
-            "Also delete the on-disk output folder and archive?",
-            default="no")
+        preview = data.removal_preview(jid)
+        remove = False
+        if preview["files"]:
+            shown = preview["files"][:15]
+            more = len(preview["files"]) - len(shown)
+            listing = "\n".join(f"  • {f}" for f in shown)
+            if more > 0:
+                listing += f"\n  … and {more} more"
+            if preview["folder"]:
+                tail = (f"\n\nThe folder {preview['folder']} was created "
+                        "by this export and will then be empty, so it "
+                        "will be removed too.")
+            else:
+                tail = ("\n\nThe output folder itself and any other "
+                        "files in it are kept.")
+            remove = messagebox.askyesno(
+                "Delete files too?",
+                f"Also delete the {len(preview['files'])} file(s) this "
+                f"export job wrote?\n\n{listing}{tail}",
+                default="no")
         if not messagebox.askyesno(
                 "Delete", f"Delete job #{jid}?"):
             return

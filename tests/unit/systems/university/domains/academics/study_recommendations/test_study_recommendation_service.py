@@ -10,7 +10,7 @@ import sqlite3
 
 import pytest
 
-from education_system.systems.university.domains.academics.domain.study_recommendations.services.study_recommendation_service import (
+from education_system.systems.university.domains.student_life.domain.study_hub.services.recommendations import (
     StudyRecommendationService,
 )
 

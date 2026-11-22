@@ -139,21 +139,22 @@ class HealthChecker:
     def _check_email_service(self) -> Dict[str, Any]:
         """Check email service connectivity"""
         try:
-            # Try to import email service
-            from education_system.systems.university.infrastructure.email.email_service import EmailService
+            from education_system.systems.university.infrastructure.email import outbox_delivery
 
-            # Check if email configuration exists
-            email_service = EmailService()
+            # The outbox delivery mode decides what "configured" means:
+            # inbox_only/sandbox never leave the server; live needs SMTP.
+            mode = outbox_delivery.delivery_mode()
+            problems = outbox_delivery.live_problems() if mode == 'live' else []
 
-            if hasattr(email_service, 'is_configured') and email_service.is_configured():
+            if not problems:
                 return {
                     'status': HealthStatus.HEALTHY.value,
-                    'message': 'Email service is configured'
+                    'message': f'Email outbox is configured (mode: {mode})'
                 }
             else:
                 return {
                     'status': HealthStatus.DEGRADED.value,
-                    'message': 'Email service not configured (optional)'
+                    'message': f"Email outbox in live mode but {', '.join(problems)}"
                 }
 
         except Exception as e:

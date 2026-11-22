@@ -1,3 +1,4 @@
+from education_system.systems.university.plugins.campus_commerce.domain.services.restaurant.operations.user_access import can as restaurant_can
 from education_system.systems.university.infrastructure.auth import UserAuth, display_auth_menu
 from education_system.systems.university.infrastructure.database.data_backup import display_backup_menu, backup_before_operation
 from education_system.systems.university.infrastructure.email import send_confirmation_email
@@ -61,7 +62,7 @@ def create_customer():
             print("You must be logged in to create customers.")
             return
 
-        if not auth.check_permission('manage_takeaway_restaurants'):
+        if not restaurant_can(auth, 'manage_takeaway_restaurants'):
             print("You don't have permission to create customers.")
             return
 
@@ -232,7 +233,7 @@ def view_customers():
         choice = input("Choose an option (1-6): ")
 
         if choice == '1':
-            cursor.execute('SELECT * FROM restaurant_customers ORDER BY registration_date DESC')
+            cursor.execute('SELECT * FROM restaurant_customers ORDER BY created_at DESC')
         elif choice == '2':
             search_name = input("Enter name to search: ")
             cursor.execute('SELECT * FROM restaurant_customers WHERE name LIKE ? ORDER BY name', (f'%{search_name}%',))
@@ -265,7 +266,7 @@ def view_customers():
                 ORDER BY birthday
             ''', (current_month,))
         else:
-            cursor.execute('SELECT * FROM restaurant_customers ORDER BY registration_date DESC')
+            cursor.execute('SELECT * FROM restaurant_customers ORDER BY created_at DESC')
 
         customers = cursor.fetchall()
 
@@ -280,8 +281,8 @@ def view_customers():
         print("-"*120)
 
         for customer in customers:
-            last_visit = customer[9][:10] if customer[9] else 'Never'
-            print(f"{customer[0]:<12} {customer[1]:<20} {customer[2] or 'N/A':<25} {customer[3] or 'N/A':<15} {customer[6]:<8} {customer[5]:<8} {customer[11]:<7} {last_visit:<12}")
+            last_visit = customer[13][:10] if customer[13] else 'Never'
+            print(f"{customer[0]:<12} {customer[1]:<20} {customer[2] or 'N/A':<25} {customer[3] or 'N/A':<15} {customer[4] or 'N/A':<8} {customer[5] or 0:<8} {customer[14] or 0:<7} {last_visit:<12}")
 
         print("="*120)
         print(f"Total customers: {len(customers)}")
@@ -420,7 +421,7 @@ def update_customer():
             print("You must be logged in to update customers.")
             return
 
-        if not auth.check_permission('manage_takeaway_restaurants'):
+        if not restaurant_can(auth, 'manage_takeaway_restaurants'):
             print("You don't have permission to update customers.")
             return
 
@@ -876,7 +877,7 @@ def update_loyalty_points():
         print("You must be logged in to update loyalty points.")
         return
 
-    if not auth.check_permission('manage_takeaway_restaurants'):
+    if not restaurant_can(auth, 'manage_takeaway_restaurants'):
         print("You don't have permission to update loyalty points.")
         return
 
@@ -975,7 +976,7 @@ def promote_customer_tier():
         print("You must be logged in to promote customers.")
         return
 
-    if not auth.check_permission('manage_takeaway_restaurants'):
+    if not restaurant_can(auth, 'manage_takeaway_restaurants'):
         print("You don't have permission to promote customers.")
         return
 
@@ -1099,7 +1100,7 @@ def award_bonus_points():
         print("You must be logged in to award bonus points.")
         return
 
-    if not auth.check_permission('manage_takeaway_restaurants'):
+    if not restaurant_can(auth, 'manage_takeaway_restaurants'):
         print("You don't have permission to award bonus points.")
         return
 

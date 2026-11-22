@@ -296,7 +296,7 @@ class ExtrasLauncher:
             self.status_var.set(f"Failed to launch {program_path.name}")
 
     def _run_in_output_window(self, program_path, cwd):
-        import threading
+        from education_system.platform.delivery.gui.tk_threads import start_thread, ui
 
         win = tk.Toplevel(self.root)
         win.title(program_path.stem.replace('_', ' ').title())
@@ -333,9 +333,9 @@ class ExtrasLauncher:
                 text.insert("end", "\n\n--- Done ---")
                 text.configure(state="disabled")
                 text.see("end")
-            win.after(0, update)
+            ui(win, update)
 
-        threading.Thread(target=run, daemon=True).start()
+        start_thread(win, run)
         self.status_var.set(f"Running {program_path.stem}")
 
     def close_launcher(self):

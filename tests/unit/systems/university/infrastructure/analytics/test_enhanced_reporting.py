@@ -15,7 +15,7 @@ from datetime import datetime, timedelta
 from unittest.mock import Mock, patch, MagicMock
 from pathlib import Path
 
-from education_system.systems.university.services.analytics.enhanced_reporting import (
+from education_system.systems.university.shared.analytics.enhanced_reporting import (
     SystemConfig,
     CacheManager,
     DataQualityMonitor,
@@ -165,7 +165,7 @@ class TestDataQualityMonitor:
         """Test running complete quality checks"""
         mock_conn = Mock()
 
-        with patch('education_system.systems.university.services.analytics.enhanced_reporting.get_reporting_db_connection', return_value=mock_conn):
+        with patch('education_system.systems.university.shared.analytics.enhanced_reporting.get_reporting_db_connection', return_value=mock_conn):
             with patch.object(DataQualityMonitor, 'check_missing_data', return_value={}):
                 with patch.object(DataQualityMonitor, 'check_duplicates', return_value={}):
                     with patch.object(DataQualityMonitor, 'check_invalid_data', return_value={}):
@@ -263,7 +263,7 @@ class TestPredictiveAnalytics:
         mock_cursor.fetchone.return_value = None  # No attendance_records table
         mock_conn.cursor.return_value = mock_cursor
 
-        with patch('education_system.systems.university.services.analytics.enhanced_reporting.predictive.get_reporting_db_connection', return_value=mock_conn):
+        with patch('education_system.systems.university.shared.analytics.enhanced_reporting.predictive.get_reporting_db_connection', return_value=mock_conn):
             result = PredictiveAnalytics.predict_dropout_risk()
             # When no attendance data, should return error dict
             assert isinstance(result, dict)
@@ -274,8 +274,8 @@ class TestPredictiveAnalytics:
         import pandas as pd
 
         mock_conn = Mock()
-        with patch('education_system.systems.university.services.analytics.enhanced_reporting.predictive.get_reporting_db_connection', return_value=mock_conn):
-            with patch('education_system.systems.university.services.analytics.enhanced_reporting.predictive.pd.read_sql_query', return_value=pd.DataFrame()):
+        with patch('education_system.systems.university.shared.analytics.enhanced_reporting.predictive.get_reporting_db_connection', return_value=mock_conn):
+            with patch('education_system.systems.university.shared.analytics.enhanced_reporting.predictive.pd.read_sql_query', return_value=pd.DataFrame()):
                 result = PredictiveAnalytics.detect_anomalies()
                 # When no data, should return error dict
                 assert isinstance(result, dict)
@@ -303,7 +303,7 @@ class TestAdvancedVisualization:
             'present_count': np.random.randint(5, 40, 10),
         })
 
-        with patch('education_system.systems.university.services.analytics.enhanced_reporting.visualization.pd.read_sql_query', return_value=df):
+        with patch('education_system.systems.university.shared.analytics.enhanced_reporting.visualization.pd.read_sql_query', return_value=df):
             with patch('matplotlib.pyplot.savefig'):
                 with patch('matplotlib.pyplot.close'):
                     result = AdvancedVisualization.create_correlation_matrix(mock_conn)
@@ -423,7 +423,7 @@ class TestUtilityFunctions:
 
     def test_load_templates(self):
         """Test loading templates"""
-        with patch('education_system.systems.university.services.analytics.enhanced_reporting.get_reporting_db_connection'):
+        with patch('education_system.systems.university.shared.analytics.enhanced_reporting.get_reporting_db_connection'):
             templates = load_templates()
             assert isinstance(templates, (list, dict))
 
@@ -476,7 +476,7 @@ class TestReportGeneration:
 
     def test_get_section_dataframe(self):
         """Test getting section dataframe"""
-        with patch('education_system.systems.university.services.analytics.enhanced_reporting.get_reporting_db_connection'):
+        with patch('education_system.systems.university.shared.analytics.enhanced_reporting.get_reporting_db_connection'):
             with patch('pandas.read_sql_query'):
                 df = get_section_dataframe('students', '2024-01-01', '2024-01-31')
                 # Should return DataFrame or None
@@ -485,7 +485,7 @@ class TestReportGeneration:
         """Test generating a complete report"""
         template = ReportTemplate(name="Test", description="Test", sections=['students'])
 
-        with patch('education_system.systems.university.services.analytics.enhanced_reporting.generate_enhanced_pdf_report'):
+        with patch('education_system.systems.university.shared.analytics.enhanced_reporting.generate_enhanced_pdf_report'):
             result = generate_report(
                 template,
                 start_date='2024-01-01',

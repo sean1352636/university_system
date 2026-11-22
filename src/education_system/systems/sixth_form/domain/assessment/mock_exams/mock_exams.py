@@ -30,7 +30,11 @@ from education_system import paths
 from education_system.systems.sixth_form.domain.assessment.gradebook.gradebook import (
     LETTER_GRADES, pct_to_letter,
 )
-from education_system.systems.sixth_form.domain.academics.subjects.subjects import EXAM_BOARDS
+from education_system.systems.sixth_form.domain.assessment.exams_office.boards import (
+    EXAM_BOARDS,
+    normalise_board,
+    stored_names,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -199,11 +203,12 @@ def _validate_mock_payload(data: dict[str, Any]) -> dict[str, Any]:
         pass
     out["subject"] = subject
 
-    board = (data.get("exam_board") or "").strip()
-    if board and board not in EXAM_BOARDS:
+    raw_board = (data.get("exam_board") or "").strip()
+    board = normalise_board(raw_board) if raw_board else None
+    if raw_board and board is None:
         raise ValidationError(
             f"Exam board must be blank or one of: {', '.join(EXAM_BOARDS)}")
-    out["exam_board"] = board or None
+    out["exam_board"] = board
 
     paper = data.get("paper_number")
     if paper in (None, ""):
@@ -331,11 +336,13 @@ def list_mocks(
         clauses.append("subject = ?")
         args.append(subject)
     if exam_board:
-        if exam_board not in EXAM_BOARDS:
+        if normalise_board(exam_board) is None:
             raise ValidationError(
                 f"Exam board must be one of: {', '.join(EXAM_BOARDS)}")
-        clauses.append("exam_board = ?")
-        args.append(exam_board)
+        # Older rows carry "Edexcel" etc.; match every spelling.
+        names = stored_names(exam_board)
+        clauses.append(f"exam_board IN ({','.join('?' * len(names))})")
+        args.extend(names)
     if date_from:
         clauses.append("date_sat >= ?")
         args.append(_validate_date(date_from, "date_from"))
@@ -459,18 +466,22 @@ def save_results(
     mock_id: int, entries: dict[str, dict[str, Any]],
 ) -> int:
     """Upsert result rows in one transaction. Missing students are
-    untouched. Returns number of rows written. Skips entries where both
-    marks and grade are blank."""
+    untouched. An entry whose marks, grade and notes are all blank
+    clears that student's saved result (the row is deleted), so a
+    wrong mark can be removed by blanking it. Returns the number of
+    rows written or cleared."""
     init_db()
     mock = get_mock(mock_id)
     if mock is None:
         raise ValidationError(f"No mock exam with id {mock_id}")
 
     cleaned: list[tuple[str, dict[str, Any]]] = []
+    blanked: list[str] = []
     for sid, payload in entries.items():
-        # Skip rows with nothing to record
-        if not any(payload.get(k) not in (None, "")
+        # A fully blank row means "no result": clear any saved one.
+        if not any(str(payload.get(k) or "").strip()
                    for k in ("marks", "grade", "notes")):
+            blanked.append(sid)
             continue
         cleaned.append((sid, _validate_result_payload(
             payload, max_marks=mock.max_marks)))
@@ -478,6 +489,15 @@ def save_results(
     written = 0
     try:
         with _connect() as conn:
+            for sid in blanked:
+                cur = conn.execute(
+                    "DELETE FROM mock_results "
+                    "WHERE mock_id = ? AND student_id = ?",
+                    (mock_id, sid))
+                if cur.rowcount:
+                    logger.info("Cleared mock #%d result for %s",
+                                mock_id, sid)
+                    written += cur.rowcount
             for sid, p in cleaned:
                 conn.execute(
                     """INSERT INTO mock_results

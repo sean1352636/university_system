@@ -27,6 +27,11 @@ Operations:
   Declined) — this is the workflow staff use during offer week.
 * Per-student comparison: every offer side-by-side with predicted
   grades for the relevant subject.
+* Structured conditions on an offer (``offer_conditions`` table — the
+  platform's shape, ``platform/cross_system/offer_conditions``) and a
+  met / not met / review check of the learner's *released* results
+  against them (:func:`check_offer`). For a choice at this platform's own
+  university the conditions are that university's, read-only here.
 
 Cascade: deleting a UCAS choice (or its application, or the student)
 removes the offer details row.
@@ -37,9 +42,10 @@ from __future__ import annotations
 import logging
 import re
 import sqlite3
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any
 from education_system import paths
+from education_system.platform.cross_system import offer_conditions as _oc
 
 logger = logging.getLogger(__name__)
 
@@ -70,7 +76,35 @@ CREATE TABLE IF NOT EXISTS offer_details (
 
 CREATE INDEX IF NOT EXISTS idx_offers_choice   ON offer_details(choice_id);
 CREATE INDEX IF NOT EXISTS idx_offers_deadline ON offer_details(reply_deadline);
+
+-- What an external university's offer asks for, row by row, so the
+-- learner's released results can be checked against it.
+CREATE TABLE IF NOT EXISTS offer_conditions (
+    condition_id        INTEGER PRIMARY KEY AUTOINCREMENT,
+    choice_id           INTEGER NOT NULL,
+    position            INTEGER NOT NULL DEFAULT 0,
+    kind                TEXT NOT NULL CHECK (kind IN (
+                            'grade_profile', 'subject_grade', 'tariff_points',
+                            'qualification_grade', 'gcse_requirement',
+                            'other_text')),
+    qualification_type  TEXT,
+    subject             TEXT,
+    min_grade           TEXT,
+    min_points          INTEGER,
+    count               INTEGER,
+    text                TEXT,
+    created_at          TEXT DEFAULT (datetime('now')),
+    FOREIGN KEY (choice_id) REFERENCES ucas_choices(choice_id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_offer_conditions_choice
+    ON offer_conditions(choice_id, position);
 """
+
+#: Structured condition kinds (the platform's).
+CONDITION_KINDS: tuple[str, ...] = _oc.CONDITION_KINDS
+_COND_FIELDS = ("kind", "qualification_type", "subject", "min_grade",
+                "min_points", "count", "text")
 
 
 @dataclass
@@ -91,6 +125,8 @@ class OfferDetails:
     #: refuses it — and carries the officer who issued it.
     issued_by_university: bool = False
     issued_by: str | None = None
+    #: Structured conditions, in the platform's shape, in order.
+    conditions: list[dict[str, Any]] = field(default_factory=list)
 
     @property
     def is_editable_here(self) -> bool:
@@ -221,28 +257,28 @@ def _university_terms(choice_ids: list[int]) -> dict[int, OfferDetails]:
     if not choice_ids:
         return {}
     try:
-        from education_system.systems.university.domains.admissions.domain.ucas import (
-            offer_terms as _terms,
-        )
-        issued = _terms.terms_for_choices(choice_ids)
+        from education_system.platform.cross_system.adapters import route_support
+        issued = route_support.adapter_for("university").offer_terms_for_choices(
+            list(choice_ids))
     except Exception:
         logger.debug("University offer terms unavailable", exc_info=True)
         return {}
     return {
         cid: OfferDetails(
-            offer_id=t.terms_id,
+            offer_id=t.get("terms_id"),
             choice_id=cid,
-            grade_requirement=t.grade_requirement,
-            grade_alternative=t.grade_alternative,
-            reply_deadline=t.reply_deadline,
-            expiry_date=t.expiry_date,
-            scholarship=t.scholarship,
-            accommodation_guaranteed=t.accommodation_guaranteed,
-            notes=t.notes,
-            created_at=t.issued_at,
-            updated_at=t.updated_at,
+            grade_requirement=t.get("grade_requirement"),
+            grade_alternative=t.get("grade_alternative"),
+            reply_deadline=t.get("reply_deadline"),
+            expiry_date=t.get("expiry_date"),
+            scholarship=t.get("scholarship"),
+            accommodation_guaranteed=t.get("accommodation_guaranteed"),
+            notes=t.get("notes"),
+            created_at=t.get("issued_at"),
+            updated_at=t.get("updated_at"),
             issued_by_university=True,
-            issued_by=t.issued_by,
+            issued_by=t.get("issued_by"),
+            conditions=list(t.get("conditions") or []),
         )
         for cid, t in issued.items()
     }
@@ -285,7 +321,11 @@ def get_details_for_choice(choice_id: int) -> OfferDetails | None:
         r = conn.execute(
             "SELECT * FROM offer_details WHERE choice_id = ?", (choice_id,),
         ).fetchone()
-        return _row_details(r) if r else None
+        if not r:
+            return None
+        out = _row_details(r)
+        out.conditions = _load_conditions(conn, [choice_id]).get(choice_id, [])
+        return out
 
 
 def save_details(choice_id: int, data: dict[str, Any]) -> OfferDetails:
@@ -307,6 +347,13 @@ def save_details(choice_id: int, data: dict[str, Any]) -> OfferDetails:
         )
     try:
         p = _validate_payload(data)
+        conditions = None
+        if data.get("conditions") is not None:
+            try:
+                conditions = _oc.validate_conditions(data.get("conditions"))
+            except ValueError as e:
+                raise ValidationError(str(e)) from None
+            _validate_against_scales(conditions)
     except ValidationError as e:
         logger.warning("save_details validation failed for choice #%d: %s",
                        choice_id, e)
@@ -334,6 +381,8 @@ def save_details(choice_id: int, data: dict[str, Any]) -> OfferDetails:
              p["reply_deadline"], p["expiry_date"], p["scholarship"],
              p["accommodation_guaranteed"], p["notes"]),
         )
+        if conditions is not None:
+            _replace_conditions(conn, choice_id, conditions)
         conn.commit()
     out = get_details_for_choice(choice_id)
     assert out is not None
@@ -366,6 +415,8 @@ def delete_details(choice_id: int) -> bool:
         cur = conn.execute(
             "DELETE FROM offer_details WHERE choice_id = ?", (choice_id,),
         )
+        conn.execute(
+            "DELETE FROM offer_conditions WHERE choice_id = ?", (choice_id,))
         conn.commit()
         if cur.rowcount:
             logger.info("Deleted offer details for choice #%d", choice_id)
@@ -479,6 +530,9 @@ def list_offer_rows(
                     for name in {r["university"] for r in rows}}
     ours = {r["choice_id"] for r in rows if ours_by_name.get(r["university"])}
     issued = _university_terms(sorted(ours))
+    local_conditions = _load_conditions(
+        conn=None, choice_ids=[r["choice_id"] for r in rows
+                               if r["choice_id"] not in ours])
 
     out: list[OfferRow] = []
     for r in rows:
@@ -498,6 +552,7 @@ def list_offer_rows(
                 accommodation_guaranteed=bool(r["accommodation_guaranteed"]),
                 notes=r["notes"],
                 created_at=r["created_at"], updated_at=r["updated_at"],
+                conditions=local_conditions.get(r["choice_id"], []),
             )
         subj_key = _subject_for_course(r["course_name"])
         pred = grade_map.get((r["student_id"], subj_key))
@@ -592,3 +647,205 @@ def summary(*, deadline_window_days: int = 30) -> OfferSummary:
         with_accommodation=n_accom,
         upcoming_deadlines=upcoming,
     )
+
+
+# ── Structured conditions ─────────────────────────────────────────
+
+def _load_conditions(conn: sqlite3.Connection | None,
+                     choice_ids) -> dict[int, list[dict[str, Any]]]:
+    """``{choice_id: [condition, ...]}`` for the choices we entered."""
+    ids = sorted({int(i) for i in choice_ids})
+    out: dict[int, list[dict[str, Any]]] = {}
+    if not ids:
+        return out
+    own = conn is None
+    if own:
+        init_db()
+        conn = _connect()
+    try:
+        for start in range(0, len(ids), 500):
+            chunk = ids[start:start + 500]
+            marks = ",".join("?" * len(chunk))
+            # db-audit: ignore[DBW001] - join of placeholders
+            rows = conn.execute(
+                f"SELECT * FROM offer_conditions WHERE choice_id IN ({marks}) "  # nosec B608
+                "ORDER BY choice_id, position, condition_id", chunk).fetchall()
+            for r in rows:
+                out.setdefault(r["choice_id"], []).append(
+                    {f: r[f] for f in _COND_FIELDS})
+    finally:
+        if own:
+            conn.close()
+    return out
+
+
+def _replace_conditions(conn: sqlite3.Connection, choice_id: int,
+                        rows: list[dict[str, Any]]) -> None:
+    conn.execute("DELETE FROM offer_conditions WHERE choice_id = ?",
+                 (choice_id,))
+    for pos, c in enumerate(rows):
+        conn.execute(
+            """INSERT INTO offer_conditions
+                   (choice_id, position, kind, qualification_type, subject,
+                    min_grade, min_points, count, text)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+            (choice_id, pos, c["kind"], c.get("qualification_type"),
+             c.get("subject"), c.get("min_grade"), c.get("min_points"),
+             c.get("count"), c.get("text")))
+
+
+def _validate_against_scales(rows: list[dict[str, Any]]) -> None:
+    """Grades on a qualification the college teaches must be on its scale."""
+    from education_system.systems.sixth_form.domain.academics.qualifications import (
+        grade_scales as _gs,
+    )
+    for i, c in enumerate(rows, 1):
+        if c["kind"] not in ("subject_grade", "qualification_grade"):
+            continue
+        qtype = c.get("qualification_type")
+        if qtype and _gs.canonical_type(qtype):
+            try:
+                _gs.validate_grade(c["min_grade"], qtype)
+            except ValueError as e:
+                raise ValidationError(f"Condition {i}: {e}") from None
+
+
+def set_conditions(choice_id: int, rows) -> list[dict[str, Any]]:
+    """Replace the structured conditions on an external university's offer.
+
+    Refused for a choice at this platform's own university — those are
+    that university's conditions, published with its offer.
+    """
+    init_db()
+    from education_system.systems.sixth_form.domain.progression.university import ucas as _ucas
+    choice = _ucas.get_choice(choice_id)
+    if choice is None:
+        raise ValidationError(f"No UCAS choice with id {choice_id}")
+    if _is_ours(choice.university):
+        raise UniversityIssuedError(
+            f"The conditions of an offer from {choice.university} are set by "
+            "its admissions team and cannot be entered here.")
+    try:
+        clean = _oc.validate_conditions(rows)
+    except ValueError as e:
+        raise ValidationError(str(e)) from None
+    _validate_against_scales(clean)
+    with _connect() as conn:
+        # The conditions hang off the offer, so make sure there is one to
+        # show them on (an otherwise-empty details row).
+        conn.execute("INSERT OR IGNORE INTO offer_details (choice_id) VALUES (?)",
+                     (choice_id,))
+        _replace_conditions(conn, choice_id, clean)
+        conn.commit()
+    logger.info("Saved %d offer condition(s) for choice #%d",
+                len(clean), choice_id)
+    return clean
+
+
+def conditions_from_text(text: str | None) -> list[dict[str, Any]]:
+    """Read a typed grade requirement as structured conditions."""
+    return _oc.conditions_from_text(text)
+
+
+def describe_condition(c: dict[str, Any]) -> str:
+    return _oc.describe(c)
+
+
+# ── Met / not met against released results ────────────────────────
+
+@dataclass
+class OfferCheck:
+    choice_id: int
+    verdict: str            # Met / Missed / Review / Pending
+    reason: str
+    conditions: list[dict[str, Any]]
+    from_text: bool         # conditions read from the typed requirement
+
+    @property
+    def label(self) -> str:
+        return {_oc.MET: "Met", _oc.MISSED: "Not met",
+                _oc.REVIEW: "Review", _oc.PENDING: "Awaiting results"
+                }.get(self.verdict, self.verdict)
+
+
+def released_results_for(student_id: str) -> list[dict[str, Any]]:
+    """The learner's released exam results in the platform's result shape.
+
+    Embargoed results are left out — this check is shown to staff advising
+    the learner, and before release it would give the results away.
+    """
+    from education_system.systems.sixth_form.domain.assessment.exam_results import (
+        exam_results as _results,
+    )
+    from education_system.systems.sixth_form.domain.academics.qualifications import (
+        learning_aims as _aims,
+    )
+    out: list[dict[str, Any]] = []
+    for row in _results.results_for_student(student_id, released_only=True):
+        qtype = None
+        try:
+            qtype = _aims.qualification_type_for(student_id, row.subject)
+        except Exception:
+            logger.debug("No qualification type for %s / %s", student_id,
+                         row.subject, exc_info=True)
+        out.append({"subject": row.subject, "grade": row.result.grade,
+                    "qualification_type": qtype, "released": True,
+                    "release_at": None, "season": row.season,
+                    "year": row.year})
+    return out
+
+
+def check_offer(row: OfferRow | int, *,
+                results: list[dict[str, Any]] | None = None) -> OfferCheck | None:
+    """Met / not met / review for one offer against released results.
+
+    ``None`` for a choice with no offer. Uses the structured conditions
+    when there are any, otherwise reads the typed requirement.
+    """
+    if isinstance(row, int):
+        row = get_offer_row(row)
+        if row is None:
+            return None
+    if row.decision_status not in OFFER_DECISION_STATUSES:
+        return None
+    d = row.details
+    if row.decision_status == "Unconditional Offer":
+        return OfferCheck(row.choice_id, _oc.MET, "Unconditional offer.", [], False)
+    conditions = list(d.conditions) if d and d.conditions else []
+    from_text = False
+    if not conditions:
+        text = (d.grade_requirement if d and d.grade_requirement
+                else row.offer_terms)
+        conditions = _oc.conditions_from_text(text)
+        from_text = True
+    if not conditions:
+        return OfferCheck(row.choice_id, _oc.REVIEW,
+                          "No condition recorded on this offer.", [], from_text)
+    if results is None:
+        try:
+            results = released_results_for(row.student_id)
+        except Exception as e:
+            logger.exception("Could not read results for %s", row.student_id)
+            return OfferCheck(row.choice_id, _oc.PENDING,
+                              f"Results could not be read: {e}", conditions,
+                              from_text)
+    ev = _oc.evaluate(conditions, results)
+    return OfferCheck(row.choice_id, ev.verdict, ev.reason, conditions, from_text)
+
+
+def checks_for_student(student_id: str) -> dict[int, OfferCheck]:
+    """``{choice_id: OfferCheck}`` for every offer the learner holds."""
+    rows = offers_for_student(student_id)
+    if not rows:
+        return {}
+    try:
+        results = released_results_for(student_id)
+    except Exception:
+        logger.exception("Could not read results for %s", student_id)
+        results = None
+    out: dict[int, OfferCheck] = {}
+    for r in rows:
+        chk = check_offer(r, results=results)
+        if chk is not None:
+            out[r.choice_id] = chk
+    return out

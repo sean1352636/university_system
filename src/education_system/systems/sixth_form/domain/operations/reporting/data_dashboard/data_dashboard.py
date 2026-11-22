@@ -136,7 +136,7 @@ def panel_fees_status() -> Panel:
     panel = Panel("Fees status", ("Status", "Items", "Total balance"))
 
     def _go():
-        from education_system.systems.sixth_form.domain.finance.fees import fees
+        from education_system.systems.sixth_form.domains.finance.domain.fees import fees
         return fees.list_views()
 
     views = _safe(_go)
@@ -164,7 +164,7 @@ def panel_bursaries_status() -> Panel:
     panel = Panel("Bursary applications", ("Status", "Applications", ""))
 
     def _go():
-        from education_system.systems.sixth_form.domain.finance.bursaries import bursaries
+        from education_system.systems.sixth_form.domains.finance.domain.bursaries import bursaries
         return bursaries.list_applications()
 
     apps = _safe(_go)

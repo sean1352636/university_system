@@ -245,22 +245,27 @@ def _create_order(auth) -> None:
         print("An order needs at least one line item.")
         return
     discount = _prompt_float("Discount (£, optional)") or 0.0
-    payment = _prompt("Payment method (cash/card)", default="cash")
+    payment = _prompt("Payment method (cash/card/student_account)", default="cash")
     try:
         res = OrderManager.create_order(
             username, user_type, line_items,
-            discount=discount, payment_method=payment)
+            discount=discount, payment_method=payment,
+            processed_by=_current_username(auth))
         print(f"\n✓ Recorded order {res['order_id']} "
               f"(id={res['id']}, total £{res['total']:.2f}).")
+        if res.get('finance_payment_id'):
+            print(f"  Finance System Payment ID: {res['finance_payment_id']}")
     except Exception as e:
         print(f"\n✗ {e}")
 
 
-def _refund_order() -> None:
+def _refund_order(auth=None) -> None:
     pk = _prompt_int("Order id to refund", allow_blank=False)
     ref = _prompt("Refund reference (optional)")
+    reason = _prompt("Reason (optional)")
     try:
-        if OrderManager.refund_order(pk, ref or None):
+        if OrderManager.refund_order(pk, ref or None, reason=reason,
+                                     processed_by=_current_username(auth)):
             print(f"\n✓ Refunded order {pk}.")
         else:
             print(f"\nNo un-refunded order with id {pk}.")
@@ -284,7 +289,7 @@ def _orders_menu(auth) -> None:
         elif choice == "3":
             _view_order()
         elif choice == "4":
-            _refund_order()
+            _refund_order(auth)
         elif choice == "0":
             return
         else:

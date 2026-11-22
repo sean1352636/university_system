@@ -6,7 +6,7 @@ import datetime as _dt
 import functools
 import logging
 import tkinter as tk
-from tkinter import messagebox, simpledialog, ttk
+from tkinter import messagebox, ttk
 from typing import Any, Callable
 
 from education_system.systems.primary.domain.academics.attendance import (
@@ -18,6 +18,8 @@ from education_system.systems.primary.domain.academics.attendance.attendance imp
 from education_system.systems.primary.domain.learners.pupils.pupils import (
     ValidationError, YEAR_GROUPS,
 )
+from education_system.platform.delivery.gui.parented_dialogs import make_toplevel
+from education_system.systems.primary.interfaces.gui import kit
 
 logger = logging.getLogger(__name__)
 
@@ -31,7 +33,7 @@ def _safe_view(func: Callable[..., None]) -> Callable[..., None]:
             logger.warning("%s validation: %s", func.__name__, e)
             try:
                 messagebox.showerror("Attendance", str(e),
-                                     parent=getattr(host, "root", None))
+                                     parent=_err_parent(host))
             except Exception:
                 pass
         except Exception as e:
@@ -40,11 +42,17 @@ def _safe_view(func: Callable[..., None]) -> Callable[..., None]:
                 messagebox.showerror(
                     "Error",
                     f"An unexpected error occurred:\n\n{e}\n\nSee logs for details.",
-                    parent=getattr(host, "root", None),
+                    parent=_err_parent(host),
                 )
             except Exception:
                 pass
     return wrapper
+
+
+def _err_parent(host):
+    if isinstance(host, tk.Misc):
+        return host.winfo_toplevel()
+    return getattr(host, "root", None)
 
 
 def _today() -> str:
@@ -62,17 +70,19 @@ def _parse_mark(s: str) -> str:
 @_safe_view
 def open_attendance(host) -> None:
     logger.debug("GUI: open_attendance")
-    host._clear_content()
-    root = host.content_frame
-    ttk.Label(root, text="Attendance",
-              font=("", 16, "bold")).pack(anchor="w", pady=(0, 8))
+    kit.show_page(host, "Attendance", lambda parent: _draw_attendance(parent, host))
+
+
+def _draw_attendance(root, host) -> None:
+    kit.page_heading(root, "Attendance",
+                     "Take the register by date and session, or mark one pupil.")
+    top = root.winfo_toplevel
 
     bar = ttk.Frame(root)
     bar.pack(fill="x", pady=(0, 6))
     ttk.Label(bar, text="Date:").pack(side="left", padx=(0, 4))
     date_var = tk.StringVar(value=_today())
-    ttk.Entry(bar, textvariable=date_var, width=12).pack(side="left",
-                                                         padx=(0, 8))
+    kit.DateField(bar, date_var).pack(side="left", padx=(0, 8))
     ttk.Label(bar, text="Session:").pack(side="left", padx=(0, 4))
     session_var = tk.StringVar(value="AM")
     ttk.Combobox(bar, textvariable=session_var,
@@ -80,21 +90,21 @@ def open_attendance(host) -> None:
         side="left", padx=(0, 8))
     ttk.Label(bar, text="Year:").pack(side="left", padx=(0, 4))
     year_var = tk.StringVar(value="")
-    ttk.Combobox(bar, textvariable=year_var,
-                 values=["", *YEAR_GROUPS], state="readonly", width=5).pack(
-        side="left", padx=(0, 8))
+    kit.ChoiceField(bar, year_var, blank=True, width=10,
+                    choices=[(y, kit.YEAR_GROUP_LABELS.get(y, y)) for y in YEAR_GROUPS]
+                    ).pack(side="left", padx=(0, 8))
     ttk.Button(bar, text="Load register",
                command=lambda: _refresh()).pack(side="left", padx=2)
     ttk.Button(bar, text="Save",
                command=lambda: _save_register()).pack(side="left", padx=2)
     ttk.Button(bar, text="Single mark",
-               command=lambda: _single_mark(host, on_done=_refresh)
+               command=lambda: _single_mark(root, on_done=_refresh)
                ).pack(side="left", padx=2)
     ttk.Button(bar, text="Pupil history",
-               command=lambda: _pupil_history(host)).pack(side="left",
+               command=lambda: _pupil_history(root)).pack(side="left",
                                                           padx=2)
     ttk.Button(bar, text="Daily summary",
-               command=lambda: _daily_summary(host, date_var.get())
+               command=lambda: _daily_summary(root, date_var.get())
                ).pack(side="left", padx=2)
 
     summary_var = tk.StringVar(value="")
@@ -102,16 +112,12 @@ def open_attendance(host) -> None:
         anchor="w", pady=(0, 8))
 
     cols = ("pupil", "name", "year", "form", "mark", "label", "notes")
-    tree = ttk.Treeview(root, columns=cols, show="headings", height=18)
-    for c, label, w in [
+    tree = kit.tree(root, [
         ("pupil", "Pupil ID", 90), ("name", "Name", 180),
         ("year", "Year", 50), ("form", "Form", 60),
         ("mark", "Mark", 60), ("label", "Status", 160),
         ("notes", "Notes", 200),
-    ]:
-        tree.heading(c, text=label)
-        tree.column(c, width=w, anchor="w")
-    tree.pack(fill="both", expand=True)
+    ], height=18, stretch=("notes",))
 
     # Per-row editable state held outside the tree.
     state: dict[str, dict[str, str]] = {}
@@ -136,13 +142,13 @@ def open_attendance(host) -> None:
                 date_var.get().strip(),
                 session=session_var.get().strip() or None)
         except ValidationError as e:
-            messagebox.showerror("Attendance", str(e), parent=host.root)
+            messagebox.showerror("Attendance", str(e), parent=top())
             return
         except Exception as e:
             logger.exception("attendance refresh failed")
             messagebox.showerror("Attendance",
                                  f"Could not load register:\n\n{e}",
-                                 parent=host.root)
+                                 parent=top())
             return
         by_pupil = {r.pupil_id: r for r in existing_records}
         for p in pupils:
@@ -153,7 +159,7 @@ def open_attendance(host) -> None:
             state[p.pupil_id] = {"mark": mark, "notes": notes}
             tree.insert("", "end", iid=p.pupil_id, values=(
                 p.pupil_id, p.full_name, p.year_group,
-                p.form_group or "-",
+                getattr(p, "class_name", None) or "-",
                 mark or "-", label, notes or "-",
             ))
         present = sum(1 for v in state.values()
@@ -163,15 +169,15 @@ def open_attendance(host) -> None:
         summary_var.set(
             f"Register loaded: {len(pupils)} pupil(s)    "
             f"present={present}    unmarked={unmarked}")
-        host.status_var.set(
-            f"Attendance: {date_var.get()} {session_var.get()} "
-            f"— {len(pupils)} pupil(s)")
+        if getattr(host, "status_var", None) is not None:
+            host.status_var.set(
+                f"Attendance: {date_var.get()} {session_var.get()} "
+                f"— {len(pupils)} pupil(s)")
 
     def _set_mark_for(pupil_id: str) -> None:
         cur = state.get(pupil_id, {"mark": "", "notes": ""})
-        dlg = tk.Toplevel(host.root)
+        dlg = make_toplevel(top())
         dlg.title(f"Mark — {pupil_id}")
-        dlg.transient(host.root)
         dlg.geometry("360x180")
         dlg.update_idletasks()
         try:
@@ -219,13 +225,13 @@ def open_attendance(host) -> None:
         if not marks:
             messagebox.showinfo("Attendance",
                                 "No marks to save.",
-                                parent=host.root)
+                                parent=top())
             return
         try:
             results = data.bulk_record(date_var.get().strip(),
                                         session_var.get().strip(), marks)
         except ValidationError as e:
-            messagebox.showerror("Attendance", str(e), parent=host.root)
+            messagebox.showerror("Attendance", str(e), parent=top())
             return
         # Apply notes (bulk_record doesn't take notes)
         for pid, payload in state.items():
@@ -243,9 +249,9 @@ def open_attendance(host) -> None:
         if bad:
             msg += "\n\nFailures:\n" + "\n".join(
                 f"• {pid}: {err}" for pid, err in bad.items())
-            messagebox.showwarning("Attendance", msg, parent=host.root)
+            messagebox.showwarning("Attendance", msg, parent=top())
         else:
-            messagebox.showinfo("Attendance", msg, parent=host.root)
+            messagebox.showinfo("Attendance", msg, parent=top())
         _refresh()
 
     tree.bind("<Double-1>",
@@ -256,20 +262,19 @@ def open_attendance(host) -> None:
     _refresh()
 
 
+def _owner(host) -> tk.Misc:
+    """The window a pop-up belongs to: the page's window (main window or a
+    pop-out), or the host's root for an old caller passing the host."""
+    if isinstance(host, tk.Misc):
+        return host.winfo_toplevel()
+    return host.root
+
+
 @_safe_view
 def _single_mark(host, *, on_done=None) -> None:
-    pid = simpledialog.askstring("Single mark", "Pupil ID:",
-                                  parent=host.root)
-    if not pid:
-        return
-    pid = pid.strip()
-    if not pid:
-        return
-
-    dlg = tk.Toplevel(host.root)
-    dlg.title(f"Mark — {pid}")
-    dlg.transient(host.root)
-    dlg.geometry("380x220")
+    dlg = make_toplevel(_owner(host))
+    dlg.title("Single mark")
+    dlg.geometry("560x260")
     dlg.update_idletasks()
     try:
         dlg.wait_visibility()
@@ -282,13 +287,14 @@ def _single_mark(host, *, on_done=None) -> None:
     sess_var = tk.StringVar(value="AM")
     mark_var = tk.StringVar(value="")
     notes_var = tk.StringVar(value="")
+    pupil_var = tk.StringVar(value="")
 
-    ttk.Label(frm, text=f"Pupil: {pid}",
-              font=("", 10, "bold")).pack(anchor="w", pady=(0, 6))
+    row = ttk.Frame(frm); row.pack(fill="x", pady=2)
+    ttk.Label(row, text="Pupil:", width=8).pack(side="left")
+    kit.PupilPicker(row, pupil_var).pack(side="left", padx=4)
     row = ttk.Frame(frm); row.pack(fill="x", pady=2)
     ttk.Label(row, text="Date:", width=8).pack(side="left")
-    ttk.Entry(row, textvariable=date_var, width=14).pack(side="left",
-                                                         padx=4)
+    kit.DateField(row, date_var).pack(side="left", padx=4)
     row = ttk.Frame(frm); row.pack(fill="x", pady=2)
     ttk.Label(row, text="Session:", width=8).pack(side="left")
     ttk.Combobox(row, textvariable=sess_var, values=list(SESSIONS),
@@ -303,6 +309,10 @@ def _single_mark(host, *, on_done=None) -> None:
                                                           padx=4)
 
     def _save() -> None:
+        pid = pupil_var.get().strip()
+        if not pid:
+            messagebox.showerror("Attendance", "Choose a pupil.", parent=dlg)
+            return
         try:
             rec = data.record_mark(
                 pid, date_var.get().strip(),
@@ -331,56 +341,56 @@ def _single_mark(host, *, on_done=None) -> None:
 
 @_safe_view
 def _pupil_history(host) -> None:
-    pid = simpledialog.askstring("Pupil history", "Pupil ID:",
-                                  parent=host.root)
-    if not pid:
-        return
-    pid = pid.strip()
-    if not pid:
-        return
-    try:
-        summary = data.pupil_summary(pid)
-    except ValidationError as e:
-        messagebox.showerror("Attendance", str(e), parent=host.root)
-        return
-
-    dlg = tk.Toplevel(host.root)
-    dlg.title(f"Attendance — {pid}")
-    dlg.transient(host.root)
-    dlg.geometry("640x520")
-    dlg.update_idletasks()
-    try:
-        dlg.wait_visibility()
-        dlg.grab_set()
-    except tk.TclError:
-        pass
+    dlg = make_toplevel(_owner(host))
+    dlg.title("Attendance — pupil history")
+    dlg.geometry("700x560")
     frm = ttk.Frame(dlg, padding=12)
     frm.pack(fill="both", expand=True)
-    ttk.Label(frm, text=f"Pupil {pid}",
+    pick = ttk.Frame(frm)
+    pick.pack(fill="x", pady=(0, 6))
+    ttk.Label(pick, text="Pupil:").pack(side="left")
+    pupil_var = tk.StringVar(value="")
+    picker = kit.PupilPicker(pick, pupil_var)
+    picker.pack(side="left", padx=4)
+    title_var = tk.StringVar(value="Choose a pupil.")
+    ttk.Label(frm, textvariable=title_var,
               font=("", 11, "bold")).pack(anchor="w")
-    ttk.Label(frm,
-              text=(f"Total: {summary['total_sessions']}    "
-                    f"Present: {summary['present']}    "
-                    f"Auth absent: {summary['authorised_absent']}    "
-                    f"Unauth absent: {summary['unauthorised_absent']}    "
-                    f"Attendance %: {summary['attendance_pct']}"),
+    totals_var = tk.StringVar(value="")
+    ttk.Label(frm, textvariable=totals_var,
               foreground="#444").pack(anchor="w", pady=(2, 8))
-    tree = ttk.Treeview(frm, columns=("date", "sess", "mark", "label",
-                                       "notes"),
-                        show="headings", height=18)
-    for c, label, w in [
+    ttk.Button(frm, text="Close",
+               command=dlg.destroy).pack(side="bottom", anchor="e", pady=(10, 0))
+    tree = kit.tree(frm, [
         ("date", "Date", 100), ("sess", "Sess", 60),
         ("mark", "Mark", 60), ("label", "Status", 160),
         ("notes", "Notes", 200),
-    ]:
-        tree.heading(c, text=label)
-        tree.column(c, width=w, anchor="w")
-    tree.pack(fill="both", expand=True)
-    for r in summary["records"]:
-        tree.insert("", "end", iid=str(r.record_id), values=(
-            r.date, r.session, r.mark, r.label, r.notes or "-"))
-    ttk.Button(frm, text="Close",
-               command=dlg.destroy).pack(side="right", pady=(10, 0))
+    ], height=18, stretch=("notes",))
+
+    def _show(_value: str = "") -> None:
+        pid = pupil_var.get().strip()
+        for i in tree.get_children():
+            tree.delete(i)
+        if not pid:
+            title_var.set("Choose a pupil.")
+            totals_var.set("")
+            return
+        try:
+            summary = data.pupil_summary(pid)
+        except ValidationError as e:
+            messagebox.showerror("Attendance", str(e), parent=dlg)
+            return
+        title_var.set(f"Pupil {pid}")
+        totals_var.set(f"Total: {summary['total_sessions']}    "
+                       f"Present: {summary['present']}    "
+                       f"Auth absent: {summary['authorised_absent']}    "
+                       f"Unauth absent: {summary['unauthorised_absent']}    "
+                       f"Attendance %: {summary['attendance_pct']}")
+        for r in summary["records"]:
+            tree.insert("", "end", iid=str(r.record_id), values=(
+                r.date, r.session, r.mark, r.label, r.notes or "-"))
+
+    picker.bind_change(_show)
+    ttk.Button(pick, text="Show", command=_show).pack(side="left", padx=4)
 
 
 @_safe_view
@@ -388,12 +398,11 @@ def _daily_summary(host, date_iso: str) -> None:
     try:
         summary = data.daily_summary(date_iso.strip())
     except ValidationError as e:
-        messagebox.showerror("Attendance", str(e), parent=host.root)
+        messagebox.showerror("Attendance", str(e), parent=_owner(host))
         return
 
-    dlg = tk.Toplevel(host.root)
+    dlg = make_toplevel(_owner(host))
     dlg.title(f"Daily summary — {summary['date']}")
-    dlg.transient(host.root)
     dlg.geometry("520x420")
     dlg.update_idletasks()
     try:

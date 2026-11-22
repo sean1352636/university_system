@@ -1,12 +1,27 @@
 """
 Training Menu - Training and certifications CLI.
+
+Keyed by the signed-in username; course administration is HR's.
 """
 
+from typing import Any
+
+from education_system.systems.university.domains.staff.domain.staff_hr import access
 from education_system.systems.university.domains.staff.domain.staff_hr.services import TrainingManager
+from education_system.systems.university.domains.staff.interfaces.cli.staff_hr.menus.profile_menu import (
+    session_actor,
+)
 
 
 def display_training_menu(user_id: str, is_admin: bool = False) -> None:
-    """Display training and certifications menu."""
+    """Display training and certifications menu (``is_admin`` is kept for
+    older callers; HR roles decide)."""
+    actor = session_actor(user_id)
+    user_id = access.username_of(actor)
+    if not user_id:
+        print("\nPlease sign in to use Training & Certifications.")
+        return
+    is_admin = access.can(actor, 'hr')
     while True:
         print("\n" + "=" * 60)
         print("TRAINING & CERTIFICATIONS")
@@ -34,21 +49,21 @@ def display_training_menu(user_id: str, is_admin: bool = False) -> None:
         elif choice == '1':
             _browse_courses()
         elif choice == '2':
-            _view_enrollments(user_id)
+            _view_enrollments(user_id, actor)
         elif choice == '3':
-            _enroll_course(user_id)
+            _enroll_course(user_id, actor)
         elif choice == '4':
-            _complete_course(user_id)
+            _complete_course(user_id, actor)
         elif choice == '5':
-            _view_certifications(user_id)
+            _view_certifications(user_id, actor)
         elif choice == '6':
-            _add_certification(user_id)
+            _add_certification(user_id, actor)
         elif choice == '7':
-            _expiring_certs()
+            _expiring_certs(actor)
         elif choice == '8':
             _mandatory_status(user_id)
         elif choice == '9' and is_admin:
-            _manage_courses()
+            _manage_courses(actor)
         else:
             print("Invalid choice.")
 
@@ -78,9 +93,9 @@ def _browse_courses() -> None:
     input("\nPress Enter to continue...")
 
 
-def _view_enrollments(user_id: str) -> None:
+def _view_enrollments(user_id: str, actor: Any = None) -> None:
     """View user's enrollments."""
-    enrollments = TrainingManager.get_enrollments(user_id)
+    enrollments = TrainingManager.get_enrollments(user_id, actor=actor)
     print("\n" + "-" * 60)
     print("MY ENROLLED COURSES")
     print("-" * 60)
@@ -99,7 +114,7 @@ def _view_enrollments(user_id: str) -> None:
     input("\nPress Enter to continue...")
 
 
-def _enroll_course(user_id: str) -> None:
+def _enroll_course(user_id: str, actor: Any = None) -> None:
     """Enroll in a course."""
     courses = TrainingManager.get_courses()
     print("\nAvailable Courses:")
@@ -116,7 +131,7 @@ def _enroll_course(user_id: str) -> None:
             due_date = input("Due date (YYYY-MM-DD, or leave blank): ").strip()
             enrollment_id = TrainingManager.enroll(
                 user_id, course['course_id'],
-                due_date if due_date else None
+                due_date if due_date else None, actor=actor
             )
             print(f"\nEnrolled successfully. Enrollment ID: {enrollment_id}")
     except ValueError as e:
@@ -127,10 +142,10 @@ def _enroll_course(user_id: str) -> None:
     input("Press Enter to continue...")
 
 
-def _complete_course(user_id: str) -> None:
+def _complete_course(user_id: str, actor: Any = None) -> None:
     """Mark a course as completed."""
-    enrollments = TrainingManager.get_enrollments(user_id, status='in_progress')
-    enrollments += TrainingManager.get_enrollments(user_id, status='enrolled')
+    enrollments = TrainingManager.get_enrollments(user_id, status='in_progress', actor=actor)
+    enrollments += TrainingManager.get_enrollments(user_id, status='enrolled', actor=actor)
 
     if not enrollments:
         print("\nNo courses in progress.")
@@ -148,8 +163,9 @@ def _complete_course(user_id: str) -> None:
         if 1 <= choice <= len(enrollments):
             enrollment = enrollments[choice - 1]
             score = float(input("Score achieved: ").strip())
-            TrainingManager.complete_course(enrollment['enrollment_id'], score)
-            print("\nCourse completed!")
+            result = TrainingManager.record_result(enrollment['enrollment_id'], score, actor=actor)
+            print("\nCourse completed!" if result == 'completed'
+                  else "\nBelow the passing score: recorded as failed.")
     except ValueError:
         print("\nInvalid input.")
     except Exception as e:
@@ -158,9 +174,9 @@ def _complete_course(user_id: str) -> None:
     input("Press Enter to continue...")
 
 
-def _view_certifications(user_id: str) -> None:
+def _view_certifications(user_id: str, actor: Any = None) -> None:
     """View user's certifications."""
-    certs = TrainingManager.get_certifications(user_id)
+    certs = TrainingManager.get_certifications(user_id, actor=actor)
     print("\n" + "-" * 60)
     print("MY CERTIFICATIONS")
     print("-" * 60)
@@ -177,7 +193,7 @@ def _view_certifications(user_id: str) -> None:
     input("\nPress Enter to continue...")
 
 
-def _add_certification(user_id: str) -> None:
+def _add_certification(user_id: str, actor: Any = None) -> None:
     """Add a certification."""
     print("\n--- Add Certification ---")
     name = input("Certification Name: ").strip()
@@ -189,7 +205,7 @@ def _add_certification(user_id: str) -> None:
     if name:
         try:
             cert_id = TrainingManager.add_certification(
-                user_id, name,
+                user_id, name, actor=actor,
                 issuing_body=issuing_body,
                 credential_id=credential_id,
                 issue_date=issue_date,
@@ -204,9 +220,11 @@ def _add_certification(user_id: str) -> None:
     input("Press Enter to continue...")
 
 
-def _expiring_certs() -> None:
-    """View expiring certifications."""
+def _expiring_certs(actor: Any = None) -> None:
+    """View expiring certifications (your own and your reports'; all for HR)."""
     certs = TrainingManager.get_expiring_certs(days=60)
+    if actor is not None:
+        certs = access.filter_people(certs, actor)
     print("\n" + "-" * 60)
     print("CERTIFICATIONS EXPIRING IN 60 DAYS")
     print("-" * 60)
@@ -239,7 +257,7 @@ def _mandatory_status(user_id: str) -> None:
     input("\nPress Enter to continue...")
 
 
-def _manage_courses() -> None:
+def _manage_courses(actor: Any = None) -> None:
     """Admin: Manage courses."""
     print("\n--- Manage Courses ---")
     print("  1. Create New Course")
@@ -256,7 +274,7 @@ def _manage_courses() -> None:
         if name:
             try:
                 course_id = TrainingManager.create_course(
-                    name, category=category,
+                    name, actor=actor, category=category,
                     duration_hours=float(duration) if duration else None,
                     is_mandatory=1 if mandatory else 0
                 )
@@ -264,3 +282,17 @@ def _manage_courses() -> None:
             except Exception as e:
                 print(f"\nError: {e}")
         input("Press Enter to continue...")
+    elif choice == '2':
+        courses = TrainingManager.get_all_courses(actor=actor)
+        print("\n" + "-" * 70)
+        print("ALL COURSES")
+        print("-" * 70)
+        for c in courses:
+            flags = ("mandatory " if c.get('is_mandatory') else "") + \
+                ("" if c.get('is_active') else "INACTIVE")
+            print(f"  [{c['course_id']}] {c.get('name')} ({c.get('category') or 'N/A'}) "
+                  f"- {c.get('enrollment_count') or 0} enrolled {flags}".rstrip())
+        if not courses:
+            print("  No courses.")
+        print("-" * 70)
+        input("\nPress Enter to continue...")

@@ -5,7 +5,7 @@ from __future__ import annotations
 import functools
 import logging
 import tkinter as tk
-from tkinter import messagebox, simpledialog, ttk
+from tkinter import messagebox, ttk
 from typing import Any, Callable
 
 from education_system.systems.primary.domain.pastoral.attendance_concerns import (
@@ -17,6 +17,7 @@ from education_system.systems.primary.domain.pastoral.attendance_concerns.attend
 from education_system.systems.primary.domain.learners.pupils.pupils import (
     ValidationError,
 )
+from education_system.systems.primary.interfaces.gui import kit
 
 logger = logging.getLogger(__name__)
 
@@ -47,13 +48,62 @@ def _safe_view(func: Callable[..., None]) -> Callable[..., None]:
     return wrapper
 
 
-def _concern_dialog(host, title: str,
-                      initial: dict[str, Any] | None = None
-                      ) -> dict[str, Any] | None:
-    dlg = tk.Toplevel(host.root)
+def _owner(host, owner=None):
+    """The window a pop-up belongs to: the page's own window when the page
+    was popped out, else the main window."""
+    return owner if owner is not None else host.root
+
+
+def _ay_choices() -> list[str]:
+    """Academic years in the "2026/27" form this domain stores (the kit's
+    years are "2026-27")."""
+    return [y.replace("-", "/") for y in kit.academic_years()]
+
+
+def _current_ay() -> str:
+    years = kit.academic_years(back=0, ahead=0)
+    return years[0].replace("-", "/") if years else ""
+
+
+def _ask_date(owner, title: str, prompt: str) -> str | None:
+    """A date picked from drop-downs ("" = left blank); None if cancelled."""
+    dlg = tk.Toplevel(owner)
     dlg.title(title)
-    dlg.transient(host.root)
-    dlg.geometry("520x620")
+    dlg.transient(owner)
+    try:
+        dlg.wait_visibility()
+        dlg.grab_set()
+    except tk.TclError:
+        logger.debug("grab_set skipped", exc_info=True)
+    frm = ttk.Frame(dlg, padding=12)
+    frm.pack(fill="both", expand=True)
+    ttk.Label(frm, text=prompt).pack(anchor="w", pady=(0, 6))
+    var = tk.StringVar()
+    kit.DateField(frm, var).pack(anchor="w")
+    result: str | None = None
+
+    def _ok() -> None:
+        nonlocal result
+        result = var.get().strip()
+        dlg.destroy()
+
+    btns = ttk.Frame(frm)
+    btns.pack(fill="x", pady=(10, 0))
+    ttk.Button(btns, text="Cancel", command=dlg.destroy).pack(side="right",
+                                                              padx=4)
+    ttk.Button(btns, text="OK", command=_ok).pack(side="right")
+    dlg.wait_window()
+    return result
+
+
+def _concern_dialog(host, title: str,
+                      initial: dict[str, Any] | None = None, *,
+                      owner=None) -> dict[str, Any] | None:
+    master = _owner(host, owner)
+    dlg = tk.Toplevel(master)
+    dlg.title(title)
+    dlg.transient(master)
+    dlg.geometry("600x620")
     dlg.update_idletasks()
     try:
         dlg.wait_visibility()
@@ -62,11 +112,11 @@ def _concern_dialog(host, title: str,
         logger.debug("grab_set skipped", exc_info=True)
 
     initial = initial or {}
-    frm = ttk.Frame(dlg, padding=12)
-    frm.pack(fill="both", expand=True)
+    frm, footer = kit.scrolled_form(dlg)
 
     pupil_var  = tk.StringVar(value=str(initial.get("pupil_id") or ""))
-    ay_var     = tk.StringVar(value=str(initial.get("academic_year") or ""))
+    ay_var     = tk.StringVar(value=str(initial.get("academic_year")
+                                           or _current_ay()))
     type_var   = tk.StringVar(value=str(initial.get("concern_type")
                                            or "Persistent absence"))
     level_var  = tk.StringVar(value=str(initial.get("level")
@@ -81,29 +131,30 @@ def _concern_dialog(host, title: str,
     parent_var = tk.StringVar(value=str(initial.get("parent_contact") or ""))
 
     rows: list[tuple[str, tk.Widget]] = [
-        ("Pupil ID:",     ttk.Entry(frm, textvariable=pupil_var, width=14)),
-        ("Academic year:", ttk.Entry(frm, textvariable=ay_var, width=10)),
-        ("Concern type:", ttk.Combobox(frm, textvariable=type_var,
-                                          values=list(CONCERN_TYPES),
-                                          state="readonly", width=22)),
-        ("Level:",        ttk.Combobox(frm, textvariable=level_var,
-                                          values=list(CONCERN_LEVELS),
-                                          state="readonly", width=22)),
-        ("Attendance %:", ttk.Entry(frm, textvariable=att_var, width=8)),
-        ("Threshold %:",  ttk.Entry(frm, textvariable=thr_var, width=8)),
-        ("Opened:",       ttk.Entry(frm, textvariable=open_var, width=14)),
-        ("Next review:",  ttk.Entry(frm, textvariable=review_var, width=14)),
-        ("Closed:",       ttk.Entry(frm, textvariable=close_var, width=14)),
-        ("Status:",       ttk.Combobox(frm, textvariable=status_var,
-                                          values=list(CONCERN_STATUSES),
-                                          state="readonly", width=14)),
-        ("Key worker:",   ttk.Entry(frm, textvariable=worker_var, width=24)),
+        ("Pupil:",        kit.PupilPicker(frm, pupil_var)),
+        ("Academic year:", kit.ChoiceField(frm, ay_var, choices=_ay_choices(),
+                                           editable=True, width=10)),
+        ("Concern type:", kit.ChoiceField(frm, type_var,
+                                          choices=CONCERN_TYPES, width=22)),
+        ("Level:",        kit.ChoiceField(frm, level_var,
+                                          choices=CONCERN_LEVELS, width=22)),
+        ("Attendance %:", kit.NumberField(frm, att_var, from_=0, to=100,
+                                          increment=0.1)),
+        ("Threshold %:",  kit.NumberField(frm, thr_var, from_=0, to=100,
+                                          increment=0.1)),
+        ("Opened:",       kit.DateField(frm, open_var)),
+        ("Next review:",  kit.DateField(frm, review_var)),
+        ("Closed:",       kit.DateField(frm, close_var)),
+        ("Status:",       kit.ChoiceField(frm, status_var,
+                                          choices=CONCERN_STATUSES,
+                                          width=14)),
+        ("Key worker:",   kit.StaffPicker(frm, worker_var, by="name")),
         ("Parent ctc:",   ttk.Entry(frm, textvariable=parent_var, width=24)),
     ]
     for i, (label, widget) in enumerate(rows):
         ttk.Label(frm, text=label).grid(row=i, column=0, sticky="w",
                                           pady=2)
-        widget.grid(row=i, column=1, sticky="ew", pady=2)
+        widget.grid(row=i, column=1, sticky="w", pady=2)
     frm.columnconfigure(1, weight=1)
 
     text_fields = [("Intervention:", "intervention", 3),
@@ -140,12 +191,9 @@ def _concern_dialog(host, title: str,
             result[k] = w.get("1.0", "end").strip()
         dlg.destroy()
 
-    btns = ttk.Frame(frm)
-    btns.grid(row=len(rows) + len(text_fields), column=0,
-                columnspan=2, sticky="e", pady=(12, 0))
-    ttk.Button(btns, text="Cancel",
+    ttk.Button(footer, text="Cancel",
                   command=dlg.destroy).pack(side="right", padx=4)
-    ttk.Button(btns, text="Save", command=_save).pack(side="right")
+    ttk.Button(footer, text="Save", command=_save).pack(side="right")
     dlg.wait_window()
     return result
 
@@ -153,10 +201,16 @@ def _concern_dialog(host, title: str,
 @_safe_view
 def open_attendance_concerns(host) -> None:
     logger.debug("GUI: open_attendance_concerns")
-    host._clear_content()
-    root = host.content_frame
-    ttk.Label(root, text="Attendance Concerns",
-                font=("", 16, "bold")).pack(anchor="w", pady=(0, 8))
+    kit.show_page(host, "Attendance Concerns",
+                  lambda parent: _draw_attendance_concerns(parent, host))
+
+
+def _draw_attendance_concerns(parent, host) -> None:
+    root = parent
+    win = parent.winfo_toplevel()
+    kit.page_heading(root, "Attendance Concerns",
+                     "Persistent-absence cases: levels, reviews and "
+                     "interventions.")
 
     summary_var = tk.StringVar()
     ttk.Label(root, textvariable=summary_var,
@@ -166,12 +220,11 @@ def open_attendance_concerns(host) -> None:
     bar.pack(fill="x", pady=(0, 6))
     ttk.Label(bar, text="Academic year:").pack(side="left", padx=(0, 4))
     ay_var = tk.StringVar(value="")
-    ttk.Entry(bar, textvariable=ay_var, width=10).pack(
-        side="left", padx=(0, 6))
+    kit.ChoiceField(bar, ay_var, choices=_ay_choices(), blank=True,
+                    width=10).pack(side="left", padx=(0, 6))
     ttk.Label(bar, text="Status:").pack(side="left", padx=(0, 4))
     status_var = tk.StringVar(value="")
-    ttk.Combobox(bar, textvariable=status_var,
-                    values=["", *CONCERN_STATUSES], state="readonly",
+    kit.ChoiceField(bar, status_var, choices=CONCERN_STATUSES, blank=True,
                     width=12).pack(side="left", padx=(0, 6))
     open_only_var = tk.BooleanVar(value=False)
     ttk.Checkbutton(bar, text="Open only",
@@ -179,38 +232,36 @@ def open_attendance_concerns(host) -> None:
     ttk.Button(bar, text="Apply",
                   command=lambda: _refresh()).pack(side="left", padx=2)
     ttk.Button(bar, text="New",
-                  command=lambda: _new(host, on_done=_refresh)
+                  command=lambda: _new(host, on_done=_refresh,
+                                        owner=win)
                   ).pack(side="left", padx=2)
     ttk.Button(bar, text="Edit",
-                  command=lambda: _edit(host, tree, on_done=_refresh)
+                  command=lambda: _edit(host, tree, on_done=_refresh,
+                                        owner=win)
                   ).pack(side="left", padx=2)
     ttk.Button(bar, text="Close",
-                  command=lambda: _close(host, tree, on_done=_refresh)
+                  command=lambda: _close(host, tree, on_done=_refresh,
+                                        owner=win)
                   ).pack(side="left", padx=2)
     ttk.Button(bar, text="Delete",
-                  command=lambda: _delete(host, tree, on_done=_refresh)
+                  command=lambda: _delete(host, tree, on_done=_refresh,
+                                        owner=win)
                   ).pack(side="left", padx=2)
     ttk.Button(bar, text="Refresh",
                   command=lambda: _refresh()).pack(side="left", padx=2)
 
-    cols = ("id", "pupil", "year", "ay", "type", "level",
-              "att", "status", "opened", "review")
-    tree = ttk.Treeview(root, columns=cols, show="headings", height=18)
-    for c, label, w in [
+    tree = kit.tree(root, [
         ("id", "ID", 50), ("pupil", "Pupil", 200),
         ("year", "Yr", 50), ("ay", "AY", 80),
         ("type", "Type", 160), ("level", "Level", 150),
         ("att", "Att%", 60), ("status", "Status", 100),
         ("opened", "Opened", 90), ("review", "Review", 90),
-    ]:
-        tree.heading(c, text=label)
-        tree.column(c, width=w, anchor="w")
-    tree.pack(fill="both", expand=True)
-    tree.tag_configure("severe", background="#fde7e7")
-    tree.tag_configure("closed", foreground="#888")
-    tree.tag_configure("escalated", background="#ffe4b3")
+    ], height=18, tags={"severe": "#fde7e7", "closed": {"foreground": "#888"},
+                        "escalated": "#ffe4b3"})
 
     def _refresh() -> None:
+        if not tree.winfo_exists():
+            return
         for i in tree.get_children():
             tree.delete(i)
         try:
@@ -221,13 +272,13 @@ def open_attendance_concerns(host) -> None:
             )
         except ValidationError as e:
             messagebox.showerror("Attendance Concerns", str(e),
-                                   parent=host.root)
+                                   parent=win)
             return
         except Exception as e:
             logger.exception("attendance_concerns refresh failed")
             messagebox.showerror("Attendance Concerns",
                                    f"Could not load:\n\n{e}",
-                                   parent=host.root)
+                                   parent=win)
             return
         for c in rows:
             pupil = f"{c.pupil_id} ({c.pupil_name or '-'})"
@@ -256,22 +307,24 @@ def open_attendance_concerns(host) -> None:
                 f"Pupils: {s['pupils']}    Avg attendance: {avg}")
         except Exception:
             summary_var.set(f"{len(rows)} concern(s)")
-        host.status_var.set(
-            f"Attendance Concerns: {len(rows)} record(s)")
+        status_bar = getattr(host, "status_var", None)
+        if status_bar is not None:
+            status_bar.set(f"Attendance Concerns: {len(rows)} record(s)")
 
     tree.bind("<Double-1>",
-                lambda _e: _edit(host, tree, on_done=_refresh))
+                lambda _e: _edit(host, tree, on_done=_refresh, owner=win))
+    ay_var.trace_add("write", lambda *_: _refresh())
     status_var.trace_add("write", lambda *_: _refresh())
     open_only_var.trace_add("write", lambda *_: _refresh())
     _refresh()
 
 
-def _selected_id(tree: ttk.Treeview, host) -> int | None:
+def _selected_id(tree: ttk.Treeview, host, owner=None) -> int | None:
     sel = tree.focus()
     if not sel:
         messagebox.showinfo("Attendance Concerns",
                               "Select a concern first.",
-                              parent=host.root)
+                              parent=_owner(host, owner))
         return None
     try:
         return int(sel)
@@ -280,8 +333,8 @@ def _selected_id(tree: ttk.Treeview, host) -> int | None:
 
 
 @_safe_view
-def _new(host, *, on_done=None) -> None:
-    fields = _concern_dialog(host, "New attendance concern")
+def _new(host, *, on_done=None, owner=None) -> None:
+    fields = _concern_dialog(host, "New attendance concern", owner=owner)
     if not fields:
         return
     c = data.create(fields)
@@ -289,15 +342,15 @@ def _new(host, *, on_done=None) -> None:
         "Attendance Concerns",
         f"Created concern #{c.concern_id}: {c.pupil_id} — "
         f"{c.concern_type} ({c.status})",
-        parent=host.root,
+        parent=_owner(host, owner),
     )
     if on_done:
         on_done()
 
 
 @_safe_view
-def _edit(host, tree: ttk.Treeview, *, on_done=None) -> None:
-    cid = _selected_id(tree, host)
+def _edit(host, tree: ttk.Treeview, *, on_done=None, owner=None) -> None:
+    cid = _selected_id(tree, host, owner)
     if cid is None:
         return
     existing = data.get(cid)
@@ -309,7 +362,7 @@ def _edit(host, tree: ttk.Treeview, *, on_done=None) -> None:
         "next_review_date", "closed_date", "status",
         "key_worker", "intervention", "parent_contact", "notes")}
     fields = _concern_dialog(host, f"Edit concern #{cid}",
-                                initial=initial)
+                                initial=initial, owner=owner)
     if not fields:
         return
     data.update(cid, fields)
@@ -318,14 +371,12 @@ def _edit(host, tree: ttk.Treeview, *, on_done=None) -> None:
 
 
 @_safe_view
-def _close(host, tree: ttk.Treeview, *, on_done=None) -> None:
-    cid = _selected_id(tree, host)
+def _close(host, tree: ttk.Treeview, *, on_done=None, owner=None) -> None:
+    cid = _selected_id(tree, host, owner)
     if cid is None:
         return
-    end = simpledialog.askstring(
-        "Close concern",
-        "Closed date (YYYY-MM-DD, blank = today):",
-        parent=host.root)
+    end = _ask_date(_owner(host, owner), "Close concern",
+                    "Closed date (blank = today):")
     if end is None:
         return
     data.close(cid, closed_date=end.strip() or None)
@@ -334,8 +385,8 @@ def _close(host, tree: ttk.Treeview, *, on_done=None) -> None:
 
 
 @_safe_view
-def _delete(host, tree: ttk.Treeview, *, on_done=None) -> None:
-    cid = _selected_id(tree, host)
+def _delete(host, tree: ttk.Treeview, *, on_done=None, owner=None) -> None:
+    cid = _selected_id(tree, host, owner)
     if cid is None:
         return
     existing = data.get(cid)
@@ -345,7 +396,7 @@ def _delete(host, tree: ttk.Treeview, *, on_done=None) -> None:
             "Delete concern",
             f"Delete concern #{cid} ({existing.pupil_id} / "
             f"{existing.concern_type})?",
-            parent=host.root):
+            parent=_owner(host, owner)):
         return
     data.delete(cid)
     if on_done:

@@ -1,5 +1,7 @@
 # Module Restructuring Migration Guide
 
+> This is a record of the v5.41–v5.42 restructuring: file paths below reflect the tree at that time and the old import paths no longer resolve; see [Project Structure](../../reference/PROJECT_STRUCTURE.md) for current locations.
+
 ## Overview
 
 Between versions 5.41 and 5.42, the University Management System underwent a major refactoring effort. **49 single-file modules** that had grown to between 1,000 and 4,500 lines were decomposed into package directories. Each original file was replaced by a directory containing smaller, focused modules.
@@ -42,7 +44,7 @@ infrastructure/database/data_backup/
 Imports stay the same:
 ```python
 # Both work identically
-from university_system.infrastructure.database.data_backup import create_backup
+from education_system.systems.university.infrastructure.database.data_backup import create_backup
 ```
 
 ### Pattern 2: Mixin-Based Class Splitting
@@ -112,7 +114,7 @@ import sqlite3
 import tkinter as tk
 from tkinter import ttk, messagebox
 
-from university_system.infrastructure.auth import UserAuth
+from education_system.systems.university.infrastructure.auth import UserAuth
 # ... other shared imports and constants
 ```
 
@@ -241,27 +243,27 @@ All new packages include `__init__.py` files that re-export the same public API.
 
 ```python
 # Original import (still works)
-from university_system.infrastructure.database.data_backup import create_backup, restore_backup
+from education_system.systems.university.infrastructure.database.data_backup import create_backup, restore_from_backup
 
 # New direct import (optional, for clarity)
-from university_system.infrastructure.database.data_backup.core import create_backup, restore_backup
+from education_system.systems.university.infrastructure.database.data_backup.operations import restore_from_backup
 ```
 
 ### Example: Social Matching Service
 
 ```python
 # Original import (still works)
-from university_system.modules.domain.social_matching.services.social_matching_service import SocialMatchingService
+from education_system.systems.university.domains.student_life.domain.social_matching.services.social_matching_service import SocialMatchingService
 
 # New direct import (optional, for clarity)
-from university_system.modules.domain.social_matching.services.matching import MatchingMixin
+from education_system.systems.university.domains.student_life.domain.social_matching.services.matching import MatchingMixin
 ```
 
 ### Example: Course Management
 
 ```python
 # Original import (still works)
-from university_system.modules.domain.academics.services.course_management import CourseManagementService
+from education_system.systems.university.domains.curriculum.domain.course_management import create_course
 
 # The __init__.py re-exports everything from the subpackage
 ```

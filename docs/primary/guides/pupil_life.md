@@ -247,11 +247,11 @@ Manage parental consent for various activities and data usage.
 
 | Module | Access Path | Key Roles |
 |---|---|---|
-| Clubs | Sidebar → Pupil Life → Clubs | admin, teacher |
-| Meals | Sidebar → Pupil Life → Meals | admin, teacher |
-| Transport | Sidebar → Pupil Life → Transport | admin |
-| Trips | Sidebar → Pupil Life → Trips | admin, teacher |
-| Library | Sidebar → Pupil Life → Library | admin, teacher |
-| Medical | Sidebar → Pupil Life → Medical | admin, teacher |
-| Class Groups | Sidebar → Pupil Life → Class Groups | admin |
-| Consent | Sidebar → Pupil Life → Consent | admin |
+| Clubs | Sidebar → Academic Management → Clubs & Activities | admin, teacher |
+| Meals | Sidebar → Finance → Dinner Money | admin, teacher |
+| Transport | Sidebar → Pastoral & Wellbeing → Transport | admin |
+| Trips | Sidebar → Finance → Trips & Payments | admin, teacher |
+| Library | Sidebar → Academic Management → Library | admin, teacher |
+| Medical | Sidebar → Pastoral & Wellbeing → Medical Records | admin, teacher |
+| Class Groups | Sidebar → Academic Management → Classes | admin |
+| Consent | Sidebar → System → GDPR | admin |

@@ -16,11 +16,11 @@ from education_system.systems.apprenticeships import config
 from education_system.systems.apprenticeships.domain.apprentices.models import ValidationError
 from education_system.systems.apprenticeships.domain.reviews import action_plans as rules
 from education_system.systems.apprenticeships.domain.reviews.progress_reviews import ReviewTarget
-from education_system.systems.apprenticeships.services import (
+from education_system.systems.apprenticeships.application.learning import (
     action_plan_service,
     review_service,
 )
-from education_system.systems.apprenticeships.services.access import Actor, PermissionDenied
+from education_system.systems.apprenticeships.application.security.access import Actor, PermissionDenied
 
 TODAY = date(2026, 9, 10)
 
@@ -385,7 +385,9 @@ class TestListing:
         assert [a.target_id for a in mine] == [employer_one.target_id]
 
     def test_the_apprentice_filter_cannot_widen_an_employers_scope(self, cohort, admin):
-        from education_system.systems.apprenticeships.services import apprentice_service
+        from education_system.systems.apprenticeships.application.apprentices import (
+            apprentice_service,
+        )
 
         other = apprentice_service.create_apprentice(
             admin, {"given_name": "Ali", "family_name": "Khan"}

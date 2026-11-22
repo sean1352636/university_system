@@ -16,13 +16,16 @@ from education_system.systems.sixth_form.interfaces.gui._ui import grab_when_vie
 
 import logging
 import tkinter as tk
-from tkinter import filedialog, messagebox, ttk
+from tkinter import ttk
+from education_system.platform.delivery.gui.parented_dialogs import filedialog, messagebox
 from typing import Callable
 
 from education_system.systems.sixth_form.domain.academics.assignments import (
-    assignments as data,
     assignments_admin as admin,
     assignments_analytics as analytics,
+)
+from education_system.systems.sixth_form.domain.academics.assignments import (
+    store as assignments_store,
 )
 from education_system.systems.sixth_form.domain.learners.students import (
     students as student_data,
@@ -77,6 +80,11 @@ class InsightTab:
         self.refresh()
 
     def _build(self) -> None:
+        from education_system.systems.sixth_form.interfaces.gui import popout
+        if not isinstance(self.frame.master, popout.FrameBook):
+            bar = ttk.Frame(self.frame)
+            bar.pack(fill="x", padx=8, pady=(8, 0))
+            popout.add_page_button(bar, "Assignment insight", InsightTab)
         self.nb = ttk.Notebook(self.frame)
         self.nb.pack(fill="both", expand=True, padx=8, pady=8)
         self.student = StudentPane(self.nb, self)
@@ -311,7 +319,7 @@ class CohortPane:
         self.tree.heading("median", text="Max")
         self.tree.heading("low", text="Facility")
         rows = []
-        for a in data.list_assignments(subject_name=subject):
+        for a in assignments_store.list_assignments(subject_name=subject):
             for weak in analytics.criterion_weaknesses(a.assignment_id):
                 rows.append((a, weak))
         rows.sort(key=lambda pair: (pair[1].facility is None,
@@ -698,7 +706,7 @@ class ExportsPane:
                    anchor="w").pack(fill="x", pady=(6, 4))
 
     def refresh(self) -> None:
-        self._assignments = data.list_assignments()
+        self._assignments = assignments_store.list_assignments()
         self.assign_cb.configure(values=[
             f"#{a.assignment_id}  {a.title} ({a.subject_name})"
             for a in self._assignments])

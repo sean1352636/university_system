@@ -1,0 +1,28 @@
+{
+  "name": "exam_statement",
+  "description": "A candidate's statement of entry for an exam series, sent to the pupil and their contacts.",
+  "subject": "Statement of entry: {pupil_name} - {series_name}",
+  "body": [
+    "Dear {recipient_name},",
+    "",
+    "Below is {pupil_first_name}'s statement of entry for the {series_name} exams at {school_name}.",
+    "Please check the subjects, tiers and the name carefully. If anything is wrong, contact {officer_name} straight away - changes after the board's deadline cost extra and may not be possible.",
+    "",
+    "{statement}",
+    "",
+    "Best wishes,",
+    "{school_name}"
+  ],
+  "placeholders": {
+    "recipient_name": "The pupil's or contact's name",
+    "pupil_name": "The pupil's preferred first name and surname",
+    "pupil_first_name": "The pupil's preferred or first name",
+    "series_name": "The exam series, e.g. June 2027",
+    "statement": "The candidate number, entries and access arrangements",
+    "officer_name": "The exams officer's name",
+    "school_name": "The school's name"
+  },
+  "defaults": {
+    "school_name": "Secondary School"
+  }
+}

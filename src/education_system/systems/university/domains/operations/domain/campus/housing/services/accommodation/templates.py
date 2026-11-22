@@ -211,6 +211,9 @@ def apply_template():
 
             aid = cursor.lastrowid
             conn.commit()
+            # Carry it to exams, assessments and module staff (consent-gated).
+            from education_system.systems.university.services.bus import accommodation_bus
+            accommodation_bus.after_change()
 
         print(get_text("housing.accommodation.success.template_applied", "Template '{name}' applied successfully to student {student_id}.").format(name=name, student_id=student_id))
         log_action('apply_template', aid, f"Applied template {name} to student {student_id}")

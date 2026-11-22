@@ -16,7 +16,7 @@ class ExternalExaminerService:
         with transaction() as conn:
             conn.execute("""
                 CREATE TABLE IF NOT EXISTS external_examiners (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    examiner_id INTEGER PRIMARY KEY AUTOINCREMENT,
                     name TEXT NOT NULL,
                     email TEXT,
                     institution TEXT,
@@ -39,7 +39,7 @@ class ExternalExaminerService:
                     overall_rating TEXT,
                     created_by TEXT,
                     created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-                    FOREIGN KEY (examiner_id) REFERENCES external_examiners(id)
+                    FOREIGN KEY (examiner_id) REFERENCES external_examiners(examiner_id)
                 )
             """)
             conn.execute("""
@@ -80,8 +80,8 @@ class ExternalExaminerService:
 
     def get_examiner(self, examiner_id: int) -> Optional[Dict]:
         with get_connection() as conn:
-            row = conn.execute("SELECT * FROM external_examiners WHERE id = ?", (examiner_id,)).fetchone()
-            return dict(row) if row else None
+            row = conn.execute("SELECT * FROM external_examiners WHERE examiner_id = ?", (examiner_id,)).fetchone()
+            return self._examiner_row(row) if row else None
 
     def list_examiners(self, status: str = None) -> List[Dict]:
         with get_connection() as conn:
@@ -89,7 +89,14 @@ class ExternalExaminerService:
                 rows = conn.execute("SELECT * FROM external_examiners WHERE status = ?", (status,)).fetchall()
             else:
                 rows = conn.execute("SELECT * FROM external_examiners ORDER BY name").fetchall()
-            return [dict(r) for r in rows]
+            return [self._examiner_row(r) for r in rows]
+
+    @staticmethod
+    def _examiner_row(row) -> Dict:
+        """The table's key is examiner_id; the screens read it as id."""
+        data = dict(row)
+        data['id'] = data.get('examiner_id')
+        return data
 
     def update_examiner(self, examiner_id: int, **kwargs) -> bool:
         if not kwargs:
@@ -98,7 +105,7 @@ class ExternalExaminerService:
         sets = ", ".join(f"{validate_identifier(k)} = ?" for k in kwargs)
         with transaction() as conn:
             # db-audit: ignore[DBW001] - f-string of literal parts
-            conn.execute(f"UPDATE external_examiners SET {sets} WHERE id = ?", (*kwargs.values(), examiner_id))
+            conn.execute(f"UPDATE external_examiners SET {sets} WHERE examiner_id = ?", (*kwargs.values(), examiner_id))
             conn.commit()
             return True
 

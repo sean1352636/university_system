@@ -14,7 +14,9 @@ from __future__ import annotations
 import datetime as _dt
 import logging
 import tkinter as tk
-from tkinter import messagebox, ttk
+from tkinter import ttk
+from education_system.systems.sixth_form.interfaces.gui._sidebar import SidebarBook
+from education_system.platform.delivery.gui.parented_dialogs import messagebox
 from typing import Any
 
 from education_system.platform import branding
@@ -75,7 +77,7 @@ def open_directory(parent=None) -> None:
     win.geometry(WIN_GEOMETRY)
     win.minsize(*WIN_MINSIZE)
 
-    nb = ttk.Notebook(win)
+    nb = SidebarBook(win)
     nb.pack(fill="both", expand=True, padx=10, pady=10)
 
     projects_tab = ProjectsTab(nb, win)
@@ -161,6 +163,8 @@ class ProjectsTab:
                 ("Update milestone",  self._update_milestone),
                 ("Delete",            self._delete),
                 ("Refresh",           self.refresh),
+                ("Authenticate (teacher)", self._authenticate),
+                ("Hours check",       self._hours_check),
         ):
             ttk.Button(actions, text=label,
                         command=cmd).pack(side="left", padx=4)
@@ -267,6 +271,65 @@ class ProjectsTab:
         LogEntryDialog(self.root, project=proj,
                         on_save=lambda _e: self.refresh())
 
+    def _authenticate(self) -> None:
+        """JCQ teacher authentication: candidate declaration + supervisor
+        sign-off. Required before a mark, grade or "Complete"."""
+        pid = self._selected_id()
+        if pid is None:
+            return
+        proj = data.get_project(pid)
+        if proj is None:
+            self.refresh()
+            return
+        if proj.is_authenticated:
+            if messagebox.askyesno(
+                    "EPQ", f"Authenticated by {proj.authenticated_by} on "
+                           f"{proj.authenticated_at}.\n\nRevoke this "
+                           "authentication (recorded in error)?"):
+                data.revoke_authentication(pid)
+                self.refresh()
+            return
+        chk = data.hours_check(pid)
+        if not messagebox.askyesno(
+                "EPQ", "Has the candidate signed their declaration that the "
+                       "work is their own?"):
+            return
+        from education_system.platform.delivery.gui.parented_dialogs import simpledialog
+        teacher = simpledialog.askstring(
+            "EPQ", "Authenticating teacher (supervisor):",
+            initialvalue=proj.supervisor or "", parent=self.root)
+        if not teacher:
+            return
+        reason = None
+        if not chk.met:
+            reason = simpledialog.askstring(
+                "EPQ", f"{chk.label}.\nReason for authenticating below the "
+                       f"{data.EPQ_TARGET_HOURS:g}-hour target:", parent=self.root)
+            if not reason:
+                return
+        try:
+            data.authenticate_project(pid, teacher=teacher, candidate_declared=True,
+                                      hours_shortfall_reason=reason)
+        except ValidationError as e:
+            messagebox.showerror("EPQ", str(e))
+            return
+        messagebox.showinfo("EPQ", f"Project #{pid} authenticated by {teacher}.")
+        self.refresh()
+
+    def _hours_check(self) -> None:
+        pid = self._selected_id()
+        if pid is None:
+            return
+        chk = data.hours_check(pid)
+        proj = data.get_project(pid)
+        auth = (f"Authenticated by {proj.authenticated_by} on {proj.authenticated_at}"
+                if proj and proj.is_authenticated else "Not yet authenticated")
+        short = data.projects_below_target()
+        messagebox.showinfo(
+            "EPQ hours", f"Project #{pid}: {chk.label}\n{auth}\n\n"
+                         f"{len(short)} live project(s) are under the "
+                         f"{data.EPQ_TARGET_HOURS:g}-hour target.")
+
     def _update_milestone(self) -> None:
         pid = self._selected_id()
         if pid is None:
@@ -298,12 +361,6 @@ class ProjectDialog(tk.Toplevel):
         # before the window mapping has been processed. after_idle
         # queues the grab for the next idle slice of the event loop.
         self.after_idle(self._safe_grab)
-
-    def _safe_grab(self) -> None:
-        try:
-            self.grab_set()
-        except Exception:
-            pass
 
         frm = ttk.Frame(self, padding=12)
         frm.pack(fill="both", expand=True)
@@ -404,6 +461,12 @@ class ProjectDialog(tk.Toplevel):
         ttk.Button(btns, text="Save",
                     command=self._save).pack(side="right", padx=4)
 
+    def _safe_grab(self) -> None:
+        try:
+            self.grab_set()
+        except Exception:
+            pass
+
     def _payload(self) -> dict[str, Any]:
         if self.project is not None:
             sid = self.project.student_id
@@ -458,12 +521,6 @@ class LogEntryDialog(tk.Toplevel):
         # before the window mapping has been processed. after_idle
         # queues the grab for the next idle slice of the event loop.
         self.after_idle(self._safe_grab)
-
-    def _safe_grab(self) -> None:
-        try:
-            self.grab_set()
-        except Exception:
-            pass
 
         frm = ttk.Frame(self, padding=12)
         frm.pack(fill="both", expand=True)
@@ -533,6 +590,12 @@ class LogEntryDialog(tk.Toplevel):
 
         self._refresh()
 
+    def _safe_grab(self) -> None:
+        try:
+            self.grab_set()
+        except Exception:
+            pass
+
     def _refresh(self) -> None:
         for iid in self.tree.get_children():
             self.tree.delete(iid)
@@ -543,9 +606,9 @@ class LogEntryDialog(tk.Toplevel):
                 values=(e.log_id, e.entry_date,
                           f"{e.hours:.1f}", e.activity),
             )
-        total = data.total_hours_for_project(self.project.project_id)
+        chk = data.hours_check(self.project.project_id)
         self.total_lbl.configure(
-            text=f"{len(entries)} entries · {total:.1f} hours total")
+            text=f"{len(entries)} entries · {chk.label}")
 
     def _add(self) -> None:
         try:
@@ -611,12 +674,6 @@ class MilestoneDialog(tk.Toplevel):
         # queues the grab for the next idle slice of the event loop.
         self.after_idle(self._safe_grab)
 
-    def _safe_grab(self) -> None:
-        try:
-            self.grab_set()
-        except Exception:
-            pass
-
         frm = ttk.Frame(self, padding=12)
         frm.pack(fill="both", expand=True)
         frm.columnconfigure(1, weight=1)
@@ -680,6 +737,12 @@ class MilestoneDialog(tk.Toplevel):
 
         self._load_existing()
         self._refresh_summary()
+
+    def _safe_grab(self) -> None:
+        try:
+            self.grab_set()
+        except Exception:
+            pass
 
     def _selected_type(self) -> str:
         raw = self.cb_type.get().split(" — ", 1)[0].strip()

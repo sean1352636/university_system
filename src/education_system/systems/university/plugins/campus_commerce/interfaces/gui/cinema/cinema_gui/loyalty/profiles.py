@@ -197,8 +197,10 @@ def view_profile_history(self):
     try:
         cursor = conn.cursor()
         cursor.execute("""SELECT b.booking_ref, m.title, b.booking_time, b.ticket_types, b.total_amount, b.booking_time
-                        FROM bookings b JOIN movies m ON b.movie_id = m.id
-                        WHERE b.customer_email = ? ORDER BY b.created_at DESC LIMIT 20""", (email,))
+                        FROM bookings b
+                        JOIN screenings sc ON b.screening_id = sc.id
+                        JOIN movies m ON sc.movie_id = m.id
+                        WHERE b.customer_email = ? ORDER BY b.booking_time DESC LIMIT 20""", (email,))
         bookings = cursor.fetchall()
     finally:
         conn.close()

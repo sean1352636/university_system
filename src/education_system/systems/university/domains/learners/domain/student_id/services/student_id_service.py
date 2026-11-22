@@ -59,7 +59,8 @@ def get_student_details(student_id):
     with get_connection() as conn:
         try:
             row = conn.execute(
-                "SELECT * FROM students WHERE student_id = ? OR username = ?",
+                "SELECT * FROM students WHERE student_id = ? OR student_id = "
+                "(SELECT u.student_id FROM users u WHERE u.username = ?)",
                 (student_id, student_id),
             ).fetchone()
         except Exception:
@@ -71,8 +72,12 @@ def get_student_details(student_id):
             info["name"] = row["full_name"]
         elif "name" in keys:
             info["name"] = row["name"]
+        elif "first_name" in keys:
+            info["name"] = " ".join(p for p in (row["first_name"], row["last_name"]) if p) or info["name"]
         if "email" in keys:
             info["email"] = row["email"]
+        elif "email_address" in keys:
+            info["email"] = row["email_address"] or info["email"]
         if "course" in keys:
             info["course"] = row["course"]
         if "department" in keys:

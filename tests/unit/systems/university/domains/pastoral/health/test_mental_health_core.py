@@ -16,14 +16,13 @@ from datetime import datetime, timedelta, date
 from unittest.mock import patch, MagicMock
 
 from education_system.systems.university.infrastructure.database.db import get_connection
-from education_system.systems.university.domains.pastoral.domain.services.mental_health.mental_health_core import (
+from education_system.systems.university.domains.student_support.domain.mental_health.mental_health_core import (
     CounselorManager,
     AppointmentManager,
     ResourceManager,
     WellnessCheckInManager,
     PeerSupportManager,
     MeditationManager,
-    display_mental_health_menu,
 )
 
 @pytest.fixture
@@ -545,16 +544,6 @@ class TestMeditationManager:
         # Get by category
         breathing_sessions = MeditationManager.get_meditation_sessions(category='Breathing')
         assert len(breathing_sessions) >= 1
-
-class TestCLIMenu:
-    """Tests for CLI menu"""
-
-    def test_display_mental_health_menu_exit(self, setup_database):
-        """Test menu display and exit"""
-        with patch('builtins.input', return_value='8'):
-            with patch('builtins.print'):
-                mock_auth = MagicMock()
-                display_mental_health_menu(mock_auth)
 
 class TestIntegrationScenarios:
     """Integration tests for complete workflows"""

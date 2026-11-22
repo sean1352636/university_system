@@ -1,6 +1,6 @@
 # Lost & Found, Feedback System & Notifications Guide
 
-This guide covers the Lost & Found item tracking, campus feedback/suggestion system, and the multi-channel notifications service within the University Management System.
+This guide covers the Lost & Found item tracking, campus feedback/suggestion system, and the Notifications Hub inbox within the University Management System.
 
 ## Table of Contents
 
@@ -19,24 +19,20 @@ This guide covers the Lost & Found item tracking, campus feedback/suggestion sys
   - [Admin Responses](#admin-responses)
   - [Impact Tracking](#impact-tracking)
 - [Notifications System](#notifications-system)
-  - [Creating Notifications](#creating-notifications)
-  - [Notification Channels](#notification-channels)
-  - [Priority Levels](#priority-levels)
-  - [User Preferences](#user-preferences)
-  - [Daily Digest](#daily-digest)
-  - [Smart Bundling](#smart-bundling)
-  - [Quiet Hours](#quiet-hours)
+  - [Notifications Hub](#notifications-hub)
+  - [Delivering a Notification](#delivering-a-notification)
+  - [Notification Preferences](#notification-preferences)
 - [Configuration](#configuration)
 - [Troubleshooting](#troubleshooting)
 
 ## Overview
 
-These three services provide essential campus life functionality: tracking lost and found items with automatic matching, a feedback and suggestion system with voting and status tracking, and a multi-channel notification service with smart bundling and quiet hours.
+These three services provide essential campus life functionality: tracking lost and found items with automatic matching, a feedback and suggestion system with voting and status tracking, and a Notifications Hub that shows each user their unread messages.
 
 **Key files:**
-- Lost & Found: `modules/domain/lost_found/services/lost_found_service.py`
-- Feedback: `modules/domain/feedback/services/feedback_service.py`
-- Notifications: `modules/domain/notifications/services/notifications_service.py`
+- Lost & Found: `src/education_system/systems/university/domains/operations/domain/campus/lost_found/services/lost_found_service.py`
+- Feedback: `src/education_system/systems/university/domains/operations/domain/communications/feedback/services/feedback_service.py`
+- Notifications: `src/education_system/systems/university/domains/operations/interfaces/gui/communications/notifications/notifications_gui.py`
 
 ---
 
@@ -45,7 +41,7 @@ These three services provide essential campus life functionality: tracking lost 
 ### Reporting Lost Items
 
 ```python
-from university_system.modules.domain.lost_found.services.lost_found_service import (
+from education_system.systems.university.domains.operations.domain.campus.lost_found.services.lost_found_service import (
     LostFoundService
 )
 
@@ -219,7 +215,7 @@ categories = service.get_category_breakdown()
 ### Submitting Feedback
 
 ```python
-from university_system.modules.domain.feedback.services.feedback_service import (
+from education_system.systems.university.domains.operations.domain.communications.feedback.services.feedback_service import (
     FeedbackService
 )
 
@@ -385,196 +381,40 @@ stats = service.get_statistics()
 
 ## Notifications System
 
-### Creating Notifications
+The earlier multi-channel service is gone: the `notifications` table family, `NotificationsService` and the standalone notifications CLI were removed. Startup drops any legacy notification tables still in the database.
+
+### Notifications Hub
+
+The bell button opens the Hub, an **unread inbox** built on the shared `UnifiedInboxPanel` (`src/education_system/platform/features/messaging/unified_inbox.py`). It shows the signed-in user's unread received messages:
+
+- University user-to-user `messages`
+- Cross-system staff messages
+
+A **Source** filter (All, University, Cross-system) narrows the feed, and the view defaults to unread only.
 
 ```python
-from university_system.modules.domain.notifications.services.notifications_service import (
-    NotificationsService
-)
+from education_system.systems.university.domains.operations.interfaces.gui.communications.notifications.notifications_gui import launch_notifications_gui
 
-service = NotificationsService()
-
-# Create a notification
-service.create_notification(
-    user_id='S-12345',
-    channel='Academic',
-    title='Grade Posted',
-    message='Your grade for CS101 Final Exam has been posted.',
-    priority='medium',
-    delivery_method='push'
-)
+launch_notifications_gui(parent=root, auth=auth)
 ```
 
-### Notification Channels
+### Delivering a Notification
 
-| Channel | Examples |
-|---------|----------|
-| Academic | Grades, assignments, course updates |
-| Social | Messages, friend requests, group invites |
-| Financial | Payment due, aid disbursement, refund |
-| Health | Appointments, health alerts, prescriptions |
-| Housing | Maintenance, roommate requests, inspections |
-| Events | Campus events, club meetings, deadlines |
-| System | Account updates, security alerts, maintenance |
-
-### Priority Levels
-
-| Priority | Behavior |
-|----------|----------|
-| Low | Included in daily digest only |
-| Medium | Standard notification delivery |
-| High | Immediate delivery, bypasses digest |
-| Urgent | Immediate delivery, bypasses quiet hours |
-
-### Delivery Methods
-
-| Method | Description |
-|--------|-------------|
-| Push | In-app push notification |
-| Email | Email notification via email service |
-| SMS | SMS message (high/urgent priority only) |
-
-### Managing Notifications
+Code that needs to notify someone in-app delivers a message to their inbox:
 
 ```python
-# Get notifications with filters
-notifications = service.get_notifications(
-    user_id='S-12345',
-    channel='Academic',
-    is_read=False
-)
+from education_system.systems.university.infrastructure.email.messages_inbox import deliver_inbox_message
 
-# Mark individual as read
-service.mark_as_read(notification_id='notif_001')
-
-# Mark all as read
-service.mark_all_as_read(user_id='S-12345')
-
-# Archive a notification
-service.archive_notification(notification_id='notif_001')
-
-# Delete old notifications (retention management)
-service.delete_old_notifications(days=90)
-
-# Get unread count
-count = service.get_unread_count(user_id='S-12345')
-```
-
-### User Preferences
-
-Configure notification delivery per channel:
-
-```python
-# Get current preferences
-prefs = service.get_preferences(user_id='S-12345')
-
-# Update preferences
-service.update_preferences(
-    user_id='S-12345',
-    academic_enabled=True,
-    social_enabled=True,
-    financial_enabled=True,
-    health_enabled=True,
-    housing_enabled=True,
-    events_enabled=False,     # Disable event notifications
-    system_enabled=True
+deliver_inbox_message(
+    recipient_ref='S-12345',
+    subject='Grade Posted',
+    body='Your grade for CS101 Final Exam has been posted.'
 )
 ```
 
-### Channel-Specific Settings
+### Notification Preferences
 
-```python
-# Get channel settings
-settings = service.get_channel_settings(
-    user_id='S-12345',
-    channel='Academic'
-)
-
-# Update channel settings
-service.update_channel_settings(
-    user_id='S-12345',
-    channel='Academic',
-    enabled=True,
-    min_priority='medium',     # Filter out low-priority
-    delivery_method='push',
-    bundle_enabled=True
-)
-```
-
-### Daily Digest
-
-Low-priority notifications are compiled into a daily digest:
-
-```python
-# Generate a daily digest for a user
-digest = service.generate_daily_digest(user_id='S-12345')
-# Compiles all unread low-priority notifications into a single summary
-```
-
-### Smart Bundling
-
-Related notifications are automatically grouped:
-
-```python
-# Example: 5 assignment grade notifications bundled into one:
-# "You have 5 new grade notifications for CS101, MATH201, ENG102..."
-```
-
-**Bundle settings:**
-- Bundle time window: 300 seconds (5 minutes) default
-- Notifications within the window and same channel are grouped
-- Bundled notifications show a summary count
-
-### Quiet Hours
-
-Configure do-not-disturb periods:
-
-```python
-service.update_preferences(
-    user_id='S-12345',
-    quiet_hours_start='22:00',
-    quiet_hours_end='08:00'
-)
-```
-
-**Quiet hours behavior:**
-- Low/Medium priority: Held until quiet hours end
-- High priority: Held until quiet hours end
-- Urgent priority: Delivered immediately (bypasses quiet hours)
-- Supports midnight-spanning periods (e.g., 22:00-08:00)
-
-### Notification Statistics
-
-```python
-stats = service.get_notification_stats(user_id='S-12345')
-# Returns: total sent, read rate, channel breakdown,
-#          average response time, preference summary
-```
-
-### Notifications Database Schema
-
-| Table | Purpose |
-|-------|---------|
-| `notifications` | Core notification records |
-| `notification_preferences` | User delivery preferences |
-| `notification_channels` | Channel-specific settings |
-| `notification_history` | Delivery tracking and timestamps |
-| `digests` | Daily digest compilation records |
-| `bundled_notifications` | Grouped notification containers |
-| `notification_bundle_items` | Individual items within bundles |
-
-### Legacy Compatibility
-
-The notification service maintains backward compatibility with older notification types:
-
-```python
-# Legacy function maps old notification_type to new (channel, priority) system
-service.create_notification_legacy(
-    user_id='S-12345',
-    notification_type='grade_update',  # Mapped to Academic channel, Medium priority
-    message='Your grade has been updated.'
-)
-```
+Students set quiet hours, daily digest and bundling options in the Notification Preferences window (`src/education_system/systems/university/domains/student_life/interfaces/gui/notification_prefs/notification_prefs_gui.py`). They are saved on the user's `user_preferences` row.
 
 ---
 
@@ -582,7 +422,7 @@ service.create_notification_legacy(
 
 ### Database
 
-All three services store data in the main `student_records.db` database. Tables are created automatically on first use.
+Lost & Found, Feedback and the University message inbox store data in the main `student_records.db` database (`var/data/university/db_files/`). Tables are created automatically on first use.
 
 ### Integration Points
 
@@ -592,16 +432,6 @@ All three services store data in the main `student_records.db` database. Tables 
 | Email | Email delivery for notifications and feedback responses |
 | Activity Logging | All operations logged for compliance |
 | Database | Centralized storage with connection pooling |
-
-### Notification Defaults
-
-| Setting | Default |
-|---------|---------|
-| Quiet hours | Disabled (set start/end to enable) |
-| Bundle window | 300 seconds |
-| SMS | High/Urgent priority only |
-| Digest | Daily compilation of low-priority items |
-| Retention | 90 days (configurable) |
 
 ## Troubleshooting
 
@@ -618,22 +448,8 @@ All three services store data in the main `student_records.db` database. Tables 
 2. Check if the vote was previously removed
 3. Verify the user_id is correct and authenticated
 
-### Notifications Not Delivered
+### Notifications Not Showing in the Hub
 
-1. Check user preferences - the channel may be disabled
-2. Verify priority meets the minimum threshold for the channel
-3. Check quiet hours settings
-4. For SMS, ensure priority is High or Urgent
-5. Review the `notification_history` table for delivery status
-
-### Digest Not Generated
-
-1. Ensure there are unread low-priority notifications
-2. Check that the digest generation job is running
-3. Verify the user has digest delivery enabled
-
-### Notification Bundling Issues
-
-1. Check the bundle time window setting
-2. Notifications must be in the same channel to bundle
-3. Review `bundled_notifications` and `notification_bundle_items` tables
+1. The Hub lists unread messages only by default, so a message already read will not appear
+2. Check the **Source** filter is not hiding the message
+3. Confirm you are signed in: the inbox is keyed on the signed-in user

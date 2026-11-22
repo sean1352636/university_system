@@ -13,16 +13,19 @@ from types import SimpleNamespace
 
 import pytest
 
-from education_system.systems.university.domains.academics.interfaces.gui._cross_dialogs import (
+from education_system.systems.university.domains.teaching.interfaces.gui._cross_dialogs import (
     timetable as grid_module,
 )
-from education_system.systems.university.domains.academics.interfaces.gui import (
+from education_system.systems.university.domains.teaching.interfaces.gui import (
     timetable_management,
 )
 
 SCHEMA = [
     "CREATE TABLE student_modules (student_id TEXT, module_code TEXT, status TEXT)",
-    "CREATE TABLE rooms (id INTEGER PRIMARY KEY, building TEXT, room_number TEXT)",
+    "CREATE TABLE rooms (id INTEGER PRIMARY KEY, building TEXT, room_number TEXT, "
+    "room_name TEXT, capacity INTEGER)",
+    "CREATE TABLE modules (module_code TEXT, module_name TEXT)",
+    "CREATE TABLE instructors (id INTEGER PRIMARY KEY, first_name TEXT, last_name TEXT)",
     """CREATE TABLE module_schedule (
         id INTEGER PRIMARY KEY, module_code TEXT, day_of_week TEXT,
         start_time TEXT, end_time TEXT, room_id INTEGER, session_type TEXT,
@@ -70,7 +73,8 @@ def db(tmp_path, monkeypatch):
 def test_weekly_grid_skips_draft_clone(db):
     panel = SimpleNamespace(_scope="student", _scope_id="S1",
                             _week_start=date(2026, 9, 14))
-    panel._modules_in_scope = lambda conn: grid_module.WeeklyGridPanel._modules_in_scope(panel, conn)
+    panel._slots_in_scope = lambda conn, tt: grid_module.WeeklyGridPanel._slots_in_scope(
+        panel, conn, tt)
     lectures, _ = grid_module.WeeklyGridPanel._load_rows(panel)
     assert sorted(r["id"] for r in lectures) == [11, 20]   # NULL status counts as published
     monday = [r for r in lectures if r["day_of_week"] == "Monday"]
@@ -78,9 +82,9 @@ def test_weekly_grid_skips_draft_clone(db):
 
 
 def test_term_view_skips_draft_clone(db):
-    gui = SimpleNamespace()
-    gui._modules_for = lambda conn, scope, target: timetable_management.TimetableManagementGUI._modules_for(
-        gui, conn, scope, target)
+    gui = SimpleNamespace(
+        _slots_for=timetable_management.TimetableManagementGUI._slots_for,
+        _term_exams=timetable_management.TimetableManagementGUI._term_exams)
     rows = timetable_management.TimetableManagementGUI._collect_term_rows(
         gui, "2026-09-14", "2026-09-20", "student", "S1")
     mondays = [r for r in rows if r[1] == "Monday"]

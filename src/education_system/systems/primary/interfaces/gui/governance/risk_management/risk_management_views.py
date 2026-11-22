@@ -5,7 +5,7 @@ from __future__ import annotations
 import logging
 import tkinter as tk
 from datetime import date as _date
-from tkinter import messagebox, ttk
+from tkinter import ttk
 from typing import Any
 
 from education_system.platform import branding
@@ -26,6 +26,8 @@ from education_system.systems.primary.domain.governance.risk_management.risk_man
     ValidationError,
     score_band,
 )
+from education_system.platform.delivery.gui.parented_dialogs import messagebox
+from education_system.systems.primary.interfaces.gui import kit
 
 logger = logging.getLogger(__name__)
 
@@ -43,18 +45,49 @@ BAND_COLOURS = {
 
 def open_risk_management_window(parent=None) -> None:
     data.init_db()
-    master = getattr(parent, "root", parent)
-    win = tk.Toplevel(master) if master is not None else tk.Tk()
-    win.title(f"Risk Management — {branding.SYSTEM_NAME}")
-    win.geometry(WIN_GEOMETRY)
-    win.minsize(*WIN_MINSIZE)
-    nb = ttk.Notebook(win)
-    nb.pack(fill="both", expand=True, padx=10, pady=10)
+    if parent is None:
+        # Stand-alone (no main window): a window of its own, as before.
+        win = tk.Tk()
+        win.title(f"Risk Management — {branding.SYSTEM_NAME}")
+        win.geometry(WIN_GEOMETRY)
+        win.minsize(*WIN_MINSIZE)
+        frame = ttk.Frame(win, padding=10)
+        frame.pack(fill="both", expand=True)
+        _draw_risk_management(frame)
+        return
+    kit.show_page(parent, "Risk Management", _draw_risk_management)
+
+
+def _draw_risk_management(parent) -> None:
+    kit.page_heading(parent, "Risk Management",
+                     "Risk register, actions, reviews, the heatmap and an overview.")
+    nb = ttk.Notebook(parent)
+    nb.pack(fill="both", expand=True)
     RisksTab(nb)
     ActionsTab(nb)
     ReviewsTab(nb)
     HeatmapTab(nb)
     OverviewTab(nb)
+
+
+def _date_field(master: tk.Misc) -> kit.DateField:
+    """Date drop-downs with ``get()`` / ``set()`` ("" when not set)."""
+    return kit.DateField(master, tk.StringVar())
+
+
+def _staff_name_field(master: tk.Misc) -> kit.StaffPicker:
+    """A staff member picked by name (holds the full name)."""
+    return kit.StaffPicker(master, tk.StringVar(), by="name")
+
+
+def _dialog_body(win: tk.Toplevel) -> tuple[ttk.Frame, ttk.Frame]:
+    """``(fields frame, buttons frame)``: the fields scroll on a small
+    screen while Save / Cancel stay visible."""
+    wrap, footer = kit.scrolled_form(win, padding=10)
+    wrap.columnconfigure(1, weight=1)
+    btns = ttk.Frame(footer)
+    btns.pack(side="right")
+    return wrap, btns
 
 
 def _set_text(text: tk.Text, body: str) -> None:
@@ -249,7 +282,7 @@ class RiskDialog(tk.Toplevel):
                  on_save) -> None:
         super().__init__(master)
         self.title("Risk")
-        self.geometry("720x780")
+        self.geometry("760x660")
         self.transient(master.winfo_toplevel())
         self.after_idle(self.grab_set)
         self._existing = existing
@@ -257,16 +290,14 @@ class RiskDialog(tk.Toplevel):
         self._build()
 
     def _build(self) -> None:
-        wrap = ttk.Frame(self, padding=10)
-        wrap.pack(fill="both", expand=True)
-        wrap.columnconfigure(1, weight=1)
+        wrap, btns = _dialog_body(self)
 
         self.title_e = ttk.Entry(wrap)
         self.cat_cb = ttk.Combobox(wrap, values=CATEGORIES,
                                       state="readonly")
         self.desc_t = tk.Text(wrap, height=3, width=40)
-        self.owner_e = ttk.Entry(wrap)
-        self.ident_e = ttk.Entry(wrap)
+        self.owner_e = _staff_name_field(wrap)
+        self.ident_e = _date_field(wrap)
         self.status_cb = ttk.Combobox(wrap, values=STATUSES,
                                           state="readonly")
         self.like_cb = ttk.Combobox(
@@ -288,9 +319,9 @@ class RiskDialog(tk.Toplevel):
             state="readonly", width=20)
         self.treat_cb = ttk.Combobox(wrap, values=TREATMENTS,
                                           state="readonly")
-        self.freq_e = ttk.Entry(wrap, width=10)
-        self.last_e = ttk.Entry(wrap)
-        self.next_e = ttk.Entry(wrap)
+        self.freq_e = kit.NumberField(wrap, from_=1, to=3650, width=10)
+        self.last_e = _date_field(wrap)
+        self.next_e = _date_field(wrap)
         self.notes_t = tk.Text(wrap, height=3, width=40)
 
         fields = [
@@ -318,9 +349,6 @@ class RiskDialog(tk.Toplevel):
             w.grid(row=i, column=1, sticky="ew",
                    padx=6, pady=2)
 
-        btns = ttk.Frame(wrap)
-        btns.grid(row=len(fields), column=0, columnspan=2,
-                   sticky="e", pady=10)
         ttk.Button(btns, text="Save",
                     command=self._save).pack(side="left", padx=4)
         ttk.Button(btns, text="Cancel",
@@ -329,7 +357,7 @@ class RiskDialog(tk.Toplevel):
         today = _date.today().isoformat()
         if self._existing is None:
             self.cat_cb.set(DEFAULT_CATEGORY)
-            self.ident_e.insert(0, today)
+            self.ident_e.set(today)
             self.status_cb.set(DEFAULT_STATUS)
             self.like_cb.current(2)
             self.imp_cb.current(2)
@@ -342,8 +370,8 @@ class RiskDialog(tk.Toplevel):
             self.title_e.insert(0, e.title)
             self.cat_cb.set(e.category)
             self.desc_t.insert("1.0", e.description or "")
-            self.owner_e.insert(0, e.owner or "")
-            self.ident_e.insert(0, e.identified_date)
+            self.owner_e.set(e.owner or "")
+            self.ident_e.set(e.identified_date)
             self.status_cb.set(e.status)
             self.like_cb.current(int(e.likelihood) - 1)
             self.imp_cb.current(int(e.impact) - 1)
@@ -358,8 +386,8 @@ class RiskDialog(tk.Toplevel):
                      f"({IMPACT_LABELS[e.residual_impact]})")
             self.treat_cb.set(e.treatment)
             self.freq_e.insert(0, str(e.review_frequency_days))
-            self.last_e.insert(0, e.last_reviewed or "")
-            self.next_e.insert(0, e.next_review or "")
+            self.last_e.set(e.last_reviewed or "")
+            self.next_e.set(e.next_review or "")
             self.notes_t.insert("1.0", e.notes or "")
 
     @staticmethod
@@ -514,7 +542,7 @@ class ActionDialog(tk.Toplevel):
                  on_save) -> None:
         super().__init__(master)
         self.title(f"Action on risk #{risk_id}")
-        self.geometry("620x480")
+        self.geometry("680x480")
         self.transient(master.winfo_toplevel())
         self.after_idle(self.grab_set)
         self._risk_id = risk_id
@@ -523,15 +551,13 @@ class ActionDialog(tk.Toplevel):
         self._build()
 
     def _build(self) -> None:
-        wrap = ttk.Frame(self, padding=10)
-        wrap.pack(fill="both", expand=True)
-        wrap.columnconfigure(1, weight=1)
+        wrap, btns = _dialog_body(self)
         self.desc_t = tk.Text(wrap, height=3, width=40)
-        self.owner_e = ttk.Entry(wrap)
-        self.due_e = ttk.Entry(wrap)
+        self.owner_e = _staff_name_field(wrap)
+        self.due_e = _date_field(wrap)
         self.status_cb = ttk.Combobox(wrap, values=ACTION_STATUSES,
                                           state="readonly")
-        self.completed_e = ttk.Entry(wrap)
+        self.completed_e = _date_field(wrap)
         self.evidence_e = ttk.Entry(wrap)
         self.notes_t = tk.Text(wrap, height=3, width=40)
 
@@ -550,9 +576,6 @@ class ActionDialog(tk.Toplevel):
                                               padx=6, pady=2)
             w.grid(row=i, column=1, sticky="ew",
                    padx=6, pady=2)
-        btns = ttk.Frame(wrap)
-        btns.grid(row=len(fields), column=0, columnspan=2,
-                   sticky="e", pady=10)
         ttk.Button(btns, text="Save",
                     command=self._save).pack(side="left", padx=4)
         ttk.Button(btns, text="Cancel",
@@ -563,10 +586,10 @@ class ActionDialog(tk.Toplevel):
         else:
             e = self._existing
             self.desc_t.insert("1.0", e.description)
-            self.owner_e.insert(0, e.owner or "")
-            self.due_e.insert(0, e.due_date or "")
+            self.owner_e.set(e.owner or "")
+            self.due_e.set(e.due_date or "")
             self.status_cb.set(e.status)
-            self.completed_e.insert(0, e.completed_date or "")
+            self.completed_e.set(e.completed_date or "")
             self.evidence_e.insert(0, e.evidence or "")
             self.notes_t.insert("1.0", e.notes or "")
 
@@ -591,7 +614,7 @@ class ReviewDialog(tk.Toplevel):
     def __init__(self, master, *, risk_id: int, on_save) -> None:
         super().__init__(master)
         self.title(f"Review on risk #{risk_id}")
-        self.geometry("620x520")
+        self.geometry("680x520")
         self.transient(master.winfo_toplevel())
         self.after_idle(self.grab_set)
         self._risk_id = risk_id
@@ -599,11 +622,9 @@ class ReviewDialog(tk.Toplevel):
         self._build()
 
     def _build(self) -> None:
-        wrap = ttk.Frame(self, padding=10)
-        wrap.pack(fill="both", expand=True)
-        wrap.columnconfigure(1, weight=1)
-        self.date_e = ttk.Entry(wrap)
-        self.reviewer_e = ttk.Entry(wrap)
+        wrap, btns = _dialog_body(self)
+        self.date_e = _date_field(wrap)
+        self.reviewer_e = _staff_name_field(wrap)
         self.summary_t = tk.Text(wrap, height=3, width=40)
         self.like_cb = ttk.Combobox(
             wrap, values=("",) + tuple(
@@ -619,7 +640,7 @@ class ReviewDialog(tk.Toplevel):
             wrap, values=("",) + STATUSES, state="readonly")
         self.notes_t = tk.Text(wrap, height=3, width=40)
 
-        self.date_e.insert(0, _date.today().isoformat())
+        self.date_e.set(_date.today().isoformat())
         fields = [
             ("Review date:",     self.date_e),
             ("Reviewer:",        self.reviewer_e),
@@ -635,9 +656,6 @@ class ReviewDialog(tk.Toplevel):
                                               padx=6, pady=2)
             w.grid(row=i, column=1, sticky="ew",
                    padx=6, pady=2)
-        btns = ttk.Frame(wrap)
-        btns.grid(row=len(fields), column=0, columnspan=2,
-                   sticky="e", pady=10)
         ttk.Button(btns, text="Save",
                     command=self._save).pack(side="left", padx=4)
         ttk.Button(btns, text="Cancel",

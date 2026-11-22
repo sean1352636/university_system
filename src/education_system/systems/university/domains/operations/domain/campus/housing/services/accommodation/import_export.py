@@ -137,6 +137,9 @@ def bulk_import_from_csv(filepath):
                         ''', (student_id, typ, desc, sd, ed, status, notes, now, now))
                         aid = cursor.lastrowid
                         conn.commit()
+                        # Carry it to exams, assessments and module staff (consent-gated).
+                        from education_system.systems.university.services.bus import accommodation_bus
+                        accommodation_bus.after_change()
 
                         log_action('bulk_add', aid, f"Bulk import: {typ} for {student_id}")
                         success_count += 1
@@ -620,6 +623,9 @@ def import_from_json():
 
                     aid = cursor.lastrowid
                     conn.commit()
+                    # Carry it to exams, assessments and module staff (consent-gated).
+                    from education_system.systems.university.services.bus import accommodation_bus
+                    accommodation_bus.after_change()
 
                     log_action('import', aid, f"Imported from JSON: {acc_type} for {student_id}")
                     success_count += 1

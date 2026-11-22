@@ -553,5 +553,5 @@ The Parking Management System provides comprehensive tools for managing campus p
 ---
 
 **Last Updated**: January 2026
-**Module**: `university_system/modules/domain/mobility/gui/parking_management_gui.py`
+**Module**: `src/education_system/systems/university/domains/operations/interfaces/gui/campus/mobility/parking_management_gui.py`
 **Support**: parking@university.edu | (555) 123-PARK

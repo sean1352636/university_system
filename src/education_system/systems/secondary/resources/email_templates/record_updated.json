@@ -1,0 +1,44 @@
+{
+  "name": "record_updated",
+  "description": "Sent to a pupil's school e-mail address when staff change their pupil record.",
+  "subject": "Your school record has been updated",
+  "body": [
+    "Dear {pupil_first_name},",
+    "",
+    "This is to let you know that your school record was updated on {updated_date}.",
+    "",
+    "What was changed:",
+    "{changes}",
+    "",
+    "Your form group:",
+    "{form_details}",
+    "",
+    "If anything looks wrong, or you didn't expect this change, please speak to your form tutor or the school office.",
+    "",
+    "Best wishes,",
+    "{school_name}"
+  ],
+  "placeholders": {
+    "pupil_first_name": "The pupil's preferred or first name",
+    "pupil_name": "The pupil's preferred first name and surname",
+    "changes": "A bulleted list of the parts of the record that changed (names of the parts only, not the new values)",
+    "updated_date": "The date of the change, e.g. 3 November 2026",
+    "school_email": "The pupil's school e-mail address",
+    "school_name": "The school's name",
+    "form_details": "The pupil's form, form tutor (with e-mail) and form room as they are now, one per line",
+    "form_group": "The pupil's form group",
+    "form_tutor": "The form tutor's name",
+    "form_tutor_email": "The form tutor's e-mail address",
+    "form_room": "The form room",
+    "year_group": "The pupil's year group number"
+  },
+  "defaults": {
+    "school_name": "Secondary School",
+    "form_details": "    Form:        not set yet",
+    "form_group": "",
+    "form_tutor": "",
+    "form_tutor_email": "",
+    "form_room": "",
+    "year_group": ""
+  }
+}

@@ -21,6 +21,37 @@ _APPRENTICESHIP_ROLE_OPTIONS = [
     ("end_point_assessor", "End-Point Assessor", "Gateway decisions and EPA grading"),
 ]
 
+# SEND is a staff tool for now (no learner or parent screens), so a
+# superadmin enters it as one of the two staff roles.
+_SEND_ROLE_OPTIONS = [
+    ("admin", "SEND Admin", "Every SEND area, records and reports"),
+    ("staff", "SENCO / Staff", "Learners, plans, EHCPs, provision and meetings"),
+]
+
+# Adult Education is staff-only too (no learner portal yet).
+_ADULT_EDUCATION_ROLE_OPTIONS = [
+    ("admin", "Adult Education Admin", "Every area: courses, funding, fees and reports"),
+    ("staff", "Tutor / Staff", "Learners, enrolments, registers, goals and support"),
+]
+
+# Alternative Provision is staff-only too (no pupil or parent screens yet).
+_ALTERNATIVE_PROVISION_ROLE_OPTIONS = [
+    ("admin", "AP Admin", "Every area: referrals, placements, providers, invoices, reports"),
+    ("staff", "Key Worker / Staff", "Pupils, registers, behaviour, safeguarding and plans"),
+]
+
+# Training Provider is staff-only too (no learner or client portal yet).
+_TRAINING_PROVIDER_ROLE_OPTIONS = [
+    ("admin", "TP Admin", "Every area: clients, courses, sessions, invoices, reports"),
+    ("staff", "Trainer / Staff", "Learners, bookings, registers, results and certificates"),
+]
+
+# Local Authority Education is council staff only (no parent or school portal yet).
+_LOCAL_AUTHORITY_ROLE_OPTIONS = [
+    ("admin", "LA Admin", "Every area, including deleting records and the schools register"),
+    ("staff", "Education Officer", "Children, admissions, welfare, exclusions, SEND, transport"),
+]
+
 _ROLE_COLOURS = {
     "admin": "#c0392b",
     "staff": "#2980b9",
@@ -44,6 +75,16 @@ def role_options(target_system: str):
     """Roles a superadmin may enter *target_system* as."""
     if target_system == "apprenticeships":
         return _APPRENTICESHIP_ROLE_OPTIONS
+    if target_system == "special_education":
+        return _SEND_ROLE_OPTIONS
+    if target_system == "adult_education":
+        return _ADULT_EDUCATION_ROLE_OPTIONS
+    if target_system == "alternative_provision":
+        return _ALTERNATIVE_PROVISION_ROLE_OPTIONS
+    if target_system == "training_provider":
+        return _TRAINING_PROVIDER_ROLE_OPTIONS
+    if target_system == "local_authority":
+        return _LOCAL_AUTHORITY_ROLE_OPTIONS
     return _ROLE_OPTIONS
 
 

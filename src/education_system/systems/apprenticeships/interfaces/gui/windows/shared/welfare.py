@@ -26,10 +26,8 @@ from education_system.systems.apprenticeships.infrastructure.persistence.reposit
     staff_repository,
 )
 from education_system.systems.apprenticeships.interfaces.gui import widgets
-from education_system.systems.apprenticeships.services import (
-    apprentice_service,
-    welfare_service,
-)
+from education_system.systems.apprenticeships.application.apprentices import apprentice_service
+from education_system.systems.apprenticeships.application.support import welfare_service
 
 logger = logging.getLogger(__name__)
 

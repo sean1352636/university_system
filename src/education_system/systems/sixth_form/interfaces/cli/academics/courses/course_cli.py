@@ -10,6 +10,7 @@ from __future__ import annotations
 import logging
 from datetime import date
 from typing import Any, Callable
+from education_system.systems.sixth_form.infrastructure.record_links import describe
 from education_system.systems.sixth_form.domain.academics.courses import courses as data
 from education_system.systems.sixth_form.domain.academics.courses.courses import (
     Course,
@@ -132,6 +133,13 @@ def _collect_form(existing: Course | None) -> dict[str, Any]:
     payload["description"] = _input(
         "Description (optional)",
         default=(existing.description or "") if is_edit else "")
+    payload["qualification_type"] = _input(
+        "Qualification type (blank = the subject's; e.g. 'GCSE' for a resit)",
+        default=(existing.qualification_type or "") if is_edit else "")
+    payload["planned_hours"] = _input(
+        "Planned hours per learner per year (optional)",
+        default=("" if not is_edit or existing.planned_hours is None
+                 else f"{existing.planned_hours:g}"))
     return payload
 
 
@@ -272,9 +280,45 @@ def view_course(course_id: int | None = None) -> None:
     print(f"    Room         : {c.room or '—'}")
     print(f"    Max students : {c.max_students}")
     print(f"    Created      : {c.created_at}")
+    print(f"    Qualification: {data.effective_qualification_type(c)}")
+    print(f"    Planned hours: "
+          f"{'—' if c.planned_hours is None else f'{c.planned_hours:g}'}")
     if c.description:
         print(f"    Description  : {c.description}")
     _pause()
+
+
+def learners_on_course_flow(course_id: int | None = None) -> None:
+    """Learners whose active aim matches the course, and who is missing
+    from the course's class groups."""
+    print("\n═══ Learners on Course (learning aims) ═══")
+    try:
+        cid = course_id if course_id is not None else int(
+            _input("Course ID", allow_empty=False))
+    except ValueError:
+        print("  ✗ Course ID must be a whole number.")
+        _pause()
+        return
+    aims = data.learners_on_course(cid)
+    from education_system.systems.sixth_form.domain.academics.class_groups import (
+        class_groups as _cg,
+    )
+    grouped: set[str] = set()
+    for g in _cg.list_groups(course_id=cid):
+        grouped.update(_cg.list_members(g.group_id))
+    for a in aims:
+        flag = "" if a.student_id in grouped else "   ← not in a class group"
+        print(f"    {a.student_id:<10} {a.label:<36} from {a.start_date}{flag}")
+    print(f"\n  {len(aims)} learner(s); "
+          f"{sum(1 for a in aims if a.student_id not in grouped)} not grouped.")
+    _pause()
+
+
+def _programme_reports() -> None:
+    from education_system.systems.sixth_form.interfaces.cli.academics.qualifications import (
+        study_programme_cli,
+    )
+    study_programme_cli.run_reports()
 
 
 def edit_course(course_id: int | None = None) -> None:
@@ -347,6 +391,33 @@ def delete_course_flow(course_id: int | None = None) -> None:
         _pause()
         return
 
+    try:
+        history = data.history_counts(cid)
+    except Exception as exc:
+        logger.exception("CLI history_counts(%d) failed", cid)
+        print(f"  ✗ Error: {exc}")
+        _pause()
+        return
+    if history:
+        print(f"\n  Course {existing.course_code} has recorded history that deleting it would "
+              f"destroy:\n    {describe(history)}")
+        if getattr(existing, "archived_at", None):
+            print("  It is already archived (hidden from lists, history kept).")
+            _pause()
+            return
+        confirm = _input(
+            "Archiving hides the course, its class groups and slots from lists and timetables. Type 'yes' to archive instead", default="no")
+        if confirm.lower() != "yes":
+            print("\n  Cancelled.")
+            return
+        try:
+            if data.archive_course(cid):
+                print(f"\n  ✓ Archived course #{cid} — history kept.")
+        except Exception as e:
+            logger.exception("CLI archive_course(%d) failed", cid)
+            print(f"\n  ✗ Unexpected error: {e}")
+        _pause()
+        return
     confirm = _input(
         f"Delete course {existing.course_code} ({existing.subject}, "
         f"Year {existing.year_group} {existing.academic_year})? "
@@ -414,6 +485,8 @@ _MENU: list[tuple[str, Callable[[], None]]] = [
     ("View Course",      view_course),
     ("Edit Course",      edit_course),
     ("Delete Course",    delete_course_flow),
+    ("Learners on Course (aims)", learners_on_course_flow),
+    ("Study Programme Reports",   _programme_reports),
 ]
 
 

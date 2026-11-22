@@ -105,7 +105,6 @@ def create_performance_indexes():
             ('idx_student_modules_student_id', 'student_modules', 'student_id', False),
             ('idx_student_modules_module_code', 'student_modules', 'module_code', False),
             ('idx_student_modules_status', 'student_modules', 'status', False),
-            ('idx_student_modules_student_module', 'student_modules', 'student_id, module_code', False),
 
             # User/Auth indexes
             ('idx_users_username', 'users', 'username', True),
@@ -184,8 +183,6 @@ def create_performance_indexes():
             # Library indexes
             ('idx_book_loans_student_id', 'book_loans', 'student_id', False),
             ('idx_book_loans_book_id', 'book_loans', 'book_id', False),
-            ('idx_book_loans_due_date', 'book_loans', 'due_date', False),
-            ('idx_book_loans_status', 'book_loans', 'status', False),
 
             # Support ticket indexes
             ('idx_support_tickets_user_id', 'support_tickets', 'user_id', False),

@@ -2,7 +2,7 @@
 
 ## Overview
 
-The University Management System uses a relational database to store all application data. By default, the system uses SQLite for ease of deployment, but supports PostgreSQL and MySQL for production environments.
+The University Management System uses a relational database to store all application data. The system uses SQLite in WAL mode.
 
 ## Table of Contents
 
@@ -25,78 +25,43 @@ The University Management System uses a relational database to store all applica
 ### Default Configuration (SQLite)
 
 ```python
-# infrastructure/database/db.py
-DEFAULT_DB_PATH = 'data/db_files/university_system.db'
-```
-
-### PostgreSQL Configuration
-
-```python
-# .env
-DB_TYPE=postgresql
-DB_HOST=localhost
-DB_PORT=5432
-DB_NAME=university_system
-DB_USER=db_user
-DB_PASSWORD=secure_password
-```
-
-### MySQL Configuration
-
-```python
-# .env
-DB_TYPE=mysql
-DB_HOST=localhost
-DB_PORT=3306
-DB_NAME=university_system
-DB_USER=db_user
-DB_PASSWORD=secure_password
+# src/education_system/systems/university/infrastructure/database/db.py
+# Resolves to var/data/university/db_files/student_records.db
+# (UNIVERSITY_DEFAULT_DB_PATH in src/education_system/paths.py)
+DEFAULT_DB_PATH = os.fspath(DEFAULT_DB_PATH)
 ```
 
 ## Connection Management
 
 ### DatabaseManager Class
 
-The `DatabaseManager` class provides centralized database access:
+The `DatabaseManager` class is a context manager for centralized database access:
 
 ```python
-from infrastructure.database.db import DatabaseManager
+from education_system.systems.university.infrastructure.database.db import DatabaseManager
 
-# Create instance
-db_manager = DatabaseManager(db_path='data/db_files/university_system.db')
-
-# Get connection
-conn = db_manager.get_connection()
-
-# Execute query
-cursor = conn.cursor()
-cursor.execute("SELECT * FROM users WHERE id = ?", (user_id,))
-result = cursor.fetchone()
-
-# Close connection
-db_manager.close()
+# Uses the default database unless db_path is given
+with DatabaseManager() as db:
+    # Execute query
+    db.execute("SELECT * FROM users WHERE id = ?", (user_id,))
+    result = db.fetchone()
 ```
+
+New code can also call `get_connection()` from the same module directly.
 
 ### Transaction Management
 
 Use transactions for data modifications:
 
 ```python
-from infrastructure.database.db import get_db_transaction
+from education_system.systems.university.infrastructure.database.db import transaction
 
 # Automatic transaction management
-with get_db_transaction() as (conn, cursor):
+with transaction() as conn:
+    cursor = conn.cursor()
     cursor.execute("INSERT INTO courses (...) VALUES (?)", data)
     cursor.execute("INSERT INTO enrollments (...) VALUES (?)", enrollment_data)
     # Automatically commits on success, rolls back on exception
-```
-
-### Read-Only Connections
-
-For read operations, use read-only connections:
-
-```python
-db_manager = DatabaseManager(db_path='path/to/db', read_only=True)
 ```
 
 ## Schema Overview
@@ -694,46 +659,41 @@ email TEXT NOT NULL
 
 ### Example Migration
 
+Migrations live in `src/education_system/migrations/versions/` on a single Alembic chain. The chain must have exactly one head, so each new migration's `down_revision` points at the current head.
+
 ```python
-# infrastructure/database/migrations/001_add_account_lockout.py
+# src/education_system/migrations/versions/<revision>_add_account_lockout.py
+from alembic import op
 
-def upgrade(conn):
+revision = "<revision>"
+down_revision = "<current head>"
+
+
+def upgrade() -> None:
     """Add account lockout fields to users table."""
-    cursor = conn.cursor()
+    op.execute("ALTER TABLE users ADD COLUMN failed_login_attempts INTEGER DEFAULT 0")
+    op.execute("ALTER TABLE users ADD COLUMN account_locked_until TIMESTAMP")
 
-    # Add new columns
-    cursor.execute("""
-        ALTER TABLE users
-        ADD COLUMN failed_login_attempts INTEGER DEFAULT 0
-    """)
 
-    cursor.execute("""
-        ALTER TABLE users
-        ADD COLUMN account_locked_until TIMESTAMP
-    """)
-
-    conn.commit()
-
-def downgrade(conn):
-    """Remove account lockout fields (SQLite doesn't support column drop)."""
-    # For SQLite, would need to recreate table
-    # For PostgreSQL/MySQL:
-    # cursor.execute("ALTER TABLE users DROP COLUMN failed_login_attempts")
-    # cursor.execute("ALTER TABLE users DROP COLUMN account_locked_until")
-    pass
+def downgrade() -> None:
+    """Remove account lockout fields."""
+    op.execute("ALTER TABLE users DROP COLUMN account_locked_until")
+    op.execute("ALTER TABLE users DROP COLUMN failed_login_attempts")
 ```
 
 ### Running Migrations
 
+The launcher applies pending migrations at startup. To run them by hand:
+
 ```bash
 # Run all pending migrations
-python -m infrastructure.database.migrate
+python -m alembic -c src/education_system/alembic.ini upgrade head
 
 # Check migration status
-python -m infrastructure.database.migrate --status
+python -m alembic -c src/education_system/alembic.ini current
 
 # Rollback last migration (if supported)
-python -m infrastructure.database.migrate --rollback
+python -m alembic -c src/education_system/alembic.ini downgrade -1
 ```
 
 ## Backup and Recovery
@@ -747,8 +707,8 @@ python -m infrastructure.database.migrate --rollback
 # Backup script
 #!/bin/bash
 DATE=$(date +%Y%m%d_%H%M%S)
-BACKUP_DIR="/path/to/backups/database"
-DB_PATH="/path/to/data/db_files/university_system.db"
+BACKUP_DIR="/path/to/education-system/var/backups/university/database"
+DB_PATH="/path/to/education-system/var/data/university/db_files/student_records.db"
 
 # Create backup
 sqlite3 $DB_PATH ".backup $BACKUP_DIR/backup_$DATE.db"
@@ -763,12 +723,13 @@ find $BACKUP_DIR -name "backup_*.db.gz" -mtime +30 -delete
 ### Manual Backup
 
 ```python
-from infrastructure.database.db import DatabaseManager
+import sqlite3
+
+from education_system.systems.university.infrastructure.database.db import get_connection
 
 def backup_database(source_path: str, backup_path: str):
     """Create a database backup."""
-    source_db = DatabaseManager(source_path)
-    source_conn = source_db.get_connection()
+    source_conn = get_connection(db_path=source_path)
 
     # Create backup connection
     backup_conn = sqlite3.connect(backup_path)
@@ -778,17 +739,14 @@ def backup_database(source_path: str, backup_path: str):
 
     # Close connections
     backup_conn.close()
-    source_db.close()
+    source_conn.close()
 ```
 
 ### Recovery
 
 ```bash
 # Restore from backup
-cp backups/database/backup_YYYYMMDD.db data/db_files/university_system.db
-
-# Or using Python
-python -m infrastructure.database.restore --file backups/database/backup_YYYYMMDD.db
+cp var/backups/university/database/backup_YYYYMMDD.db var/data/university/db_files/student_records.db
 ```
 
 ### Disaster Recovery
@@ -851,8 +809,6 @@ VACUUM;
 ## References
 
 - [SQLite Documentation](https://www.sqlite.org/docs.html)
-- [PostgreSQL Documentation](https://www.postgresql.org/docs/)
-- [MySQL Documentation](https://dev.mysql.com/doc/)
 - [Database Normalization](https://en.wikipedia.org/wiki/Database_normalization)
 - [ACID Properties](https://en.wikipedia.org/wiki/ACID)
 

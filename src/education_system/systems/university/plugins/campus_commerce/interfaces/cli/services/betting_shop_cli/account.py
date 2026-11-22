@@ -8,6 +8,9 @@ from education_system.systems.university.plugins.campus_commerce.interfaces.cli.
     logger, get_connection, transaction,
     MIN_DEPOSIT, MAX_DEPOSIT,
 )
+from education_system.systems.university.plugins.campus_commerce.domain.betting.services.betting_core import (
+    AccountManager,
+)
 from education_system.systems.university.plugins.campus_commerce.interfaces.cli.services.betting_shop_cli.helpers import print_subheader, get_current_user
 
 
@@ -105,42 +108,20 @@ def deposit_funds():
             input("\nPress Enter to continue...")
             return
 
-        # Get current balance
-        with get_connection() as conn:
-            cursor = conn.execute('SELECT balance FROM betting_accounts WHERE user_id = ?',
-                                (user.get('username'),))
-            row = cursor.fetchone()
-            balance_before = float(row[0]) if row else 0.00
+        # Wallet credit + Finance posting live in the shared betting service
+        username = user.get('username')
+        student_id = user.get('student_id') or username
+        AccountManager.get_or_create_account(username, username, user.get('email', ''))
+        transaction_id = AccountManager.deposit(
+            username, amount, payment_method, username, student_id=student_id
+        )
+        if not transaction_id:
+            print("❌ Deposit failed. Check amount limits, account status and student account balance.")
+            input("\nPress Enter to continue...")
+            return
 
-        balance_after = balance_before + amount
-
-        with transaction() as conn:
-            # Ensure account exists
-            cursor = conn.execute('SELECT account_id FROM betting_accounts WHERE user_id = ?',
-                                (user.get('username'),))
-            if not cursor.fetchone():
-                conn.execute('''
-                    INSERT INTO betting_accounts (user_id, username, email)
-                    VALUES (?, ?, ?)
-                ''', (user.get('username'), user.get('username'), user.get('email', '')))
-
-            # Update balance
-            conn.execute('''
-                UPDATE betting_accounts
-                SET balance = balance + ?,
-                    total_deposited = total_deposited + ?,
-                    updated_at = ?
-                WHERE user_id = ?
-            ''', (amount, amount, datetime.now().isoformat(), user.get('username')))
-
-            # Record transaction
-            conn.execute('''
-                INSERT INTO transactions
-                (source_type, student_id, transaction_type, amount, balance_before, balance_after,
-                 description, payment_method, created_at)
-                VALUES ('betting', ?, 'deposit', ?, ?, ?, ?, ?, ?)
-            ''', (user.get('username'), amount, balance_before, balance_after,
-                  f'Deposit via {payment_method}', payment_method, datetime.now().isoformat()))
+        account = AccountManager.get_account(username) or {}
+        balance_after = float(account.get('balance') or 0)
 
         print(f"\n✅ Successfully deposited GBP {amount:.2f} via {payment_method}")
         print(f"   New Balance: GBP {balance_after:.2f}")
@@ -239,27 +220,19 @@ def withdraw_funds():
             input("\nPress Enter to continue...")
             return
 
+        username = user.get('username')
+        student_id = user.get('student_id') or username
+        if withdrawal_method == "Student Account":
+            result = AccountManager.withdraw_to_student_account(username, amount, student_id, username)
+        else:
+            result = {'transaction_id': AccountManager.withdraw(username, amount, withdrawal_method, username)}
+        if not result.get('transaction_id'):
+            print(f"❌ Withdrawal failed: {result.get('message') or 'check balance and account status'}")
+            input("\nPress Enter to continue...")
+            return
+        if withdrawal_method == "Student Account" and result.get('new_balance') is not None:
+            print(f"   Student account balance: GBP {float(result['new_balance']):.2f}")
         balance_after = current_balance - amount
-
-        with transaction() as conn:
-            # Update balance
-            conn.execute('''
-                UPDATE betting_accounts
-                SET balance = balance - ?,
-                    total_withdrawn = total_withdrawn + ?,
-                    updated_at = ?
-                WHERE user_id = ?
-            ''', (amount, amount, datetime.now().isoformat(), user.get('username')))
-
-            # Record transaction
-            conn.execute('''
-                INSERT INTO transactions
-                (source_type, student_id, transaction_type, amount, balance_before, balance_after,
-                 description, payment_method, created_at)
-                VALUES ('betting', ?, 'withdrawal', ?, ?, ?, ?, ?, ?)
-            ''', (user.get('username'), amount, current_balance, balance_after,
-                  f'Withdrawal to {withdrawal_method}', withdrawal_method,
-                  datetime.now().isoformat()))
 
         print("\n✅ Withdrawal processed successfully!")
         print(f"   Amount: GBP {amount:.2f}")

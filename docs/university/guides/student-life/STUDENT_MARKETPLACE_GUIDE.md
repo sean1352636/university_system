@@ -53,12 +53,12 @@ The Student Marketplace module facilitates peer-to-peer transactions among stude
 
 ## Architecture
 
-### Service Layer (`services/marketplace_service.py`)
+### Service Layer (`src/education_system/systems/university/plugins/campus_commerce/domain/marketplace/services/marketplace_service.py`)
 
 The `MarketplaceService` class provides all business logic and database operations:
 
 ```python
-from university_system.modules.domain.marketplace.services.marketplace_service import MarketplaceService
+from education_system.systems.university.plugins.campus_commerce.domain.marketplace.services.marketplace_service import MarketplaceService
 
 service = MarketplaceService()
 
@@ -182,12 +182,12 @@ Buyer-seller communication:
 ### Running the CLI
 
 ```bash
-python -m university_system.modules.domain.marketplace.cli.marketplace_cli
+python -m education_system.systems.university.plugins.campus_commerce.interfaces.cli.marketplace.marketplace_cli
 ```
 
 Or from within the application:
 ```python
-from university_system.modules.domain.marketplace.cli import MarketplaceCLI
+from education_system.systems.university.plugins.campus_commerce.interfaces.cli.marketplace import MarketplaceCLI
 
 cli = MarketplaceCLI(user_id='user123')
 cli.run()
@@ -226,13 +226,13 @@ STUDENT MARKETPLACE
 ### Running the GUI
 
 ```bash
-python -m university_system.modules.domain.marketplace.gui.marketplace_gui
+python -m education_system.systems.university.plugins.campus_commerce.interfaces.gui.marketplace.marketplace_gui
 ```
 
 Or from within the application:
 ```python
 import tkinter as tk
-from university_system.modules.domain.marketplace.gui import MarketplaceGUI
+from education_system.systems.university.plugins.campus_commerce.interfaces.gui.marketplace import MarketplaceGUI
 
 root = tk.Tk()
 app = MarketplaceGUI(root)
@@ -314,7 +314,7 @@ root.mainloop()
 ### Example 1: Creating a Textbook Listing
 
 ```python
-from university_system.modules.domain.marketplace.services.marketplace_service import MarketplaceService
+from education_system.systems.university.plugins.campus_commerce.domain.marketplace.services.marketplace_service import MarketplaceService
 
 service = MarketplaceService()
 
@@ -533,7 +533,7 @@ The marketplace uses the university system's centralized SQLite database. Tables
 
 ### Running Tests
 ```bash
-python -m university_system.modules.domain.marketplace.test_marketplace
+python -m pytest tests/unit/systems/university/domains/operations/commerce/marketplace/test_marketplace.py -v
 ```
 
 ### Test Coverage
@@ -626,17 +626,15 @@ The Achievement & Portfolio System enables students to:
 ## Architecture
 
 ```
-portfolio/
-├── services/
-│   └── portfolio_service.py      (1,319 lines) - Core business logic
-├── cli/
-│   └── portfolio_cli.py          (836 lines) - Command-line interface
-├── gui/
-│   └── portfolio_gui.py          (1,045 lines) - Tkinter GUI
-└── __init__.py
+src/education_system/systems/university/domains/progression/
+├── domain/portfolio/services/
+│   └── portfolio_service.py      - Core business logic
+└── interfaces/
+    ├── cli/portfolio/
+    │   └── portfolio_cli.py      - Command-line interface
+    └── gui/portfolio/
+        └── portfolio_gui.py      - Tkinter GUI
 ```
-
-**Total:** 3,200 lines of professional, production-ready code
 
 ## Features
 
@@ -751,7 +749,7 @@ portfolio/
 ### PortfolioService
 
 ```python
-from university_system.modules.domain.portfolio import PortfolioService
+from education_system.systems.university.domains.progression.domain.portfolio import PortfolioService
 
 service = PortfolioService()
 
@@ -826,10 +824,10 @@ url = service.get_portfolio_url("S001")
 
 ```bash
 # From university system
-python -m university_system.modules.domain.portfolio.cli.portfolio_cli
+python -m education_system.systems.university.domains.progression.interfaces.cli.portfolio.portfolio_cli
 
 # Or directly
-python university_system/modules/domain/portfolio/cli/portfolio_cli.py
+python src/education_system/systems/university/domains/progression/interfaces/cli/portfolio/portfolio_cli.py
 ```
 
 ### Menu Structure
@@ -872,14 +870,14 @@ Verified Badges: 3
 ### Usage
 
 ```python
-from university_system.modules.domain.portfolio import PortfolioGUI
+from education_system.systems.university.domains.progression.interfaces.gui.portfolio.portfolio_gui import PortfolioGUI
 
 # Standalone
 app = PortfolioGUI()
 app.run()
 
 # Or as part of main system
-from university_system.modules.domain.portfolio.gui.portfolio_gui import PortfolioGUI
+from education_system.systems.university.domains.progression.interfaces.gui.portfolio.portfolio_gui import PortfolioGUI
 gui = PortfolioGUI(parent_window)
 ```
 
@@ -1047,20 +1045,6 @@ gui = PortfolioGUI(parent_window)
 - Database integrity tests
 - Performance benchmarks
 
-### Test Script
-```bash
-# Run comprehensive tests
-python test_portfolio_system.py
-
-# Expected Output:
-# - Portfolio creation
-# - Item additions (projects, research, leadership)
-# - Badge awards (Dean's List, certifications)
-# - Skills with endorsements
-# - Resume generation
-# - Statistics calculation
-```
-
 ## Documentation
 
 ### Code Documentation
@@ -1100,9 +1084,9 @@ Part of the University Management System v5.0.0
 - JSON for data serialization
 
 ### Dependencies
-- university_system.infrastructure.database
-- university_system.infrastructure.auth
-- university_system.modules.shared.utils
+- education_system.systems.university.infrastructure.database
+- education_system.systems.university.infrastructure.auth
+- education_system.systems.university.infrastructure.activity_logger
 
 ## Contact & Support
 
@@ -1117,475 +1101,57 @@ For issues, feature requests, or questions about the Portfolio System:
 
 # Smart Notifications Hub
 
-A comprehensive notification management system for the university platform that provides unified notification delivery across all university systems.
+The Notifications Hub is the bell button in the University GUI. It is an **unread inbox**: it lists the signed-in user's unread received messages, drawn from the same unified feed as the Email Manager's Messages tab.
 
-## Overview
-
-The Smart Notifications Hub centralizes all notifications from academic, social, financial, health, housing, and events systems. It provides intelligent notification management with customizable preferences, priority levels, quiet hours, and delivery methods.
+The earlier multi-channel service is gone. The `notifications` table family, `NotificationsService` and the standalone notifications CLI were removed, and startup drops any legacy notification tables still in the database.
 
 ## Features
 
-### Core Features
-- **Multi-Channel Notifications**: Academic, Social, Financial, Health, Housing, Events, System
-- **Priority Levels**: Low, Medium, High, Urgent (with color coding)
-- **Delivery Methods**: Push, Email, SMS
-- **Smart Bundling**: Automatically groups related notifications
-- **Quiet Hours**: Customizable do-not-disturb periods
-- **Daily Digest**: Optional summary instead of real-time alerts
-- **Notification History**: Complete audit trail with search
-
-### User Preferences
-- Channel-specific enable/disable
-- Minimum priority thresholds per channel
-- Delivery method selection per channel
-- Configurable quiet hours (with midnight-spanning support)
-- Daily digest scheduling
-- Notification bundling settings
-- Time-based automatic cleanup
+- **University messages**: Unread user-to-user `messages`
+- **Cross-system messages**: Unread staff messages from other systems
+- **Source filter**: All, University or Cross-system
+- **Unread only**: The default view
+- **Header badge**: Counts the same unread messages
 
 ## Architecture
 
 ```
-notifications/
-├── services/
-│   └── notifications_service.py    # Core business logic
-├── cli/
-│   └── notifications_cli.py         # Command-line interface
-├── gui/
-│   └── __init__.py                  # Backward compatibility wrapper (redirects to Email Manager)
-└── __init__.py
+src/education_system/systems/university/domains/operations/interfaces/gui/communications/notifications/
+└── notifications_gui.py    # Hub window (NotificationsGUI, launch_notifications_gui)
 
-Note: The GUI has been integrated into the Email Manager at:
-modules/shared/gui/email/email_gui/notifications_tab.py
+src/education_system/platform/features/messaging/
+└── unified_inbox.py        # Shared UnifiedInboxPanel
 ```
-
-## Database Schema
-
-### Tables
-
-#### `notifications`
-Core notification records with channel, priority, and content.
-- `notification_id`: Primary key
-- `user_id`: Target user
-- `channel`: Notification category
-- `priority`: Urgency level
-- `title`: Brief headline
-- `message`: Full content
-- `source_system`: Originating system
-- `source_id`: Source record reference
-- `is_read`: Read status
-- `is_archived`: Archive status
-- `created_at`, `read_at`, `expires_at`: Timestamps
-- `metadata`: JSON additional data
-
-#### `notification_preferences`
-User-level global settings.
-- `quiet_hours_start`, `quiet_hours_end`: DND period
-- `daily_digest_enabled`: Digest mode flag
-- `daily_digest_time`: Digest delivery time
-- `bundle_notifications`: Auto-bundling flag
-- `bundle_time_window`: Bundling time threshold (seconds)
-
-#### `notification_channels`
-Channel-specific user preferences.
-- `user_id`, `channel`: Composite key
-- `enabled`: Channel enabled flag
-- `min_priority`: Minimum priority filter
-- `push_enabled`, `email_enabled`, `sms_enabled`: Delivery methods
-
-#### `notification_history`
-Delivery tracking and audit log.
-- Links to notifications
-- Tracks delivery method and status
-- Records errors and timestamps
-
-#### `digests`
-Daily digest compilation records.
-- One per user per day
-- Tracks notification count and send time
-
-#### `bundled_notifications`
-Smart notification grouping.
-- Groups related notifications by channel
-- Time-based bundling within configurable window
-- Automatic bundle creation and expiration
 
 ## Usage
 
-### Service Layer
-
-```python
-from university_system.modules.domain.notifications import NotificationsService
-
-service = NotificationsService()
-
-# Create a notification
-notification_id = service.create_notification(
-    user_id='S12345',
-    channel='academic',
-    priority='high',
-    title='Assignment Due Soon',
-    message='Your CS101 assignment is due in 24 hours',
-    source_system='Assignment System',
-    source_id='assignment_123'
-)
-
-# Get unread notifications
-notifications = service.get_notifications(
-    user_id='S12345',
-    unread_only=True
-)
-
-# Mark as read
-service.mark_as_read(notification_id, user_id='S12345')
-
-# Update preferences
-service.update_preferences(
-    user_id='S12345',
-    quiet_hours_start='22:00',
-    quiet_hours_end='08:00',
-    daily_digest_enabled=True,
-    daily_digest_time='08:00'
-)
-
-# Configure channel
-service.update_channel_settings(
-    user_id='S12345',
-    channel='social',
-    enabled=True,
-    min_priority='medium',
-    push_enabled=True,
-    email_enabled=False
-)
-```
-
-### CLI Interface
-
-```python
-from university_system.modules.domain.notifications.cli import NotificationsCLI
-
-cli = NotificationsCLI()
-cli.main_menu()
-```
-
-**CLI Features:**
-- View notifications (all, unread, by channel, by priority)
-- Mark notifications as read (individual or bulk)
-- Archive notifications
-- Configure preferences and quiet hours
-- Manage channel settings
-- Set up daily digest
-- Clear old notifications
-- View statistics
-- Create test notifications
-
 ### GUI Interface
 
-**NEW:** The Notifications GUI has been integrated into the Email Manager for a unified communication experience.
-
-Access notifications through the Email Manager:
-
 ```python
-from university_system.modules.shared.gui.email.email_gui.email_manager_main import EmailManagerGUI
+from education_system.systems.university.domains.operations.interfaces.gui.communications.notifications.notifications_gui import launch_notifications_gui
 
-# Create email manager
-email_gui = EmailManagerGUI(root, auth)
-
-# Access notifications tab
-email_gui.show_notifications_tab()
+launch_notifications_gui(parent=root, auth=auth)
 ```
 
-**Backward Compatibility:** For legacy code, importing NotificationsGUI will automatically redirect to the Email Manager:
+The Email Manager opens the same Hub through `EmailManagerGUI.show_notifications_hub()`.
+
+### Delivering a Notification
+
+Code that needs to notify someone in-app delivers a message to their inbox:
 
 ```python
-from university_system.modules.domain.notifications.gui import NotificationsGUI
+from education_system.systems.university.infrastructure.email.messages_inbox import deliver_inbox_message
 
-# This now opens the Email Manager with notifications tab focused
-app = NotificationsGUI()
-app.run()
-```
-
-**GUI Features:**
-- Modern notification center with inbox-style list
-- Unread badge count
-- Channel filter tabs (Academic, Social, Financial, Health, Housing, Events)
-- Priority color coding (Red=Urgent, Orange=High, Yellow=Medium, Blue=Low)
-- Interactive preferences panel
-- Quiet hours time picker
-- Daily digest configuration
-- Notification bundling settings
-- Channel-specific preferences
-- Notification history with search and filters
-- Mark as read/archive functionality
-- Statistics dashboard
-- One-click "Mark All as Read"
-- Real-time updates
-
-## Notification Channels
-
-| Channel | Description | Common Uses |
-|---------|-------------|-------------|
-| **Academic** | Course, assignment, grade notifications | Assignment due, grade posted, exam scheduled |
-| **Social** | Student life and community | Club events, social activities, friend requests |
-| **Financial** | Billing and payments | Payment due, receipt issued, scholarship awarded |
-| **Health** | Campus health services | Appointment reminder, health alert, prescription ready |
-| **Housing** | Residential life | Maintenance request, package arrival, room inspection |
-| **Events** | Campus events | Event registration, event reminder, event cancelled |
-| **System** | Platform notifications | System maintenance, account updates, security alerts |
-
-## Priority Levels
-
-| Priority | Color | Description | Delivery |
-|----------|-------|-------------|----------|
-| **Urgent** | 🔴 Red | Immediate attention required | All methods, overrides quiet hours |
-| **High** | 🟠 Orange | Important but not critical | All enabled methods |
-| **Medium** | 🟡 Yellow | Standard notifications | Respects quiet hours |
-| **Low** | 🔵 Blue | Informational only | May be bundled or delayed |
-
-## Smart Features
-
-### Quiet Hours
-Configure periods when only urgent notifications are delivered. Supports midnight-spanning periods (e.g., 22:00-08:00).
-
-### Daily Digest
-Consolidates all notifications into a single daily summary, reducing notification fatigue. Configure delivery time to match your schedule.
-
-### Smart Bundling
-Automatically groups related notifications within a configurable time window (default: 5 minutes). Example: Multiple grade postings become "3 new grades posted" instead of 3 separate notifications.
-
-### Notification Expiration
-Optionally set expiration dates for time-sensitive notifications. Expired notifications are automatically cleaned up.
-
-### Delivery Tracking
-Complete audit trail of when and how notifications were delivered, with error tracking for troubleshooting.
-
-## API Reference
-
-### NotificationsService
-
-#### Notification Management
-- `create_notification(...)`: Create new notification
-- `get_notifications(...)`: Retrieve notifications with filtering
-- `mark_as_read(...)`: Mark notification as read
-- `mark_all_as_read(...)`: Bulk mark as read
-- `archive_notification(...)`: Archive notification
-- `delete_old_notifications(...)`: Clean up old notifications
-- `get_unread_count(...)`: Get unread count
-
-#### Preferences Management
-- `get_preferences(...)`: Get user preferences
-- `update_preferences(...)`: Update global preferences
-- `get_channel_settings(...)`: Get all channel settings
-- `update_channel_settings(...)`: Update channel-specific settings
-
-#### Analytics
-- `get_notification_stats(...)`: Get comprehensive statistics
-- `generate_daily_digest(...)`: Create daily digest
-
-### Enums
-
-```python
-NotificationPriority:
-    LOW = "low"
-    MEDIUM = "medium"
-    HIGH = "high"
-    URGENT = "urgent"
-
-NotificationChannel:
-    ACADEMIC = "academic"
-    SOCIAL = "social"
-    FINANCIAL = "financial"
-    HEALTH = "health"
-    HOUSING = "housing"
-    EVENTS = "events"
-    SYSTEM = "system"
-
-DeliveryMethod:
-    PUSH = "push"
-    EMAIL = "email"
-    SMS = "sms"
-```
-
-## Integration Examples
-
-### From Assignment System
-```python
-from university_system.modules.domain.notifications import NotificationsService
-
-service = NotificationsService()
-
-# Notify about new assignment
-service.create_notification(
-    user_id=student_id,
-    channel='academic',
-    priority='medium',
-    title=f'New Assignment: {assignment_title}',
-    message=f'A new assignment has been posted for {course_code}. Due: {due_date}',
-    source_system='Assignment System',
-    source_id=f'assignment_{assignment_id}'
+deliver_inbox_message(
+    recipient_ref='S12345',
+    subject='New Assignment',
+    body='A new assignment has been posted for CS101.'
 )
 ```
 
-### From Financial System
-```python
-# Payment due reminder
-service.create_notification(
-    user_id=student_id,
-    channel='financial',
-    priority='high',
-    title='Tuition Payment Due Soon',
-    message=f'Your tuition payment of ${amount} is due on {due_date}',
-    source_system='Financial Services',
-    source_id=f'payment_{payment_id}',
-    expires_at=due_date
-)
-```
+### Preferences
 
-### From Health Services
-```python
-# Appointment reminder
-service.create_notification(
-    user_id=student_id,
-    channel='health',
-    priority='high',
-    title='Health Appointment Tomorrow',
-    message=f'Your appointment at {time} with {doctor}. Location: {location}',
-    source_system='Health Services',
-    source_id=f'appointment_{appointment_id}'
-)
-```
-
-## Configuration
-
-### Default Settings
-- **Quiet Hours**: 22:00 - 08:00
-- **Daily Digest**: Disabled (08:00 when enabled)
-- **Bundling**: Enabled (5-minute window)
-- **All Channels**: Enabled with minimum priority "low"
-- **Delivery Methods**: Push and Email enabled, SMS disabled
-
-### Customization
-Users can customize all settings through:
-1. GUI Preferences panel
-2. CLI Settings menu
-3. Direct service API calls
-
-## Performance
-
-### Indexes
-Optimized database indexes for common queries:
-- User + read status + created date (notification list)
-- User + channel + created date (channel filter)
-- Priority + created date (priority filter)
-
-### Scalability
-- Connection pooling for concurrent access
-- Efficient batch operations (mark all as read)
-- Automatic cleanup of old notifications
-- Bundle aggregation reduces notification volume
-
-## Testing
-
-### Manual Testing
-
-**CLI Testing:**
-```bash
-python -m university_system.modules.domain.notifications.cli.notifications_cli
-```
-
-**GUI Testing:**
-The Notifications GUI is now integrated into the Email Manager. To test:
-```bash
-# Run the email manager
-python -m university_system.modules.shared.gui.email.email_gui.email_manager_main
-
-# Then navigate to the Notifications tab, or use the menu:
-# Communication > Notifications Hub
-```
-
-For backward compatibility testing:
-```bash
-# This will open the Email Manager with notifications focused
-python -c "from university_system.modules.domain.notifications.gui import NotificationsGUI; app = NotificationsGUI(); app.run()"
-```
-
-### Test Scenarios
-1. Create notifications across different channels
-2. Filter by channel and priority
-3. Configure quiet hours spanning midnight
-4. Enable daily digest and verify bundling
-5. Test notification expiration
-6. Verify delivery tracking
-7. Check statistics accuracy
-
-## Maintenance
-
-### Database Cleanup
-```python
-# Delete read notifications older than 30 days
-count = service.delete_old_notifications(user_id, days=30)
-```
-
-### Monitoring
-Check notification statistics to monitor:
-- Unread notification accumulation
-- Channel distribution
-- Priority distribution
-- Daily notification volume
-
-## Troubleshooting
-
-### Notifications Not Appearing
-1. Check channel is enabled: `get_channel_settings()`
-2. Verify priority meets minimum threshold
-3. Check quiet hours configuration
-4. Review daily digest settings
-
-### Quiet Hours Not Working
-- Ensure time format is HH:MM (24-hour)
-- Verify midnight-spanning logic (22:00-08:00)
-- Check urgent notifications override quiet hours
-
-### Performance Issues
-- Run database cleanup for old notifications
-- Check notification volume per user
-- Review bundle settings
-- Monitor database indexes
-
-## Future Enhancements
-
-Potential future improvements:
-- Real-time push notification delivery
-- Mobile app integration
-- Notification templates
-- Advanced filtering (date ranges, search)
-- Notification forwarding rules
-- Integration with external notification services (Twilio, SendGrid)
-- Analytics dashboard
-- A/B testing for notification effectiveness
-
-## Dependencies
-
-- `sqlite3`: Database operations
-- `datetime`: Timestamp handling
-- `enum`: Enumeration types
-- `tkinter`: GUI interface
-- University infrastructure:
-  - `database.db`: Connection management
-  - `shared_context`: Authentication
-  - `activity_logger`: Audit logging
-
-## License
-
-Part of the University Management System v5.0.0
-
-## Support
-
-For issues or questions about the Smart Notifications Hub:
-1. Check this README
-2. Review code documentation
-3. Check activity logs for errors
-4. Contact system administrator
+Students set quiet hours, daily digest and bundling options in the Notification Preferences window (`src/education_system/systems/university/domains/student_life/interfaces/gui/notification_prefs/notification_prefs_gui.py`). They are saved on the user's `user_preferences` row.
 
 # Campus Navigation Module
 
@@ -1613,17 +1179,16 @@ A comprehensive campus navigation and wayfinding system that provides interactiv
 ## Module Structure
 
 ```
-campus_navigation/
-├── __init__.py                 # Module exports
-├── services/
-│   ├── __init__.py
-│   └── navigation_service.py  # Core navigation service layer
-├── cli/
-│   ├── __init__.py
-│   └── navigation_cli.py      # Command-line interface
-└── gui/
-    ├── __init__.py
-    └── navigation_gui.py      # Graphical user interface
+src/education_system/systems/university/domains/operations/
+├── domain/campus/campus_navigation/
+│   ├── __init__.py                 # Module exports
+│   └── services/
+│       └── navigation_service.py   # Core navigation service layer
+└── interfaces/
+    ├── cli/campus/campus_navigation/
+    │   └── navigation_cli.py       # Command-line interface
+    └── gui/campus/campus_navigation/
+        └── navigation_gui.py       # Graphical user interface
 ```
 
 ## Database Schema
@@ -1725,7 +1290,7 @@ Stores user favorite locations.
 ### Service Layer
 
 ```python
-from university_system.modules.domain.campus_navigation import NavigationService
+from education_system.systems.university.domains.operations.domain.campus.campus_navigation import NavigationService
 
 # Initialize service
 service = NavigationService()
@@ -1771,7 +1336,7 @@ favorites = service.get_favorites(user_id="student123")
 ### CLI Interface
 
 ```python
-from university_system.modules.domain.campus_navigation import NavigationCLI
+from education_system.systems.university.domains.operations.interfaces.cli.campus.campus_navigation.navigation_cli import NavigationCLI
 
 # Run CLI
 cli = NavigationCLI()
@@ -1780,13 +1345,13 @@ cli.display_menu()
 
 Or run directly:
 ```bash
-python -m university_system.modules.domain.campus_navigation.cli.navigation_cli
+python -m education_system.systems.university.domains.operations.interfaces.cli.campus.campus_navigation.navigation_cli
 ```
 
 ### GUI Interface
 
 ```python
-from university_system.modules.domain.campus_navigation import NavigationGUI
+from education_system.systems.university.domains.operations.interfaces.gui.campus.campus_navigation.navigation_gui import NavigationGUI
 
 # Standalone window
 app = NavigationGUI()
@@ -1928,20 +1493,15 @@ The GUI provides a rich graphical interface with:
 ## Configuration
 
 No additional configuration required. The module uses:
-- Centralized database via `university_system.infrastructure.database.db`
-- Activity logging via `university_system.modules.shared.utils.activity_logger`
-- Authentication via `university_system.infrastructure.shared_context`
+- Centralized database via `education_system.systems.university.infrastructure.database.db`
+- Activity logging via `education_system.systems.university.infrastructure.activity_logger`
+- Authentication via `education_system.systems.university.infrastructure.shared_context`
 
 ## Testing
 
-Run the test script:
+Run the tests:
 ```bash
-python test_navigation.py
-```
-
-Test the CLI:
-```bash
-python test_navigation_cli.py
+python -m pytest tests/unit/systems/university/domains/operations/campus/campus_navigation/test_campus_navigation_service.py -v
 ```
 
 ## Dependencies
@@ -1953,9 +1513,9 @@ python test_navigation_cli.py
 - json (built-in)
 
 Project-specific dependencies:
-- university_system.infrastructure.database
-- university_system.modules.shared.utils.activity_logger
-- university_system.infrastructure.shared_context
+- education_system.systems.university.infrastructure.database
+- education_system.systems.university.infrastructure.activity_logger
+- education_system.systems.university.infrastructure.shared_context
 
 ## Future Enhancements
 
@@ -2210,7 +1770,7 @@ All settings default to permissive (enabled) except major/year filters.
 ### Service Layer
 
 ```python
-from university_system.modules.domain.social_matching import SocialMatchingService
+from education_system.systems.university.domains.student_life.domain.social_matching import SocialMatchingService
 
 service = SocialMatchingService()
 
@@ -2272,10 +1832,10 @@ activity_id = service.create_social_activity(
 
 ```bash
 # Run the CLI
-python -m university_system.modules.domain.social_matching.cli.social_matching_cli
+python -m education_system.systems.university.domains.student_life.interfaces.cli.social_matching.social_matching_cli
 
 # Or from within the application
-from university_system.modules.domain.social_matching.cli import SocialMatchingCLI
+from education_system.systems.university.domains.student_life.interfaces.cli.social_matching import SocialMatchingCLI
 
 cli = SocialMatchingCLI()
 cli.run()
@@ -2297,7 +1857,7 @@ cli.run()
 
 ```python
 import tkinter as tk
-from university_system.modules.domain.social_matching.gui import SocialMatchingGUI
+from education_system.systems.university.domains.student_life.interfaces.gui.social_matching import SocialMatchingGUI
 
 root = tk.Tk()
 app = SocialMatchingGUI(root)
@@ -2317,21 +1877,17 @@ root.mainloop()
 ## Architecture
 
 ```
-social_matching/
-├── database/
-│   ├── __init__.py
-│   └── db_init.py              # Database schema and initialization
-├── services/
-│   ├── __init__.py
-│   └── social_matching_service.py  # Core business logic
-├── cli/
-│   ├── __init__.py
-│   └── social_matching_cli.py  # Command-line interface
-├── gui/
-│   ├── __init__.py
-│   └── social_matching_gui.py  # Tkinter GUI interface
-├── __init__.py
-└── README.md
+src/education_system/systems/university/domains/student_life/
+├── domain/social_matching/
+│   ├── database/
+│   │   └── db_init.py                  # Database schema and initialization
+│   └── services/
+│       └── social_matching_service.py  # Core business logic
+└── interfaces/
+    ├── cli/social_matching/
+    │   └── social_matching_cli.py      # Command-line interface
+    └── gui/social_matching/
+        └── social_matching_gui.py      # Tkinter GUI interface
 ```
 
 ## Compatibility Scoring Algorithm
@@ -2454,7 +2010,7 @@ ACTIVITY_LEVELS = [
 The module integrates with the university's authentication system:
 
 ```python
-from university_system.infrastructure.shared_context import get_auth
+from education_system.systems.university.infrastructure.shared_context import get_auth
 
 auth = get_auth()
 if auth.is_logged_in():
@@ -2466,7 +2022,7 @@ if auth.is_logged_in():
 All significant actions are logged:
 
 ```python
-from university_system.modules.shared.utils.activity_logger import log_activity
+from education_system.systems.university.infrastructure.activity_logger import log_activity
 
 log_activity('create', 'user_interest', user_id=user_id,
             details={'category': category, 'interest': interest_name})
@@ -2477,7 +2033,7 @@ log_activity('create', 'user_interest', user_id=user_id,
 Uses the centralized database connection pool:
 
 ```python
-from university_system.infrastructure.database.db import get_connection, transaction
+from education_system.systems.university.infrastructure.database.db import get_connection, transaction
 
 with transaction() as conn:
     # Database operations with automatic commit/rollback
@@ -2504,19 +2060,19 @@ Potential additions:
 Initialize the database:
 
 ```bash
-python -m university_system.modules.domain.social_matching.database.db_init
+python -m education_system.systems.university.domains.student_life.domain.social_matching.database.db_init
 ```
 
 Run the CLI interface:
 
 ```bash
-python -m university_system.modules.domain.social_matching.cli.social_matching_cli
+python -m education_system.systems.university.domains.student_life.interfaces.cli.social_matching.social_matching_cli
 ```
 
 Run the GUI interface:
 
 ```bash
-python -m university_system.modules.domain.social_matching.gui.social_matching_gui
+python -m education_system.systems.university.domains.student_life.interfaces.gui.social_matching.social_matching_gui
 ```
 
 ## Dependencies
@@ -2897,19 +2453,19 @@ The system includes comprehensive error handling:
 ## Integration Points
 
 ### Email Service
-- **Module**: `university_system.infrastructure.email.email_service`
+- **Module**: `education_system.systems.university.infrastructure.email.email_service`
 - **Function**: `send_email(recipient_email, subject, body)`
 - **Purpose**: Send refund confirmation receipts
 
 ### Finance Integration
-- **Module**: `university_system.modules.shared.utils.finance_integration`
+- **Module**: `education_system.systems.university.domains.finance.infrastructure.finance_integration`
 - **Functions**:
   - `ensure_student_finance_account_exists(student_id)`
   - `get_student_finance_account_balance(student_id)`
 - **Purpose**: Manage student account balances and transactions
 
 ### Database
-- **Module**: `university_system.infrastructure.database.db`
+- **Module**: `education_system.systems.university.infrastructure.database.db`
 - **Functions**:
   - `get_db_connection()`: Get database connection
   - `transaction()`: Transaction context manager
@@ -2917,9 +2473,9 @@ The system includes comprehensive error handling:
 
 ## File Locations
 
-- **Main GUI**: `university_system/modules/domain/carrental/gui/carrental_gui.py`
-- **Core Services**: `university_system/modules/domain/carrental/services/carrental_core.py`
-- **Database**: `university_system/data/db_files/student_records.db`
+- **Main GUI**: `src/education_system/systems/university/plugins/campus_commerce/interfaces/gui/carrental/carrental_gui.py`
+- **Core Services**: `src/education_system/systems/university/plugins/campus_commerce/domain/carrental/services/carrental_core.py`
+- **Database**: `var/data/university/db_files/student_records.db`
 
 ## Key Methods
 
@@ -2968,7 +2524,7 @@ The Mental Health & Wellness Hub is a comprehensive module for tracking student 
 
 ## Features
 
-### Service Layer (`services/wellness_service.py`)
+### Service Layer (`src/education_system/systems/university/domains/student_support/domain/wellbeing/wellness/services/wellness_service.py`)
 
 #### Wellness Tracking
 - **Wellness Check-ins**: Regular mood, stress, sleep, energy, and anxiety assessments (1-10 scale)
@@ -3023,7 +2579,7 @@ The Mental Health & Wellness Hub is a comprehensive module for tracking student 
   - 🏆 Wellness Champion (1000+ points)
 - **Leaderboard**: Top wellness point earners
 
-### CLI Interface (`cli/wellness_cli.py`)
+### CLI Interface (`src/education_system/systems/university/domains/student_support/interfaces/cli/wellbeing/wellness/wellness_cli.py`)
 
 #### Main Features
 - **Interactive Menu**: Easy-to-navigate command-line interface
@@ -3053,7 +2609,7 @@ The Mental Health & Wellness Hub is a comprehensive module for tracking student 
 - **Smart Recommendations**: Context-aware suggestions based on data
 - **Privacy Notices**: Confidentiality reminders for counseling features
 
-### GUI Interface (`gui/wellness_gui.py`)
+### GUI Interface (`src/education_system/systems/university/domains/student_support/interfaces/gui/wellbeing/wellness/wellness_gui.py`)
 
 #### Dashboard Tab
 - **Wellness Summary Card**: Average scores for past 30 days
@@ -3224,7 +2780,7 @@ Default Crisis Resources:
 ### Service Layer
 
 ```python
-from university_system.modules.domain.wellness import WellnessService
+from education_system.systems.university.domains.student_support.domain.wellbeing.wellness import WellnessService
 
 service = WellnessService()
 student_id = "12345"
@@ -3271,7 +2827,7 @@ resources = service.get_crisis_resources()
 ### CLI Interface
 
 ```python
-from university_system.modules.domain.wellness import WellnessCLI
+from education_system.systems.university.domains.student_support.interfaces.cli.wellbeing.wellness.wellness_cli import WellnessCLI
 
 cli = WellnessCLI()
 cli.main_menu()  # Launches interactive CLI
@@ -3280,7 +2836,7 @@ cli.main_menu()  # Launches interactive CLI
 ### GUI Interface
 
 ```python
-from university_system.modules.domain.wellness import WellnessGUI
+from education_system.systems.university.domains.student_support.interfaces.gui.wellbeing.wellness.wellness_gui import WellnessGUI
 
 app = WellnessGUI()
 app.run()  # Launches Tkinter GUI
@@ -3290,7 +2846,7 @@ Or as a child window:
 
 ```python
 import tkinter as tk
-from university_system.modules.domain.wellness import WellnessGUI
+from education_system.systems.university.domains.student_support.interfaces.gui.wellbeing.wellness.wellness_gui import WellnessGUI
 
 root = tk.Tk()
 wellness_gui = WellnessGUI(parent=root)
@@ -3320,9 +2876,9 @@ wellness_gui = WellnessGUI(parent=root)
 
 The wellness module integrates seamlessly with the existing university system:
 
-- **Authentication**: Uses `infrastructure/shared_context.py` for auth
-- **Database**: Uses `infrastructure/database/db.py` connection pooling
-- **Activity Logging**: All actions logged via `modules/shared/utils/activity_logger.py`
+- **Authentication**: Uses `src/education_system/systems/university/infrastructure/shared_context.py` for auth
+- **Database**: Uses `src/education_system/systems/university/infrastructure/database/db.py` connection pooling
+- **Activity Logging**: All actions logged via `src/education_system/systems/university/infrastructure/activity_logger.py`
 - **Student Records**: Foreign key relationships to existing student table
 
 ## Running the Module
@@ -3334,13 +2890,13 @@ The wellness module is accessible from the main university system menu.
 ### Standalone CLI
 
 ```bash
-python -m university_system.modules.domain.wellness.cli.wellness_cli
+python -m education_system.systems.university.domains.student_support.interfaces.cli.wellbeing.wellness.wellness_cli
 ```
 
 ### Standalone GUI
 
 ```bash
-python -m university_system.modules.domain.wellness.gui.wellness_gui
+python -m education_system.systems.university.domains.student_support.interfaces.gui.wellbeing.wellness.wellness_gui
 ```
 
 ## Testing
@@ -3349,7 +2905,7 @@ To verify the module is working:
 
 ```python
 # Test imports
-from university_system.modules.domain.wellness import WellnessService, WellnessCLI, WellnessGUI
+from education_system.systems.university.domains.student_support.domain.wellbeing.wellness import WellnessService, WellnessCLI, WellnessGUI
 
 # Test service initialization
 service = WellnessService()
@@ -3547,7 +3103,7 @@ Optimized indexes for:
 ### Service Layer
 
 ```python
-from university_system.modules.domain.events.services.events_service import get_events_service
+from education_system.systems.university.domains.student_life.domain.student_life.events.services.events_service import get_events_service
 
 # Initialize service
 service = get_events_service()
@@ -3612,7 +3168,7 @@ print(f"Events Attended: {stats['total_attended']}")
 ### CLI Interface
 
 ```python
-from university_system.modules.domain.events.cli.events_cli import EventsCLI
+from education_system.systems.university.domains.student_life.interfaces.cli.student_life.events.events_cli import EventsCLI
 
 # Run CLI
 cli = EventsCLI()
@@ -3621,14 +3177,14 @@ cli.run()
 
 Or from command line:
 ```bash
-python -m university_system.modules.domain.events.cli.events_cli
+python -m education_system.systems.university.domains.student_life.interfaces.cli.student_life.events.events_cli
 ```
 
 ### GUI Interface
 
 ```python
 import tkinter as tk
-from university_system.modules.domain.events.gui.events_gui import EventsGUI
+from education_system.systems.university.domains.student_life.interfaces.gui.student_life.events.events_gui import EventsGUI
 
 # Create main window
 root = tk.Tk()
@@ -3644,21 +3200,21 @@ root.mainloop()
 
 ## Architecture
 
-### Service Layer (`services/events_service.py`)
+### Service Layer (`src/education_system/systems/university/domains/student_life/domain/student_life/events/services/events_service.py`)
 - **EventsService**: Main service class with all business logic
 - Singleton pattern for database connection management
 - Comprehensive error handling and validation
 - Activity logging for audit trail
 - Transaction safety for all write operations
 
-### CLI Interface (`cli/events_cli.py`)
+### CLI Interface (`src/education_system/systems/university/domains/student_life/interfaces/cli/student_life/events/events_cli.py`)
 - **EventsCLI**: Command-line interface class
 - Menu-driven navigation
 - Input validation and error handling
 - Formatted output with color coding
 - Date and time formatting utilities
 
-### GUI Interface (`gui/events_gui.py`)
+### GUI Interface (`src/education_system/systems/university/domains/student_life/interfaces/gui/student_life/events/events_gui.py`)
 - **EventsGUI**: Tkinter-based graphical interface
 - Three-panel layout: Calendar/Filters, Events, Recommendations
 - Event cards with rich visual design
@@ -3716,7 +3272,7 @@ root.mainloop()
 None required - uses centralized database configuration.
 
 ### Database
-- Uses main university database: `data/db_files/student_records.db`
+- Uses main university database: `var/data/university/db_files/student_records.db`
 - Auto-creates tables on first run
 - Indexes created automatically for performance
 
@@ -3780,20 +3336,6 @@ None required - uses centralized database configuration.
 - Student marketplace for event-related items
 - Academic calendar integration
 
-## Testing
-
-Run tests:
-```bash
-# Test service layer
-python -m pytest university_system/tests/test_events_service.py -v
-
-# Test CLI
-python -m pytest university_system/tests/test_events_cli.py -v
-
-# Test GUI
-python -m pytest university_system/tests/test_events_gui.py -v
-```
-
 ## Troubleshooting
 
 ### Common Issues
@@ -3835,7 +3377,6 @@ Part of the University Management System v5.0.0
 ## Support
 
 For issues or questions:
-- Check documentation in `docs/modules/events/`
 - Review code comments and docstrings
 - Contact development team
 
@@ -3892,14 +3433,16 @@ The module uses 7 interconnected tables:
 ## Architecture
 
 ```
-feedback/
-├── services/
-│   └── feedback_service.py     # Core service layer (884 lines)
-├── cli/
-│   └── feedback_cli.py         # CLI interface (729 lines)
-├── gui/
-│   └── feedback_gui.py         # GUI interface (1116 lines)
-└── __init__.py                 # Module exports
+src/education_system/systems/university/domains/operations/
+├── domain/communications/feedback/
+│   ├── __init__.py             # Module exports
+│   └── services/
+│       └── feedback_service.py # Core service layer
+└── interfaces/
+    ├── cli/communications/feedback/
+    │   └── feedback_cli.py     # CLI interface
+    └── gui/communications/feedback/
+        └── feedback_gui.py     # GUI interface
 ```
 
 ## Usage
@@ -3907,7 +3450,7 @@ feedback/
 ### Service Layer
 
 ```python
-from university_system.modules.domain.feedback import FeedbackService
+from education_system.systems.university.domains.operations.domain.communications.feedback import FeedbackService
 
 service = FeedbackService()
 
@@ -3957,7 +3500,7 @@ service.add_impact_data(
 
 ```bash
 # Run the CLI
-python -m university_system.modules.domain.feedback.cli.feedback_cli
+python -m education_system.systems.university.domains.operations.interfaces.cli.communications.feedback.feedback_cli
 
 # Or from within the main CLI
 # Select: Student Services > Feedback & Suggestions
@@ -3976,7 +3519,7 @@ CLI Features:
 ### GUI Interface
 
 ```python
-from university_system.modules.domain.feedback.gui import FeedbackGUI
+from education_system.systems.university.domains.operations.interfaces.gui.communications.feedback import FeedbackGUI
 
 # Standalone
 app = FeedbackGUI()
@@ -4218,13 +3761,13 @@ service.add_impact_data(
 
 Run syntax validation:
 ```bash
-python3 -m py_compile university_system/modules/domain/feedback/services/feedback_service.py
-python3 -m py_compile university_system/modules/domain/feedback/cli/feedback_cli.py
-python3 -m py_compile university_system/modules/domain/feedback/gui/feedback_gui.py
+python3 -m py_compile src/education_system/systems/university/domains/operations/domain/communications/feedback/services/feedback_service.py
+python3 -m py_compile src/education_system/systems/university/domains/operations/interfaces/cli/communications/feedback/feedback_cli.py
+python3 -m py_compile src/education_system/systems/university/domains/operations/interfaces/gui/communications/feedback/feedback_gui.py
 ```
 
 Manual testing:
-1. Run CLI: `python -m university_system.modules.domain.feedback.cli.feedback_cli`
+1. Run CLI: `python -m education_system.systems.university.domains.operations.interfaces.cli.communications.feedback.feedback_cli`
 2. Submit several suggestions with different categories
 3. Upvote suggestions as different users
 4. Add admin responses and status updates
@@ -4244,9 +3787,9 @@ Manual testing:
 
 ## File Locations
 
-- Service: `university_system/modules/domain/feedback/services/feedback_service.py`
-- CLI: `university_system/modules/domain/feedback/cli/feedback_cli.py`
-- GUI: `university_system/modules/domain/feedback/gui/feedback_gui.py`
+- Service: `src/education_system/systems/university/domains/operations/domain/communications/feedback/services/feedback_service.py`
+- CLI: `src/education_system/systems/university/domains/operations/interfaces/cli/communications/feedback/feedback_cli.py`
+- GUI: `src/education_system/systems/university/domains/operations/interfaces/gui/communications/feedback/feedback_gui.py`
 
 ## License
 

@@ -33,6 +33,7 @@ from education_system.systems.university.domains.finance.domain.reporting.revenu
 
 from education_system.systems.university.domains.finance.domain.reporting.revenue_analytics.forecasting import (
     generate_predictive_analytics,
+    build_revenue_forecast,
     generate_revenue_forecast,
     generate_forecast_values,
     generate_enrollment_based_forecast,

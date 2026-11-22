@@ -23,7 +23,7 @@ from tkinter import filedialog, messagebox, ttk
 
 from education_system.systems.university.infrastructure.database.db import get_connection, transaction
 from education_system.systems.university.infrastructure.utils.activity_logger import log_activity
-from education_system.systems.university.services.dashboard.student_services import StudentDashboardService
+from education_system.systems.university.shared.analytics.dashboard.student_services import StudentDashboardService
 
 logger = logging.getLogger(__name__)
 
@@ -757,7 +757,7 @@ class GPACalculatorGUI:
             messagebox.showerror(_t('gui.assessment.academic_progress.gpa_calculator.dialogs.error', default='Error'), f'Failed: {e}', parent=self.window)
 
     def _on_export_pdf(self):
-        """[47] PDF export via the shared ExportManager when available."""
+        """[47] PDF export via the shared pdf_export PDFGenerator when available."""
         path = filedialog.asksaveasfilename(
             parent=self.window, defaultextension='.pdf',
             filetypes=[('PDF', '*.pdf')],
@@ -766,14 +766,18 @@ class GPACalculatorGUI:
         if not path:
             return
         try:
-            from education_system.systems.university.services.pdf_export.export_manager import (
-                ExportManager,
+            from education_system.systems.university.services.pdf_export.pdf_generator import (
+                PDFGenerator,
             )
-            ExportManager().export_to_pdf(
-                {'modules': [(mc, disp, combo.get())
-                             for mc, disp, combo in self._module_rows]},
-                path, title='What-If GPA',
+            pdf = PDFGenerator(path)
+            pdf.add_title_page('What-If GPA', subtitle=str(self.student_id or ''))
+            pdf.add_data_table(
+                ['Module', 'Current', 'Hypothetical'],
+                [(mc, disp, combo.get()) for mc, disp, combo in self._module_rows],
+                max_rows=len(self._module_rows) or 1,
             )
+            if not pdf.save():
+                raise RuntimeError(f'Could not write {path}')
             messagebox.showinfo(_t('gui.assessment.academic_progress.gpa_calculator.dialogs.saved', default='Saved'), f'Exported {path}', parent=self.window)
         except ImportError:
             messagebox.showinfo(_t('gui.assessment.academic_progress.gpa_calculator.dialogs.pdf_unavailable', default='PDF unavailable'),
@@ -802,7 +806,7 @@ class GPACalculatorGUI:
         """[50] Email a snapshot to the student's advisor.  Requires the
         shared communications hub to be configured in this environment."""
         try:
-            from education_system.platform.integrations.email.email_service import send_email
+            from education_system.systems.university.infrastructure.email.email_service import send_email
         except Exception:
             messagebox.showinfo(
                 _t('gui.assessment.academic_progress.gpa_calculator.dialogs.email_unavailable', default='Email unavailable'),
@@ -824,7 +828,7 @@ class GPACalculatorGUI:
 
         def go():
             try:
-                send_email(to=email_var.get(),
+                send_email(recipient_email=email_var.get(),
                            subject='What-If GPA snapshot',
                            body=body.get('1.0', 'end'))
                 win.destroy()

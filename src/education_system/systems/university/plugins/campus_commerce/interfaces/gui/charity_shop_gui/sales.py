@@ -6,9 +6,11 @@ from education_system.systems.university.plugins.campus_commerce.interfaces.gui.
     messagebox, datetime,
     FINANCE_INTEGRATION_AVAILABLE, ACTIVITY_LOGGER_AVAILABLE, EMAIL_SERVICE_AVAILABLE,
     get_current_user, get_student_info,
-    record_revenue_to_finance, process_student_finance_account_payment,
     send_email, log_activity, logger,
     load_email_template, render_email_template,
+)
+from education_system.systems.university.plugins.campus_commerce.domain.charity_shop.services.charity_shop_service import (
+    sell_item as sell_item_service,
 )
 
 
@@ -39,50 +41,24 @@ class SalesMixin:
             student_id = sale_data['student_id']
             customer_email = sale_data['customer_email']
 
-            # Generate transaction reference
-            transaction_ref = f"CS-{item['id']}-{datetime.now().strftime('%Y%m%d%H%M%S')}"
-
-            # Process payment based on method
-            payment_success = True
-            payment_message = ""
-
-            if payment_method == "Finance Account":
-                # Process payment from student finance account
-                if FINANCE_INTEGRATION_AVAILABLE and student_id:
-                    current_user = get_current_user()
-                    processed_by = current_user.get('username', 'System') if current_user else "System"
-                    result = process_student_finance_account_payment(
-                        student_id=student_id,
-                        amount=total_amount,
-                        description=f"Charity Shop: {quantity}x {item['name']}",
-                        transaction_source="Charity Shop",
-                        transaction_ref=transaction_ref,
-                        processed_by=processed_by
-                    )
-                    payment_success = result.get('success', False)
-                    payment_message = result.get('message', '')
-
-                    if not payment_success:
-                        messagebox.showerror(_t('gui.shell.services.charity_shop_gui.sales.dialogs.payment_failed', default="Payment Failed"), f"Finance Account payment failed: {payment_message}")
-                        return
+            # The domain service writes the sale and posts it to Finance
+            # (Finance Account debit, or revenue for cash/card) exactly once.
+            current_user = get_current_user()
+            processed_by = current_user.get('username', 'System') if current_user else "System"
+            sale = sell_item_service(
+                item_id=item["id"],
+                quantity=quantity,
+                payment_method=payment_method,
+                student_id=student_id,
+                processed_by=processed_by,
+            )
+            if not sale.get('success'):
+                if payment_method == "Finance Account":
+                    messagebox.showerror(_t('gui.shell.services.charity_shop_gui.sales.dialogs.payment_failed', default="Payment Failed"), f"Finance Account payment failed: {sale.get('message', '')}")
                 else:
-                    messagebox.showerror(_t('gui.shell.services.charity_shop_gui.sales.dialogs.error', default="Error"), _t('gui.shell.services.charity_shop_gui.sales.dialogs.finance_integration_not_available_for_student_account_payment', default="Finance integration not available for student account payment"))
-                    return
-
-            # Mark item as sold in database
-            self.db.mark_as_sold(item["id"], quantity)
-
-            # Record revenue to central finance system
-            if FINANCE_INTEGRATION_AVAILABLE:
-                record_revenue_to_finance(
-                    student_id=student_id or "WALK-IN",
-                    amount=total_amount,
-                    revenue_category="Charity Shop Sale",
-                    transaction_source="Charity Shop",
-                    transaction_ref=transaction_ref,
-                    payment_method=payment_method,
-                    notes=f"{quantity}x {item['name']}"
-                )
+                    messagebox.showerror(_t('gui.shell.services.charity_shop_gui.sales.dialogs.error', default="Error"), sale.get('message', 'Sale failed'))
+                return
+            transaction_ref = sale['transaction_ref']
 
             # Send email receipt if email provided
             receipt_sent = False

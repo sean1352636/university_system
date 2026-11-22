@@ -122,6 +122,8 @@ def init_db() -> None:
     global _DB_READY
     if _DB_READY:
         return
+    from education_system.systems.primary.domain.learners.pupils import pupils as _pupils
+    _pupils.init_db()  # reads join pupils; a fresh database has no pupils table yet
     from education_system.systems.primary.domain.academics.subjects import (
         subjects as subjects_data,
     )
@@ -132,7 +134,7 @@ def init_db() -> None:
     except sqlite3.Error:
         logger.exception("Failed to initialise behaviour_incidents table")
         raise
-    logger.info("Secondary behaviour_incidents table ready")
+    logger.info("Primary behaviour_incidents table ready")
     _DB_READY = True
 
 

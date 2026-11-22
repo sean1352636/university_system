@@ -8,8 +8,8 @@ from __future__ import annotations
 import logging
 
 from education_system.systems.apprenticeships.interfaces.cli import prompts
-from education_system.systems.apprenticeships.services import search_service
-from education_system.systems.apprenticeships.services.access import Actor
+from education_system.systems.apprenticeships.application.workspace import search_service
+from education_system.systems.apprenticeships.application.security.access import Actor
 
 logger = logging.getLogger(__name__)
 

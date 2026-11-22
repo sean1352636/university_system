@@ -23,13 +23,13 @@ This guide covers database backups, recovery, maintenance, migrations, and monit
 The database layer is the foundation of the University Management System. It uses SQLite with Write-Ahead Logging (WAL), thread-safe connection pooling, and comprehensive backup/recovery capabilities including encryption, cloud storage, and scheduled automation.
 
 **Key files:**
-- Core: `infrastructure/database/db.py`
-- Backup: `infrastructure/database/data_backup.py`
-- Utilities: `infrastructure/database/utilities.py`
-- Migrations: `infrastructure/database/migrations/`
-- GUI: `modules/shared/gui/database/data_backup_gui.py`
+- Core: `src/education_system/systems/university/infrastructure/database/db.py`
+- Backup: `src/education_system/systems/university/infrastructure/database/data_backup/`
+- Utilities: `src/education_system/systems/university/infrastructure/database/utilities.py`
+- Migrations: `src/education_system/migrations/versions/`
+- GUI: `src/education_system/systems/university/shell/gui/database/backup_gui.py`
 
-**Database location:** `data/db_files/student_records.db`
+**Database location:** `var/data/university/db_files/student_records.db`
 
 ## Database Architecture
 
@@ -64,7 +64,7 @@ The system uses a thread-safe connection pool:
 Always use context managers for database operations:
 
 ```python
-from university_system.infrastructure.database.db import get_connection, transaction
+from education_system.systems.university.infrastructure.database.db import get_connection, transaction
 
 # Read-only queries
 with get_connection() as conn:
@@ -111,7 +111,7 @@ Configure the database layer via environment variables:
 make db-backup
 
 # Using the enhanced backup menu
-python -m education_system --cli
+python -m education_system --university --cli
 # Navigate to: System Administration > Backup & Recovery
 ```
 
@@ -138,7 +138,7 @@ The enhanced CLI backup menu provides:
 
 ### Backup Storage
 
-Backups are stored in the `backups/` directory with naming convention:
+Backups are stored in the `var/backups/university/database/` directory with naming convention:
 ```
 student_records_manual_full_20260208_153000.db
 student_records_auto_incremental_20260208_020000.db.gz
@@ -146,7 +146,7 @@ student_records_auto_incremental_20260208_020000.db.gz
 
 ### Backup Metadata
 
-All backups are tracked in `data/backup_metadata.json`:
+All backups are tracked in `var/data/university/backup_metadata.json`:
 - File path and timestamp
 - Backup type and size
 - Hash for integrity verification
@@ -314,25 +314,15 @@ View database statistics:
 
 ### Available Migrations
 
-Migrations are located in `infrastructure/database/migrations/`:
-
-| Migration | Purpose |
-|-----------|---------|
-| `add_mfa_system.py` | Add MFA tables and columns |
-| `add_security_features.py` | Add security-related tables |
-| `add_student_modules_columns.py` | Add missing student_modules columns |
-| `add_unique_mfa_contacts.py` | Add unique constraints to MFA contacts |
-| `fix_campus_events_tables.py` | Fix campus events schema |
-| `fix_facilities_schema.py` | Fix facilities management schema |
-| `fix_job_postings_schema.py` | Fix job postings schema |
-| `fix_rooms_foreign_keys.py` | Fix foreign key constraints |
-| `separate_staff_hr_job_postings.py` | Separate job postings from staff HR |
+Migrations are Alembic scripts on a single chain, located in `src/education_system/migrations/versions/`. `877b10b0175b_baseline.py` is the baseline.
 
 ### Running a Migration
 
+The launcher applies pending migrations at startup. To run them by hand:
+
 ```bash
 # From project root
-PYTHONPATH=. python3 university_system/infrastructure/database/migrations/add_student_modules_columns.py
+alembic -c src/education_system/alembic.ini upgrade head
 ```
 
 ### Migration Best Practices
@@ -348,14 +338,14 @@ PYTHONPATH=. python3 university_system/infrastructure/database/migrations/add_st
 Initialize all database schemas at once:
 
 ```python
-from university_system.infrastructure.database.utilities import initialize_all_schemas
+from education_system.systems.university.infrastructure.database.utilities import initialize_all_schemas
 initialize_all_schemas()
 ```
 
 Or initialize specific schemas:
 
 ```python
-from university_system.infrastructure.database.utilities import (
+from education_system.systems.university.infrastructure.database.utilities import (
     init_grade_system_db,
     init_finance_system_db,
     init_student_union_db,
@@ -389,7 +379,7 @@ from university_system.infrastructure.database.utilities import (
 Monitor the connection pool health:
 
 ```python
-from university_system.infrastructure.database.db import get_connection_pool
+from education_system.systems.university.infrastructure.database.db import get_connection_pool
 
 pool = get_connection_pool()
 stats = pool.get_stats()
@@ -398,7 +388,7 @@ stats = pool.get_stats()
 
 ### Query Performance
 
-The query monitor (`infrastructure/database/query_monitor.py`) tracks:
+The query monitor (`src/education_system/systems/university/infrastructure/database/query_monitor.py`) tracks:
 - Slow query detection
 - Query execution times
 - Most frequent queries
@@ -406,7 +396,7 @@ The query monitor (`infrastructure/database/query_monitor.py`) tracks:
 
 ### Pool Metrics
 
-The pool metrics module (`infrastructure/database/pool_metrics.py`) provides:
+The pool metrics module (`src/education_system/systems/university/infrastructure/database/pool_metrics.py`) provides:
 - Connection utilization rates
 - Wait times
 - Connection lifecycle statistics
@@ -430,7 +420,7 @@ The pool metrics module (`infrastructure/database/pool_metrics.py`) provides:
 **Symptoms**: Backup creation fails or produces empty files.
 
 **Solutions**:
-1. Verify the `backups/` directory exists and has write permissions
+1. Verify the `var/backups/university/database/` directory exists and has write permissions
 2. Check available disk space
 3. If encrypting, verify the encryption password is set correctly
 4. Check database file permissions (should be 644)
@@ -473,8 +463,8 @@ The pool metrics module (`infrastructure/database/pool_metrics.py`) provides:
 
 ```bash
 # Fix directory permissions
-chmod -R 755 data/ logs/ backups/
+chmod -R 755 var/data/ var/logs/ var/backups/
 
 # Fix database file permissions
-chmod 644 data/db_files/student_records.db
+chmod 644 var/data/university/db_files/student_records.db
 ```

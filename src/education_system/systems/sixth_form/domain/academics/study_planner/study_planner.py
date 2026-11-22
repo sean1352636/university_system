@@ -582,6 +582,30 @@ def complete_task(task_id: int, *,
     return update_task(task_id, payload)
 
 
+def _own_open_task(student_id: str, task_id: int) -> StudyTask:
+    """The learner's own task, still open — or a refusal."""
+    task = get_task(int(task_id))
+    sid = (student_id or "").strip()
+    if task is None or not sid or task.student_id != sid:
+        raise ValidationError("That session is not in your study plan.")
+    if not task.is_open:
+        raise ValidationError(f"That session is already {task.status}.")
+    return task
+
+
+def start_own_task(student_id: str, task_id: int) -> StudyTask:
+    """The learner marks one of their own planned sessions as started."""
+    return start_task(_own_open_task(student_id, task_id).task_id)
+
+
+def complete_own_task(student_id: str, task_id: int, *,
+                      actual_duration: int | None = None,
+                      reflection: str | None = None) -> StudyTask:
+    """The learner marks one of their own sessions done (from the portal)."""
+    return complete_task(_own_open_task(student_id, task_id).task_id,
+                         actual_duration=actual_duration, reflection=reflection)
+
+
 def skip_task(task_id: int) -> StudyTask:
     return set_status(task_id, "Skipped")
 

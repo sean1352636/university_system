@@ -47,7 +47,8 @@ def show_dashboard(content_frame):
         cursor.execute('SELECT COUNT(*) FROM housing_rooms')
         total_rooms = cursor.fetchone()[0]
 
-        cursor.execute('SELECT COUNT(*) FROM housing_rooms WHERE status = "Occupied"')
+        # Occupied = holds at least one Active/Pending assignment (derived count).
+        cursor.execute('SELECT COUNT(*) FROM housing_rooms WHERE current_occupants > 0')
         occupied_rooms = cursor.fetchone()[0]
 
         cursor.execute('SELECT COUNT(*) FROM housing_assignments WHERE status = "Active"')
@@ -82,6 +83,13 @@ def show_dashboard(content_frame):
 
             ttk.Label(stat_frame, text=str(value), font=('Arial', 20, 'bold')).pack()
             ttk.Label(stat_frame, text=label).pack()
+
+        if total_buildings == 0:
+            ttk.Label(stats_frame,
+                      text=_t('gui.operations.campus.housing.housing_accommodation_gui.dashboard_manager.labels.no_buildings_yet',
+                              default="No residences are set up yet. Open Buildings to add one, "
+                                      "then add its rooms or import them from a CSV file."),
+                      foreground='#555555', wraplength=700).grid(row=3, column=0, columnspan=3, sticky='w', pady=(10, 0))
 
     except Exception as e:
         ttk.Label(stats_frame, text=f"Error loading statistics: {str(e)}",

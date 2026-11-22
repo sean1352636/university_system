@@ -90,9 +90,21 @@ from education_system.systems.university.domains.finance.domain.reporting.revenu
     list_unassigned_cases,
     set_case_status as set_collection_case_status,
 )
+from education_system.systems.university.domains.finance.domain.reporting.revenue_analytics.collections import (
+    open_case,
+    overdue_debt,
+)
+from education_system.systems.university.domains.finance.domain.reporting.revenue_analytics.collection_case_actions import (
+    active_case_for_student,
+    send_case_notice,
+)
 from education_system.systems.university.domains.finance.domain.reporting.revenue_analytics.agencies import (
+    count_open_cases,
+    create_agency,
     run_collection_workflow,
     save_collection_workflow,
+    set_agency_active,
+    update_agency,
 )
 
 # Configure logging
@@ -140,6 +152,31 @@ class CollectionsManager:
         self.root = gui.root
         self.conn = gui.conn
         self.finance_system = vars(gui).get('finance_system')
+
+    # The widgets and navigation these dialogs use belong to other managers.
+    @property
+    def colors(self):
+        return self.gui.layout.colors
+
+    @property
+    def content_frame(self):
+        return self.gui.layout.content_frame
+
+    @property
+    def tab_frames(self):
+        return self.gui.layout.tab_frames
+
+    @property
+    def report_text(self):
+        return self.gui.reports.report_text
+
+    def show_tab(self, tab_name):
+        """Switch the main finance window to ``tab_name``."""
+        self.gui.reports.show_tab(tab_name)
+
+    def show_text_window(self, title, content):
+        """Show content in a separate text window."""
+        self.gui.reports.show_text_window(title, content)
 
     def update_status(self, message):
         """Forward status updates to the owning GUI when available."""
@@ -232,13 +269,7 @@ class CollectionsManager:
 
     def create_collection_case(self):
         """Create new collection case"""
-        case_name = simpledialog.askstring(_("finance_gui.compliance.collection_case_title"), _("finance_gui.compliance.enter_case_name"))
-        if case_name:
-            student_id = simpledialog.askstring(_("finance_gui.compliance.collection_case_title"), _("finance_gui.compliance.enter_student_id"))
-            if student_id:
-                messagebox.showinfo(_("finance_gui.messages.success"), _("finance_gui.compliance.case_created").format(name=case_name, student_id=student_id))
-                # Here you would save to database
-                self.refresh_collections()
+        self.gui_create_collection_case()
 
 
     def manage_agencies(self):
@@ -398,7 +429,11 @@ class CollectionsManager:
                     messagebox.showerror(_("finance_gui.messages.error"), _("finance_gui.compliance.student_id_required"))
                     return
 
-                create_collection_case(student_id, notes)
+                # The debt is what the student's overdue fees still owe.
+                total_debt = overdue_debt(student_id)
+                if total_debt <= 0:
+                    raise ValueError(f"No overdue debt found for student {student_id}")
+                open_case(student_id, total_debt, notes)
                 messagebox.showinfo(_("finance_gui.messages.success"), _("finance_gui.compliance.case_created_success"))
                 dialog.destroy()
 
@@ -477,7 +512,7 @@ class CollectionsManager:
                     messagebox.showerror(_("finance_gui.messages.error"), _("finance_gui.compliance.all_fields_required"))
                     return
 
-                add_collection_agency(name, email, phone, commission)
+                create_agency(name, email, phone, commission)
                 messagebox.showinfo(_("finance_gui.messages.success"), _("finance_gui.compliance.agency_added_success"))
                 dialog.destroy()
 
@@ -531,7 +566,9 @@ class CollectionsManager:
                     messagebox.showerror(_("finance_gui.messages.error"), _("finance_gui.compliance.agency_id_required"))
                     return
 
-                edit_collection_agency(agency_id, new_name, new_email, new_commission)
+                update_agency(agency_id, agency_name=new_name or None,
+                              contact_email=new_email or None,
+                              commission_rate=new_commission)
                 messagebox.showinfo(_("finance_gui.messages.success"), _("finance_gui.compliance.agency_updated"))
                 dialog.destroy()
 
@@ -564,7 +601,12 @@ class CollectionsManager:
                 agency_id = int(agency_id_var.get())
 
                 if messagebox.askyesno(_("finance_gui.dialogs.confirm"), _("finance_gui.compliance.confirm_deactivate").format(id=agency_id)):
-                    deactivate_collection_agency(agency_id)
+                    open_cases = count_open_cases(agency_id)
+                    if open_cases and not messagebox.askyesno(
+                            _("finance_gui.dialogs.confirm"),
+                            f"This agency has {open_cases} open case(s), which will need reassigning. Deactivate anyway?"):
+                        return
+                    set_agency_active(agency_id, False)
                     messagebox.showinfo(_("finance_gui.messages.success"), _("finance_gui.compliance.agency_deactivated"))
                     dialog.destroy()
 
@@ -982,7 +1024,10 @@ class CollectionsManager:
                     messagebox.showerror(_("finance_gui.messages.error"), _("finance_gui.compliance.student_id_required"))
                     return
 
-                send_collection_notice(student_id, notice_type, custom_message)
+                case = active_case_for_student(student_id)
+                if case is None:
+                    raise ValueError(f"No active collection case found for student {student_id}")
+                send_case_notice(case['case_id'], notice_type, message=custom_message or None)
                 messagebox.showinfo(_("finance_gui.messages.success"), _("finance_gui.compliance.notice_sent"))
                 dialog.destroy()
 

@@ -16,7 +16,7 @@ from typing import Any, Callable
 
 from education_system.platform.identity.auth.role_manager import ROLE_HIERARCHY
 from education_system.systems.sixth_form.domain.governance.user_management import user_management as data
-from education_system.systems.sixth_form.interfaces.user_accounts import (
+from education_system.systems.sixth_form.domain.governance.user_management.user_accounts import (
     DEFAULT_ROLE,
     ROLES,
     SYSTEM_KEY,

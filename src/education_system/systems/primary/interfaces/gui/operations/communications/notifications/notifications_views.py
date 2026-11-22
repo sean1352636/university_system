@@ -4,9 +4,10 @@ from __future__ import annotations
 
 import logging
 import tkinter as tk
-from tkinter import messagebox, ttk
+from tkinter import ttk
 
-from education_system.platform import branding
+from education_system.platform.delivery.gui.parented_dialogs import make_toplevel, messagebox
+from education_system.systems.primary.interfaces.gui import kit
 from education_system.systems.primary.domain.operations.communications.notifications import (
     notifications as data,
 )
@@ -43,16 +44,148 @@ _STATUS_TAGS = {
 }
 
 
+# ── Pickers local to this screen ────────────────────────────────────
+
+def _priority_choices() -> list[tuple[str, str]]:
+    return [(str(p), f"{p} - {priority_label(p)}") for p in PRIORITIES]
+
+
+def _contact_choices() -> list[tuple[str, str]]:
+    """Parent contacts as ``(contact id, "Name (Mother of Pupil)")``."""
+    try:
+        from education_system.systems.primary.domain.operations.communications.parent_contacts import (
+            parent_contacts as pc,
+        )
+        rows = pc.list_contacts_with_detail()
+    except Exception:  # noqa: BLE001 - an empty list beats a broken form
+        logger.exception("parent contact list for picker failed")
+        return []
+    rows.sort(key=lambda r: (r.contact.last_name.lower(), r.contact.first_name.lower()))
+    return [(str(r.contact.contact_id),
+             f"{r.contact.full_name} ({r.contact.relationship} of {r.student_name})")
+            for r in rows]
+
+
+def _recipient_choices(recipient_type: str) -> list[tuple[str, str]] | None:
+    """The people a recipient id can be picked from for *recipient_type*;
+    ``None`` for types that are not a list of people (Group / Other)."""
+    if recipient_type == "Student":
+        return kit._pupil_choices()
+    if recipient_type in ("Staff", "Tutor"):
+        return kit._staff_choices(by="id", active_only=True, role=None, dsl_only=False)
+    if recipient_type == "Parent":
+        return _contact_choices()
+    return None
+
+
+def _name_from_label(label: str) -> str:
+    """"Smith, Amy (P001) · Year 3" / "Amy Smith (S01) · Teacher" → the name."""
+    name = label.split(" (", 1)[0].strip()
+    if ", " in name:
+        last, first = name.split(", ", 1)
+        name = f"{first} {last}"
+    return name
+
+
+class _RecipientField(ttk.Frame):
+    """Recipient id picked from the list that fits the recipient type
+    (pupils, staff, parent contacts); typed for Group / Other. Holds the id
+    in *var*; when *name_var* is given it is filled with the picked name."""
+
+    def __init__(self, master, var: tk.StringVar, type_var: tk.StringVar,
+                 name_var: tk.StringVar | None = None) -> None:
+        super().__init__(master)
+        self.var, self.type_var, self.name_var = var, type_var, name_var
+        self._child: tk.Misc | None = None
+        self._labels: dict[str, str] = {}
+        self._build()
+        self._trace = type_var.trace_add("write", lambda *_a: self._build())
+
+    def _build(self) -> None:
+        if self._child is not None:
+            self._child.destroy()
+        choices = _recipient_choices(self.type_var.get())
+        if choices is None:
+            self._labels = {}
+            self._child = ttk.Entry(self, textvariable=self.var, width=24)
+        else:
+            self._labels = dict(choices)
+            # type part of a name to narrow the list, as the kit's pupil / staff pickers
+            self._child = kit._SearchPicker(self, self.var, choices=choices, width=44,
+                                            on_change=self._picked)
+        self._child.pack(side="left", fill="x", expand=True)
+
+    def _picked(self, value: str) -> None:
+        if self.name_var is not None and value in self._labels:
+            self.name_var.set(_name_from_label(self._labels[value]))
+
+    def destroy(self) -> None:
+        try:
+            self.type_var.trace_remove("write", self._trace)
+        except (tk.TclError, ValueError):
+            pass
+        super().destroy()
+
+
+class _DateTimeField(ttk.Frame):
+    """Date + time drop-downs bound to one ISO StringVar: ``YYYY-MM-DDTHH:MM``,
+    just ``YYYY-MM-DD`` when no time is picked, "" when no date."""
+
+    def __init__(self, master, var: tk.StringVar) -> None:
+        super().__init__(master)
+        self.var = var
+        self._busy = False
+        self._d = tk.StringVar()
+        self._t = tk.StringVar()
+        self._show()
+        kit.DateField(self, self._d).pack(side="left")
+        ttk.Label(self, text="at").pack(side="left", padx=4)
+        kit.TimeField(self, self._t).pack(side="left")
+        for v in (self._d, self._t):
+            v.trace_add("write", lambda *_a: self._sync())
+        self._trace = var.trace_add("write", lambda *_a: self._show())
+
+    def _show(self) -> None:
+        if self._busy:
+            return
+        self._busy = True
+        try:
+            cur = (self.var.get() or "").strip()
+            self._d.set(cur[:10])
+            self._t.set(cur[11:16] if len(cur) >= 16 else "")
+        finally:
+            self._busy = False
+
+    def _sync(self) -> None:
+        if self._busy:
+            return
+        self._busy = True
+        try:
+            d, t = self._d.get().strip(), self._t.get().strip()
+            self.var.set(f"{d}T{t}" if d and t else d)
+        finally:
+            self._busy = False
+
+    def destroy(self) -> None:
+        try:
+            self.var.trace_remove("write", self._trace)
+        except (tk.TclError, ValueError):
+            pass
+        super().destroy()
+
+
 def open_notifications_window(parent=None) -> None:
     data.init_db()
-    master = getattr(parent, "root", parent)
-    win = tk.Toplevel(master) if master is not None else tk.Tk()
-    win.title(f"Notifications — {branding.SYSTEM_NAME}")
-    win.geometry(WIN_GEOMETRY)
-    win.minsize(*WIN_MINSIZE)
+    kit.show_page(parent, "Notifications",
+                  lambda frame: _draw_notifications(frame, parent))
 
-    nb = ttk.Notebook(win)
-    nb.pack(fill="both", expand=True, padx=10, pady=10)
+
+def _draw_notifications(parent: ttk.Frame, host=None) -> None:
+    kit.page_heading(parent, "Notifications",
+                     "Notices to pupils, staff and parents - schedule, send, track reads "
+                     "and actions.")
+    nb = ttk.Notebook(parent)
+    nb.pack(fill="both", expand=True)
 
     NotificationsTab(nb, scope="unread",       label="Unread")
     NotificationsTab(nb, scope="needs_action", label="Needs Action")
@@ -75,38 +208,27 @@ class NotificationsTab:
         bar = ttk.Frame(self.frame)
         bar.pack(fill="x", padx=8, pady=(8, 4))
         ttk.Label(bar, text="Recipient type:").pack(side="left")
-        self.f_rt = ttk.Combobox(
-            bar, values=("",) + RECIPIENT_TYPES,
-            state="readonly", width=10)
-        self.f_rt.current(0)
+        self.f_rt = kit.ChoiceField(bar, tk.StringVar(), choices=RECIPIENT_TYPES,
+                                     blank=True, width=10)
         self.f_rt.pack(side="left", padx=(2, 8))
         ttk.Label(bar, text="Type:").pack(side="left")
-        self.f_type = ttk.Combobox(
-            bar, values=("",) + NOTIFICATION_TYPES,
-            state="readonly", width=14)
-        self.f_type.current(0)
+        self.f_type = kit.ChoiceField(bar, tk.StringVar(), choices=NOTIFICATION_TYPES,
+                                     blank=True, width=14)
         self.f_type.pack(side="left", padx=(2, 8))
         ttk.Label(bar, text="Channel:").pack(side="left")
-        self.f_ch = ttk.Combobox(
-            bar, values=("",) + CHANNELS,
-            state="readonly", width=10)
-        self.f_ch.current(0)
+        self.f_ch = kit.ChoiceField(bar, tk.StringVar(), choices=CHANNELS,
+                                     blank=True, width=10)
         self.f_ch.pack(side="left", padx=(2, 8))
         if self.scope == "all":
             ttk.Label(bar, text="Status:").pack(side="left")
-            self.f_status = ttk.Combobox(
-                bar, values=("",) + STATUSES,
-                state="readonly", width=12)
-            self.f_status.current(0)
+            self.f_status = kit.ChoiceField(bar, tk.StringVar(), choices=STATUSES,
+                                            blank=True, width=12)
             self.f_status.pack(side="left", padx=(2, 8))
         else:
             self.f_status = None
         ttk.Label(bar, text="Min P:").pack(side="left")
-        self.f_pri = ttk.Combobox(
-            bar,
-            values=("",) + tuple(str(p) for p in PRIORITIES),
-            state="readonly", width=4)
-        self.f_pri.current(0)
+        self.f_pri = kit.ChoiceField(bar, tk.StringVar(), choices=_priority_choices(),
+                                     blank=True, width=12)
         self.f_pri.pack(side="left", padx=(2, 8))
         ttk.Label(bar, text="Title:").pack(side="left")
         self.f_title = ttk.Entry(bar, width=20)
@@ -261,9 +383,8 @@ class NotificationsTab:
         n = self._selected()
         if not n:
             return
-        when = _prompt_text(self.frame,
-                              "Scheduled for (ISO datetime)",
-                              initial=n.scheduled_for or "")
+        when = _prompt_datetime(self.frame, "Scheduled for",
+                                initial=n.scheduled_for or "")
         if not when:
             return
         try:
@@ -468,20 +589,19 @@ class NotificationEditor:
                  ) -> None:
         self.notification = notification
         self.result: Notification | None = None
-        self.win = tk.Toplevel(parent)
+        self.win = make_toplevel(parent.winfo_toplevel())
         self.win.title(
             f"Edit notification #{notification.notification_id}"
             if notification else "New notification")
-        self.win.geometry("880x780")
-        self.win.transient(parent); self.win.after_idle(self.win.grab_set)
+        self.win.geometry("900x700")
+        self.win.after_idle(self.win.grab_set)
         self._build()
         if notification:
             self._load()
         self.win.wait_window()
 
     def _build(self) -> None:
-        body = ttk.Frame(self.win)
-        body.pack(fill="both", expand=True, padx=12, pady=10)
+        body, footer = kit.scrolled_form(self.win)
         body.grid_columnconfigure(1, weight=1)
         body.grid_columnconfigure(3, weight=1)
         self.vars: dict[str, tk.Variable] = {}
@@ -504,34 +624,44 @@ class NotificationEditor:
                 padx=4, pady=2)
             v = tk.StringVar()
             self.vars[key] = v
-            ttk.Combobox(body, textvariable=v, values=values,
-                          state="readonly", width=width).grid(
+            kit.ChoiceField(body, v, choices=values, width=width).grid(
                 row=row, column=col + 1, sticky="ew",
                 padx=4, pady=2)
 
+        def picker(row, col, label, key, make, span=1):
+            ttk.Label(body, text=label).grid(
+                row=row, column=col, sticky="w",
+                padx=4, pady=2)
+            v = tk.StringVar()
+            self.vars[key] = v
+            make(v).grid(row=row, column=col + 1, columnspan=span,
+                         sticky="w", padx=4, pady=2)
+
         combo(0, 0, "Recipient type*", "recipient_type",
                  RECIPIENT_TYPES)
-        entry(0, 2, "Recipient id*", "recipient_id")
         entry(1, 0, "Recipient name", "recipient_name", width=48)
+        picker(0, 2, "Recipient*", "recipient_id",
+               lambda v: _RecipientField(body, v, self.vars["recipient_type"],
+                                         self.vars["recipient_name"]))
         entry(2, 0, "Title*", "title", width=48)
         combo(3, 0, "Type*", "notification_type",
                  NOTIFICATION_TYPES)
         combo(3, 2, "Channel*", "channel", CHANNELS)
-        combo(4, 0, "Priority*", "priority",
-                 tuple(str(p) for p in PRIORITIES))
+        combo(4, 0, "Priority*", "priority", _priority_choices())
         combo(4, 2, "Status*", "status", STATUSES)
-        entry(5, 0, "Sent by", "sent_by")
+        picker(5, 0, "Sent by", "sent_by",
+               lambda v: kit.StaffPicker(body, v, by="name", width=30))
         entry(5, 2, "Linked to", "linked_to")
-        entry(6, 0, "Scheduled for (ISO datetime)",
-                 "scheduled_for")
-        entry(6, 2, "Expires on (YYYY-MM-DD)", "expires_on")
-        entry(7, 0, "Icon", "icon")
-        entry(7, 2, "URL", "url")
-        entry(8, 0, "Action label", "action_label")
-        entry(8, 2, "Action URL", "action_url")
+        picker(6, 0, "Scheduled for", "scheduled_for",
+               lambda v: _DateTimeField(body, v), span=3)
+        picker(7, 0, "Expires on", "expires_on", lambda v: kit.DateField(body, v), span=3)
+        entry(8, 0, "Icon", "icon")
+        entry(8, 2, "URL", "url")
+        entry(9, 0, "Action label", "action_label")
+        entry(9, 2, "Action URL", "action_url")
 
         flags = ttk.LabelFrame(body, text="Flags")
-        flags.grid(row=9, column=0, columnspan=4,
+        flags.grid(row=10, column=0, columnspan=4,
                      sticky="ew", padx=4, pady=(8, 4))
         for col, (key, label) in enumerate((
                 ("requires_action",  "Requires action"),
@@ -544,7 +674,7 @@ class NotificationEditor:
                 row=0, column=col, sticky="w",
                 padx=6, pady=4)
 
-        row = 10
+        row = 11
         for key, label in (
                 ("body",  "Body"),
                 ("notes", "Notes"),
@@ -559,12 +689,10 @@ class NotificationEditor:
             self.texts[key] = t
             row += 1
 
-        bar = ttk.Frame(self.win)
-        bar.pack(fill="x", padx=12, pady=(0, 10))
-        ttk.Button(bar, text="Save",
+        ttk.Button(footer, text="Save",
                     command=self._save).pack(side="right",
                                                padx=4)
-        ttk.Button(bar, text="Cancel",
+        ttk.Button(footer, text="Cancel",
                     command=self.win.destroy).pack(side="right")
 
         self.vars["recipient_type"].set(DEFAULT_RECIPIENT_TYPE)
@@ -615,16 +743,15 @@ class NotificationEditor:
 class BroadcastDialog:
     def __init__(self, parent) -> None:
         self.result: list | None = None
-        self.win = tk.Toplevel(parent)
+        self.win = make_toplevel(parent.winfo_toplevel())
         self.win.title("Broadcast Notification")
-        self.win.geometry("700x600")
-        self.win.transient(parent); self.win.after_idle(self.win.grab_set)
+        self.win.geometry("760x680")
+        self.win.after_idle(self.win.grab_set)
         self._build()
         self.win.wait_window()
 
     def _build(self) -> None:
-        body = ttk.Frame(self.win)
-        body.pack(fill="both", expand=True, padx=12, pady=10)
+        body, footer = kit.scrolled_form(self.win)
         body.grid_columnconfigure(1, weight=1)
 
         self.vars: dict[str, tk.Variable] = {}
@@ -643,24 +770,34 @@ class BroadcastDialog:
                 row=row, column=0, sticky="w", padx=4, pady=2)
             v = tk.StringVar()
             self.vars[key] = v
-            ttk.Combobox(body, textvariable=v, values=values,
-                          state="readonly").grid(
+            kit.ChoiceField(body, v, choices=values).grid(
                 row=row, column=1, sticky="ew",
                 padx=4, pady=2)
 
         combo(0, "Recipient type", "recipient_type",
                  RECIPIENT_TYPES)
-        entry(1, "Recipient ids (comma-separated)*",
-                 "recipient_ids")
+        ttk.Label(body, text="Recipients*").grid(
+            row=1, column=0, sticky="nw", padx=4, pady=2)
+        self.vars["recipient_ids"] = tk.StringVar()
+        self.recip_holder = ttk.Frame(body)
+        self.recip_holder.grid(row=1, column=1, sticky="ew", padx=4, pady=2)
+        self.recip_multi: kit.MultiPicker | None = None
         entry(2, "Title*", "title")
         combo(3, "Notification type", "notification_type",
                  NOTIFICATION_TYPES)
         combo(4, "Channel", "channel", CHANNELS)
-        combo(5, "Priority", "priority",
-                 tuple(str(p) for p in PRIORITIES))
+        combo(5, "Priority", "priority", _priority_choices())
         combo(6, "Status", "status", STATUSES)
-        entry(7, "Sent by", "sent_by")
-        entry(8, "Expires on (YYYY-MM-DD)", "expires_on")
+        ttk.Label(body, text="Sent by").grid(
+            row=7, column=0, sticky="w", padx=4, pady=2)
+        self.vars["sent_by"] = tk.StringVar()
+        kit.StaffPicker(body, self.vars["sent_by"], by="name").grid(
+            row=7, column=1, sticky="w", padx=4, pady=2)
+        ttk.Label(body, text="Expires on").grid(
+            row=8, column=0, sticky="w", padx=4, pady=2)
+        self.vars["expires_on"] = tk.StringVar()
+        kit.DateField(body, self.vars["expires_on"]).grid(
+            row=8, column=1, sticky="w", padx=4, pady=2)
 
         ttk.Label(body, text="Body").grid(
             row=9, column=0, sticky="nw", padx=4, pady=(6, 2))
@@ -675,23 +812,50 @@ class BroadcastDialog:
         self.vars["channel"].set(DEFAULT_CHANNEL)
         self.vars["priority"].set("2")
         self.vars["status"].set(DEFAULT_STATUS)
+        self._build_recipients()
+        self.vars["recipient_type"].trace_add(
+            "write", lambda *_a: self._build_recipients())
 
-        bar = ttk.Frame(self.win)
-        bar.pack(fill="x", padx=12, pady=(0, 10))
-        ttk.Button(bar, text="Broadcast",
+        ttk.Button(footer, text="Broadcast",
                     command=self._send).pack(side="right",
                                                 padx=4)
-        ttk.Button(bar, text="Cancel",
+        ttk.Button(footer, text="Cancel",
                     command=self.win.destroy).pack(side="right")
+
+    def _build_recipients(self) -> None:
+        """Tick-list of the people for the recipient type; typed ids
+        (comma-separated) for Group / Other."""
+        for child in self.recip_holder.winfo_children():
+            child.destroy()
+        choices = _recipient_choices(self.vars["recipient_type"].get())
+        if choices is None:
+            self.recip_multi = None
+            ttk.Entry(self.recip_holder, textvariable=self.vars["recipient_ids"],
+                      width=40).pack(fill="x")
+            ttk.Label(self.recip_holder, text="comma-separated ids",
+                      foreground="#888").pack(anchor="w")
+            return
+        self.recip_multi = kit.MultiPicker(self.recip_holder, choices, height=8)
+        self.recip_multi.pack(fill="both", expand=True)
+        row = ttk.Frame(self.recip_holder)
+        row.pack(fill="x")
+        ttk.Button(row, text="Select all",
+                   command=lambda: self.recip_multi.box.selection_set(0, "end")
+                   ).pack(side="left")
+        ttk.Button(row, text="Clear",
+                   command=lambda: self.recip_multi.box.selection_clear(0, "end")
+                   ).pack(side="left", padx=4)
 
     def _send(self) -> None:
         rt = self.vars["recipient_type"].get()
+        if self.recip_multi is not None:
+            self.vars["recipient_ids"].set(",".join(self.recip_multi.get()))
         ids_raw = self.vars["recipient_ids"].get().strip()
         title = self.vars["title"].get().strip()
         if not ids_raw or not title:
             messagebox.showerror(
                 "Notifications",
-                "Recipient ids and title are required.",
+                "Recipients and title are required.",
                 parent=self.win)
             return
         recipients = [(rt, rid.strip(), None)
@@ -725,14 +889,15 @@ class BroadcastDialog:
         self.win.destroy()
 
 
-def _prompt_text(parent, title: str, *,
-                  initial: str = "") -> str | None:
-    win = tk.Toplevel(parent)
-    win.title(title); win.geometry("420x140")
-    win.transient(parent); win.after_idle(win.grab_set)
+def _prompt_datetime(parent, title: str, *,
+                     initial: str = "") -> str | None:
+    """Ask for a date and (optional) time; returns ISO text."""
+    win = make_toplevel(parent.winfo_toplevel())
+    win.title(title)
+    win.after_idle(win.grab_set)
     ttk.Label(win, text=title).pack(anchor="w", padx=8, pady=8)
     var = tk.StringVar(value=initial)
-    ttk.Entry(win, textvariable=var).pack(fill="x", padx=8)
+    _DateTimeField(win, var).pack(anchor="w", padx=8)
     result: dict = {"value": None}
 
     def ok() -> None:
@@ -751,14 +916,13 @@ def _prompt_text(parent, title: str, *,
 
 def _prompt_choice(parent, title: str, options: list[str], *,
                     default: str | None = None) -> str | None:
-    win = tk.Toplevel(parent)
+    win = make_toplevel(parent.winfo_toplevel())
     win.title(title); win.geometry("360x140")
-    win.transient(parent); win.after_idle(win.grab_set)
+    win.after_idle(win.grab_set)
     ttk.Label(win, text=title).pack(anchor="w", padx=8, pady=8)
     var = tk.StringVar(
         value=default or (options[0] if options else ""))
-    ttk.Combobox(win, textvariable=var, values=options,
-                  state="readonly").pack(fill="x", padx=8)
+    kit.ChoiceField(win, var, choices=options).pack(fill="x", padx=8)
     result: dict = {"value": None}
 
     def ok() -> None:

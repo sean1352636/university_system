@@ -362,19 +362,6 @@ class MusicShopGUI:
                     messagebox.showerror(_t("common.error"), _t('gui.operations.commerce.musicshop.musicshop_gui_parts.musicshopgui_create_inventory_tab.dialogs.insufficient_balance_in_student_account', default="Insufficient balance in student account"))
                     return
 
-                # Process student account payment
-                result = process_student_finance_account_payment(
-                    student_id=customer_id,
-                    amount=total,
-                    description="Music Shop purchase",
-                    transaction_source='MusicShop',
-                    transaction_ref=f"MUS-{datetime.now().strftime('%Y%m%d%H%M%S')}",
-                    processed_by=self.current_user.get('username')
-                )
-                if not result.get('success'):
-                    messagebox.showerror(_t("common.error"), result.get('message', 'Payment failed'))
-                    return
-
             # Create order
             order_id = OrderManager.create_order(
                 customer_id=customer_id,
@@ -387,15 +374,12 @@ class MusicShopGUI:
             )
 
             if order_id:
-                # Record payment
+                # Record payment (the service posts the sale to Finance)
                 TransactionManager.record_payment(order_id, customer_id, total, actual_method,
                                                    processed_by=self.current_user.get('username'))
 
                 # Automatically mark order as delivered
                 OrderManager.update_order_status(order_id, 'delivered')
-
-                # Record revenue to finance
-                self.record_revenue_to_finance(order_id, total, actual_method)
 
                 # Send receipt
                 self.send_receipt_email(order_id)

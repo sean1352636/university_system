@@ -1,19 +1,22 @@
 """Unit tests for closing a UCAS application once the applicant is admitted.
 
 Nothing used to end a UCAS application when the applicant actually became a
-student here, so they stayed in "Admit from UCAS" for ever: listed as
-*Enrolled*, and refused by Admit as an existing student — a dead end the
-screen gave no way to clear.
+student here, so they stayed in "Admit from UCAS" for ever. The first fix
+deleted the sixth form's choice (and sometimes its application), which erased
+the college's record of where the learner went and had the university writing
+another system's data.
 
-These tests pin what gets removed (this university's choice, and the parent
-application only when it was the last one) and what does not (choices at other
-universities, and our own link row, which is the audit trail).
+These tests pin the replacement: nothing is deleted. Our own link row is
+stamped with the student and archived (our record that the choice was
+placed), and ``university.student.enrolled`` is published once per choice for
+the sixth form to mark its own choice *Placed*.
 """
 
 from unittest.mock import MagicMock
 
 import pytest
 
+from education_system.platform.integrations.external import cross_system_bus
 from education_system.systems.university.domains.admissions.domain.ucas import (
     post_admission,
 )
@@ -22,11 +25,13 @@ from education_system.systems.university.domains.admissions.domain.ucas import (
 class _Applicant:
     """The shape ``ucas.list_applicants`` returns, reduced to what is read."""
 
-    def __init__(self, student_id, choice_id, application_id, course_code="CS"):
+    def __init__(self, student_id, choice_id, application_id, course_code="CS",
+                 placed=False):
         self.student_id = student_id
         self.choice_id = choice_id
         self.application_id = application_id
         self.course_code = course_code
+        self.placed = placed
 
 
 class _Link:
@@ -35,29 +40,20 @@ class _Link:
 
 
 @pytest.fixture()
-def sf(monkeypatch):
-    """A stub sixth-form UCAS API recording what was deleted."""
-    api = MagicMock()
-    api.deleted_choices = []
-    api.deleted_applications = []
-    api.remaining = {}
+def published(monkeypatch):
+    """Capture bus publishes instead of writing the live auth database."""
+    events = []
 
-    def _delete_choice(choice_id):
-        api.deleted_choices.append(choice_id)
-        return True
+    def _publish(event_name, **kwargs):
+        events.append((event_name, kwargs))
+        return f"evt-{len(events)}"
 
-    def _delete_application(application_id):
-        api.deleted_applications.append(application_id)
-        return True
-
-    def _list_choices(application_id):
-        return api.remaining.get(application_id, [])
-
-    api.delete_choice.side_effect = _delete_choice
-    api.delete_application.side_effect = _delete_application
-    api.list_choices.side_effect = _list_choices
-    monkeypatch.setattr(post_admission, "_sf_ucas", lambda: api)
-    return api
+    monkeypatch.setattr(cross_system_bus, "publish_cross_system", _publish)
+    monkeypatch.setattr(post_admission, "_university_student",
+                        lambda uni_id: {"start_date": "2026-09-21",
+                                        "course": "Computing"} if uni_id else {})
+    monkeypatch.setattr(post_admission, "_journey_for", lambda sid: "J-1")
+    return events
 
 
 @pytest.fixture()
@@ -82,44 +78,50 @@ def links(monkeypatch):
 
 def _applicants(monkeypatch, rows):
     """Point ``choices_for_applicant`` at a fixed applicant list."""
-    monkeypatch.setattr(post_admission, "choices_for_applicant",
-                        lambda sid, university_name=None: [
-                            {"choice_id": r.choice_id,
-                             "application_id": r.application_id,
-                             "university": None,
-                             "course_code": r.course_code}
-                            for r in rows if r.student_id == sid])
+    def _choices(sid, university_name=None, include_placed=False):
+        return [{"choice_id": r.choice_id,
+                 "application_id": r.application_id,
+                 "university": None,
+                 "course_code": r.course_code,
+                 "course_name": "Computing",
+                 "entry_year": 2027,
+                 "journey_id": None}
+                for r in rows
+                if r.student_id == sid and (include_placed or not r.placed)]
+    monkeypatch.setattr(post_admission, "choices_for_applicant", _choices)
 
 
 class TestClearAfterAdmission:
 
-    def test_single_choice_is_removed_with_its_application(self, monkeypatch, sf, links):
+    def test_choice_is_placed_not_deleted(self, monkeypatch, published, links):
         _applicants(monkeypatch, [_Applicant("C1", 11, 10)])
-        sf.remaining[10] = []           # nothing left after the choice goes
 
         summary = post_admission.clear_after_admission("C1", "U1", actor="tester")
 
-        assert sf.deleted_choices == [11]
-        assert sf.deleted_applications == [10]
-        assert summary["choices_removed"] == 1
-        assert summary["application_removed"] == 10
-        assert not summary["errors"]
-
-    def test_other_universities_choices_survive(self, monkeypatch, sf, links):
-        """Only the choice naming us is ours to remove."""
-        _applicants(monkeypatch, [_Applicant("C1", 11, 10)])
-        sf.remaining[10] = [object()]   # a choice elsewhere is still there
-
-        summary = post_admission.clear_after_admission("C1", "U1")
-
-        assert sf.deleted_choices == [11]
-        assert sf.deleted_applications == []
+        assert summary["choices_placed"] == 1
+        assert summary["choices_removed"] == 0
         assert summary["application_removed"] is None
+        assert not summary["errors"]
+        assert [name for name, _kw in published] == ["university.student.enrolled"]
 
-    def test_link_is_archived_not_deleted(self, monkeypatch, sf, links):
-        """Our link row is the audit trail of what we decided."""
+    def test_event_payload(self, monkeypatch, published, links):
         _applicants(monkeypatch, [_Applicant("C1", 11, 10)])
-        sf.remaining[10] = []
+        post_admission.clear_after_admission("C1", "U1")
+        _name, kw = published[0]
+        assert kw["target_system"] == "sixth_form"
+        assert kw["journey_id"] == "J-1"
+        assert kw["sf_student_id"] == "C1"
+        assert kw["sf_choice_id"] == 11
+        assert kw["university_student_id"] == "U1"
+        assert kw["course_code"] == "CS"
+        assert kw["entry_year"] == 2027
+        assert kw["start_date"] == "2026-09-21"
+        assert kw["enrolled_on"]
+        assert kw["idempotency_key"].endswith(":U1:11")
+
+    def test_link_is_archived_with_the_student(self, monkeypatch, published, links):
+        """Our link row is our record that the choice was placed."""
+        _applicants(monkeypatch, [_Applicant("C1", 11, 10)])
 
         summary = post_admission.clear_after_admission("C1", "U1")
 
@@ -127,97 +129,93 @@ class TestClearAfterAdmission:
         assert links.students == {111: "U1"}
         assert summary["links_archived"] == [111]
 
-    def test_dry_run_changes_nothing(self, monkeypatch, sf, links):
+    def test_dry_run_changes_nothing(self, monkeypatch, published, links):
         _applicants(monkeypatch, [_Applicant("C1", 11, 10)])
 
         summary = post_admission.clear_after_admission(
             "C1", "U1", delete_choices=False)
 
-        assert sf.deleted_choices == []
+        assert published == []
         assert links.archived == []
-        assert summary["choices_removed"] == 0
+        assert summary["choices_placed"] == 0
         assert summary["choices"]           # still reports what it found
 
-    def test_applicant_with_no_ucas_record(self, monkeypatch, sf, links):
-        """Someone admitted by another route has nothing to clear."""
+    def test_applicant_with_no_ucas_record_is_still_announced(
+            self, monkeypatch, published, links):
+        """Someone admitted by another route has no choice to place, but
+        the sixth form's destinations still want to hear where they went."""
         _applicants(monkeypatch, [])
         summary = post_admission.clear_after_admission("C1", "U1")
         assert summary["choices"] == []
-        assert sf.deleted_choices == []
-        assert post_admission.describe(summary) == "No UCAS application to clear."
+        assert len(published) == 1
+        assert published[0][1]["sf_choice_id"] is None
 
-    def test_blank_student_id_is_a_no_op(self, monkeypatch, sf, links):
+    def test_already_placed_is_not_announced_again(self, monkeypatch, published, links):
+        _applicants(monkeypatch, [_Applicant("C1", 11, 10, placed=True)])
+        summary = post_admission.clear_after_admission("C1", "U1")
+        assert published == []
+        assert post_admission.describe(summary) == "No open UCAS application to clear."
+
+    def test_blank_student_id_is_a_no_op(self, monkeypatch, published, links):
         assert post_admission.clear_after_admission("", "U1")["choices"] == []
+        assert published == []
 
-    def test_several_choices_at_this_university(self, monkeypatch, sf, links):
+    def test_several_choices_at_this_university(self, monkeypatch, published, links):
         _applicants(monkeypatch, [_Applicant("C1", 11, 10),
                                   _Applicant("C1", 12, 10)])
-        sf.remaining[10] = []
         summary = post_admission.clear_after_admission("C1", "U1")
-        assert sorted(sf.deleted_choices) == [11, 12]
-        assert summary["choices_removed"] == 2
-        # The application is removed once, not once per choice.
-        assert sf.deleted_applications == [10]
+        assert summary["choices_placed"] == 2
+        assert sorted(kw["sf_choice_id"] for _n, kw in published) == [11, 12]
 
 
 class TestFailureHandling:
 
-    def test_delete_failure_is_reported_not_raised(self, monkeypatch, sf, links):
+    def test_publish_failure_is_reported_not_raised(self, monkeypatch, published, links):
         """The student already exists; a tidy-up failure must not look fatal."""
         _applicants(monkeypatch, [_Applicant("C1", 11, 10)])
-        sf.delete_choice.side_effect = RuntimeError("sixth form offline")
 
+        def _boom(*_a, **_k):
+            raise RuntimeError("bus offline")
+
+        monkeypatch.setattr(cross_system_bus, "publish_cross_system", _boom)
         summary = post_admission.clear_after_admission("C1", "U1")
 
-        assert summary["choices_removed"] == 0
+        assert summary["choices_placed"] == 0
         assert summary["errors"]
-        assert "sixth form offline" in summary["errors"][0]
+        assert "bus offline" in summary["errors"][0]
 
-    def test_missing_sixth_form_api_is_reported(self, monkeypatch, links):
+    def test_link_failure_does_not_stop_the_event(self, monkeypatch, published, links):
         _applicants(monkeypatch, [_Applicant("C1", 11, 10)])
-
-        def _boom():
-            raise ImportError("no sixth form installed")
-
-        monkeypatch.setattr(post_admission, "_sf_ucas", _boom)
-        summary = post_admission.clear_after_admission("C1", "U1")
-        assert summary["errors"] and "no sixth form" in summary["errors"][0]
-
-    def test_link_failure_does_not_stop_the_delete(self, monkeypatch, sf, links):
-        _applicants(monkeypatch, [_Applicant("C1", 11, 10)])
-        sf.remaining[10] = []
         links.set_link_status.side_effect = RuntimeError("link table locked")
 
         summary = post_admission.clear_after_admission("C1", "U1")
 
-        assert sf.deleted_choices == [11]
+        assert summary["choices_placed"] == 1
         assert summary["errors"]
 
-    def test_unknown_student_on_the_link_is_survivable(self, monkeypatch, sf, links):
+    def test_unknown_student_on_the_link_is_survivable(self, monkeypatch, published, links):
         """attach_uni_student refuses an id that is not a student here."""
         _applicants(monkeypatch, [_Applicant("C1", 11, 10)])
-        sf.remaining[10] = []
         links.attach_uni_student.side_effect = RuntimeError("No uni student")
 
         summary = post_admission.clear_after_admission("C1", "U1")
 
         assert links.archived == [(111, "archived")]   # archived anyway
-        assert summary["choices_removed"] == 1
+        assert summary["choices_placed"] == 1
 
 
 class TestDescribe:
 
-    def test_summarises_what_happened(self, monkeypatch, sf, links):
+    def test_summarises_what_happened(self, monkeypatch, published, links):
         _applicants(monkeypatch, [_Applicant("C1", 11, 10)])
-        sf.remaining[10] = []
         text = post_admission.describe(
             post_admission.clear_after_admission("C1", "U1"))
-        assert "1 UCAS choice(s) removed" in text
-        assert "#10 removed" in text
+        assert "1 UCAS choice(s) marked placed" in text
+        assert "removed" not in text
 
     def test_nothing_found(self):
         assert post_admission.describe({"choices": []}) == \
-            "No UCAS application to clear."
+            "No open UCAS application to clear."
 
 
 class TestBusPort:
@@ -228,15 +226,14 @@ class TestBusPort:
     through ``services.bus.ucas_bus``.
     """
 
-    def test_forwards_to_the_domain_module(self, monkeypatch, sf, links):
+    def test_forwards_to_the_domain_module(self, monkeypatch, published, links):
         from education_system.systems.university.services.bus import ucas_bus
         _applicants(monkeypatch, [_Applicant("C1", 11, 10)])
-        sf.remaining[10] = []
 
         summary = ucas_bus.clear_after_admission("C1", "U1", actor="gui")
 
-        assert summary["choices_removed"] == 1
-        assert sf.deleted_choices == [11]
+        assert summary["choices_placed"] == 1
+        assert published
 
     def test_blank_applicant_is_a_no_op(self):
         from education_system.systems.university.services.bus import ucas_bus

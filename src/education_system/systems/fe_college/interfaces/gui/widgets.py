@@ -378,6 +378,10 @@ def _widest(options: Sequence[str]) -> int:
 
 # ── Modal form ──────────────────────────────────────────────────────────────
 
+# More fields than this and the form scrolls inside its dialog.
+_SCROLL_AFTER_FIELDS = 20
+
+
 class FormDialog:
     """A modal form built from field specs; returns a dict or None.
 
@@ -412,23 +416,36 @@ class FormDialog:
         body.pack(fill="both", expand=True)
         body.columnconfigure(1, weight=1)
 
+        # A long form (the learner record runs to thirty fields) scrolls
+        # inside the dialog so the buttons stay on a 768-pixel screen. Short
+        # forms are laid out exactly as before.
+        inputs = [spec for spec in fields if spec[2] != "section"]
+        form = self._scrolling_area(body) if len(fields) > _SCROLL_AFTER_FIELDS else body
+        if form is not body:
+            form.columnconfigure(1, weight=1)
+
         for r, spec in enumerate(fields):
             key, label, kind = spec[0], spec[1], spec[2]
             options = spec[3] if len(spec) > 3 else None
-            ttk.Label(body, text=label).grid(row=r, column=0, sticky="nw",
+            if kind == "section":
+                ttk.Label(form, text=label, font=("TkDefaultFont", 10, "bold")).grid(
+                    row=r, column=0, columnspan=2, sticky="w", pady=(10, 2))
+                continue
+            ttk.Label(form, text=label).grid(row=r, column=0, sticky="nw",
                                              pady=4, padx=(0, 12))
             value = initial.get(key)
-            widget = self._build_field(body, key, kind, options, value, width)
+            widget = self._build_field(form, key, kind, options, value, width)
             widget.grid(row=r, column=1, sticky="ew", pady=4)
             self._widgets[key] = widget
 
+        after = 1 if form is not body else len(fields)
         self.error_var = tk.StringVar()
         ttk.Label(body, textvariable=self.error_var, foreground=TONE["bad"],
-                  wraplength=width * 8).grid(row=len(fields), column=0, columnspan=2,
+                  wraplength=width * 8).grid(row=after, column=0, columnspan=2,
                                              sticky="w", pady=(8, 0))
 
         actions = ttk.Frame(body)
-        actions.grid(row=len(fields) + 1, column=0, columnspan=2, sticky="e", pady=(12, 0))
+        actions.grid(row=after + 1, column=0, columnspan=2, sticky="e", pady=(12, 0))
         ttk.Button(actions, text="Cancel", command=self.win.destroy).pack(side="right")
         ttk.Button(actions, text=submit_label, command=self._submit).pack(
             side="right", padx=(0, 8))
@@ -437,13 +454,45 @@ class FormDialog:
         self.win.bind("<Escape>", lambda _e: self.win.destroy())
         _centre(self.win, master)
         self.win.grab_set()
-        if fields:
-            first = self._widgets[fields[0][0]]
+        if inputs:
+            first = self._widgets[inputs[0][0]]
             try:
                 first.focus_set()
             except tk.TclError:
                 pass
         self.win.wait_window()
+
+    def _scrolling_area(self, body: ttk.Frame) -> ttk.Frame:
+        """A scrolling frame in row 0 of *body*, sized to fit the screen."""
+        holder = ttk.Frame(body)
+        holder.grid(row=0, column=0, columnspan=2, sticky="nsew")
+        body.rowconfigure(0, weight=1)
+        canvas = tk.Canvas(holder, highlightthickness=0)
+        bar = ttk.Scrollbar(holder, orient="vertical", command=canvas.yview)
+        inner = ttk.Frame(canvas, padding=(0, 0, 12, 0))
+        window = canvas.create_window((0, 0), window=inner, anchor="nw")
+
+        def resize(_event: Any = None) -> None:
+            canvas.configure(scrollregion=canvas.bbox("all"))
+            room = max(240, self.win.winfo_screenheight() - 240)
+            canvas.configure(height=min(inner.winfo_reqheight(), room),
+                             width=inner.winfo_reqwidth())
+
+        inner.bind("<Configure>", resize)
+        canvas.bind("<Configure>", lambda e: canvas.itemconfigure(window, width=e.width))
+        canvas.configure(yscrollcommand=bar.set)
+        canvas.pack(side="left", fill="both", expand=True)
+        bar.pack(side="right", fill="y")
+
+        def wheel(event: Any) -> None:
+            num = getattr(event, "num", None)
+            step = -1 if num == 4 else 1 if num == 5 else int(-1 * (event.delta / 120))
+            canvas.yview_scroll(step, "units")
+
+        for sequence in ("<MouseWheel>", "<Button-4>", "<Button-5>"):
+            self.win.bind(sequence, wheel)
+        self.win.resizable(False, True)
+        return inner
 
     def _build_field(self, body, key, kind, options, value, width):
         if kind == "multiline":
@@ -478,6 +527,8 @@ class FormDialog:
         collected: dict[str, Any] = {}
         for spec in self._fields:
             key, label, kind = spec[0], spec[1], spec[2]
+            if kind == "section":
+                continue
             holder = self._vars[key]
             if kind == "multiline":
                 raw = holder.get("1.0", "end").strip()

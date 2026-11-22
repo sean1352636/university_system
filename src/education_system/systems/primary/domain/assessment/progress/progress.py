@@ -17,7 +17,8 @@ A Draft can be edited freely; a Published review is what's used in
 reports; sharing just stamps when it went out.
 
 Optional ``populate_from_data()`` helper auto-fills attendance % from
-``attendance_report`` and a notes line from ``grades_report`` when
+``attendance_report`` and an attainment line (reading, phonics, MTC,
+SATs) when
 the staff member creates a new review.
 """
 
@@ -30,6 +31,7 @@ from dataclasses import dataclass, field
 from datetime import date as _date
 from typing import Any
 from education_system import paths
+from education_system.systems.primary.infrastructure.schema_repair import repair_links
 
 logger = logging.getLogger(__name__)
 
@@ -71,8 +73,8 @@ OPEN_TARGET_STATUSES: tuple[str, ...] = ("Open", "On Track", "At Risk")
 
 TARGET_AREAS: tuple[str, ...] = (
     "Academic", "Attendance", "Punctuality", "Behaviour",
-    "Homework", "Attitude", "Independent Study",
-    "Exam Prep", "UCAS", "Wellbeing", "Other",
+    "Homework", "Attitude", "Reading", "Phonics",
+    "Times Tables", "Wellbeing", "Other",
 )
 DEFAULT_TARGET_AREA: str = "Academic"
 
@@ -100,7 +102,7 @@ CREATE TABLE IF NOT EXISTS progress_reviews (
     created_at         TEXT DEFAULT (datetime('now')),
     updated_at         TEXT DEFAULT (datetime('now')),
     UNIQUE (student_id, period, academic_year),
-    FOREIGN KEY (student_id) REFERENCES students(student_id)
+    FOREIGN KEY (student_id) REFERENCES pupils(pupil_id)
         ON DELETE CASCADE,
     FOREIGN KEY (reviewer_staff_id) REFERENCES staff(staff_id)
         ON DELETE SET NULL
@@ -215,6 +217,7 @@ def init_db() -> None:
     from education_system.systems.primary.domain.staff import staff
     from education_system.systems.primary.domain.staff import staff as _staff
     from education_system.systems.primary.domain import _pupils_bridge as _students
+    repair_links(DB_PATH)
     _students.init_db()
     _staff.init_db()
     with _connect() as conn:
@@ -507,7 +510,10 @@ def update_review(review_id: int, d: dict[str, Any]) -> Review:
     existing = get_review(review_id)
     if existing is None:
         raise ValidationError(f"No review #{review_id}")
-    if existing.status == "Archived":
+    # An Archived review is locked; the only change allowed is a
+    # status-only move back out of Archived (un-archiving).
+    if existing.status == "Archived" and (
+            set(d) != {"status"} or d.get("status") == "Archived"):
         raise ValidationError(
             "Cannot edit an Archived review — un-archive first")
     merged = {
@@ -768,46 +774,85 @@ def delete_target(target_id: int) -> bool:
 
 # ── Auto-populate helper ─────────────────────────────────────────
 
+def _attainment_summary(pupil_id: str) -> list[str]:
+    """One phrase per primary measure the pupil has a result for: the
+    current reading band, the latest phonics check, the latest multiplication
+    tables check and the latest KS1 / KS2 SATs outcomes. A measure that is
+    missing or fails to load is simply left out."""
+    A = "education_system.systems.primary.domain.assessment"
+    import importlib
+    parts: list[str] = []
+
+    def _mod(name):
+        try:
+            return importlib.import_module(f"{A}.{name}.{name}")
+        except Exception:
+            logger.debug("assessment module %s unavailable", name, exc_info=True)
+            return None
+
+    try:
+        rl = _mod("reading_levels")
+        rec = rl.get_record(pupil_id) if rl else None
+        if rec and rec.band:
+            parts.append(f"Reading: {rec.band} ({rec.status})")
+    except Exception:
+        logger.debug("reading level lookup failed", exc_info=True)
+    try:
+        ph = _mod("phonics_screening")
+        res = ph.list_for_pupil(pupil_id) if ph else []
+        if res:
+            last = max(res, key=lambda r: (r.academic_year, r.attempt))
+            parts.append(f"Phonics check {last.academic_year}: {last.score}/40 "
+                         f"({'passed' if last.passed else 'not passed'})")
+    except Exception:
+        logger.debug("phonics lookup failed", exc_info=True)
+    try:
+        mt = _mod("mtc")
+        res = mt.list_for_pupil(pupil_id) if mt else []
+        if res:
+            last = max(res, key=lambda r: r.academic_year)
+            parts.append(f"MTC {last.academic_year}: {last.score}/25")
+    except Exception:
+        logger.debug("MTC lookup failed", exc_info=True)
+    for name, label in (("ks1_sats", "KS1"), ("ks2_sats", "KS2")):
+        try:
+            m = _mod(name)
+            res = m.list_for_pupil(pupil_id) if m else []
+            if res:
+                year = max(r.academic_year for r in res)
+                latest = ", ".join(f"{r.subject} {r.outcome}"
+                                   for r in res if r.academic_year == year)
+                parts.append(f"{label} {year}: {latest}")
+        except Exception:
+            logger.debug("%s lookup failed", name, exc_info=True)
+    return parts
+
+
 def populate_from_data(
     student_id: str,
     *,
     window_days: int = 28,
 ) -> dict[str, Any]:
     """Return a dict of suggested defaults for a new review: attendance %
-    from the attendance module and a one-line academic summary built
-    from the grades report."""
+    from the attendance module and a one-line attainment summary built
+    from the pupil's reading, phonics, MTC and SATs results."""
     out: dict[str, Any] = {}
     from education_system.systems.primary.domain.operations.reporting.attendance_report import attendance_report as _ar
+    import datetime as _dtm
+    to_d = _dtm.date.today()
+    from_d = to_d - _dtm.timedelta(days=window_days)
     try:
-        ps = _ar.per_student_report(student_id, window_days=window_days)
-        out["attendance_pct"] = ps.breakdown.percentage
-    except _ar.ValidationError:
+        rows = _ar.pupil_attendance(from_date=from_d.isoformat(),
+                                    to_date=to_d.isoformat(), pupil_id=student_id)
+        out["attendance_pct"] = (rows[0].attendance_pct
+                                 if rows and rows[0].total_sessions else None)
+    except Exception:
+        logger.debug("attendance lookup for %s failed", student_id, exc_info=True)
         out["attendance_pct"] = None
 
-    try:
-        from education_system.systems.primary.domain.grades_report import grades_report as _gr
-        gs = _gr.per_student_grade_report(student_id)
-        if gs.subjects:
-            parts = []
-            for row in gs.subjects:
-                pieces = []
-                if row.predicted_grade:
-                    pieces.append(f"pred {row.predicted_grade}")
-                if row.latest_mock_grade:
-                    pieces.append(f"mock {row.latest_mock_grade}")
-                if row.best_actual_grade:
-                    pieces.append(f"actual {row.best_actual_grade}")
-                if pieces:
-                    parts.append(f"{row.subject}: {', '.join(pieces)}")
-            if parts:
-                out["academic_summary"] = " | ".join(parts)
-        if gs.notes:
-            existing_notes = out.get("notes", "")
-            joined = (existing_notes + "\n" if existing_notes else "")
-            joined += "\n".join(f"- {n}" for n in gs.notes)
-            out["notes"] = joined
-    except Exception:
-        pass
+    parts = _attainment_summary(student_id)
+    if parts:
+        out["academic_summary"] = " | ".join(parts)
 
     return out
 

@@ -117,7 +117,7 @@ def _dean_of_students_user_id() -> str | None:
     try:
         with get_connection() as conn:
             row = conn.execute(
-                "SELECT user_id FROM users "
+                "SELECT id FROM users "
                 "WHERE LOWER(role) IN ('dean', 'dean_of_students', "
                 "                      'student_affairs_dean') "
                 "AND email IS NOT NULL LIMIT 1"

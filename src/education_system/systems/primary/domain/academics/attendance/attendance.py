@@ -99,6 +99,16 @@ class AttendanceRecord:
     def category(self) -> str:
         return MARK_CODES.get(self.mark, (self.mark, "unknown"))[1]
 
+    @property
+    def is_possible(self) -> bool:
+        """A session the pupil could attend ("X" not required doesn't count)."""
+        return self.category != "not_required"
+
+    @property
+    def is_attending(self) -> bool:
+        """Present or late (in time) - counts as attended."""
+        return self.category in PRESENT_LIKE
+
 
 _DB_READY = False
 
@@ -117,7 +127,7 @@ def init_db() -> None:
     except sqlite3.Error:
         logger.exception("Failed to initialise attendance_records table")
         raise
-    logger.info("Secondary attendance_records table ready")
+    logger.info("Primary attendance_records table ready")
     _DB_READY = True
 
 
@@ -300,6 +310,39 @@ def list_for_date(date_iso: str, *,
         raise
 
 
+def list_records(*, date: str | None = None,
+                 date_from: str | None = None,
+                 date_to: str | None = None,
+                 pupil_id: str | None = None) -> list[AttendanceRecord]:
+    """Marks across the school for one ``date`` or a ``date_from`` ..
+    ``date_to`` range, optionally for one pupil. Newest first."""
+    init_db()
+    where: list[str] = []
+    params: list[Any] = []
+    if date:
+        where.append("date = ?")
+        params.append(_validate_date(date))
+    if date_from:
+        where.append("date >= ?")
+        params.append(_validate_date(date_from, "From date"))
+    if date_to:
+        where.append("date <= ?")
+        params.append(_validate_date(date_to, "To date"))
+    if pupil_id:
+        where.append("pupil_id = ?")
+        params.append(pupil_id.strip())
+    sql = "SELECT * FROM attendance_records"
+    if where:
+        sql += " WHERE " + " AND ".join(where)
+    sql += " ORDER BY date DESC, pupil_id, session"
+    try:
+        with _connect() as conn:
+            return [_row(r) for r in conn.execute(sql, tuple(params)).fetchall()]
+    except sqlite3.Error:
+        logger.exception("list_records failed")
+        raise
+
+
 def list_for_pupil(pupil_id: str, *,
                    date_from: str | None = None,
                    date_to: str | None = None) -> list[AttendanceRecord]:
@@ -382,7 +425,9 @@ def pupil_summary(pupil_id: str, *,
     auth = sum(1 for r in records if r.category in AUTH_ABSENT_LIKE)
     unauth = sum(1 for r in records if r.category in UNAUTH_ABSENT_LIKE)
     other = total - present - auth - unauth
-    pct = round(100.0 * present / total, 2) if total else 0.0
+    # "X" (not required) is not a possible session, so it stays out of the %.
+    possible = sum(1 for r in records if r.is_possible)
+    pct = round(100.0 * present / possible, 2) if possible else 0.0
     return {
         "pupil_id": (pupil_id or "").strip(),
         "total_sessions": total,

@@ -8,6 +8,7 @@ from tkinter import filedialog, messagebox, ttk
 from typing import Any, Callable
 from education_system.systems.primary.interfaces import settings as data
 from education_system.platform import branding
+from education_system.systems.primary.interfaces.gui import kit
 from education_system.systems.primary.interfaces.settings import (
     SettingError,
     SettingSpec,
@@ -19,7 +20,23 @@ WIN_GEOMETRY = "1100x800"
 WIN_MINSIZE = (900, 700)
 
 
+def _has_pages(host: Any) -> bool:
+    try:
+        return callable(getattr(host, "show_page", None))
+    except (AttributeError, RecursionError, tk.TclError):
+        return False
+
+
 def open_settings_window(parent=None, *, auth=None) -> None:
+    """Show Settings. Given the main window object (which has ``show_page``)
+    it opens as a page in the content area, with "Open in new window"; given
+    a bare Tk root (or nothing) it opens in a window of its own."""
+    if parent is not None and _has_pages(parent):
+        def draw(frame: ttk.Frame) -> None:
+            kit.page_heading(frame, "Settings")
+            SettingsForm(frame, auth)
+        kit.show_page(parent, "Settings", draw)
+        return
     master = getattr(parent, "root", parent)
     win = tk.Toplevel(master) if master is not None else tk.Tk()
     win.title(f"Settings — {branding.SYSTEM_NAME}")
@@ -154,10 +171,7 @@ class SettingsForm:
         else:
             # int / float / str
             var = tk.StringVar(value=str(current))
-            ent = ttk.Entry(bar, textvariable=var, width=28,
-                               state="disabled" if disabled
-                                     else "normal")
-            ent.pack(side="left")
+            self._value_control(bar, spec, var, disabled).pack(side="left")
             ttk.Button(bar, text="Save",
                         command=lambda s=spec, v=var:
                             self._on_change(s, v.get()),
@@ -181,16 +195,50 @@ class SettingsForm:
                        foreground="#a44").pack(anchor="w",
                                                   pady=(2, 0))
 
+    def _value_control(self, bar: tk.Misc, spec: SettingSpec, var: tk.StringVar,
+                       disabled: bool) -> tk.Misc:
+        """The box for an int / float / str setting: a spinbox for numbers
+        (within the setting's min/max), the academic-year list for a year,
+        a folder chooser for a directory, otherwise a text box."""
+        state = "disabled" if disabled else "normal"
+        if spec.type in ("int", "float"):
+            lo = spec.min if spec.min is not None else 0
+            hi = spec.max if spec.max is not None else 100000
+            box = kit.NumberField(bar, var, from_=lo, to=hi,
+                                  increment=1 if spec.type == "int" else 0.5,
+                                  width=10, state=state)
+            return box
+        if spec.key.endswith("_year"):
+            picker = kit.AcademicYearPicker(bar, var, blank=True)
+            if disabled:
+                picker.box.configure(state="disabled")
+            return picker
+        if spec.key.endswith("_dir"):
+            holder = ttk.Frame(bar)
+            ttk.Entry(holder, textvariable=var, width=36, state=state).pack(side="left")
+
+            def browse() -> None:
+                chosen = filedialog.askdirectory(
+                    parent=self.root.winfo_toplevel(), initialdir=var.get() or None,
+                    title=spec.label)
+                if chosen:
+                    var.set(chosen)
+
+            ttk.Button(holder, text="Browse…", command=browse,
+                       state=state).pack(side="left", padx=(4, 0))
+            return holder
+        return ttk.Entry(bar, textvariable=var, width=28, state=state)
+
     def _on_change(self, spec: SettingSpec, raw: Any) -> None:
         try:
             v = data.set(spec.key, raw, auth=self.auth)
         except SettingError as e:
-            messagebox.showerror(spec.label, str(e))
+            messagebox.showerror(spec.label, str(e), parent=self.root.winfo_toplevel())
             self._refresh_one(spec)
             return
         except Exception as e:
             logger.exception("save setting failed")
-            messagebox.showerror(spec.label, str(e))
+            messagebox.showerror(spec.label, str(e), parent=self.root.winfo_toplevel())
             self._refresh_one(spec)
             return
         self.status_var.set(
@@ -217,7 +265,7 @@ class SettingsForm:
         try:
             v = data.reset_to_default(spec.key, auth=self.auth)
         except SettingError as e:
-            messagebox.showerror(spec.label, str(e))
+            messagebox.showerror(spec.label, str(e), parent=self.root.winfo_toplevel())
             return
         self.status_var.set(
             f"Reset {spec.label} → "
@@ -229,7 +277,8 @@ class SettingsForm:
                 "Reset all local settings",
                 "This wipes every locally-overridden value, "
                 "restoring local defaults. Global (auth-policy) "
-                "settings are not affected.\n\nContinue?"):
+                "settings are not affected.\n\nContinue?",
+                parent=self.root.winfo_toplevel()):
             return
         n = data.reset_all_local()
         for spec in data.list_settings(scope="local"):
@@ -244,6 +293,7 @@ class SettingsForm:
     def _export(self) -> None:
         snapshot = data.export_all(auth=self.auth)
         path = filedialog.asksaveasfilename(
+            parent=self.root.winfo_toplevel(),
             initialfile="settings.json",
             defaultextension=".json",
             filetypes=[("JSON", "*.json"), ("All files", "*.*")])
@@ -256,10 +306,11 @@ class SettingsForm:
                 json.dumps(snapshot, indent=2) + "\n",
                 encoding="utf-8")
         except Exception as e:
-            messagebox.showerror("Export", str(e))
+            messagebox.showerror("Export", str(e), parent=self.root.winfo_toplevel())
             return
         self.status_var.set(
             f"Exported {len(snapshot)} setting(s) → {path}")
         messagebox.showinfo(
             "Export",
-            f"Wrote {len(snapshot)} setting(s) to:\n{path}")
+            f"Wrote {len(snapshot)} setting(s) to:\n{path}",
+            parent=self.root.winfo_toplevel())

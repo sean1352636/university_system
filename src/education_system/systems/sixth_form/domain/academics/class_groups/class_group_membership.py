@@ -54,6 +54,18 @@ ValidationError = core.ValidationError
 ClassGroup = core.ClassGroup
 ClassGroupMember = core.ClassGroupMember
 
+#: Who may change class lists: teaching staff (the Class Groups menu),
+#: plus whoever manages students or enrolments (intake from a course).
+WRITE_CAPABILITIES = ("teaching", "students.manage", "admissions")
+
+
+def _require_writer(action: str) -> None:
+    """Roster writes need one of :data:`WRITE_CAPABILITIES`; reads are
+    open. Nobody signed in and no ``_guard.system_actor`` is refused."""
+    from education_system.systems.sixth_form.domain.admissions import _guard
+    _guard.require_any(WRITE_CAPABILITIES, action)
+
+
 #: Guard against a paste of the entire student body into a bulk call.
 #: Large enough for any real class list, small enough that a mistake
 #: fails fast instead of locking the DB for a minute.
@@ -248,6 +260,7 @@ def add_members_bulk(group_id: int,
     Capacity is filled in the order given, so the caller controls who
     gets the last place.
     """
+    _require_writer("adding learners to class groups")
     _init()
     group = _require_group(group_id)
     ids = _clean_ids(student_ids)
@@ -324,6 +337,7 @@ def remove_members_bulk(group_id: int,
     Ids that were not members are reported as skips rather than errors —
     removing somebody who is already gone is not a failure.
     """
+    _require_writer("removing learners from class groups")
     _init()
     group = _require_group(group_id)
     ids = _clean_ids(student_ids)
@@ -375,6 +389,7 @@ def move_student(from_group_id: int,
     transaction, so a full destination leaves the student exactly where
     they started rather than nowhere.
     """
+    _require_writer("moving learners between class groups")
     _init()
     sid = core._require(student_id, "Student ID")
     src = _require_group(from_group_id, "source class group")
@@ -450,6 +465,7 @@ def swap_students(group_a: int,
 
     Returns the two new memberships as ``(a_now_in_b, b_now_in_a)``.
     """
+    _require_writer("swapping learners between class groups")
     _init()
     sid_a = core._require(student_a, "First student ID")
     sid_b = core._require(student_b, "Second student ID")
@@ -546,6 +562,7 @@ def transfer_all_members(from_group_id: int,
     tell from the group list which half moved. Pass ``partial=True`` to
     accept filling the destination and leaving the remainder behind.
     """
+    _require_writer("moving a class list")
     _init()
     src = _require_group(from_group_id, "source class group")
     dst = _require_group(to_group_id, "destination class group")
@@ -658,6 +675,7 @@ def clear_members(group_id: int,
     ``delete_group``, which takes the group and its history context with
     it.
     """
+    _require_writer("emptying class groups")
     _init()
     group = _require_group(group_id)
     with cg_log.operation(logger, "clear_members",

@@ -88,7 +88,7 @@ class StaffPortalCLI:
             print("\n--- Recent Registrations ---")
             try:
                 rows = conn.execute(
-                    "SELECT student_id, first_name, last_name, registration_date "
+                    "SELECT student_id, first_name, last_name, registration_datetime AS registration_date "
                     "FROM students ORDER BY registration_datetime DESC LIMIT 5"
                 ).fetchall()
                 if rows:
@@ -146,7 +146,7 @@ class StaffPortalCLI:
 
     def _handle_course_management(self):
         try:
-            from education_system.systems.university.domains.academics.domain.services.course_management.menu import display_course_management_menu
+            from education_system.systems.university.domains.curriculum.domain.course_management.menu import display_course_management_menu
             display_course_management_menu(self.auth)
         except ImportError as e:
             print(f"\n  Course Management module is not available: {e}")
@@ -162,7 +162,7 @@ class StaffPortalCLI:
 
     def _handle_grade_tracking(self):
         try:
-            from education_system.systems.university.domains.academics.interfaces.gui.grade_tracking_management_gui import display_enhanced_grade_menu
+            from education_system.systems.university.domains.assessment.interfaces.gui.grade_tracking_management_gui import display_enhanced_grade_menu
             if display_enhanced_grade_menu:
                 display_enhanced_grade_menu()
             else:
@@ -174,7 +174,7 @@ class StaffPortalCLI:
 
     def _handle_attendance(self):
         try:
-            from education_system.systems.university.domains.academics.domain.services.attendance import display_advanced_attendance_menu
+            from education_system.systems.university.domains.teaching.domain.attendance import display_advanced_attendance_menu
             display_advanced_attendance_menu()
         except ImportError as e:
             print(f"\n  Attendance module is not available: {e}")
@@ -193,7 +193,7 @@ class StaffPortalCLI:
 
     def _handle_academic_calendar(self):
         try:
-            from education_system.systems.university.domains.academics.domain.services.academic_calendar.cli import display_academic_calendar_menu
+            from education_system.systems.university.domains.teaching.domain.academic_calendar.cli import display_academic_calendar_menu
             display_academic_calendar_menu()
         except ImportError as e:
             print(f"\n  Academic Calendar module is not available: {e}")
@@ -201,7 +201,7 @@ class StaffPortalCLI:
 
     def _handle_scheduling(self):
         try:
-            from education_system.systems.university.domains.academics.domain.services.module_scheduling.menus import display_module_scheduling_menu
+            from education_system.systems.university.domains.teaching.domain.module_scheduling.menus import display_module_scheduling_menu
             display_module_scheduling_menu()
         except ImportError as e:
             print(f"\n  Scheduling module is not available: {e}")
@@ -223,7 +223,7 @@ class StaffPortalCLI:
 
     def _handle_office_hours(self):
         try:
-            from education_system.systems.university.domains.academics.interfaces.cli.office_hours_cli import display_office_hours_menu
+            from education_system.systems.university.domains.teaching.interfaces.cli.office_hours_cli import display_office_hours_menu
             display_office_hours_menu(self.auth)
         except ImportError as e:
             print(f"\n  Office Hours module is not available: {e}")
@@ -231,7 +231,7 @@ class StaffPortalCLI:
 
     def _handle_ta_management(self):
         try:
-            from education_system.systems.university.domains.academics.domain.services.assignments.admin_tools.ta_management_cli import display_ta_management_menu
+            from education_system.systems.university.domains.assessment.domain.assignments.admin_tools.ta_management_cli import display_ta_management_menu
             display_ta_management_menu(self.auth)
         except ImportError as e:
             print(f"\n  TA Management module is not available: {e}")
@@ -277,10 +277,10 @@ class StaffPortalCLI:
 
     def _handle_early_warning(self):
         try:
-            from education_system.systems.university.domains.pastoral.domain.services.early_warning.early_warning_core import display_early_warning_menu
-            display_early_warning_menu(self.auth)
+            from education_system.systems.university.domains.student_support.interfaces.cli.wellbeing.intervention_hub.intervention_hub_cli import display_intervention_hub_menu
+            display_intervention_hub_menu(self.auth)
         except ImportError as e:
-            print(f"\n  Early Warning System module is not available: {e}")
+            print(f"\n  Early Warning & Interventions is not available: {e}")
             input("Press Enter to continue...")
 
     def _handle_export_data(self):
@@ -303,7 +303,7 @@ class StaffPortalCLI:
 
     def _handle_library(self):
         try:
-            from education_system.systems.university.domains.academics.domain.services.library.menu import display_library_menu
+            from education_system.systems.university.domains.library.domain.library.menu import display_library_menu
             display_library_menu()
         except ImportError as e:
             print(f"\n  Library module is not available: {e}")
@@ -321,15 +321,17 @@ class StaffPortalCLI:
 
     def _handle_alumni_management(self):
         try:
-            from education_system.systems.university.domains.learners.domain.alumni import display_alumni_menu
-            display_alumni_menu()
+            from education_system.systems.university.domains.learners.interfaces.cli.alumni import (
+                display_alumni_relations_menu,
+            )
+            display_alumni_relations_menu(self.auth)
         except ImportError as e:
             print(f"\n  Alumni Management module is not available: {e}")
             input("Press Enter to continue...")
 
     def _handle_transfer_credits(self):
         try:
-            from education_system.systems.university.domains.academics.interfaces.cli.transfer_credits_cli import display_transfer_credits_menu
+            from education_system.systems.university.domains.curriculum.interfaces.cli.transfer_credits_cli import display_transfer_credits_menu
             display_transfer_credits_menu(self.auth)
         except ImportError as e:
             print(f"\n  Transfer Credits module is not available: {e}")
@@ -337,15 +339,23 @@ class StaffPortalCLI:
 
     def _handle_accreditation(self):
         try:
-            from education_system.systems.university.domains.academics.interfaces.cli.accreditation_cli import display_accreditation_menu
+            from education_system.systems.university.domains.quality.interfaces.cli.accreditation_cli import display_accreditation_menu
             display_accreditation_menu(self.auth)
         except ImportError as e:
             print(f"\n  Accreditation module is not available: {e}")
             input("Press Enter to continue...")
 
+    def _handle_student_handbook(self):
+        try:
+            from education_system.systems.university.domains.student_life.interfaces.cli.student_handbook import run_student_handbook_cli
+            run_student_handbook_cli(self.auth)
+        except ImportError as e:
+            print(f"\n  Student Handbook is not available: {e}")
+            input("Press Enter to continue...")
+
     def _handle_course_catalog(self):
         try:
-            from education_system.systems.university.domains.academics.interfaces.cli.course_catalog_cli import display_course_catalog_menu
+            from education_system.systems.university.domains.curriculum.interfaces.cli.course_catalog_cli import display_course_catalog_menu
             display_course_catalog_menu(self.auth)
         except ImportError as e:
             print(f"\n  Course Catalog module is not available: {e}")
@@ -416,6 +426,7 @@ class StaffPortalCLI:
             print("    25. Transfer Credits")
             print("    26. Accreditation")
             print("    27. Course Catalog")
+            print("    28. Student Handbook")
 
             print("\n    R.  Return to Login")
             print("    Q.  Shutdown")
@@ -492,6 +503,8 @@ class StaffPortalCLI:
                 self._handle_accreditation()
             elif choice == '27':
                 self._handle_course_catalog()
+            elif choice == '28':
+                self._handle_student_handbook()
             else:
                 print("\n  Invalid choice. Please try again.")
                 input("Press Enter to continue...")

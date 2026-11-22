@@ -21,6 +21,10 @@ import uuid
 
 # Import database connection
 from education_system.systems.university.plugins.campus_commerce.interfaces.gui.restaurant_management_gui.core.main_gui import get_db_connection
+# Finance posting lives in the domain service (shared with the CLI).
+from education_system.systems.university.plugins.campus_commerce.domain.services.restaurant.operations.settlement import (
+    refund_order_payment,
+)
 
 
 def create_refunds_tab(self, parent):
@@ -227,57 +231,19 @@ Status: {values[5]}
         if not refund_method:
             return
 
-        # Process based on method
-        success = False
-
-        if refund_method == 'Finance Account':
-            if not payer_id:
-                messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.orders.refunds.dialogs.refund_failed', default="Refund Failed"),
-                                    _t('gui.operations.commerce.restaurant_management_gui.orders.refunds.dialogs.cannot_refund_to_finance_account_no_account_linked_to_this_order', default="Cannot refund to Finance Account — no account linked to this order"))
-                return
-            success = add_refund_to_student_account(payer_id, amount, order_id)
-        else:
-            # For cash/card, just record the refund
-            success = True
+        # The domain service credits the finance account (if chosen), marks
+        # the order refunded and posts the refund to Finance.
+        operator = getattr(self, 'current_user', None)
+        outcome = refund_order_payment(
+            order_id, amount, refund_method,
+            student_id=payer_id,
+            processed_by=operator.get('username') if isinstance(operator, dict) else None,
+        )
+        success = outcome['success']
 
         if success:
-            # Update order status to refunded
             try:
-                conn = get_db_connection()
-                if not conn:
-                    messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.orders.refunds.dialogs.error', default="Error"), _t('gui.operations.commerce.restaurant_management_gui.orders.refunds.dialogs.database_connection_failed', default="Database connection failed"))
-                    return
-
-                cursor = conn.cursor()
-
-                cursor.execute('''
-                    UPDATE orders
-                    SET order_status = 'Refunded'
-                    WHERE order_id = ?
-                ''', (order_id,))
-
-                # Generate refund reference
-                refund_ref = f"REST-REFUND-{uuid.uuid4().hex[:12].upper()}"
-
-                # Record refund in unified_refunds table
-                cursor.execute('''
-                    INSERT INTO unified_refunds
-                    (source_type, reference_id, reference_type, amount, refund_type,
-                     refund_method, refund_reference, reason, refund_date, status)
-                    VALUES ('order', ?, 'order', ?, 'Full', ?, ?, 'Customer Request', CURRENT_TIMESTAMP, 'processed')
-                ''', (str(order_id), amount, refund_method, refund_ref))
-                refund_row_id = cursor.lastrowid
-
-                conn.commit()
-                conn.close()
-
-                # Auto-post to GL (cash has moved). Never raises.
-                try:
-                    from education_system.systems.university.domains.finance.domain.ledger import notify_ledger
-                    notify_ledger('refund', refund_row_id, posted_by='restaurant')
-                except Exception as _e:
-                    import logging
-                    logging.getLogger(__name__).warning("ledger hook failed: %s", _e)
+                refund_ref = outcome['refund_ref']
 
                 # Send refund receipt email to the payer
                 email_sent = send_refund_receipt(order_id, amount, refund_method, refund_ref,
@@ -302,7 +268,7 @@ Status: {values[5]}
             except Exception as e:
                 messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.orders.refunds.dialogs.refund_error', default="Refund Error"), f"Failed to process refund: {e}")
         else:
-            messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.orders.refunds.dialogs.refund_failed', default="Refund Failed"), _t('gui.operations.commerce.restaurant_management_gui.orders.refunds.dialogs.failed_to_process_finance_account_refund', default="Failed to process finance account refund"))
+            messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.orders.refunds.dialogs.refund_failed', default="Refund Failed"), outcome.get('message') or _t('gui.operations.commerce.restaurant_management_gui.orders.refunds.dialogs.failed_to_process_finance_account_refund', default="Failed to process finance account refund"))
 
     # Button frame
     button_frame = ttk.Frame(parent)
@@ -430,7 +396,7 @@ def get_payer_info_from_order(order_id: int) -> Optional[dict]:
 
         # Try to get full name and email from students table
         cursor.execute('''
-            SELECT first_name, last_name, email FROM students
+            SELECT first_name, last_name, email_address FROM students
             WHERE student_id = ?
         ''', (user_identifier,))
         student_row = cursor.fetchone()
@@ -480,61 +446,6 @@ def get_student_account_balance(student_id: str) -> Optional[float]:
     except Exception as e:
         print(f"Error getting student balance: {e}")
         return None
-
-
-def add_refund_to_student_account(student_id: str, amount: float, order_id: int) -> bool:
-    """Add refund amount to student's finance account."""
-    try:
-        conn = get_db_connection()
-        if not conn:
-            return False
-
-        cursor = conn.cursor()
-
-        # Get account_id and balance
-        cursor.execute('''
-            SELECT account_id, balance FROM student_finance_accounts
-            WHERE student_id = ? AND account_status = 'active'
-        ''', (student_id,))
-        row = cursor.fetchone()
-
-        if not row:
-            # Try to create account if it doesn't exist
-            cursor.execute('''
-                INSERT INTO student_finance_accounts
-                (student_id, account_type, balance, account_status, created_at)
-                VALUES (?, 'standard', ?, 'active', CURRENT_TIMESTAMP)
-            ''', (student_id, amount))
-            account_id = cursor.lastrowid
-            balance_before = 0
-            balance_after = amount
-        else:
-            account_id = row[0]
-            balance_before = float(row[1])
-            balance_after = balance_before + amount
-
-            # Add to balance
-            cursor.execute('''
-                UPDATE student_finance_accounts
-                SET balance = ?, updated_at = CURRENT_TIMESTAMP
-                WHERE account_id = ?
-            ''', (balance_after, account_id))
-
-        # Record transaction
-        cursor.execute('''
-            INSERT INTO transactions
-            (source_type, account_id, student_id, transaction_type, amount, balance_before,
-             balance_after, description, created_at)
-            VALUES ('student_finance', ?, ?, 'credit', ?, ?, ?, ?, CURRENT_TIMESTAMP)
-        ''', (account_id, student_id, amount, balance_before, balance_after,
-              f'Restaurant Refund - Order: {order_id}'))
-
-        conn.commit()
-        conn.close()
-        return True
-    except Exception as e:
-        print(f"Error adding to student account: {e}")
-        return False
 
 
 def send_refund_receipt(order_id: int, amount: float, method: str,

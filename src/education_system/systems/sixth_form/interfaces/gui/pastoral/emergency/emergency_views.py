@@ -6,7 +6,9 @@ from education_system.systems.sixth_form.interfaces.gui._ui import grab_when_vie
 import datetime as _dt
 import logging
 import tkinter as tk
-from tkinter import messagebox, ttk
+from tkinter import ttk
+from education_system.systems.sixth_form.interfaces.gui._sidebar import SidebarBook
+from education_system.platform.delivery.gui.parented_dialogs import messagebox
 from education_system.platform import branding
 from education_system.systems.sixth_form.domain.pastoral.emergency import (
     emergency as data,
@@ -44,7 +46,7 @@ def open_emergency_window(parent=None) -> None:
     win.geometry(WIN_GEOMETRY)
     win.minsize(*WIN_MINSIZE)
 
-    nb = ttk.Notebook(win)
+    nb = SidebarBook(win)
     nb.pack(fill="both", expand=True, padx=10, pady=10)
 
     EmergencyTab(nb, scope="open",      label="Open")
@@ -54,6 +56,10 @@ def open_emergency_window(parent=None) -> None:
     EmergencyTab(nb, scope="lockdown",  label="Lockdowns")
     EmergencyTab(nb, scope="all",       label="All")
     SummaryTab(nb)
+    from education_system.systems.sixth_form.interfaces.gui.pastoral.emergency.contacts_tabs import (
+        add_contact_tabs,
+    )
+    add_contact_tabs(nb)
 
 
 class EmergencyTab:

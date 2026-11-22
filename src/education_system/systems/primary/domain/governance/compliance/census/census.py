@@ -1,13 +1,13 @@
-"""Census / ILR data layer for Primary School System.
+"""School Census data layer for the Primary School System.
 
-Tracks statutory data returns:
- - DfE School Census (autumn / spring / summer)
- - ESFA Individualised Learner Record (ILR) submissions
+Tracks statutory data returns - the DfE School Census (autumn / spring /
+summer), the workforce census and similar. A return is a submission
+window; it moves through Draft → Validated → Submitted → Accepted (or
+Rejected). Submitting records the number of pupils on roll.
 
-A `Return` row is the overall submission window; `LearnerAim`
-rows are the per-student ILR aim entries which roll up into
-the return. Returns move through Draft → Validated → Submitted
-→ Accepted (or Rejected) status workflow.
+The ILR learner-aim half of the sixth-form original was taken out on
+2026-11-05 (FE only); the ``learner_aims`` table is left in existing
+databases but no longer used.
 """
 
 from __future__ import annotations
@@ -46,48 +46,6 @@ RETURN_STATUSES: tuple[str, ...] = (
     "Archived",
 )
 DEFAULT_RETURN_STATUS = "Planned"
-
-AIM_TYPES: tuple[str, ...] = (
-    "Programme Aim",
-    "Component Aim",
-    "Core Aim",
-    "Maths",
-    "English",
-    "Tutorial",
-    "Work Placement",
-    "Enrichment",
-    "Other",
-)
-DEFAULT_AIM_TYPE = "Programme Aim"
-
-FUNDING_MODELS: tuple[str, ...] = (
-    "16-19 (excluding Apprenticeships)",
-    "Apprenticeship",
-    "Adult Skills",
-    "Advanced Learner Loans",
-    "Community Learning",
-    "ESFA Other",
-    "Other",
-)
-DEFAULT_FUNDING_MODEL = "16-19 (excluding Apprenticeships)"
-
-LEARNER_AIM_STATUSES: tuple[str, ...] = (
-    "Continuing",
-    "Completed",
-    "Withdrawn",
-    "Transferred",
-    "Achieved",
-    "Partially Achieved",
-    "Not Achieved",
-    "Temporarily Withdrawn",
-)
-DEFAULT_LEARNER_AIM_STATUS = "Continuing"
-
-COMPLETION_CODES: tuple[int, ...] = (1, 2, 3, 6, 7, 10)
-# 1 Continuing, 2 Completed (achieved), 3 Withdrawn,
-# 6 Temporarily withdrawn, 7 Transferred, 10 Completed
-# (not achieved)
-
 
 class ValidationError(Exception):
     pass
@@ -133,40 +91,7 @@ class CensusReturn:
 
 
 @dataclass
-class LearnerAim:
-    aim_id: int
-    return_id: int | None
-    learner_ref: str
-    learner_name: str | None
-    ukprn: str | None
-    uln: str | None
-    aim_type: str
-    aim_reference: str
-    aim_title: str | None
-    funding_model: str
-    start_date: str
-    planned_end_date: str | None
-    actual_end_date: str | None
-    completion_code: int | None
-    outcome_code: str | None
-    status: str
-    planned_hours: int | None
-    actual_hours: int | None
-    funding_band_value: float | None
-    delivery_location: str | None
-    partner_ukprn: str | None
-    notes: str | None
-    created_on: str
-    updated_on: str
-
-    @property
-    def is_active(self) -> bool:
-        return self.status in ("Continuing",
-                                       "Temporarily Withdrawn")
-
-
-@dataclass
-class CensusIlrSummary:
+class CensusSummary:
     total_returns: int = 0
     planned: int = 0
     in_progress: int = 0
@@ -175,18 +100,9 @@ class CensusIlrSummary:
     rejected: int = 0
     overdue: int = 0
     open_windows: int = 0
-    total_aims: int = 0
-    continuing_aims: int = 0
-    completed_aims: int = 0
-    withdrawn_aims: int = 0
-    achieved_aims: int = 0
-    distinct_learners: int = 0
-    total_planned_hours: int = 0
-    total_funding_value: float = 0.0
+    pupils_on_roll: int = 0
     by_return_type: dict[str, int] = field(default_factory=dict)
     by_return_status: dict[str, int] = field(default_factory=dict)
-    by_funding_model: dict[str, int] = field(default_factory=dict)
-    by_aim_status: dict[str, int] = field(default_factory=dict)
 
 
 # ── DB ─────────────────────────────────────────────────────────────
@@ -229,38 +145,6 @@ def init_db() -> None:
               UNIQUE (return_type, academic_year)
             );
 
-            CREATE TABLE IF NOT EXISTS learner_aims (
-              aim_id              INTEGER PRIMARY KEY AUTOINCREMENT,
-              return_id           INTEGER REFERENCES census_returns(return_id) ON DELETE SET NULL,
-              learner_ref         TEXT NOT NULL,
-              learner_name        TEXT,
-              ukprn               TEXT,
-              uln                 TEXT,
-              aim_type            TEXT NOT NULL,
-              aim_reference       TEXT NOT NULL,
-              aim_title           TEXT,
-              funding_model       TEXT NOT NULL,
-              start_date          TEXT NOT NULL,
-              planned_end_date    TEXT,
-              actual_end_date     TEXT,
-              completion_code     INTEGER,
-              outcome_code        TEXT,
-              status              TEXT NOT NULL,
-              planned_hours       INTEGER,
-              actual_hours        INTEGER,
-              funding_band_value  REAL,
-              delivery_location   TEXT,
-              partner_ukprn       TEXT,
-              notes               TEXT,
-              created_on          TEXT NOT NULL,
-              updated_on          TEXT NOT NULL
-            );
-            CREATE INDEX IF NOT EXISTS ix_aims_learner
-              ON learner_aims(learner_ref);
-            CREATE INDEX IF NOT EXISTS ix_aims_return
-              ON learner_aims(return_id);
-            CREATE INDEX IF NOT EXISTS ix_aims_status
-              ON learner_aims(status);
         """)
 
 
@@ -377,96 +261,6 @@ def _validate_return(p: dict[str, Any], *,
     return out
 
 
-def _validate_aim(p: dict[str, Any]) -> dict[str, Any]:
-    out = dict(p)
-    out["learner_ref"] = (out.get("learner_ref") or "").strip()
-    if not out["learner_ref"]:
-        raise ValidationError("Learner ref is required")
-
-    at = (out.get("aim_type") or DEFAULT_AIM_TYPE).strip()
-    if at not in AIM_TYPES:
-        raise ValidationError(
-            f"Aim type must be one of: {', '.join(AIM_TYPES)}")
-    out["aim_type"] = at
-
-    out["aim_reference"] = (out.get("aim_reference")
-                                    or "").strip()
-    if not out["aim_reference"]:
-        raise ValidationError("Aim reference is required")
-
-    fm = (out.get("funding_model")
-            or DEFAULT_FUNDING_MODEL).strip()
-    if fm not in FUNDING_MODELS:
-        raise ValidationError(
-            f"Funding model must be one of: "
-            f"{', '.join(FUNDING_MODELS)}")
-    out["funding_model"] = fm
-
-    status = (out.get("status")
-                  or DEFAULT_LEARNER_AIM_STATUS).strip()
-    if status not in LEARNER_AIM_STATUSES:
-        raise ValidationError(
-            f"Aim status must be one of: "
-            f"{', '.join(LEARNER_AIM_STATUSES)}")
-    out["status"] = status
-
-    out["start_date"] = (out.get("start_date") or "").strip()
-    if not out["start_date"]:
-        raise ValidationError("Start date is required")
-    _check_date("Start date", out["start_date"])
-    _check_date("Planned end date",
-                    out.get("planned_end_date"))
-    _check_date("Actual end date", out.get("actual_end_date"))
-
-    if (out.get("planned_end_date")
-            and out["planned_end_date"] < out["start_date"]):
-        raise ValidationError(
-            "Planned end date cannot be before start date")
-    if (out.get("actual_end_date")
-            and out["actual_end_date"] < out["start_date"]):
-        raise ValidationError(
-            "Actual end date cannot be before start date")
-
-    cc = out.get("completion_code")
-    if cc in (None, ""):
-        out["completion_code"] = None
-    else:
-        try:
-            out["completion_code"] = int(cc)
-        except (TypeError, ValueError):
-            raise ValidationError(
-                "Completion code must be an integer")
-        if out["completion_code"] not in COMPLETION_CODES:
-            raise ValidationError(
-                f"Completion code must be one of "
-                f"{COMPLETION_CODES}")
-
-    rid = out.get("return_id")
-    if rid in (None, "", 0):
-        out["return_id"] = None
-    else:
-        try:
-            out["return_id"] = int(rid)
-        except (TypeError, ValueError):
-            raise ValidationError(
-                "Return id must be an integer")
-
-    _opt_int(out, "planned_hours", "Planned hours")
-    _opt_int(out, "actual_hours", "Actual hours")
-    _opt_float(out, "funding_band_value", "Funding band value")
-
-    for k in ("learner_name", "ukprn", "uln", "aim_title",
-               "outcome_code", "delivery_location",
-               "partner_ukprn", "notes"):
-        v = out.get(k)
-        out[k] = (v.strip() if isinstance(v, str) else v) or None
-    for k in ("planned_end_date", "actual_end_date"):
-        v = out.get(k)
-        out[k] = ((v or "").strip() or None
-                    if isinstance(v, str) else v)
-    return out
-
-
 def _row_return(r: sqlite3.Row) -> CensusReturn:
     return CensusReturn(
         return_id=r["return_id"],
@@ -484,35 +278,6 @@ def _row_return(r: sqlite3.Row) -> CensusReturn:
         error_count=r["error_count"],
         warning_count=r["warning_count"],
         file_ref=r["file_ref"],
-        notes=r["notes"],
-        created_on=r["created_on"],
-        updated_on=r["updated_on"],
-    )
-
-
-def _row_aim(r: sqlite3.Row) -> LearnerAim:
-    return LearnerAim(
-        aim_id=r["aim_id"],
-        return_id=r["return_id"],
-        learner_ref=r["learner_ref"],
-        learner_name=r["learner_name"],
-        ukprn=r["ukprn"],
-        uln=r["uln"],
-        aim_type=r["aim_type"],
-        aim_reference=r["aim_reference"],
-        aim_title=r["aim_title"],
-        funding_model=r["funding_model"],
-        start_date=r["start_date"],
-        planned_end_date=r["planned_end_date"],
-        actual_end_date=r["actual_end_date"],
-        completion_code=r["completion_code"],
-        outcome_code=r["outcome_code"],
-        status=r["status"],
-        planned_hours=r["planned_hours"],
-        actual_hours=r["actual_hours"],
-        funding_band_value=r["funding_band_value"],
-        delivery_location=r["delivery_location"],
-        partner_ukprn=r["partner_ukprn"],
         notes=r["notes"],
         created_on=r["created_on"],
         updated_on=r["updated_on"],
@@ -642,144 +407,6 @@ def list_returns(*,
     return [_row_return(r) for r in rows]
 
 
-# ── CRUD: aims ───────────────────────────────────────────
-
-def create_aim(payload: dict[str, Any]) -> LearnerAim:
-    init_db()
-    p = _validate_aim(payload)
-    if p["return_id"] is not None:
-        if get_return(p["return_id"]) is None:
-            raise ValidationError(
-                f"No return with id {p['return_id']}")
-    now = _dt.datetime.now().isoformat(timespec="seconds")
-    with _connect() as conn:
-        cur = conn.execute("""
-            INSERT INTO learner_aims (
-              return_id, learner_ref, learner_name, ukprn,
-              uln, aim_type, aim_reference, aim_title,
-              funding_model, start_date, planned_end_date,
-              actual_end_date, completion_code, outcome_code,
-              status, planned_hours, actual_hours,
-              funding_band_value, delivery_location,
-              partner_ukprn, notes, created_on, updated_on
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
-                      ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        """, (
-            p["return_id"], p["learner_ref"],
-            p["learner_name"], p["ukprn"], p["uln"],
-            p["aim_type"], p["aim_reference"], p["aim_title"],
-            p["funding_model"], p["start_date"],
-            p["planned_end_date"], p["actual_end_date"],
-            p["completion_code"], p["outcome_code"],
-            p["status"], p["planned_hours"],
-            p["actual_hours"], p["funding_band_value"],
-            p["delivery_location"], p["partner_ukprn"],
-            p["notes"], now, now,
-        ))
-        aid = cur.lastrowid
-    return get_aim(aid)  # type: ignore[return-value]
-
-
-def update_aim(aim_id: int,
-                    payload: dict[str, Any]) -> LearnerAim:
-    init_db()
-    if get_aim(aim_id) is None:
-        raise ValidationError(f"No aim with id {aim_id}")
-    p = _validate_aim(payload)
-    if p["return_id"] is not None:
-        if get_return(p["return_id"]) is None:
-            raise ValidationError(
-                f"No return with id {p['return_id']}")
-    now = _dt.datetime.now().isoformat(timespec="seconds")
-    with _connect() as conn:
-        conn.execute("""
-            UPDATE learner_aims SET
-              return_id=?, learner_ref=?, learner_name=?,
-              ukprn=?, uln=?, aim_type=?, aim_reference=?,
-              aim_title=?, funding_model=?, start_date=?,
-              planned_end_date=?, actual_end_date=?,
-              completion_code=?, outcome_code=?, status=?,
-              planned_hours=?, actual_hours=?,
-              funding_band_value=?, delivery_location=?,
-              partner_ukprn=?, notes=?, updated_on=?
-            WHERE aim_id=?
-        """, (
-            p["return_id"], p["learner_ref"],
-            p["learner_name"], p["ukprn"], p["uln"],
-            p["aim_type"], p["aim_reference"], p["aim_title"],
-            p["funding_model"], p["start_date"],
-            p["planned_end_date"], p["actual_end_date"],
-            p["completion_code"], p["outcome_code"],
-            p["status"], p["planned_hours"],
-            p["actual_hours"], p["funding_band_value"],
-            p["delivery_location"], p["partner_ukprn"],
-            p["notes"], now, aim_id,
-        ))
-    return get_aim(aim_id)  # type: ignore[return-value]
-
-
-def delete_aim(aim_id: int) -> bool:
-    init_db()
-    with _connect() as conn:
-        cur = conn.execute(
-            "DELETE FROM learner_aims WHERE aim_id=?",
-            (aim_id,))
-        return cur.rowcount > 0
-
-
-def get_aim(aim_id: int) -> LearnerAim | None:
-    init_db()
-    with _connect() as conn:
-        r = conn.execute(
-            "SELECT * FROM learner_aims WHERE aim_id=?",
-            (aim_id,)).fetchone()
-    return _row_aim(r) if r else None
-
-
-def list_aims(*,
-                  return_id: int | None = None,
-                  learner_ref: str | None = None,
-                  aim_type: str | None = None,
-                  funding_model: str | None = None,
-                  status: str | None = None,
-                  active_only: bool = False,
-                  ) -> list[LearnerAim]:
-    init_db()
-    sql = "SELECT * FROM learner_aims WHERE 1=1"
-    params: list[Any] = []
-    if return_id is not None:
-        sql += " AND return_id=?"
-        params.append(return_id)
-    if learner_ref:
-        sql += " AND learner_ref=?"
-        params.append(learner_ref)
-    if aim_type:
-        sql += " AND aim_type=?"
-        params.append(aim_type)
-    if funding_model:
-        sql += " AND funding_model=?"
-        params.append(funding_model)
-    if status:
-        sql += " AND status=?"
-        params.append(status)
-    if active_only:
-        sql += (" AND status IN "
-                  "('Continuing','Temporarily Withdrawn')")
-    sql += (" ORDER BY learner_ref, start_date,"
-              " aim_id DESC")
-    with _connect() as conn:
-        rows = conn.execute(sql, params).fetchall()
-    return [_row_aim(r) for r in rows]
-
-
-def aims_for_learner(learner_ref: str) -> list[LearnerAim]:
-    return list_aims(learner_ref=learner_ref)
-
-
-def aims_for_return(return_id: int) -> list[LearnerAim]:
-    return list_aims(return_id=return_id)
-
-
 # ── Workflow ──────────────────────────────────────────────
 
 def _ret_dict(r: CensusReturn) -> dict[str, Any]:
@@ -812,6 +439,13 @@ def validate_return(return_id: int) -> CensusReturn:
                                   "status": "Validated"})
 
 
+def _pupils_on_roll() -> int:
+    """Pupils currently on roll - the headcount a school census return
+    is made for."""
+    from education_system.systems.primary.domain.learners.pupils import pupils
+    return len(pupils.list_pupils())
+
+
 def submit_return(return_id: int, *,
                           submitted_by: str | None = None,
                           file_ref: str | None = None
@@ -827,9 +461,7 @@ def submit_return(return_id: int, *,
         data["submitted_by"] = submitted_by
     if file_ref:
         data["file_ref"] = file_ref
-    aim_rows = aims_for_return(return_id)
-    data["learner_count"] = len({a.learner_ref
-                                            for a in aim_rows})
+    data["learner_count"] = _pupils_on_roll()
     return update_return(return_id, data)
 
 
@@ -916,12 +548,10 @@ def record_validation_counts(return_id: int, *,
 
 # ── Summary ─────────────────────────────────────────────
 
-def summary() -> CensusIlrSummary:
+def summary() -> CensusSummary:
     returns = list_returns()
-    aims = list_aims()
-    out = CensusIlrSummary(
-        total_returns=len(returns),
-        total_aims=len(aims))
+    out = CensusSummary(total_returns=len(returns),
+                        pupils_on_roll=_pupils_on_roll())
     for r in returns:
         if r.status == "Planned":
             out.planned += 1
@@ -942,44 +572,17 @@ def summary() -> CensusIlrSummary:
             out.by_return_type.get(r.return_type, 0) + 1)
         out.by_return_status[r.status] = (
             out.by_return_status.get(r.status, 0) + 1)
-    learners: set[str] = set()
-    for a in aims:
-        learners.add(a.learner_ref)
-        if a.status == "Continuing":
-            out.continuing_aims += 1
-        elif a.status == "Completed":
-            out.completed_aims += 1
-        elif a.status == "Withdrawn":
-            out.withdrawn_aims += 1
-        elif a.status == "Achieved":
-            out.achieved_aims += 1
-        if a.planned_hours:
-            out.total_planned_hours += a.planned_hours
-        if a.funding_band_value:
-            out.total_funding_value += a.funding_band_value
-        out.by_funding_model[a.funding_model] = (
-            out.by_funding_model.get(a.funding_model, 0) + 1)
-        out.by_aim_status[a.status] = (
-            out.by_aim_status.get(a.status, 0) + 1)
-    out.distinct_learners = len(learners)
     return out
 
 
 __all__ = [
     "RETURN_TYPES", "DEFAULT_RETURN_TYPE",
     "RETURN_STATUSES", "DEFAULT_RETURN_STATUS",
-    "AIM_TYPES", "DEFAULT_AIM_TYPE",
-    "FUNDING_MODELS", "DEFAULT_FUNDING_MODEL",
-    "LEARNER_AIM_STATUSES", "DEFAULT_LEARNER_AIM_STATUS",
-    "COMPLETION_CODES",
     "ValidationError",
-    "CensusReturn", "LearnerAim", "CensusIlrSummary",
+    "CensusReturn", "CensusSummary",
     "init_db",
     "create_return", "update_return", "delete_return",
     "get_return", "list_returns",
-    "create_aim", "update_aim", "delete_aim",
-    "get_aim", "list_aims",
-    "aims_for_learner", "aims_for_return",
     "validate_return", "submit_return", "accept_return",
     "reject_return", "resubmit_return", "archive_return",
     "set_return_status", "record_validation_counts",

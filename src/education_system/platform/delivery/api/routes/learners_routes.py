@@ -662,4 +662,52 @@ def abandon_dead_letter():
     return denied or jsonify({"abandoned": True})
 
 
+# Failed best-effort syncs that never reached the bus (journey registration,
+# progression announce/publish) — see platform/cross_system/sync_failures.py.
+
+@learners_bp.route("/sync-failures", methods=["GET"])
+@superadmin_required
+def list_sync_failures():
+    from education_system.platform.cross_system import sync_failures
+    status = request.args.get("status", sync_failures.OPEN)
+    if status not in (*sync_failures.STATUSES, "all"):
+        return jsonify({"error": f"status must be one of "
+                                 f"{', '.join(sync_failures.STATUSES)} or all"}), 400
+    rows = sync_failures.list_failures(
+        status=None if status == "all" else status,
+        limit=_int_arg("limit", 200), db_path=_db_path)
+    return jsonify({"sync_failures": _jsonable(rows), "count": len(rows)})
+
+
+@learners_bp.route("/sync-failures/<int:failure_id>/retry", methods=["POST"])
+@superadmin_required
+def retry_sync_failure(failure_id: int):
+    from education_system.platform.cross_system import sync_failures
+    actor = g.current_user.get("username")
+    try:
+        sync_failures.retry(failure_id, actor=actor, db_path=_db_path)
+    except sync_failures.SyncFailureError as exc:
+        return jsonify({"error": str(exc)}), 404
+    except Exception as exc:
+        logger.exception("Retry of sync failure %s failed", failure_id)
+        return jsonify({"retried": False, "error": str(exc)}), 502
+    denied = _audit("CONFIG_CHANGE", "sync_failure", str(failure_id), step="retry")
+    return denied or jsonify({"retried": True})
+
+
+@learners_bp.route("/sync-failures/<int:failure_id>/abandon", methods=["POST"])
+@superadmin_required
+def abandon_sync_failure(failure_id: int):
+    from education_system.platform.cross_system import sync_failures
+    reason = ((request.get_json(silent=True) or {}).get("reason") or "").strip()
+    if not reason:
+        return jsonify({"error": "reason is required"}), 400
+    if not sync_failures.abandon(failure_id, reason=reason,
+                                 actor=g.current_user.get("username"), db_path=_db_path):
+        return jsonify({"error": "No open sync failure with that id"}), 404
+    denied = _audit("CONFIG_CHANGE", "sync_failure", str(failure_id), step="abandon",
+                    reason=reason)
+    return denied or jsonify({"abandoned": True})
+
+
 __all__ = ["init_learner_routes", "learners_bp"]

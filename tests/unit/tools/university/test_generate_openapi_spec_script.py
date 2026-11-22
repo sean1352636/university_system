@@ -1,4 +1,4 @@
-"""Tests for scripts.generate_openapi_spec."""
+"""Tests for tools/university/generate_openapi_spec.py."""
 import json
 from unittest.mock import patch
 
@@ -7,16 +7,32 @@ from tools.university import generate_openapi_spec as script
 
 class TestModuleSurface:
     def test_callables_and_builders(self):
-        for name in ("_build_university", "_build_college", "_build_secondary",
-                     "_build_primary", "_build_unified", "_write_spec",
+        for name in ("_build_university", "_build_unified", "_write_spec",
                      "_run_one", "main"):
             assert callable(getattr(script, name))
 
     def test_builders_registry_complete(self):
-        assert set(script.BUILDERS.keys()) == {"university", "college", "secondary", "primary", "unified"}
+        assert set(script.BUILDERS.keys()) == {"university", "unified"}
         for _, (builder, filename) in script.BUILDERS.items():
             assert callable(builder)
             assert filename.endswith(".json")
+
+
+class TestPaths:
+    def test_specs_are_written_to_the_repo_docs_folder(self):
+        assert (script.REPO_ROOT / "pyproject.toml").exists()
+        assert script.DOCS_API_DIR == script.REPO_ROOT / "docs" / "api"
+
+
+class TestUniversityBuilder:
+    def test_keeps_only_university_paths(self):
+        spec = {"info": {"title": "t"}, "paths": {
+            "/api/v1/university/students": {"get": {}},
+            "/api/v1/primary/pupils": {"get": {}},
+        }}
+        with patch.object(script, "_build_unified", return_value=spec):
+            result = script._build_university()
+        assert list(result["paths"]) == ["/api/v1/university/students"]
 
 
 class TestWriteSpec:

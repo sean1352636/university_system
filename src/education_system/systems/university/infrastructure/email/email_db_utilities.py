@@ -60,18 +60,11 @@ def _get_db_path() -> str:
 
 
 def _ensure_migrations_table(cursor) -> None:
-    """Ensure the schema_migrations table exists."""
-    cursor.execute('''
-    CREATE TABLE IF NOT EXISTS schema_migrations (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        version INTEGER NOT NULL UNIQUE,
-        migration_name TEXT NOT NULL,
-        applied_at TEXT NOT NULL,
-        status TEXT DEFAULT 'success',
-        error_message TEXT,
-        rollback_sql TEXT
+    """Ensure the e-mail tables (incl. schema_migrations) exist."""
+    from education_system.systems.university.infrastructure.database.schemas import (
+        email_legacy_schema,
     )
-    ''')
+    email_legacy_schema.apply_to_connection(cursor.connection)
 
 
 def get_schema_version(cursor) -> int:
@@ -599,228 +592,16 @@ def initialize_email_db():
     """Simplified email database initialization"""
 
     def _init_tables(cursor):
-        # Stored emails table
-        cursor.execute('''
-        CREATE TABLE IF NOT EXISTS stored_emails (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            recipient_email TEXT NOT NULL,
-            subject TEXT NOT NULL,
-            body TEXT NOT NULL,
-            sender_email TEXT NOT NULL,
-            sender_name TEXT NOT NULL,
-            cc_recipients TEXT,
-            bcc_recipients TEXT,
-            attachment_paths TEXT,
-            created_date TEXT NOT NULL,
-            template_name TEXT,
-            template_vars TEXT,
-            related_to TEXT,
-            student_id TEXT
-        )
-        ''')
-
-        # Email log table
-        cursor.execute('''
-        CREATE TABLE IF NOT EXISTS email_log (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            recipient TEXT,
-            subject TEXT,
-            message TEXT,
-            sent_date TEXT,
-            status TEXT,
-            related_to TEXT,
-            student_id TEXT,
-            sender_email TEXT,
-            sender_name TEXT,
-            cc_recipients TEXT,
-            bcc_recipients TEXT,
-            attachment_info TEXT,
-            template_name TEXT,
-            template_vars TEXT
-        )
-        ''')
-
-        # Messages table - align schema with communication admin expectations
-        cursor.execute('''
-        CREATE TABLE IF NOT EXISTS messages (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            sender_id INTEGER NOT NULL,
-            recipient_id INTEGER NOT NULL,
-            subject TEXT NOT NULL,
-            message TEXT,
-            content TEXT,
-            attachment_path TEXT,
-            assignment_id INTEGER,
-            is_read INTEGER DEFAULT 0,
-            is_archived INTEGER DEFAULT 0,
-            is_deleted_by_sender INTEGER DEFAULT 0,
-            is_deleted_by_recipient INTEGER DEFAULT 0,
-            sent_at TEXT NOT NULL,
-            read_at TEXT,
-            reply_to INTEGER,
-            FOREIGN KEY (sender_id) REFERENCES users (id),
-            FOREIGN KEY (recipient_id) REFERENCES users (id),
-            FOREIGN KEY (assignment_id) REFERENCES assignments (id),
-            FOREIGN KEY (reply_to) REFERENCES messages (id)
-        )
-        ''')
-
-        # Backfill missing columns for legacy databases without recreating the table
-        cursor.execute("PRAGMA table_info(messages)")
-        existing_columns = {row[1] for row in cursor.fetchall()}
-
-        column_definitions = [
-            ('message', 'TEXT'),
-            ('content', 'TEXT'),
-            ('attachment_path', 'TEXT'),
-            ('assignment_id', 'INTEGER'),
-            ('is_archived', 'INTEGER DEFAULT 0'),
-            ('is_deleted_by_sender', 'INTEGER DEFAULT 0'),
-            ('is_deleted_by_recipient', 'INTEGER DEFAULT 0'),
-            ('read_at', 'TEXT'),
-            ('reply_to', 'INTEGER')
-        ]
-
-        # Use centralized SQL safety validation for column definitions
-        for column_name, definition in column_definitions:
-            if column_name not in existing_columns:
-                try:
-                    safe_alter_table_add_column("messages", column_name, definition, cursor.connection)
-                    existing_columns.add(column_name)
-                except SQLIdentifierError as e:
-                    logger.warning(f"Invalid column definition for '{column_name}': {e}")
-                    continue
+        # Tables, columns and indexes: infrastructure/database/schemas/email_legacy_schema
+        _ensure_migrations_table(cursor)
 
         # Keep legacy data consistent between message/content columns
-        if 'message' in existing_columns and 'content' in existing_columns:
-            cursor.execute("UPDATE messages SET content = message WHERE content IS NULL AND message IS NOT NULL")
-            cursor.execute("UPDATE messages SET message = content WHERE message IS NULL AND content IS NOT NULL")
-
+        cursor.execute("UPDATE messages SET content = message WHERE content IS NULL AND message IS NOT NULL")
+        cursor.execute("UPDATE messages SET message = content WHERE message IS NULL AND content IS NOT NULL")
         # Ensure default flags are set for existing rows
-        if 'is_archived' in existing_columns:
-            cursor.execute("UPDATE messages SET is_archived = 0 WHERE is_archived IS NULL")
-        if 'is_deleted_by_sender' in existing_columns:
-            cursor.execute("UPDATE messages SET is_deleted_by_sender = 0 WHERE is_deleted_by_sender IS NULL")
-        if 'is_deleted_by_recipient' in existing_columns:
-            cursor.execute("UPDATE messages SET is_deleted_by_recipient = 0 WHERE is_deleted_by_recipient IS NULL")
-
-        # Email metrics table
-        cursor.execute('''
-        CREATE TABLE IF NOT EXISTS email_metrics (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            date TEXT NOT NULL,
-            sent_count INTEGER DEFAULT 0,
-            failed_count INTEGER DEFAULT 0,
-            opened_count INTEGER DEFAULT 0,
-            clicked_count INTEGER DEFAULT 0
-        )
-        ''')
-
-        # Scheduled emails table - handle both legacy and new schemas
-        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='scheduled_emails'")
-        scheduled_exists = cursor.fetchone()
-
-        if scheduled_exists:
-            # Check if this is a legacy table
-            cursor.execute("PRAGMA table_info(scheduled_emails)")
-            scheduled_columns = {row[1] for row in cursor.fetchall()}
-
-            # Legacy schema has: recipient, subject, body, scheduled_for
-            # New schema has: template_name, recipient_email, template_vars, scheduled_date
-            is_legacy = 'scheduled_for' in scheduled_columns and 'scheduled_date' not in scheduled_columns
-
-            if is_legacy:
-                log_event('info', "Migrating legacy scheduled_emails table to new schema")
-
-                # Rename old table
-                cursor.execute("ALTER TABLE scheduled_emails RENAME TO scheduled_emails_old")
-
-                # Create new table with correct schema
-                cursor.execute('''
-                CREATE TABLE scheduled_emails (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    template_name TEXT,
-                    recipient_email TEXT NOT NULL,
-                    template_vars TEXT,
-                    scheduled_date TEXT NOT NULL,
-                    status TEXT DEFAULT 'pending',
-                    created_at TEXT NOT NULL
-                )
-                ''')
-
-                # Migrate data from old table
-                try:
-                    cursor.execute('''
-                    INSERT INTO scheduled_emails (id, recipient_email, template_vars, scheduled_date, status, created_at)
-                    SELECT
-                        id,
-                        recipient,
-                        json_object('subject', subject, 'body', body),
-                        scheduled_for,
-                        COALESCE(status, 'pending'),
-                        COALESCE(created_at, datetime('now'))
-                    FROM scheduled_emails_old
-                    ''')
-                    log_event('info', f"Migrated {cursor.rowcount} records from legacy scheduled_emails")
-                except Exception as e:
-                    log_event('warning', f"Error migrating scheduled_emails data: {e}")
-
-                # Drop old table
-                cursor.execute("DROP TABLE scheduled_emails_old")
-            else:
-                # Not legacy, just add missing columns
-                scheduled_column_definitions = [
-                    ('template_name', 'TEXT'),
-                    ('recipient_email', 'TEXT NOT NULL DEFAULT ""'),
-                    ('template_vars', 'TEXT'),
-                    ('scheduled_date', 'TEXT NOT NULL DEFAULT "2024-01-01 00:00:00"'),
-                    ('status', 'TEXT DEFAULT "pending"'),
-                    ('created_at', 'TEXT NOT NULL DEFAULT (datetime("now"))')
-                ]
-
-                for column_name, definition in scheduled_column_definitions:
-                    if column_name not in scheduled_columns:
-                        try:
-                            safe_alter_table_add_column("scheduled_emails", column_name, definition, cursor.connection)
-                            log_event('info', f"Added missing column {column_name} to scheduled_emails")
-                        except SQLIdentifierError as e:
-                            log_event('warning', f"Invalid column definition for {column_name}: {e}")
-                        except Exception as e:
-                            log_event('warning', f"Could not add column {column_name} to scheduled_emails: {e}")
-        else:
-            # Table doesn't exist, create it fresh
-            cursor.execute('''
-            CREATE TABLE IF NOT EXISTS scheduled_emails (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                template_name TEXT,
-                recipient_email TEXT NOT NULL,
-                template_vars TEXT,
-                scheduled_date TEXT NOT NULL,
-                status TEXT DEFAULT 'pending',
-                created_at TEXT NOT NULL
-            )
-            ''')
-
-        # Create indexes with error handling
-        try:
-            cursor.execute('CREATE INDEX IF NOT EXISTS idx_recipient_id ON messages(recipient_id)')
-        except Exception as e:
-            log_event('warning', f"Could not create idx_recipient_id: {e}")
-
-        try:
-            cursor.execute('CREATE INDEX IF NOT EXISTS idx_sender_id ON messages(sender_id)')
-        except Exception as e:
-            log_event('warning', f"Could not create idx_sender_id: {e}")
-
-        try:
-            cursor.execute('CREATE INDEX IF NOT EXISTS idx_email_metrics_date ON email_metrics(date)')
-        except Exception as e:
-            log_event('warning', f"Could not create idx_email_metrics_date: {e}")
-
-        try:
-            cursor.execute('CREATE INDEX IF NOT EXISTS idx_scheduled_emails_date ON scheduled_emails(scheduled_date)')
-        except Exception as e:
-            log_event('warning', f"Could not create idx_scheduled_emails_date: {e}")
+        cursor.execute("UPDATE messages SET is_archived = 0 WHERE is_archived IS NULL")
+        cursor.execute("UPDATE messages SET is_deleted_by_sender = 0 WHERE is_deleted_by_sender IS NULL")
+        cursor.execute("UPDATE messages SET is_deleted_by_recipient = 0 WHERE is_deleted_by_recipient IS NULL")
 
         # Run schema migrations after base tables are created
         migration_results = run_pending_migrations(cursor)
@@ -846,40 +627,10 @@ def initialize_email_db():
 def migrate_email_log_table():
     """Migrate existing email_log table to add missing columns"""
     def _migrate_table(cursor):
-        try:
-            # Get current table schema
-            cursor.execute("PRAGMA table_info(email_log)")
-            columns = cursor.fetchall()
-            existing_columns = [column[1] for column in columns]
-
-            # List of columns that should exist
-            required_columns = [
-                ('sender_email', 'TEXT'),
-                ('sender_name', 'TEXT'),
-                ('cc_recipients', 'TEXT'),
-                ('bcc_recipients', 'TEXT'),
-                ('attachment_info', 'TEXT'),
-                ('template_name', 'TEXT'),
-                ('template_vars', 'TEXT')
-            ]
-
-            # Add missing columns
-            for column_name, column_type in required_columns:
-                if column_name not in existing_columns:
-                    try:
-                        safe_alter_table_add_column("email_log", column_name, column_type, cursor.connection)
-                        log_event('info', f"Added column {column_name} to email_log table")
-                    except SQLIdentifierError as e:
-                        log_event('warning', f"Invalid column definition for {column_name}: {e}")
-                    except Exception as e:
-                        log_event('warning', f"Could not add column {column_name}: {e}")
-
-            log_event('info', "Email log table migration completed")
-            return True
-
-        except Exception as e:
-            log_event('error', f"Error during email_log table migration: {e}")
-            return False
+        # The columns are part of email_legacy_schema now.
+        _ensure_migrations_table(cursor)
+        log_event('info', "Email log table migration completed")
+        return True
 
     return execute_db_operation(_migrate_table)
 

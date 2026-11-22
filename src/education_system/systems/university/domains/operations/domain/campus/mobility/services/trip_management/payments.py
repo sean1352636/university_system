@@ -1,13 +1,14 @@
 """Taking payment for a trip registration, through the Finance system.
 
 Three methods are offered at the point of registration. All three post to
-Finance via ``finance.infrastructure.finance_integration`` — the same entry
-points the Shop, Restaurant, Library and Betting Shop use — so a trip
-payment lands in the ``payments`` table the Finance GUI reads, and is posted
-to the general ledger:
+Finance through its port, ``services/bus/finance_bus`` (which wraps
+``finance.infrastructure.finance_integration`` — the same entry points the
+Shop, Restaurant, Library and Betting Shop use), so a trip payment lands in
+the ``payments`` table the Finance GUI reads, and is posted to the general
+ledger:
 
-* cash / card       → ``record_payment_to_finance``
-* student account   → ``process_student_finance_account_payment``, which
+* cash / card       → ``finance_bus.record_payment``
+* student account   → ``finance_bus.pay_from_student_account``, which
   re-checks the balance atomically, debits ``student_finance_accounts``,
   writes the ledger rows and fires the low-balance alert.
 
@@ -55,12 +56,11 @@ def method_label(method):
 
 
 def _finance():
-    """Import the finance integration lazily; ``None`` when unavailable."""
+    """Finance's port (``services/bus/finance_bus``), imported lazily;
+    ``None`` when unavailable. Operations may not import Finance itself."""
     try:
-        from education_system.systems.university.domains.finance.infrastructure import (
-            finance_integration,
-        )
-        return finance_integration
+        from education_system.systems.university.services.bus import finance_bus
+        return finance_bus
     except Exception as exc:  # pragma: no cover - optional dependency
         logger.warning("Finance integration unavailable: %s", exc)
         return None
@@ -118,7 +118,7 @@ def account_balance(student_id):
     if finance is None:
         return None
     try:
-        return finance.get_student_finance_account_balance(str(student_id))
+        return finance.account_balance(str(student_id))
     except Exception as exc:
         logger.warning("Could not read finance balance for %s: %s", student_id, exc)
         return None
@@ -211,7 +211,7 @@ def take_payment(*, method, amount, student_id, trip_id, trip_name,
             # check_balance=True re-verifies against the live balance inside
             # Finance's own transaction, so a balance that moved between the
             # prompt and here is caught here rather than going overdrawn.
-            outcome = finance.process_student_finance_account_payment(
+            outcome = finance.pay_from_student_account(
                 student_id=str(student_id),
                 amount=amount,
                 description=description,
@@ -228,7 +228,7 @@ def take_payment(*, method, amount, student_id, trip_id, trip_name,
             return result
 
         if method in _FINANCE_METHOD_NAMES:
-            payment_id = finance.record_payment_to_finance(
+            payment_id = finance.record_payment(
                 student_id=str(student_id) if student_id else None,
                 amount=amount,
                 payment_method=_FINANCE_METHOD_NAMES[method],
@@ -264,7 +264,7 @@ def refund_payment(*, method, amount, student_id, trip_id, trip_name,
     """Refund a trip payment through Finance.
 
     The refund is always recorded in ``unified_refunds`` (and posted to the
-    ledger) via ``record_refund_to_finance``. A student-account payment is
+    ledger) via ``finance_bus.record_refund``. A student-account payment is
     additionally credited straight back to the balance, so the student gets
     the money without the finance office settling anything by hand; cash and
     card refunds are recorded against the original method for the office to
@@ -297,7 +297,7 @@ def refund_payment(*, method, amount, student_id, trip_id, trip_name,
     ).format(trip_name=trip_name)
 
     try:
-        refund_id = finance.record_refund_to_finance(
+        refund_id = finance.record_refund(
             student_id=str(student_id) if student_id else None,
             refund_amount=amount,
             original_payment_id=None,
@@ -319,7 +319,7 @@ def refund_payment(*, method, amount, student_id, trip_id, trip_name,
             return result
 
         if method == STUDENT_ACCOUNT and student_id:
-            credited = finance.top_up_student_finance_account(
+            credited = finance.credit_student_account(
                 student_id=str(student_id),
                 amount=amount,
                 payment_method='refund',
@@ -347,3 +347,67 @@ def refund_payment(*, method, amount, student_id, trip_id, trip_name,
             "Refund failed: {error}",
         ).format(error=exc)
         return result
+
+
+def pay_for_registration(auth, participant_id, method, amount=None):
+    """Take a payment towards a trip place — operations and Students' Union
+    trips alike — through Finance (:func:`take_payment`), then record it on
+    the place: ``amount_paid`` goes up and ``payment_status`` becomes
+    'paid' once nothing is owed (cost less any hardship award), else
+    'partial'. ``amount`` defaults to everything still owed (an instalment
+    can be paid by giving its amount). The participant pays for their own
+    place; trip organisers may record a payment for anyone.
+
+    Returns the :func:`take_payment` outcome plus ``amount`` and ``owed``
+    (what is left). Raises PermissionError / ValueError before any money
+    moves; a Finance failure comes back as ``success`` False.
+    """
+    from education_system.systems.university.domains.operations.domain.campus.mobility.services.trip_management import (
+        database, money, registrations, trips,
+    )
+    if method not in (CASH, CARD, STUDENT_ACCOUNT):
+        raise ValueError(f"unknown payment method {method!r}")
+    who = trips.actor(auth)
+    with database.read_connection() as c:
+        place = registrations.get_participant(participant_id, conn=c)
+        if not place:
+            raise ValueError(get_text("mobility.trip_management.participants.not_found",
+                                      "Participant not found."))
+        trip = trips.get_trip(place['trip_id'], conn=c)
+        own = ((who['user_id'] is not None and place.get('user_id') == who['user_id'])
+               or (who['student_id'] and place.get('student_id') == who['student_id']))
+        if not own and not (auth.check_permission('manage_trip_participants')
+                            or trips.can_manage_trip(auth, trip, conn=c, who=who)):
+            raise PermissionError(get_text("mobility.trip_management.auth.no_permission_manage_participants",
+                                           "You don't have permission to manage participants."))
+    if place['status'] not in ('registered', 'confirmed', 'attended'):
+        raise ValueError(f"no payment is taken for a {place['status']} registration")
+    owed = money.amount_owed(place, trip)
+    amount = owed if amount is None else round(float(amount), 2)
+    if amount <= 0 or amount - owed > 0.005:
+        raise ValueError(f"amount must be more than zero and no more than £{owed:.2f} owed")
+    if method == STUDENT_ACCOUNT and not place.get('student_id'):
+        raise ValueError("only a student can pay from a student finance account")
+    trip_name = trip['trip_name']
+    if (trip.get('source') or 'operations') == 'su':
+        trip_name = f"{trip_name} (Students' Union{': ' + trip['organising_club'] if trip.get('organising_club') else ''})"
+    outcome = take_payment(method=method, amount=amount, student_id=place.get('student_id'),
+                           trip_id=trip['id'], trip_name=trip_name, processed_by=who['username'])
+    outcome['amount'] = amount
+    outcome['owed'] = owed
+    if not outcome.get('success'):
+        return outcome
+    left = round(owed - amount, 2)
+    try:
+        with database.write_transaction() as c:
+            c.execute("UPDATE trip_participants SET amount_paid = COALESCE(amount_paid, 0) + ?, "
+                      "payment_method = ?, payment_reference = ?, payment_status = ? WHERE id = ?",
+                      (amount, method, outcome.get('reference'),
+                       'paid' if left <= 0.005 else 'partial', participant_id))
+    except Exception as exc:
+        # The money is in Finance; say so rather than reading as unpaid.
+        logger.error("Trip payment %s taken but registration %s not updated: %s",
+                     outcome.get('reference'), participant_id, exc)
+        outcome['message'] = f"payment taken but the registration was not updated: {exc}"
+    outcome['owed'] = max(left, 0.0)
+    return outcome

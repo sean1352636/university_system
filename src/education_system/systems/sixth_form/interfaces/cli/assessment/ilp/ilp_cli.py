@@ -275,6 +275,34 @@ def _print_plan_full(p: Plan) -> None:
             if r.comments:
                 for line in r.comments.splitlines():
                     print(f"        {line}")
+    _print_academic_targets(detail.academic_targets)
+
+
+def _print_academic_targets(acad: Any) -> None:
+    """The student's academic targets (Target Setting), read-only."""
+    print("    Academic targets (Target Setting):")
+    if acad is None or not (acad.grade_targets or acad.actions):
+        print("      (none set)")
+        return
+    for t in acad.grade_targets:
+        print(f"      {t.subject_name:<24} min {t.mte_grade:<3} "
+              f"asp {t.aspirational_grade or '—':<3} "
+              f"now {t.current_grade or '—':<3} {t.status}")
+    for a in acad.actions:
+        print(f"      • {a.description[:60]}  "
+              f"[{a.subject_name or 'general'}; due {a.due_date or '—'}; "
+              f"{a.status}]")
+
+
+def academic_targets_flow() -> None:
+    print("\n═══ Academic Targets (from Target Setting) ═══")
+    try:
+        sid = _pick_student()
+    except _UserAbort:
+        print("\n  Cancelled.")
+        return
+    _print_academic_targets(data.academic_targets_for(sid))
+    _pause()
 
 
 # ── Plan flows ────────────────────────────────────────────────────
@@ -768,6 +796,7 @@ _MENU: list[tuple[str, Callable[[], None]]] = [
     ("Delete review",       delete_review_flow),
     ("─" * 6,               lambda: None),
     ("Summary",             summary_flow),
+    ("Academic targets (per-student)", academic_targets_flow),
 ]
 
 

@@ -37,6 +37,7 @@ _STATE_COLOURS: dict[str, str] = {
     board_service.IN_PROGRESS:     "#1a3f8c",
     board_service.READY_TO_ENROL:  "#14532d",
     board_service.ENROLLED:        "#0d6b2a",
+    board_service.WITHDRAWN_REROUTED: "#6b6b6b",
 }
 
 
@@ -61,8 +62,19 @@ def open_dashboard(parent=None) -> None:
     # the university's other windows (see ucas_views) on purpose.
     win.geometry(WIN_GEOMETRY)
     win.minsize(*WIN_MINSIZE)
-    _Dashboard(win, actor=_actor(parent))
+    _Dashboard(win, actor=_actor(parent), viewer=_viewer(parent))
     return None
+
+
+def _viewer(parent):
+    """Who is looking, for the contextual-flags gate: the signed-in auth
+    object if the host has one, else its ``current_user`` dict. ``None``
+    (no viewer) is refused by the gate."""
+    auth = getattr(parent, "auth", None)
+    if auth is not None and getattr(auth, "current_user", None):
+        return auth
+    user = getattr(parent, "current_user", None)
+    return user if isinstance(user, dict) else None
 
 
 class _Dashboard:
@@ -71,14 +83,16 @@ class _Dashboard:
         ("name",    "Applicant",     180),
         ("source",  "Sixth form",    170),
         ("course",  "Programme",     190),
+        ("entry",   "Entry",         130),
         ("offer",   "Offer",         200),
         ("quals",   "Qualifications", 230),
         ("app",     "Application",   90),
     )
 
-    def __init__(self, win: tk.Misc, *, actor: str) -> None:
+    def __init__(self, win: tk.Misc, *, actor: str, viewer=None) -> None:
         self.win = win
         self.actor = actor
+        self.viewer = viewer
         self.board: board_service.Board | None = None
         self._build()
         self.refresh()
@@ -125,6 +139,12 @@ class _Dashboard:
                    command=self._request_selected).pack(side="right", padx=4)
         ttk.Button(actions, text="Accept handover",
                    command=self._accept_selected).pack(side="right", padx=4)
+        # Contextual flags are fetched on request, never rendered with the
+        # row: each read is access-logged, and only admissions
+        # decision-makers are let through.
+        ttk.Button(actions, text="Contextual flags…",
+                   command=self._contextual_selected).pack(side="right",
+                                                          padx=4)
 
         detail_box = ttk.LabelFrame(outer, text="Handover detail",
                                      padding=(8, 6))
@@ -180,7 +200,9 @@ class _Dashboard:
             self.tree.insert(
                 "", "end", iid=str(row.application_id),
                 values=(row.state, row.full_name, row.source_sixth_form or "—",
-                        row.programme or "—", row.offer_status or "—",
+                        row.programme or "—",
+                        row.entry_label or row.entry_year or "—",
+                        row.offer_status or "—",
                         row.qualification_status or "—", row.application_id),
                 tags=(row.state,))
         hidden = len(self.board.rows) - shown
@@ -216,8 +238,26 @@ class _Dashboard:
             f"   (their id: {row.sixth_form_student_id or '—'})\n"
             f"UCAS        : {row.ucas_id or '—'}\n"
             f"Programme   : {row.programme or '—'}  "
-            f"entry {row.entry_year or '—'}\n"
+            f"entry {row.entry_year or '—'}"
+            + (f"  [{row.entry_label}]" if row.entry_label else "") + "\n"
+            f"Placed via  : {row.route or 'Firm (not stated)'}\n"
             f"Journey     : {row.journey_id or '—'}\n")
+        if row.entry_label:
+            self.detail.insert(
+                "end",
+                f"Deferred    : {row.entry_label} — held for that intake; "
+                f"enrolment will refuse until then\n")
+        if row.routing_status == "withdrawn_by_reroute":
+            self.detail.insert(
+                "end", f"Withdrawn   : {row.reroute_reason or 'rerouted'}\n")
+        self.detail.insert(
+            "end",
+            f"Reference   : {row.reference_status or '—'}\n"
+            f"Contextual  : {row.contextual_status or '—'}\n")
+        if row.predictions:
+            self.detail.insert("end", "Predicted   :\n")
+            for line in row.predictions:
+                self.detail.insert("end", f"    {line}\n")
         if row.converted_student_id:
             self.detail.insert(
                 "end", f"Enrolled as : {row.converted_student_id}\n")
@@ -243,6 +283,12 @@ class _Dashboard:
                 "to put the question on the application's checklist.\n")
         self.detail.insert("end", "\n")
 
+        if row.advisories:
+            self.detail.insert("end", "Sixth form notes:\n")
+            for note in row.advisories:
+                self.detail.insert("end", f"    • {note}\n")
+            self.detail.insert("end", "\n")
+
         if row.outstanding:
             self.detail.insert("end", "Outstanding before enrolment:\n")
             for item in row.outstanding:
@@ -253,6 +299,41 @@ class _Dashboard:
         self.detail.configure(state="disabled")
 
     # ── actions ─────────────────────────────────────────────────────
+
+    def _contextual_selected(self) -> None:
+        row = self._selected()
+        if row is None:
+            self.status.config(text="Select an applicant first.")
+            return
+        if not board_service.can_view_contextual(self.viewer):
+            # Still routed through the service so the refusal is logged.
+            board_service.contextual_for(row.application_id,
+                                         viewer=self.viewer)
+            messagebox.showinfo(
+                "Contextual flags",
+                "Contextual admissions data is visible to admissions "
+                "decision-makers only.", parent=self.win)
+            return
+        section = board_service.contextual_for(row.application_id,
+                                               viewer=self.viewer)
+        if not section:
+            messagebox.showinfo(
+                "Contextual flags",
+                f"{row.full_name}: {row.contextual_status or 'none held'}",
+                parent=self.win)
+            return
+        from education_system.systems.university.domains.admissions.domain import (
+            sixthform_handover_records as records,
+        )
+        lines = records.describe_flags(section) or ["No flags held"]
+        messagebox.showinfo(
+            "Contextual flags",
+            f"{row.full_name} — released under consent "
+            f"{section.get('consent_reference') or ''} "
+            f"({section.get('consent_granted_date') or 'date not given'})\n\n"
+            + "\n".join(f"• {line}" for line in lines)
+            + "\n\nUse only to inform the admissions decision.",
+            parent=self.win)
 
     def _accept_selected(self) -> None:
         row = self._selected()

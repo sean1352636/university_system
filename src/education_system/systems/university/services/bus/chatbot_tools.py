@@ -55,7 +55,7 @@ def tool_active_holds(student_id: str | int) -> dict[str, Any]:
 def tool_module_grade(student_id: str | int, module_code: str) -> dict[str, Any]:
     """Compute the weighted grade for one module."""
     try:
-        from education_system.systems.university.domains.academics.interfaces.gui._cross_services import (
+        from education_system.systems.university.domains.teaching.interfaces.gui._cross_services import (
             compute_module_grade,
         )
         return {"ok": True, "result": compute_module_grade(student_id, module_code)}
@@ -66,7 +66,7 @@ def tool_module_grade(student_id: str | int, module_code: str) -> dict[str, Any]
 def tool_module_timeline(module_code: str) -> dict[str, Any]:
     """Lecture / assessment / exam events for a module."""
     try:
-        from education_system.systems.university.domains.academics.interfaces.gui._cross_services import (
+        from education_system.systems.university.domains.teaching.interfaces.gui._cross_services import (
             module_timeline,
         )
         return {"ok": True, "events": module_timeline(module_code)}
@@ -77,7 +77,7 @@ def tool_module_timeline(module_code: str) -> dict[str, Any]:
 def tool_current_period(kind: str = "term") -> dict[str, Any]:
     """Current academic period (term / exam_window / submission_window / ...)."""
     try:
-        from education_system.systems.university.domains.academics.interfaces.gui._cross_services import (
+        from education_system.systems.university.domains.teaching.interfaces.gui._cross_services import (
             current_period,
         )
         return {"ok": True, "kind": kind, "period": current_period(kind)}
@@ -89,7 +89,7 @@ def tool_find_free_rooms(day_of_week: str, start_time: str, end_time: str,
                          min_capacity: int | None = None) -> dict[str, Any]:
     """Free rooms for a recurring weekday slot."""
     try:
-        from education_system.systems.university.domains.academics.interfaces.gui._cross_services import (
+        from education_system.systems.university.domains.teaching.interfaces.gui._cross_services import (
             find_free_rooms,
         )
         rooms = find_free_rooms(
@@ -118,7 +118,7 @@ def tool_qualified_for(instructor_id: int | str, module_code: str) -> dict[str, 
 
 def tool_instructor_workload(instructor_id: int | str) -> dict[str, Any]:
     try:
-        from education_system.systems.university.domains.academics.interfaces.gui._cross_services import (
+        from education_system.systems.university.domains.teaching.interfaces.gui._cross_services import (
             instructor_workload,
         )
         return {"ok": True, "workload": instructor_workload(instructor_id=int(instructor_id))}
@@ -183,7 +183,7 @@ def tool_summarise_module(module_code: str,
         return {"ok": False, "error": "module_code required"}
     out: dict[str, Any] = {"ok": True, "module_code": module_code}
     try:
-        from education_system.systems.university.domains.academics.interfaces.gui._cross_services import (
+        from education_system.systems.university.domains.teaching.interfaces.gui._cross_services import (
             module_timeline, find_conflicts_for_module,
             compute_module_grade, instructor_workload,
         )
@@ -235,7 +235,7 @@ def tool_move_slot(schedule_id: int,
                    moved_by: str = "chatbot") -> dict[str, Any]:
     """Move a module_schedule row through the canonical writer."""
     try:
-        from education_system.systems.university.domains.academics.domain.services.module_scheduling.slot_writer import (
+        from education_system.systems.university.domains.teaching.domain.module_scheduling.slot_writer import (
             move_slot,
         )
         return {"ok": True, "result": move_slot(
@@ -258,7 +258,7 @@ def tool_book_room(*, day_of_week: str | None = None,
     a write tool is called. Mirrors the dialog flow Exam uses.
     """
     try:
-        from education_system.systems.university.domains.academics.interfaces.gui._cross_services import (
+        from education_system.systems.university.domains.teaching.interfaces.gui._cross_services import (
             find_free_rooms,
         )
         rows = find_free_rooms(
@@ -287,11 +287,11 @@ def tool_schedule_exam(*, module_code: str, date: str,
     if not module_code or not date or not start_time or not end_time:
         return {"ok": False, "error": "module_code/date/start_time/end_time required"}
     try:
-        from education_system.systems.university.domains.academics.interfaces.gui.exam_management.models import (
+        from education_system.systems.university.domains.assessment.interfaces.gui.exam_management.models import (
             Exam,
         )
-        from education_system.systems.university.domains.academics.interfaces.gui.exam_management.data_manager import (
-            ExamDataManager,
+        from education_system.systems.university.domains.assessment.interfaces.gui.exam_management.data_manager import (
+            DataManager,
         )
         exam = Exam(
             id=0,
@@ -304,7 +304,7 @@ def tool_schedule_exam(*, module_code: str, date: str,
             students_enrolled=int(students_enrolled or 0),
             enrolled_student_ids=list(enrolled_student_ids or []),
         )
-        dm = ExamDataManager()
+        dm = DataManager()
         dm._save_exam_to_db(exam, is_new=True)
         return {"ok": True, "exam_id": exam.id}
     except Exception as exc:

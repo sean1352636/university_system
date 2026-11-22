@@ -52,6 +52,7 @@ _STATUS_ACTIONS: dict[str, tuple[frozenset[str], str]] = {
     "resume": (frozenset({INTERRUPTED, SUSPENDED, DEFERRED}), ACTIVE),
     "complete": (frozenset({ACTIVE}), COMPLETED),
     "close": (frozenset({COMPLETED, WITHDRAWN}), CLOSED),
+    "reinstate": (frozenset({WITHDRAWN}), ACTIVE),
 }
 
 
@@ -202,6 +203,13 @@ def _publish(
             history_id=history_id,
             **payload,
         )
+        if action == "withdraw":
+            # Tell the learner's sixth form (only if they came from one);
+            # best-effort, never raises.
+            from education_system.systems.university.application.students import (
+                sixth_form_feedback,
+            )
+            sixth_form_feedback.publish_withdrawn(student_id, history_id=history_id)
         return OperationResult.success(event_id)
     except Exception as exc:
         # ``student_lifecycle_actions`` is the durable reconciliation source of
@@ -215,12 +223,46 @@ def _publish(
         )
 
 
+def _progression_permit(conn, student_id: str) -> tuple[str, int | None]:
+    """``(registration type, repeat year)`` the board outcome permits, or raise."""
+    from education_system.systems.university.application.assessment import progression_rules
+    permit = progression_rules.registration_permit(conn, student_id)
+    if not permit["allowed"]:
+        raise EnrolmentBoundaryError(f"Re-registration refused: {permit['reason']}")
+    return permit["registration_type"] or "re-registration", permit["repeat_year"]
+
+
+def _check_finance_holds(conn, student_id: str, academic_year: str, kind: str,
+                         hold_override: dict[str, Any] | None) -> None:
+    """Debt holds block registration; see ``finance_bus.check_registration_holds``."""
+    from education_system.systems.university.services.bus import finance_bus
+
+    override = hold_override or {}
+    finance_bus.check_registration_holds(
+        conn, student_id, academic_year=academic_year, context=kind,
+        override_by=override.get("by"), override_role=override.get("role"),
+        override_reason=override.get("reason"),
+    )
+
+
 def register(student_id: str, academic_year: str, *, actor_id: str,
              mode_of_study: str | None = None,
              programme_code: str | None = None, campus_code: str | None = None,
              declarations: dict[str, Any] | None = None,
-             returning: bool = False) -> int:
-    """Complete annual registration or re-registration."""
+             returning: bool = False,
+             hold_override: dict[str, Any] | None = None) -> int:
+    """Complete annual registration or re-registration.
+
+    Active finance holds block it (``finance_bus.FinanceHoldBlock``) unless
+    ``hold_override`` - ``{"by", "role", "reason"}`` from someone holding
+    ``finance.hold_override`` - overrides them; the override is recorded in
+    the same transaction.
+
+    Re-registration is gated by the student's latest ratified progression
+    outcome (assessment boards): a resit or repeat-year outcome records that
+    registration type; withdrawal, an exit award or a decision still awaiting
+    ratification refuses it.
+    """
     ensure_schema()
     kind = "re-registration" if returning else "annual_registration"
     now = datetime.now().date().isoformat()
@@ -228,6 +270,10 @@ def register(student_id: str, academic_year: str, *, actor_id: str,
         student = _student(conn, student_id)
         if student["status"] in {WITHDRAWN, CLOSED}:
             raise EnrolmentBoundaryError(f"Cannot register a {student['status'].lower()} student")
+        _check_finance_holds(conn, student_id, academic_year, kind, hold_override)
+        repeat_year = None
+        if returning:
+            kind, repeat_year = _progression_permit(conn, student_id)
         selected_programme = programme_code or student["course"]
         regulation_version = _regulation_version(
             conn, selected_programme, academic_year
@@ -288,7 +334,7 @@ def register(student_id: str, academic_year: str, *, actor_id: str,
             conn, student, action=kind, actor_id=actor_id,
             reason=f"{academic_year} registration completed",
             effective_date=now, to_status=ACTIVE,
-            academic_year=academic_year,
+            academic_year=academic_year, repeat_year=repeat_year,
             new_programme=programme_code or student["course"],
             new_mode=mode_of_study or student["mode_of_study"],
             new_campus=campus_code or student["campus_code"],
@@ -331,7 +377,9 @@ def select_module(
     actor_id: str,
     teaching_period: str | None = None,
 ) -> int:
-    """Create a canonical module enrolment under the current registration."""
+    """Enrol the student on a module under the current registration. The
+    enrolment is written to ``student_modules`` (the enrolment record); its
+    ``module_enrolments`` copy follows by trigger. Returns the copy's id."""
     ensure_schema()
     with transaction() as conn:
         registration = conn.execute(
@@ -370,72 +418,121 @@ def select_module(
         ).fetchone()
         if module is None:
             raise EnrolmentBoundaryError(f"Module {module_code!r} does not exist")
-        cursor = conn.execute(
-            """INSERT INTO module_enrolments
-                 (registration_id, student_id, module_code, academic_year,
-                  teaching_period, attempt_number, status, effective_from)
-               VALUES (?, ?, ?, ?, ?, 1, 'enrolled', ?)""",
-            (
-                registration_id,
-                student_id,
-                module_code,
-                academic_year,
-                teaching_period,
-                datetime.now().date().isoformat(),
-            ),
+        # student_modules is the enrolment record; module_enrolments follows
+        # it by trigger (infrastructure/database/schemas/enrolment_mirror_schema).
+        from education_system.systems.university.infrastructure.database.schemas import (
+            enrolment_mirror_schema,
         )
-        return int(cursor.lastrowid)
+        if not enrolment_mirror_schema.installed(conn.execute):
+            # Before migration 1a3c5e7f9b2d there is no trigger: write the copy.
+            cursor = conn.execute(
+                """INSERT INTO module_enrolments
+                     (registration_id, student_id, module_code, academic_year,
+                      teaching_period, attempt_number, status, effective_from)
+                   VALUES (?, ?, ?, ?, ?, 1, 'enrolled', ?)""",
+                (registration_id, student_id, module_code, academic_year,
+                 teaching_period, datetime.now().date().isoformat()),
+            )
+            return int(cursor.lastrowid)
+        conn.execute(
+            """INSERT INTO student_modules (student_id, module_code, enrollment_date,
+                                            status, semester)
+               VALUES (?, ?, ?, 'Enrolled', ?)
+               ON CONFLICT(student_id, module_code) DO UPDATE SET
+                 status = 'Enrolled', semester = COALESCE(excluded.semester, semester)""",
+            (student_id, module_code, datetime.now().date().isoformat(), teaching_period),
+        )
+        row = conn.execute(
+            "SELECT module_enrolment_id FROM module_enrolments WHERE student_id = ? "
+            "AND module_code = ? ORDER BY module_enrolment_id DESC LIMIT 1",
+            (student_id, module_code),
+        ).fetchone()
+        if row is None:
+            raise EnrolmentBoundaryError(
+                "The enrolment was recorded but its registration copy was not made")
+        return int(row[0])
 
 
-def change_status(student_id: str, action: str, *, actor_id: str, reason: str,
-                  effective_date: str | None = None,
-                  expected_return_date: str | None = None) -> int:
-    """Interrupt, withdraw, defer, suspend, resume, complete or close."""
-    ensure_schema()
+def apply_status_change(conn, student_id: str, action: str, *, actor_id: str,
+                        reason: str, effective_date: str | None = None,
+                        expected_return_date: str | None = None) -> tuple[int, str]:
+    """:func:`change_status` on the caller's open connection (no commit, no
+    event). Returns ``(history_id, new_status)``; the caller publishes with
+    :func:`publish_change` after committing."""
     action = action.strip().lower()
     if action not in _STATUS_ACTIONS:
         raise EnrolmentBoundaryError(f"Unknown lifecycle action {action!r}")
     sources, target = _STATUS_ACTIONS[action]
     effective = effective_date or datetime.now().date().isoformat()
-    with transaction() as conn:
-        student = _student(conn, student_id)
-        if student["status"] not in sources:
-            raise EnrolmentBoundaryError(
-                f"Cannot {action} student in status {student['status']!r}"
-            )
-        history_id = _record(
-            conn, student, action=action, actor_id=actor_id, reason=reason,
-            effective_date=effective, to_status=target,
-            expected_return_date=expected_return_date,
+    student = _student(conn, student_id)
+    if student["status"] not in sources:
+        raise EnrolmentBoundaryError(
+            f"Cannot {action} student in status {student['status']!r}"
         )
+    history_id = _record(
+        conn, student, action=action, actor_id=actor_id, reason=reason,
+        effective_date=effective, to_status=target,
+        expected_return_date=expected_return_date,
+    )
+    conn.execute(
+        """UPDATE students SET status = ?, is_active = ?,
+               expected_return_date = ?,
+               record_closed_at = CASE WHEN ? = 'Closed'
+                                       THEN ? ELSE record_closed_at END
+           WHERE student_id = ?""",
+        (target, int(target == ACTIVE), expected_return_date, target,
+         datetime.now().isoformat(), student_id),
+    )
+    _move_modules(conn, student_id, action)
+    return history_id, target
+
+
+_MODULE_MOVES = {
+    "interrupt": ("Enrolled", "Paused"), "suspend": ("Enrolled", "Paused"),
+    "withdraw": ("Enrolled", "Withdrawn"), "complete": ("Enrolled", "Completed"),
+    "close": ("Enrolled", "Closed"), "resume": ("Paused", "Enrolled"),
+    "reinstate": ("Withdrawn", "Enrolled"),
+}
+
+
+def _move_modules(conn, student_id: str, action: str) -> None:
+    move = _MODULE_MOVES.get(action)
+    if move:
         conn.execute(
-            """UPDATE students SET status = ?, is_active = ?,
-                   expected_return_date = ?,
-                   record_closed_at = CASE WHEN ? = 'Closed'
-                                           THEN ? ELSE record_closed_at END
-               WHERE student_id = ?""",
-            (target, int(target == ACTIVE), expected_return_date, target,
-             datetime.now().isoformat(), student_id),
+            "UPDATE student_modules SET status = ? WHERE student_id = ? AND status = ?",
+            (move[1], student_id, move[0]),
         )
-        if action in {"interrupt", "withdraw", "suspend", "complete", "close"}:
-            module_status = {
-                "interrupt": "Paused", "suspend": "Paused",
-                "withdraw": "Withdrawn", "complete": "Completed",
-                "close": "Closed",
-            }[action]
-            conn.execute(
-                "UPDATE student_modules SET status = ? "
-                "WHERE student_id = ? AND status = 'Enrolled'",
-                (module_status, student_id),
-            )
-        elif action == "resume":
-            conn.execute(
-                "UPDATE student_modules SET status = 'Enrolled' "
-                "WHERE student_id = ? AND status = 'Paused'",
-                (student_id,),
-            )
+
+
+def record_history(conn, student: dict, *, action: str, actor_id: str, reason: str,
+                   new_programme: str | None = None) -> int:
+    """Append a history row (and its downstream actions) on the caller's
+    connection, for a change applied by the caller - e.g. a course transfer
+    that also swaps the curriculum. ``student`` needs student_id, status,
+    course, mode_of_study and campus_code."""
+    return _record(conn, student, action=action, actor_id=actor_id, reason=reason,
+                   effective_date=datetime.now().date().isoformat(),
+                   new_programme=new_programme)
+
+
+def publish_change(student_id: str, action: str, history_id: int, **payload: Any):
+    """Publish a committed lifecycle change (see :func:`apply_status_change`)."""
+    return _publish(student_id, action, history_id, **payload)
+
+
+def change_status(student_id: str, action: str, *, actor_id: str, reason: str,
+                  effective_date: str | None = None,
+                  expected_return_date: str | None = None) -> int:
+    """Interrupt, withdraw, defer, suspend, resume, complete, close or
+    reinstate."""
+    ensure_schema()
+    with transaction() as conn:
+        history_id, target = apply_status_change(
+            conn, student_id, action, actor_id=actor_id, reason=reason,
+            effective_date=effective_date, expected_return_date=expected_return_date,
+        )
     _publish(
-        student_id, action, history_id, status=target,
+        student_id, action.strip().lower(), history_id, status=target,
         expected_return_date=expected_return_date,
     )
     return history_id

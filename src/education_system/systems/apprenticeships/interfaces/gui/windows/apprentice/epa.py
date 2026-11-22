@@ -20,7 +20,7 @@ from typing import Any
 
 from education_system.systems.apprenticeships import config
 from education_system.systems.apprenticeships.interfaces.gui import widgets
-from education_system.systems.apprenticeships.services import epa_service
+from education_system.systems.apprenticeships.application.assessments import epa_service
 
 logger = logging.getLogger(__name__)
 

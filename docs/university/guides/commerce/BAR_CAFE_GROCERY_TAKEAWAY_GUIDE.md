@@ -302,5 +302,5 @@ After delivery, you can:
 ---
 
 **Last Updated**: February 2026
-**Module**: `university_system/modules/domain/commerce/`
+**Module**: `src/education_system/systems/university/plugins/campus_commerce/`
 **Support**: Contact individual service emails listed above

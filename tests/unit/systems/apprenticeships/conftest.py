@@ -14,7 +14,7 @@ from datetime import date, timedelta
 import pytest
 
 from education_system.systems.apprenticeships.infrastructure.persistence import schema
-from education_system.systems.apprenticeships.services.access import Actor
+from education_system.systems.apprenticeships.application.security.access import Actor
 
 
 @pytest.fixture(autouse=True)
@@ -82,11 +82,9 @@ def cohort(db, admin):
     from education_system.systems.apprenticeships.infrastructure.persistence.repositories import (
         staff_repository,
     )
-    from education_system.systems.apprenticeships.services import (
-        apprentice_service,
-        employer_service,
-        programme_service,
-    )
+    from education_system.systems.apprenticeships.application.apprentices import apprentice_service
+    from education_system.systems.apprenticeships.application.employers import employer_service
+    from education_system.systems.apprenticeships.application.programmes import programme_service
 
     programme = programme_service.create_programme(admin, {
         "reference": "ST0119", "title": "Software Developer", "level": 4,

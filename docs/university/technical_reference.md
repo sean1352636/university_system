@@ -4,6 +4,8 @@ Detailed technical documentation for the University Student Management System.
 Extracted from development history — covers module APIs, integration patterns,
 function signatures, database schemas, and error handling conventions.
 
+This is a historical record, up to March 2026. File names and `refactored/` paths reflect the tree at the time of each entry; see [Project Structure](../reference/PROJECT_STRUCTURE.md) for current locations.
+
 ---
 
 ## Table of Contents
@@ -1682,8 +1684,9 @@ parameterised queries:
 
 
 The following section provides a complete alphabetical listing of all significant
-functions and methods across the project, with their signatures, return types, and
-module locations. This is intended as a quick-reference API index.
+functions and methods across the project as of March 2026, with their signatures, return
+types, and module locations. This is intended as a quick-reference API index; check the
+source for current signatures.
 
 ---
 

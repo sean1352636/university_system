@@ -28,6 +28,8 @@ from education_system.systems.university.infrastructure.i18n import (
 from education_system.systems.university.infrastructure.utils.gui_language_selector import show_gui_language_selector
 
 from education_system.systems.university.plugins.campus_commerce.domain.services.takeaway.takeaway_service import (
+    complete_order as takeaway_complete_order,
+    refund_order as takeaway_refund_order,
     init_takeaway_db,
     get_restaurants,
     get_menu_items,
@@ -43,12 +45,11 @@ from education_system.systems.university.plugins.campus_commerce.domain.services
 # Email integration
 from education_system.systems.university.infrastructure.email.email_service import send_email
 
-# Finance integration for account details and revenue recording
+# Read-only finance helpers for display; all posting goes through
+# takeaway_service (complete_order / refund_order).
 from education_system.systems.university.domains.finance.infrastructure.finance_integration import (
     get_student_info,
     get_student_finance_account_balance,
-    process_student_finance_account_payment,
-    record_revenue_to_finance,
 )
 
 # Housing integration for delivery address
@@ -742,41 +743,25 @@ class TakeawayGUI:
                     )
                     return
 
-                # Process payment from student finance account
-                payment_result = process_student_finance_account_payment(
-                    student_id=user_identifier,
-                    amount=total_amount,
-                    description=_t("takeaway.order_description").format(restaurant=restaurant_name),
-                    transaction_source="Takeaway",
-                    transaction_ref=f"TO_{datetime.now().strftime('%Y%m%d%H%M%S')}",
-                    processed_by=self.current_user.get('username', 'System')
-                )
-
-                if not payment_result.get('success'):
-                    messagebox.showerror(_t("takeaway.payment_failed"), payment_result.get('message', _t("takeaway.payment_process_failed")))
-                    return
-
-            # Place the order
-            order_id = place_order(
+            # Place the order. The domain service debits the student account
+            # (if chosen) and posts the sale to Finance itself.
+            outcome = takeaway_complete_order(
                 user_id,
                 address,
                 delivery_type.get(),
                 selected_payment,
-                notes_entry.get().strip()
+                notes_entry.get().strip(),
+                finance_user_id=user_identifier,
+                processed_by=self.current_user.get('username', 'System'),
             )
+            order_id = outcome['order_id']
+            payment_result = outcome.get('account_result') or {}
+
+            if not order_id and payment_result and not payment_result.get('success'):
+                messagebox.showerror(_t("takeaway.payment_failed"), payment_result.get('message', _t("takeaway.payment_process_failed")))
+                return
 
             if order_id:
-                # Record revenue to finance system
-                record_revenue_to_finance(
-                    student_id=user_identifier,
-                    amount=total_amount,
-                    revenue_category="Takeaway Sales",
-                    transaction_source="Takeaway",
-                    transaction_ref=order_id,
-                    payment_method=selected_payment.replace('_', ' ').title(),
-                    notes=_t("takeaway.order_from_restaurant", restaurant=restaurant_name)
-                )
-
                 # Send receipt email
                 order_details = {
                     'restaurant_name': restaurant_name,
@@ -1063,56 +1048,17 @@ class TakeawayGUI:
         if not refund_method:
             return
 
-        # Process based on method
+        # The domain service credits the student account (if chosen), marks the
+        # order refunded and posts the refund to Finance.
         try:
-            conn = sqlite3.connect(str(paths.UNIVERSITY_DEFAULT_DB_PATH))
-            cursor = conn.cursor()
-
-            # Update order status to refunded
-            cursor.execute('''
-                UPDATE orders
-                SET payment_status = 'refunded'
-                WHERE source_type = 'takeaway' AND source_order_id = ?
-            ''', (order_id,))
-
-            # Generate unique refund reference
-            refund_ref = f"TAKEAWAY-REFUND-{datetime.now().strftime('%Y%m%d%H%M%S')}"
-
-            # Get student_id for the user if available
-            cursor.execute('SELECT student_id FROM users WHERE id = ?', (user_id,))
-            student_row = cursor.fetchone()
-            resolved_student_id = student_row[0] if student_row and student_row[0] else user_id
-
-            # Insert refund record into unified_refunds
-            cursor.execute('''
-                INSERT INTO unified_refunds
-                (source_type, reference_id, reference_type, refund_date, amount,
-                 refund_method, refund_reference, student_id, processed_by, notes, status)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'processed')
-            ''', ('takeaway', order_id, 'order',
-                  datetime.now().strftime('%Y-%m-%d %H:%M:%S'), amount, refund_method,
-                  refund_ref, resolved_student_id,
-                  self.current_user.get('username', 'System'), None))
-            refund_row_id = cursor.lastrowid
-
-            conn.commit()
-            conn.close()
-
-            # Auto-post to GL (cash has moved). Never raises.
-            try:
-                from education_system.systems.university.domains.finance.domain.ledger import notify_ledger
-                notify_ledger('refund', refund_row_id,
-                              posted_by=self.current_user.get('username', 'takeaway'))
-            except Exception as _e:
-                import logging
-                logging.getLogger(__name__).warning("ledger hook failed: %s", _e)
-
-            # If student account refund, add to their account
-            if refund_method == 'Student Account':
-                success = self.add_takeaway_refund_to_student_account(user_id, amount, refund_ref)
-                if not success:
-                    messagebox.showwarning(_t('gui.operations.commerce.takeaway.dialogs.partial_success', default="Partial Success"),
-                                         _t('gui.operations.commerce.takeaway.dialogs.refund_recorded_but_failed_to_credit_student_account_please_cred', default="Refund recorded but failed to credit student account. Please credit manually."))
+            outcome = takeaway_refund_order(
+                order_id, amount, refund_method,
+                processed_by=self.current_user.get('username', 'System'),
+            )
+            if not outcome['success']:
+                messagebox.showerror(_t('gui.operations.commerce.takeaway.dialogs.error', default="Error"), outcome['message'])
+                return
+            refund_ref = outcome['refund_ref']
 
             # Send refund receipt email
             self.send_takeaway_refund_receipt(order_id, user_id, amount, refund_method, refund_ref)
@@ -1206,68 +1152,6 @@ class TakeawayGUI:
 
         dialog.wait_window()
         return result['method']
-
-    def add_takeaway_refund_to_student_account(self, user_id, amount, refund_ref):
-        """Add refund amount to student finance account"""
-        try:
-            conn = sqlite3.connect(str(paths.UNIVERSITY_DEFAULT_DB_PATH))
-            cursor = conn.cursor()
-
-            # Get student_id from users table
-            cursor.execute('SELECT student_id FROM users WHERE id = ?', (user_id,))
-            user_row = cursor.fetchone()
-
-            if not user_row or not user_row[0]:
-                print(f"No student_id found for user_id {user_id}")
-                conn.close()
-                return False
-
-            student_id = user_row[0]
-
-            # Check if student finance account exists
-            cursor.execute('SELECT account_id, balance FROM student_finance_accounts WHERE student_id = ?', (student_id,))
-            account = cursor.fetchone()
-
-            if not account:
-                # Create account with refund amount
-                cursor.execute('''
-                    INSERT INTO student_finance_accounts (student_id, balance)
-                    VALUES (?, ?)
-                ''', (student_id, amount))
-                account_id = cursor.lastrowid
-                balance_before = 0.00
-                balance_after = amount
-            else:
-                # Update existing account
-                account_id, balance_before = account
-                balance_after = balance_before + amount
-                cursor.execute('''
-                    UPDATE student_finance_accounts
-                    SET balance = ?, updated_at = CURRENT_TIMESTAMP
-                    WHERE account_id = ?
-                ''', (balance_after, account_id))
-
-            # Record transaction
-            cursor.execute('''
-                INSERT INTO transactions
-                (source_type, account_id, student_id, transaction_type, amount, balance_before, balance_after,
-                 description, reference_id, processed_by)
-                VALUES ('student_finance', ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            ''', (account_id, student_id, 'credit', amount, balance_before, balance_after,
-                  'Takeaway Order Refund', refund_ref, self.current_user.get('username', 'System')))
-
-            conn.commit()
-            conn.close()
-            return True
-
-        except sqlite3.Error as e:
-            print(f"Error adding refund to student account: {e}")
-            try:
-                if 'conn' in locals():
-                    conn.close()
-            except Exception:
-                logger.debug("Suppressed exception", exc_info=True)
-            return False
 
     def send_takeaway_refund_receipt(self, order_id, user_id, amount, method, refund_ref):
         """Send refund receipt email to customer"""

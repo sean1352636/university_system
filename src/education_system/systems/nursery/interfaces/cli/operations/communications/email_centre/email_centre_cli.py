@@ -177,7 +177,7 @@ def open_manager(auth=None) -> None:
 def _open_cross_system(auth=None) -> None:
     """Hand off to the shared inter-system messaging CLI (same feature the GUI
     surfaces as the Cross-System Email tab)."""
-    from education_system.systems.nursery.domain.operations.communications.email_centre import (
+    from education_system.systems.nursery.interfaces.cli.operations.communications.email_centre import (
         cross_system_cli,
     )
     cross_system_cli.open_manager(auth=auth)

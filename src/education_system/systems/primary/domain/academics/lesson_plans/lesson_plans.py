@@ -109,7 +109,7 @@ def init_db() -> None:
     except sqlite3.Error:
         logger.exception("Failed to initialise lesson_plans table")
         raise
-    logger.info("Secondary lesson_plans table ready")
+    logger.info("Primary lesson_plans table ready")
     _DB_READY = True
 
 

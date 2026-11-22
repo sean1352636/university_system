@@ -21,14 +21,14 @@ This guide covers the search capabilities, analytics dashboards, data visualizat
 The system provides advanced search and analytics capabilities across multiple domains including academics, finance, and library management. Each domain features specialized search interfaces, real-time dashboards, and predictive analytics powered by optional machine learning libraries.
 
 **Key files:**
-- Grade Analytics: `modules/domain/academics/gui/grade_tracking/analytics_manager.py`
-- Course Analytics: `modules/domain/academics/gui/course_management_gui/analytics/analytics.py`
-- Finance Dashboard: `modules/domain/finance/gui/finance_reporting/dashboard_tab.py`
-- Finance Analysis: `modules/domain/finance/gui/finance_reporting/analysis_tab.py`
-- ML Analytics: `modules/domain/finance/gui/finance_reporting/ml_analytics.py`
-- Financial Alerts: `modules/domain/finance/gui/finance_reporting/alerts_monitoring.py`
-- Library Search: `modules/domain/academics/gui/library/search.py`
-- Course Search: `modules/domain/academics/gui/course_management_gui/search/search.py`
+- Grade Analytics: `src/education_system/systems/university/domains/assessment/interfaces/gui/grade_tracking/analytics_manager/`
+- Course Analytics: `src/education_system/systems/university/domains/curriculum/interfaces/gui/course_management_gui/analytics/analytics.py`
+- Finance Dashboard: `src/education_system/systems/university/domains/finance/interfaces/gui/finance_reporting/dashboard_tab.py`
+- Finance Analysis: `src/education_system/systems/university/domains/finance/interfaces/gui/finance_reporting/analysis_tab.py`
+- ML Analytics: `src/education_system/systems/university/domains/finance/interfaces/gui/finance_reporting/ml_analytics.py`
+- Financial Alerts: `src/education_system/systems/university/domains/finance/interfaces/gui/finance_reporting/alerts_monitoring.py`
+- Library Search: `src/education_system/systems/university/domains/library/interfaces/gui/library/search.py`
+- Course Search: `src/education_system/systems/university/domains/curriculum/interfaces/gui/course_management_gui/search/search.py`
 
 ## Search Features
 

@@ -9,6 +9,18 @@ attendance). When an approved request overlaps a register date, staff
 typically mark the matching attendance rows as ``Authorised``.
 
 Cascade: deleting a student wipes their pending/historical requests.
+
+**Storage.** Requests are kept in the sixth form's one absence store,
+``attendance_leave_requests`` (see :mod:`attendance_leave`), alongside
+planned leave and inbound absence reports, so a request logged here is
+the same record the attendance office decides and codes — nobody types
+the same holiday twice. This module keeps its own vocabulary (reasons,
+Pending / Approved / Denied / ...) and maps it onto the store. The
+original ``absence_requests`` table is still created and left in place;
+its rows were copied across once (``legacy_ref``) and it is not written
+to any more, apart from deletes so that a deleted request stays deleted.
+Approving here records the decision only, as it always has; the
+attendance window's "Write marks" codes the register for it.
 """
 
 from __future__ import annotations
@@ -149,6 +161,43 @@ class Summary:
     overdue_pending: int         # pending & start_date <= today
 
 
+# This module's statuses ↔ the absence store's states.
+_STATUS_TO_STORE: dict[str, str] = {
+    "Pending": "Requested", "Approved": "Approved", "Denied": "Declined",
+    "Cancelled": "Cancelled", "Withdrawn": "Withdrawn",
+}
+_STATUS_FROM_STORE: dict[str, str] = {
+    v: k for k, v in _STATUS_TO_STORE.items()}
+_STATUS_FROM_STORE["Superseded"] = "Withdrawn"
+
+# Leave kinds (requests raised in the attendance window) → reasons here.
+_KIND_TO_REASON: dict[str, str] = {
+    "University open day": "University Open Day",
+    "Interview": "University Interview",
+    "Audition or trial": "Sports / Competition",
+    "Driving test": "Driving Test",
+    "Medical appointment": "Medical Appointment",
+    "Religious observance": "Religious Observance",
+    "Family holiday": "Other",
+    "Family event": "Family Emergency",
+    "Bereavement": "Family Bereavement",
+    "College activity": "Work Experience",
+    "Illness": "Illness",
+    "Other": "Other",
+}
+_SUBMITTER_FROM_REPORTER: dict[str, str] = {
+    "Parent": "Parent", "Student": "Student", "Staff": "Staff",
+    "Other": "Other",
+}
+
+
+def _store():
+    from education_system.systems.sixth_form.domain.academics.attendance import (  # noqa: E501
+        attendance_leave as _leave,
+    )
+    return _leave
+
+
 # ── DB plumbing ────────────────────────────────────────────────────
 
 def _connect() -> sqlite3.Connection:
@@ -171,10 +220,70 @@ def init_db() -> None:
     )
     _students.init_db()
     with _connect() as conn:
+        # Kept so the pre-unification rows stay where they were; the
+        # store copies them across on its first use.
         conn.executescript(_SCHEMA)
+    _store().init_db()
     logger.debug("Absence-requests schema ready at %s", DB_PATH)
 
     _DB_READY = True
+
+
+def _from_store(r: Any) -> AbsenceRequest:
+    """A store row in this module's shape."""
+    reason = r.reason_text if r.reason_text in REASONS else \
+        _KIND_TO_REASON.get(r.kind, "Other")
+    submitter = r.reporter_type if r.reporter_type in SUBMITTERS else \
+        _SUBMITTER_FROM_REPORTER.get(r.reporter_type or "", None)
+    decided = r.decided_at[:10] if r.decided_at else None
+    created = r.requested_at or ""
+    return AbsenceRequest(
+        request_id=r.request_id,
+        student_id=r.student_id,
+        request_date=r.request_date or (created[:10] or r.date_from),
+        start_date=r.date_from,
+        end_date=r.date_to,
+        reason=reason,
+        description=r.detail,
+        status=_STATUS_FROM_STORE.get(r.state, "Pending"),
+        submitted_by=r.requested_by,
+        submitter_type=submitter,
+        contact_phone=r.contact_phone,
+        supporting_doc=r.supporting_doc,
+        decision_date=decided,
+        decided_by=r.decided_by,
+        decision_notes=r.decision_note,
+        notes=r.notes,
+        created_at=created,
+        updated_at=r.updated_at or created,
+    )
+
+
+def _store_fields(p: dict[str, Any]) -> dict[str, Any]:
+    """This module's validated payload as store columns."""
+    leave = _store()
+    try:
+        notice = (_date_of(p["start_date"]) - _date_of(p["request_date"])).days
+    except ValueError:
+        notice = None
+    return {
+        "date_from": p["start_date"], "date_to": p["end_date"],
+        "kind": leave.kind_for_pastoral_reason(p["reason"]),
+        "reason_text": p["reason"], "detail": p["description"],
+        "state": _STATUS_TO_STORE[p["status"]],
+        "requested_by": p["submitted_by"],
+        "reporter_type": p["submitter_type"],
+        "contact_phone": p["contact_phone"],
+        "supporting_doc": p["supporting_doc"],
+        "decided_at": p["decision_date"], "decided_by": p["decided_by"],
+        "decision_note": p["decision_notes"], "notes": p["notes"],
+        "request_date": p["request_date"], "notice_days": notice,
+    }
+
+
+def _date_of(value: str):
+    import datetime as _dt
+    return _dt.date.fromisoformat(value)
 
 
 def _row(r: sqlite3.Row) -> AbsenceRequest:
@@ -287,24 +396,14 @@ def _validate_payload(payload: dict[str, Any]) -> dict[str, Any]:
 def create_request(payload: dict[str, Any]) -> AbsenceRequest:
     init_db()
     p = _validate_payload(payload)
-    with _connect() as conn:
-        cur = conn.execute(
-            """INSERT INTO absence_requests
-                   (student_id, request_date, start_date, end_date,
-                    reason, description, status,
-                    submitted_by, submitter_type, contact_phone,
-                    supporting_doc, decision_date, decided_by,
-                    decision_notes, notes, created_at, updated_at)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
-                       datetime('now'), datetime('now'))""",
-            (p["student_id"], p["request_date"], p["start_date"],
-             p["end_date"], p["reason"], p["description"], p["status"],
-             p["submitted_by"], p["submitter_type"], p["contact_phone"],
-             p["supporting_doc"], p["decision_date"], p["decided_by"],
-             p["decision_notes"], p["notes"]),
-        )
-        conn.commit()
-        new_id = cur.lastrowid
+    fields = _store_fields(p)
+    leave = _store()
+    try:
+        new_id = leave.store_insert(
+            p["student_id"], fields.pop("date_from"), fields.pop("date_to"),
+            origin=leave.ORIGIN_PASTORAL, **fields)
+    except leave.ValidationError as e:
+        raise ValidationError(str(e)) from None
     out = get_request(new_id)
     assert out is not None
     logger.info(
@@ -317,12 +416,10 @@ def create_request(payload: dict[str, Any]) -> AbsenceRequest:
 
 def get_request(request_id: int) -> AbsenceRequest | None:
     init_db()
-    with _connect() as conn:
-        r = conn.execute(
-            "SELECT * FROM absence_requests WHERE request_id = ?",
-            (request_id,),
-        ).fetchone()
-        return _row(r) if r else None
+    r = _store().get_request(request_id)
+    if r is None or r.origin not in _store().PLANNED_ORIGINS:
+        return None
+    return _from_store(r)
 
 
 def list_requests(
@@ -338,53 +435,46 @@ def list_requests(
     overlaps_to: str | None = None,
 ) -> list[AbsenceRequest]:
     init_db()
-    clauses: list[str] = []
-    args: list[Any] = []
-    if student_id:
-        clauses.append("student_id = ?")
-        args.append(student_id.strip())
-    if status:
-        if status not in STATUSES:
-            raise ValidationError(
-                f"Status must be one of: {', '.join(STATUSES)}")
-        clauses.append("status = ?")
-        args.append(status)
-    if reason:
-        if reason not in REASONS:
-            raise ValidationError(
-                f"Reason must be one of: {', '.join(REASONS)}")
-        clauses.append("reason = ?")
-        args.append(reason)
-    if pending_only:
-        ph = ",".join("?" * len(OPEN_STATUSES))
-        clauses.append(f"status IN ({ph})")
-        args.extend(OPEN_STATUSES)
-    if decided_only:
-        ph = ",".join("?" * len(DECIDED_STATUSES))
-        clauses.append(f"status IN ({ph})")
-        args.extend(DECIDED_STATUSES)
-    if date_from:
-        clauses.append("request_date >= ?")
-        args.append(_validate_date(date_from, "date_from"))
-    if date_to:
-        clauses.append("request_date <= ?")
-        args.append(_validate_date(date_to, "date_to"))
+    if status and status not in STATUSES:
+        raise ValidationError(
+            f"Status must be one of: {', '.join(STATUSES)}")
+    if reason and reason not in REASONS:
+        raise ValidationError(
+            f"Reason must be one of: {', '.join(REASONS)}")
+    date_from = _validate_date(date_from, "date_from")
+    date_to = _validate_date(date_to, "date_to")
     if overlaps_from and overlaps_to:
-        # [start, end] overlaps [from, to] iff start <= to AND end >= from
-        clauses.append("start_date <= ? AND end_date >= ?")
-        args.append(_validate_date(overlaps_to, "overlaps_to"))
-        args.append(_validate_date(overlaps_from, "overlaps_from"))
-    where = ("WHERE " + " AND ".join(clauses)) if clauses else ""
-    sql = (f"SELECT * FROM absence_requests {where} "
-           "ORDER BY CASE status "
-           "  WHEN 'Pending'    THEN 0 "
-           "  WHEN 'Approved'   THEN 1 "
-           "  WHEN 'Denied'     THEN 2 "
-           "  WHEN 'Cancelled'  THEN 3 "
-           "  ELSE 4 END, "
-           "start_date DESC, request_id DESC")
-    with _connect() as conn:
-        return [_row(r) for r in conn.execute(sql, args).fetchall()]
+        overlaps_from = _validate_date(overlaps_from, "overlaps_from")
+        overlaps_to = _validate_date(overlaps_to, "overlaps_to")
+    leave = _store()
+    # The store holds every planned absence — requests logged here and
+    # leave asked for in the attendance window — so both teams see the
+    # same list. Filters on this module's own vocabulary run on the
+    # mapped rows.
+    rows = [_from_store(r) for r in leave.list_requests(
+        student_id=(student_id or "").strip() or None,
+        state=_STATUS_TO_STORE[status] if status else None,
+        date_from=overlaps_from if overlaps_from and overlaps_to else None,
+        date_to=overlaps_to if overlaps_from and overlaps_to else None,
+        limit=100000)]
+    out: list[AbsenceRequest] = []
+    for r in rows:
+        if reason and r.reason != reason:
+            continue
+        if pending_only and r.status not in OPEN_STATUSES:
+            continue
+        if decided_only and r.status not in DECIDED_STATUSES:
+            continue
+        if date_from and r.request_date < date_from:
+            continue
+        if date_to and r.request_date > date_to:
+            continue
+        out.append(r)
+    order = {"Pending": 0, "Approved": 1, "Denied": 2, "Cancelled": 3}
+    out.sort(key=lambda r: (-r.request_id,))
+    out.sort(key=lambda r: r.start_date, reverse=True)
+    out.sort(key=lambda r: order.get(r.status, 4))
+    return out
 
 
 def list_requests_with_detail(**kwargs) -> list[RequestRow]:
@@ -431,23 +521,30 @@ def update_request(request_id: int,
         "notes":          payload.get("notes", existing.notes),
     }
     p = _validate_payload(merged)
-    with _connect() as conn:
-        conn.execute(
-            """UPDATE absence_requests SET
-                   request_date = ?, start_date = ?, end_date = ?,
-                   reason = ?, description = ?, status = ?,
-                   submitted_by = ?, submitter_type = ?, contact_phone = ?,
-                   supporting_doc = ?, decision_date = ?, decided_by = ?,
-                   decision_notes = ?, notes = ?,
-                   updated_at = datetime('now')
-               WHERE request_id = ?""",
-            (p["request_date"], p["start_date"], p["end_date"],
-             p["reason"], p["description"], p["status"],
-             p["submitted_by"], p["submitter_type"], p["contact_phone"],
-             p["supporting_doc"], p["decision_date"], p["decided_by"],
-             p["decision_notes"], p["notes"], request_id),
-        )
-        conn.commit()
+    fields = _store_fields(p)
+    leave = _store()
+    stored = leave.get_request(request_id)
+    if (stored is not None and stored.state == leave.APPROVED
+            and stored.marks_written
+            and fields["state"] != leave.APPROVED):
+        # Un-approving leave whose marks are already in the register:
+        # void them, as the attendance window's cancel does, rather than
+        # leave authorised absence behind for days nobody was away.
+        try:
+            leave.cancel(request_id,
+                         reason=p["decision_notes"]
+                         or f"{p['status']} in the pastoral absence log",
+                         actor=p["decided_by"])
+        except leave.ValidationError as e:
+            raise ValidationError(str(e)) from None
+    if p["reason"] == existing.reason:
+        # Leave raised in the attendance window carries a precise kind;
+        # an edit that did not touch the reason must not flatten it.
+        fields.pop("kind", None)
+    try:
+        _store().store_update(request_id, **fields)
+    except _store().ValidationError as e:
+        raise ValidationError(str(e)) from None
     out = get_request(request_id)
     assert out is not None
     logger.info("Updated absence request #%d (status=%s)",
@@ -493,16 +590,12 @@ def deny(request_id: int, *, decided_by: str | None = None,
 
 def delete_request(request_id: int) -> bool:
     init_db()
-    with _connect() as conn:
-        cur = conn.execute(
-            "DELETE FROM absence_requests WHERE request_id = ?",
-            (request_id,),
-        )
-        conn.commit()
-        if cur.rowcount:
-            logger.info("Deleted absence request #%d", request_id)
-            return True
+    if get_request(request_id) is None:
         return False
+    if _store().store_delete(request_id):
+        logger.info("Deleted absence request #%d", request_id)
+        return True
+    return False
 
 
 # ── Summary ───────────────────────────────────────────────────────

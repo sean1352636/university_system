@@ -1,3 +1,4 @@
+from education_system.systems.university.plugins.campus_commerce.domain.services.restaurant.operations.user_access import can as restaurant_can
 from education_system.systems.university.infrastructure.auth import UserAuth, display_auth_menu
 from education_system.systems.university.infrastructure.database.data_backup import display_backup_menu, backup_before_operation
 from education_system.systems.university.infrastructure.email import send_confirmation_email
@@ -173,7 +174,7 @@ def create_menu_item():
         print("You must be logged in to create menu items.")
         return
 
-    if not auth.check_permission('manage_menu'):
+    if not restaurant_can(auth, 'manage_menu'):
         print("You don't have permission to create menu items.")
         return
 
@@ -352,7 +353,7 @@ def update_menu_item():
         print("You must be logged in to update menu items.")
         return
 
-    if not auth.check_permission('manage_menu'):
+    if not restaurant_can(auth, 'manage_menu'):
         print("You don't have permission to update menu items.")
         return
 
@@ -461,7 +462,7 @@ def delete_menu_item():
         print("You must be logged in to delete menu items.")
         return
 
-    if not auth.check_permission('manage_menu'):
+    if not restaurant_can(auth, 'manage_menu'):
         print("You don't have permission to delete menu items.")
         return
 
@@ -653,7 +654,7 @@ def import_menu_csv():
         print("You must be logged in to import menu items.")
         return
 
-    if not auth.check_permission('manage_menu'):
+    if not restaurant_can(auth, 'manage_menu'):
         print("You don't have permission to import menu items.")
         return
 

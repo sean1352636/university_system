@@ -10,6 +10,7 @@ import random
 import string
 
 from education_system.paths import UNIVERSITY_DEFAULT_DB_PATH
+from education_system.systems.university.domains.operations.domain.campus.mobility.services import train_station_service
 
 try:
     from education_system.systems.university.infrastructure.database.db import get_connection
@@ -173,41 +174,14 @@ def update_service_seats(service_id, seats_change):
 
 # ==================== TICKET BOOKING ====================
 
-def purchase_ticket(service_id, passenger_name, payment_method, price_paid):
-    """Create a new ticket purchase."""
-    try:
-        ticket_number = generate_ticket_number()
-        purchase_date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-
-        with get_connection() as conn:
-            # Create ticket
-            conn.execute("""
-                INSERT INTO train_station_tickets (ticket_number, service_id, passenger_name, payment_method, price_paid, purchase_date)
-                VALUES (?, ?, ?, ?, ?, ?)
-            """, (ticket_number, service_id, passenger_name, payment_method, price_paid, purchase_date))
-
-            cursor = conn.execute("SELECT last_insert_rowid()")
-            ticket_id = cursor.fetchone()[0]
-
-            # Create receipt
-            receipt_number = generate_receipt_number()
-            conn.execute("""
-                INSERT INTO train_station_receipts (receipt_number, ticket_id, total_amount, payment_method, transaction_date)
-                VALUES (?, ?, ?, ?, ?)
-            """, (receipt_number, ticket_id, price_paid, payment_method, purchase_date))
-
-            # Update available seats
-            conn.execute("""
-                UPDATE train_station_services
-                SET available_seats = available_seats - 1
-                WHERE id = ?
-            """, (service_id,))
-
-            conn.commit()
-        return ticket_id, ticket_number, receipt_number
-    except Exception as e:
-        print(f"Error purchasing ticket: {e}")
-        return None, None, None
+def purchase_ticket(service_id, passenger_name, payment_method, price_paid, student_id=None):
+    """Create a new ticket purchase via the train station domain service,
+    which takes the money and posts it to Finance."""
+    current_user = get_current_user()
+    return train_station_service.purchase_ticket(
+        service_id, passenger_name, payment_method, price_paid,
+        student_id=student_id, processed_by=current_user.get('username') or current_user.get('name'),
+    )
 
 def get_all_tickets():
     """Get all tickets with service details."""
@@ -262,32 +236,15 @@ def get_ticket_by_number(ticket_number):
 # ==================== REFUNDS ====================
 
 def process_refund(ticket_number, amount, refund_method, student_id=None):
-    """Process a ticket refund."""
+    """Process a ticket refund via the train station domain service, which
+    writes the refund once and posts it to Finance."""
     try:
         current_user = get_current_user()
-        refund_reference = "REF-" + ''.join(random.choices(string.ascii_uppercase + string.digits, k=8))
-
-        refund_row_id = None
-        with get_connection() as conn:
-            cur = conn.execute("""
-                INSERT INTO unified_refunds
-                (source_type, reference_id, reference_type, student_id, amount, refund_method, refund_reference, refund_date, processed_by, status)
-                VALUES ('train', ?, 'ticket', ?, ?, ?, ?, CURRENT_TIMESTAMP, ?, 'processed')
-            """, (ticket_number, student_id, amount, refund_method, refund_reference, current_user.get('name', 'System')))
-            refund_row_id = cur.lastrowid
-            conn.commit()
-
-        # Auto-post to GL (cash has moved). Never raises.
-        if refund_row_id is not None:
-            try:
-                from education_system.systems.university.domains.finance.domain.ledger import notify_ledger
-                notify_ledger('refund', refund_row_id, posted_by=current_user.get('name', 'train_cli'))
-            except Exception:
-                import logging
-                logging.getLogger(__name__).exception(
-                    "ledger hook failed for train refund %s", refund_row_id,
-                )
-        return refund_reference
+        outcome = train_station_service.process_refund(
+            ticket_number, amount, refund_method, student_id=student_id,
+            processed_by=current_user.get('username') or current_user.get('name', 'System'),
+        )
+        return outcome['refund_ref']
     except Exception as e:
         print(f"Error processing refund: {e}")
         return None
@@ -390,13 +347,21 @@ def book_ticket_menu():
     payment_methods = {'1': 'Cash', '2': 'Card', '3': 'Student Account'}
     payment_method = payment_methods.get(payment_choice, 'Card')
 
+    student_id = current_user.get('student_id') or (
+        current_user.get('username') if current_user.get('id') is not None else None)
+    if payment_method == 'Student Account' and not student_id:
+        student_id = input("  Student ID to charge: ").strip()
+        if not student_id:
+            print("  ❌ A student account payment needs a student ID.")
+            return
+
     confirm = input(f"\n  Confirm purchase for £{service['price']:.2f}? (yes/no): ").strip().lower()
     if confirm != 'yes':
         print("  Purchase cancelled.")
         return
 
     ticket_id, ticket_number, receipt_number = purchase_ticket(
-        service_id, passenger_name, payment_method, service['price']
+        service_id, passenger_name, payment_method, service['price'], student_id=student_id
     )
 
     if ticket_id:

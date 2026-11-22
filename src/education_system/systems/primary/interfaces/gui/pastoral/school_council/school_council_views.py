@@ -27,6 +27,7 @@ from education_system.systems.primary.domain.pastoral.school_council.school_coun
     ValidationError,
 )
 from education_system.systems.primary.domain import _pupils_bridge as student_data
+from education_system.systems.primary.interfaces.gui import kit
 
 logger = logging.getLogger(__name__)
 
@@ -57,14 +58,23 @@ _MOTION_TAGS = {
 
 def open_school_council_window(parent=None) -> None:
     data.init_db()
-    master = getattr(parent, "root", parent)
-    win = tk.Toplevel(master) if master is not None else tk.Tk()
-    win.title(f"School Council — {branding.SYSTEM_NAME}")
-    win.geometry(WIN_GEOMETRY)
-    win.minsize(*WIN_MINSIZE)
+    if parent is None:
+        win = tk.Tk()
+        win.title(f"School Council — {branding.SYSTEM_NAME}")
+        win.geometry(WIN_GEOMETRY)
+        win.minsize(*WIN_MINSIZE)
+        frame = ttk.Frame(win, padding=10)
+        frame.pack(fill="both", expand=True)
+        _draw_school_council(frame)
+        return
+    kit.show_page(parent, "School Council", _draw_school_council)
 
-    nb = ttk.Notebook(win)
-    nb.pack(fill="both", expand=True, padx=10, pady=10)
+
+def _draw_school_council(page) -> None:
+    kit.page_heading(page, "School Council",
+                     "Council members, meetings, motions and votes")
+    nb = ttk.Notebook(page)
+    nb.pack(fill="both", expand=True)
 
     MembersTab(nb)
     MeetingsTab(nb)
@@ -76,6 +86,30 @@ def _student_options() -> list[tuple[str, str]]:
                    key=lambda s: s.student_id)
     return [(s.student_id, f"{s.student_id} — {s.full_name}")
             for s in rows]
+
+
+def _people_names() -> list[str]:
+    """Names offered for chair / secretary / proposer / seconder: the
+    active council members first, then staff. The fields store free text,
+    so the drop-down stays editable for anyone else."""
+    names: list[str] = []
+    try:
+        pupils = {s.student_id: s.full_name for s in student_data.list_students()}
+        for m in data.list_members(active_only=True):
+            name = pupils.get(m.student_id)
+            if name and name not in names:
+                names.append(name)
+    except Exception:  # noqa: BLE001 - suggestions only
+        logger.debug("council member names failed", exc_info=True)
+    try:
+        from education_system.systems.primary.domain.staff import staff
+        for st in sorted(staff.list_staff(active_only=True),
+                         key=lambda x: (x.last_name.lower(), x.first_name.lower())):
+            if st.full_name not in names:
+                names.append(st.full_name)
+    except Exception:  # noqa: BLE001
+        logger.debug("staff names failed", exc_info=True)
+    return names
 
 
 # ── Members tab ──────────────────────────────────────────────
@@ -199,7 +233,7 @@ class MembersTab:
         m = self._selected()
         if not m:
             return
-        when = _prompt_text(self.frame, "Ended on (YYYY-MM-DD)",
+        when = _prompt_date(self.frame, "Ended on",
                               initial=_dt.date.today().isoformat())
         if not when:
             return
@@ -594,7 +628,7 @@ class MemberEditor:
         self.win = tk.Toplevel(parent)
         self.win.title(f"Edit member #{member.member_id}"
                           if member else "New member")
-        self.win.geometry("620x520")
+        self.win.geometry("660x560")
         self.win.transient(parent); self.win.after_idle(self.win.grab_set)
         self._build()
         if member:
@@ -602,20 +636,15 @@ class MemberEditor:
         self.win.wait_window()
 
     def _build(self) -> None:
-        body = ttk.Frame(self.win)
-        body.pack(fill="both", expand=True, padx=12, pady=10)
+        body, footer = kit.scrolled_form(self.win)
         body.grid_columnconfigure(1, weight=1)
         self.vars: dict[str, tk.Variable] = {}
 
-        ttk.Label(body, text="Student*").grid(
+        ttk.Label(body, text="Pupil*").grid(
             row=0, column=0, sticky="w", padx=4, pady=2)
-        self.student_combo = ttk.Combobox(body, state="readonly",
-                                              width=42)
-        opts = _student_options()
-        self._student_opts = opts
-        self.student_combo["values"] = [lbl for _, lbl in opts]
-        self.student_combo.grid(row=0, column=1, sticky="ew",
-                                  padx=4, pady=2)
+        self.student_var = tk.StringVar()
+        kit.PupilPicker(body, self.student_var).grid(
+            row=0, column=1, sticky="w", padx=4, pady=2)
 
         def row_entry(row, label, key):
             ttk.Label(body, text=label).grid(
@@ -624,6 +653,14 @@ class MemberEditor:
             self.vars[key] = v
             ttk.Entry(body, textvariable=v).grid(
                 row=row, column=1, sticky="ew", padx=4, pady=2)
+
+        def row_date(row, label, key):
+            ttk.Label(body, text=label).grid(
+                row=row, column=0, sticky="w", padx=4, pady=2)
+            v = tk.StringVar()
+            self.vars[key] = v
+            kit.DateField(body, v).grid(
+                row=row, column=1, sticky="w", padx=4, pady=2)
 
         def row_combo(row, label, key, values):
             ttk.Label(body, text=label).grid(
@@ -635,9 +672,9 @@ class MemberEditor:
                 row=row, column=1, sticky="ew", padx=4, pady=2)
 
         row_combo(1, "Role*", "role", ROLES)
-        row_entry(2, "Term start*", "term_start")
-        row_entry(3, "Term end", "term_end")
-        row_entry(4, "Elected on", "elected_on")
+        row_date(2, "Term start*", "term_start")
+        row_date(3, "Term end", "term_end")
+        row_date(4, "Elected on", "elected_on")
         row_combo(5, "Status*", "status", MEMBER_STATUSES)
         row_entry(6, "Portfolio", "portfolio")
         ttk.Label(body, text="Notes").grid(
@@ -646,11 +683,9 @@ class MemberEditor:
         self.notes.grid(row=7, column=1, sticky="ew",
                           padx=4, pady=4)
 
-        bar = ttk.Frame(self.win)
-        bar.pack(fill="x", padx=12, pady=(0, 10))
-        ttk.Button(bar, text="Save",
+        ttk.Button(footer, text="Save",
                     command=self._save).pack(side="right", padx=4)
-        ttk.Button(bar, text="Cancel",
+        ttk.Button(footer, text="Cancel",
                     command=self.win.destroy).pack(side="right")
 
         self.vars["role"].set(DEFAULT_ROLE)
@@ -660,10 +695,7 @@ class MemberEditor:
     def _load(self) -> None:
         m = self.member
         assert m is not None
-        for i, (sid, _) in enumerate(self._student_opts):
-            if sid == m.student_id:
-                self.student_combo.current(i)
-                break
+        self.student_var.set(m.student_id or "")
         for key in ("role", "term_start", "term_end",
                      "elected_on", "status", "portfolio"):
             self.vars[key].set(getattr(m, key) or "")
@@ -671,14 +703,14 @@ class MemberEditor:
         self.notes.insert("1.0", m.notes or "")
 
     def _save(self) -> None:
-        idx = self.student_combo.current()
-        if idx < 0:
+        student_id = self.student_var.get().strip()
+        if not student_id:
             messagebox.showerror("School Council",
-                                    "Pick a student.",
+                                    "Pick a pupil.",
                                     parent=self.win)
             return
         payload: dict = {
-            "student_id": self._student_opts[idx][0],
+            "student_id": student_id,
             "notes": self.notes.get("1.0", "end").rstrip()
             or None,
         }
@@ -705,7 +737,7 @@ class MeetingEditor:
         self.win = tk.Toplevel(parent)
         self.win.title(f"Edit meeting #{meeting.meeting_id}"
                           if meeting else "New meeting")
-        self.win.geometry("780x780")
+        self.win.geometry("800x700")
         self.win.transient(parent); self.win.after_idle(self.win.grab_set)
         self._build()
         if meeting:
@@ -713,8 +745,7 @@ class MeetingEditor:
         self.win.wait_window()
 
     def _build(self) -> None:
-        body = ttk.Frame(self.win)
-        body.pack(fill="both", expand=True, padx=12, pady=10)
+        body, footer = kit.scrolled_form(self.win)
         body.grid_columnconfigure(1, weight=1)
         body.grid_columnconfigure(3, weight=1)
         self.vars: dict[str, tk.Variable] = {}
@@ -728,6 +759,13 @@ class MeetingEditor:
             ttk.Entry(body, textvariable=v, width=width).grid(
                 row=row, column=col + 1, sticky="ew", padx=4, pady=2)
 
+        def picker(row, col, label, key, make):
+            ttk.Label(body, text=label).grid(
+                row=row, column=col, sticky="w", padx=4, pady=2)
+            v = tk.StringVar()
+            self.vars[key] = v
+            make(v).grid(row=row, column=col + 1, sticky="w", padx=4, pady=2)
+
         def combo(row, col, label, key, values, width=22):
             ttk.Label(body, text=label).grid(
                 row=row, column=col, sticky="w", padx=4, pady=2)
@@ -738,14 +776,20 @@ class MeetingEditor:
                 row=row, column=col + 1, sticky="ew", padx=4, pady=2)
 
         entry(0, 0, "Title*", "title", width=48)
-        entry(1, 0, "Date*", "meeting_date")
-        entry(1, 2, "Time", "meeting_time")
+        people = _people_names()
+        picker(1, 0, "Date*", "meeting_date", lambda v: kit.DateField(body, v))
+        picker(1, 2, "Time", "meeting_time", lambda v: kit.TimeField(body, v))
         combo(2, 0, "Type*", "meeting_type", MEETING_TYPES)
         combo(2, 2, "Status*", "status", MEETING_STATUSES)
         entry(3, 0, "Location", "location")
-        entry(3, 2, "Next meeting on", "next_meeting_on")
-        entry(4, 0, "Chair", "chair")
-        entry(4, 2, "Secretary", "secretary")
+        picker(3, 2, "Next meeting on", "next_meeting_on",
+               lambda v: kit.DateField(body, v))
+        picker(4, 0, "Chair", "chair",
+               lambda v: kit.ChoiceField(body, v, choices=people, blank=True,
+                                         editable=True, width=24))
+        picker(4, 2, "Secretary", "secretary",
+               lambda v: kit.ChoiceField(body, v, choices=people, blank=True,
+                                         editable=True, width=24))
 
         row = 5
         for key, label in (
@@ -765,17 +809,16 @@ class MeetingEditor:
             self.texts[key] = t
             row += 1
 
-        bar = ttk.Frame(self.win)
-        bar.pack(fill="x", padx=12, pady=(0, 10))
-        ttk.Button(bar, text="Save",
+        ttk.Button(footer, text="Save",
                     command=self._save).pack(side="right", padx=4)
-        ttk.Button(bar, text="Cancel",
+        ttk.Button(footer, text="Cancel",
                     command=self.win.destroy).pack(side="right")
 
         now = _dt.datetime.now()
         self.vars["meeting_date"].set(
             _dt.date.today().isoformat())
-        self.vars["meeting_time"].set(now.strftime("%H:%M"))
+        self.vars["meeting_time"].set(
+            f"{now.hour:02d}:{now.minute - now.minute % 5:02d}")
         self.vars["meeting_type"].set(DEFAULT_MEETING_TYPE)
         self.vars["status"].set(DEFAULT_MEETING_STATUS)
 
@@ -882,13 +925,16 @@ class MotionEditor:
         ttk.Label(body, text="Proposer").grid(
             row=1, column=0, sticky="w", padx=4, pady=4)
         self.proposer = tk.StringVar()
-        ttk.Entry(body, textvariable=self.proposer).grid(
-            row=1, column=1, sticky="ew", padx=4, pady=4)
+        people = _people_names()
+        kit.ChoiceField(body, self.proposer, choices=people, blank=True,
+                        editable=True, width=30).grid(
+            row=1, column=1, sticky="w", padx=4, pady=4)
         ttk.Label(body, text="Seconder").grid(
             row=2, column=0, sticky="w", padx=4, pady=4)
         self.seconder = tk.StringVar()
-        ttk.Entry(body, textvariable=self.seconder).grid(
-            row=2, column=1, sticky="ew", padx=4, pady=4)
+        kit.ChoiceField(body, self.seconder, choices=people, blank=True,
+                        editable=True, width=30).grid(
+            row=2, column=1, sticky="w", padx=4, pady=4)
         ttk.Label(body, text="Outcome").grid(
             row=3, column=0, sticky="w", padx=4, pady=4)
         self.outcome = tk.StringVar(value=DEFAULT_MOTION_OUTCOME)
@@ -975,7 +1021,7 @@ class VoteDialog:
         )):
             ttk.Label(body, text=label).grid(
                 row=i + 1, column=0, sticky="w", padx=4, pady=4)
-            ttk.Entry(body, textvariable=var, width=8).grid(
+            kit.NumberField(body, var, from_=0, to=9999, width=8).grid(
                 row=i + 1, column=1, sticky="w",
                 padx=4, pady=4)
         bar = ttk.Frame(self.win)
@@ -1018,6 +1064,29 @@ def _prompt_text(parent, title: str, *,
     ttk.Label(win, text=title).pack(anchor="w", padx=8, pady=8)
     var = tk.StringVar(value=initial)
     ttk.Entry(win, textvariable=var).pack(fill="x", padx=8)
+    result: dict = {"value": None}
+
+    def ok() -> None:
+        result["value"] = var.get().strip()
+        win.destroy()
+
+    bar = ttk.Frame(win)
+    bar.pack(fill="x", padx=8, pady=12)
+    ttk.Button(bar, text="OK", command=ok).pack(side="right", padx=4)
+    ttk.Button(bar, text="Cancel",
+                command=win.destroy).pack(side="right")
+    win.wait_window()
+    return result["value"]
+
+
+def _prompt_date(parent, title: str, *,
+                 initial: str = "") -> str | None:
+    win = tk.Toplevel(parent)
+    win.title(title); win.geometry("400x150")
+    win.transient(parent); win.after_idle(win.grab_set)
+    ttk.Label(win, text=title).pack(anchor="w", padx=8, pady=8)
+    var = tk.StringVar(value=initial)
+    kit.DateField(win, var).pack(anchor="w", padx=8)
     result: dict = {"value": None}
 
     def ok() -> None:

@@ -36,7 +36,7 @@ def promote_from_waitlist(student_id: str, course_code: str, *,
                            academic_year: str | None = None) -> bool:
     """Atomic enrol-and-bill from a waitlist offer.
 
-    Inserts/updates plan_courses, decrements module_schedule capacity,
+    Inserts/locks the planned_courses row, decrements module_schedule capacity,
     raises a fee charge, then publishes a single event. Either all four
     succeed or the SQL transaction is rolled back; the finance charge
     fires after commit so a publish-only failure won't double-bill.
@@ -47,14 +47,23 @@ def promote_from_waitlist(student_id: str, course_code: str, *,
     try:
         with transaction() as conn:
             tbl = conn.execute(
-                "SELECT name FROM sqlite_master WHERE type='table' AND name='plan_courses'"
+                "SELECT name FROM sqlite_master WHERE type='table' AND name='planned_courses'"
             ).fetchone()
             if tbl and plan_id is not None:
                 conn.execute(
-                    "INSERT INTO plan_courses (plan_id, course_code, status) "
-                    "VALUES (?, ?, 'in_progress') "
-                    "ON CONFLICT(plan_id, course_code) DO UPDATE SET status = 'in_progress'",
-                    (plan_id, course_code),
+                    # Goes in the plan's latest semester, locked because the
+                    # student is now enrolled on it.
+                    "INSERT INTO planned_courses "
+                    "(plan_id, course_id, semester_number, semester_name, is_locked, notes) "
+                    "SELECT sp.plan_id, ?, "
+                    "COALESCE((SELECT MAX(pc.semester_number) FROM planned_courses pc "
+                    "WHERE pc.plan_id = sp.plan_id), 1), "
+                    "COALESCE((SELECT pc.semester_name FROM planned_courses pc "
+                    "WHERE pc.plan_id = sp.plan_id ORDER BY pc.semester_number DESC LIMIT 1), "
+                    "sp.start_semester), 1, 'Enrolled from waitlist' "
+                    "FROM semester_plans sp WHERE sp.plan_id = ? "
+                    "ON CONFLICT(plan_id, course_id) DO UPDATE SET is_locked = 1",
+                    (course_code, plan_id),
                 )
             sched = conn.execute(
                 "SELECT name FROM sqlite_master WHERE type='table' AND name='module_schedule'"

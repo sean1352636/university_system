@@ -54,25 +54,25 @@ A comprehensive Staff CRUD (Create, Read, Update, Delete) system has been implem
 ## Files Created/Modified
 
 ### New Files:
-1. `/university_system/modules/shared/gui/main/staff/staff_crud_gui.py`
+1. `src/education_system/systems/university/shell/gui/main/staff/staff_crud_gui.py`
    - Main staff CRUD implementation
    - ~900+ lines of code
    - All CRUD operations
 
-2. `/university_system/modules/shared/gui/main/staff/__init__.py`
+2. `src/education_system/systems/university/shell/gui/main/staff/__init__.py`
    - Module initialization
    - Function exports
 
 ### Modified Files:
-1. `/university_system/modules/shared/gui/main/main_gui.py`
+1. `src/education_system/systems/university/shell/gui/main/main_gui.py`
    - Added staff CRUD imports
    - Bound methods to UnifiedManagementGUI class
 
-2. `/university_system/modules/shared/gui/main/core/gui_setup.py`
+2. `src/education_system/systems/university/shell/gui/main/core/gui_setup.py`
    - Added staff management buttons to Human Resources category
    - Updated role permissions for staff/admin
 
-3. `/university_system/modules/shared/gui/main/imports/gui_imports.py`
+3. `src/education_system/systems/university/shell/gui/main/imports/gui_imports.py`
    - Added database imports (get_connection, transaction)
 
 ## User Access & Permissions
@@ -194,7 +194,7 @@ Staff accounts created through this system:
 ### As Admin:
 ```bash
 # Run the GUI
-python -m education_system --gui
+python -m education_system --university --gui
 
 # Login as admin
 # Username: admin
@@ -255,8 +255,8 @@ Potential improvements:
 
 For issues or questions:
 - Check the main project documentation: `CLAUDE.md`
-- Review authentication docs: `docs/infrastructure/AUTHENTICATION.md`
-- Check database docs: `docs/infrastructure/DATABASE.md`
+- Review authentication docs: `docs/shared/AUTHENTICATION.md`
+- Check database docs: `docs/university/infrastructure/DATABASE.md`
 
 ---
 
@@ -276,8 +276,7 @@ Your Staff CRUD system is **fully functional** and ready to use!
 
 ### Step 1: Run the Application
 ```bash
-cd university_system
-python -m education_system --gui
+python -m education_system --university --gui
 ```
 
 ### Step 2: Login
@@ -450,17 +449,7 @@ Human Resources ▶ Delete Staff
 
 Run the validation test:
 ```bash
-python3 test_staff_crud.py
-```
-
-Expected output:
-```
-✅ Database Schema Test - PASSED
-✅ Staff Creation Test - PASSED
-✅ Staff Query Test - PASSED
-
-TEST SUMMARY: 3/3 PASSED (100%)
-🎉 All tests passed! Staff CRUD system is ready to use.
+python -m pytest tests/unit/systems/university/domains/staff/staff_hr/test_staff_crud.py -v
 ```
 
 ---
@@ -468,13 +457,12 @@ TEST SUMMARY: 3/3 PASSED (100%)
 ## Need Help?
 
 📚 **Documentation**:
-- Full Guide: `STAFF_CRUD_GUIDE.md`
-- Implementation Details: `STAFF_CRUD_IMPLEMENTATION_COMPLETE.md`
-- Module Documentation: `modules/shared/gui/main/staff/README.md`
+- Full Guide: `docs/university/guides/administration/STAFF_CRUD_GUIDE.md`
+- Module Documentation: `src/education_system/systems/university/shell/gui/main/staff/README.md`
 
 🧪 **Testing**:
-- Test Script: `test_staff_crud.py`
-- Run: `python3 test_staff_crud.py`
+- Test File: `tests/unit/systems/university/domains/staff/staff_hr/test_staff_crud.py`
+- Run: `python -m pytest tests/unit/systems/university/domains/staff/staff_hr/test_staff_crud.py -v`
 
 📖 **Main Documentation**:
 - System Guide: `CLAUDE.md`

@@ -14,7 +14,9 @@ from __future__ import annotations
 import logging
 import tkinter as tk
 from datetime import date as _date
-from tkinter import messagebox, ttk
+from tkinter import ttk
+from education_system.systems.sixth_form.interfaces.gui._sidebar import SidebarBook
+from education_system.platform.delivery.gui.parented_dialogs import messagebox
 from typing import Any, Callable
 from education_system.systems.sixth_form.domain.progression.apprenticeships import apprenticeships
 from education_system.systems.sixth_form.domain.progression.apprenticeships import apprenticeships as data
@@ -49,7 +51,7 @@ def open_directory(gui) -> None:
     frame = _clear(gui)
     _heading(frame, "Apprenticeships")
 
-    nb = ttk.Notebook(frame)
+    nb = SidebarBook(frame)
     nb.pack(fill="both", expand=True)
 
     dir_tab = ttk.Frame(nb, padding=8)

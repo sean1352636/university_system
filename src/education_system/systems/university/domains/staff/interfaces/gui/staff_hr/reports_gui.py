@@ -15,6 +15,7 @@ from tkinter import ttk, messagebox, scrolledtext
 from datetime import datetime
 from typing import Optional
 
+from education_system.systems.university.domains.staff.interfaces.gui.staff_hr import _access
 from education_system.systems.university.domains.staff.domain.staff_hr.services import (
     EmployeeManager,
     LeaveManager,
@@ -38,7 +39,8 @@ class ReportsGUI:
             messagebox.showerror(_t('gui.staff.staff_hr.reports.dialogs.error', default="Error"), _t('gui.staff.staff_hr.reports.dialogs.login_required_to_access_reports', default="Login required to access Reports"))
             return
 
-        self.user_id = self.current_user.get('id') or self.current_user.get('username')
+        # The Staff HR key is the username, never current_user['id'].
+        self.user_id = _access.user_key(self) or self.current_user.get('username')
 
         if parent_notebook:
             self.create_as_tab(parent_notebook)
@@ -87,6 +89,24 @@ class ReportsGUI:
         for label, cmd in self._reports:
             ttk.Button(left, text=label, width=22, command=cmd).pack(fill=tk.X, pady=2)
 
+        # Compliance: equality, gender pay gap, HESA, retention. Buttons the
+        # signed-in person may not use stay visible but disabled.
+        ttk.Separator(left).pack(fill=tk.X, pady=8)
+        ttk.Label(left, text="Compliance", font=('Arial', 10, 'bold')).pack(anchor=tk.W)
+        hr = _access.can(self, 'reports')
+        pay = hr or _access.can(self, 'payroll')
+        admin = _access.can(self, 'hr_admin')
+        self._compliance = [
+            ("Equality Monitoring", 'EqualityReportWindow', hr),
+            ("Gender Pay Gap", 'PayGapWindow', pay),
+            ("HESA Staff Return", 'HesaStaffWindow', hr),
+            ("HR Retention", 'RetentionWindow', admin),
+            ("My Equality Information", 'MyEqualityWindow', True),
+        ]
+        for label, window, allowed in self._compliance:
+            ttk.Button(left, text=label, width=22, state=tk.NORMAL if allowed else tk.DISABLED,
+                       command=lambda w=window: self._open_compliance(w)).pack(fill=tk.X, pady=2)
+
         # Right: output
         right = ttk.Frame(body)
         right.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
@@ -101,7 +121,20 @@ class ReportsGUI:
         self.output.insert(tk.END, text)
         self.output.config(state=tk.DISABLED)
 
-    def _run(self, title, fn):
+    def _open_compliance(self, name):
+        from education_system.systems.university.domains.staff.interfaces.gui.staff_hr import (
+            compliance_gui,
+        )
+        parent = self.window or getattr(self, 'tab_frame', None) or self.root
+        try:
+            getattr(compliance_gui, name)(parent.winfo_toplevel(), self)
+        except Exception as e:
+            messagebox.showerror("Error", f"Could not open {name}: {e}", parent=parent)
+
+    def _run(self, title, fn, hr_only=True):
+        if hr_only and not _access.can(self, 'reports'):
+            self._write(f"{title}\n{'=' * 50}\n\nOrganisation-wide reports are available to HR only.")
+            return
         try:
             body = fn()
         except Exception as e:
@@ -206,4 +239,4 @@ class ReportsGUI:
                     f"{str(r.get('department') or 'N/A'):<20}"
                     f"{str(r.get('cycle_name') or ''):<24}")
             return "\n".join(lines)
-        self._run("Pending Reviews", build)
+        self._run("Pending Reviews", build, hr_only=False)

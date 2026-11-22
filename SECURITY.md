@@ -250,7 +250,7 @@ def is_student(self):
 
 ### Account Lockout Protection
 
-- **Failed login tracking**: Accounts locked after 5 failed attempts (configurable)
+- **Failed login tracking**: Accounts locked for 15 minutes after 3 failed attempts
 - **Lockout duration**: 15 minutes by default (configurable)
 - **Remaining attempts display**: Users see how many attempts remain
 - **Emergency unlock functions**: Administrative functions to unlock any account
@@ -420,10 +420,10 @@ with get_db_transaction() as (conn, cursor):
 
 ```bash
 # Backups are created with restricted permissions
-chmod 600 backups/*.db
+chmod 600 var/backups/university/database/*
 
 # Only database owner can read/write
-chown dbuser:dbgroup backups/*.db
+chown dbuser:dbgroup var/backups/university/database/*
 ```
 
 ## Input Validation
@@ -618,8 +618,8 @@ Security-sensitive operations are logged:
 
 ```bash
 # Logs are protected with restricted permissions
-chmod 640 logs/*.log
-chown appuser:loggroup logs/*.log
+chmod 640 var/logs/*/*.log
+chown appuser:loggroup var/logs/*/*.log
 
 # Logs are rotated and archived
 # See: /etc/logrotate.d/university-system

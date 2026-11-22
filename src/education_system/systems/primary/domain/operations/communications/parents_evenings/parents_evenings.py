@@ -34,8 +34,11 @@ logger = logging.getLogger(__name__)
 
 DB_PATH = paths.PRIMARY_PARENTS_EVENINGS_DB
 
-YEAR_GROUPS: tuple[str, ...] = ("Year 12", "Year 13", "Both")
-DEFAULT_YEAR_GROUP: str = "Both"
+YEAR_GROUPS: tuple[str, ...] = (
+    "Whole School", "Reception", "Year 1", "Year 2", "Year 3", "Year 4",
+    "Year 5", "Year 6", "KS1", "KS2",
+)
+DEFAULT_YEAR_GROUP: str = "Whole School"
 
 EVENT_STATUSES: tuple[str, ...] = (
     "Scheduled", "Open for Booking", "Closed for Booking",
@@ -58,7 +61,7 @@ CREATE TABLE IF NOT EXISTS parents_evenings (
     event_id      INTEGER PRIMARY KEY AUTOINCREMENT,
     name          TEXT NOT NULL,
     event_date    TEXT NOT NULL,
-    year_group    TEXT NOT NULL DEFAULT 'Both',
+    year_group    TEXT NOT NULL DEFAULT 'Whole School',
     location      TEXT,
     start_time    TEXT NOT NULL,
     end_time      TEXT NOT NULL,
@@ -82,7 +85,7 @@ CREATE TABLE IF NOT EXISTS parents_evening_bookings (
     updated_at  TEXT DEFAULT (datetime('now')),
     FOREIGN KEY (event_id)   REFERENCES parents_evenings(event_id)
         ON DELETE CASCADE,
-    FOREIGN KEY (student_id) REFERENCES students(student_id)
+    FOREIGN KEY (student_id) REFERENCES pupils(pupil_id)
         ON DELETE CASCADE,
     FOREIGN KEY (staff_id)   REFERENCES staff(staff_id)
         ON DELETE CASCADE,
@@ -477,6 +480,31 @@ def _row_booking_or_error(r: sqlite3.Row | None,
     return _row_booking(r)
 
 
+def _release_cancelled_slot(conn: sqlite3.Connection, event_id: int,
+                            staff_id: str, slot_time: str,
+                            keep_id: int | None = None) -> None:
+    """Remove a Cancelled booking that still holds this staff slot.
+
+    ``free_slots_for_staff`` offers a cancelled slot as free, but the UNIQUE
+    (event_id, staff_id, slot_time) constraint would still refuse a new
+    booking there. Runs inside the caller's transaction, so the cancelled
+    row only goes if the new booking is actually written.
+    """
+    rows = conn.execute(
+        """SELECT booking_id, student_id FROM parents_evening_bookings
+           WHERE event_id = ? AND staff_id = ? AND slot_time = ?
+             AND status = 'Cancelled' AND booking_id IS NOT ?""",
+        (event_id, staff_id, slot_time, keep_id)).fetchall()
+    for r in rows:
+        conn.execute(
+            "DELETE FROM parents_evening_bookings WHERE booking_id = ?",
+            (r["booking_id"],))
+        logger.info(
+            "Released cancelled booking #%d (event=%d, student=%s, staff=%s, "
+            "slot=%s) so the slot can be rebooked",
+            r["booking_id"], event_id, r["student_id"], staff_id, slot_time)
+
+
 def create_booking(event_id: int, d: dict[str, Any]) -> Booking:
     init_db()
     event = get_event(event_id)
@@ -485,6 +513,8 @@ def create_booking(event_id: int, d: dict[str, Any]) -> Booking:
     p = _validate_booking_payload(event, d)
     try:
         with _connect() as conn:
+            _release_cancelled_slot(conn, event_id, p["staff_id"],
+                                    p["slot_time"])
             cur = conn.execute(
                 """INSERT INTO parents_evening_bookings
                       (event_id, student_id, staff_id, slot_time, status,
@@ -604,6 +634,8 @@ def update_booking(booking_id: int, d: dict[str, Any]) -> Booking:
     p = _validate_booking_payload(event, merged)
     try:
         with _connect() as conn:
+            _release_cancelled_slot(conn, existing.event_id, p["staff_id"],
+                                    p["slot_time"], keep_id=booking_id)
             conn.execute(
                 """UPDATE parents_evening_bookings SET
                       student_id=?, staff_id=?, slot_time=?, status=?,

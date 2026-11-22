@@ -17,11 +17,13 @@ from education_system.systems.university.infrastructure.shared_context import ge
 try:
     from education_system.systems.university.domains.operations.domain.communications.mail.services.mail_post_core import (
         init_mail_db, PACKAGE_TYPES, STORAGE_FEES, FORWARDING_FEES,
-        PO_BOX_MONTHLY_FEE, generate_tracking_number, generate_reference
+        PO_BOX_MONTHLY_FEE, generate_tracking_number, generate_reference,
+        POBoxManager,
     )
     MAIL_CORE_AVAILABLE = True
 except ImportError:
     MAIL_CORE_AVAILABLE = False
+    POBoxManager = None
     PACKAGE_TYPES = ['letter', 'small_parcel', 'large_parcel', 'registered', 'express', 'international']
     STORAGE_FEES = {'letter': 0.00, 'small_parcel': 0.00, 'large_parcel': 2.50, 'registered': 1.00, 'express': 0.00, 'international': 3.00}
     FORWARDING_FEES = {'domestic': 5.00, 'international': 15.00}
@@ -123,16 +125,8 @@ try:
 except ImportError:
     EMAIL_AVAILABLE = False
 
-# Import finance integration
-try:
-    from education_system.systems.university.domains.finance.infrastructure.finance_integration import (
-        record_payment_to_finance,
-        get_student_finance_account_balance,
-        process_student_finance_account_payment
-    )
-    FINANCE_AVAILABLE = True
-except ImportError:
-    FINANCE_AVAILABLE = False
+# Finance posting happens inside the mail domain service (POBoxManager.rent_box);
+# this CLI no longer posts directly.
 
 # Import activity logger
 try:
@@ -524,60 +518,54 @@ def rent_po_box():
 
     try:
         duration_months = int(duration_months)
-        start_date = datetime.now()
-        end_date = start_date + timedelta(days=duration_months * 30)
 
-        with transaction() as conn:
+        with get_connection() as conn:
             # Check if box is available
             cursor = conn.execute('''
                 SELECT box_id, monthly_fee, status
                 FROM mail_po_boxes
                 WHERE box_number = ?
             ''', (box_number,))
-
             box = cursor.fetchone()
 
-            if not box:
-                print("❌ PO box not found")
-            elif box[2] != 'available':
-                print("❌ PO box is not available")
+        if not box:
+            print("❌ PO box not found")
+        elif box[2] != 'available':
+            print("❌ PO box is not available")
+        elif POBoxManager is None:
+            print("❌ Mail services are unavailable")
+        else:
+            box_id, monthly_fee, _ = box
+            total_cost = monthly_fee * duration_months
+
+            print(f"\nMonthly Fee: £{monthly_fee:.2f}")
+            print(f"Duration: {duration_months} months")
+            print(f"Total Cost: £{total_cost:.2f}")
+
+            print("\nPayment method: 1. Cash  2. Card  3. Student Account")
+            payment_method = {'1': 'Cash', '2': 'Card', '3': 'Student Account'}.get(
+                input("Select payment method (1-3, default 1): ").strip(), 'Cash')
+
+            confirm = input("\nConfirm rental? (yes/no): ").strip().lower()
+            if confirm != 'yes':
+                print("❌ Rental cancelled")
+                input("Press Enter to continue...")
+                return
+
+            # The domain service assigns the box and posts the fee to Finance.
+            result = POBoxManager.rent_box(
+                box_id, str(user_id), user_name, user_email or None, duration_months,
+                payment_method=payment_method, processed_by=user_name,
+            )
+            if not result:
+                print("❌ Rental failed (payment declined or box no longer available)")
             else:
-                box_id, monthly_fee, _ = box
-                total_cost = monthly_fee * duration_months
-
-                print(f"\nMonthly Fee: £{monthly_fee:.2f}")
-                print(f"Duration: {duration_months} months")
-                print(f"Total Cost: £{total_cost:.2f}")
-
-                confirm = input("\nConfirm rental? (yes/no): ").strip().lower()
-                if confirm != 'yes':
-                    print("❌ Rental cancelled")
-                    input("Press Enter to continue...")
-                    return
-
-                # Update PO box
-                conn.execute('''
-                    UPDATE mail_po_boxes
-                    SET holder_id = ?, holder_name = ?, holder_email = ?,
-                        status = 'rented', rental_start = ?, rental_end = ?
-                    WHERE box_id = ?
-                ''', (str(user_id), user_name, user_email or None,
-                      start_date.strftime('%Y-%m-%d'), end_date.strftime('%Y-%m-%d'), box_id))
-
                 print(f"\n✅ PO Box {box_number} rented successfully")
-                print(f"Rental Period: {start_date.strftime('%Y-%m-%d')} to {end_date.strftime('%Y-%m-%d')}")
+                print(f"Rental Period: {result['start_date']} to {result['end_date']}")
+                print(f"Paid: £{result['rental_fee']:.2f} ({payment_method})")
 
                 log_activity('create', 'po_box_rental', box_id=box_id,
                              details={'box': box_number, 'duration': duration_months})
-
-                if FINANCE_AVAILABLE:
-                    record_payment_to_finance(
-                        student_id=str(user_id),
-                        amount=total_cost,
-                        payment_type="PO Box Rental",
-                        description=f"PO Box {box_number} - {duration_months} months",
-                        payment_method="Pending"
-                    )
 
     except ValueError:
         print("❌ Invalid duration")

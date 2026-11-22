@@ -23,6 +23,7 @@ from education_system.systems.primary.domain.finance.expense_claims.expense_clai
     PAYMENT_METHODS,
     ValidationError,
 )
+from education_system.systems.primary.interfaces.gui import kit
 
 logger = logging.getLogger(__name__)
 
@@ -42,14 +43,23 @@ _STATUS_TAGS = {
 
 def open_expense_claims_window(parent=None) -> None:
     data.init_db()
-    master = getattr(parent, "root", parent)
-    win = tk.Toplevel(master) if master is not None else tk.Tk()
-    win.title(f"Expense Claims — {branding.SYSTEM_NAME}")
-    win.geometry(WIN_GEOMETRY)
-    win.minsize(*WIN_MINSIZE)
+    if parent is None:
+        win = tk.Tk()
+        win.title(f"Expense Claims — {branding.SYSTEM_NAME}")
+        win.geometry(WIN_GEOMETRY)
+        win.minsize(*WIN_MINSIZE)
+        frame = ttk.Frame(win, padding=10)
+        frame.pack(fill="both", expand=True)
+        _draw_expense_claims(frame)
+        return
+    kit.show_page(parent, "Expense Claims", _draw_expense_claims)
 
-    nb = ttk.Notebook(win)
-    nb.pack(fill="both", expand=True, padx=10, pady=10)
+
+def _draw_expense_claims(parent) -> None:
+    kit.page_heading(parent, "Expense Claims",
+                     "Staff and other claimants' expense claims, from draft to paid.")
+    nb = ttk.Notebook(parent)
+    nb.pack(fill="both", expand=True)
 
     ClaimsTab(nb, scope="open",     label="Open")
     ClaimsTab(nb, scope="awaiting", label="Awaiting Payment")
@@ -77,8 +87,15 @@ class ClaimsTab:
         self.f_ct.current(0)
         self.f_ct.pack(side="left", padx=(2, 8))
         ttk.Label(bar, text="ID:").pack(side="left")
-        self.f_cid = ttk.Entry(bar, width=12)
+        self.f_cid = kit.ChoiceField(
+            bar, choices=_claimant_choices(""), blank=True,
+            editable=True, width=26)
         self.f_cid.pack(side="left", padx=(2, 8))
+        self.f_ct.bind(
+            "<<ComboboxSelected>>",
+            lambda _e: self.f_cid.set_choices(
+                _claimant_choices(self.f_ct.get())),
+            add="+")
         ttk.Label(bar, text="Category:").pack(side="left")
         self.f_cat = ttk.Combobox(
             bar, values=("",) + CATEGORIES,
@@ -333,8 +350,8 @@ class ClaimsTab:
         c = self._selected()
         if not c:
             return
-        by = _prompt_text(self.frame, "Approved by",
-                            initial=c.approved_by or "")
+        by = _prompt_staff(self.frame, "Approved by",
+                             initial=c.approved_by or "")
         try:
             data.approve(c.claim_id, approved_by=by or None)
         except ValidationError as e:
@@ -474,7 +491,7 @@ class ClaimEditor:
         self.win.title(
             f"Edit claim #{claim.claim_id}"
             if claim else "New claim")
-        self.win.geometry("860x720")
+        self.win.geometry("960x640")
         self.win.transient(parent); self.win.after_idle(self.win.grab_set)
         self._build()
         if claim:
@@ -482,8 +499,7 @@ class ClaimEditor:
         self.win.wait_window()
 
     def _build(self) -> None:
-        body = ttk.Frame(self.win)
-        body.pack(fill="both", expand=True, padx=12, pady=10)
+        body, footer = kit.scrolled_form(self.win)
         body.grid_columnconfigure(1, weight=1)
         body.grid_columnconfigure(3, weight=1)
         self.vars: dict[str, tk.Variable] = {}
@@ -511,11 +527,28 @@ class ClaimEditor:
                 row=row, column=col + 1, sticky="ew",
                 padx=4, pady=2)
 
+        def date(row, col, label, key):
+            ttk.Label(body, text=label).grid(
+                row=row, column=col, sticky="w",
+                padx=4, pady=2)
+            v = tk.StringVar()
+            self.vars[key] = v
+            kit.DateField(body, v).grid(
+                row=row, column=col + 1, sticky="w",
+                padx=4, pady=2)
+
         entry(0, 0, "Claim ref*", "claim_ref")
         combo(0, 2, "Status*", "status", CLAIM_STATUSES)
         combo(1, 0, "Claimant type*", "claimant_type",
                  CLAIMANT_TYPES)
-        entry(1, 2, "Claimant id*", "claimant_id")
+        ttk.Label(body, text="Claimant id*").grid(
+            row=1, column=2, sticky="w", padx=4, pady=2)
+        self.vars["claimant_id"] = cid_var = tk.StringVar()
+        self.cid_field = kit.ChoiceField(
+            body, cid_var, choices=(), blank=True, editable=True,
+            width=30, on_change=self._claimant_picked)
+        self.cid_field.grid(row=1, column=3, sticky="ew",
+                            padx=4, pady=2)
         entry(2, 0, "Claimant name", "claimant_name")
         entry(2, 2, "Department", "department")
         entry(3, 0, "Title*", "title", width=48)
@@ -523,8 +556,8 @@ class ClaimEditor:
         combo(4, 2, "Payment method*", "payment_method",
                  PAYMENT_METHODS)
         entry(5, 0, "Purpose", "purpose", width=48)
-        entry(6, 0, "Incurred from", "incurred_from")
-        entry(6, 2, "Incurred to", "incurred_to")
+        date(6, 0, "Incurred from", "incurred_from")
+        date(6, 2, "Incurred to", "incurred_to")
 
         flags = ttk.LabelFrame(body, text="Flags")
         flags.grid(row=7, column=0, columnspan=4,
@@ -549,18 +582,30 @@ class ClaimEditor:
             self.texts[key] = t
             row += 1
 
-        bar = ttk.Frame(self.win)
-        bar.pack(fill="x", padx=12, pady=(0, 10))
-        ttk.Button(bar, text="Save",
+        ttk.Button(footer, text="Save",
                     command=self._save).pack(side="right",
                                                padx=4)
-        ttk.Button(bar, text="Cancel",
+        ttk.Button(footer, text="Cancel",
                     command=self.win.destroy).pack(side="right")
 
         self.vars["claimant_type"].set(DEFAULT_CLAIMANT_TYPE)
         self.vars["category"].set(DEFAULT_CATEGORY)
         self.vars["payment_method"].set(DEFAULT_PAYMENT_METHOD)
         self.vars["status"].set(DEFAULT_CLAIM_STATUS)
+        self._claimant_type_changed()
+        self.vars["claimant_type"].trace_add(
+            "write", lambda *_: self._claimant_type_changed())
+
+    def _claimant_type_changed(self) -> None:
+        ctype = self.vars["claimant_type"].get()
+        self._claimant_names = dict(_claimant_choices(ctype, names=True))
+        self.cid_field.set_choices(_claimant_choices(ctype))
+
+    def _claimant_picked(self, value: str) -> None:
+        # A picked staff member / pupil fills the name when it is empty.
+        name = self._claimant_names.get(value)
+        if name and not self.vars["claimant_name"].get().strip():
+            self.vars["claimant_name"].set(name)
 
     def _load(self) -> None:
         c = self.claim
@@ -610,7 +655,7 @@ class LineEditor:
         self.win.title(
             f"Edit line #{line.line_id}"
             if line else f"New line for claim #{claim_id}")
-        self.win.geometry("720x600")
+        self.win.geometry("820x420")
         self.win.transient(parent); self.win.after_idle(self.win.grab_set)
         self._build()
         if line:
@@ -646,17 +691,32 @@ class LineEditor:
                 row=row, column=col + 1, sticky="ew",
                 padx=4, pady=2)
 
-        entry(0, 0, "Incurred on*", "incurred_on")
+        def number(row, col, label, key, increment, to=99999):
+            ttk.Label(body, text=label).grid(
+                row=row, column=col, sticky="w",
+                padx=4, pady=2)
+            v = tk.StringVar()
+            self.vars[key] = v
+            kit.NumberField(body, v, increment=increment,
+                            to=to, width=10).grid(
+                row=row, column=col + 1, sticky="w",
+                padx=4, pady=2)
+
+        ttk.Label(body, text="Incurred on*").grid(
+            row=0, column=0, sticky="w", padx=4, pady=2)
+        self.vars["incurred_on"] = tk.StringVar()
+        kit.DateField(body, self.vars["incurred_on"]).grid(
+            row=0, column=1, sticky="w", padx=4, pady=2)
         combo(0, 2, "Category*", "category", CATEGORIES)
         entry(1, 0, "Description", "description", width=48)
         entry(2, 0, "Supplier", "supplier")
         entry(2, 2, "Receipt ref", "receipt_ref")
-        entry(3, 0, "Quantity", "quantity")
-        entry(3, 2, "Unit amount (£)", "unit_amount")
-        entry(4, 0, "Mileage miles", "mileage_miles")
-        entry(4, 2, "Mileage rate (£/mile)",
-                 "mileage_rate")
-        entry(5, 0, "VAT amount (£)", "vat_amount")
+        number(3, 0, "Quantity", "quantity", 1)
+        number(3, 2, "Unit amount (£)", "unit_amount", 0.01)
+        number(4, 0, "Mileage miles", "mileage_miles", 0.1)
+        number(4, 2, "Mileage rate (£/mile)",
+                 "mileage_rate", 0.01, to=10)
+        number(5, 0, "VAT amount (£)", "vat_amount", 0.01)
 
         ttk.Label(body, text="Notes").grid(
             row=6, column=0, sticky="nw",
@@ -737,6 +797,63 @@ def _prompt_text(parent, title: str, *,
                 command=win.destroy).pack(side="right")
     win.wait_window()
     return result["value"]
+
+
+def _prompt_staff(parent, title: str, *,
+                   initial: str = "") -> str | None:
+    """Pick a member of staff by name (the field stores the name)."""
+    win = tk.Toplevel(parent)
+    win.title(title); win.geometry("480x140")
+    win.transient(parent); win.after_idle(win.grab_set)
+    ttk.Label(win, text=title).pack(anchor="w", padx=8, pady=8)
+    var = tk.StringVar(value=initial)
+    kit.StaffPicker(win, var, by="name").pack(fill="x", padx=8)
+    result: dict = {"value": None}
+
+    def ok() -> None:
+        result["value"] = var.get().strip()
+        win.destroy()
+
+    bar = ttk.Frame(win)
+    bar.pack(fill="x", padx=8, pady=12)
+    ttk.Button(bar, text="OK", command=ok).pack(side="right",
+                                                    padx=4)
+    ttk.Button(bar, text="Cancel",
+                command=win.destroy).pack(side="right")
+    win.wait_window()
+    return result["value"]
+
+
+def _claimant_choices(claimant_type: str, *,
+                      names: bool = False) -> list[tuple[str, str]]:
+    """Who can be picked as the claimant: staff ids for "Staff", pupil
+    ids for "Student", both when no type is chosen; other claimant types
+    (governors, contractors…) are typed. ``names=True`` gives
+    ``(id, full name)`` for filling the claimant name."""
+    out: list[tuple[str, str]] = []
+    if claimant_type in ("", "Staff"):
+        try:
+            from education_system.systems.primary.domain.staff import staff
+            for s in sorted(staff.list_staff(active_only=False),
+                            key=lambda s: (s.last_name.lower(),
+                                           s.first_name.lower())):
+                out.append((s.staff_id, s.full_name if names
+                            else f"{s.full_name} ({s.staff_id})"))
+        except Exception:  # noqa: BLE001 - typed id still works
+            logger.exception("staff list for claimant failed")
+    if claimant_type in ("", "Student"):
+        try:
+            from education_system.systems.primary.domain.learners.pupils import (
+                pupils,
+            )
+            for p in sorted(pupils.list_pupils(include_off_roll=True),
+                            key=lambda p: (p.last_name.lower(),
+                                           p.first_name.lower())):
+                out.append((p.pupil_id, p.full_name if names
+                            else f"{p.last_name}, {p.first_name} ({p.pupil_id})"))
+        except Exception:  # noqa: BLE001
+            logger.exception("pupil list for claimant failed")
+    return out
 
 
 def _prompt_choice(parent, title: str, options: list[str], *,

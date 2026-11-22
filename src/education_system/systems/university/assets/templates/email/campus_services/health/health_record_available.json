@@ -1,0 +1,15 @@
+{
+    "subject": "Health Portal - Your $record_type is ready to view",
+    "body": "Dear $patient_name,\n\nThe health record you asked for ($record_type, $date_range) is ready.\n\nFor your privacy we do not send health information by e-mail. Sign in to the Health Portal to read it:\n\n$portal_link\n\nIf you did not ask for this record, contact the Health Centre straight away on health@university.edu.\n\nBest regards,\nUniversity Health Centre\n\n$signature",
+    "variables": {
+        "portal_link": {
+            "default": "Health Portal > My Health Records"
+        },
+        "date_range": {
+            "default": "all dates"
+        },
+        "signature": {
+            "default": ""
+        }
+    }
+}

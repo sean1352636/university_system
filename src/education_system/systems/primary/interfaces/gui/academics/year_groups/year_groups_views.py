@@ -5,6 +5,7 @@ from __future__ import annotations
 import functools
 import logging
 import tkinter as tk
+import types
 from tkinter import messagebox, ttk
 from typing import Any, Callable
 
@@ -14,6 +15,8 @@ from education_system.systems.primary.domain.academics.year_groups import (
 from education_system.systems.primary.domain.learners.pupils.pupils import (
     ValidationError, YEAR_GROUPS,
 )
+from education_system.platform.delivery.gui.parented_dialogs import make_toplevel
+from education_system.systems.primary.interfaces.gui import kit
 
 logger = logging.getLogger(__name__)
 
@@ -45,10 +48,9 @@ def _safe_view(func: Callable[..., None]) -> Callable[..., None]:
 
 def _edit_dialog(host, year_group: str,
                  existing: data.YearGroup | None) -> dict[str, str] | None:
-    dlg = tk.Toplevel(host.root)
+    dlg = make_toplevel(host.root)
     dlg.title(f"Year {year_group}")
-    dlg.transient(host.root)
-    dlg.geometry("420x260")
+    dlg.geometry("520x260")
     dlg.update_idletasks()
     try:
         dlg.wait_visibility()
@@ -71,10 +73,10 @@ def _edit_dialog(host, year_group: str,
 
     ttk.Label(frm, text="Head of year:").grid(row=1, column=0, sticky="w",
                                                pady=2)
-    ttk.Entry(frm, textvariable=head_var, width=32).grid(
+    kit.StaffPicker(frm, head_var, by="name", width=36).grid(
         row=1, column=1, sticky="ew", pady=2)
     ttk.Label(frm, text="Capacity:").grid(row=2, column=0, sticky="w", pady=2)
-    ttk.Entry(frm, textvariable=cap_var, width=10).grid(
+    kit.NumberField(frm, cap_var, from_=0, to=1000).grid(
         row=2, column=1, sticky="w", pady=2)
     ttk.Label(frm, text="Notes:").grid(row=3, column=0, sticky="nw", pady=2)
     ttk.Entry(frm, textvariable=notes_var, width=32).grid(
@@ -106,10 +108,18 @@ def _edit_dialog(host, year_group: str,
 @_safe_view
 def open_year_groups(host) -> None:
     logger.debug("GUI: open_year_groups")
-    host._clear_content()
-    root = host.content_frame
-    ttk.Label(root, text="Year Groups", font=("", 16, "bold")).pack(
-        anchor="w", pady=(0, 8))
+    kit.show_page(host, "Year Groups", lambda parent: _draw_year_groups(parent, host))
+
+
+def _draw_year_groups(root, main_host) -> None:
+    kit.page_heading(root, "Year Groups",
+                     "Head of year, capacity and pupil numbers for each year group.")
+    # The helpers below take a "host" for their pop-up parent and status
+    # line: use this page's window (the main window or a pop-out).
+    host = types.SimpleNamespace(
+        root=root.winfo_toplevel(),
+        status_var=getattr(main_host, "status_var", None) or tk.StringVar(master=root),
+    )
 
     bar = ttk.Frame(root)
     bar.pack(fill="x", pady=(0, 6))
@@ -123,15 +133,11 @@ def open_year_groups(host) -> None:
                command=lambda: _refresh()).pack(side="left", padx=2)
 
     cols = ("year", "head", "capacity", "pupils", "notes")
-    tree = ttk.Treeview(root, columns=cols, show="headings", height=10)
-    for c, label, w in [
+    tree = kit.tree(root, [
         ("year", "Year", 70), ("head", "Head of Year", 200),
         ("capacity", "Capacity", 90), ("pupils", "Pupils", 90),
         ("notes", "Notes", 320),
-    ]:
-        tree.heading(c, text=label)
-        tree.column(c, width=w, anchor="w")
-    tree.pack(fill="both", expand=True)
+    ], height=10, stretch=("notes",))
 
     def _refresh() -> None:
         for i in tree.get_children():

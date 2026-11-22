@@ -8,6 +8,13 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+
+def post_booking_payment_to_finance(*args, **kwargs):
+    """Finance posting shared with the CLIs (imported lazily: cinema_service
+    imports this package's constants, so a top-level import is circular)."""
+    from education_system.systems.university.plugins.campus_commerce.domain.cinema.services import cinema_service
+    return cinema_service.post_booking_payment_to_finance(*args, **kwargs)
+
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog, simpledialog
 from education_system.systems.university.infrastructure.database.db import sqlite3
@@ -349,13 +356,11 @@ def show_payment_page(self, screening, movie):
                     messagebox.showerror(_t("cinema.common.error"), f"Insufficient balance.\nRequired: £{final_total:.2f}\nAvailable: £{balance:.2f}")
                     return
 
-                # Process student account payment
-                result = process_student_finance_account_payment(
+                # Debit the student account through the shared cinema service
+                result = post_booking_payment_to_finance(
+                    booking_ref, final_total, "Student Account",
                     student_id=student_id,
-                    amount=final_total,
                     description=f"Cinema booking - {movie[1]}",
-                    transaction_source="Cinema",
-                    transaction_ref=booking_ref
                 )
                 if not result.get('success'):
                     messagebox.showerror(_t("cinema.common.error"), f"Payment failed: {result.get('message', 'Unknown error')}")
@@ -399,22 +404,14 @@ def show_payment_page(self, screening, movie):
 
             conn.commit()
 
-            # Record revenue to central finance system
-            if FINANCE_AVAILABLE and payment != "Student Account":
-                # Student account already recorded via process_student_finance_account_payment
-                try:
-                    record_payment_to_finance(
-                        student_id=self.booking_student_id or "GUEST",
-                        amount=final_total,
-                        payment_method=payment,
-                        transaction_source="Cinema",
-                        transaction_ref=booking_ref,
-                        currency="GBP",
-                        status="completed",
-                        notes=f"Cinema booking: {movie[1]}"
-                    )
-                except Exception:
-                    logger.debug("Suppressed exception", exc_info=True)
+            # Record the cash/card payment through the shared cinema service
+            # (student account bookings were debited above)
+            if payment != "Student Account":
+                post_booking_payment_to_finance(
+                    booking_ref, final_total, payment,
+                    student_id=self.booking_student_id,
+                    description=f"Cinema booking: {movie[1]}",
+                )
 
             # Get seats for receipt
             cursor_seats = conn.cursor()

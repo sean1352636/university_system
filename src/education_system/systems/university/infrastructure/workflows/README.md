@@ -40,7 +40,7 @@ workflows/
 ### 1. Using Templates
 
 ```python
-from university_system.infrastructure.workflows import (
+from education_system.systems.university.infrastructure.workflows import (
     get_workflow_engine,
     create_scholarship_workflow
 )
@@ -72,7 +72,7 @@ print(f"Status: {instance.status.value}")
 ### 2. Creating Custom Workflows
 
 ```python
-from university_system.infrastructure.workflows import (
+from education_system.systems.university.infrastructure.workflows import (
     Workflow,
     ApprovalStep,
     AutomatedStep,
@@ -144,7 +144,7 @@ engine.reject_step(
 Multi-step approval for scholarship applications with GPA checks and financial aid review.
 
 ```python
-from university_system.infrastructure.workflows import create_scholarship_workflow
+from education_system.systems.university.infrastructure.workflows import create_scholarship_workflow
 
 workflow = create_scholarship_workflow()
 
@@ -163,7 +163,7 @@ workflow = create_scholarship_workflow()
 Employee leave request approval with conditional steps based on duration.
 
 ```python
-from university_system.infrastructure.workflows import create_leave_request_workflow
+from education_system.systems.university.infrastructure.workflows import create_leave_request_workflow
 
 workflow = create_leave_request_workflow()
 
@@ -180,7 +180,7 @@ workflow = create_leave_request_workflow()
 Student grade appeal review process with escalation.
 
 ```python
-from university_system.infrastructure.workflows import create_grade_appeal_workflow
+from education_system.systems.university.infrastructure.workflows import create_grade_appeal_workflow
 
 workflow = create_grade_appeal_workflow()
 
@@ -197,7 +197,7 @@ workflow = create_grade_appeal_workflow()
 New course creation approval through curriculum committee.
 
 ```python
-from university_system.infrastructure.workflows import create_course_approval_workflow
+from education_system.systems.university.infrastructure.workflows import create_course_approval_workflow
 
 workflow = create_course_approval_workflow()
 
@@ -214,7 +214,7 @@ workflow = create_course_approval_workflow()
 Budget request approval with thresholds.
 
 ```python
-from university_system.infrastructure.workflows import create_budget_approval_workflow
+from education_system.systems.university.infrastructure.workflows import create_budget_approval_workflow
 
 workflow = create_budget_approval_workflow()
 
@@ -296,7 +296,7 @@ NotificationStep(
 ### System Health
 
 ```python
-from university_system.infrastructure.workflows import get_workflow_monitor
+from education_system.systems.university.infrastructure.workflows import get_workflow_monitor
 
 monitor = get_workflow_monitor()
 health = monitor.get_workflow_health()
@@ -342,7 +342,7 @@ for bottleneck in bottlenecks:
 ### Completion Rate
 
 ```python
-from university_system.infrastructure.workflows import get_workflow_analytics
+from education_system.systems.university.infrastructure.workflows import get_workflow_analytics
 
 analytics = get_workflow_analytics()
 
@@ -386,57 +386,7 @@ print(f"Trend: {stats['trend']}")  # improving/declining/stable
 
 ## API Endpoints
 
-### Start Workflow
-
-```http
-POST /api/v1/workflows/start
-Content-Type: application/json
-
-{
-    "workflow_id": "template_scholarship",
-    "context": {
-        "student_id": "STU001",
-        "gpa": 3.8
-    },
-    "initiated_by": "admin"
-}
-```
-
-### Approve Step
-
-```http
-POST /api/v1/workflows/{instance_id}/approve
-Content-Type: application/json
-
-{
-    "instance_id": "abc-123",
-    "step_id": "dept_head_approval",
-    "approver": "john.smith",
-    "comments": "Approved"
-}
-```
-
-### Get Pending Approvals
-
-```http
-GET /api/v1/workflows/approvals/pending?approver=department_head
-```
-
-### Get Workflow Health
-
-```http
-GET /api/v1/workflows/monitoring/health
-```
-
-### Get Analytics
-
-```http
-GET /api/v1/workflows/analytics/completion-rate?days=30
-GET /api/v1/workflows/analytics/avg-time?days=30
-GET /api/v1/workflows/analytics/approver/department_head?days=30
-```
-
-See full API documentation at `/docs` when server is running.
+This package has no HTTP routes. The earlier `/api/v1/workflows/*` routes were not carried over when the university API was rebuilt, so use the Python API above.
 
 ## Database Schema
 
@@ -533,16 +483,6 @@ context = {
 }
 ```
 
-## Examples
-
-See `examples/workflow_demo.py` for comprehensive examples of:
-
-- Creating and using workflow templates
-- Handling approvals
-- Monitoring active workflows
-- Analyzing workflow performance
-- Detecting bottlenecks
-
 ## Troubleshooting
 
 ### Workflow Not Progressing
@@ -598,14 +538,13 @@ Workflow engine automatically integrates with the notification service:
 Integrate email notifications:
 
 ```python
-from university_system.infrastructure.email import get_email_service
+from education_system.systems.university.infrastructure.email import send_email
 
 def notify_approver(approval_request):
-    email_service = get_email_service()
-    email_service.send_email(
-        to=approval_request.approver_email,
-        subject=f"Approval Required: {approval_request.workflow_name}",
-        body=render_approval_template(approval_request)
+    send_email(
+        approval_request.approver_email,
+        f"Approval Required: {approval_request.workflow_name}",
+        render_approval_template(approval_request),
     )
 ```
 
@@ -631,9 +570,7 @@ MIT License - See project root for details.
 
 For issues or questions:
 1. Check this documentation
-2. See `examples/workflow_demo.py`
-3. Review API docs at `/docs`
-4. Check GitHub issues
+2. Check GitHub issues
 
 ---
 

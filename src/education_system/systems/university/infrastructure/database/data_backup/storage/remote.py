@@ -3,8 +3,6 @@
 import ftplib
 import os
 
-import paramiko
-
 from education_system.systems.university.infrastructure.logging.log_config import configure_logging
 
 logger = configure_logging(name=__name__)
@@ -32,6 +30,10 @@ def upload_to_ftp(file_path: str, host: str, username: str, password: str, remot
 
 def upload_to_sftp(file_path: str, host: str, username: str, password: str, remote_path: str) -> bool:
     """Upload file to SFTP server"""
+    # Imported here: paramiko (and the invoke package it pulls in) costs
+    # every window that touches the backup helpers a long import otherwise.
+    import paramiko
+
     try:
         with paramiko.SSHClient() as ssh:
             ssh.load_system_host_keys()

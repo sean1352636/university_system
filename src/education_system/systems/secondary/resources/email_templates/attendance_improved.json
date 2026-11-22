@@ -1,0 +1,35 @@
+{
+  "name": "attendance_improved",
+  "description": "Letter thanking the family when attendance improves.",
+  "subject": "Attendance improving - {pupil_name}",
+  "body": [
+    "Dear {recipient_name},",
+    "",
+    "We are pleased to tell you that {first_name}'s attendance has improved.",
+    "",
+    "{first_name}'s attendance from {period} is {attendance_pct}%. {first_name} has missed {sessions_missed} sessions (half-days), {unauthorised} of them unauthorised.",
+    "",
+    "{details}",
+    "",
+    "Thank you for your support. Please keep it up - every day counts.",
+    "",
+    "Yours sincerely,",
+    "{sender_name}",
+    "{school_name}"
+  ],
+  "placeholders": {
+    "recipient_name": "The contact's name",
+    "pupil_name": "The pupil's preferred first name and surname",
+    "first_name": "The pupil's preferred first name",
+    "attendance_pct": "Attendance this school year (%)",
+    "sessions_missed": "Sessions missed this school year",
+    "unauthorised": "Unauthorised sessions this school year",
+    "period": "The dates the figures cover",
+    "details": "Meeting date, the agreed target and any extra note",
+    "sender_name": "The attendance lead / key worker",
+    "school_name": "The school's name"
+  },
+  "defaults": {
+    "school_name": "Secondary School"
+  }
+}

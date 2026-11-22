@@ -141,7 +141,7 @@ class RememberMeManager:
             # Log token creation
             conn.execute("""
                 INSERT INTO activity_log (
-                    user_id, username, action, details, timestamp, ip_address, module
+                    user_id, username, action, details, timestamp, ip_address, entity_type
                 ) VALUES (?, ?, ?, ?, ?, ?, ?)
             """, (
                 user_id, f'user_{user_id}', 'remember_me_token_created',
@@ -213,12 +213,12 @@ class RememberMeManager:
                 # Log security event
                 conn.execute("""
                     INSERT INTO activity_log (
-                        user_id, username, action, details, timestamp, ip_address, module, status
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                        user_id, username, action, details, timestamp, ip_address, entity_type
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?)
                 """, (
                     user_id, f'user_{user_id}', 'remember_me_theft_detected',
-                    'Device fingerprint mismatch - possible token theft detected',
-                    datetime.now().isoformat(), ip_address or 'unknown', 'remember_me', 'security_alert'
+                    'Security alert: device fingerprint mismatch - possible token theft detected',
+                    datetime.now().isoformat(), ip_address or 'unknown', 'remember_me'
                 ))
 
                 return None
@@ -285,7 +285,7 @@ class RememberMeManager:
             # Log revocation
             conn.execute("""
                 INSERT INTO activity_log (
-                    user_id, username, action, details, timestamp, module
+                    user_id, username, action, details, timestamp, entity_type
                 ) VALUES (?, ?, ?, ?, ?, ?)
             """, (
                 user_id, f'user_{user_id}', 'remember_me_tokens_revoked',

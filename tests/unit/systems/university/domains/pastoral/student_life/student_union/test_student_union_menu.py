@@ -6,10 +6,10 @@ Tests menu navigation and display functionality.
 import pytest
 from unittest.mock import Mock, patch, call
 
-from education_system.systems.university.domains.pastoral.domain.student_life.student_union.services import menu
+from education_system.systems.university.domains.student_life.domain.student_life.student_union.services import menu
 
 # The menu module path prefix used for patching imported names
-_MENU_MOD = 'education_system.systems.university.domains.pastoral.domain.student_life.student_union.services.menu'
+_MENU_MOD = 'education_system.systems.university.domains.student_life.domain.student_life.student_union.services.menu'
 
 
 @pytest.fixture

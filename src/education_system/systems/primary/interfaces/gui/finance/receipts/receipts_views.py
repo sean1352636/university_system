@@ -23,6 +23,7 @@ from education_system.systems.primary.domain.finance.receipts.receipts import (
     STATUSES,
     ValidationError,
 )
+from education_system.systems.primary.interfaces.gui import kit
 
 logger = logging.getLogger(__name__)
 
@@ -32,13 +33,23 @@ WIN_MINSIZE = (1200, 800)
 
 def open_receipts_window(parent=None) -> None:
     data.init_db()
-    master = getattr(parent, "root", parent)
-    win = tk.Toplevel(master) if master is not None else tk.Tk()
-    win.title(f"Receipts — {branding.SYSTEM_NAME}")
-    win.geometry(WIN_GEOMETRY)
-    win.minsize(*WIN_MINSIZE)
-    nb = ttk.Notebook(win)
-    nb.pack(fill="both", expand=True, padx=10, pady=10)
+    if parent is None:
+        win = tk.Tk()
+        win.title(f"Receipts — {branding.SYSTEM_NAME}")
+        win.geometry(WIN_GEOMETRY)
+        win.minsize(*WIN_MINSIZE)
+        frame = ttk.Frame(win, padding=10)
+        frame.pack(fill="both", expand=True)
+        _draw_receipts(frame)
+        return
+    kit.show_page(parent, "Receipts", _draw_receipts)
+
+
+def _draw_receipts(parent) -> None:
+    kit.page_heading(parent, "Receipts",
+                     "Issue, void and import receipts for money taken in.")
+    nb = ttk.Notebook(parent)
+    nb.pack(fill="both", expand=True)
     ReceiptsTab(nb)
     ImportTab(nb)
     SummaryTab(nb)
@@ -73,7 +84,8 @@ class ReceiptsTab:
         self.q_e.pack(side="left", padx=(2, 10))
         self.q_e.bind("<Return>", lambda _e: self.refresh())
         ttk.Label(bar, text="Student:").pack(side="left")
-        self.f_student = ttk.Entry(bar, width=12)
+        self.f_student = kit.PupilPicker(bar, include_off_roll=True,
+                                         width=30)
         self.f_student.pack(side="left", padx=(2, 10))
         ttk.Label(bar, text="Status:").pack(side="left")
         self.f_status = ttk.Combobox(bar, values=("",) + STATUSES,
@@ -86,10 +98,10 @@ class ReceiptsTab:
         self.f_method.current(0)
         self.f_method.pack(side="left", padx=(2, 10))
         ttk.Label(bar, text="From:").pack(side="left")
-        self.f_from = ttk.Entry(bar, width=12)
+        self.f_from = kit.DateField(bar)
         self.f_from.pack(side="left", padx=(2, 6))
         ttk.Label(bar, text="To:").pack(side="left")
-        self.f_to = ttk.Entry(bar, width=12)
+        self.f_to = kit.DateField(bar)
         self.f_to.pack(side="left", padx=(2, 10))
         ttk.Button(bar, text="Apply",
                     command=self.refresh).pack(side="left", padx=(8, 4))
@@ -153,11 +165,11 @@ class ReceiptsTab:
 
     def _clear(self) -> None:
         self.q_e.delete(0, "end")
-        self.f_student.delete(0, "end")
+        self.f_student.set("")
         self.f_status.current(0)
         self.f_method.current(0)
-        self.f_from.delete(0, "end")
-        self.f_to.delete(0, "end")
+        self.f_from.set("")
+        self.f_to.set("")
         self.refresh()
 
     def refresh(self) -> None:
@@ -450,12 +462,11 @@ class ReceiptDialog:
             r += 1
 
         label("Issued date:")
-        self.date_e = ttk.Entry(form, width=14)
-        self.date_e.insert(0, self.existing.issued_date
-                                if self.existing
-                                else _date.today().isoformat())
+        self.date_e = kit.DateField(form, tk.StringVar(
+            value=self.existing.issued_date if self.existing
+            else _date.today().isoformat()))
         if self.is_issued:
-            self.date_e.configure(state="disabled")
+            self.date_e.state_disabled(True)
         self.date_e.grid(row=r, column=1, sticky="w", padx=6)
         r += 1
 
@@ -508,9 +519,9 @@ class ReceiptDialog:
         r += 1
 
         label("Received by:")
-        self.by_e = ttk.Entry(form, width=30)
-        if self.existing and self.existing.received_by:
-            self.by_e.insert(0, self.existing.received_by)
+        self.by_e = kit.StaffPicker(form, tk.StringVar(
+            value=(self.existing.received_by or "") if self.existing
+            else ""), by="name")
         self.by_e.grid(row=r, column=1, sticky="w", padx=6)
         r += 1
 
@@ -716,12 +727,14 @@ class LineDialog:
         ttk.Label(form,
                    text=f"Amount ({CURRENCY_SYMBOL}):").grid(
             row=r, column=0, sticky="e", pady=3)
-        self.amt_e = ttk.Entry(form, width=12)
+        amt_init = ""
         if line:
             try:
-                self.amt_e.insert(0, f"{float(line.get('amount', 0)):.2f}")
+                amt_init = f"{float(line.get('amount', 0)):.2f}"
             except (TypeError, ValueError):
-                self.amt_e.insert(0, str(line.get("amount", "")))
+                amt_init = str(line.get("amount", ""))
+        self.amt_e = kit.NumberField(form, tk.StringVar(value=amt_init),
+                                     increment=0.01, to=99999, width=12)
         self.amt_e.grid(row=r, column=1, sticky="w", padx=6)
         r += 1
 
@@ -783,6 +796,42 @@ class LineDialog:
 
 # ══ Import tab ═════════════════════════════════════════════════════
 
+def _topup_choices() -> list[tuple[str, str]]:
+    """Dinner money top-ups (ledger credits) that can be receipted."""
+    try:
+        from education_system.systems.primary.domain.finance.dinner_money import (
+            dinner_money as _dm,
+        )
+        rows = _dm.list_entries(limit=500)
+    except Exception:  # noqa: BLE001 - a typed id still works
+        logger.exception("dinner money list for import failed")
+        return []
+    out = []
+    for e, pupil in rows:
+        if e.amount_pence <= 0:
+            continue
+        who = pupil.full_name if pupil else e.pupil_id
+        out.append((str(e.entry_id),
+                    f"#{e.entry_id} {e.entry_date} {who} {e.amount_display}"))
+    return out
+
+
+def _trip_payment_choices() -> list[tuple[str, str]]:
+    """Cleared trip payments (the only ones that can be receipted)."""
+    try:
+        from education_system.systems.primary.domain.finance.trips import (
+            trips as _trips,
+        )
+        rows = _trips.list_payments(status="Cleared")
+    except Exception:  # noqa: BLE001
+        logger.exception("trip payment list for import failed")
+        return []
+    return [(str(p.payment_id),
+             f"#{p.payment_id} {p.paid_on} booking #{p.booking_id} "
+             f"{_money(p.amount)}")
+            for p in rows]
+
+
 class ImportTab:
     def __init__(self, nb: ttk.Notebook) -> None:
         self.frame = ttk.Frame(nb)
@@ -800,16 +849,17 @@ class ImportTab:
                    foreground="#444", justify="left").pack(anchor="w",
                                                               pady=(0, 12))
 
-        # Fee payment import.
-        fee = ttk.LabelFrame(outer, text="From a fee payment")
+        # Dinner money top-up import.
+        fee = ttk.LabelFrame(outer, text="From a dinner money top-up")
         fee.pack(fill="x", pady=6)
-        ttk.Label(fee, text="Fee payment ID:").grid(
+        ttk.Label(fee, text="Dinner money entry ID:").grid(
             row=0, column=0, sticky="e", padx=6, pady=4)
-        self.fee_e = ttk.Entry(fee, width=10)
+        self.fee_e = kit.ChoiceField(fee, choices=_topup_choices(),
+                                     blank=True, editable=True, width=44)
         self.fee_e.grid(row=0, column=1, sticky="w", padx=6, pady=4)
         ttk.Label(fee, text="Received by:").grid(
             row=0, column=2, sticky="e", padx=6, pady=4)
-        self.fee_by_e = ttk.Entry(fee, width=20)
+        self.fee_by_e = kit.StaffPicker(fee, by="name", width=28)
         self.fee_by_e.grid(row=0, column=3, sticky="w", padx=6, pady=4)
         self.fee_issued = tk.BooleanVar(value=True)
         ttk.Checkbutton(fee, text="Issue immediately",
@@ -824,11 +874,12 @@ class ImportTab:
         trip.pack(fill="x", pady=6)
         ttk.Label(trip, text="Trip payment ID:").grid(
             row=0, column=0, sticky="e", padx=6, pady=4)
-        self.trip_e = ttk.Entry(trip, width=10)
+        self.trip_e = kit.ChoiceField(trip, choices=_trip_payment_choices(),
+                                      blank=True, editable=True, width=44)
         self.trip_e.grid(row=0, column=1, sticky="w", padx=6, pady=4)
         ttk.Label(trip, text="Received by:").grid(
             row=0, column=2, sticky="e", padx=6, pady=4)
-        self.trip_by_e = ttk.Entry(trip, width=20)
+        self.trip_by_e = kit.StaffPicker(trip, by="name", width=28)
         self.trip_by_e.grid(row=0, column=3, sticky="w", padx=6, pady=4)
         self.trip_issued = tk.BooleanVar(value=True)
         ttk.Checkbutton(trip, text="Issue immediately",
@@ -842,10 +893,10 @@ class ImportTab:
         pid = self.fee_e.get().strip()
         if not pid.isdigit():
             messagebox.showerror("Import",
-                                  "Fee payment ID must be a number.")
+                                  "Dinner money entry ID must be a number.")
             return
         try:
-            r = data.receipt_from_fee_payment(
+            r = data.receipt_from_dinner_money_topup(
                 int(pid),
                 received_by=self.fee_by_e.get().strip() or None,
                 issued=self.fee_issued.get())
@@ -859,8 +910,8 @@ class ImportTab:
             "Done",
             f"Created receipt {r.receipt_number} for "
             f"{_money(r.total_amount)} ({r.status})")
-        self.fee_e.delete(0, "end")
-        self.fee_by_e.delete(0, "end")
+        self.fee_e.set("")
+        self.fee_by_e.set("")
 
     def _import_trip(self) -> None:
         pid = self.trip_e.get().strip()
@@ -883,8 +934,8 @@ class ImportTab:
             "Done",
             f"Created receipt {r.receipt_number} for "
             f"{_money(r.total_amount)} ({r.status})")
-        self.trip_e.delete(0, "end")
-        self.trip_by_e.delete(0, "end")
+        self.trip_e.set("")
+        self.trip_by_e.set("")
 
 
 # ══ Summary tab ════════════════════════════════════════════════════
@@ -930,14 +981,14 @@ class SummaryTab:
         L.append("")
         L.append("By payment method (issued)")
         L.append("--------------------------")
-        for m in PAYMENT_METHODS:
+        for m in s.by_method:
             v = s.by_method.get(m, 0.0)
             if v:
                 L.append(f"  {m:<18} : {_money(v)}")
         L.append("")
         L.append("By line kind (issued)")
         L.append("---------------------")
-        for k in LINE_KINDS:
+        for k in sorted(s.by_kind, key=lambda k: (k not in LINE_KINDS, k)):
             v = s.by_kind.get(k, 0.0)
             if v:
                 L.append(f"  {k:<10} : {_money(v)}")

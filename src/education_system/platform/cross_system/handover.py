@@ -297,6 +297,14 @@ PRIMARY_TO_SECONDARY = HandoverSpec(
         HandoverField("medical_requirements",
                       "Medical and accessibility requirements, care plans",
                       _S),
+        # Routine: written by the Year 6 teacher for the Year 7 team to read
+        # (strengths, interests, worries, friendship groups, enhanced
+        # transition). Anything sensitive belongs in send_provision or the
+        # safeguarding channel, not here.
+        HandoverField("transition_report",
+                      "Year 6 transition report — strengths, interests, "
+                      "learning style, worries, friendships, all about me, "
+                      "teacher comments and enhanced-transition flag", _R),
         HandoverField("safeguarding_reference",
                       "Reference to the safeguarding handover", _X),
     ) + _SUPPORT_FIELDS,
@@ -456,12 +464,39 @@ SIXTH_FORM_TO_UNIVERSITY = HandoverSpec(
                       "The learner's consent record for this handover", _R,
                       required=True),
         HandoverField("confirmed_destination",
-                      "Confirmed institution and course on confirmation",
+                      "Confirmed institution and course on confirmation: "
+                      "which choice placed the learner (Firm, Insurance, "
+                      "Clearing, Adjustment or Extra), the entry year and "
+                      "whether entry is deferred (a gap year)",
                       _R),
+        # Optional, and released only under a consent recorded for exactly
+        # this purpose (the sixth form's "Contextual admissions data"). A
+        # flag is present only when the sixth form holds a real record of
+        # it; nothing is derived, and no area-based band is ever invented.
+        HandoverField("contextual_flags",
+                      "Contextual admissions flags the sixth form holds a "
+                      "record of (care experienced, free school meals, "
+                      "16-19 vulnerable/discretionary bursary, young carer, "
+                      "first generation in HE), with the consent that "
+                      "released them", _S),
+        # What the sender withheld or does not hold, and why — so the
+        # receiver can tell "no consent" and "not approved yet" from "not
+        # recorded", which an absent key alone cannot say.
+        HandoverField("handover_advisories",
+                      "Notes from the sender on fields withheld or not held "
+                      "(unapproved reference, contextual data without "
+                      "consent, deferred entry)", _R),
         HandoverField("safeguarding_reference",
                       "Reference to the safeguarding handover", _X),
     ) + _SUPPORT_FIELDS,
 )
+
+#: Bus event the sixth form publishes when a learner's destination changes
+#: after a handover was sent — the Firm missed and the Insurance confirmed,
+#: or a Clearing / Extra / Adjustment placement. Routing metadata only
+#: (which institution, course, entry year and route); the handover dataset
+#: itself is re-sent through the progression handover, never on this event.
+EVENT_UCAS_HANDOVER_REROUTED = "ucas.handover.rerouted"
 
 
 FE_COLLEGE_TO_UNIVERSITY = HandoverSpec(
@@ -694,6 +729,802 @@ APPRENTICESHIPS_TO_UNIVERSITY = HandoverSpec(
 )
 
 
+# ── Apprenticeships → FE College (the two-way college link) ─────────
+APPRENTICESHIPS_TO_FE_COLLEGE = HandoverSpec(
+    source_system="apprenticeships",
+    destination_system="fe_college",
+    checklist=_POST16_CHECKLIST,
+    notes=(
+        "An apprentice taking an FE course alongside or after the programme "
+        "(off-the-job training, a second qualification, English and maths). "
+        "Dual enrolment by default: the apprenticeship stays open. Creates an "
+        "FE applicant."
+    ),
+    fields=(
+        HandoverField("learner_identity", "Legal name, DOB, ULN", _R, required=True),
+        HandoverField("contact_details", "Learner contact details", _R),
+        HandoverField("standard_completed",
+                      "Apprenticeship standard, level and status", _R),
+        HandoverField("functional_skills",
+                      "English and maths achieved during the programme", _R),
+        HandoverField("prior_learning", "Recognised prior learning", _R),
+        HandoverField("epa_result", "End-Point Assessment grade, if assessed", _R),
+        HandoverField("referral_details", "Requested course, start and referral reason", _R,
+                      required=True),
+        HandoverField("employer_reference", "Employer reference", _S),
+        HandoverField("support_referral", "Learning support needs", _S),
+        HandoverField("safeguarding_reference", "Reference to safeguarding handover", _X),
+    ) + _SUPPORT_FIELDS,
+)
+
+
+# ── Out of the university, back into post-16 study ──────────────────
+UNIVERSITY_TO_FE_COLLEGE = HandoverSpec(
+    source_system="university",
+    destination_system="fe_college",
+    checklist=_POST16_CHECKLIST,
+    notes=(
+        "A university leaver (withdrawn, interrupted or graduated) moving "
+        "into further education — an Access, HNC/HND, professional or "
+        "retraining course. Creates an FE applicant. The university record "
+        "is never closed by the route: its adapter leaves registration to "
+        "the university's own withdrawal process."
+    ),
+    fields=(
+        HandoverField("learner_identity", "Legal name, DOB and university student id", _R,
+                      required=True),
+        HandoverField("contact_details", "Learner contact details", _R),
+        HandoverField("programme_registration",
+                      "Course, year of study, mode and registration status at the "
+                      "university", _R),
+        HandoverField("achieved_qualifications", "Qualifications on entry to university", _R),
+        HandoverField("prior_attainment", "Prior attainment relevant to FE entry", _R),
+        HandoverField("module_credits",
+                      "Credits achieved at the university, for recognised prior "
+                      "learning", _R),
+        HandoverField("referral_details", "Requested course, start and reason for the move",
+                      _R, required=True),
+        HandoverField("support_referral", "Disability / learning support needs", _S),
+        HandoverField("medical_requirements", "Medical and accessibility requirements", _S),
+        HandoverField("handover_consent", "Learner consent record", _R),
+        HandoverField("safeguarding_reference", "Reference to safeguarding handover", _X),
+    ) + _SUPPORT_FIELDS,
+)
+
+UNIVERSITY_TO_SIXTH_FORM = HandoverSpec(
+    source_system="university",
+    destination_system="sixth_form",
+    checklist=_POST16_CHECKLIST,
+    notes=(
+        "Unusual but valid: a learner leaving university to take or retake "
+        "level 3 subjects (a different pathway, or the grades a new course "
+        "needs). Creates a sixth-form applicant; the sixth form decides "
+        "eligibility for 16–19 funding, which the learner may no longer have."
+    ),
+    fields=(
+        HandoverField("learner_identity", "Legal name, DOB and university student id", _R,
+                      required=True),
+        HandoverField("contact_details", "Learner contact details", _R),
+        HandoverField("programme_registration",
+                      "Course and registration status at the university", _R),
+        HandoverField("achieved_qualifications", "Level 3 qualifications already held", _R),
+        HandoverField("prior_attainment", "GCSE and equivalent attainment", _R),
+        HandoverField("transfer_request", "Reason, intended start and subject choices", _R,
+                      required=True),
+        HandoverField("support_referral", "Disability / learning support needs", _S),
+        HandoverField("medical_requirements", "Medical and accessibility requirements", _S),
+        HandoverField("handover_consent", "Learner consent record", _R),
+        HandoverField("safeguarding_reference", "Reference to safeguarding handover", _X),
+    ) + _SUPPORT_FIELDS,
+)
+
+
+# ── Within one phase: a change of institution ───────────────────────
+#
+# Each system here runs ONE institution, so a same-phase move is a learner
+# leaving for another school, college, provider or university in the same
+# phase — or arriving from one. The receiving institution is not in this
+# system's database, so these boundaries never call the destination
+# adapter: ``route_support.transfer_within_phase`` releases the handover,
+# records where the learner went and closes the local record. Calling the
+# destination adapter would have re-registered the learner in the very
+# database they were leaving (and FE's journey-idempotent intake would have
+# handed back the same learner it then closed).
+#
+# ``receiving_institution`` is required on every one: a same-phase move
+# that does not say where the learner went is indistinguishable from a
+# learner who went missing — which, for a school-age child, is a
+# children-missing-education referral, not an admin record.
+
+_IN_PHASE_CHECKLIST: tuple[ChecklistItem, ...] = (
+    _TRANSITION_REPORT,
+    ChecklistItem("records_sent",
+                  "Learner record / common transfer file sent to the "
+                  "receiving institution", "source"),
+    # Same key as every other boundary, but ticked by the source: the
+    # receiver is outside this system and confirms by e-mail or phone.
+    ChecklistItem("documents_received",
+                  "Receiving institution confirmed the records arrived",
+                  "source"),
+    ChecklistItem("arrival_confirmed",
+                  "Receiving institution confirmed the learner has started",
+                  "source"),
+    _SUPPORT_MEETING,
+)
+
+_RECEIVING_INSTITUTION = HandoverField(
+    "receiving_institution",
+    "Name, identifier (URN / UKPRN) and contact at the institution the "
+    "learner is moving to", _R, required=True)
+_MOVE_DETAILS = HandoverField(
+    "move_details", "Reason for the move, leaving date and expected start date", _R,
+    required=True)
+
+
+def _in_phase(system: str, *, notes: str,
+              fields: tuple[HandoverField, ...]) -> HandoverSpec:
+    return HandoverSpec(
+        source_system=system, destination_system=system,
+        checklist=_IN_PHASE_CHECKLIST, creates="external_institution",
+        notes=notes,
+        fields=(_RECEIVING_INSTITUTION, _MOVE_DETAILS) + fields + (
+            HandoverField("safeguarding_reference",
+                          "Reference to the safeguarding handover", _X),
+        ) + _SUPPORT_FIELDS)
+
+
+PRIMARY_TO_PRIMARY = _in_phase(
+    "primary",
+    notes=("In-year or end-of-year move to another primary school. Carries "
+           "what a common transfer file would: identity, guardians, "
+           "attainment, attendance and support."),
+    fields=(
+        HandoverField("child_identity", "Legal name, DOB, UPN", _R, required=True),
+        HandoverField("guardians",
+                      "Parent/guardian relationships and parental responsibility",
+                      _R, required=True),
+        HandoverField("core_assessments", "Reading, writing and mathematics record", _R),
+        HandoverField("ks2_results", "Key Stage 2 results, where taken", _R),
+        HandoverField("attendance_summary", "Attendance and persistent-absence summary", _R),
+        HandoverField("send_provision", "SEND provision, EHCP, access arrangements", _S),
+        HandoverField("support_indicators",
+                      "Pupil Premium, free school meals, LAC/PLAC status", _S),
+        HandoverField("current_interventions", "Interventions in flight", _S),
+        HandoverField("medical_requirements", "Medical requirements and care plans", _S),
+    ),
+)
+
+SECONDARY_TO_SECONDARY = _in_phase(
+    "secondary",
+    notes=("In-year move to another secondary school (house move, managed "
+           "move, parental choice). Exam entries travel so the new school "
+           "can take over or withdraw them before the board deadline."),
+    fields=(
+        HandoverField("student_identity", "Legal name, DOB, UPN", _R, required=True),
+        HandoverField("gcse_entries", "Current GCSE entries — subjects, tiers, boards", _R),
+        HandoverField("gcse_results", "GCSE grades already achieved", _R),
+        HandoverField("attendance_behaviour", "Attendance and behaviour summary", _S),
+        HandoverField("access_arrangements",
+                      "SEND provision and exam access arrangements", _S),
+        HandoverField("support_indicators",
+                      "Pupil Premium, free school meals, LAC/PLAC status", _S),
+        HandoverField("medical_requirements", "Medical requirements and care plans", _S),
+    ),
+)
+
+SIXTH_FORM_TO_SIXTH_FORM = _in_phase(
+    "sixth_form",
+    notes=("Move to another sixth form part-way through a level 3 programme. "
+           "Subjects and exam-board specifications matter most: the new "
+           "provider may not teach the same specification."),
+    fields=(
+        HandoverField("student_identity", "Legal name, DOB", _R, required=True),
+        HandoverField("contact_details", "Learner contact details", _R),
+        HandoverField("current_programme", "Current subjects and study programme", _R),
+        HandoverField("predicted_qualifications", "Predicted grades", _R),
+        HandoverField("achieved_qualifications", "Qualifications already achieved", _R),
+        HandoverField("access_arrangements",
+                      "SEND provision and exam access arrangements", _S),
+        HandoverField("support_indicators", "16–19 bursary and support indicators", _S),
+        HandoverField("medical_requirements", "Medical and accessibility requirements", _S),
+    ),
+)
+
+FE_COLLEGE_TO_FE_COLLEGE = _in_phase(
+    "fe_college",
+    notes=("Move to another FE college. Learning aims and units achieved "
+           "travel so the new college can record prior learning and the "
+           "funding claim is not made twice for the same aim."),
+    fields=(
+        HandoverField("learner_identity", "Legal name, DOB and ULN", _R, required=True),
+        HandoverField("contact_details", "Learner contact details", _R),
+        HandoverField("vocational_profile", "Programme, learning aims and units achieved", _R),
+        HandoverField("prior_attainment", "GCSE and equivalent attainment", _R),
+        HandoverField("prior_learning", "Recognised prior learning", _R),
+        HandoverField("send_support", "SEND provision and reasonable adjustments", _S),
+        HandoverField("support_indicators", "Bursary and learner-support indicators", _S),
+        HandoverField("medical_requirements", "Medical and accessibility requirements", _S),
+    ),
+)
+
+APPRENTICESHIPS_TO_APPRENTICESHIPS = _in_phase(
+    "apprenticeships",
+    notes=("Change of training provider on the same standard (a 'change of "
+           "provider' on the apprenticeship service). The new provider "
+           "continues the programme, so progress and off-the-job evidence "
+           "travel; the employer usually stays the same."),
+    fields=(
+        HandoverField("learner_identity", "Legal name, DOB and ULN", _R, required=True),
+        HandoverField("standard_completed", "Standard, level and current status", _R),
+        HandoverField("functional_skills", "English and maths achieved or in progress", _R),
+        HandoverField("prior_learning", "Recognised prior learning", _R),
+        HandoverField("portfolio_summary", "KSB portfolio evidence accepted so far", _R),
+        HandoverField("epa_result", "End-Point Assessment result, if assessed", _R),
+        HandoverField("employer_reference", "Employer", _S),
+        HandoverField("support_referral", "Learning support needs", _S),
+    ),
+)
+
+UNIVERSITY_TO_UNIVERSITY = _in_phase(
+    "university",
+    notes=("Transfer to another university, usually with credit. Credits and "
+           "programme registration travel for the receiving university's "
+           "credit-transfer decision."),
+    fields=(
+        HandoverField("learner_identity", "Legal name, DOB and university student id", _R,
+                      required=True),
+        HandoverField("contact_details", "Learner contact details", _R),
+        HandoverField("programme_registration", "Course, year of study and mode", _R),
+        HandoverField("module_credits", "Credits achieved, for credit transfer", _R),
+        HandoverField("achieved_qualifications", "Qualifications on entry", _R),
+        HandoverField("support_referral",
+                      "Disability support / DSA arrangements in place", _S),
+    ),
+)
+
+# ── Primary / Secondary ↔ Alternative Provision ─────────────────────
+# A school refers a pupil to a PRU or AP placement (usually keeping them on
+# its own roll - dual registration - or, after a permanent exclusion, the
+# local authority's sixth-day provision), and the AP hands the pupil back
+# when they reintegrate. See platform.cross_system.ap_referrals.
+_AP_REFERRAL_CHECKLIST: tuple[ChecklistItem, ...] = (
+    ChecklistItem("referral_meeting_held",
+                  "Referral / admission meeting held with the school, parent "
+                  "and pupil", "both"),
+    ChecklistItem("risk_assessment_done",
+                  "Risk assessment completed before the placement starts",
+                  "destination"),
+    ChecklistItem("timetable_agreed",
+                  "Timetable, transport and start date agreed", "both"),
+    _SUPPORT_MEETING,
+    _DOCUMENTS_RECEIVED,
+)
+_AP_RETURN_CHECKLIST: tuple[ChecklistItem, ...] = (
+    ChecklistItem("reintegration_meeting_held",
+                  "Reintegration meeting held with the receiving school", "both"),
+    ChecklistItem("support_package_agreed",
+                  "Support package agreed with the receiving school", "both"),
+    ChecklistItem("follow_up_booked",
+                  "Follow-up reviews booked (2, 6 and 12 weeks)", "source"),
+    _DOCUMENTS_RECEIVED,
+)
+
+
+def _referral_fields(identity_key: str) -> tuple[HandoverField, ...]:
+    return (
+        HandoverField(identity_key, "Legal name, DOB, UPN, year group", _R,
+                      required=True),
+        # Not required: an urgent (sixth-day) referral must not wait for the
+        # school to record a parent.
+        HandoverField("guardians",
+                      "Parent/guardian relationships and parental "
+                      "responsibility", _R),
+        HandoverField("referral_details",
+                      "Reason for referral, registration (dual or sole), "
+                      "first day of any exclusion, background and the "
+                      "referring school", _R, required=True),
+        HandoverField("attendance_summary",
+                      "Attendance and persistent-absence summary", _R),
+        HandoverField("behaviour_summary",
+                      "Behaviour incidents and patterns", _S),
+        HandoverField("exclusion_history",
+                      "Suspensions and exclusions with dates and reasons", _S),
+        HandoverField("send_provision",
+                      "SEN status, EHC plan and provision", _S),
+        HandoverField("support_indicators",
+                      "Pupil Premium, free school meals, LAC/PLAC status", _S),
+        HandoverField("medical_requirements",
+                      "Medical and accessibility requirements, care plans", _S),
+        HandoverField("safeguarding_reference",
+                      "Reference to the safeguarding handover", _X),
+    ) + _SUPPORT_FIELDS
+
+
+PRIMARY_TO_ALTERNATIVE_PROVISION = HandoverSpec(
+    source_system="primary",
+    destination_system="alternative_provision",
+    checklist=_AP_REFERRAL_CHECKLIST,
+    notes=(
+        "A primary school's referral to alternative provision. Creates a "
+        "referred pupil and an open referral at the AP; the AP decides. "
+        "With dual registration the pupil stays on the school's roll."
+    ),
+    fields=_referral_fields("child_identity") + (
+        HandoverField("core_assessments",
+                      "Reading, writing and mathematics assessment record", _R),
+        HandoverField("current_interventions",
+                      "Interventions in flight that should continue", _S),
+    ),
+)
+
+SECONDARY_TO_ALTERNATIVE_PROVISION = HandoverSpec(
+    source_system="secondary",
+    destination_system="alternative_provision",
+    checklist=_AP_REFERRAL_CHECKLIST,
+    notes=(
+        "A secondary school's referral to alternative provision (at risk of "
+        "exclusion, suspension sixth-day provision, permanent exclusion, "
+        "health needs). Exam entries travel so courses can continue."
+    ),
+    fields=_referral_fields("student_identity") + (
+        HandoverField("gcse_entries",
+                      "GCSE entries - subjects, tiers, boards", _R),
+        HandoverField("access_arrangements",
+                      "SEND provision and exam access arrangements", _S),
+    ),
+)
+
+
+def _return_fields() -> tuple[HandoverField, ...]:
+    return (
+        HandoverField("child_identity", "Legal name, DOB, UPN, year group", _R,
+                      required=True),
+        HandoverField("guardians",
+                      "Parent/guardian relationships and parental "
+                      "responsibility", _R),
+        HandoverField("reintegration_plan",
+                      "Return date, phased start, readiness and the "
+                      "receiving school contact", _R, required=True),
+        HandoverField("attendance_summary",
+                      "Attendance at the AP", _R),
+        HandoverField("progress_summary",
+                      "Baseline and latest progress in English and maths", _R),
+        HandoverField("qualifications",
+                      "Qualifications and exam entries taken at the AP", _R),
+        HandoverField("reintegration_support",
+                      "Support package for the return", _S),
+        HandoverField("behaviour_summary",
+                      "Behaviour incidents and patterns at the AP", _S),
+        HandoverField("exclusion_history",
+                      "Suspensions and exclusions with dates and reasons", _S),
+        HandoverField("send_provision",
+                      "SEN status, EHC plan and provision", _S),
+        HandoverField("medical_requirements",
+                      "Medical and accessibility requirements", _S),
+        HandoverField("safeguarding_reference",
+                      "Reference to the safeguarding handover", _X),
+    ) + _SUPPORT_FIELDS
+
+
+ALTERNATIVE_PROVISION_TO_PRIMARY = HandoverSpec(
+    source_system="alternative_provision",
+    destination_system="primary",
+    checklist=_AP_RETURN_CHECKLIST,
+    notes=(
+        "Reintegration into a primary school after a sole-registered AP "
+        "placement (a dual-registered pupil is still on the home school's "
+        "roll, so nothing is admitted)."
+    ),
+    fields=_return_fields(),
+)
+
+ALTERNATIVE_PROVISION_TO_SECONDARY = HandoverSpec(
+    source_system="alternative_provision",
+    destination_system="secondary",
+    checklist=_AP_RETURN_CHECKLIST,
+    notes=(
+        "Reintegration into a secondary school after a sole-registered AP "
+        "placement. Lands in the school's incoming-pupils queue, where "
+        "admissions match or create the pupil record."
+    ),
+    fields=_return_fields(),
+)
+
+
+_SEND_REQUEST_CHECKLIST: tuple[ChecklistItem, ...] = (
+    ChecklistItem("parent_views_sought",
+                  "Parent and pupil views gathered for the request", "source"),
+    ChecklistItem("graduated_approach_evidence",
+                  "Evidence of the graduated approach (assess, plan, do, "
+                  "review) sent", "source"),
+    ChecklistItem("caseworker_assigned",
+                  "SEND caseworker / key worker assigned", "destination"),
+    _DOCUMENTS_RECEIVED,
+)
+
+
+def _send_request_fields(identity_key: str) -> tuple[HandoverField, ...]:
+    return (
+        HandoverField(identity_key, "Legal name, DOB, UPN, year group", _R,
+                      required=True),
+        HandoverField("guardians",
+                      "Parent/guardian relationships and parental "
+                      "responsibility", _R),
+        HandoverField("request_details",
+                      "What the school is asking for (SEND advice, or an EHC "
+                      "needs assessment), what it has tried, the referrer and "
+                      "the school", _R, required=True),
+        HandoverField("attendance_summary",
+                      "Attendance and persistent-absence summary", _R),
+        HandoverField("send_provision",
+                      "SEN status, needs, SEN support plans and reviews, EHC "
+                      "plan and provision", _S),
+        HandoverField("support_indicators",
+                      "Pupil Premium, free school meals, LAC/PLAC status", _S),
+        HandoverField("medical_requirements",
+                      "Medical and accessibility requirements, care plans", _S),
+        HandoverField("safeguarding_reference",
+                      "Reference to the safeguarding handover", _X),
+    ) + _SUPPORT_FIELDS
+
+
+PRIMARY_TO_SPECIAL_EDUCATION = HandoverSpec(
+    source_system="primary",
+    destination_system="special_education",
+    checklist=_SEND_REQUEST_CHECKLIST,
+    notes=(
+        "A primary school asks the SEND service for advice or an EHC needs "
+        "assessment. The pupil stays at the school; the SEND service opens "
+        "a case and its EHCP decisions flow back to the school's SEN record."
+    ),
+    fields=_send_request_fields("child_identity") + (
+        HandoverField("core_assessments",
+                      "Reading, writing and mathematics assessment record", _R),
+        HandoverField("current_interventions",
+                      "Interventions in place and their impact", _S),
+    ),
+)
+
+SECONDARY_TO_SPECIAL_EDUCATION = HandoverSpec(
+    source_system="secondary",
+    destination_system="special_education",
+    checklist=_SEND_REQUEST_CHECKLIST,
+    notes=(
+        "A secondary school asks the SEND service for advice or an EHC needs "
+        "assessment. The pupil stays at the school; the SEND service opens "
+        "a case and its EHCP decisions flow back to the school's SEN record."
+    ),
+    fields=_send_request_fields("student_identity") + (
+        HandoverField("access_arrangements",
+                      "SEND provision and exam access arrangements", _S),
+    ),
+)
+
+
+# ── Primary / Secondary ↔ the Local Authority ───────────────────────
+# Schools tell the authority what the law requires (attendance referrals,
+# suspensions and exclusions, children missing education, elective home
+# education) or ask for an EHC needs assessment; the authority allocates
+# school places. See platform.cross_system.local_authority_links.
+_LA_NOTIFICATION_CHECKLIST: tuple[ChecklistItem, ...] = (
+    ChecklistItem("parent_informed",
+                  "Parent told that the local authority has been notified", "source"),
+    ChecklistItem("caseworker_assigned",
+                  "Officer / caseworker assigned at the authority", "destination"),
+    _DOCUMENTS_RECEIVED,
+)
+_LA_PLACE_CHECKLIST: tuple[ChecklistItem, ...] = (
+    ChecklistItem("start_date_agreed",
+                  "Start date agreed with the parent", "destination"),
+    ChecklistItem("admission_meeting_held",
+                  "Admission / induction meeting held", "destination"),
+    _SUPPORT_MEETING,
+    _DOCUMENTS_RECEIVED,
+)
+
+
+def _la_notification_fields(identity_key: str) -> tuple[HandoverField, ...]:
+    return (
+        HandoverField(identity_key, "Legal name, DOB, UPN, year group, address", _R,
+                      required=True),
+        HandoverField("guardians",
+                      "Parent/guardian relationships and parental "
+                      "responsibility", _R),
+        HandoverField("notification_details",
+                      "What the school is telling the authority (attendance "
+                      "referral, suspension or exclusion, child missing "
+                      "education, elective home education, EHC needs "
+                      "assessment request), its dates and reasons, and the "
+                      "referrer", _R, required=True),
+        HandoverField("attendance_summary",
+                      "Attendance and persistent-absence summary", _R),
+        HandoverField("exclusion_history",
+                      "Suspensions and exclusions with dates and reasons", _S),
+        HandoverField("send_provision",
+                      "SEN status, needs and provision", _S),
+        HandoverField("support_indicators",
+                      "Pupil Premium, free school meals, LAC/PLAC status", _S),
+        HandoverField("medical_requirements",
+                      "Medical and accessibility requirements", _S),
+        HandoverField("safeguarding_reference",
+                      "Reference to the safeguarding handover", _X),
+    ) + _SUPPORT_FIELDS
+
+
+PRIMARY_TO_LOCAL_AUTHORITY = HandoverSpec(
+    source_system="primary",
+    destination_system="local_authority",
+    checklist=_LA_NOTIFICATION_CHECKLIST,
+    notes=(
+        "A primary school's notification to the local authority. The "
+        "authority records it (attendance case, exclusion, CME, EHE or EHC "
+        "needs assessment); the pupil stays on the school's roll and the "
+        "authority's decisions come back to the school."
+    ),
+    fields=_la_notification_fields("child_identity"),
+)
+
+SECONDARY_TO_LOCAL_AUTHORITY = HandoverSpec(
+    source_system="secondary",
+    destination_system="local_authority",
+    checklist=_LA_NOTIFICATION_CHECKLIST,
+    notes=(
+        "A secondary school's notification to the local authority. The "
+        "authority records it (attendance case, exclusion, CME, EHE or EHC "
+        "needs assessment); the pupil stays on the school's roll and the "
+        "authority's decisions come back to the school."
+    ),
+    fields=_la_notification_fields("student_identity"),
+)
+
+
+def _la_place_fields() -> tuple[HandoverField, ...]:
+    return (
+        HandoverField("child_identity", "Legal name, DOB, UPN, year group, address", _R,
+                      required=True),
+        HandoverField("guardians",
+                      "Parents/carers with parental responsibility (never "
+                      "anyone the child must not be released to)", _R),
+        HandoverField("placement_details",
+                      "The place: admissions round, year of entry or start "
+                      "date, offer basis (preference, allocation, fair access, "
+                      "appeal) and the authority's reference", _R, required=True),
+        HandoverField("send_provision",
+                      "SEN status and any EHC plan naming the school", _S),
+        HandoverField("safeguarding_reference",
+                      "Reference to the safeguarding handover", _X),
+    ) + _SUPPORT_FIELDS
+
+
+LOCAL_AUTHORITY_TO_PRIMARY = HandoverSpec(
+    source_system="local_authority",
+    destination_system="primary",
+    checklist=_LA_PLACE_CHECKLIST,
+    notes=(
+        "A school place the local authority allocated (an accepted offer or "
+        "a fair access allocation). The primary lists an accepted admissions "
+        "application; enrolling it puts the child on roll."
+    ),
+    fields=_la_place_fields(),
+)
+
+LOCAL_AUTHORITY_TO_SECONDARY = HandoverSpec(
+    source_system="local_authority",
+    destination_system="secondary",
+    checklist=_LA_PLACE_CHECKLIST,
+    notes=(
+        "A school place the local authority allocated (an accepted offer or "
+        "a fair access allocation). Lands in the school's incoming-pupils "
+        "queue, where admissions match or create the pupil record."
+    ),
+    fields=_la_place_fields(),
+)
+
+
+#: The same-phase specs, keyed by system.
+IN_PHASE_SPECS: dict[str, HandoverSpec] = {
+    s.source_system: s
+    for s in (PRIMARY_TO_PRIMARY, SECONDARY_TO_SECONDARY, SIXTH_FORM_TO_SIXTH_FORM,
+              FE_COLLEGE_TO_FE_COLLEGE, APPRENTICESHIPS_TO_APPRENTICESHIPS,
+              UNIVERSITY_TO_UNIVERSITY)
+}
+
+
+# ── Adult Education ↔ FE College, Adult Education → University ──────
+#
+# Adult community learning sits beside FE: an adult on a community course
+# moves onto an FE college course (and FE refers adults the other way, to
+# a part-time community course or English/maths/ESOL). An adult on an
+# Access to HE course applies to university through UCAS. The learner is
+# an adult, so consent is theirs and contact is direct.
+_ADULT_LEARNING_CHECKLIST: tuple[ChecklistItem, ...] = (
+    ChecklistItem("iag_held", "Information, advice and guidance session held"),
+    ChecklistItem("eligibility_confirmed", "Funding eligibility checked"),
+    _SUPPORT_MEETING,
+    _DOCUMENTS_RECEIVED,
+)
+
+ADULT_EDUCATION_TO_FE_COLLEGE = HandoverSpec(
+    source_system="adult_education",
+    destination_system="fe_college",
+    checklist=_POST16_CHECKLIST,
+    notes=(
+        "An adult moving from a community course onto an FE college course. "
+        "Creates a 19+ FE applicant; the adult education record stays open "
+        "(courses often run side by side) unless FE closes it at enrolment."
+    ),
+    fields=(
+        HandoverField("student_identity", "Legal name, DOB, ULN", _R, required=True),
+        HandoverField("contact_details", "Learner contact details", _R),
+        HandoverField("current_programme", "Current adult education courses", _R),
+        HandoverField("prior_learning", "Prior qualifications held", _R),
+        HandoverField("achieved_qualifications",
+                      "Courses and qualifications achieved in adult education", _R),
+        HandoverField("employment", "Employment status (for funding eligibility)", _R),
+        HandoverField("referral_details", "Requested course, start and referral reason", _R,
+                      required=True),
+        HandoverField("support_referral", "Learning support needs and agreed support", _S),
+        HandoverField("safeguarding_reference", "Reference to safeguarding handover", _X),
+    ) + _SUPPORT_FIELDS,
+)
+
+ADULT_EDUCATION_TO_UNIVERSITY = HandoverSpec(
+    source_system="adult_education",
+    destination_system="university",
+    checklist=_HIGHER_EDUCATION_CHECKLIST,
+    notes=(
+        "Creates a university APPLICANT for an adult on an Access to HE or "
+        "other level 3 course. The University owns decisions, confirmation "
+        "and conversion to an enrolled student."
+    ),
+    fields=(
+        HandoverField("student_identity", "Legal name, DOB, ULN and contact details", _R,
+                      required=True),
+        HandoverField("ucas_application", "UCAS application and personal ID", _R,
+                      required=True),
+        HandoverField("current_programme", "Current course (e.g. Access to HE Diploma)", _R),
+        HandoverField("predicted_qualifications", "Predicted grades / credits", _R),
+        HandoverField("achieved_qualifications", "Qualifications already achieved", _R),
+        HandoverField("qualification_profile", "Qualification types, levels and grades", _R),
+        HandoverField("recognised_prior_learning", "Prior qualifications and learning", _R),
+        HandoverField("personal_statement", "Personal statement", _R),
+        HandoverField("reference", "Tutor reference", _S),
+        HandoverField("choices", "Ranked university and course choices", _R,
+                      required=True),
+        HandoverField("offer_conditions", "Conditions returned by the university", _R),
+        HandoverField("support_referral", "Disability and learning support needs", _S),
+        HandoverField("support_indicators", "Learner-support indicators", _S),
+        HandoverField("handover_consent", "Learner consent record", _R, required=True),
+        HandoverField("confirmed_destination", "Firm confirmed institution and course", _R),
+        HandoverField("safeguarding_reference", "Reference to safeguarding handover", _X),
+    ) + _SUPPORT_FIELDS,
+)
+
+FE_COLLEGE_TO_ADULT_EDUCATION = HandoverSpec(
+    source_system="fe_college",
+    destination_system="adult_education",
+    checklist=_ADULT_LEARNING_CHECKLIST,
+    notes=(
+        "FE College refers an adult to a community course (English, maths, "
+        "ESOL, digital skills or a part-time course). The adult education "
+        "service records an enquiry and decides; the FE place stays open."
+    ),
+    fields=(
+        HandoverField("learner_identity", "Legal name, DOB, ULN", _R, required=True),
+        HandoverField("contact_details", "Learner contact details", _R),
+        HandoverField("vocational_profile", "FE programme, courses and status", _R),
+        HandoverField("prior_attainment", "Prior attainment relevant to entry", _R),
+        HandoverField("referral_details", "Requested course, start and referral reason", _R,
+                      required=True),
+        HandoverField("send_support", "Learning support and reasonable adjustments", _S),
+        HandoverField("support_indicators", "Learner-support indicators", _S),
+        HandoverField("safeguarding_reference", "Reference to safeguarding handover", _X),
+    ) + _SUPPORT_FIELDS,
+)
+
+
+# ── Training Provider ↔ Apprenticeships / FE College ────────────────
+#
+# A training provider runs short courses: first aid, health and safety,
+# licences to practise. An apprenticeship provider or FE college sends a
+# learner for one (it runs beside their programme, and the certificate
+# comes back to the sender); a learner trained here goes on to an
+# apprenticeship or an FE course.
+_SHORT_COURSE_CHECKLIST: tuple[ChecklistItem, ...] = (
+    ChecklistItem("course_confirmed", "Course and session date confirmed"),
+    ChecklistItem("payer_agreed", "Who pays agreed (purchase order / contract)", "both"),
+    ChecklistItem("adjustments_confirmed", "Access needs and adjustments confirmed", "both"),
+    _DOCUMENTS_RECEIVED,
+)
+
+_TRAINING_CERTIFICATES = HandoverField(
+    "achieved_qualifications",
+    "Certificates and short-course qualifications achieved here, with level, "
+    "awarding body and expiry", _R)
+
+TRAINING_PROVIDER_TO_APPRENTICESHIPS = HandoverSpec(
+    source_system="training_provider",
+    destination_system="apprenticeships",
+    checklist=_APPRENTICESHIP_CHECKLIST,
+    creates="concurrent_enrolment",
+    notes=(
+        "A learner trained here (often sent by their employer) starting an "
+        "apprenticeship. Creates an APPLICANT; certificates held count as "
+        "prior learning. The training provider's record stays open."
+    ),
+    fields=_APPRENTICESHIP_COMMON + (
+        _TRAINING_CERTIFICATES,
+        HandoverField("support_referral", "Support needs and adjustments", _S),
+    ) + _SUPPORT_FIELDS,
+)
+
+TRAINING_PROVIDER_TO_FE_COLLEGE = HandoverSpec(
+    source_system="training_provider",
+    destination_system="fe_college",
+    checklist=_POST16_CHECKLIST,
+    notes=(
+        "A learner trained here going on to an FE college course. Creates an "
+        "FE applicant; the training provider's record stays open."
+    ),
+    fields=(
+        HandoverField("learner_identity", "Legal name, DOB, ULN", _R, required=True),
+        HandoverField("contact_details", "Learner contact details", _R),
+        _TRAINING_CERTIFICATES,
+        HandoverField("employment", "Employer and job title", _R),
+        HandoverField("referral_details", "Requested course, start and referral reason", _R,
+                      required=True),
+        HandoverField("support_referral", "Support needs and adjustments", _S),
+        HandoverField("safeguarding_reference", "Reference to safeguarding handover", _X),
+    ) + _SUPPORT_FIELDS,
+)
+
+
+def _training_request_fields(support_key: str) -> tuple[HandoverField, ...]:
+    """What a sender gives the training provider with a training request."""
+    return (
+        HandoverField("learner_identity", "Legal name, DOB, ULN - the ULN goes on an "
+                      "accredited certificate", _R, required=True),
+        HandoverField("contact_details", "Learner contact details", _R),
+        HandoverField("referral_details", "Course asked for, why, by when and who pays",
+                      _R, required=True),
+        HandoverField("employer_reference", "Employer the learner works for", _R),
+        HandoverField(support_key, "Support needs and reasonable adjustments", _S),
+        HandoverField("safeguarding_reference", "Reference to safeguarding handover "
+                      "(a learner under 18 is still a child)", _X),
+    ) + _SUPPORT_FIELDS
+
+
+APPRENTICESHIPS_TO_TRAINING_PROVIDER = HandoverSpec(
+    source_system="apprenticeships",
+    destination_system="training_provider",
+    checklist=_SHORT_COURSE_CHECKLIST,
+    creates="concurrent_enrolment",
+    notes=(
+        "An apprentice sent on a short course (off-the-job training, a licence "
+        "to practise). The apprenticeship stays open; the certificate comes "
+        "back as off-the-job hours awaiting approval."
+    ),
+    fields=_training_request_fields("support_referral"),
+)
+
+FE_COLLEGE_TO_TRAINING_PROVIDER = HandoverSpec(
+    source_system="fe_college",
+    destination_system="training_provider",
+    checklist=_SHORT_COURSE_CHECKLIST,
+    creates="concurrent_enrolment",
+    notes=(
+        "An FE learner sent on a short course alongside their programme. The FE "
+        "place stays open; the certificate comes back to the college."
+    ),
+    fields=_training_request_fields("send_support"),
+)
+
+
+def is_in_phase(source_system: str | None, destination_system: str | None) -> bool:
+    """Whether a move stays in one phase — a change of institution."""
+    return bool(source_system) and source_system == destination_system
+
+
 HANDOVER_SPECS: dict[tuple[str, str], HandoverSpec] = {
     (s.source_system, s.destination_system): s
     for s in (NURSERY_TO_PRIMARY, PRIMARY_TO_SECONDARY,
@@ -703,7 +1534,18 @@ HANDOVER_SPECS: dict[tuple[str, str], HandoverSpec] = {
               SIXTH_FORM_TO_UNIVERSITY, FE_COLLEGE_TO_UNIVERSITY,
               SECONDARY_TO_APPRENTICESHIPS, SIXTH_FORM_TO_APPRENTICESHIPS,
               FE_COLLEGE_TO_APPRENTICESHIPS, UNIVERSITY_TO_APPRENTICESHIPS,
-              APPRENTICESHIPS_TO_UNIVERSITY)
+              APPRENTICESHIPS_TO_UNIVERSITY, APPRENTICESHIPS_TO_FE_COLLEGE,
+              UNIVERSITY_TO_FE_COLLEGE, UNIVERSITY_TO_SIXTH_FORM,
+              PRIMARY_TO_ALTERNATIVE_PROVISION, SECONDARY_TO_ALTERNATIVE_PROVISION,
+              ALTERNATIVE_PROVISION_TO_PRIMARY, ALTERNATIVE_PROVISION_TO_SECONDARY,
+              PRIMARY_TO_SPECIAL_EDUCATION, SECONDARY_TO_SPECIAL_EDUCATION,
+              ADULT_EDUCATION_TO_FE_COLLEGE, ADULT_EDUCATION_TO_UNIVERSITY,
+              FE_COLLEGE_TO_ADULT_EDUCATION,
+              TRAINING_PROVIDER_TO_APPRENTICESHIPS, TRAINING_PROVIDER_TO_FE_COLLEGE,
+              APPRENTICESHIPS_TO_TRAINING_PROVIDER, FE_COLLEGE_TO_TRAINING_PROVIDER,
+              PRIMARY_TO_LOCAL_AUTHORITY, SECONDARY_TO_LOCAL_AUTHORITY,
+              LOCAL_AUTHORITY_TO_PRIMARY, LOCAL_AUTHORITY_TO_SECONDARY,
+              *IN_PHASE_SPECS.values())
 }
 
 
@@ -717,9 +1559,10 @@ def get_spec(source_system: str, destination_system: str
     declared one.
 
     A missing spec is normal and not an error: moves to an external
-    provider, an apprenticeship, home education, or a sideways move
-    within the same phase have no fixed national dataset. Those hand over
-    whatever the source chooses to include, with consent still enforced.
+    provider, employment or home education have no fixed national
+    dataset. Those hand over whatever the source chooses to include, with
+    consent still enforced. A move within one phase (secondary to another
+    secondary) *does* have a spec — see :data:`IN_PHASE_SPECS`.
     """
     return HANDOVER_SPECS.get((source_system, destination_system))
 
@@ -1063,6 +1906,7 @@ __all__ = [
     "PRIMARY_TO_SECONDARY",
     "SECONDARY_TO_SIXTH_FORM",
     "SIXTH_FORM_TO_UNIVERSITY",
+    "EVENT_UCAS_HANDOVER_REROUTED",
     "SECONDARY_TO_APPRENTICESHIPS",
     "SIXTH_FORM_TO_APPRENTICESHIPS",
     "SECONDARY_TO_FE_COLLEGE",
@@ -1070,6 +1914,31 @@ __all__ = [
     "FE_COLLEGE_TO_APPRENTICESHIPS",
     "UNIVERSITY_TO_APPRENTICESHIPS",
     "APPRENTICESHIPS_TO_UNIVERSITY",
+    "APPRENTICESHIPS_TO_FE_COLLEGE",
+    "UNIVERSITY_TO_FE_COLLEGE",
+    "UNIVERSITY_TO_SIXTH_FORM",
+    "PRIMARY_TO_ALTERNATIVE_PROVISION",
+    "SECONDARY_TO_ALTERNATIVE_PROVISION",
+    "ALTERNATIVE_PROVISION_TO_PRIMARY",
+    "ALTERNATIVE_PROVISION_TO_SECONDARY",
+    "PRIMARY_TO_SPECIAL_EDUCATION",
+    "SECONDARY_TO_SPECIAL_EDUCATION",
+    "PRIMARY_TO_LOCAL_AUTHORITY",
+    "SECONDARY_TO_LOCAL_AUTHORITY",
+    "LOCAL_AUTHORITY_TO_PRIMARY",
+    "LOCAL_AUTHORITY_TO_SECONDARY",
+    "ADULT_EDUCATION_TO_FE_COLLEGE", "ADULT_EDUCATION_TO_UNIVERSITY",
+    "FE_COLLEGE_TO_ADULT_EDUCATION",
+    "TRAINING_PROVIDER_TO_APPRENTICESHIPS", "TRAINING_PROVIDER_TO_FE_COLLEGE",
+    "APPRENTICESHIPS_TO_TRAINING_PROVIDER", "FE_COLLEGE_TO_TRAINING_PROVIDER",
+    "PRIMARY_TO_PRIMARY",
+    "SECONDARY_TO_SECONDARY",
+    "SIXTH_FORM_TO_SIXTH_FORM",
+    "FE_COLLEGE_TO_FE_COLLEGE",
+    "APPRENTICESHIPS_TO_APPRENTICESHIPS",
+    "UNIVERSITY_TO_UNIVERSITY",
+    "IN_PHASE_SPECS",
+    "is_in_phase",
     "HANDOVER_SPECS",
     "get_spec",
     "build_handover",

@@ -1338,7 +1338,7 @@ ID: {values[0]}
                 key = result['api_key']
                 messagebox.showinfo(
                     _t("security_dashboard.api_security.key_created_success"),
-                    _t("security_dashboard.api_security.key_created_message", key=key)
+                    _t("security_dashboard.api_security.key_created_message").replace("{key}", key)
                 )
                 dialog.destroy()
                 self._load_api_keys()

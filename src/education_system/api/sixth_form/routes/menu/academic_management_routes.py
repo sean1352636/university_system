@@ -33,12 +33,12 @@ def academic_management_academic_year_calendar():
     return feature_pending("Academic Year & Calendar", _SYSTEM, category=_CATEGORY)
 
 
-@academic_management_menu_bp.route("/open-courses", methods=["GET"])
+@academic_management_menu_bp.route("/courses", methods=["GET"])
 @token_required
 @staff_required
-def academic_management_open_courses():
-    """open_courses"""
-    return feature_pending("open_courses", _SYSTEM, category=_CATEGORY)
+def academic_management_courses():
+    """Courses"""
+    return feature_pending("Courses", _SYSTEM, category=_CATEGORY)
 
 
 @academic_management_menu_bp.route("/subjects-a-levels", methods=["GET"])
@@ -57,12 +57,12 @@ def academic_management_class_groups():
     return feature_pending("Class Groups", _SYSTEM, category=_CATEGORY)
 
 
-@academic_management_menu_bp.route("/open-timetable", methods=["GET"])
+@academic_management_menu_bp.route("/timetable", methods=["GET"])
 @token_required
 @staff_required
-def academic_management_open_timetable():
-    """open_timetable"""
-    return feature_pending("open_timetable", _SYSTEM, category=_CATEGORY)
+def academic_management_timetable():
+    """Timetable"""
+    return feature_pending("Timetable", _SYSTEM, category=_CATEGORY)
 
 
 @academic_management_menu_bp.route("/timetable-optimiser", methods=["GET"])
@@ -73,12 +73,12 @@ def academic_management_timetable_optimiser():
     return feature_pending("Timetable Optimiser", _SYSTEM, category=_CATEGORY)
 
 
-@academic_management_menu_bp.route("/open-attendance", methods=["GET"])
+@academic_management_menu_bp.route("/attendance", methods=["GET"])
 @token_required
 @staff_required
-def academic_management_open_attendance():
-    """open_attendance"""
-    return feature_pending("open_attendance", _SYSTEM, category=_CATEGORY)
+def academic_management_attendance():
+    """Attendance"""
+    return feature_pending("Attendance", _SYSTEM, category=_CATEGORY)
 
 
 @academic_management_menu_bp.route("/lesson-plans", methods=["GET"])
@@ -89,12 +89,12 @@ def academic_management_lesson_plans():
     return feature_pending("Lesson Plans", _SYSTEM, category=_CATEGORY)
 
 
-@academic_management_menu_bp.route("/open-cover", methods=["GET"])
+@academic_management_menu_bp.route("/cover", methods=["GET"])
 @token_required
 @staff_required
-def academic_management_open_cover():
-    """open_cover"""
-    return feature_pending("open_cover", _SYSTEM, category=_CATEGORY)
+def academic_management_cover():
+    """Cover"""
+    return feature_pending("Cover", _SYSTEM, category=_CATEGORY)
 
 
 @academic_management_menu_bp.route("/cover-agency", methods=["GET"])
@@ -113,28 +113,28 @@ def academic_management_homework_coursework():
     return feature_pending("Homework & Coursework", _SYSTEM, category=_CATEGORY)
 
 
-@academic_management_menu_bp.route("/open-assignments", methods=["GET"])
+@academic_management_menu_bp.route("/assignments", methods=["GET"])
 @token_required
 @staff_required
-def academic_management_open_assignments():
-    """open_assignments"""
-    return feature_pending("open_assignments", _SYSTEM, category=_CATEGORY)
+def academic_management_assignments():
+    """Assignments"""
+    return feature_pending("Assignments", _SYSTEM, category=_CATEGORY)
 
 
-@academic_management_menu_bp.route("/open-enrichment", methods=["GET"])
+@academic_management_menu_bp.route("/enrichment", methods=["GET"])
 @token_required
 @staff_required
-def academic_management_open_enrichment():
-    """open_enrichment"""
-    return feature_pending("open_enrichment", _SYSTEM, category=_CATEGORY)
+def academic_management_enrichment():
+    """Enrichment"""
+    return feature_pending("Enrichment", _SYSTEM, category=_CATEGORY)
 
 
-@academic_management_menu_bp.route("/open-library", methods=["GET"])
+@academic_management_menu_bp.route("/library", methods=["GET"])
 @token_required
 @staff_required
-def academic_management_open_library():
-    """open_library"""
-    return feature_pending("open_library", _SYSTEM, category=_CATEGORY)
+def academic_management_library():
+    """Library"""
+    return feature_pending("Library", _SYSTEM, category=_CATEGORY)
 
 
 @academic_management_menu_bp.route("/study-planner", methods=["GET"])
@@ -145,12 +145,12 @@ def academic_management_study_planner():
     return feature_pending("Study Planner", _SYSTEM, category=_CATEGORY)
 
 
-@academic_management_menu_bp.route("/open-epq", methods=["GET"])
+@academic_management_menu_bp.route("/epq", methods=["GET"])
 @token_required
 @staff_required
-def academic_management_open_epq():
-    """open_epq"""
-    return feature_pending("open_epq", _SYSTEM, category=_CATEGORY)
+def academic_management_epq():
+    """EPQ"""
+    return feature_pending("EPQ", _SYSTEM, category=_CATEGORY)
 
 
 @academic_management_menu_bp.route("/work-experience", methods=["GET"])
@@ -167,4 +167,12 @@ def academic_management_work_experience():
 def academic_management_room_booking():
     """Room Booking"""
     return feature_pending("Room Booking", _SYSTEM, category=_CATEGORY)
+
+
+@academic_management_menu_bp.route("/online-learning-space", methods=["GET"])
+@token_required
+@staff_required
+def academic_management_online_learning_space():
+    """Online Learning Space"""
+    return feature_pending("Online Learning Space", _SYSTEM, category=_CATEGORY)
 

@@ -10,14 +10,16 @@ from __future__ import annotations
 from datetime import date, timedelta
 
 from education_system.systems.apprenticeships import config
-from education_system.systems.apprenticeships.services import (
+from education_system.systems.apprenticeships.application.assessments import qualification_service
+from education_system.systems.apprenticeships.application.support import (
+    support_service,
+    welfare_service,
+)
+from education_system.systems.apprenticeships.application.workspace import (
     calendar_service,
-    qualification_service,
     reporting_service,
     search_service,
-    support_service,
     task_service,
-    welfare_service,
     workload_service,
 )
 

@@ -23,7 +23,7 @@ SUPERADMIN_KEY = "__superadmin__"
 SUPERADMIN_LABEL = "Superadmin Dashboard"
 
 # Mirrors the SYSTEM_LABELS dict in shared/cli/superadmin_cli.py and
-# shared/gui/superadmin_dashboard.py — kept here so this module has no
+# platform/delivery/gui/superadmin_dashboard/theme.py — kept here so this module has no
 # circular import.
 # Derived from the per-system manifests. This table was the source of the
 # "Sixth Form College" spelling that disagreed with the other two registries.

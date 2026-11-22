@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import logging
 from typing import Any, Callable
-from education_system.systems.sixth_form.interfaces import settings as data
-from education_system.systems.sixth_form.interfaces.settings import (
+from education_system.systems.sixth_form.domain.governance.settings import settings as data
+from education_system.systems.sixth_form.domain.governance.settings.settings import (
     SettingError,
     SettingSpec,
 )

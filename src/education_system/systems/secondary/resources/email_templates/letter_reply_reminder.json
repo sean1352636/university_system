@@ -1,0 +1,27 @@
+{
+  "name": "letter_reply_reminder",
+  "description": "A reminder to families who haven't returned a reply slip.",
+  "subject": "Reminder: reply needed - {subject}",
+  "body": [
+    "Dear {recipient_name},",
+    "",
+    "We haven't yet had your reply about {pupil_name}: {question}",
+    "Please reply {reply_by}.",
+    "",
+    "The original letter is below.",
+    "",
+    "{body}",
+    "",
+    "{school_name}"
+  ],
+  "placeholders": {
+    "recipient_name": "The contact's name",
+    "subject": "The letter's subject",
+    "pupil_name": "The pupil",
+    "question": "The reply slip question",
+    "reply_by": "By when ('as soon as possible' when no date)",
+    "body": "The original merged letter",
+    "school_name": "The school's name"
+  },
+  "defaults": {"school_name": "Secondary School"}
+}

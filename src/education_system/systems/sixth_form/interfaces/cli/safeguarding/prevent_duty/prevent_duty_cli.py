@@ -256,8 +256,9 @@ def concern_close() -> None:
 
 
 def concern_delete() -> None:
+    """Close a concern as retained — Prevent records are never deleted."""
     try:
-        cid = int(_input("Concern id to delete", allow_empty=False))
+        cid = int(_input("Concern id to close (retained)", allow_empty=False))
     except _UserAbort:
         return
     except ValueError:
@@ -268,18 +269,17 @@ def concern_delete() -> None:
         print(f"  ✗ No concern with id {cid}")
         return
     _print_concern(c)
-    refs = data.list_referrals(concern_id=cid)
-    if refs:
-        print(f"\n  This will also delete {len(refs)} referral(s).")
+    print("\n  The concern and its referrals are kept; it is closed with "
+          "your reason.")
     try:
-        confirm = _input("Type DELETE to confirm", allow_empty=False)
+        reason = _input("Reason for closing", allow_empty=False)
     except _UserAbort:
         return
-    if confirm != "DELETE":
-        print("  Cancelled.")
-        return
-    if data.delete_concern(cid):
-        print(f"  ✓ Deleted concern #{cid}")
+    try:
+        data.archive_concern(cid, reason=reason)
+        print(f"  ✓ Concern #{cid} closed — retained")
+    except data.ValidationError as e:
+        print(f"  ✗ {e}")
 
 
 # ── Referrals ──────────────────────────────────────────────────────
@@ -386,8 +386,10 @@ def referral_edit() -> None:
 
 
 def referral_delete() -> None:
+    """Close a referral as retained — never deleted."""
     try:
-        rid = int(_input("Referral id to delete", allow_empty=False))
+        rid = int(_input("Referral id to close (retained)",
+                         allow_empty=False))
     except _UserAbort:
         return
     except ValueError:
@@ -399,14 +401,14 @@ def referral_delete() -> None:
         return
     _print_referral(r)
     try:
-        confirm = _input("Type DELETE to confirm", allow_empty=False)
+        reason = _input("Reason for closing", allow_empty=False)
     except _UserAbort:
         return
-    if confirm != "DELETE":
-        print("  Cancelled.")
-        return
-    if data.delete_referral(rid):
-        print(f"  ✓ Deleted referral #{rid}")
+    try:
+        data.archive_referral(rid, reason=reason)
+        print(f"  ✓ Referral #{rid} closed — retained")
+    except data.ValidationError as e:
+        print(f"  ✗ {e}")
 
 
 # ── Training ──────────────────────────────────────────────────────
@@ -536,15 +538,17 @@ def training_delete() -> None:
         print(f"  ✗ No training with id {tid}")
         return
     _print_training(t)
+    print("  Training is compliance evidence: it is archived (kept on file),")
+    print("  not deleted. It leaves the register and compliance counts.")
     try:
-        confirm = _input("Type DELETE to confirm", allow_empty=False)
+        reason = _input("Reason for archiving", allow_empty=False)
     except _UserAbort:
         return
-    if confirm != "DELETE":
-        print("  Cancelled.")
-        return
-    if data.delete_training(tid):
-        print(f"  ✓ Deleted training #{tid}")
+    try:
+        data.archive_training(tid, reason=reason)
+        print(f"  ✓ Training #{tid} archived — retained")
+    except data.ValidationError as e:
+        print(f"  ✗ {e}")
 
 
 def training_per_staff() -> None:
@@ -600,13 +604,13 @@ _MENU: list[tuple[str, Callable[[], None] | None]] = [
     ("View concern + referrals",   concern_view),
     ("Edit concern",               concern_edit),
     ("Close concern",              concern_close),
-    ("Delete concern",             concern_delete),
+    ("Close concern (retain)",     concern_delete),
     ("── Channel Referrals ──",   None),
     ("Add referral",                referral_add),
     ("List open referrals",         lambda: referral_list(open_only=True)),
     ("List all referrals",          lambda: referral_list(open_only=False)),
     ("Edit referral",               referral_edit),
-    ("Delete referral",             referral_delete),
+    ("Close referral (retain)",     referral_delete),
     ("── Training ──",             None),
     ("Add training record",         training_add),
     ("List all training",           training_list),

@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 office_hours_bp = Blueprint("office_hours", __name__, url_prefix="/api/office-hours")
 
 # Initialize the service at module level
-from education_system.systems.university.domains.academics.domain.services.office_hours.office_hours_service import (
+from education_system.systems.university.domains.teaching.domain.office_hours.office_hours_service import (
     OfficeHoursService,
 )
 

@@ -1,3 +1,4 @@
+from education_system.systems.university.plugins.campus_commerce.domain.services.restaurant.operations.user_access import can as restaurant_can
 from education_system.systems.university.infrastructure.auth import UserAuth, display_auth_menu
 from education_system.systems.university.infrastructure.database.data_backup import display_backup_menu, backup_before_operation
 from education_system.systems.university.infrastructure.email import send_confirmation_email
@@ -18,7 +19,10 @@ from PIL import Image
 from decimal import Decimal, ROUND_HALF_UP
 import threading
 import time
-from education_system.systems.university.domains.finance.infrastructure.finance_integration import record_payment_to_finance
+from education_system.systems.university.plugins.campus_commerce.domain.services.restaurant.operations.settlement import (
+    refund_order_payment,
+    settle_order_payment,
+)
 from collections import defaultdict
 from education_system.systems.university.plugins.campus_commerce.domain.services.restaurant.operations.connection import get_db_connection
 import warnings
@@ -181,10 +185,15 @@ def view_order_details(order_id):
 
         # Get order information
         cursor.execute('''
-            SELECT o.*, c.name as customer_name, c.email as customer_email
+            SELECT o.order_id, o.customer_id, o.table_id,
+                   COALESCE(o.order_date, o.created_at), o.total_amount,
+                   o.order_status, o.payment_method, o.order_type,
+                   o.estimated_delivery, o.actual_time, o.rating, o.review,
+                   o.discount_amount, o.tax_amount, o.tip_amount,
+                   c.name as customer_name, c.email as customer_email
             FROM orders o
             LEFT JOIN restaurant_customers c ON o.customer_id = c.customer_id
-            WHERE o.order_id = ?
+            WHERE o.source_type = 'restaurant' AND o.order_id = ?
         ''', (order_id,))
 
         order = cursor.fetchone()
@@ -227,11 +236,11 @@ def view_order_details(order_id):
 
         # Get order items
         cursor.execute('''
-            SELECT oi.*, mi.name
+            SELECT oi.item_id, oi.order_id, oi.quantity, oi.unit_price,
+                   oi.special_instructions, COALESCE(oi.item_name, '')
             FROM order_items oi
-            JOIN menu_items mi ON oi.item_id = mi.item_id
-            WHERE oi.order_id = ?
-            ORDER BY oi.id
+            WHERE oi.source_type = 'restaurant' AND oi.order_id = ?
+            ORDER BY oi.item_id
         ''', (order_id,))
 
         items = cursor.fetchall()
@@ -336,7 +345,7 @@ def refund_order():
         print("You must be logged in to process refunds.")
         return
 
-    if not auth.check_permission('update_takeaway_order_status'):
+    if not restaurant_can(auth, 'update_takeaway_order_status'):
         print("You don't have permission to process refunds.")
         return
 
@@ -416,11 +425,21 @@ def refund_order():
                     order_id, datetime.now().strftime('%Y-%m-%d %H:%M:%S'), f'Refund for order: {order_id} - {reason}'
                 ))
 
-        # Update order status
-        cursor.execute('UPDATE orders SET order_status = ? WHERE order_id = ?', ('Refunded', order_id))
-
         conn.commit()
         conn.close()
+
+        # Shared domain service: marks the order Refunded and posts the
+        # refund to Finance (unified_refunds + ledger).
+        outcome = refund_order_payment(
+            order_id, refund_amount, order[6],
+            refund_type='Full' if refund_choice == '1' else 'Partial',
+            reason=reason,
+            student_id=order[1] if order[6] == 'Meal Plan' else None,
+            processed_by=auth.current_user['username'] if auth and auth.current_user else None,
+        )
+        if not outcome['success']:
+            print(f"Refund failed: {outcome['message']}")
+            return
 
         print("✅ Refund processed!")
         print(f"Refund amount: £{refund_amount:.2f}")
@@ -449,7 +468,7 @@ def update_order_status():
         print("You must be logged in to update order status.")
         return
 
-    if not auth.check_permission('update_takeaway_order_status'):
+    if not restaurant_can(auth, 'update_takeaway_order_status'):
         print("You don't have permission to update order status.")
         return
 
@@ -604,61 +623,16 @@ def process_cash_payment():
                 print("Invalid amount.")
 
         change = cash_received - order[0]
-
-        # Update payment method and status
-        cursor.execute('''
-            UPDATE orders
-            SET payment_method = 'Cash', order_status = 'Completed'
-            WHERE order_id = ?
-        ''', (order_id,))
-
-        conn.commit()
-
-        # Record payment to central finance system
-        finance_payment_id = record_payment_to_finance(
-            student_id="EXTERNAL",  # Restaurant customers may not be students
-            amount=order[0],
-            payment_method='Cash',
-            transaction_source='Restaurant',
-            transaction_ref=order_id,
-            notes='Restaurant order payment',
-            created_by=auth.current_user['username'] if auth and auth.current_user else None
-        )
-
-        # Cross-domain: post the order through the unified commerce
-        # bus so restaurant spend feeds loyalty tier + the unified
-        # transaction history. Uses ``commerce_bus.resolve_student``
-        # which checks the explicit ``restaurant_customers.student_id``
-        # link first, then falls back to email match.
-        try:
-            cursor.execute(
-                "SELECT rc.customer_id, rc.email "
-                "FROM orders o "
-                "LEFT JOIN restaurant_customers rc "
-                "  ON rc.customer_id = o.customer_id "
-                "WHERE o.order_id = ?",
-                (order_id,),
-            )
-            crow = cursor.fetchone()
-            from education_system.systems.university.services.bus import (
-                commerce_bus,
-            )
-            student_id = commerce_bus.resolve_student(
-                customer_id=crow[0] if crow else None,
-                email=crow[1] if crow else None,
-            )
-            if student_id:
-                commerce_bus.post_sale(
-                    student_id,
-                    source="restaurant",
-                    amount=float(order[0]),
-                    description=f"Restaurant order {order_id}",
-                    reference_id=order_id,
-                )
-        except Exception:
-            logger.debug("Suppressed exception", exc_info=True)
-
         conn.close()
+
+        # Shared domain service: marks the order Completed and posts to Finance.
+        settlement = settle_order_payment(
+            order_id, order[0], 'Cash',
+            student_id="EXTERNAL",  # Restaurant customers may not be students
+            notes='Restaurant order payment',
+            processed_by=auth.current_user['username'] if auth and auth.current_user else None,
+        )
+        finance_payment_id = settlement['payment_id']
 
         print("✅ Payment processed successfully!")
         print(f"Cash received: £{cash_received:.2f}")
@@ -721,27 +695,16 @@ def process_card_payment():
         # In a real system, this would integrate with a payment processor
         print("✅ Card payment approved!")
 
-        # Update payment method and status
-        cursor.execute('''
-            UPDATE orders
-            SET payment_method = ?, order_status = 'Completed'
-            WHERE order_id = ?
-        ''', (card_type, order_id))
-
-        conn.commit()
-
-        # Record payment to central finance system
-        finance_payment_id = record_payment_to_finance(
-            student_id="EXTERNAL",
-            amount=order[0],
-            payment_method=card_type,
-            transaction_source='Restaurant',
-            transaction_ref=order_id,
-            notes=f'Restaurant order payment via {card_type}',
-            created_by=auth.current_user['username'] if auth and auth.current_user else None
-        )
-
         conn.close()
+
+        # Shared domain service: marks the order Completed and posts to Finance.
+        settlement = settle_order_payment(
+            order_id, order[0], card_type,
+            student_id="EXTERNAL",
+            notes=f'Restaurant order payment via {card_type}',
+            processed_by=auth.current_user['username'] if auth and auth.current_user else None,
+        )
+        finance_payment_id = settlement['payment_id']
 
         print(f"Payment processed: £{order[0]:.2f} via {card_type}")
         if finance_payment_id:
@@ -825,27 +788,17 @@ def process_meal_plan_payment():
             order_id, datetime.now().strftime('%Y-%m-%d %H:%M:%S'), f'Order payment: {order_id}'
         ))
 
-        # Update order
-        cursor.execute('''
-            UPDATE orders
-            SET payment_method = 'Meal Plan', order_status = 'Completed'
-            WHERE order_id = ?
-        ''', (order_id,))
-
         conn.commit()
-
-        # Record payment to central finance system
-        finance_payment_id = record_payment_to_finance(
-            student_id=order[2],  # customer_id (student_id)
-            amount=order[0],
-            payment_method='Meal Plan',
-            transaction_source='Restaurant',
-            transaction_ref=order_id,
-            notes=f'Restaurant order via Meal Plan (Plan ID: {meal_plan[0]})',
-            created_by=auth.current_user['username'] if auth and auth.current_user else None
-        )
-
         conn.close()
+
+        # Shared domain service: marks the order Completed and posts to Finance.
+        settlement = settle_order_payment(
+            order_id, order[0], 'Meal Plan',
+            student_id=order[2],  # customer_id (student_id)
+            notes=f'Restaurant order via Meal Plan (Plan ID: {meal_plan[0]})',
+            processed_by=auth.current_user['username'] if auth and auth.current_user else None,
+        )
+        finance_payment_id = settlement['payment_id']
 
         print("✅ Meal plan payment processed!")
         print(f"Amount charged: £{order[0]:.2f}")
@@ -1082,7 +1035,7 @@ def create_purchase_order():
         print("You must be logged in to create purchase orders.")
         return
 
-    if not auth.check_permission('manage_inventory'):
+    if not restaurant_can(auth, 'manage_inventory'):
         print("You don't have permission to create purchase orders.")
         return
 
@@ -1145,6 +1098,7 @@ def create_purchase_order():
             po_id, selected_supplier[0], datetime.now().strftime('%Y-%m-%d'),
             expected_delivery, None, 0, 'Pending', notes, auth.current_user['id']
         ))
+        po_key = cursor.lastrowid
 
         print(f"\nPurchase Order {po_id} created. Now add items:")
 
@@ -1183,7 +1137,7 @@ def create_purchase_order():
             cursor.execute('''
                 INSERT INTO restaurant_purchase_order_items VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             ''', (
-                None, po_id, item_name, quantity, unit, unit_cost, total_cost, 0
+                None, po_key, item_name, quantity, unit, unit_cost, total_cost, 0
             ))
 
             item_count += 1
@@ -1191,14 +1145,14 @@ def create_purchase_order():
 
         if item_count == 0:
             print("No items added. Cancelling purchase order.")
-            cursor.execute('DELETE FROM restaurant_purchase_orders WHERE po_id = ?', (po_id,))
+            cursor.execute('DELETE FROM restaurant_purchase_orders WHERE order_id = ?', (po_key,))
             conn.commit()
             conn.close()
             return
 
         # Update total amount
-        cursor.execute('UPDATE restaurant_purchase_orders SET total_amount = ? WHERE po_id = ?',
-                      (total_amount, po_id))
+        cursor.execute('UPDATE restaurant_purchase_orders SET total_cost = ?, total_amount = ? WHERE order_id = ?',
+                      (total_amount, total_amount, po_key))
 
         conn.commit()
         conn.close()
@@ -1232,7 +1186,7 @@ def update_purchase_order():
         print("You must be logged in to update purchase orders.")
         return
 
-    if not auth.check_permission('manage_inventory'):
+    if not restaurant_can(auth, 'manage_inventory'):
         print("You don't have permission to update purchase orders.")
         return
 
@@ -1244,7 +1198,7 @@ def update_purchase_order():
         conn = get_db_connection()
         cursor = conn.cursor()
 
-        cursor.execute('SELECT * FROM restaurant_purchase_orders WHERE po_id = ?', (po_id,))
+        cursor.execute('SELECT order_id, supplier_id, status FROM restaurant_purchase_orders WHERE po_number = ?', (po_id,))
         po = cursor.fetchone()
 
         if not po:
@@ -1252,7 +1206,7 @@ def update_purchase_order():
             conn.close()
             return
 
-        print(f"Current PO Status: {po[6]}")
+        print(f"Current PO Status: {po[2]}")
 
         print("\nNew status options:")
         print("1. Pending")
@@ -1282,10 +1236,10 @@ def update_purchase_order():
             cursor.execute('''
                 UPDATE restaurant_purchase_orders
                 SET status = ?, actual_delivery = ?
-                WHERE po_id = ?
+                WHERE po_number = ?
             ''', (new_status, actual_delivery, po_id))
         else:
-            cursor.execute('UPDATE restaurant_purchase_orders SET status = ? WHERE po_id = ?',
+            cursor.execute('UPDATE restaurant_purchase_orders SET status = ? WHERE po_number = ?',
                           (new_status, po_id))
 
         conn.commit()
@@ -1315,7 +1269,7 @@ def receive_purchase_order():
         print("You must be logged in to receive purchase orders.")
         return
 
-    if not auth.check_permission('manage_inventory'):
+    if not restaurant_can(auth, 'manage_inventory'):
         print("You don't have permission to receive purchase orders.")
         return
 
@@ -1328,7 +1282,7 @@ def receive_purchase_order():
         cursor = conn.cursor()
 
         # Get PO details
-        cursor.execute('SELECT * FROM restaurant_purchase_orders WHERE po_id = ?', (po_id,))
+        cursor.execute('SELECT order_id, supplier_id, status FROM restaurant_purchase_orders WHERE po_number = ?', (po_id,))
         po = cursor.fetchone()
 
         if not po:
@@ -1336,13 +1290,13 @@ def receive_purchase_order():
             conn.close()
             return
 
-        if po[6] not in ['Ordered', 'Shipped']:
-            print(f"Cannot receive PO with status: {po[6]}")
+        if po[2] not in ['Ordered', 'Shipped']:
+            print(f"Cannot receive PO with status: {po[2]}")
             conn.close()
             return
 
         # Get PO items
-        cursor.execute('SELECT * FROM restaurant_purchase_order_items WHERE po_id = ?', (po_id,))
+        cursor.execute('SELECT * FROM restaurant_purchase_order_items WHERE order_id = ?', (po[0],))
         po_items = cursor.fetchall()
 
         print(f"\nReceiving Purchase Order: {po_id}")
@@ -1367,7 +1321,7 @@ def receive_purchase_order():
             cursor.execute('''
                 UPDATE restaurant_purchase_order_items
                 SET received_quantity = ?
-                WHERE id = ?
+                WHERE item_id = ?
             ''', (total_received, item[0]))
 
             # Update inventory if item exists
@@ -1394,8 +1348,8 @@ def receive_purchase_order():
         # Check if all items fully received
         cursor.execute('''
             SELECT COUNT(*) FROM restaurant_purchase_order_items
-            WHERE po_id = ? AND received_quantity < quantity
-        ''', (po_id,))
+            WHERE order_id = ? AND received_quantity < quantity
+        ''', (po[0],))
 
         pending_items = cursor.fetchone()[0]
 
@@ -1404,8 +1358,8 @@ def receive_purchase_order():
             cursor.execute('''
                 UPDATE restaurant_purchase_orders
                 SET status = ?, actual_delivery = ?
-                WHERE po_id = ?
-            ''', ('Delivered', datetime.now().strftime('%Y-%m-%d'), po_id))
+                WHERE order_id = ?
+            ''', ('Delivered', datetime.now().strftime('%Y-%m-%d'), po[0]))
             print("\n✅ All items received. Purchase order marked as delivered.")
         else:
             print(f"\n📦 Partial delivery received. {pending_items} items still pending.")
@@ -1468,14 +1422,14 @@ def purchase_order_reports():
         elif choice == '2':
             # Supplier performance
             cursor.execute('''
-                SELECT s.name, COUNT(po.po_id) as order_count,
+                SELECT s.name, COUNT(po.order_id) as order_count,
                        SUM(po.total_amount) as total_value,
-                       AVG(CASE WHEN po.actual_delivery IS NOT NULL AND po.expected_delivery IS NOT NULL
-                           THEN julianday(po.actual_delivery) - julianday(po.expected_delivery)
+                       AVG(CASE WHEN po.actual_delivery IS NOT NULL AND po.expected_delivery_date IS NOT NULL
+                           THEN julianday(po.actual_delivery) - julianday(po.expected_delivery_date)
                            ELSE NULL END) as avg_delay_days
                 FROM restaurant_suppliers s
                 LEFT JOIN restaurant_purchase_orders po ON s.supplier_id = po.supplier_id
-                WHERE po.po_id IS NOT NULL
+                WHERE po.order_id IS NOT NULL
                 GROUP BY s.supplier_id, s.name
                 ORDER BY total_value DESC
             ''')
@@ -1496,11 +1450,11 @@ def purchase_order_reports():
             cursor.execute('''
                 SELECT
                     COUNT(*) as total_orders,
-                    COUNT(CASE WHEN actual_delivery <= expected_delivery THEN 1 END) as on_time,
-                    COUNT(CASE WHEN actual_delivery > expected_delivery THEN 1 END) as late,
+                    COUNT(CASE WHEN actual_delivery <= expected_delivery_date THEN 1 END) as on_time,
+                    COUNT(CASE WHEN actual_delivery > expected_delivery_date THEN 1 END) as late,
                     COUNT(CASE WHEN actual_delivery IS NULL AND status != 'Cancelled' THEN 1 END) as pending
                 FROM restaurant_purchase_orders
-                WHERE expected_delivery IS NOT NULL
+                WHERE expected_delivery_date IS NOT NULL
             ''')
 
             delivery_stats = cursor.fetchone()

@@ -334,5 +334,5 @@ Available reports include:
 ---
 
 **Last Updated**: February 2026
-**Module**: `university_system/modules/domain/cinema/`
+**Module**: `src/education_system/systems/university/plugins/campus_commerce/domain/cinema/`
 **Support**: cinema@university.edu | (555) 123-FILM

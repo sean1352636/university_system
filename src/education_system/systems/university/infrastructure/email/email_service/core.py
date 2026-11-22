@@ -102,9 +102,14 @@ def safe_log_email(cursor, recipient, subject, sent_date, status, related_to=Non
             return False
 
 @handle_exception
-def send_email(recipient_email, subject, body, cc=None, bcc=None, attachments=None):
+def send_email(recipient_email, subject, body, cc=None, bcc=None, attachments=None, *,
+               kind="transactional", category="general", to_ref=None):
     """
-    Store email in DB or send via SMTP based on mode with enhanced logging.
+    Store the in-app copy, then put the message in the university outbox,
+    which delivers it according to the delivery mode (inbox only, sandbox
+    or live SMTP) with retries — see ``outbox_delivery``. ``kind`` is
+    ``transactional`` (always delivered), ``bulk`` or ``marketing`` (which
+    honour unsubscribes and preferences for ``category``).
 
     Args:
         recipient_email: Email address of recipient
@@ -161,21 +166,25 @@ def send_email(recipient_email, subject, body, cc=None, bcc=None, attachments=No
     bcc_str = ", ".join(bcc) if isinstance(bcc, list) else bcc if bcc else None
     attachment_str = ", ".join(attachments) if attachments else None
 
-    if config.get('database_only_mode', True):
-        # Nothing goes over the wire in this mode — the body is only ever read
-        # back through the in-app inbox, which renders plain text. Storing the
-        # markup would show the recipient raw <div>s.
-        from education_system.systems.university.infrastructure.email.smtp import (
-            body_is_html, html_to_plain_text,
-        )
-        stored_body = html_to_plain_text(body) if body_is_html(body) else body
-        result = send_email_db_only(
-            recipient_email, subject, stored_body, cc_str, bcc_str, attachment_str, current_time
-        )
-    else:
-        result = send_email_via_smtp(
-            recipient_email, subject, body, cc_str, bcc_str, attachment_str, current_time
-        )
+    # The in-app inbox is a plain text widget, so it keeps the readable
+    # rendering; the outbox keeps what goes over the wire.
+    from education_system.systems.university.infrastructure.email.smtp import (
+        body_is_html, html_to_plain_text,
+    )
+    stored_body = html_to_plain_text(body) if body_is_html(body) else body
+    result = send_email_db_only(
+        recipient_email, subject, stored_body, cc_str, bcc_str, attachment_str, current_time
+    )
+    try:
+        from education_system.systems.university.infrastructure.email import outbox_delivery
+        who = getattr(_get_current_auth(), "current_user", None)
+        actor = who.get("username") if isinstance(who, dict) else None
+        queued = outbox_delivery.enqueue(
+            recipient_email, subject, body, kind=kind, category=category, to_ref=to_ref,
+            cc=cc_str, bcc=bcc_str, attachments=attachment_str, created_by=actor)
+        result = bool(result) or queued["status"] in ("queued", "stored")
+    except Exception as exc:
+        log_event('error', f"E-mail to {recipient_email} not added to the outbox: {exc}")
 
     # Enhanced logging of result
     if result:

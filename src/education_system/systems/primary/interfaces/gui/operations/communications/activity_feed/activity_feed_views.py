@@ -11,9 +11,11 @@ from __future__ import annotations
 import json
 import logging
 import tkinter as tk
-from tkinter import messagebox, ttk
+from tkinter import ttk
 from typing import Callable
-from education_system.platform import branding
+
+from education_system.platform.delivery.gui.parented_dialogs import make_toplevel, messagebox
+from education_system.systems.primary.interfaces.gui import kit
 from education_system.systems.primary.domain.operations.communications.activity_feed import (
     activity_feed as data,
 )
@@ -33,16 +35,27 @@ WIN_GEOMETRY = "1400x900"
 WIN_MINSIZE = (1200, 800)
 
 
+def _known_actors() -> list[str]:
+    """Actors already in the feed (most active first) for the drop-downs;
+    the boxes stay typeable for anyone not listed yet."""
+    try:
+        return list(data.summary().by_actor)
+    except Exception:  # noqa: BLE001 - an empty list beats a broken screen
+        logger.debug("actor list failed", exc_info=True)
+        return []
+
+
 def open_activity_feed_window(parent=None) -> None:
     data.init_db()
-    master = getattr(parent, "root", parent)
-    win = tk.Toplevel(master) if master is not None else tk.Tk()
-    win.title(f"Activity Feed — {branding.SYSTEM_NAME}")
-    win.geometry(WIN_GEOMETRY)
-    win.minsize(*WIN_MINSIZE)
+    kit.show_page(parent, "Activity Feed", lambda frame: _draw_activity_feed(frame, parent))
 
-    nb = ttk.Notebook(win)
-    nb.pack(fill="both", expand=True, padx=10, pady=10)
+
+def _draw_activity_feed(parent: ttk.Frame, host=None) -> None:
+    kit.page_heading(parent, "Activity Feed",
+                     "Who did what, and when - filter the audit trail, log an event, "
+                     "or see the totals.")
+    nb = ttk.Notebook(parent)
+    nb.pack(fill="both", expand=True)
 
     FeedTab(nb)
     LogTab(nb)
@@ -64,32 +77,33 @@ class FeedTab:
         bar1 = ttk.Frame(self.frame)
         bar1.pack(fill="x", padx=8, pady=(8, 2))
         ttk.Label(bar1, text="Actor:").pack(side="left")
-        self.f_actor = ttk.Entry(bar1, width=14)
+        self.v_actor = tk.StringVar()
+        self.f_actor = kit.ChoiceField(bar1, self.v_actor, choices=_known_actors(),
+                                       blank=True, editable=True, width=16)
         self.f_actor.pack(side="left", padx=(2, 8))
         ttk.Label(bar1, text="Action:").pack(side="left")
-        self.f_action = ttk.Combobox(bar1, values=("",) + ACTIONS,
-                                       width=14)
-        self.f_action.current(0)
+        self.v_action = tk.StringVar()
+        self.f_action = kit.ChoiceField(bar1, self.v_action, choices=ACTIONS, blank=True,
+                                        editable=True, width=14)
         self.f_action.pack(side="left", padx=(2, 8))
         ttk.Label(bar1, text="Severity:").pack(side="left")
-        self.f_severity = ttk.Combobox(
-            bar1, values=("",) + SEVERITIES,
-            state="readonly", width=10)
-        self.f_severity.current(0)
+        self.v_severity = tk.StringVar()
+        self.f_severity = kit.ChoiceField(bar1, self.v_severity, choices=SEVERITIES,
+                                          blank=True, width=10)
         self.f_severity.pack(side="left", padx=(2, 8))
         ttk.Label(bar1, text="Source:").pack(side="left")
-        self.f_source = ttk.Combobox(bar1, values=("",) + SOURCES,
-                                       state="readonly", width=10)
-        self.f_source.current(0)
+        self.v_source = tk.StringVar()
+        self.f_source = kit.ChoiceField(bar1, self.v_source, choices=SOURCES, blank=True,
+                                        width=10)
         self.f_source.pack(side="left", padx=(2, 8))
 
         # Filter row 2
         bar2 = ttk.Frame(self.frame)
         bar2.pack(fill="x", padx=8, pady=(2, 4))
         ttk.Label(bar2, text="Entity type:").pack(side="left")
-        self.f_ent_type = ttk.Combobox(
-            bar2, values=("",) + KNOWN_ENTITY_TYPES, width=18)
-        self.f_ent_type.current(0)
+        self.v_ent_type = tk.StringVar()
+        self.f_ent_type = kit.ChoiceField(bar2, self.v_ent_type, choices=KNOWN_ENTITY_TYPES,
+                                          blank=True, editable=True, width=18)
         self.f_ent_type.pack(side="left", padx=(2, 8))
         ttk.Label(bar2, text="Entity id:").pack(side="left")
         self.f_ent_id = ttk.Entry(bar2, width=12)
@@ -98,8 +112,9 @@ class FeedTab:
         self.f_like = ttk.Entry(bar2, width=20)
         self.f_like.pack(side="left", padx=(2, 8))
         ttk.Label(bar2, text="Limit:").pack(side="left")
-        self.f_limit = ttk.Entry(bar2, width=6)
-        self.f_limit.insert(0, "200")
+        self.v_limit = tk.StringVar(value="200")
+        self.f_limit = kit.NumberField(bar2, self.v_limit, from_=1, to=10000, increment=50,
+                                       width=6)
         self.f_limit.pack(side="left", padx=(2, 8))
         ttk.Button(bar2, text="Apply",
                     command=self.refresh).pack(side="left", padx=(8, 4))
@@ -150,15 +165,12 @@ class FeedTab:
                     command=self.refresh).pack(side="right")
 
     def _clear(self) -> None:
-        self.f_actor.delete(0, "end")
-        self.f_action.current(0)
-        self.f_severity.current(0)
-        self.f_source.current(0)
-        self.f_ent_type.current(0)
+        for v in (self.v_actor, self.v_action, self.v_severity, self.v_source,
+                  self.v_ent_type):
+            v.set("")
         self.f_ent_id.delete(0, "end")
         self.f_like.delete(0, "end")
-        self.f_limit.delete(0, "end")
-        self.f_limit.insert(0, "200")
+        self.v_limit.set("200")
         self.refresh()
 
     def _toggle_auto(self) -> None:
@@ -265,8 +277,8 @@ class LogTab:
 
         ttk.Label(form, text="Action:").grid(row=r, column=0,
                                                 sticky="e", pady=4)
-        self.action_cb = ttk.Combobox(form, values=ACTIONS, width=18)
-        self.action_cb.set("system")
+        self.action_cb = kit.ChoiceField(form, tk.StringVar(value="system"), choices=ACTIONS,
+                                         editable=True, width=18)
         self.action_cb.grid(row=r, column=1, sticky="w", padx=6)
 
         r += 1
@@ -278,7 +290,8 @@ class LogTab:
         r += 1
         ttk.Label(form, text="Actor:").grid(row=r, column=0,
                                                sticky="e", pady=4)
-        self.actor_e = ttk.Entry(form, width=22)
+        self.actor_e = kit.ChoiceField(form, tk.StringVar(), choices=_known_actors(),
+                                       blank=True, editable=True, width=22)
         self.actor_e.grid(row=r, column=1, sticky="w", padx=6)
 
         r += 1
@@ -290,25 +303,22 @@ class LogTab:
         r += 1
         ttk.Label(form, text="Severity:").grid(row=r, column=0,
                                                   sticky="e", pady=4)
-        self.sev_cb = ttk.Combobox(form, values=SEVERITIES,
-                                      state="readonly", width=12)
-        self.sev_cb.set(DEFAULT_SEVERITY)
+        self.sev_cb = kit.ChoiceField(form, tk.StringVar(value=DEFAULT_SEVERITY),
+                                      choices=SEVERITIES, width=12)
         self.sev_cb.grid(row=r, column=1, sticky="w", padx=6)
 
         r += 1
         ttk.Label(form, text="Source:").grid(row=r, column=0,
                                                 sticky="e", pady=4)
-        self.source_cb = ttk.Combobox(form, values=SOURCES,
-                                         state="readonly", width=12)
-        self.source_cb.set("gui")
+        self.source_cb = kit.ChoiceField(form, tk.StringVar(value="gui"), choices=SOURCES,
+                                         width=12)
         self.source_cb.grid(row=r, column=1, sticky="w", padx=6)
 
         r += 1
         ttk.Label(form, text="Entity type:").grid(row=r, column=0,
                                                      sticky="e", pady=4)
-        self.ent_type_cb = ttk.Combobox(
-            form, values=("",) + KNOWN_ENTITY_TYPES, width=22)
-        self.ent_type_cb.set("")
+        self.ent_type_cb = kit.ChoiceField(form, tk.StringVar(), choices=KNOWN_ENTITY_TYPES,
+                                           blank=True, editable=True, width=22)
         self.ent_type_cb.grid(row=r, column=1, sticky="w", padx=6)
 
         r += 1
@@ -339,7 +349,7 @@ class LogTab:
 
     def _clear(self) -> None:
         self.summary_e.delete(0, "end")
-        self.actor_e.delete(0, "end")
+        self.actor_e.set("")
         self.role_e.delete(0, "end")
         self.ent_type_cb.set("")
         self.ent_id_e.delete(0, "end")
@@ -438,9 +448,8 @@ class SummaryTab:
 
 class EventDetailDialog:
     def __init__(self, parent: tk.Misc, event: Event) -> None:
-        self.win = tk.Toplevel(parent)
+        self.win = make_toplevel(parent.winfo_toplevel())
         self.win.title(f"Event #{event.event_id}")
-        self.win.transient(parent)
         self.win.geometry("700x520")
         self.win.minsize(560, 400)
 
@@ -494,9 +503,8 @@ class PurgeDialog:
     def __init__(self, parent: tk.Misc,
                  on_save: Callable[[], None]) -> None:
         self.on_save = on_save
-        self.win = tk.Toplevel(parent)
+        self.win = make_toplevel(parent.winfo_toplevel())
         self.win.title("Purge old events")
-        self.win.transient(parent)
         self.win.after_idle(self.win.grab_set)
 
         form = ttk.Frame(self.win, padding=12)
@@ -508,8 +516,8 @@ class PurgeDialog:
                                          sticky="w", pady=(0, 8))
         ttk.Label(form, text="Older than (days):").grid(row=1, column=0,
                                                           sticky="e", pady=4)
-        self.days_e = ttk.Entry(form, width=8)
-        self.days_e.insert(0, "365")
+        self.days_e = kit.NumberField(form, tk.StringVar(value="365"), from_=1, to=36500,
+                                      width=8)
         self.days_e.grid(row=1, column=1, sticky="w", padx=6)
         bar = ttk.Frame(form)
         bar.grid(row=2, column=0, columnspan=2, pady=(12, 0))

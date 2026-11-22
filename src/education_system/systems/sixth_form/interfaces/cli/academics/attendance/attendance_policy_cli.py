@@ -16,15 +16,11 @@ import logging
 from datetime import date as _date, timedelta as _timedelta
 from typing import Callable
 
-from education_system.systems.sixth_form.domain.academics.attendance import (
-    attendance_rollcall as rollcall,
-    attendance_weeks as weeks,
-    attendance_window as window,
-)
 from education_system.systems.sixth_form.domain.academics.attendance.attendance import (
     ValidationError,
 )
 from education_system.systems.sixth_form.interfaces.cli.academics.attendance.attendance_cli import (
+    lazy_domain,
     _input,
     _pause,
     _pick_from,
@@ -32,6 +28,11 @@ from education_system.systems.sixth_form.interfaces.cli.academics.attendance.att
     _pick_slot,
     _UserAbort,
 )
+
+# Domain modules load on first use (see attendance_cli.lazy_domain).
+rollcall = lazy_domain("attendance_rollcall")
+weeks = lazy_domain("attendance_weeks")
+window = lazy_domain("attendance_window")
 from education_system.systems.sixth_form.domain.academics.timetable.timetable import (
     day_name,
 )
@@ -217,6 +218,20 @@ def roll_history() -> None:
     _pause()
 
 
+def roll_off_site() -> None:
+    print("\n═══ Confirmed Off Site (sign-out log) ═══")
+    print("\n  Learners signed out at reception and not back. They are not")
+    print("  expected at the assembly point; a roll call counts them as")
+    print("  'Confirmed off site' unless a marshal says otherwise.")
+    rows = rollcall.confirmed_off_site()
+    if not rows:
+        print("\n  ✓ Nobody is signed out.")
+    for presence in rows:
+        print(f"    {presence.student_id:<12}{presence.full_name[:24]:<25}"
+              f"{presence.detail or ''}")
+    _pause()
+
+
 _ROLL_MENU: list[tuple[str, Callable[[], None]]] = [
     ("Who is on site",      roll_on_site),
     ("Start a roll call",   roll_start),
@@ -224,6 +239,7 @@ _ROLL_MENU: list[tuple[str, Callable[[], None]]] = [
     ("Status / who's missing", roll_status),
     ("Close",               roll_close),
     ("Drill history",       roll_history),
+    ("Confirmed off site (signed out)", roll_off_site),
 ]
 
 

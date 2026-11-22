@@ -13,6 +13,9 @@ from education_system.systems.university.plugins.campus_commerce.interfaces.gui.
     send_email,
     logger,
 )
+from education_system.systems.university.plugins.campus_commerce.domain.charity_shop.services.charity_shop_service import (
+    refund_transaction as refund_transaction_service,
+)
 
 
 class RefundsMixin:
@@ -188,52 +191,24 @@ class RefundsMixin:
             if not refund_method:
                 return
 
-            # Process refund
+            # Process refund through the domain service (local status, Finance
+            # posting and any student-account credit happen there, once).
             try:
-                conn = sqlite3.connect(str(DEFAULT_DB_PATH))
-                cursor = conn.cursor()
-
-                # Update transaction status
-                cursor.execute('''
-                    UPDATE transactions
-                    SET status = 'refunded'
-                    WHERE source_type = 'charity_shop' AND reference_number = ?
-                ''', (transaction_id,))
-
-                # Generate refund reference
-                refund_ref = f"CHARITY-REFUND-{datetime.now().strftime('%Y%m%d%H%M%S')}"
-
-                # Insert refund record into unified_refunds table
                 processed_by = self.current_user.get('username', 'System') if self.current_user else 'System'
-                cursor.execute('''
-                    INSERT INTO unified_refunds
-                    (source_type, reference_id, reference_type, refund_date, amount,
-                     refund_method, refund_reference, student_id, processed_by, status)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                ''', ('charity_shop', transaction_id, 'transaction',
-                      datetime.now().strftime('%Y-%m-%d %H:%M:%S'), amount, refund_method,
-                      refund_ref, student_id, processed_by, 'processed'))
-                refund_row_id = cursor.lastrowid
+                outcome = refund_transaction_service(
+                    transaction_ref=transaction_id,
+                    amount=amount,
+                    refund_method=refund_method,
+                    processed_by=processed_by,
+                )
+                if not outcome.get('success'):
+                    messagebox.showerror(_t('gui.shell.services.charity_shop_gui.refunds.dialogs.error', default="Error"), outcome.get('message', 'Refund failed'))
+                    return
+                refund_ref = outcome['refund_ref']
 
-                conn.commit()
-                conn.close()
-
-                # Auto-post to GL (cash has moved). Never raises.
-                try:
-                    from education_system.systems.university.domains.finance.domain.ledger import notify_ledger
-                    notify_ledger('refund', refund_row_id, posted_by=processed_by)
-                except Exception:
-                    import logging
-                    logging.getLogger(__name__).exception(
-                        "ledger hook failed for charity_shop refund %s", refund_row_id,
-                    )
-
-                # If student account refund, add to their account
-                if refund_method == 'Student Account':
-                    success = self._add_charity_refund_to_student_account(student_id, amount, refund_ref)
-                    if not success:
-                        messagebox.showwarning(_t('gui.shell.services.charity_shop_gui.refunds.dialogs.partial_success', default="Partial Success"),
-                                             _t('gui.shell.services.charity_shop_gui.refunds.dialogs.refund_recorded_but_failed_to_credit_student_account_please_cred', default="Refund recorded but failed to credit student account. Please credit manually."))
+                if refund_method == 'Student Account' and not outcome.get('credited'):
+                    messagebox.showwarning(_t('gui.shell.services.charity_shop_gui.refunds.dialogs.partial_success', default="Partial Success"),
+                                         _t('gui.shell.services.charity_shop_gui.refunds.dialogs.refund_recorded_but_failed_to_credit_student_account_please_cred', default="Refund recorded but failed to credit student account. Please credit manually."))
 
                 # Send refund receipt email
                 self._send_charity_refund_receipt(transaction_id, student_id, amount, refund_method, refund_ref)
@@ -440,86 +415,6 @@ TOTAL:              \u00a3{trans[3]:.2f}
 
         dialog.wait_window()
         return result['method']
-
-    def _add_charity_refund_to_student_account(self, student_id, amount, refund_ref):
-        """Add refund amount to student finance account"""
-        try:
-            # Use finance integration if available for better handling
-            if FINANCE_INTEGRATION_AVAILABLE:
-                try:
-                    from education_system.systems.university.domains.finance.infrastructure.finance_integration import top_up_student_finance_account
-                    result = top_up_student_finance_account(
-                        student_id=student_id,
-                        amount=amount,
-                        payment_method='Refund',
-                        processed_by=self.current_user.get('username', 'System') if self.current_user else 'System',
-                        description=f'Charity Shop Purchase Refund - {refund_ref}'
-                    )
-                    if result.get('success'):
-                        logger.info(f"Refund credited to finance account for {student_id}: \u00a3{amount:.2f}")
-                        return True
-                    else:
-                        logger.error(f"Finance integration failed: {result.get('message')}")
-                        # Fall through to manual method
-                except Exception as e:
-                    logger.warning(f"Finance integration error, using fallback: {e}")
-                    # Fall through to manual method
-
-            # Fallback: Direct database update with correct schema
-            conn = sqlite3.connect(str(DEFAULT_DB_PATH))
-            try:
-                cursor = conn.cursor()
-
-                # Check if student finance account exists and get account_id and current balance
-                cursor.execute('SELECT account_id, balance FROM student_finance_accounts WHERE student_id = ?', (student_id,))
-                account = cursor.fetchone()
-
-                if not account:
-                    # Create account with refund amount
-                    cursor.execute('''
-                        INSERT INTO student_finance_accounts (student_id, balance, created_at)
-                        VALUES (?, ?, ?)
-                    ''', (student_id, amount, datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
-
-                    # Get the newly created account_id
-                    cursor.execute('SELECT account_id FROM student_finance_accounts WHERE student_id = ?', (student_id,))
-                    account = cursor.fetchone()
-                    account_id = account[0]
-                    balance_before = 0.0
-                    balance_after = amount
-
-                    logger.info(f"Created new finance account for {student_id} with refund of \u00a3{amount:.2f}")
-                else:
-                    account_id = account[0]
-                    balance_before = account[1]
-                    balance_after = balance_before + amount
-
-                    # Update existing account
-                    cursor.execute('''
-                        UPDATE student_finance_accounts
-                        SET balance = ?, updated_at = CURRENT_TIMESTAMP
-                        WHERE student_id = ?
-                    ''', (balance_after, student_id))
-                    logger.info(f"Updated finance account for {student_id}: +\u00a3{amount:.2f}")
-
-                # Record transaction with correct schema
-                processed_by = self.current_user.get('username', 'System') if self.current_user else 'System'
-                cursor.execute('''
-                    INSERT INTO transactions
-                    (source_type, account_id, student_id, transaction_type, amount, balance_before, balance_after,
-                     description, reference_id, processed_by, created_at)
-                    VALUES ('student_finance', ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
-                ''', (account_id, student_id, 'credit', amount, balance_before, balance_after,
-                      'Charity Shop Purchase Refund', refund_ref, processed_by))
-
-                conn.commit()
-            finally:
-                conn.close()
-            return True
-
-        except Exception as e:
-            logger.error(f"Error adding refund to student account: {e}")
-            return False
 
     def _send_charity_refund_receipt(self, transaction_id, student_id, amount, method, refund_ref):
         """Send refund receipt email to customer"""

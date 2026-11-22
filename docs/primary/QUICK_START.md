@@ -16,7 +16,7 @@ Get the Primary School Management System running in 5 minutes.
 ```bash
 # Clone the repository (if not already done)
 git clone <repository-url>
-cd education_system
+cd education-system
 
 # Create and activate a virtual environment
 python -m venv venv
@@ -28,6 +28,7 @@ source venv/bin/activate    # Linux / macOS
 
 ```bash
 pip install -r requirements.lock
+pip install -e .
 ```
 
 Key dependencies include Flask, bcrypt, pyotp, and the standard library modules (tkinter, sqlite3, logging).
@@ -36,7 +37,7 @@ Key dependencies include Flask, bcrypt, pyotp, and the standard library modules 
 
 ```bash
 # Check the package is importable
-python -c "from education_system.primary_school import __version__; print(__version__)"
+python -c "from education_system.systems.primary.manifest import MANIFEST; print(MANIFEST.display_name)"
 ```
 
 ## Starting the System
@@ -47,7 +48,7 @@ python -c "from education_system.primary_school import __version__; print(__vers
 python -m education_system --primary --gui
 ```
 
-This opens the tkinter-based desktop application with a scrollable sidebar listing all 46 available modules.
+This opens the tkinter-based desktop application with a scrollable sidebar listing the available modules.
 
 ### Option B: Launch the CLI
 
@@ -63,15 +64,15 @@ The CLI provides a text-based menu interface for headless or remote operation.
 python -m education_system
 ```
 
-The universal login window authenticates against the shared auth system and allows you to select any of the four Education System platforms (University, College, Secondary School, Primary School).
+The universal login window authenticates against the shared auth system and allows you to select any of the seven Education System platforms you have access to (Nursery, Primary School, Secondary School, Sixth Form College, FE College, Apprenticeships, University).
 
 ## First Login
 
-The system uses shared authentication with pre-seeded default accounts. Use these to log in and explore:
+The system uses shared authentication. When started with `EDU_DEV_SEED=true`, it seeds these default accounts. Use them to log in and explore:
 
 | Role | Username | Password | Notes |
 |------|----------|----------|-------|
-| Super Admin | `superadmin` | `SuperAdmin@123` | Access to all 4 systems |
+| Super Admin | `superadmin` | `SuperAdmin@123` | Access to all 7 systems |
 | Administrator | `admin3` | `admin1234` | Primary school admin |
 | Staff | `staff3` | `staff1234` | Teacher / staff role |
 | Student | `student3` | `student1234` | Pupil-facing features |
@@ -81,83 +82,26 @@ The system uses shared authentication with pre-seeded default accounts. Use thes
 
 ## Quick Tour of Features
 
-The system contains 46 domain modules organized into 7 categories:
+The sidebar groups the system's modules into 9 categories:
 
-### Academics (11 modules)
-
-- **Pupils** -- Pupil records, profiles, and ID management (IDs prefixed `PRI`, e.g., PRI0001)
-- **Subjects** -- Subject definitions and curriculum mapping
-- **Classes** -- Class group creation and pupil assignment
-- **Assessment** -- Assessment recording with levels: Emerging, Developing, Expected, Greater Depth
-- **Attendance** -- Daily and session-based attendance registers
-- **Timetable** -- Class timetable scheduling and room allocation
-- **Homework** -- Homework setting, tracking, and completion
-- **SATs** -- Key Stage 1 and Key Stage 2 SATs preparation and results
-- **Phonics** -- Year 1 phonics screening check tracking
-- **Reading Records** -- Reading log management and reading level tracking
-- **Progress** -- Pupil progress tracking across key stages (EYFS, KS1, KS2)
-
-### Pastoral Care (5 modules)
-
-- **Behaviour** -- Behaviour incident logging and management
-- **Rewards** -- Reward points, certificates, and recognition
-- **Safeguarding** -- Safeguarding concern logging, escalation, and reporting
-- **SEND** -- Special educational needs and disabilities tracking and support plans
-- **Pastoral** -- Pastoral care records, referrals, and wellbeing notes
-
-### Staff (4 modules)
-
-- **HR** -- Staff records, contracts, and personnel management (IDs prefixed `STF`, e.g., STF0001)
-- **CPD** -- Continuing professional development records
-- **Cover** -- Cover lesson allocation and tracking
-- **Staff Directory** -- Staff contact details and role directory
-
-### Administration (9 modules)
-
-- **Users** -- User account management
-- **Settings** -- System configuration and preferences
-- **Admissions** -- Admissions application processing and intake management
-- **Finance** -- Financial management, budgets, and expenditure tracking
-- **Data Export** -- Data export and reporting tools
-- **Audit Log** -- System audit trail and activity logging
-- **Policies** -- Policy document management and version tracking
-- **Documents** -- Document storage and management
-
-### Pupil Life (8 modules)
-
-- **Clubs** -- Extra-curricular club management and attendance
-- **Meals** -- School meal management, dietary requirements, and free school meals
-- **Transport** -- Pupil transport arrangements and routes
-- **Trips** -- School trip planning, risk assessments, and consent
-- **Library** -- Library catalogue, loans, returns, and overdue tracking
-- **Medical** -- Medical information, allergies, and medication records
-- **Class Groups** -- Form group and set management
-- **Consent** -- Parental consent tracking for activities and data
-
-### Facilities (4 modules)
-
-- **Room Booking** -- Room and space booking
-- **Assets** -- Asset tracking and inventory management
-- **Visitors** -- Visitor sign-in, DBS checks, and safeguarding
-- **Incidents** -- Incident reporting and follow-up
-
-### Communication (6 modules)
-
-- **Email** -- Email communication to parents and staff
-- **Notifications** -- System notifications and alerts
-- **Announcements** -- School-wide announcements
-- **Calendar** -- School calendar, term dates, and events
-- **Parents Evening** -- Parents evening scheduling and booking
-- **Communication Log** -- Communication history and audit trail
+- **Pupil Management** -- Pupil directory and profiles (IDs prefixed `P`), admissions, year group enrolment, onboarding, bulk operations, and leavers
+- **Academic Management** -- Academic year, calendar, year groups, classes, subjects, timetable, attendance register, lesson plans, cover, homework, phonics tracking, reading levels, library, and clubs
+- **Assessment & Progress** -- Assessment records (grades BLW, WTS, EXS, GDS), phonics screening, multiplication check, KS1 and KS2 SATs, EYFS profile, target setting, interventions, early warning, observations, and pupil reports
+- **Pastoral & Wellbeing** -- Class teachers, behaviour, house points, safeguarding, SEND, pupil premium, accessibility, wellbeing, pupil support, attendance concerns, absence requests, first aid, medical records, emergency contacts, Prevent duty, equality and diversity, complaints, feedback, surveys, school council, breakfast and after-school club, and transport
+- **Staff & Communication** -- Staff directory (IDs prefixed `T`), teaching assistants, HR, absence, wellbeing, recruitment, appraisals, CPD, DBS checks, visitors, parent contacts, parents' evenings, newsletters, announcements, notifications, activity feed, email and messaging, letter templates, document hub, and attachments
+- **Finance** -- Dinner money, trips and payments, receipts, expense claims, funding, and school census
+- **Reports & Analytics** -- Attendance and progress reports, KPI, data and mobile dashboards, audit reports, and data exports
+- **Cross-System** -- Student journey, analytics dashboard, cross-system calendar, central admin portal, GDPR compliance, shared documents, pupil self-service, and certificates
+- **System** -- Change password, MFA, user accounts, user management, settings, compliance, governance, policies, GDPR, risk management, health and safety, assets, multi-language, to-do, and about
 
 ## Common Tasks
 
 ### Add a Pupil
 
-1. Log in as `primary_admin` or a user with pupil management permissions.
+1. Log in as `admin3` or a user with pupil management permissions.
 2. Navigate to the **Pupils** module in the sidebar.
 3. Click **Add Pupil** and fill in the required fields (name, date of birth, year group, class).
-4. The system generates a pupil ID automatically (format: `PRI0001`, `PRI0002`, ...).
+4. The system generates a pupil ID automatically (the prefix `P` followed by digits).
 5. Select the year group: Reception, Year 1, Year 2, Year 3, Year 4, Year 5, or Year 6.
 6. Save the record.
 
@@ -173,10 +117,10 @@ The system contains 46 domain modules organized into 7 categories:
 1. Navigate to the **Assessment** module.
 2. Select the subject and class.
 3. For each pupil, record the assessment level:
-   - **Emerging** -- Working towards the expected standard
-   - **Developing** -- Making progress towards the expected standard
-   - **Expected** -- Meeting the expected standard for age
-   - **Greater Depth** -- Exceeding the expected standard
+   - **BLW** -- Working below the expected standard
+   - **WTS** -- Working towards the expected standard
+   - **EXS** -- Meeting the expected standard
+   - **GDS** -- Working at greater depth
 4. Add any notes or comments.
 5. Save the assessment records.
 
@@ -192,35 +136,32 @@ The system contains 46 domain modules organized into 7 categories:
 The system uses SQLite. The database file is located at:
 
 ```
-primary_school/data/db_files/primary_school.db
+var/data/primary/primary.db
 ```
 
 The shared authentication database is at:
 
 ```
-education_system/shared/data/db_files/auth.db
+var/data/platform/db_files/auth.db
 ```
 
-On first run, the schema is created automatically and default data (including the default user accounts above) is seeded.
+On first run, each module creates its tables automatically. The default user accounts above are seeded only when `EDU_DEV_SEED=true`.
 
 ## Log Files
 
-Application logs are written to:
+Application logs are written to the console; the Primary School writes no log file of its own. Console output shows warnings and above. Start with `--verbose` to see info-level messages:
 
+```bash
+python -m education_system --primary --gui --verbose
 ```
-primary_school/logs/app.log
-```
-
-Log output includes timestamps, module names, and severity levels. Console output shows warnings and above; the file captures info-level and above.
 
 ## Next Steps
 
 - **[README.md](README.md)** -- Full documentation index
 - **[TROUBLESHOOTING.md](TROUBLESHOOTING.md)** -- Solutions to common problems
-- **Shared authentication** -- See `education_system/shared/auth/` for the unified authentication system
-- **Configuration** -- See `primary_school/core/defaults.py` for session timeout, lockout, and other settings
+- **Shared authentication** -- See `src/education_system/platform/identity/auth/` for the unified authentication system
+- **Configuration** -- See `src/education_system/platform/identity/auth/defaults.py` for session timeout, lockout, and other settings
 
 ---
 
-**Last Updated**: March 2026
-**Version**: 1.0.0
+**Last Updated**: October 2026

@@ -31,64 +31,6 @@ class BillingMixin:
         except Exception:
             self.fee_display_var.set("GBP 25.00")
 
-    def record_payment_transaction(self, client_id: str, amount: float, description: str, payment_method: str):
-        """Record payment transaction in finance system to add to revenue"""
-        try:
-            with transaction() as conn:
-                cursor = conn.cursor()
-
-                # Try to record in the main payments table
-                payment_row_id = None
-                try:
-                    cursor.execute('''
-                        INSERT INTO payments
-                        (student_id, amount, payment_method, payment_date, status, notes, created_by, created_at)
-                        VALUES (?, ?, ?, ?, 'completed', ?, ?, ?)
-                    ''', (client_id, amount, payment_method, datetime.now().strftime('%Y-%m-%d'),
-                          description, self.current_user.get('username'), datetime.now().isoformat()))
-                    payment_row_id = cursor.lastrowid
-                except Exception:
-                    logger.debug("Suppressed exception", exc_info=True)
-
-                # Auto-post to GL if the INSERT succeeded (never raises)
-                if payment_row_id is not None:
-                    try:
-                        from education_system.systems.university.domains.finance.domain.ledger import notify_ledger
-                        notify_ledger('payment', payment_row_id,
-                                      posted_by=self.current_user.get('username') or 'legal')
-                    except Exception as _e:
-                        import logging
-                        logging.getLogger(__name__).warning("ledger hook failed: %s", _e)
-
-                # Try to update student finance account
-                try:
-                    cursor.execute('''
-                        SELECT account_id FROM student_finance_accounts WHERE student_id = ?
-                    ''', (client_id,))
-                    account = cursor.fetchone()
-
-                    if account:
-                        cursor.execute('''
-                            INSERT INTO transactions
-                            (source_type, account_id, student_id, transaction_type, amount, description, processed_by, created_at)
-                            VALUES ('student_finance', ?, ?, 'legal_service', ?, ?, ?, ?)
-                        ''', (account[0], client_id, amount, description,
-                              self.current_user.get('username'), datetime.now().isoformat()))
-                except Exception:
-                    logger.debug("Suppressed exception", exc_info=True)
-
-            log_activity('record_payment', 'legal_services', details={
-                'client_id': client_id,
-                'amount': amount,
-                'description': description
-            })
-
-            return True
-
-        except Exception as e:
-            print(f"Error recording payment transaction: {e}")
-            return False
-
     def generate_invoice(self):
         """Generate invoice for the selected case"""
         case_selection = self.doc_case_combo.get()

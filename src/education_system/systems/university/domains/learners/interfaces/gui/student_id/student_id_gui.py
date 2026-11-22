@@ -79,7 +79,8 @@ class StudentIDGUI:
             with get_connection() as conn:
                 # Get student details
                 row = conn.execute(
-                    "SELECT * FROM students WHERE student_id = ? OR username = ?",
+                    "SELECT * FROM students WHERE student_id = ? OR student_id = "
+                    "(SELECT u.student_id FROM users u WHERE u.username = ?)",
                     (sid, sid)
                 ).fetchone()
                 if row:
@@ -88,8 +89,12 @@ class StudentIDGUI:
                         info['name'] = row['full_name']
                     elif 'name' in keys:
                         info['name'] = row['name']
+                    elif 'first_name' in keys:
+                        info['name'] = " ".join(p for p in (row['first_name'], row['last_name']) if p) or info.get('name')
                     if 'email' in keys:
                         info['email'] = row['email']
+                    elif 'email_address' in keys:
+                        info['email'] = row['email_address'] or info.get('email')
                     if 'course' in keys:
                         info['course'] = row['course']
                     if 'department' in keys:

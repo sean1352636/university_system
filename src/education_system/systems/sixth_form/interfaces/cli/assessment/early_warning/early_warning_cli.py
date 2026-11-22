@@ -419,6 +419,31 @@ def acknowledge_flow() -> None:
     _pause()
 
 
+def open_intervention_flow() -> None:
+    """Open an intervention for an alert (or show the one it opened)."""
+    print("\n═══ Open Intervention from Alert ═══")
+    try:
+        a = _pick_alert()
+        lead = _input("Lead staff (optional)")
+    except _UserAbort:
+        print("\n  Cancelled.")
+        return
+    try:
+        iv, created = data.open_intervention(
+            a.alert_id, lead_staff=lead or None)
+    except ValidationError as e:
+        print(f"\n  ✗ {e}")
+        _pause()
+        return
+    if created:
+        print(f"\n  ✓ Intervention #{iv.intervention_id} opened "
+              f"({iv.intervention_type}): {iv.title}")
+    else:
+        print(f"\n  • Alert already has intervention "
+              f"#{iv.intervention_id}: {iv.title} ({iv.status})")
+    _pause()
+
+
 def resolve_flow() -> None:
     print("\n═══ Resolve Alert ═══")
     try:
@@ -550,6 +575,10 @@ def scan_flow() -> None:
         print("  By source:")
         for src, n in result.sources.items():
             print(f"    {src:<22} : {n}")
+    for err in result.errors:
+        print(f"  ✗ {err}")
+    if result.errors:
+        print("  (a failed source means its alerts were NOT checked)")
     _pause()
 
 
@@ -606,6 +635,7 @@ _MENU: list[tuple[str, Callable[[], None]]] = [
     ("─" * 6,                lambda: None),
     ("Auto-scan for alerts", scan_flow),
     ("Summary",              summary_flow),
+    ("Open intervention from alert", open_intervention_flow),
 ]
 
 

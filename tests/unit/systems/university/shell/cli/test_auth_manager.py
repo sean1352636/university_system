@@ -4,7 +4,7 @@ from unittest.mock import Mock
 
 
 def test_link_auth_to_student_union_uses_current_module_path(monkeypatch):
-    from education_system.systems.university.domains.pastoral.domain.student_life import (
+    from education_system.systems.university.domains.student_life.domain.student_life import (
         student_union,
     )
     from education_system.systems.university.shell.cli import auth_manager

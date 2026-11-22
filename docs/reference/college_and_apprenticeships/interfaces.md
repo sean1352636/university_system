@@ -1,6 +1,6 @@
 # Interfaces
 
-Apprenticeships only — `fe_college` has no interfaces.
+Apprenticeships only. FE College has its own interfaces under `systems/fe_college/interfaces/`.
 
 Two interface trees live under
 `education_system/systems/apprenticeships/interfaces/`, both built.
@@ -99,7 +99,7 @@ standing.
 
 ## Preferences
 
-`services/preferences.py` holds three per-login settings, each chosen
+`application/workspace/preferences.py` holds three per-login settings, each chosen
 because it has exactly one place it can take effect: date format
 (`widgets._display` / `prompts.cell`), rows per table
 (`widgets.DataTable` height, `prompts.table`'s row budget) and the

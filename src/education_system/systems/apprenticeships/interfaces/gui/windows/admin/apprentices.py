@@ -7,11 +7,11 @@ from typing import Any
 
 from education_system.systems.apprenticeships import config
 from education_system.systems.apprenticeships.interfaces.gui import widgets
-from education_system.systems.apprenticeships.services import (
-    apprentice_service,
-    employer_service,
-    programme_service,
-)
+from education_system.systems.apprenticeships.application.apprentices import apprentice_service
+from education_system.systems.apprenticeships.application.employers import employer_service
+from education_system.systems.apprenticeships.application.programmes import programme_service
+from education_system.systems.apprenticeships.application.security import account_service
+from education_system.systems.apprenticeships.domain.apprentices.models import ValidationError
 
 logger = logging.getLogger(__name__)
 
@@ -83,6 +83,7 @@ def render(gui) -> None:
         buttons.append(("Change Status", lambda: _change_status(gui, table)))
         buttons.append(("Start Programme", lambda: _start(gui, table)))
         buttons.append(("Assign Tutor", lambda: _assign_tutor(gui, table)))
+        buttons.append(("Create Login", lambda: _create_login_for_selected(gui, table)))
     if gui.actor.can("training.manage"):
         buttons.append(("Apply Curriculum", lambda: _apply_curriculum(gui, table)))
     buttons.append(("View Detail", lambda: _view(gui, table)))
@@ -125,6 +126,21 @@ def _detail(gui, apprentice_id: int) -> None:
 
     body = widgets.scrollable(frame)
     widgets.field_grid(
+        widgets.section(body, "Personal details"),
+        (
+            ("Legal name", record.legal_name),
+            ("Preferred name", record.preferred_name),
+            ("Gender", record.gender),
+            ("Address", record.address),
+            ("Emergency contact", record.emergency_contact_name),
+            ("Relationship", record.emergency_contact_relationship),
+            ("Emergency phone", record.emergency_contact_phone),
+            ("Learning difficulty / disability", "Yes" if record.has_lldd else "No"),
+            ("EHC plan", "Yes" if record.has_ehcp else "No"),
+        ),
+        columns=3,
+    )
+    widgets.field_grid(
         widgets.section(body, "Record"),
         (
             ("ULN", record.uln),
@@ -165,6 +181,7 @@ def _detail(gui, apprentice_id: int) -> None:
         (
             ("Prior learning", record.prior_learning),
             ("Support needs", record.support_needs),
+            ("Medical notes", record.medical_notes),
             ("Notes", record.notes),
         ),
         columns=1,
@@ -211,17 +228,78 @@ def _history(gui, parent, apprentice_id: int) -> None:
 def _create(gui) -> None:
     choices = _choices(gui)
 
-    def save(values: dict[str, Any]) -> None:
-        apprentice_service.create_apprentice(gui.actor, _payload(values, choices))
+    def save(values: dict[str, Any]) -> Any:
+        payload = _payload(values, choices)
+        try:
+            return apprentice_service.create_apprentice(
+                gui.actor, payload, check_duplicate=True,
+            )
+        except apprentice_service.DuplicateApprentice as dup:
+            if not widgets.confirm(
+                f"{dup}\n\nTwins and people with common names can match. "
+                "Save this as a new apprentice anyway?",
+                title="Possible duplicate",
+            ):
+                raise ValidationError(
+                    "Not saved. Open the existing record from the cohort list instead."
+                ) from dup
+            return apprentice_service.create_apprentice(gui.actor, payload)
 
+    fields = _fields(choices, None)
+    fields += [
+        {"kind": "section", "key": "_login", "label": "Login"},
+        {"key": "create_login", "label": "Create their login", "kind": "check",
+         "value": True,
+         "help": "Creates a shared login and e-mails them a temporary password."},
+    ]
     dialog = widgets.FormDialog(
-        gui.root, "Enrol apprentice", _fields(choices, None), save,
+        gui.root, "Enrol apprentice", fields, save,
         intro="New records start as an applicant. Use Start Programme once the "
               "eligibility checks and the signed training plan are in place.",
         save_label="Enrol",
     )
-    if dialog.saved:
-        gui.refresh()
+    if not dialog.saved:
+        return
+    created = dialog.result
+    if created is not None and dialog.values_at_save.get("create_login"):
+        _create_login(gui, created.apprentice_id, created.full_name)
+    gui.refresh()
+
+
+def _create_login_for_selected(gui, table: widgets.DataTable) -> None:
+    apprentice_id = table.require_selection_int("create a login")
+    if apprentice_id is None:
+        return
+    ok, summary = widgets.guard(
+        lambda: apprentice_service.get_apprentice(gui.actor, apprentice_id)
+    )
+    if not ok or summary is None:
+        return
+    if not widgets.confirm(
+        f"Create a login for {summary.full_name} and e-mail them a temporary password?",
+        title="Create login",
+    ):
+        return
+    _create_login(gui, apprentice_id, summary.full_name)
+    gui.refresh()
+
+
+def _create_login(gui, apprentice_id: int, name: str) -> None:
+    """Create the login and show the sign-in details once."""
+    ok, new = widgets.guard(
+        lambda: account_service.create_apprentice_login(gui.actor, apprentice_id),
+        title="Create login",
+    )
+    if not ok or new is None:
+        return
+    widgets.inform(
+        f"Login created for {name}:\n\n"
+        f"    Username:  {new.username}\n"
+        f"    Password:  {new.password}\n\n"
+        "Note the password now. It won't be shown again.\n\n"
+        f"{new.welcome_detail}",
+        title="Create login",
+    )
 
 
 def _edit(gui, table: widgets.DataTable) -> None:
@@ -258,17 +336,42 @@ def _fields(choices: dict[str, list], summary: Any) -> list[dict[str, Any]]:
     target.
     """
     record = getattr(summary, "apprentice", None)
+
+    def value(attr: str, default: Any = "") -> Any:
+        found = getattr(record, attr, None)
+        return default if found is None else found
+
     return [
-        {"key": "given_name", "label": "First name", "required": True,
-         "value": getattr(record, "given_name", "")},
-        {"key": "family_name", "label": "Last name", "required": True,
-         "value": getattr(record, "family_name", "")},
-        {"key": "uln", "label": "ULN", "value": getattr(record, "uln", ""),
-         "help": "Ten digits. Leave blank until the number comes back."},
+        {"kind": "section", "key": "_identity", "label": "Identity"},
+        {"key": "given_name", "label": "Legal first name", "required": True,
+         "value": value("given_name")},
+        {"key": "middle_name", "label": "Middle name(s)", "value": value("middle_name")},
+        {"key": "family_name", "label": "Legal last name", "required": True,
+         "value": value("family_name")},
+        {"key": "preferred_name", "label": "Preferred name", "value": value("preferred_name")},
         {"key": "date_of_birth", "label": "Date of birth",
-         "value": getattr(record, "date_of_birth", ""), "help": "YYYY-MM-DD"},
-        {"key": "email", "label": "Email", "value": getattr(record, "email", "")},
-        {"key": "phone", "label": "Phone", "value": getattr(record, "phone", "")},
+         "value": value("date_of_birth"), "help": "YYYY-MM-DD"},
+        {"key": "gender", "label": "Gender", "kind": "combo",
+         "options": ("", *config.GENDERS), "value": value("gender")},
+        {"key": "uln", "label": "ULN", "value": value("uln"),
+         "help": "Ten digits. Leave blank until the number comes back."},
+        {"kind": "section", "key": "_contact", "label": "Contact"},
+        {"key": "email", "label": "Email", "value": value("email")},
+        {"key": "phone", "label": "Phone", "value": value("phone")},
+        {"kind": "section", "key": "_address", "label": "Home address"},
+        {"key": "address_line1", "label": "Address line 1", "value": value("address_line1")},
+        {"key": "address_line2", "label": "Address line 2", "value": value("address_line2")},
+        {"key": "town", "label": "Town / city", "value": value("town")},
+        {"key": "postcode", "label": "Postcode", "value": value("postcode")},
+        {"kind": "section", "key": "_emergency", "label": "Emergency contact"},
+        {"key": "emergency_contact_name", "label": "Name",
+         "value": value("emergency_contact_name")},
+        {"key": "emergency_contact_relationship", "label": "Relationship", "kind": "combo",
+         "options": ("", *config.EMERGENCY_RELATIONSHIPS), "editable": True,
+         "value": value("emergency_contact_relationship")},
+        {"key": "emergency_contact_phone", "label": "Phone",
+         "value": value("emergency_contact_phone")},
+        {"kind": "section", "key": "_apprenticeship", "label": "Apprenticeship"},
         {"key": "username", "label": "Login username",
          "value": getattr(record, "username", ""),
          "help": "Links this record to an apprentice login."},
@@ -290,11 +393,18 @@ def _fields(choices: dict[str, list], summary: Any) -> list[dict[str, Any]]:
          "value": getattr(record, "funding_model", ""),
          "help": "Leave blank to let the funding screen derive it."},
         {"key": "prior_learning", "label": "Prior learning", "kind": "text",
-         "value": getattr(record, "prior_learning", "")},
+         "value": value("prior_learning")},
+        {"kind": "section", "key": "_needs", "label": "Needs and medical"},
+        {"key": "has_lldd", "label": "Learning difficulty / disability", "kind": "check",
+         "value": value("has_lldd", False)},
+        {"key": "has_ehcp", "label": "Has an EHC plan", "kind": "check",
+         "value": value("has_ehcp", False)},
         {"key": "support_needs", "label": "Support needs", "kind": "text",
-         "value": getattr(record, "support_needs", "")},
-        {"key": "notes", "label": "Notes", "kind": "text",
-         "value": getattr(record, "notes", "")},
+         "value": value("support_needs")},
+        {"key": "medical_notes", "label": "Medical notes", "kind": "text",
+         "value": value("medical_notes"),
+         "help": "Conditions, allergies or medication staff should know about."},
+        {"key": "notes", "label": "Notes", "kind": "text", "value": value("notes")},
     ]
 
 
@@ -304,7 +414,10 @@ def _payload(values: dict[str, Any], choices: dict[str, list]) -> dict[str, Any]
         for key in (
             "given_name", "family_name", "uln", "date_of_birth", "email", "phone",
             "username", "weekly_hours", "funding_model", "prior_learning",
-            "support_needs", "notes",
+            "support_needs", "notes", "middle_name", "preferred_name", "gender",
+            "address_line1", "address_line2", "town", "postcode",
+            "emergency_contact_name", "emergency_contact_relationship",
+            "emergency_contact_phone", "has_lldd", "has_ehcp", "medical_notes",
         )
     }
     payload["programme_id"] = _id_for(choices["programmes"], values.get("programme"))

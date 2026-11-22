@@ -5,6 +5,9 @@ import random
 from datetime import datetime
 
 from education_system.systems.university.infrastructure.database.db import get_connection, transaction
+from education_system.systems.university.plugins.campus_commerce.domain.cinema.services.cinema_service import (
+    post_booking_payment_to_finance,
+)
 
 from education_system.systems.university.plugins.campus_commerce.interfaces.cli.services.cinema_cli.constants import (
     TICKET_TYPES, MEMBER_DISCOUNT, ACTIVITY_LOGGING, EMAIL_AVAILABLE,
@@ -242,20 +245,47 @@ def book_tickets():
                 input("\n📌 Press Enter to continue...")
                 return
 
+            # Payment method (posted to Finance through the shared cinema service)
+            print("\n💳 Payment Methods:")
+            print("1. Cash")
+            print("2. Card")
+            print("3. Student Account")
+            payment_choice = input("\nSelect payment method [2]: ").strip() or "2"
+            payment_method = {"1": "Cash", "2": "Card", "3": "Student Account"}.get(payment_choice)
+            if payment_method is None:
+                print("❌ Invalid payment method")
+                input("\n📌 Press Enter to continue...")
+                return
+
+            student_id = user.get('student_id') or user.get('username')
+            payment_posted = False
+            if payment_method == "Student Account" and total_amount > 0:
+                charge = post_booking_payment_to_finance(
+                    booking_ref, total_amount, payment_method,
+                    student_id=student_id,
+                    description=f"Cinema booking - {movie_title}",
+                    processed_by=user.get('username'),
+                )
+                if not charge['success']:
+                    print(f"❌ Student account payment failed: {charge['message']}")
+                    input("\n📌 Press Enter to continue...")
+                    return
+                payment_posted = True
+
             # Create booking
             with transaction() as conn_tx:
                 conn_tx.execute('''
                     INSERT INTO cinema_bookings
-                    (booking_ref, user_id, user_name, user_email, screening_id, movie_title,
+                    (booking_ref, user_id, user_name, user_email, showing_id, screening_id, movie_title,
                      screening_date, screening_time, num_tickets, ticket_type, seat_numbers,
                      ticket_total, snacks_total, member_discount, total_amount,
-                     points_earned, points_redeemed, status, booking_date)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'confirmed', ?)
+                     points_earned, points_redeemed, status, booking_date, payment_method)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'confirmed', ?, ?)
                 ''', (booking_ref, user.get('username'), user.get('full_name', user.get('username')),
-                      user.get('email', ''), screening_id, movie_title, date, time,
+                      user.get('email', ''), screening_id, screening_id, movie_title, date, time,
                       num_tickets, ticket_type, ','.join(selected_seats),
                       ticket_total, snacks_total, member_discount_amount, total_amount,
-                      points_to_earn, points_redeemed, datetime.now().isoformat()))
+                      points_to_earn, points_redeemed, datetime.now().isoformat(), payment_method))
 
                 booking_id = conn_tx.execute('SELECT last_insert_rowid()').fetchone()[0]
 
@@ -276,25 +306,36 @@ def book_tickets():
                     WHERE screening_id = ?
                 ''', (num_tickets, screening_id))
 
-                # Mark seats as booked
-                mark_seats_as_booked(int(screening_id), selected_seats, booking_ref)
-
-                # Handle membership points
+                # Update total spent
                 if membership:
-                    if points_redeemed > 0:
-                        redeem_points(user.get('username'), points_redeemed,
-                                    f"Redeemed for booking {booking_ref}")
-
-                    if points_to_earn > 0:
-                        award_points(user.get('username'), points_to_earn, booking_ref,
-                                   f"Earned from booking {booking_ref}")
-
-                    # Update total spent
                     conn_tx.execute('''
                         UPDATE cinema_memberships
                         SET total_spent = total_spent + ?
                         WHERE user_id = ?
                     ''', (total_amount, user.get('username')))
+
+            # These open their own write transactions, so they must run after
+            # the booking transaction commits (inside it they deadlock on the
+            # SQLite write lock).
+            mark_seats_as_booked(int(screening_id), selected_seats, booking_ref)
+
+            if membership:
+                if points_redeemed > 0:
+                    redeem_points(user.get('username'), points_redeemed,
+                                f"Redeemed for booking {booking_ref}")
+
+                if points_to_earn > 0:
+                    award_points(user.get('username'), points_to_earn, booking_ref,
+                               f"Earned from booking {booking_ref}")
+
+            # Cash/card: record the completed payment now the booking exists
+            if not payment_posted and total_amount > 0:
+                post_booking_payment_to_finance(
+                    booking_ref, total_amount, payment_method,
+                    student_id=student_id,
+                    description=f"Cinema booking - {movie_title}",
+                    processed_by=user.get('username'),
+                )
 
             print_subheader("BOOKING CONFIRMED!")
             print(f"\n✅ Booking Reference: {booking_ref}")

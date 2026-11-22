@@ -164,21 +164,16 @@ def _build_registry() -> dict[str, DatasetSpec]:
         )
 
         def _list(**kwargs: Any) -> list[Any]:
-            pid = kwargs.get("pupil_id")
-            date_from = kwargs.get("date_from")
-            date_to = kwargs.get("date_to")
-            if pid:
-                return att_mod.list_for_pupil(
-                    pid, date_from=date_from, date_to=date_to,
-                )
-            if date_from:
-                return att_mod.list_for_date(date_from)
-            return []
+            return att_mod.list_records(
+                pupil_id=kwargs.get("pupil_id"),
+                date_from=kwargs.get("date_from"),
+                date_to=kwargs.get("date_to"),
+            )
 
         return DatasetSpec(
             key="attendance", label="Attendance records",
-            description="Per-pupil attendance marks. "
-                        "Supply pupil_id or date_from.",
+            description="Attendance marks (AM/PM sessions), optionally "
+                        "for one pupil or a date range.",
             columns=[
                 ("record_id", "#"),
                 ("pupil_id", "Pupil"),
@@ -203,14 +198,15 @@ def _build_registry() -> dict[str, DatasetSpec]:
                 ("incident_id", "#"),
                 ("pupil_id", "Pupil"),
                 ("incident_date", "Date"),
-                ("category", "Category"),
+                ("incident_type", "Type"),
+                ("polarity", "Positive / negative"),
                 ("severity", "Severity"),
                 ("description", "Description"),
                 ("action_taken", "Action"),
-                ("staff_id", "Staff"),
+                ("raised_by", "Raised by"),
             ],
             list_fn=beh_mod.list_incidents,
-            filter_keys=["pupil_id", "category", "severity",
+            filter_keys=["pupil_id", "incident_type", "severity",
                          "date_from", "date_to"],
         )
 
@@ -224,11 +220,11 @@ def _build_registry() -> dict[str, DatasetSpec]:
             columns=[
                 ("concern_id", "#"),
                 ("pupil_id", "Pupil"),
-                ("date_raised", "Raised"),
+                ("raised_date", "Raised"),
                 ("category", "Category"),
                 ("severity", "Severity"),
                 ("status", "Status"),
-                ("summary", "Summary"),
+                ("description", "Description"),
             ],
             list_fn=sg_mod.list_concerns,
             filter_keys=["pupil_id", "status", "severity"],
@@ -264,7 +260,7 @@ def _build_registry() -> dict[str, DatasetSpec]:
                 ("assignment_id", "#"),
                 ("title", "Title"),
                 ("year_group", "Year"),
-                ("issued_date", "Issued"),
+                ("set_date", "Set"),
                 ("due_date", "Due"),
             ],
             list_fn=hw_mod.list_assignments,
@@ -277,17 +273,20 @@ def _build_registry() -> dict[str, DatasetSpec]:
         )
         return DatasetSpec(
             key="parent_contacts", label="Parent contacts",
-            description="Logged contacts with parents/carers.",
+            description="Parents and carers on each pupil's record.",
             columns=[
                 ("contact_id", "#"),
-                ("pupil_id", "Pupil"),
-                ("contact_date", "Date"),
-                ("method", "Method"),
-                ("direction", "Direction"),
-                ("summary", "Summary"),
+                ("student_id", "Pupil"),
+                ("relationship", "Relationship"),
+                ("first_name", "First name"),
+                ("last_name", "Last name"),
+                ("email", "Email"),
+                ("primary_phone", "Phone"),
+                ("is_emergency_contact", "Emergency contact"),
+                ("has_parental_responsibility", "Parental responsibility"),
             ],
             list_fn=pc_mod.list_contacts,
-            filter_keys=["pupil_id"],
+            filter_keys=["student_id"],
         )
 
     def _trips() -> DatasetSpec:
@@ -300,9 +299,10 @@ def _build_registry() -> dict[str, DatasetSpec]:
             columns=[
                 ("trip_id", "#"),
                 ("name", "Name"),
-                ("trip_date", "Date"),
+                ("start_date", "Date"),
                 ("destination", "Destination"),
-                ("cost_pence", "Cost (pence)"),
+                ("year_group", "Year group"),
+                ("cost_per_place", "Cost per place (£)"),
                 ("status", "Status"),
             ],
             list_fn=trips_mod.list_trips,
@@ -318,14 +318,91 @@ def _build_registry() -> dict[str, DatasetSpec]:
             columns=[
                 ("send_id", "#"),
                 ("pupil_id", "Pupil"),
-                ("category", "Category"),
-                ("stage", "Stage"),
+                ("provision_stage", "Stage"),
                 ("primary_need", "Primary need"),
+                ("status", "Status"),
+                ("next_review_date", "Next review"),
                 ("notes", "Notes"),
             ],
             list_fn=send_mod.list_records,
-            filter_keys=["year_group", "stage"],
+            filter_keys=["year_group", "provision_stage"],
         )
+
+    A = "education_system.systems.primary.domain."
+
+    def _records(module: str, fn: str, *, pick: int | None = None):
+        """A list_fn over ``module.fn``; ``pick`` takes that item from each
+        (record, pupil) pair the primary list functions return."""
+        def _list(**kwargs: Any) -> list[Any]:
+            import importlib
+            rows = getattr(importlib.import_module(A + module), fn)(**kwargs)
+            if pick is None:
+                return list(rows)
+            return [r[pick] for r in rows if r[pick] is not None]
+        return _list
+
+    def _result(key, label, description, module, fn, columns, filters, pick=0):
+        return lambda: DatasetSpec(
+            key=key, label=label, description=description, columns=columns,
+            list_fn=_records(module, fn, pick=pick), filter_keys=filters)
+
+    _reading_levels = _result(
+        "reading_levels", "Reading levels", "Each pupil's current reading band.",
+        "assessment.reading_levels.reading_levels", "list_records",
+        [("pupil_id", "Pupil"), ("band", "Band"), ("status", "Status"),
+         ("last_assessed", "Last assessed"), ("book_title", "Book")],
+        ["year_group", "band", "status"], pick=1)
+    _phonics = _result(
+        "phonics_screening", "Phonics screening check", "Year 1 / 2 phonics check scores.",
+        "assessment.phonics_screening.phonics_screening", "list_results",
+        [("result_id", "#"), ("pupil_id", "Pupil"), ("academic_year", "Year"),
+         ("attempt", "Attempt"), ("score", "Score /40"), ("passed", "Passed"),
+         ("assessed_on", "Assessed")],
+        ["academic_year", "pupil_id", "year_group"])
+    _mtc = _result(
+        "mtc", "Multiplication tables check", "Year 4 MTC scores.",
+        "assessment.mtc.mtc", "list_results",
+        [("result_id", "#"), ("pupil_id", "Pupil"), ("academic_year", "Year"),
+         ("score", "Score /25"), ("met_expected", "Met expected"),
+         ("assessed_on", "Assessed")],
+        ["academic_year", "pupil_id", "year_group"])
+    _sats_cols = [("result_id", "#"), ("pupil_id", "Pupil"), ("academic_year", "Year"),
+                  ("subject", "Subject"), ("scaled_score", "Scaled score"),
+                  ("outcome", "Outcome"), ("assessed_on", "Assessed")]
+    _ks1 = _result("ks1_sats", "KS1 SATs", "End of KS1 results.",
+                   "assessment.ks1_sats.ks1_sats", "list_results", _sats_cols,
+                   ["academic_year", "subject", "pupil_id", "year_group"])
+    _ks2 = _result("ks2_sats", "KS2 SATs", "End of KS2 results.",
+                   "assessment.ks2_sats.ks2_sats", "list_results", _sats_cols,
+                   ["academic_year", "subject", "pupil_id", "year_group"])
+    _progress = _result(
+        "progress_reviews", "Progress reviews", "Pupil progress reviews.",
+        "assessment.progress.progress", "list_reviews",
+        [("review_id", "#"), ("student_id", "Pupil"), ("review_date", "Date"),
+         ("period", "Period"), ("overall", "Overall"), ("risk_level", "Risk"),
+         ("attendance_pct", "Attendance %"), ("status", "Status")],
+        ["student_id", "period", "academic_year", "risk_level"], pick=None)
+    _dinner = _result(
+        "dinner_money", "Dinner money ledger", "Meals charged and top-ups paid.",
+        "finance.dinner_money.dinner_money", "list_entries",
+        [("entry_id", "#"), ("pupil_id", "Pupil"), ("entry_date", "Date"),
+         ("kind", "Kind"), ("meal_type", "Meal"), ("amount_display", "Amount"),
+         ("description", "Description")],
+        ["pupil_id", "kind", "from_date", "to_date"])
+    _pp = _result(
+        "pupil_premium", "Pupil Premium", "Pupil Premium eligibility records.",
+        "finance.pupil_premium.pupil_premium", "list_records",
+        [("pp_id", "#"), ("pupil_id", "Pupil"), ("academic_year", "Year"),
+         ("category", "Category"), ("status", "Status"),
+         ("funding_amount", "Funding (£)"), ("eligibility_source", "Source")],
+        ["year_group", "academic_year", "category", "status"], pick=None)
+    _receipts = _result(
+        "receipts", "Receipts", "Receipts issued for payments.",
+        "finance.receipts.receipts", "list_receipts",
+        [("receipt_number", "Receipt"), ("issued_date", "Date"),
+         ("payer_name", "Payer"), ("student_id", "Pupil"), ("method", "Method"),
+         ("total_amount", "Total (£)"), ("status", "Status")],
+        ["student_id", "status", "date_from", "date_to"], pick=None)
 
     for key, builder in (
         ("pupils",          _pupils),
@@ -338,6 +415,15 @@ def _build_registry() -> dict[str, DatasetSpec]:
         ("parent_contacts", _parent_contacts),
         ("trips",           _trips),
         ("send",            _send),
+        ("reading_levels",  _reading_levels),
+        ("phonics_screening", _phonics),
+        ("mtc",             _mtc),
+        ("ks1_sats",        _ks1),
+        ("ks2_sats",        _ks2),
+        ("progress_reviews", _progress),
+        ("dinner_money",    _dinner),
+        ("pupil_premium",   _pp),
+        ("receipts",        _receipts),
     ):
         _safe_register(R, key, builder)
 
@@ -460,6 +546,22 @@ def render(
     also write it to disk."""
     spec = (spec_or_key if isinstance(spec_or_key, DatasetSpec)
             else get_dataset(spec_or_key))
+    body, _rows = _render_with_count(spec, fmt=fmt, columns=columns,
+                                     filters=filters, limit=limit)
+    return body
+
+
+def _render_with_count(
+    spec: DatasetSpec,
+    *,
+    fmt: str,
+    columns: list[str] | None,
+    filters: dict[str, Any] | None,
+    limit: int | None,
+) -> tuple[str, int]:
+    """Render ``spec`` and return ``(body, data_rows)``. The row count is
+    the number of records written, independent of how many text lines a
+    record takes (a CSV cell may hold newlines)."""
     fmt = (fmt or DEFAULT_FORMAT).lower().strip()
     if fmt not in FORMATS:
         raise ValidationError(
@@ -468,7 +570,11 @@ def render(
     if not cols:
         raise ValidationError("No columns selected")
     rows_raw = fetch(spec, filters=filters, limit=limit)
+    return _render_rows(fmt, cols, rows_raw), len(rows_raw)
 
+
+def _render_rows(fmt: str, cols: list[tuple[str, str]],
+                 rows_raw: list[Any]) -> str:
     if fmt == "csv":
         rows = project(rows_raw, cols)
         return _write_csv_like(rows, [h for _, h in cols],
@@ -506,19 +612,13 @@ def export(
         fmt = suffix if suffix in FORMATS else DEFAULT_FORMAT
         if suffix == "md":
             fmt = "markdown"
-    body = render(spec, fmt=fmt, columns=columns,
-                     filters=filters, limit=limit)
+    fmt = fmt.lower().strip()
+    body, rows_n = _render_with_count(spec, fmt=fmt, columns=columns,
+                                      filters=filters, limit=limit)
     path.parent.mkdir(parents=True, exist_ok=True)
-    written = path.write_text(body, encoding="utf-8")
+    # bytes_written is the on-disk size, not the character count.
+    written = path.write_bytes(body.encode("utf-8"))
     cols = _resolve_columns(spec, columns)
-    rows_n = (body.count("\n") - 1) if fmt in ("csv", "tsv")\
-        else (len(body.splitlines()) if fmt == "jsonl"
-              else fetch(spec, filters=filters, limit=limit).__len__())
-    if fmt in ("csv", "tsv", "markdown"):
-        # rows_n above for csv/tsv subtracts the header; markdown has
-        # 2 header rows, count via list:
-        if fmt == "markdown":
-            rows_n = max(0, len(body.splitlines()) - 2)
     logger.info(
         "Exported %s → %s (%s, %d row(s), %d byte(s))",
         spec.key, path, fmt, rows_n, written)

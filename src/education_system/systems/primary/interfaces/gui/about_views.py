@@ -9,6 +9,7 @@ from tkinter import filedialog, messagebox, ttk
 from typing import Any
 from education_system.systems.primary.interfaces import about as data
 from education_system.platform import branding
+from education_system.systems.primary.interfaces.gui import kit
 
 logger = logging.getLogger(__name__)
 
@@ -16,7 +17,22 @@ WIN_GEOMETRY = "780x680"
 WIN_MINSIZE = (640, 560)
 
 
+def _has_pages(host: Any) -> bool:
+    try:
+        return callable(getattr(host, "show_page", None))
+    except (AttributeError, RecursionError, tk.TclError):
+        return False
+
+
 def open_about_window(parent=None, *, auth: Any = None) -> None:
+    """Show About. Given the main window object (which has ``show_page``) it
+    opens as a page in the content area, with "Open in new window"; given a
+    bare Tk root (or nothing) it opens in a window of its own."""
+    if parent is not None and _has_pages(parent):
+        kit.show_page(parent, "About",
+                      lambda frame: AboutDialog(frame, auth=auth,
+                                                on_close=lambda: kit.close_page(parent, frame)))
+        return
     master = getattr(parent, "root", parent)
     win = tk.Toplevel(master) if master is not None else tk.Tk()
     win.title(f"About — {branding.SYSTEM_NAME}")
@@ -26,23 +42,21 @@ def open_about_window(parent=None, *, auth: Any = None) -> None:
 
 
 class AboutDialog:
-    def __init__(self, root: tk.Misc, *, auth: Any = None) -> None:
+    def __init__(self, root: tk.Misc, *, auth: Any = None,
+                 on_close: Any = None) -> None:
         self.root = root
         self.auth = auth
+        self._on_close = on_close or root.winfo_toplevel().destroy
         self.info = data.build(auth=auth)
         self._build()
 
     def _build(self) -> None:
         # Header
-        head = ttk.Frame(self.root)
-        head.pack(fill="x", padx=16, pady=(16, 8))
-        ttk.Label(head, text=self.info.system_name,
-                   font=("", 18, "bold")).pack(anchor="w")
-        ttk.Label(head,
-                   text=f"v{self.info.version}   "
-                        f"·  {self.info.release_name}   "
-                        f"·  {self.info.release_date}",
-                   foreground="#555").pack(anchor="w")
+        head = kit.page_heading(
+            self.root, self.info.system_name,
+            f"v{self.info.version}   ·  {self.info.release_name}   "
+            f"·  {self.info.release_date}")
+        head.pack_configure(padx=16, pady=(16, 8))
         ttk.Separator(self.root, orient="horizontal").pack(
             fill="x", padx=16, pady=4)
 
@@ -62,7 +76,7 @@ class AboutDialog:
         ttk.Button(bar, text="Save report…",
                     command=self._save).pack(side="left", padx=6)
         ttk.Button(bar, text="Close",
-                    command=self.root.destroy).pack(side="right")
+                    command=self._on_close).pack(side="right")
 
     def _build_overview(self, nb: ttk.Notebook) -> None:
         frame = ttk.Frame(nb)
@@ -78,7 +92,7 @@ class AboutDialog:
             ("Release date",  self.info.release_date),
             ("",              ""),
             ("Signed in as",  self.info.current_user or "(none)"),
-            ("Role (sixth-form)", self.info.current_role or "—"),
+            ("Role (primary)", self.info.current_role or "—"),
             ("",              ""),
             ("License",       self.info.license),
             ("Support",       self.info.support),
@@ -196,13 +210,16 @@ class AboutDialog:
             self.root.clipboard_append(body)
             messagebox.showinfo(
                 "Copied",
-                "About info copied to the clipboard.")
+                "About info copied to the clipboard.",
+                parent=self.root.winfo_toplevel())
         except tk.TclError as e:
-            messagebox.showerror("Copy", str(e))
+            messagebox.showerror("Copy", str(e), parent=self.root.winfo_toplevel())
 
     def _save(self) -> None:
         body = data.text_report(self.info)
+        win = self.root.winfo_toplevel()
         path = filedialog.asksaveasfilename(
+            parent=win,
             initialfile="about.txt",
             defaultextension=".txt",
             filetypes=[("Text", "*.txt"), ("Markdown", "*.md"),
@@ -212,6 +229,6 @@ class AboutDialog:
         try:
             Path(path).write_text(body + "\n", encoding="utf-8")
         except Exception as e:
-            messagebox.showerror("Save", str(e))
+            messagebox.showerror("Save", str(e), parent=win)
             return
-        messagebox.showinfo("Save", f"Wrote {path}")
+        messagebox.showinfo("Save", f"Wrote {path}", parent=win)

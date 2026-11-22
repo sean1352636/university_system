@@ -375,6 +375,7 @@ class DirectoryManager:
         values.append(hours_id)
 
         with transaction() as conn:
+            _refuse_if_bookable(conn, hours_id)
             conn.execute(
                 'UPDATE staff_office_hours_directory SET ' + ', '.join(fields)
                 + ' WHERE hours_id = ?',
@@ -388,6 +389,7 @@ class DirectoryManager:
     def remove_office_hours(hours_id: int) -> None:
         """Remove an office hours record."""
         with transaction() as conn:
+            _refuse_if_bookable(conn, hours_id)
             conn.execute('''
                 DELETE FROM staff_office_hours_directory WHERE hours_id = ?
             ''', (hours_id,))
@@ -413,3 +415,16 @@ class DirectoryManager:
             'expertise': expertise_list,
             'office_hours': office_hours_list,
         }
+
+
+def _refuse_if_bookable(conn, hours_id) -> None:
+    """A directory row that mirrors bookable office hours is changed in
+    Office Hours (students may be booked into it), not here."""
+    cols = {r[1] for r in conn.execute("PRAGMA table_info(staff_office_hours_directory)")}
+    if "office_hour_id" not in cols:
+        return
+    row = conn.execute("SELECT office_hour_id FROM staff_office_hours_directory "
+                       "WHERE hours_id = ?", (hours_id,)).fetchone()
+    if row and row[0]:
+        raise ValueError("These are bookable office hours: change or remove them in "
+                         "Office Hours so booked students are told")

@@ -14,7 +14,9 @@ from education_system.systems.sixth_form.interfaces.gui._ui import grab_when_vie
 
 import logging
 import tkinter as tk
-from tkinter import messagebox, ttk
+from tkinter import ttk
+from education_system.systems.sixth_form.interfaces.gui._sidebar import SidebarBook
+from education_system.platform.delivery.gui.parented_dialogs import messagebox
 from typing import Any, Callable
 from education_system.systems.sixth_form.domain.academics.class_groups import class_groups
 from education_system.systems.sixth_form.domain.academics.courses import courses
@@ -67,8 +69,39 @@ def _student_subjects(student) -> list[str]:
     """
     if student is None:
         return []
-    return [s for s in (student.subject_1, student.subject_2,
-                        student.subject_3) if s]
+    out = [s for s in (student.subject_1, student.subject_2,
+                       student.subject_3) if s]
+    # Plus every other active learning aim (4th A level, EPQ, BTEC,
+    # T Level, GCSE resit) — UCAS takes predictions for those too.
+    try:
+        from education_system.systems.sixth_form.domain.academics.qualifications import (
+            learning_aims,
+        )
+        for a in learning_aims.active_aims(student.student_id):
+            if a.subject not in out:
+                out.append(a.subject)
+    except Exception:
+        logger.exception("Could not read learning aims for %s",
+                         student.student_id)
+    return out
+
+
+def _grades_for(student_id: str | None, subject: str | None) -> list[str]:
+    """Grade scale for the learner's aim in ``subject`` (A*-U default)."""
+    try:
+        from education_system.systems.sixth_form.domain.academics.qualifications import (
+            learning_aims,
+        )
+        return list(learning_aims.grade_options(student_id, subject))
+    except Exception:
+        return list(LETTER_GRADES)
+
+
+def _all_grades() -> list[str]:
+    from education_system.systems.sixth_form.domain.academics.qualifications import (
+        grade_scales,
+    )
+    return list(grade_scales.ALL_GRADES)
 
 
 def _current_user(gui) -> str:
@@ -131,7 +164,7 @@ def open_directory(gui) -> None:
     frame = _clear(gui)
     _heading(frame, "Predicted Grades")
 
-    nb = ttk.Notebook(frame)
+    nb = SidebarBook(frame)
     nb.pack(fill="both", expand=True)
 
     dir_tab = ttk.Frame(nb, padding=8)
@@ -166,7 +199,7 @@ def _build_directory_tab(gui, parent: ttk.Frame) -> None:
                  ).pack(side="left", padx=(4, 12))
     ttk.Label(filt, text="Grade:").pack(side="left")
     ttk.Combobox(filt, textvariable=grade_var,
-                 values=["", *LETTER_GRADES], state="readonly", width=6
+                 values=["", *_all_grades()], state="readonly", width=12
                  ).pack(side="left", padx=(4, 12))
     ttk.Label(filt, text="Confidence:").pack(side="left")
     ttk.Combobox(filt, textvariable=confidence_var,
@@ -363,9 +396,21 @@ def _new_dialog(gui, on_saved) -> None:
 
     student_var.trace_add("write", _sync_subjects)
     _sync_subjects()
-    row(3, "Grade:", ttk.Combobox(frm, textvariable=grade_var,
-                                   values=list(LETTER_GRADES),
-                                   state="readonly", width=6))
+    grade_box = ttk.Combobox(frm, textvariable=grade_var,
+                             values=list(LETTER_GRADES),
+                             state="readonly", width=14)
+    row(3, "Grade:", grade_box)
+
+    def _sync_grades(*_args) -> None:
+        # The grade list follows the qualification of the learner's aim.
+        grades = _grades_for(student_by_label.get(student_var.get()),
+                             subject_var.get())
+        grade_box.configure(values=grades)
+        if grade_var.get() not in grades:
+            grade_var.set(grades[0] if grades else "")
+
+    subject_var.trace_add("write", _sync_grades)
+    _sync_grades()
     row(4, "Confidence:", ttk.Combobox(frm, textvariable=confidence_var,
                                         values=list(CONFIDENCE_LEVELS),
                                         state="readonly", width=10))
@@ -434,8 +479,9 @@ def _edit_dialog(gui, prediction_id: int, on_saved) -> None:
         w.grid(row=idx, column=1, sticky="w", pady=2)
 
     row(1, "Grade:", ttk.Combobox(frm, textvariable=grade_var,
-                                   values=list(LETTER_GRADES),
-                                   state="readonly", width=6))
+                                   values=_grades_for(pred.student_id,
+                                                      pred.subject),
+                                   state="readonly", width=14))
     row(2, "Confidence:", ttk.Combobox(frm, textvariable=confidence_var,
                                         values=list(CONFIDENCE_LEVELS),
                                         state="readonly", width=10))
@@ -520,9 +566,10 @@ def _build_entry_grid(gui, parent: ttk.Frame, student, rows,
         # Blank is a real option: it means "not predicted yet", which is
         # what an empty row has to be able to stay.
         ttk.Combobox(header, textvariable=grade_var,
-                     values=["", *LETTER_GRADES], state="readonly",
-                     width=6).grid(row=row_index, column=1, sticky="w",
-                                   padx=(0, 8), pady=2)
+                     values=["", *_grades_for(student.student_id, subject)],
+                     state="readonly",
+                     width=12).grid(row=row_index, column=1, sticky="w",
+                                    padx=(0, 8), pady=2)
         ttk.Combobox(header, textvariable=confidence_var,
                      values=list(CONFIDENCE_LEVELS), state="readonly",
                      width=10).grid(row=row_index, column=2, sticky="w",
@@ -599,7 +646,7 @@ def _build_entry_grid(gui, parent: ttk.Frame, student, rows,
 def _open_university_ucas(gui) -> None:
     """Through to the screen these are needed by."""
     try:
-        from education_system.systems.sixth_form.domain.progression.university.views import (
+        from education_system.systems.sixth_form.interfaces.gui.progression.university import (
             window as university_window,
         )
     except Exception as exc:

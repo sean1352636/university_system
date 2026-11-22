@@ -1,0 +1,31 @@
+{
+  "name": "admission_received",
+  "description": "Sent to the parent when an application is recorded.",
+  "subject": "Application received: {child_name} ({application_ref})",
+  "body": [
+    "Dear {parent_name},",
+    "",
+    "Thank you for your application for a place for {child_first_name} in Year {year_group} for {academic_year} ({route}).",
+    "",
+    "We received it on {received_date}. Your reference is {application_ref} - please quote it if you contact us.",
+    "",
+    "We will write to you again once a decision has been made.",
+    "",
+    "Yours sincerely,",
+    "Admissions, {school_name}"
+  ],
+  "placeholders": {
+    "parent_name": "The parent/carer's name",
+    "child_first_name": "The child's preferred or first name",
+    "child_name": "The child's preferred first name and surname",
+    "application_ref": "The application reference, e.g. APP00012",
+    "year_group": "The year group applied for",
+    "academic_year": "The academic year applied for, e.g. 2026/27",
+    "route": "Year 7 normal round or In-year",
+    "school_name": "The school's name",
+    "received_date": "The date the application was received"
+  },
+  "defaults": {
+    "school_name": "Secondary School"
+  }
+}

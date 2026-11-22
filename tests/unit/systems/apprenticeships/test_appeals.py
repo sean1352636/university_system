@@ -20,11 +20,9 @@ from education_system.systems.apprenticeships.domain.quality.appeals import Appe
 from education_system.systems.apprenticeships.infrastructure.persistence.repositories import (
     epa_repository,
 )
-from education_system.systems.apprenticeships.services import (
-    apprentice_service,
-    appeal_service,
-)
-from education_system.systems.apprenticeships.services.access import Actor, PermissionDenied
+from education_system.systems.apprenticeships.application.apprentices import apprentice_service
+from education_system.systems.apprenticeships.application.quality import appeal_service
+from education_system.systems.apprenticeships.application.security.access import Actor, PermissionDenied
 
 TODAY = date(2026, 9, 10)
 

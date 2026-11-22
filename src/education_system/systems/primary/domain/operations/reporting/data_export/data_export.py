@@ -56,32 +56,23 @@ _BUILTIN_PRESETS_RAW: tuple[tuple[str, str, str, tuple[str, ...]], ...] = (
     ("full_backup", "Full Backup",
      "Every registered dataset. Best for full periodic snapshots.",
      ()),  # populated lazily — "everything"
-    ("students_core", "Students (core)",
-     "Students, enrolments, tutor-group assignments and parent contacts.",
-     ("students", "enrolments", "tutor_groups", "parent_contacts")),
+    ("pupils_core", "Pupils (core)",
+     "Pupils, parents and carers, the SEND register and Pupil Premium.",
+     ("pupils", "parent_contacts", "send", "pupil_premium")),
     ("academics", "Academics",
-     "Courses, subjects, class groups, timetable and attendance.",
-     ("courses", "subjects", "class_groups",
-      "timetable", "attendance")),
+     "Subjects, attendance and homework.",
+     ("subjects", "attendance", "homework")),
     ("assessment", "Assessment",
-     "Homework, gradebook, predicted grades, mock exams, exam "
-     "entries and results.",
-     ("homework", "gradebook", "predicted_grades", "mock_exams",
-      "exam_entries", "exam_results")),
+     "Reading levels, phonics check, multiplication tables check, KS1 and "
+     "KS2 SATs, and progress reviews.",
+     ("reading_levels", "phonics_screening", "mtc", "ks1_sats", "ks2_sats",
+      "progress_reviews")),
     ("pastoral", "Pastoral",
-     "Behaviour, safeguarding and progress reviews.",
-     ("behaviour", "safeguarding", "progress_reviews",
-      "progress_targets")),
-    ("ucas_careers", "UCAS & Careers",
-     "UCAS applications, personal statements, references, offers, "
-     "apprenticeships and careers.",
-     ("ucas_applications", "personal_statements", "references",
-      "offers", "apprenticeship_applications", "careers_aspirations")),
+     "Behaviour, safeguarding, SEND and progress reviews.",
+     ("behaviour", "safeguarding", "send", "progress_reviews")),
     ("finance", "Finance",
-     "Fees, bursaries, trips, payments and receipts.",
-     ("fees", "fee_payments", "bursary_applications",
-      "bursary_disbursements", "trips", "trip_bookings",
-      "trip_payments", "receipts")),
+     "Dinner money, trips, receipts and Pupil Premium.",
+     ("dinner_money", "trips", "receipts", "pupil_premium")),
     ("staff", "Staff", "Staff directory.", ("staff",)),
 )
 
@@ -472,6 +463,33 @@ def run_export(
                 row_count=0, column_count=0,
                 bytes_written=0, error=str(e)))
 
+    def _write_manifest() -> None:
+        # Written alongside the data files (always — useful for human
+        # review even if the job partially failed).
+        manifest = {
+            "job_id": job_id, "preset_key": preset.key,
+            "preset_name": preset.name, "started_at": started,
+            "finished_at": _now_iso(),
+            "fmt": fmt,
+            "files": [
+                {"dataset": r.dataset_key, "file": Path(r.file_path).name
+                    if r.file_path else None, "rows": r.row_count,
+                 "bytes": r.bytes_written,
+                 "error": r.error}
+                for r in results
+            ],
+            "totals": {"rows": rows_total, "bytes": bytes_total},
+        }
+        try:
+            (out_dir / "_manifest.json").write_text(
+                json.dumps(manifest, indent=2, ensure_ascii=False) + "\n",
+                encoding="utf-8")
+        except Exception:
+            logger.exception("manifest write failed")
+
+    # The manifest goes in before zipping so the archive carries it.
+    _write_manifest()
+
     archive_path: str | None = None
     if zip_output:
         try:
@@ -479,35 +497,14 @@ def run_export(
         except Exception as e:
             logger.exception("zip step failed")
             failures += 1
-            # Track the failure on a synthetic row.
+            # Track the failure on a synthetic row, and record it in the
+            # on-disk manifest too.
             results.append(DatasetResult(
                 dataset_key="__archive__", label="(zip archive)",
                 file_path="", fmt="zip",
                 row_count=0, column_count=0, bytes_written=0,
                 error=str(e)))
-
-    # Write a manifest alongside the data files (always — useful for
-    # human review even if the job partially failed).
-    manifest = {
-        "job_id": job_id, "preset_key": preset.key,
-        "preset_name": preset.name, "started_at": started,
-        "finished_at": _now_iso(),
-        "fmt": fmt,
-        "files": [
-            {"dataset": r.dataset_key, "file": Path(r.file_path).name
-                if r.file_path else None, "rows": r.row_count,
-             "bytes": r.bytes_written,
-             "error": r.error}
-            for r in results
-        ],
-        "totals": {"rows": rows_total, "bytes": bytes_total},
-    }
-    try:
-        (out_dir / "_manifest.json").write_text(
-            json.dumps(manifest, indent=2, ensure_ascii=False) + "\n",
-            encoding="utf-8")
-    except Exception:
-        logger.exception("manifest write failed")
+            _write_manifest()
 
     finished = _now_iso()
     successes = sum(1 for r in results if not r.error)
@@ -565,8 +562,8 @@ def _dict_to_dataset_result(d: dict[str, Any]) -> DatasetResult:
 
 
 def _make_archive(out_dir: Path, job_id: int, preset_key: str) -> str:
-    """Zip every file in ``out_dir`` (the manifest is added too once
-    written). The archive is written next to ``out_dir`` so it
+    """Zip every file in ``out_dir``, including ``_manifest.json``
+    (run_export writes it first). The archive is written next to ``out_dir`` so it
     isn't recursively included in subsequent runs."""
     parent = out_dir.parent
     name = (f"export_{preset_key}_{job_id}_"

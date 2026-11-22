@@ -145,20 +145,11 @@ class SafeguardingMixin:
 
             sg_id = None
             if escalate_safeguarding:
-                try:
-                    excerpt = (row[2] or '')[:500]
-                    cursor.execute(
-                        '''INSERT INTO safeguarding_submissions
-                           (username, full_name, role, content, submitted_at,
-                            severity, categories, status)
-                           VALUES (?, ?, ?, ?, ?, 'High', '{"chat-report": []}', 'Pending')''',
-                        (username, full_name, role,
-                         f"Chat report (msg #{message_id}): {(reason or '')}"
-                         f"\n\nExcerpt:\n{excerpt}", now),
-                    )
-                    sg_id = cursor.lastrowid
-                except Exception:
-                    sg_id = None
+                excerpt = (row[2] or '')[:500]
+                sg_id = _raise_safeguarding_concern(
+                    username, full_name, role,
+                    f"Chat report (msg #{message_id}): {(reason or '')}"
+                    f"\n\nExcerpt:\n{excerpt}")
 
             cursor.execute(
                 '''INSERT INTO chat_reports
@@ -336,34 +327,53 @@ class SafeguardingMixin:
         if role not in ('admin', 'staff'):
             return None
 
-        def _get(cursor):
-            try:
-                cursor.execute(
-                    '''SELECT id, username, full_name, role, content, submitted_at,
-                              severity, categories, status, reviewer, review_note, reviewed_at
-                       FROM safeguarding_submissions WHERE id = ?''',
-                    (submission_id,),
-                )
-                row = cursor.fetchone()
-            except Exception:
-                return None
-            if not row:
-                return None
-            return {
-                'id': row[0], 'username': row[1], 'full_name': row[2],
-                'role': row[3], 'content': row[4], 'submitted_at': row[5],
-                'severity': row[6], 'categories': row[7], 'status': row[8],
-                'reviewer': row[9], 'review_note': row[10], 'reviewed_at': row[11],
-            }
-
+        # Safeguarding cases live in the safeguarding service's own
+        # classified database, not the communications database.
         try:
-            return execute_db_operation(_get)
+            from education_system.systems.university.domains.safeguarding.application.services import (
+                submissions,
+            )
+            case = submissions.get_submission(submission_id)
+            if not case:
+                return None
+            content, _transcription = submissions.resolve_content(submission_id)
         except Exception as e:
             log_event('error', f"Error getting safeguarding submission: {e}")
             return None
+        return {
+            'id': case['id'], 'username': case['username'], 'full_name': case['full_name'],
+            'role': case['role'], 'content': content, 'submitted_at': case['submitted_at'],
+            'severity': case['severity'], 'categories': case['categories'],
+            'status': case['status'], 'reviewer': case['reviewer'],
+            'review_note': case['review_note'], 'reviewed_at': case['reviewed_at'],
+        }
 
     # ------------------------------------------------------------------
     # Cross-cutting: user profile lookup, notifications hub emission,
     # and proposing chat-poll dates as tentative calendar events.
     # ------------------------------------------------------------------
 
+
+def _raise_safeguarding_concern(username, full_name, role, text):
+    """Raise a chat report as a safeguarding concern through the
+    safeguarding service, so it lands in the classified safeguarding
+    database where the DSLs work (with risk scoring, SLA and on-call
+    assignment). At least HIGH; higher when the text says so. Returns the
+    case id, or None when it could not be raised."""
+    try:
+        from education_system.systems.university.domains.safeguarding.application.services import (
+            submissions,
+        )
+        from education_system.systems.university.domains.safeguarding.domain.analysis import (
+            SEVERITY_ORDER, analyse_text,
+        )
+        matches, overall = analyse_text(text)
+        categories = {category: m["snippets"] for category, m in matches.items()}
+        severity = overall if (overall in SEVERITY_ORDER and
+                               SEVERITY_ORDER[overall] >= SEVERITY_ORDER["HIGH"]) else "HIGH"
+        return submissions.save_submission(
+            {"username": username, "full_name": full_name, "role": role},
+            text, severity, categories)
+    except Exception as e:
+        log_event('error', f"Could not raise the chat report as a safeguarding concern: {e}")
+        return None

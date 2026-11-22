@@ -6,8 +6,120 @@ from datetime import datetime
 from typing import Optional, List, Dict, Any
 
 from education_system import paths
+from education_system.systems.university.domains.finance.infrastructure.finance_integration import (
+    process_student_finance_account_payment,
+    record_payment_to_finance,
+    record_refund_to_finance,
+    top_up_student_finance_account,
+)
 
 logger = logging.getLogger(__name__)
+
+# Finance posting identity shared by the GUI and every CLI (CLAUDE.md: post to
+# Finance from the domain service, never from an interface).
+FINANCE_SOURCE = 'PhoneShop'
+FINANCE_SALE_DESCRIPTION = 'Phone Shop purchase'
+FINANCE_REFUND_DESCRIPTION = 'Phone Shop Purchase Refund'
+_STUDENT_ACCOUNT_METHODS = {'finance_account', 'student_account', 'student account'}
+
+
+def is_student_account_method(payment_method: Optional[str]) -> bool:
+    """True when a payment/refund method means the student's finance account."""
+    return (payment_method or '').strip().lower() in _STUDENT_ACCOUNT_METHODS
+
+
+def post_sale_to_finance(order_id: int, customer_id: Optional[str], amount: float,
+                         payment_method: Optional[str], processed_by: Optional[str] = None,
+                         order_number: Optional[str] = None) -> Optional[int]:
+    """Post a completed phone shop sale to Finance. Never raises.
+
+    Student-account sales are debited from the finance account (which records
+    its own payments row); every other method is recorded as a payment. A
+    posting failure is logged and the local sale is left intact.
+    """
+    try:
+        ref = order_number
+        if not ref:
+            order = OrderManager.get_order(order_id)
+            ref = (order or {}).get('order_number') or str(order_id)
+        if is_student_account_method(payment_method):
+            result = process_student_finance_account_payment(
+                student_id=customer_id,
+                amount=amount,
+                description=FINANCE_SALE_DESCRIPTION,
+                transaction_source=FINANCE_SOURCE,
+                transaction_ref=ref,
+                processed_by=processed_by or 'System',
+            )
+            if not result.get('success'):
+                logger.warning("Phone Shop order %s: student account payment not posted: %s",
+                               ref, result.get('message'))
+                return None
+            return result.get('payment_id')
+        payment_id = record_payment_to_finance(
+            student_id=customer_id or 'EXTERNAL',
+            amount=amount,
+            payment_method=payment_method or 'cash',
+            transaction_source=FINANCE_SOURCE,
+            transaction_ref=ref,
+            notes="Phone Shop purchase",
+            created_by=processed_by,
+        )
+        if payment_id is None:
+            logger.warning("Phone Shop order %s: payment not posted to finance", ref)
+        return payment_id
+    except Exception:
+        logger.exception("Phone Shop order %s: finance posting failed", order_id)
+        return None
+
+
+def post_refund_to_finance(order_id: int, customer_id: Optional[str], amount: float,
+                           refund_method: Optional[str], reason: Optional[str] = None,
+                           processed_by: Optional[str] = None, order_number: Optional[str] = None,
+                           transaction_id: Optional[int] = None) -> Dict[str, Any]:
+    """Post a phone shop refund to Finance. Never raises.
+
+    Returns ``{'refund_id', 'refund_ref', 'credited'}``; ``credited`` is True
+    when a student-account refund was credited back to the account.
+    """
+    outcome: Dict[str, Any] = {'refund_id': None, 'refund_ref': None, 'credited': False}
+    try:
+        ref = order_number
+        if not ref:
+            order = OrderManager.get_order(order_id)
+            ref = (order or {}).get('order_number') or str(order_id)
+        transaction_ref = f"{ref}-REFUND-{datetime.now().strftime('%Y%m%d%H%M%S')}"
+        refund_id = record_refund_to_finance(
+            student_id=customer_id or 'EXTERNAL',
+            refund_amount=amount,
+            original_payment_id=None,
+            refund_reason=reason or FINANCE_REFUND_DESCRIPTION,
+            refund_type='order',
+            transaction_source=FINANCE_SOURCE,
+            transaction_ref=transaction_ref,
+            refund_method=refund_method or 'original_payment_method',
+            requested_by=processed_by,
+            notes=f'phone_shop_transaction_{transaction_id}' if transaction_id else None,
+        )
+        if refund_id is None:
+            logger.warning("Phone Shop order %s: refund not posted to finance", ref)
+        outcome['refund_id'] = refund_id
+        outcome['refund_ref'] = f"{FINANCE_SOURCE.upper()}-{transaction_ref}"
+        if is_student_account_method(refund_method) and customer_id:
+            credit = top_up_student_finance_account(
+                student_id=customer_id,
+                amount=amount,
+                payment_method='refund',
+                processed_by=processed_by or 'System',
+                description=FINANCE_REFUND_DESCRIPTION,
+            )
+            outcome['credited'] = bool(credit.get('success'))
+            if not outcome['credited']:
+                logger.warning("Phone Shop order %s: student account not credited: %s",
+                               ref, credit.get('message'))
+    except Exception:
+        logger.exception("Phone Shop order %s: finance refund posting failed", order_id)
+    return outcome
 
 # Constants
 PHONE_CATEGORIES = ['Smartphone', 'Feature Phone', 'Tablet', 'Smartwatch', 'Accessories', 'Cases', 'Chargers', 'Headphones']
@@ -482,13 +594,21 @@ class TransactionManager:
             ''', (payment_method, datetime.now().strftime('%Y-%m-%d %H:%M:%S'), order_id))
 
             conn.commit()
-            return cursor.lastrowid
+            txn_id = cursor.lastrowid
         except Exception as e:
             logger.error(f"Failed to record payment: {e}")
             conn.rollback()
             return None
         finally:
             conn.close()
+
+        if kwargs.get('post_to_finance', True):
+            post_sale_to_finance(
+                order_id, customer_id, amount, payment_method,
+                processed_by=kwargs.get('processed_by'),
+                order_number=kwargs.get('order_number'),
+            )
+        return txn_id
 
     @staticmethod
     def process_refund(order_id: int, amount: float, reason: str = None, **kwargs) -> Optional[int]:
@@ -516,14 +636,54 @@ class TransactionManager:
             WHERE source_type = 'phone_shop' AND order_id = ?
             ''', (datetime.now().strftime('%Y-%m-%d %H:%M:%S'), order_id))
 
+            cursor.execute('''
+            UPDATE transactions SET status = 'refunded'
+            WHERE source_type = 'phone_shop' AND reference_type = 'order' AND reference_id = ?
+              AND transaction_type = 'payment'
+            ''', (order_id,))
+
             conn.commit()
-            return cursor.lastrowid
+            txn_id = cursor.lastrowid
         except Exception as e:
             logger.error(f"Failed to process refund: {e}")
             conn.rollback()
             return None
         finally:
             conn.close()
+
+        if kwargs.get('post_to_finance', True):
+            post_refund_to_finance(
+                order_id, order['customer_id'], amount,
+                kwargs.get('refund_method') or order.get('payment_method'),
+                reason=reason, processed_by=kwargs.get('processed_by'),
+                order_number=order.get('order_number'),
+                transaction_id=kwargs.get('transaction_id'),
+            )
+        return txn_id
+
+    @staticmethod
+    def refund_order(order_id: int, amount: float, refund_method: Optional[str],
+                     reason: Optional[str] = None, processed_by: Optional[str] = None,
+                     transaction_id: Optional[int] = None) -> Dict[str, Any]:
+        """Refund an order locally and post it to Finance in one step.
+
+        Used by the GUI refund flows; returns the local transaction id plus the
+        finance outcome (``refund_id``, ``refund_ref``, ``credited``).
+        """
+        order = OrderManager.get_order(order_id)
+        if not order:
+            return {'success': False, 'message': 'Order not found'}
+        txn_id = TransactionManager.process_refund(
+            order_id, amount, reason, processed_by=processed_by, post_to_finance=False,
+        )
+        if not txn_id:
+            return {'success': False, 'message': 'Failed to record refund'}
+        outcome = post_refund_to_finance(
+            order_id, order.get('customer_id'), amount, refund_method,
+            reason=reason, processed_by=processed_by,
+            order_number=order.get('order_number'), transaction_id=transaction_id,
+        )
+        return {'success': True, 'transaction_id': txn_id, 'customer_id': order.get('customer_id'), **outcome}
 
 class ReportManager:
     """Generate phone shop reports"""

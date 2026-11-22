@@ -26,13 +26,13 @@ from education_system.systems.apprenticeships.infrastructure.persistence.reposit
 )
 from education_system.systems.apprenticeships.interfaces.cli import prompts
 from education_system.systems.apprenticeships.interfaces.cli.commands import apprentices
-from education_system.systems.apprenticeships.services import (
-    apprentice_service,
+from education_system.systems.apprenticeships.application.apprentices import apprentice_service
+from education_system.systems.apprenticeships.application.learning import (
     learning_plan_service,
-    programme_service,
     training_service,
 )
-from education_system.systems.apprenticeships.services.access import Actor
+from education_system.systems.apprenticeships.application.programmes import programme_service
+from education_system.systems.apprenticeships.application.security.access import Actor
 
 logger = logging.getLogger(__name__)
 

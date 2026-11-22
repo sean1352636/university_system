@@ -239,6 +239,34 @@ def _close(svc: InformationRightsService, actor: str) -> None:
         print(f"  ! {e}")
 
 
+def _health_disclosure(svc: InformationRightsService, actor: str) -> None:
+    """Write the health section of a SAR to the owner-only health export
+    folder (optionally encrypted)."""
+    import json
+    from datetime import datetime as _dt
+
+    from education_system.systems.university.services.bus import subject_access_bus
+    ref = _input("Reference")
+    student_id = _input("Student ID of the data subject")
+    try:
+        r = svc.get_by_reference(ref)
+        section = svc.health_disclosure(r["request_id"], student_id, actor=actor)
+    except InformationRightsError as e:
+        print(f"  ! {e}")
+        return
+    path = subject_access_bus.export_path(
+        f"sar_health_{r['reference']}_{_dt.now().strftime('%Y%m%d_%H%M%S')}.json")
+    path.write_text(json.dumps(section, indent=2, default=str), encoding="utf-8")
+    encrypt = _input("Encrypt the file with the health key? (y/N)", "n").lower() == "y"
+    path = subject_access_bus.finalize_export(path, encrypt=encrypt)
+    total = sum(len(v) for v in section["records"].values())
+    print(f"  {total} health record(s) written to {path}")
+    if section["withheld"]:
+        print("  Withheld for review (internal notes / third-party data):")
+        for what, n in section["withheld"].items():
+            print(f"    {what}: {n}")
+
+
 def _dashboard(svc: InformationRightsService) -> None:
     s = svc.dashboard_summary()
     print(f"\n  Dashboard as of {s['as_of']}")
@@ -280,6 +308,7 @@ def display_menu(actor: str = "cli") -> None:
         print("\n[Closure & Reporting]")
         print("10.  Close request")
         print("11.  Dashboard (deadlines, overdue, due-soon)")
+        print("12.  Health records for a SAR (disclosure file)")
         print("\n 0.  Back")
         print("=" * 70)
         choice = input("\nEnter your choice: ").strip()
@@ -308,6 +337,8 @@ def display_menu(actor: str = "cli") -> None:
                 _close(svc, actor)
             elif choice == "11":
                 _dashboard(svc)
+            elif choice == "12":
+                _health_disclosure(svc, actor)
             else:
                 print("  unknown choice")
         except KeyboardInterrupt:

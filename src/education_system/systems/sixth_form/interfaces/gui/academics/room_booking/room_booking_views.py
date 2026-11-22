@@ -15,7 +15,9 @@ from __future__ import annotations
 import datetime as _dt
 import logging
 import tkinter as tk
-from tkinter import messagebox, ttk
+from tkinter import ttk
+from education_system.systems.sixth_form.interfaces.gui._sidebar import SidebarBook
+from education_system.platform.delivery.gui.parented_dialogs import messagebox
 from typing import Any
 
 from education_system.platform import branding
@@ -61,7 +63,7 @@ def open_directory(parent=None) -> None:
     win.geometry(WIN_GEOMETRY)
     win.minsize(*WIN_MINSIZE)
 
-    nb = ttk.Notebook(win)
+    nb = SidebarBook(win)
     nb.pack(fill="both", expand=True, padx=10, pady=10)
 
     resources_tab = ResourcesTab(nb, win)
@@ -297,12 +299,6 @@ class BookingDialog(tk.Toplevel):
         # queues the grab for the next idle slice of the event loop.
         self.after_idle(self._safe_grab)
 
-    def _safe_grab(self) -> None:
-        try:
-            self.grab_set()
-        except Exception:
-            pass
-
         frm = ttk.Frame(self, padding=12)
         frm.pack(fill="both", expand=True)
         frm.columnconfigure(1, weight=1)
@@ -402,6 +398,12 @@ class BookingDialog(tk.Toplevel):
                     command=self.destroy).pack(side="right", padx=4)
         ttk.Button(btns, text="Save",
                     command=self._save).pack(side="right", padx=4)
+
+    def _safe_grab(self) -> None:
+        try:
+            self.grab_set()
+        except Exception:
+            pass
 
     def _payload(self) -> dict[str, Any]:
         rid = self._resource_map.get(self.cb_resource.get())
@@ -522,6 +524,7 @@ class ResourcesTab:
         for label, cmd in (
                 ("View / Edit", self._edit),
                 ("Delete",       self._delete),
+                ("Room day (lessons, exams, bookings)", self._room_day),
                 ("Refresh",      self.refresh),
         ):
             ttk.Button(actions, text=label,
@@ -591,6 +594,38 @@ class ResourcesTab:
         ResourceDialog(self.root, resource=r,
                          on_save=self._after_save)
 
+    def _room_day(self) -> None:
+        """Show everything occupying the selected room on a date."""
+        from education_system.platform.delivery.gui.parented_dialogs import simpledialog
+        rid = self._selected_id()
+        if rid is None:
+            messagebox.showinfo("Room day", "Select a resource first.",
+                                parent=self.frame)
+            return
+        day = simpledialog.askstring(
+            "Room day", "Date (YYYY-MM-DD):",
+            initialvalue=_dt.date.today().isoformat(), parent=self.frame)
+        if not day:
+            return
+        try:
+            entries = data.room_day(rid, day.strip())
+        except ValidationError as e:
+            messagebox.showwarning("Room day", str(e), parent=self.frame)
+            return
+        r = data.get_resource(rid)
+        name = r.name if r else f"#{rid}"
+        if not entries:
+            messagebox.showinfo("Room day",
+                                f"{name} is free all day on {day}.",
+                                parent=self.frame)
+            return
+        messagebox.showinfo(
+            "Room day",
+            f"{name} on {day}:\n\n" + "\n".join(
+                f"{e.start_time}–{e.end_time}  {e.kind:<7}  {e.label}"
+                for e in entries),
+            parent=self.frame)
+
     def _after_save(self, _r) -> None:
         self.refresh()
         if self._refresh_callback is not None:
@@ -631,12 +666,6 @@ class ResourceDialog(tk.Toplevel):
         # before the window mapping has been processed. after_idle
         # queues the grab for the next idle slice of the event loop.
         self.after_idle(self._safe_grab)
-
-    def _safe_grab(self) -> None:
-        try:
-            self.grab_set()
-        except Exception:
-            pass
 
         frm = ttk.Frame(self, padding=12)
         frm.pack(fill="both", expand=True)
@@ -698,6 +727,12 @@ class ResourceDialog(tk.Toplevel):
                     command=self.destroy).pack(side="right", padx=4)
         ttk.Button(btns, text="Save",
                     command=self._save).pack(side="right", padx=4)
+
+    def _safe_grab(self) -> None:
+        try:
+            self.grab_set()
+        except Exception:
+            pass
 
     def _payload(self) -> dict[str, Any]:
         return {

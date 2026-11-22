@@ -33,6 +33,14 @@ def delivery_degree_apprenticeships():
     return feature_pending("Degree Apprenticeships", _SYSTEM, category=_CATEGORY)
 
 
+@delivery_menu_bp.route("/learning-plans", methods=["GET"])
+@token_required
+@staff_required
+def delivery_learning_plans():
+    """Learning Plans"""
+    return feature_pending("Learning Plans", _SYSTEM, category=_CATEGORY)
+
+
 @delivery_menu_bp.route("/off-the-job-approvals", methods=["GET"])
 @token_required
 @staff_required

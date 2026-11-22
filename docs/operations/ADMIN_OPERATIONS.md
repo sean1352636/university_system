@@ -18,31 +18,34 @@ A consolidated guide for system administrators running the Education System in p
 
 ## System Overview
 
-The Education System runs four subsystems from a single codebase:
+The Education System runs seven systems from a single codebase:
 
 | System | Key | Database | Users |
 |--------|-----|----------|-------|
 | University | `university` | `student_records.db` | Admin, Staff, Instructor, Student, Parent |
-| Sixth Form College | `college` | `college.db` | Admin, Teacher, Student, Parent |
-| Secondary School | `school` | `secondary.db` | Admin, Teacher, Student, Parent |
+| Sixth Form College | `sixth_form` | `sixthform.db` | Admin, Teacher, Student, Parent |
+| Secondary School | `secondary` | `secondary.db` | Admin, Teacher, Student, Parent |
 | Primary School | `primary` | `primary.db` | Admin, Teacher, Pupil, Parent |
+| Nursery / Early Years | `nursery` | `nursery.db` | Admin |
+| FE College | `fe_college` | `fe_college.db` | Admin, Teacher, Student |
+| Apprenticeships | `apprenticeships` | `apprenticeships.db` | Admin, Staff, Apprentice, Employer, End-point assessor |
 
 **Shared infrastructure:**
-- Authentication: `shared/data/db_files/auth.db` (all systems)
-- Webhooks: `shared/data/db_files/webhooks.db`
-- Offline sync: `shared/data/db_files/offline_sync.db`
+- Authentication: `var/data/platform/db_files/auth.db` (all systems)
+- Webhooks: `var/data/platform/db_files/webhooks.db`
+- Offline sync: `var/data/platform/db_files/offline_sync.db`
 
 ## First-Time Setup
 
 ### 1. Install Dependencies
 
 ```bash
-pip install -r requirements.lock
+make install
 ```
 
 ### 2. Initialise Databases
 
-Databases are auto-created on first run. Default accounts are seeded automatically.
+Databases are auto-created on first run. A fresh `auth.db` starts empty: set `EDU_INITIAL_ADMIN_USER` and `EDU_INITIAL_ADMIN_PASSWORD` to create one admin. The demo accounts are seeded only with `EDU_DEV_SEED=true`, which is for development only.
 
 ```bash
 python -m education_system --gui    # GUI mode
@@ -51,15 +54,18 @@ python -m education_system --cli    # CLI mode
 
 ### 3. Change Default Passwords
 
-The system ships with weak demo passwords. Change them immediately:
+If the demo accounts were seeded, change their weak passwords immediately:
 
 | Username | Default Password | System |
 |----------|-----------------|--------|
 | `superadmin` | `SuperAdmin@123` | All |
 | `admin` | `admin123` | University |
-| `admin1` | `admin1234` | College |
+| `admin1` | `admin1234` | Sixth Form |
 | `admin2` | `admin1234` | Secondary |
 | `admin3` | `admin1234` | Primary |
+| `admin4` | `admin1234` | Nursery |
+| `admin5` | `admin1234` | Apprenticeships |
+| `admin6` | `admin1234` | FE College |
 
 **GUI:** Login > My Account > Change Password
 **CLI:** Login > Authentication > My Account > Change Password
@@ -82,7 +88,7 @@ EDU_PRODUCTION=true
 
 **GUI:** Admin Panel > User Management > Create New User
 **CLI:** Authentication > User Management > Create New User
-**API:** `POST /api/v1/auth/login` (admin token required)
+**API:** `POST /api/v1/auth/register` (admin token required)
 
 ### Roles and Permissions
 
@@ -90,7 +96,7 @@ Each system defines its own roles. Users are assigned to systems via the `user_s
 
 A user can have access to multiple systems with different roles:
 ```
-superadmin: university(admin), college(admin), school(admin), primary(admin)
+superadmin: university(admin), sixth_form(admin), secondary(admin), primary(admin), nursery(admin), fe_college(admin), apprenticeships(admin)
 ```
 
 ### Forced Password Reset
@@ -107,7 +113,7 @@ The setting is stored in `auth_settings` table in `auth.db`.
 
 ### Account Lockout
 
-After 5 failed login attempts, accounts are locked for 15 minutes. Admins can unlock accounts:
+After 3 failed login attempts, accounts are locked for 15 minutes. Admins can unlock accounts:
 
 **CLI:** Authentication > User Management > Edit User (reset failed attempts)
 
@@ -152,11 +158,14 @@ All user actions are logged to the activity log:
 ### Database Locations
 
 ```
-education_system/shared/data/db_files/auth.db          # Shared authentication
-education_system/university_system/data/db_files/       # University data
-education_system/college_system/data/db_files/          # College data
-education_system/secondary_school/data/db_files/        # Secondary data
-education_system/primary_school/data/db_files/          # Primary data
+var/data/platform/db_files/auth.db          # Shared authentication
+var/data/university/db_files/student_records.db  # University data
+var/data/sixth_form/sixthform.db            # Sixth Form data
+var/data/secondary/secondary.db             # Secondary data
+var/data/primary/primary.db                 # Primary data
+var/data/nursery/nursery.db                 # Nursery data
+var/data/fe_college/fe_college.db           # FE College data
+var/data/apprenticeships/apprenticeships.db # Apprenticeships data
 ```
 
 All databases use SQLite with WAL mode for concurrent access.
@@ -179,7 +188,7 @@ Checks for:
 
 ### Automatic Backups
 
-- **Location:** `backups/` directory
+- **Location:** `var/backups/` directory
 - **Schedule:** Daily at 2 AM (configurable)
 - **Retention:** 7-30 days (configurable)
 - **Includes:** Database files, configuration, uploads
@@ -187,7 +196,7 @@ Checks for:
 ### Manual Backup
 
 ```bash
-make db-backup
+python -c "from education_system.systems.university.infrastructure.database.data_backup import create_enhanced_backup; create_enhanced_backup(manual=True)"
 ```
 
 Or via GUI: Data Backup GUI > Create Backup
@@ -195,7 +204,7 @@ Or via GUI: Data Backup GUI > Create Backup
 ### Restore
 
 ```bash
-make db-restore BACKUP_FILE=backups/backup_20260406.db
+python -c "from education_system.systems.university.infrastructure.database.data_backup import restore_from_backup; restore_from_backup('var/backups/university/database/<backup file>')"
 ```
 
 ### Backup Templates
@@ -222,7 +231,7 @@ make db-restore BACKUP_FILE=backups/backup_20260406.db
 
 ### Log Files
 
-Logs are written to the centralised `logs/` directory:
+Logs are written under the centralised `var/logs/` directory, in a folder per owner (for example `var/logs/university/`):
 - `app.log` — Application logs (rotating, 5 MB max, 5 backups)
 - `enhanced_log_YYYY-MM-DD.json` — Chatbot conversation logs
 - `backup.log` — Backup activity
@@ -262,7 +271,7 @@ SMTP_PASSWORD=your-password
 python -m education_system --api
 ```
 
-The unified server runs on port 5000 and serves all 4 systems.
+The unified server runs on port 5000 and serves all 7 systems.
 
 ### Rate Limiting
 
@@ -297,19 +306,19 @@ See [WEBHOOKS.md](../reference/WEBHOOKS.md) for webhook configuration and manage
 - Rotate admin passwords
 - Review user account list for inactive accounts
 - Test backup restore procedure
-- Update dependencies (`pip install -r requirements.lock --upgrade`)
+- Update dependencies (`make lock`, then `make install`)
 
 ### On Upgrade
 
 ```bash
 # 1. Backup databases
-make db-backup
+python -c "from education_system.systems.university.infrastructure.database.data_backup import create_enhanced_backup; create_enhanced_backup(manual=True)"
 
 # 2. Pull latest code
 git pull
 
 # 3. Install dependencies
-pip install -r requirements.lock
+make install
 
 # 4. Run database migrations (auto-applied on startup)
 python -m education_system --cli  # Start and stop to trigger migrations
@@ -325,9 +334,9 @@ make test
 | Problem | Solution |
 |---------|----------|
 | "Database is locked" | Another process has the DB open. Check for stale processes. WAL mode handles most concurrency. |
-| Login fails with correct password | Account may be locked (5 failed attempts). Wait 15 minutes or reset via admin CLI. |
+| Login fails with correct password | Account may be locked (3 failed attempts). Wait 15 minutes or reset via admin CLI. |
 | MFA code rejected | Check system clock synchronisation (TOTP requires accurate time). |
-| Email not sending | Verify `.env` SMTP settings. Check `logs/app.log` for SMTP errors. |
+| Email not sending | Verify `.env` SMTP settings. Check `var/logs/` for SMTP errors. |
 | API returns 401 | Token expired. Refresh via `POST /api/v1/auth/refresh`. |
 | Forced password reset won't stop | Admin can disable it: Security Settings > toggle off "Force password reset". |
 

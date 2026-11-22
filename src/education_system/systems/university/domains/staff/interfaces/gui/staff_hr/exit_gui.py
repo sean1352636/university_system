@@ -12,6 +12,7 @@ from __future__ import annotations
 
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 
+from education_system.systems.university.domains.staff.interfaces.gui.staff_hr import _access as _hr
 import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext
 from datetime import datetime
@@ -46,7 +47,7 @@ class ExitGUI:
 
     def _get_user_id(self):
         """Get user ID from current user dict."""
-        return self.current_user.get('id') or self.current_user.get('username')
+        return _hr.user_key(self)
 
     def create_as_tab(self, notebook: ttk.Notebook):
         """Create as a tab in parent notebook."""
@@ -58,7 +59,8 @@ class ExitGUI:
         """Create as standalone window."""
         self.window = tk.Toplevel(self.root)
         self.window.title(_t('gui.staff.staff_hr.exit.windows.exit_management_turnover_analytics', default="Exit Management & Turnover Analytics"))
-        self.window.geometry("1200x700")
+        self.window.geometry("1400x900")
+        self.window.minsize(1200, 800)
         self.window.minsize(1000, 600)
 
         bottom_frame = ttk.Frame(self.window)
@@ -80,11 +82,15 @@ class ExitGUI:
 
         self._create_my_checklist_tab()
 
-        if self.current_user.get('role') in ['admin', 'Admin', 'administrator', 'staff']:
+        if _hr.can(self, 'hr'):
             self._create_initiate_exit_tab()
+        if _hr.can(self, 'hr'):
             self._create_manage_exits_tab()
+        if _hr.can(self, 'hr'):
             self._create_interviews_tab()
+        if _hr.can(self, 'hr'):
             self._create_knowledge_transfer_tab()
+        if _hr.can(self, 'hr'):
             self._create_analytics_tab()
 
     def _create_my_checklist_tab(self):
@@ -550,7 +556,7 @@ class ExitGUI:
                 f"{len(required_pending)} required items are not completed.\nComplete exit anyway?"):
                 return
 
-        ExitManager.complete_exit(user_id)
+        ExitManager.complete_exit(user_id, self._get_user_id())
         messagebox.showinfo(_t('gui.staff.staff_hr.exit.dialogs.success', default="Success"), _t('gui.staff.staff_hr.exit.dialogs.exit_process_marked_as_complete', default="Exit process marked as complete"))
         self._load_exit_records()
 
@@ -896,12 +902,12 @@ Areas for Improvement:
         def save():
             try:
                 transfer_id = ExitManager.create_knowledge_transfer(
-                    from_user_id=from_entry.get().strip(),
-                    to_user_id=to_entry.get().strip(),
+                    departing_user_id=from_entry.get().strip(),
+                    receiving_user_id=to_entry.get().strip(),
                     topic=topic_entry.get().strip(),
                     description=desc_text.get("1.0", tk.END).strip(),
                     priority=priority_combo.get(),
-                    due_date=due_entry.get().strip() or None
+                    scheduled_date=due_entry.get().strip() or None
                 )
                 messagebox.showinfo(_t('gui.staff.staff_hr.exit.dialogs.success', default="Success"), f"Transfer created. ID: {transfer_id}")
                 dialog.destroy()

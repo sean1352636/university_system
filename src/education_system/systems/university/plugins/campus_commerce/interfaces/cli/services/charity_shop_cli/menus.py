@@ -9,6 +9,10 @@ from education_system.systems.university.plugins.campus_commerce.interfaces.cli.
     ACTIVITY_LOGGER_AVAILABLE, log_read, log_search, log_menu_navigation,
 )
 import education_system.systems.university.plugins.campus_commerce.interfaces.cli.services.charity_shop_cli._imports as _imp
+from education_system.systems.university.plugins.campus_commerce.interfaces.cli.services.charity_shop_cli._imports import get_current_user
+from education_system.systems.university.plugins.campus_commerce.domain.charity_shop.services.charity_shop_service import (
+    sell_item as sell_item_service,
+)
 
 from education_system.systems.university.plugins.campus_commerce.interfaces.cli.services.charity_shop_cli.db import init_charity_shop_db
 from education_system.systems.university.plugins.campus_commerce.interfaces.cli.services.charity_shop_cli.inventory import (
@@ -433,6 +437,20 @@ def edit_item_cli() -> None:
     input("\nPress Enter to continue...")
 
 
+SALE_PAYMENT_METHODS = ["Cash", "Debit/Credit Card", "Finance Account"]
+
+
+def _operator_name() -> str:
+    """Username of the logged-in operator, for Finance audit fields."""
+    try:
+        user = get_current_user()
+    except Exception:
+        user = None
+    if isinstance(user, dict):
+        return user.get('username') or 'System'
+    return getattr(user, 'username', None) or 'System'
+
+
 def sell_item_cli() -> None:
     """Sell an item via CLI."""
     print("\n--- Sell Item ---")
@@ -476,12 +494,33 @@ def sell_item_cli() -> None:
 
     revenue = qty_to_sell * price
 
-    confirm = input(f"\nSell {qty_to_sell} x '{name}' for \u00a3{revenue:.2f}? (y/n): ").strip().lower()
+    print("\nPayment method:")
+    for i, method in enumerate(SALE_PAYMENT_METHODS, 1):
+        print(f"  {i}. {method}")
+    method_choice = input("Select payment method [1]: ").strip() or "1"
+    if not method_choice.isdigit() or not 1 <= int(method_choice) <= len(SALE_PAYMENT_METHODS):
+        print("Invalid payment method.")
+        return
+    payment_method = SALE_PAYMENT_METHODS[int(method_choice) - 1]
+    student_id = input("Student ID (required for Finance Account, otherwise optional): ").strip() or None
+    if payment_method == "Finance Account" and not student_id:
+        print("A student ID is required for Finance Account payment.")
+        return
+
+    confirm = input(f"\nSell {qty_to_sell} x '{name}' for \u00a3{revenue:.2f} ({payment_method})? (y/n): ").strip().lower()
     if confirm == 'y':
-        if mark_as_sold(item_id, qty_to_sell):
-            print(f"\n\u2705 Sold {qty_to_sell} x '{name}' for \u00a3{revenue:.2f}!")
+        # The domain service updates stock and posts the sale to Finance.
+        sale = sell_item_service(
+            item_id=item_id,
+            quantity=qty_to_sell,
+            payment_method=payment_method,
+            student_id=student_id,
+            processed_by=_operator_name(),
+        )
+        if sale.get('success'):
+            print(f"\n\u2705 Sold {qty_to_sell} x '{name}' for \u00a3{revenue:.2f}! (Ref: {sale['transaction_ref']})")
         else:
-            print("\n\u274c Failed to process sale.")
+            print(f"\n\u274c Failed to process sale: {sale.get('message', '')}")
     else:
         print("Sale cancelled.")
 
@@ -1000,7 +1039,8 @@ def sales_pricing_cli() -> None:
             try:
                 sale_id = int(input("Sale ID to refund: "))
                 reason = input("Refund reason: ").strip()
-                if process_refund(sale_id, reason):
+                refund_method = input("Refund method (cash/card) [cash]: ").strip().lower() or 'cash'
+                if process_refund(sale_id, reason, refund_method=refund_method, processed_by=_operator_name()):
                     print("\n\u2705 Refund processed!")
                 else:
                     print("\n\u274c Failed to process refund.")
@@ -1037,7 +1077,7 @@ def layaway_menu_cli() -> None:
                 customer_id = int(input("Customer ID: "))
                 deposit = float(input("Deposit amount: \u00a3"))
                 days = int(input("Due in (days) [30]: ") or "30")
-                layaway_id = layaway_system(item_id, customer_id, deposit, days)
+                layaway_id = layaway_system(item_id, customer_id, deposit, days, processed_by=_operator_name())
                 if layaway_id:
                     print(f"\n\u2705 Layaway created (ID: {layaway_id})")
                 else:
@@ -1076,7 +1116,7 @@ def gift_card_menu_cli() -> None:
                 amount = float(input("Gift card amount: \u00a3"))
                 customer_id = input("Customer ID (optional): ").strip()
                 cid = int(customer_id) if customer_id else None
-                result = gift_card_management('issue', amount=amount, customer_id=cid)
+                result = gift_card_management('issue', amount=amount, customer_id=cid, processed_by=_operator_name())
                 if result:
                     print("\n\u2705 Gift Card Issued!")
                     print(f"Code: {result['code']}")

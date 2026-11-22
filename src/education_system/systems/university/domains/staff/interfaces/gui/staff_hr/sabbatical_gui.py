@@ -13,6 +13,7 @@ from __future__ import annotations
 
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 
+from education_system.systems.university.domains.staff.interfaces.gui.staff_hr import _access as _hr
 import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext
 from datetime import datetime
@@ -47,7 +48,7 @@ class SabbaticalGUI:
 
     def _get_user_id(self):
         """Get user ID from current user dict."""
-        return self.current_user.get('id') or self.current_user.get('username')
+        return _hr.user_key(self)
 
     def create_as_tab(self, notebook: ttk.Notebook):
         """Create as a tab in parent notebook."""
@@ -59,7 +60,8 @@ class SabbaticalGUI:
         """Create as standalone window."""
         self.window = tk.Toplevel(self.root)
         self.window.title(_t('gui.staff.staff_hr.sabbatical.windows.sabbatical_study_leave', default="Sabbatical / Study Leave"))
-        self.window.geometry("1200x700")
+        self.window.geometry("1400x900")
+        self.window.minsize(1200, 800)
         self.window.minsize(1000, 600)
 
         bottom_frame = ttk.Frame(self.window)
@@ -83,9 +85,11 @@ class SabbaticalGUI:
         self._create_apply_tab()
         self._create_progress_tab()
 
-        if self.current_user.get('role') in ['admin', 'Admin', 'administrator', 'staff']:
+        if _hr.can(self, 'manager'):
             self._create_approvals_tab()
+        if _hr.can(self, 'hr'):
             self._create_return_tab()
+        if _hr.can(self, 'hr'):
             self._create_reports_tab()
 
     # ==================== TAB 1: MY APPLICATIONS ====================
@@ -624,7 +628,7 @@ class SabbaticalGUI:
             self.sabbatical_approvals_tree.delete(item)
 
         try:
-            approvals = SabbaticalManager.get_pending_approvals()
+            approvals = _hr.approvable(self, SabbaticalManager.get_pending_approvals())
 
             for a in approvals:
                 start = a.get('start_date', '')
@@ -653,11 +657,14 @@ class SabbaticalGUI:
 
         item = self.sabbatical_approvals_tree.item(selection[0])
         approval_id = item['values'][0]
+        if not _hr.may_approve(self, item['values'][1]):
+            messagebox.showerror(_t('gui.staff.staff_hr.sabbatical.dialogs.error', default="Error"), "You may not approve or reject this person's request.")
+            return
 
         comments = tk.simpledialog.askstring("Comments", "Enter approval comments (optional):", parent=self.root)
 
         try:
-            SabbaticalManager.approve_application(approval_id, self._get_user_id(), comments or '')
+            SabbaticalManager.approve_application(approval_id, self._get_user_id(), comments or '', actor=_hr.actor(self))
             messagebox.showinfo(_t('gui.staff.staff_hr.sabbatical.dialogs.success', default="Success"), _t('gui.staff.staff_hr.sabbatical.dialogs.sabbatical_application_approved_at_this_level', default="Sabbatical application approved at this level"))
             self._load_sabbatical_approvals()
         except Exception as e:
@@ -672,6 +679,9 @@ class SabbaticalGUI:
 
         item = self.sabbatical_approvals_tree.item(selection[0])
         approval_id = item['values'][0]
+        if not _hr.may_approve(self, item['values'][1]):
+            messagebox.showerror(_t('gui.staff.staff_hr.sabbatical.dialogs.error', default="Error"), "You may not approve or reject this person's request.")
+            return
 
         comments = tk.simpledialog.askstring("Reason", "Enter rejection reason:", parent=self.root)
         if not comments:
@@ -679,7 +689,7 @@ class SabbaticalGUI:
             return
 
         try:
-            SabbaticalManager.reject_application(approval_id, self._get_user_id(), comments)
+            SabbaticalManager.reject_application(approval_id, self._get_user_id(), comments, actor=_hr.actor(self))
             messagebox.showinfo(_t('gui.staff.staff_hr.sabbatical.dialogs.success', default="Success"), _t('gui.staff.staff_hr.sabbatical.dialogs.sabbatical_application_rejected', default="Sabbatical application rejected"))
             self._load_sabbatical_approvals()
         except Exception as e:

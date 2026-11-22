@@ -25,7 +25,7 @@ class AuthFacadeSupportOptionalInterfacesMixin:
         minimal stub. Mirrors the original eager logic, now run lazily."""
         try:
             if is_chatbot_available():
-                from education_system.systems.university.infrastructure.ai.university_chatbot import VoiceInterface
+                from education_system.systems.university.shared.ai.chatbot import VoiceInterface
                 vi = VoiceInterface()
                 if hasattr(vi, "initialize"):
                     vi.initialize()
@@ -81,7 +81,7 @@ class AuthFacadeSupportOptionalInterfacesMixin:
             def __init__(self):
                 self.enabled = False
 
-            def process_message(self, msg, user, session_id=None, voice=False):
+            def process_message(self, msg, user, session_id=None, voice=False, **kwargs):
                 return "Chatbot temporarily unavailable. Please try again later."
 
             def run_authenticated_console_interface(self):

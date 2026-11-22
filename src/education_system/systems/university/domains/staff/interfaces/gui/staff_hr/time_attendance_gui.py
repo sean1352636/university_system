@@ -17,9 +17,11 @@ from datetime import datetime, timedelta
 from typing import Optional
 import csv
 
-from education_system.systems.university.infrastructure.database.db import get_connection, transaction
 from education_system.systems.university.infrastructure.auth import UserAuth
-from education_system.systems.university.infrastructure.activity_logger import log_activity
+from education_system.systems.university.domains.staff.domain.staff_hr.services.managers.time_manager import (
+    TimeManager,
+)
+from education_system.systems.university.domains.staff.interfaces.gui.staff_hr import _access as _hr
 from education_system.systems.university.infrastructure.i18n import get_text as get_translation
 import tkinter.simpledialog  # noqa: F401 - registers tk.simpledialog
 
@@ -36,6 +38,7 @@ class TimeAttendanceGUI:
         self.current_user = auth.current_user if auth and auth.current_user else None
         self.parent_notebook = parent_notebook
         self.window = None
+        self.username = _hr.user_key(self) if self.current_user else None
 
         if not self.current_user:
             messagebox.showerror(_t("staff_hr.time_attendance.errors.error_generic", default="Error"),
@@ -57,8 +60,8 @@ class TimeAttendanceGUI:
         """Create as standalone window."""
         self.window = tk.Toplevel(self.root)
         self.window.title(_t("staff_hr.time_attendance.window_title", default="Time & Attendance System"))
-        self.window.geometry("1200x700")
-        self.window.minsize(1000, 600)
+        self.window.geometry("1400x900")
+        self.window.minsize(1200, 800)
 
         bottom_frame = ttk.Frame(self.window)
         bottom_frame.pack(side=tk.BOTTOM, fill=tk.X, padx=10, pady=5)
@@ -81,8 +84,12 @@ class TimeAttendanceGUI:
         self._create_clock_tab()
         self._create_entries_tab()
         self._create_timesheets_tab()
-        if self.current_user.get('role') in ['admin', 'Admin', 'administrator', 'staff']:
+        # Approvals: line managers (their reports) and HR.
+        if _hr.can(self, 'manager'):
             self._create_approvals_tab()
+
+    def _actor(self):
+        return _hr.actor(self)
 
     def _create_clock_tab(self):
         """Create the clock in/out tab."""
@@ -352,80 +359,33 @@ class TimeAttendanceGUI:
 
     def _update_clock_status(self):
         """Update clock in/out status."""
-        user_id = self.current_user.get('id') or self.current_user.get('username')
-        today = datetime.now().strftime("%Y-%m-%d")
-
         try:
-            with get_connection() as conn:
-                cursor = conn.cursor()
+            open_entry = TimeManager.get_current_status(self.username, actor=self._actor())
 
-                # Check for open entry (clocked in but not out)
-                cursor.execute('''
-                    SELECT entry_id, clock_in FROM time_entries
-                    WHERE user_id = ? AND entry_date = ? AND clock_out IS NULL
-                    ORDER BY clock_in DESC LIMIT 1
-                ''', (user_id, today))
+            if open_entry:
+                self.clock_status.config(text=_t("staff_hr.time_attendance.clock.status_clocked_in", default="Clocked in since {time}", time=open_entry['clock_in']), foreground='green')
+                self.clock_in_btn.config(state=tk.DISABLED)
+                self.clock_out_btn.config(state=tk.NORMAL)
+            else:
+                self.clock_status.config(text=_t("staff_hr.time_attendance.clock.status_not_clocked_in", default="Not clocked in"), foreground='gray')
+                self.clock_in_btn.config(state=tk.NORMAL)
+                self.clock_out_btn.config(state=tk.DISABLED)
 
-                open_entry = cursor.fetchone()
-
-                if open_entry:
-                    clock_in_time = open_entry[1]
-                    self.clock_status.config(text=_t("staff_hr.time_attendance.clock.status_clocked_in", default="Clocked in since {time}", time=clock_in_time), foreground='green')
-                    self.clock_in_btn.config(state=tk.DISABLED)
-                    self.clock_out_btn.config(state=tk.NORMAL)
-                else:
-                    self.clock_status.config(text=_t("staff_hr.time_attendance.clock.status_not_clocked_in", default="Not clocked in"), foreground='gray')
-                    self.clock_in_btn.config(state=tk.NORMAL)
-                    self.clock_out_btn.config(state=tk.DISABLED)
-
-                # Get today's summary
-                cursor.execute('''
-                    SELECT COUNT(*), SUM(
-                        CASE WHEN clock_out IS NOT NULL THEN
-                            (julianday(clock_out) - julianday(clock_in)) * 24 - COALESCE(break_minutes, 0) / 60.0
-                        ELSE 0 END
-                    )
-                    FROM time_entries WHERE user_id = ? AND entry_date = ?
-                ''', (user_id, today))
-
-                result = cursor.fetchone()
-                entries = result[0] or 0
-                hours = result[1] or 0
-
-                self.today_hours.config(text=_t("staff_hr.time_attendance.summary.hours_worked", default="Hours Worked: {hours}", hours=f"{hours:.2f}"))
-                self.today_entries.config(text=_t("staff_hr.time_attendance.summary.entries", default="Entries: {count}", count=entries))
-
-                # Get week total
-                week_start = (datetime.now() - timedelta(days=datetime.now().weekday())).strftime("%Y-%m-%d")
-                cursor.execute('''
-                    SELECT SUM(
-                        CASE WHEN clock_out IS NOT NULL THEN
-                            (julianday(clock_out) - julianday(clock_in)) * 24 - COALESCE(break_minutes, 0) / 60.0
-                        ELSE 0 END
-                    )
-                    FROM time_entries WHERE user_id = ? AND entry_date >= ?
-                ''', (user_id, week_start))
-
-                week_total = cursor.fetchone()[0] or 0
-                self.week_hours.config(text=_t("staff_hr.time_attendance.summary.week_total", default="Week Total: {hours} hours", hours=f"{week_total:.2f}"))
+            summary = TimeManager.day_summary(self.username, actor=self._actor())
+            self.today_hours.config(text=_t("staff_hr.time_attendance.summary.hours_worked", default="Hours Worked: {hours}", hours=f"{summary['hours_today']:.2f}"))
+            self.today_entries.config(text=_t("staff_hr.time_attendance.summary.entries", default="Entries: {count}", count=summary['entries']))
+            self.week_hours.config(text=_t("staff_hr.time_attendance.summary.week_total", default="Week Total: {hours} hours", hours=f"{summary['hours_week']:.2f}"))
 
         except Exception as e:
             self.clock_status.config(text=_t("staff_hr.time_attendance.errors.status_error", default="Error: {error}", error=str(e)), foreground='red')
 
     def _clock_in(self):
         """Clock in for the current user."""
-        user_id = self.current_user.get('id') or self.current_user.get('username')
         now = datetime.now()
 
         try:
-            with transaction() as conn:
-                conn.execute('''
-                    INSERT INTO time_entries (user_id, entry_date, clock_in, work_type, location)
-                    VALUES (?, ?, ?, ?, ?)
-                ''', (user_id, now.strftime("%Y-%m-%d"), now.strftime("%H:%M:%S"),
-                      self.work_type.get().lower(), self.location.get().lower()))
-
-            log_activity('create', 'time_entry', user_id=user_id, details={'action': 'clock_in'})
+            TimeManager.clock_in(self.username, location=self.location.get().lower(),
+                                 work_type=self.work_type.get().lower(), actor=self._actor())
             messagebox.showinfo(_t("staff_hr.time_attendance.dialogs.clock_in.success_title", default="Success"),
                               _t("staff_hr.time_attendance.dialogs.clock_in.success_message", default="Clocked in at {time}", time=now.strftime('%H:%M:%S')))
             self._update_clock_status()
@@ -437,18 +397,10 @@ class TimeAttendanceGUI:
 
     def _clock_out(self):
         """Clock out for the current user."""
-        user_id = self.current_user.get('id') or self.current_user.get('username')
-        today = datetime.now().strftime("%Y-%m-%d")
         now = datetime.now().strftime("%H:%M:%S")
 
         try:
-            with transaction() as conn:
-                conn.execute('''
-                    UPDATE time_entries SET clock_out = ?, updated_at = ?
-                    WHERE user_id = ? AND entry_date = ? AND clock_out IS NULL
-                ''', (now, datetime.now().isoformat(), user_id, today))
-
-            log_activity('update', 'time_entry', user_id=user_id, details={'action': 'clock_out'})
+            TimeManager.clock_out(self.username, actor=self._actor())
             messagebox.showinfo(_t("staff_hr.time_attendance.dialogs.clock_out.success_title", default="Success"),
                               _t("staff_hr.time_attendance.dialogs.clock_out.success_message", default="Clocked out at {time}", time=now))
             self._update_clock_status()
@@ -463,37 +415,22 @@ class TimeAttendanceGUI:
         try:
             self.entries_tree.delete(*self.entries_tree.get_children())
 
-            user_id = self.current_user.get('id') or self.current_user.get('username')
             from_date = self.entries_from.get()
             to_date = self.entries_to.get()
 
-            with get_connection() as conn:
-                cursor = conn.cursor()
-                cursor.execute('''
-                    SELECT entry_id, entry_date, clock_in, clock_out, break_minutes,
-                           work_type, location
-                    FROM time_entries
-                    WHERE user_id = ? AND entry_date BETWEEN ? AND ?
-                    ORDER BY entry_date DESC, clock_in DESC
-                ''', (user_id, from_date, to_date))
+            total_hours = 0
+            total_overtime = 0
 
-                total_hours = 0
-                total_overtime = 0
+            for row in TimeManager.get_entries(self.username, from_date, to_date, actor=self._actor()):
+                hours = float(row.get('hours') or 0)
+                values = (row['entry_id'], row['entry_date'], row['clock_in'], row.get('clock_out') or '-',
+                          row.get('break_minutes') or 0, f"{hours:.2f}",
+                          (row.get('work_type') or '').capitalize(), (row.get('location') or '').capitalize())
+                self.entries_tree.insert('', 'end', values=values)
 
-                for row in cursor.fetchall():
-                    hours = 0
-                    if row[3]:  # clock_out exists
-                        clock_in = datetime.strptime(f"{row[1]} {row[2]}", "%Y-%m-%d %H:%M:%S")
-                        clock_out = datetime.strptime(f"{row[1]} {row[3]}", "%Y-%m-%d %H:%M:%S")
-                        hours = (clock_out - clock_in).total_seconds() / 3600 - (row[4] or 0) / 60
-
-                    values = (row[0], row[1], row[2], row[3] or '-', row[4] or 0,
-                              f"{hours:.2f}", row[5].capitalize(), row[6].capitalize())
-                    self.entries_tree.insert('', 'end', values=values)
-
-                    total_hours += hours
-                    if row[5] == 'overtime':
-                        total_overtime += hours
+                total_hours += hours
+                if row.get('work_type') == 'overtime':
+                    total_overtime += hours
 
             self.entries_total.config(text=_t("staff_hr.time_attendance.entries.summary.total_hours", default="Total Hours: {hours}", hours=f"{total_hours:.2f}"))
             self.entries_overtime.config(text=_t("staff_hr.time_attendance.entries.summary.overtime", default="Overtime: {hours}", hours=f"{total_overtime:.2f}"))
@@ -565,8 +502,6 @@ class TimeAttendanceGUI:
         error_label.pack(fill=tk.X, pady=5)
 
         def save_entry():
-            user_id = self.current_user.get('id') or self.current_user.get('username')
-
             try:
                 break_mins = int(break_var.get())
             except ValueError:
@@ -574,15 +509,10 @@ class TimeAttendanceGUI:
                 return
 
             try:
-                with transaction() as conn:
-                    conn.execute('''
-                        INSERT INTO time_entries
-                        (user_id, entry_date, clock_in, clock_out, break_minutes, work_type, location, is_manual, notes)
-                        VALUES (?, ?, ?, ?, ?, ?, 'office', 1, ?)
-                    ''', (user_id, date_var.get(), in_var.get(), out_var.get(),
-                          break_mins, type_var.get().lower(), notes_entry.get()))
-
-                log_activity('create', 'time_entry', user_id=user_id, details={'action': 'manual_entry'})
+                TimeManager.add_manual_entry(self.username, date_var.get(), in_var.get(), out_var.get(),
+                                             actor=self._actor(), break_minutes=break_mins,
+                                             work_type=type_var.get().lower(), location='office',
+                                             notes=notes_entry.get())
                 messagebox.showinfo(_t("staff_hr.time_attendance.dialogs.add_manual_entry.success_title", default="Success"),
                                   _t("staff_hr.time_attendance.dialogs.add_manual_entry.success_message", default="Manual entry added"))
                 dialog.destroy()
@@ -605,31 +535,80 @@ class TimeAttendanceGUI:
         item = self.entries_tree.item(selection[0])
         entry_id = item['values'][0]
 
-        # Similar dialog to add_manual_entry but pre-filled
-        messagebox.showinfo(_t("staff_hr.time_attendance.dialogs.edit_entry.title", default="===== EDIT ENTRY ====="),
-                          _t("staff_hr.time_attendance.dialogs.edit_entry.message", default="Editing entry {id}\n(Full edit dialog would open here)", id=entry_id))
+        try:
+            entry = TimeManager.get_entry(entry_id, actor=self._actor())
+        except Exception as e:
+            messagebox.showerror(_t("staff_hr.time_attendance.errors.error_generic", default="Error"), str(e))
+            return
+        if not entry:
+            return
+
+        dialog = tk.Toplevel(self.root)
+        dialog.title(_t("staff_hr.time_attendance.dialogs.edit_entry.title", default="Edit Entry"))
+        dialog.geometry("400x380")
+        dialog.transient(self.root)
+        dialog.grab_set()
+
+        main_frame = ttk.Frame(dialog, padding=20)
+        main_frame.pack(fill=tk.BOTH, expand=True)
+        ttk.Label(main_frame, text=_t("staff_hr.time_attendance.dialogs.edit_entry.header", default="Correct Time Entry {id}", id=entry_id),
+                  font=('Arial', 14, 'bold')).pack(pady=(0, 15))
+
+        variables = {}
+        for key, label, default in (
+                ('entry_date', _t("staff_hr.time_attendance.dialogs.add_manual_entry.label_date", default="Date:"), entry.get('entry_date')),
+                ('clock_in', _t("staff_hr.time_attendance.dialogs.add_manual_entry.label_clock_in", default="Clock In:"), entry.get('clock_in')),
+                ('clock_out', _t("staff_hr.time_attendance.dialogs.add_manual_entry.label_clock_out", default="Clock Out:"), entry.get('clock_out')),
+                ('break_minutes', _t("staff_hr.time_attendance.dialogs.add_manual_entry.label_break", default="Break (min):"), entry.get('break_minutes') or 0),
+                ('notes', _t("staff_hr.time_attendance.dialogs.add_manual_entry.label_notes", default="Notes:"), entry.get('notes'))):
+            row = ttk.Frame(main_frame)
+            row.pack(fill=tk.X, pady=4)
+            ttk.Label(row, text=label, width=12, anchor=tk.W).pack(side=tk.LEFT)
+            variables[key] = tk.StringVar(value='' if default is None else str(default))
+            ttk.Entry(row, textvariable=variables[key], width=25).pack(side=tk.LEFT)
+
+        error_label = ttk.Label(main_frame, text="", foreground='red', wraplength=340)
+        error_label.pack(fill=tk.X, pady=5)
+
+        def save():
+            try:
+                break_mins = int(variables['break_minutes'].get() or 0)
+            except ValueError:
+                error_label.config(text=_t("staff_hr.time_attendance.dialogs.add_manual_entry.error_invalid_break", default="Invalid break duration"))
+                return
+            try:
+                TimeManager.update_entry(entry_id, actor=self._actor(),
+                                         entry_date=variables['entry_date'].get().strip(),
+                                         clock_in=variables['clock_in'].get().strip(),
+                                         clock_out=variables['clock_out'].get().strip() or None,
+                                         break_minutes=break_mins,
+                                         notes=variables['notes'].get().strip())
+            except Exception as e:
+                error_label.config(text=str(e))
+                return
+            dialog.destroy()
+            self._load_entries()
+            self._update_clock_status()
+
+        btn_frame = ttk.Frame(main_frame)
+        btn_frame.pack(pady=10)
+        ttk.Button(btn_frame, text=_t("staff_hr.time_attendance.dialogs.add_manual_entry.btn_save", default="Save"), command=save).pack(side=tk.LEFT, padx=10)
+        ttk.Button(btn_frame, text=_t("staff_hr.time_attendance.dialogs.add_manual_entry.btn_cancel", default="Cancel"), command=dialog.destroy).pack(side=tk.LEFT, padx=10)
 
     def _load_timesheets(self):
         """Load user's timesheets."""
         try:
             self.timesheets_tree.delete(*self.timesheets_tree.get_children())
 
-            user_id = self.current_user.get('id') or self.current_user.get('username')
-
-            with get_connection() as conn:
-                cursor = conn.cursor()
-                cursor.execute('''
-                    SELECT timesheet_id, week_start, week_end, regular_hours,
-                           overtime_hours, total_hours, status, submitted_date
-                    FROM timesheets
-                    WHERE user_id = ?
-                    ORDER BY week_start DESC
-                ''', (user_id,))
-
-                for row in cursor.fetchall():
-                    values = (row[0], row[1], row[2], f"{row[3]:.2f}", f"{row[4]:.2f}",
-                              f"{row[5]:.2f}", row[6].capitalize(), row[7] or '-')
-                    self.timesheets_tree.insert('', 'end', values=values, tags=(row[6],))
+            for ts in TimeManager.get_timesheets(self.username, actor=self._actor()):
+                status = ts.get('status') or 'draft'
+                label = status.capitalize()
+                if status == 'rejected' and ts.get('rejection_reason'):
+                    label += f" ({ts['rejection_reason']})"
+                values = (ts['timesheet_id'], ts['week_start'], ts['week_end'],
+                          f"{ts.get('regular_hours') or 0:.2f}", f"{ts.get('overtime_hours') or 0:.2f}",
+                          f"{ts.get('total_hours') or 0:.2f}", label, ts.get('submitted_date') or '-')
+                self.timesheets_tree.insert('', 'end', values=values, tags=(status,))
 
         except Exception as e:
             messagebox.showerror(_t("staff_hr.time_attendance.errors.error_generic", default="Error"),
@@ -637,53 +616,13 @@ class TimeAttendanceGUI:
 
     def _create_timesheet(self):
         """Create a new timesheet for current week."""
-        user_id = self.current_user.get('id') or self.current_user.get('username')
-
-        # Calculate current week
-        today = datetime.now()
-        week_start = today - timedelta(days=today.weekday())
-        week_end = week_start + timedelta(days=6)
-
         try:
-            with get_connection() as conn:
-                cursor = conn.cursor()
-
-                # Check if timesheet already exists
-                cursor.execute('''
-                    SELECT timesheet_id FROM timesheets
-                    WHERE user_id = ? AND week_start = ?
-                ''', (user_id, week_start.strftime("%Y-%m-%d")))
-
-                if cursor.fetchone():
-                    messagebox.showwarning(_t("staff_hr.time_attendance.errors.error_generic", default="Warning"),
-                                         _t("staff_hr.time_attendance.dialogs.create_timesheet.warning_exists", default="Timesheet for this week already exists"))
-                    return
-
-                # Calculate hours from time entries
-                cursor.execute('''
-                    SELECT work_type,
-                           SUM((julianday(clock_out) - julianday(clock_in)) * 24 - COALESCE(break_minutes, 0) / 60.0)
-                    FROM time_entries
-                    WHERE user_id = ? AND entry_date BETWEEN ? AND ? AND clock_out IS NOT NULL
-                    GROUP BY work_type
-                ''', (user_id, week_start.strftime("%Y-%m-%d"), week_end.strftime("%Y-%m-%d")))
-
-                regular_hours = 0
-                overtime_hours = 0
-
-                for row in cursor.fetchall():
-                    if row[0] == 'overtime':
-                        overtime_hours = row[1] or 0
-                    else:
-                        regular_hours += row[1] or 0
-
-            with transaction() as conn:
-                conn.execute('''
-                    INSERT INTO timesheets
-                    (user_id, week_start, week_end, regular_hours, overtime_hours, total_hours, status)
-                    VALUES (?, ?, ?, ?, ?, ?, 'draft')
-                ''', (user_id, week_start.strftime("%Y-%m-%d"), week_end.strftime("%Y-%m-%d"),
-                      regular_hours, overtime_hours, regular_hours + overtime_hours))
+            try:
+                TimeManager.create_timesheet(self.username, actor=self._actor())
+            except ValueError:
+                messagebox.showwarning(_t("staff_hr.time_attendance.errors.error_generic", default="Warning"),
+                                       _t("staff_hr.time_attendance.dialogs.create_timesheet.warning_exists", default="Timesheet for this week already exists"))
+                return
 
             messagebox.showinfo(_t("staff_hr.time_attendance.dialogs.create_timesheet.success_title", default="Success"),
                               _t("staff_hr.time_attendance.dialogs.create_timesheet.success_message", default="Timesheet created"))
@@ -703,9 +642,9 @@ class TimeAttendanceGUI:
 
         item = self.timesheets_tree.item(selection[0])
         timesheet_id = item['values'][0]
-        status = item['values'][6].lower()
+        status = str(item['values'][6]).lower().split(' ')[0]
 
-        if status != 'draft':
+        if status not in ('draft', 'rejected'):
             messagebox.showwarning(_t("staff_hr.time_attendance.errors.error_generic", default="Warning"),
                                  _t("staff_hr.time_attendance.dialogs.submit_timesheet.warning_draft_only", default="Only draft timesheets can be submitted"))
             return
@@ -715,11 +654,7 @@ class TimeAttendanceGUI:
             return
 
         try:
-            with transaction() as conn:
-                conn.execute('''
-                    UPDATE timesheets SET status = 'submitted', submitted_date = ?, updated_at = ?
-                    WHERE timesheet_id = ?
-                ''', (datetime.now().strftime("%Y-%m-%d"), datetime.now().isoformat(), timesheet_id))
+            TimeManager.submit_timesheet(timesheet_id, actor=self._actor())
 
             messagebox.showinfo(_t("staff_hr.time_attendance.dialogs.submit_timesheet.success_title", default="Success"),
                               _t("staff_hr.time_attendance.dialogs.submit_timesheet.success_message", default="Timesheet submitted for approval"))
@@ -734,20 +669,11 @@ class TimeAttendanceGUI:
         try:
             self.pending_tree.delete(*self.pending_tree.get_children())
 
-            with get_connection() as conn:
-                cursor = conn.cursor()
-                cursor.execute('''
-                    SELECT timesheet_id, user_id, week_start, week_end,
-                           regular_hours, overtime_hours, total_hours, submitted_date
-                    FROM timesheets
-                    WHERE status = 'submitted'
-                    ORDER BY submitted_date ASC
-                ''')
-
-                for row in cursor.fetchall():
-                    values = (row[0], row[1], row[2], row[3], f"{row[4]:.2f}",
-                              f"{row[5]:.2f}", f"{row[6]:.2f}", row[7] or '-')
-                    self.pending_tree.insert('', 'end', values=values)
+            for ts in TimeManager.get_pending_approvals(actor=self._actor()):
+                values = (ts['timesheet_id'], ts['user_id'], ts['week_start'], ts['week_end'],
+                          f"{ts.get('regular_hours') or 0:.2f}", f"{ts.get('overtime_hours') or 0:.2f}",
+                          f"{ts.get('total_hours') or 0:.2f}", ts.get('submitted_date') or '-')
+                self.pending_tree.insert('', 'end', values=values)
 
         except Exception as e:
             messagebox.showerror(_t("staff_hr.time_attendance.errors.error_generic", default="Error"),
@@ -765,20 +691,9 @@ class TimeAttendanceGUI:
                                   _t("staff_hr.time_attendance.dialogs.approve_timesheets.confirm_message", default="Approve {count} timesheet(s)?", count=len(selection))):
             return
 
-        approved_by = self.current_user.get('username') or self.current_user.get('id')
-
         try:
-            with transaction() as conn:
-                for item_id in selection:
-                    item = self.pending_tree.item(item_id)
-                    timesheet_id = item['values'][0]
-
-                    conn.execute('''
-                        UPDATE timesheets
-                        SET status = 'approved', approved_by = ?, approved_date = ?, updated_at = ?
-                        WHERE timesheet_id = ?
-                    ''', (approved_by, datetime.now().strftime("%Y-%m-%d"),
-                          datetime.now().isoformat(), timesheet_id))
+            for item_id in selection:
+                TimeManager.approve_timesheet(self.pending_tree.item(item_id)['values'][0], actor=self._actor())
 
             messagebox.showinfo(_t("staff_hr.time_attendance.dialogs.approve_timesheets.success_title", default="Success"),
                               _t("staff_hr.time_attendance.dialogs.approve_timesheets.success_message", default="Approved {count} timesheet(s)", count=len(selection)))
@@ -802,16 +717,8 @@ class TimeAttendanceGUI:
             return
 
         try:
-            with transaction() as conn:
-                for item_id in selection:
-                    item = self.pending_tree.item(item_id)
-                    timesheet_id = item['values'][0]
-
-                    conn.execute('''
-                        UPDATE timesheets
-                        SET status = 'rejected', rejection_reason = ?, updated_at = ?
-                        WHERE timesheet_id = ?
-                    ''', (reason, datetime.now().isoformat(), timesheet_id))
+            for item_id in selection:
+                TimeManager.reject_timesheet(self.pending_tree.item(item_id)['values'][0], reason, actor=self._actor())
 
             messagebox.showinfo(_t("staff_hr.time_attendance.dialogs.reject_timesheets.success_title", default="Success"),
                               _t("staff_hr.time_attendance.dialogs.reject_timesheets.success_message", default="Rejected {count} timesheet(s)", count=len(selection)))

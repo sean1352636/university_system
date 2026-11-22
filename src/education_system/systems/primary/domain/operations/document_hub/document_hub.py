@@ -268,6 +268,10 @@ def _validate_payload(p: dict[str, Any]) -> dict[str, Any]:
         except (TypeError, ValueError):
             raise ValidationError(
                 "Supersedes id must be an integer")
+        if get_document(out["supersedes_id"]) is None:
+            raise ValidationError(
+                f"No document with id {out['supersedes_id']} "
+                "to supersede")
 
     fsz = out.get("file_size_kb")
     if fsz in (None, ""):

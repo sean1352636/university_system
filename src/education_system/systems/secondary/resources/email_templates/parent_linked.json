@@ -1,0 +1,27 @@
+{
+  "name": "parent_linked",
+  "description": "Sent to a parent or carer who already has a login when another child is added to their parent portal.",
+  "subject": "{pupil_first_name} added to your {school_name} parent portal",
+  "body": [
+    "Dear {parent_name},",
+    "",
+    "{pupil_name} has been added to your parent portal at {school_name}.",
+    "Sign in with your existing login ({username}) and choose {pupil_first_name} at the top of the portal.",
+    "",
+    "If you weren't expecting this e-mail, please contact the school office.",
+    "",
+    "Best wishes,",
+    "{school_name}"
+  ],
+  "placeholders": {
+    "parent_name": "The contact's full name",
+    "pupil_first_name": "The pupil's preferred or first name",
+    "pupil_name": "The pupil's preferred first name and surname",
+    "username": "The parent's existing login username",
+    "school_name": "The school's name"
+  },
+  "defaults": {
+    "school_name": "Secondary School",
+    "password": ""
+  }
+}

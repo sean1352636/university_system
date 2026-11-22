@@ -253,27 +253,59 @@ class ExportManager:
             return
 
         try:
-            with open(file_path, 'w', newline='') as f:
+            rows = []
+            with get_connection() as conn:
+                tables = {r[0] for r in conn.execute(
+                    "SELECT name FROM sqlite_master WHERE type = 'table' AND name IN "
+                    "('workflow_templates', 'workflow_template_steps', 'document_types')")}
+                if 'workflow_templates' in tables:
+                    cols = {r[1] for r in conn.execute("PRAGMA table_info(workflow_templates)")}
+                    # Older and newer builders store the document type differently.
+                    type_ids = [c for c in ('document_type_id', 'type_id') if c in cols]
+                    type_id_expr = f"COALESCE({', '.join('wt.' + c for c in type_ids)})" if type_ids else "NULL"
+                    type_name_parts = (["dt.type_name"] if 'document_types' in tables else []) + (
+                        ["wt.document_type_name"] if 'document_type_name' in cols else [])
+                    type_name_expr = f"COALESCE({', '.join(type_name_parts)}, '')" if type_name_parts else "''"
+                    join_types = (f"LEFT JOIN document_types dt ON dt.type_id = {type_id_expr}"
+                                  if 'document_types' in tables else "")
+                    steps_expr = ("(SELECT COUNT(*) FROM workflow_template_steps s "
+                                  "WHERE s.template_id = wt.template_id)"
+                                  if 'workflow_template_steps' in tables else "0")
+                    active_expr = "wt.is_active" if 'is_active' in cols else "1"
+                    created_expr = "wt.created_date" if 'created_date' in cols else "NULL"
+                    # Every interpolated piece above is a fixed column/expression
+                    # chosen from PRAGMA output, never user input.
+                    # db-audit: ignore[DBW001] - fragments are literals picked by schema checks
+                    rows = conn.execute(f"""
+                        SELECT wt.template_id, wt.template_name, {type_name_expr}, {steps_expr},
+                               CASE WHEN COALESCE({active_expr}, 1) THEN 'Yes' ELSE 'No' END,
+                               COALESCE({created_expr}, '')
+                        FROM workflow_templates wt
+                        {join_types}
+                        ORDER BY wt.template_id
+                    """).fetchall()  # nosec B608
+
+            with open(file_path, 'w', newline='', encoding='utf-8') as f:
                 writer = csv.writer(f)
                 writer.writerow(['Workflow ID', 'Workflow Name', 'Document Type',
                                'Total Steps', 'Active', 'Created Date'])
+                writer.writerows(tuple(r) for r in rows)
 
-                # Sample workflow data (would query from workflow_templates table)
-                sample_workflows = [
-                    (1, 'Standard Document Review', 'Transcript', 3, 'Yes', '2024-01-15'),
-                    (2, 'Fast Track Approval', 'ID Card', 2, 'Yes', '2024-02-01'),
-                    (3, 'Detailed Compliance Check', 'Financial Document', 5, 'Yes', '2024-03-10'),
-                ]
-
-                writer.writerows(sample_workflows)
-
+            if rows:
+                message = (f"Workflow data exported successfully:\n{file_path}\n\n"
+                           f"Total workflows: {len(rows)}")
+            else:
+                message = (f"No workflow templates have been created yet, so the file\n"
+                           f"{file_path}\ncontains only the column headings.")
             messagebox.showinfo(_t('gui.shell.document_manager.exports.dialogs.export_complete', default="Export Complete"),
-                              f"Workflow data exported successfully:\n{file_path}")
+                              message, parent=self.root)
 
-            self.gui.log_event('export', 'workflow_data', details='Exported workflow data')
+            self.gui.log_event('export', 'workflow_data',
+                               details=f'Exported {len(rows)} workflow templates')
 
         except Exception as e:
-            messagebox.showerror(_t('gui.shell.document_manager.exports.dialogs.export_error', default="Export Error"), f"Failed to export workflow data: {e}")
+            messagebox.showerror(_t('gui.shell.document_manager.exports.dialogs.export_error', default="Export Error"), f"Failed to export workflow data: {e}",
+                                 parent=self.root)
 
     def export_student_list(self):
         """Export list of all students"""

@@ -170,10 +170,12 @@ Record pastoral notes, wellbeing concerns, and maintain communication logs linke
 
 ## Quick Reference
 
+> Student and parent logins cannot open these screens yet; see [SECURITY.md](../security/SECURITY.md#role-based-access-control-rbac). This table describes the intended access.
+
 | Module | Access Path | Key Roles |
 |---|---|---|
-| Behaviour | Sidebar → Pastoral Care → Behaviour | admin, teacher |
-| Rewards | Sidebar → Pastoral Care → Rewards | admin, teacher |
-| Safeguarding | Sidebar → Pastoral Care → Safeguarding | admin, DSL only |
-| SEND | Sidebar → Pastoral Care → SEND | admin, teacher, SENCo |
-| Pastoral | Sidebar → Pastoral Care → Pastoral | admin, teacher |
+| Behaviour | Sidebar → Pastoral & Wellbeing → Behaviour Log | admin, teacher |
+| Rewards | Sidebar → Pastoral & Wellbeing → House Points | admin, teacher |
+| Safeguarding | Sidebar → Pastoral & Wellbeing → Safeguarding | admin, DSL only |
+| SEND | Sidebar → Pastoral & Wellbeing → SEND | admin, teacher, SENCo |
+| Pastoral | Sidebar → Pastoral & Wellbeing → Pupil Support | admin, teacher |

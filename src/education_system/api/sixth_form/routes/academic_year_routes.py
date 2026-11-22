@@ -25,9 +25,12 @@ import datetime as _dt
 import hashlib
 import json
 import logging
+import hmac
 import os
 from typing import Any
 from flask import Blueprint, Response, abort, g, jsonify, request
+
+from education_system.api.sixth_form import access_gate
 
 from education_system.systems.sixth_form.domain.academics.academic_year import (
     academic_year as data,
@@ -58,6 +61,7 @@ academic_year_bp = Blueprint(
 # If neither is set the request is rejected.
 
 def _token_required(view):
+    view = access_gate.gate(view)
     try:
         from education_system.platform.delivery.api.auth import token_required
         return token_required(view)
@@ -417,10 +421,13 @@ def _build_ics(year_id: int) -> str:
 
 @academic_year_bp.route("/<int:year_id>/calendar.ics", methods=["GET"])
 def calendar_ics_route(year_id: int):
+    # Calendar clients can't send an auth header, so the feed is gated
+    # by a shared token — and refused outright when none is configured,
+    # rather than served to anyone who finds the URL.
     expected = os.environ.get("SIXTHFORM_ICS_TOKEN")
-    if expected:
-        if request.args.get("token") != expected:
-            return abort(401)
+    if not expected or not hmac.compare_digest(
+            request.args.get("token") or "", expected):
+        return abort(401)
     try:
         body = _build_ics(year_id)
     except Exception as e:

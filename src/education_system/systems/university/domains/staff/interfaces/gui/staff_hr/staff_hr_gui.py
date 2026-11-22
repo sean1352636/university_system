@@ -16,6 +16,7 @@ logger = logging.getLogger(__name__)
 
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 
+from education_system.systems.university.domains.staff.interfaces.gui.staff_hr import _access as _hr
 import tkinter as tk
 from tkinter import ttk, messagebox
 from typing import Optional
@@ -173,9 +174,11 @@ class StaffHRGUI:
         self._load_reports()
         self._load_assets()
         self._load_admin_tools()
+        self._load_staff_profile()
+        self._load_academic_staff()
 
-        # Admin-only tabs
-        if self.current_user.get('role') in ('admin', 'Admin', 'administrator'):
+        # HR-only tabs
+        if _hr.can(self, 'hr'):
             self._load_exit_management()
 
         # Select the first sidebar button by default
@@ -184,7 +187,7 @@ class StaffHRGUI:
 
         # Log activity
         log_activity('view', 'staff_hr_gui',
-                     user_id=self.current_user.get('id') or self.current_user.get('username'),
+                     user_id=_hr.user_key(self),
                      details={'action': 'opened_staff_hr_gui'})
 
     def _add_sidebar_button(self, text: str):
@@ -469,6 +472,16 @@ class StaffHRGUI:
         from education_system.systems.university.domains.staff.interfaces.gui.staff_hr.admin_tools_gui import AdminToolsGUI
         self._load_tab_safe(AdminToolsGUI, "Admin Tools")
 
+    def _load_staff_profile(self):
+        """Load staff profiles (own profile, My Team, line managers) as a tab."""
+        from education_system.systems.university.domains.staff.interfaces.gui.staff_hr.staff_profile_gui import StaffProfileGUI
+        self._load_tab_safe(StaffProfileGUI, "My Profile")
+
+    def _load_academic_staff(self):
+        """Load academic staff (supervision, examiners, observations) as a tab."""
+        from education_system.systems.university.domains.staff.interfaces.gui.staff_hr.academic_staff_gui import AcademicStaffGUI
+        self._load_tab_safe(AcademicStaffGUI, "Academic Staff")
+
     def _load_exit_management(self):
         """Load exit management as a tab (admin only)."""
         from education_system.systems.university.domains.staff.interfaces.gui.staff_hr.exit_gui import ExitGUI
@@ -477,7 +490,7 @@ class StaffHRGUI:
     def _get_leave_balance(self) -> str:
         """Get user's remaining leave balance."""
         try:
-            user_id = self.current_user.get('id') or self.current_user.get('username')
+            user_id = _hr.user_key(self)
             year = 2026  # Current year
 
             with get_connection() as conn:
@@ -497,7 +510,7 @@ class StaffHRGUI:
     def _get_pending_requests(self) -> int:
         """Get count of pending leave requests."""
         try:
-            user_id = self.current_user.get('id') or self.current_user.get('username')
+            user_id = _hr.user_key(self)
 
             with get_connection() as conn:
                 cursor = conn.cursor()
@@ -512,7 +525,7 @@ class StaffHRGUI:
     def _get_training_due(self) -> int:
         """Get count of training courses due."""
         try:
-            user_id = self.current_user.get('id') or self.current_user.get('username')
+            user_id = _hr.user_key(self)
 
             with get_connection() as conn:
                 cursor = conn.cursor()
@@ -527,7 +540,7 @@ class StaffHRGUI:
     def _get_goals_progress(self) -> str:
         """Get average goals progress."""
         try:
-            user_id = self.current_user.get('id') or self.current_user.get('username')
+            user_id = _hr.user_key(self)
 
             with get_connection() as conn:
                 cursor = conn.cursor()
@@ -543,7 +556,7 @@ class StaffHRGUI:
     def _get_notifications(self) -> list:
         """Get user notifications and reminders."""
         notifications = []
-        user_id = self.current_user.get('id') or self.current_user.get('username')
+        user_id = _hr.user_key(self)
 
         try:
             with get_connection() as conn:
@@ -615,13 +628,16 @@ class StaffHRGUI:
 
                 # Check for pending travel approvals
                 try:
-                    cursor.execute('''
-                        SELECT COUNT(*) FROM travel_approvals ta
-                        JOIN travel_requests tr ON ta.request_id = tr.request_id
-                        WHERE ta.status = 'pending'
-                    ''')
-                    travel_pending = cursor.fetchone()[0]
-                    if travel_pending > 0 and self.current_user.get('role') in ('admin', 'Admin', 'administrator', 'staff'):
+                    travel_pending = 0
+                    if _hr.can(self, 'manager'):
+                        cursor.execute('''
+                            SELECT DISTINCT tr.request_id, tr.user_id FROM travel_approvals ta
+                            JOIN travel_requests tr ON ta.request_id = tr.request_id
+                            WHERE ta.status = 'pending'
+                        ''')
+                        travel_pending = len(_hr.approvable(
+                            self, [{'user_id': r[1]} for r in cursor.fetchall()]))
+                    if travel_pending > 0:
                         notifications.append({
                             'icon': '\u2708',
                             'message': f"{travel_pending} travel request(s) awaiting approval"

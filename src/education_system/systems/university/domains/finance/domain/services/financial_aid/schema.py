@@ -6,7 +6,7 @@ FINANCIAL_AID_SCHEMA = """
 -- Financial Aid Applications
 CREATE TABLE IF NOT EXISTS financial_aid_applications (
     application_id INTEGER PRIMARY KEY AUTOINCREMENT,
-    student_id INTEGER NOT NULL,
+    student_id TEXT NOT NULL,
     academic_year TEXT NOT NULL,
     application_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     status TEXT DEFAULT 'pending',  -- pending, under_review, approved, denied
@@ -23,7 +23,7 @@ CREATE TABLE IF NOT EXISTS financial_aid_applications (
 -- FAFSA Data
 CREATE TABLE IF NOT EXISTS fafsa_data (
     fafsa_id INTEGER PRIMARY KEY AUTOINCREMENT,
-    student_id INTEGER NOT NULL,
+    student_id TEXT NOT NULL,
     academic_year TEXT NOT NULL,
     efc INTEGER,  -- Expected Family Contribution
     submission_date DATE,
@@ -41,7 +41,7 @@ CREATE TABLE IF NOT EXISTS fafsa_data (
 -- Aid Packages
 CREATE TABLE IF NOT EXISTS aid_packages (
     package_id INTEGER PRIMARY KEY AUTOINCREMENT,
-    student_id INTEGER NOT NULL,
+    student_id TEXT NOT NULL,
     academic_year TEXT NOT NULL,
     total_aid_amount REAL DEFAULT 0,
     total_grants REAL DEFAULT 0,
@@ -122,7 +122,7 @@ CREATE TABLE IF NOT EXISTS scholarship_applications (
 CREATE TABLE IF NOT EXISTS scholarship_awards (
     award_id INTEGER PRIMARY KEY AUTOINCREMENT,
     scholarship_id INTEGER NOT NULL,
-    student_id INTEGER NOT NULL,
+    student_id TEXT NOT NULL,
     academic_year TEXT NOT NULL,
     amount REAL NOT NULL,
     award_date DATE,
@@ -140,7 +140,7 @@ CREATE TABLE IF NOT EXISTS disbursements (
     disbursement_id INTEGER PRIMARY KEY AUTOINCREMENT,
     award_id INTEGER,
     component_id INTEGER,
-    student_id INTEGER NOT NULL,
+    student_id TEXT NOT NULL,
     amount REAL NOT NULL,
     disbursement_type TEXT,  -- scholarship, grant, loan, work_study
     disbursement_date DATE NOT NULL,
@@ -192,7 +192,7 @@ CREATE TABLE IF NOT EXISTS compliance_reports (
 -- External Scholarships
 CREATE TABLE IF NOT EXISTS external_scholarships (
     external_id INTEGER PRIMARY KEY AUTOINCREMENT,
-    student_id INTEGER NOT NULL,
+    student_id TEXT NOT NULL,
     provider_name TEXT NOT NULL,
     scholarship_name TEXT,
     amount REAL NOT NULL,
@@ -211,7 +211,7 @@ CREATE TABLE IF NOT EXISTS payment_schedules (
     schedule_id INTEGER PRIMARY KEY AUTOINCREMENT,
     award_id INTEGER,
     component_id INTEGER,
-    student_id INTEGER NOT NULL,
+    student_id TEXT NOT NULL,
     total_amount REAL NOT NULL,
     payment_date DATE NOT NULL,
     amount REAL NOT NULL,

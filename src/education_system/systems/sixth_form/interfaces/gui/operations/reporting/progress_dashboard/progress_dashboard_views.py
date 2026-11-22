@@ -4,7 +4,9 @@ from __future__ import annotations
 
 import logging
 import tkinter as tk
-from tkinter import messagebox, ttk
+from tkinter import ttk
+from education_system.systems.sixth_form.interfaces.gui._sidebar import SidebarBook
+from education_system.platform.delivery.gui.parented_dialogs import messagebox
 
 from education_system.systems.sixth_form.domain.operations.reporting.progress import progress
 from education_system.platform import branding
@@ -32,7 +34,7 @@ def open_progress_dashboard_window(parent=None) -> None:
     win.title(f"Progress Dashboard — {branding.SYSTEM_NAME}")
     win.geometry(WIN_GEOMETRY)
     win.minsize(*WIN_MINSIZE)
-    nb = ttk.Notebook(win)
+    nb = SidebarBook(win)
     nb.pack(fill="both", expand=True, padx=10, pady=10)
     OverviewTab(nb)
     DistributionTab(nb)
@@ -48,7 +50,7 @@ def _att(v: float | None) -> str:
 class OverviewTab:
     COLS = ("student_id", "name", "risk", "overall",
             "attendance", "open", "overdue", "met", "missed",
-            "period", "date")
+            "period", "date", "grade_on", "grade_risk", "grade_below")
     HEADERS = {
         "student_id": "Student",  "name": "Name",
         "risk": "Risk",           "overall": "Overall",
@@ -56,11 +58,14 @@ class OverviewTab:
         "overdue": "Overdue",     "met": "Met",
         "missed": "Missed",       "period": "Period",
         "date": "Review Date",
+        "grade_on": "Grades on track", "grade_risk": "Grades at risk",
+        "grade_below": "Grades below",
     }
     WIDTHS = {
         "student_id": 80, "name": 200, "risk": 80, "overall": 200,
         "attendance": 60, "open": 60, "overdue": 70, "met": 60,
         "missed": 70, "period": 180, "date": 100,
+        "grade_on": 110, "grade_risk": 100, "grade_below": 100,
     }
 
     def __init__(self, nb: ttk.Notebook) -> None:
@@ -86,6 +91,9 @@ class OverviewTab:
         self.overdue_v = tk.BooleanVar(value=False)
         ttk.Checkbutton(bar, text="Overdue targets only",
                           variable=self.overdue_v).pack(side="left", padx=4)
+        self.below_v = tk.BooleanVar(value=False)
+        ttk.Checkbutton(bar, text="Below grade target only",
+                          variable=self.below_v).pack(side="left", padx=4)
 
         ttk.Button(bar, text="Refresh",
                     command=self.refresh).pack(side="left", padx=(10, 4))
@@ -103,7 +111,9 @@ class OverviewTab:
             self.tree.column(c, width=self.WIDTHS[c],
                               anchor=("e" if c in ("attendance", "open",
                                                        "overdue", "met",
-                                                       "missed")
+                                                       "missed", "grade_on",
+                                                       "grade_risk",
+                                                       "grade_below")
                                        else "w"))
         ysb = ttk.Scrollbar(tree_wrap, orient="vertical",
                               command=self.tree.yview)
@@ -121,6 +131,7 @@ class OverviewTab:
                 risk_filter=None if rf == "(all)" else rf,
                 only_unreviewed=self.unreviewed_v.get(),
                 only_overdue=self.overdue_v.get(),
+                only_below_target=self.below_v.get(),
             )
         except Exception as e:
             logger.exception("Dashboard refresh failed")
@@ -138,6 +149,9 @@ class OverviewTab:
                 r.met_targets, r.missed_targets,
                 r.latest_period or "—",
                 r.latest_date or "—",
+                (f"{r.grade_on_track}/{r.grade_targets}"
+                 if r.grade_targets else "—"),
+                r.grade_at_risk, r.grade_below,
             ), tags=(tag,) if tag else ())
         cov = d.review_coverage_pct
         cov_s = "—" if cov is None else f"{cov:.1f}%"
@@ -145,7 +159,8 @@ class OverviewTab:
             text=(f"{d.total_students} students · "
                   f"{d.reviewed_students} reviewed ({cov_s}) · "
                   f"{d.high_risk_students} high/critical · "
-                  f"{d.overdue_target_students} with overdue"))
+                  f"{d.overdue_target_students} with overdue · "
+                  f"{d.below_target_students} below a grade target"))
 
 
 # ══ Distribution tab ══════════════════════════════════════════════
@@ -203,6 +218,12 @@ class DistributionTab:
         L.append(f"  Met                : {s.met_targets}")
         L.append(f"  Missed             : {s.missed_targets}")
         L.append(f"  Overdue (open)     : {s.overdue_open_targets}")
+        L.append("")
+        L.append("Grade targets (Target Setting)")
+        L.append("------------------------------")
+        gtotal = max(sum(d.grade_targets_by_status.values()), 1)
+        for st, n in d.grade_targets_by_status.items():
+            L.append(self._bar(st, n, gtotal))
         self.text.configure(state="normal")
         self.text.delete("1.0", "end")
         self.text.insert("1.0", "\n".join(L))
@@ -232,6 +253,7 @@ class AttentionTab:
         self.risk_list, self.risk_lbl = self._panel(body, "High / Critical Risk")
         self.unrev_list, self.unrev_lbl = self._panel(body, "Without a Review")
         self.overdue_list, self.overdue_lbl = self._panel(body, "Overdue Targets")
+        self.below_list, self.below_lbl = self._panel(body, "Below Grade Target")
 
     def _panel(self, parent, title: str) -> tuple[tk.Listbox, ttk.Label]:
         col = ttk.Frame(parent)
@@ -272,3 +294,9 @@ class AttentionTab:
         self.risk_lbl.configure(text=f"High / Critical Risk ({len(risk)})")
         self.unrev_lbl.configure(text=f"Without a Review ({len(unrev)})")
         self.overdue_lbl.configure(text=f"Overdue Targets ({len(ovr)})")
+        below = data.students_below_grade_target()
+        self._populate(
+            self.below_list, below,
+            lambda r: f" {r.student_id:<8} {r.full_name[:22]:<22} "
+                       f"{r.grade_below} below")
+        self.below_lbl.configure(text=f"Below Grade Target ({len(below)})")

@@ -33,9 +33,10 @@ class SyncMixin:
                     SELECT m.module_code, m.module_name
                     FROM modules m
                     JOIN student_modules sm ON sm.module_code = m.module_code
-                    JOIN students s ON s.student_id = sm.student_id
-                    WHERE s.user_id = ? OR s.student_id = ?
-                ''', (user_id, username))
+                    WHERE sm.student_id = ?
+                       OR sm.student_id IN (SELECT student_id FROM users
+                                             WHERE username = ? AND student_id IS NOT NULL)
+                ''', (username, username))
                 modules = list(cursor.fetchall())
             except Exception:
                 # Schema may not be present in this DB; skip silently.
@@ -104,7 +105,7 @@ class SyncMixin:
         def _sync(cursor):
             try:
                 cursor.execute(
-                    'SELECT group_name, assignment_id FROM assignment_groups WHERE id = ?',
+                    'SELECT group_name, assignment_id FROM groups WHERE id = ?',
                     (group_id,),
                 )
                 row = cursor.fetchone()
@@ -115,7 +116,9 @@ class SyncMixin:
             group_name = row[0]
             try:
                 cursor.execute(
-                    'SELECT student_id FROM assignment_group_members WHERE group_id = ?',
+                    # Members are kept by student number; chat rooms by account id.
+                    'SELECT u.id FROM group_members gm JOIN users u ON u.student_id = '
+                    'gm.student_id WHERE gm.group_id = ?',
                     (group_id,),
                 )
                 member_ids = [r[0] for r in cursor.fetchall()]

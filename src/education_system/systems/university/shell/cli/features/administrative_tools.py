@@ -55,7 +55,7 @@ def display_administrative_tools_menu(auth):
             display_user_management_menu(auth)
         elif choice == '2':
             # Enhanced Reporting
-            from education_system.systems.university.services.analytics.enhanced_reporting import display_enhanced_reporting_menu
+            from education_system.systems.university.shared.analytics.enhanced_reporting import display_enhanced_reporting_menu
             display_enhanced_reporting_menu()
         elif choice == '3':
             # Student Analytics Dashboard
@@ -68,10 +68,10 @@ def display_administrative_tools_menu(auth):
             display_business_intelligence_menu(auth)
         elif choice == '6':
             # Batch Operations
-            display_batch_menu()
+            display_batch_menu(auth)
         elif choice == '7':
             # Advanced Search
-            display_enhanced_menu()
+            display_enhanced_menu(auth)
         elif choice == '8':
             if auth.current_user['role'] == 'admin':
                 # Admin Database Tools

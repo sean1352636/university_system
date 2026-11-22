@@ -12,7 +12,7 @@ from unittest.mock import Mock, patch, MagicMock
 import pandas as pd
 import numpy as np
 
-from education_system.systems.university.services.analytics.student_analytics import (
+from education_system.systems.university.shared.analytics.student_analytics import (
     StudentAnalytics,
     configure_matplotlib,
     CONFIG
@@ -22,7 +22,7 @@ from education_system.systems.university.services.analytics.student_analytics im
 @pytest.fixture
 def analytics():
     """Create StudentAnalytics instance for testing"""
-    with patch('education_system.systems.university.services.analytics.student_analytics.base.get_connection'):
+    with patch('education_system.systems.university.shared.analytics.student_analytics.base.get_connection'):
         return StudentAnalytics(gui_mode=True)
 
 
@@ -71,7 +71,7 @@ class TestStudentAnalyticsInit:
 
     def test_init_default(self):
         """Test default initialization"""
-        with patch('education_system.systems.university.services.analytics.student_analytics.base.get_connection'):
+        with patch('education_system.systems.university.shared.analytics.student_analytics.base.get_connection'):
             analytics = StudentAnalytics()
 
             assert hasattr(analytics, 'db_path')
@@ -81,14 +81,14 @@ class TestStudentAnalyticsInit:
 
     def test_init_gui_mode(self):
         """Test initialization with GUI mode"""
-        with patch('education_system.systems.university.services.analytics.student_analytics.base.get_connection'):
+        with patch('education_system.systems.university.shared.analytics.student_analytics.base.get_connection'):
             analytics = StudentAnalytics(gui_mode=True)
             assert analytics.gui_mode is True
 
     def test_create_directories(self):
         """Test directory creation"""
         with tempfile.TemporaryDirectory() as tmpdir:
-            with patch('education_system.systems.university.services.analytics.student_analytics.base.get_connection'):
+            with patch('education_system.systems.university.shared.analytics.student_analytics.base.get_connection'):
                 analytics = StudentAnalytics()
                 analytics.plots_dir = os.path.join(tmpdir, 'plots')
                 analytics.reports_dir = os.path.join(tmpdir, 'reports')
@@ -445,7 +445,7 @@ class TestReportGeneration:
 
         with patch.object(analytics, 'get_all_students', return_value=enriched_students):
             with patch.object(analytics, 'get_all_modules', return_value=enriched_modules):
-                with patch('education_system.systems.university.services.analytics.student_analytics.reporting.PdfPages') as mock_pdf:
+                with patch('education_system.systems.university.shared.analytics.student_analytics.reporting.PdfPages') as mock_pdf:
                     mock_pdf_instance = MagicMock()
                     mock_pdf.return_value.__enter__ = Mock(return_value=mock_pdf_instance)
                     mock_pdf.return_value.__exit__ = Mock(return_value=False)

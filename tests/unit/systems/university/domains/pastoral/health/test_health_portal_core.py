@@ -11,7 +11,7 @@ import os
 import tempfile
 from cryptography.fernet import Fernet
 
-from education_system.systems.university.domains.pastoral.domain.health.portal.health_portal_core import (
+from education_system.systems.university.domains.health.domain.health.portal.health_portal_core import (
     SecurityManager,
     get_or_create_encryption_key,
     encrypt_sensitive_data,
@@ -121,45 +121,39 @@ class TestSecurityManager:
         # Should return False (not timed out) for our mock auth
         assert result is False
 
+@pytest.fixture
+def health_key(tmp_path, monkeypatch):
+    """Point the managed health key at a temp file."""
+    from education_system import paths
+    from education_system.systems.university.domains.health.infrastructure.health import (
+        field_crypto,
+    )
+    monkeypatch.setattr(paths, "UNIVERSITY_HEALTH_FIELD_KEY_FILE", tmp_path / "health_field_key")
+    field_crypto.reset()
+    yield tmp_path / "health_field_key"
+    field_crypto.reset()
+
+
 class TestEncryptionFunctions:
     """Test encryption utility functions"""
 
-    def test_get_or_create_encryption_key(self):
-        """Test encryption key creation"""
-        with tempfile.TemporaryDirectory() as temp_dir:
-            key_file = os.path.join(temp_dir, 'health_encryption.key')
+    def test_get_or_create_encryption_key(self, health_key):
+        """The managed key is created once and then reused"""
+        key1 = get_or_create_encryption_key()
+        assert health_key.exists()
+        assert get_or_create_encryption_key() == key1
 
-            # Create a key
-            key1 = Fernet.generate_key()
-            with open(key_file, 'wb') as f:
-                f.write(key1)
-
-            # Retrieve the key
-            with patch('education_system.systems.university.domains.pastoral.domain.health.portal.health_portal_core.os.path.exists', return_value=True):
-                with patch('builtins.open', return_value=open(key_file, 'rb')):
-                    key2 = get_or_create_encryption_key()
-
-                    # Keys should be readable
-                    assert key2 is not None
-
-    def test_encrypt_decrypt_sensitive_data(self):
+    def test_encrypt_decrypt_sensitive_data(self, health_key):
         """Test encryption and decryption"""
-        # Create a cipher suite
-        key = Fernet.generate_key()
-        cipher_suite = Fernet(key)
+        test_data = "sensitive information"
 
-        # Patch the global cipher_suite
-        with patch('education_system.systems.university.domains.pastoral.domain.health.portal.health_portal_core.cipher_suite', cipher_suite):
-            test_data = "sensitive information"
+        encrypted = encrypt_sensitive_data(test_data)
+        assert encrypted is not None
+        assert encrypted != test_data
+        assert encrypted.startswith("enc1:")
 
-            # Encrypt
-            encrypted = encrypt_sensitive_data(test_data)
-            assert encrypted is not None
-            assert encrypted != test_data
-
-            # Decrypt
-            decrypted = decrypt_sensitive_data(encrypted)
-            assert decrypted == test_data
+        decrypted = decrypt_sensitive_data(encrypted)
+        assert decrypted == test_data
 
     def test_encrypt_none_returns_none(self):
         """Test encrypting None returns None"""
@@ -180,13 +174,13 @@ class TestEncryptionFunctions:
 class TestAuditLogging:
     """Test audit logging"""
 
-    @patch('education_system.systems.university.domains.pastoral.domain.health.portal.health_portal_core.audit_logger')
-    def test_log_audit_event(self, mock_logger):
-        """Test logging audit event"""
+    @patch('education_system.systems.university.domains.health.domain.health.records.db.audit.log_audit_event')
+    def test_log_audit_event(self, mock_record):
+        """Audit events go to the health audit trail + immutable log"""
         log_audit_event('user123', 'create', 'record', '456', 'Created new record')
 
-        mock_logger.info.assert_called_once()
-        call_args = str(mock_logger.info.call_args)
+        mock_record.assert_called_once()
+        call_args = str(mock_record.call_args)
 
         assert 'user123' in call_args
         assert 'create' in call_args
@@ -261,8 +255,8 @@ class TestHealthPortalMenu:
         inputs = iter([str(100)])  # Try a high number to simulate logout option
         monkeypatch.setattr('builtins.input', lambda _: next(inputs))
 
-        with patch('education_system.systems.university.domains.pastoral.domain.health.portal.health_portal_core.setup_health_permissions'):
-            with patch('education_system.systems.university.domains.pastoral.domain.health.portal.health_portal_core.init_enhanced_health_db'):
+        with patch('education_system.systems.university.domains.health.domain.health.portal.health_portal_core.setup_health_permissions'):
+            with patch('education_system.systems.university.domains.health.domain.health.portal.health_portal_core.init_enhanced_health_db'):
                 result = display_health_portal_menu(auth=mock_auth)
 
                 # Should have attempted logout or returned
@@ -273,22 +267,22 @@ class TestHealthPortalMenu:
         inputs = iter([str(99)])  # Try a high number to simulate return option
         monkeypatch.setattr('builtins.input', lambda _: next(inputs))
 
-        with patch('education_system.systems.university.domains.pastoral.domain.health.portal.health_portal_core.setup_health_permissions'):
-            with patch('education_system.systems.university.domains.pastoral.domain.health.portal.health_portal_core.init_enhanced_health_db'):
+        with patch('education_system.systems.university.domains.health.domain.health.portal.health_portal_core.setup_health_permissions'):
+            with patch('education_system.systems.university.domains.health.domain.health.portal.health_portal_core.init_enhanced_health_db'):
                 result = display_health_portal_menu(auth=mock_auth)
 
                 # Should return auth object
                 assert result == mock_auth
 
-    @patch('education_system.systems.university.domains.pastoral.domain.health.portal.health_portal_core.manage_health_records_enhanced')
+    @patch('education_system.systems.university.domains.health.domain.health.portal.health_portal_core.manage_health_records_enhanced')
     def test_display_menu_calls_function(self, mock_function, mock_auth, monkeypatch):
         """Test menu calls appropriate function"""
         # First input selects an option, second exits
         inputs = iter(['1', str(99)])
         monkeypatch.setattr('builtins.input', lambda _: next(inputs))
 
-        with patch('education_system.systems.university.domains.pastoral.domain.health.portal.health_portal_core.setup_health_permissions'):
-            with patch('education_system.systems.university.domains.pastoral.domain.health.portal.health_portal_core.init_enhanced_health_db'):
+        with patch('education_system.systems.university.domains.health.domain.health.portal.health_portal_core.setup_health_permissions'):
+            with patch('education_system.systems.university.domains.health.domain.health.portal.health_portal_core.init_enhanced_health_db'):
                 display_health_portal_menu(auth=mock_auth)
 
                 # Function may or may not be called depending on menu structure
@@ -303,8 +297,8 @@ class TestMenuPermissions:
         inputs = iter([str(99)])  # Exit immediately
         monkeypatch.setattr('builtins.input', lambda _: next(inputs))
 
-        with patch('education_system.systems.university.domains.pastoral.domain.health.portal.health_portal_core.setup_health_permissions'):
-            with patch('education_system.systems.university.domains.pastoral.domain.health.portal.health_portal_core.init_enhanced_health_db'):
+        with patch('education_system.systems.university.domains.health.domain.health.portal.health_portal_core.setup_health_permissions'):
+            with patch('education_system.systems.university.domains.health.domain.health.portal.health_portal_core.init_enhanced_health_db'):
                 display_health_portal_menu(auth=mock_auth)
 
                 captured = capsys.readouterr()
@@ -320,8 +314,8 @@ class TestMenuPermissions:
         inputs = iter([str(99)])  # Exit immediately
         monkeypatch.setattr('builtins.input', lambda _: next(inputs))
 
-        with patch('education_system.systems.university.domains.pastoral.domain.health.portal.health_portal_core.setup_health_permissions'):
-            with patch('education_system.systems.university.domains.pastoral.domain.health.portal.health_portal_core.init_enhanced_health_db'):
+        with patch('education_system.systems.university.domains.health.domain.health.portal.health_portal_core.setup_health_permissions'):
+            with patch('education_system.systems.university.domains.health.domain.health.portal.health_portal_core.init_enhanced_health_db'):
                 display_health_portal_menu(auth=student_auth)
 
                 captured = capsys.readouterr()
@@ -350,7 +344,7 @@ class TestSessionTimeout:
     def test_session_timeout_with_no_settings(self, mock_auth):
         """Test session timeout when settings table doesn't exist"""
         # Mock database error
-        with patch('education_system.systems.university.domains.pastoral.domain.health.portal.health_portal_core.get_connection', side_effect=Exception("DB Error")):
+        with patch('education_system.systems.university.domains.health.domain.health.portal.health_portal_core.get_connection', side_effect=Exception("DB Error")):
             result = SecurityManager.check_session_timeout(mock_auth)
 
             # Should not timeout on error
@@ -361,7 +355,7 @@ class TestErrorHandling:
 
     def test_init_enhanced_health_db_handles_errors(self):
         """Test database initialization handles errors gracefully"""
-        with patch('education_system.systems.university.domains.pastoral.domain.health.portal.health_portal_core.get_connection', side_effect=sqlite3.Error("Test error")):
+        with patch('education_system.systems.university.domains.health.domain.health.portal.health_portal_core.get_connection', side_effect=sqlite3.Error("Test error")):
             try:
                 init_enhanced_health_db()
                 # Should not crash
@@ -370,7 +364,7 @@ class TestErrorHandling:
 
     def test_encrypt_sensitive_data_handles_errors(self):
         """Test encryption handles errors gracefully"""
-        with patch('education_system.systems.university.domains.pastoral.domain.health.portal.health_portal_core.cipher_suite', None):
+        with patch('education_system.systems.university.domains.health.domain.health.portal.health_portal_core.cipher_suite', None):
             try:
                 result = encrypt_sensitive_data("test")
                 # Should return None or handle gracefully
@@ -390,39 +384,33 @@ class TestIntegration:
         inputs = iter([str(99)])
         monkeypatch.setattr('builtins.input', lambda _: next(inputs))
 
-        with patch('education_system.systems.university.domains.pastoral.domain.health.portal.health_portal_core.setup_health_permissions'):
+        with patch('education_system.systems.university.domains.health.domain.health.portal.health_portal_core.setup_health_permissions'):
             result = display_health_portal_menu(auth=mock_auth)
 
             assert result == mock_auth
 
-    def test_encryption_workflow(self):
+    def test_encryption_workflow(self, health_key):
         """Test complete encryption workflow"""
-        # Create key
-        key = Fernet.generate_key()
-        cipher_suite = Fernet(key)
+        # Encrypt data
+        test_data = "Patient SSN: 123-45-6789"
+        encrypted = encrypt_sensitive_data(test_data)
 
-        # Patch cipher_suite
-        with patch('education_system.systems.university.domains.pastoral.domain.health.portal.health_portal_core.cipher_suite', cipher_suite):
-            # Encrypt data
-            test_data = "Patient SSN: 123-45-6789"
-            encrypted = encrypt_sensitive_data(test_data)
+        # Verify encrypted
+        assert encrypted != test_data
 
-            # Verify encrypted
-            assert encrypted != test_data
+        # Decrypt data
+        decrypted = decrypt_sensitive_data(encrypted)
 
-            # Decrypt data
-            decrypted = decrypt_sensitive_data(encrypted)
-
-            # Verify decrypted correctly
-            assert decrypted == test_data
+        # Verify decrypted correctly
+        assert decrypted == test_data
 
     def test_audit_and_security_workflow(self, mock_auth, test_db):
         """Test audit logging and security checks"""
         # Log audit event
-        with patch('education_system.systems.university.domains.pastoral.domain.health.portal.health_portal_core.audit_logger') as mock_logger:
+        with patch('education_system.systems.university.domains.health.domain.health.records.db.audit.log_audit_event') as mock_record:
             log_audit_event('user1', 'view', 'record', '123', 'Viewed record')
 
-            mock_logger.info.assert_called_once()
+            mock_record.assert_called_once()
 
         # Check session timeout
         result = SecurityManager.check_session_timeout(mock_auth)

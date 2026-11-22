@@ -11,6 +11,7 @@ from typing import Any, Callable
 from education_system.systems.primary.domain.assessment.early_warning import (
     early_warning as data,
 )
+from education_system.systems.primary.interfaces.gui import kit
 from education_system.systems.primary.domain.assessment.early_warning.early_warning import (
     ALERT_TYPES, SEVERITIES, ALERT_STATUSES, SOURCES,
 )
@@ -52,7 +53,7 @@ def _alert_dialog(host, title: str,
     dlg = tk.Toplevel(host.root)
     dlg.title(title)
     dlg.transient(host.root)
-    dlg.geometry("520x620")
+    dlg.geometry("620x620")
     dlg.update_idletasks()
     try:
         dlg.wait_visibility()
@@ -61,8 +62,8 @@ def _alert_dialog(host, title: str,
         logger.debug("grab_set skipped — dialog not viewable", exc_info=True)
 
     initial = initial or {}
-    frm = ttk.Frame(dlg, padding=12)
-    frm.pack(fill="both", expand=True)
+    # Tall form: the fields scroll on a small screen, Save/Cancel stay put.
+    frm, footer = kit.scrolled_form(dlg)
 
     pupil_var   = tk.StringVar(value=str(initial.get("pupil_id") or ""))
     type_var    = tk.StringVar(value=str(initial.get("alert_type")
@@ -84,8 +85,7 @@ def _alert_dialog(host, title: str,
         initial.get("resolved_date") or ""))
 
     rows: list[tuple[str, tk.Widget]] = [
-        ("Pupil ID:",   ttk.Entry(frm, textvariable=pupil_var,
-                                    width=14)),
+        ("Pupil:",      kit.PupilPicker(frm, pupil_var)),
         ("Type:",       ttk.Combobox(frm, textvariable=type_var,
                                       values=list(ALERT_TYPES),
                                       state="readonly", width=18)),
@@ -97,18 +97,13 @@ def _alert_dialog(host, title: str,
         ("Source:",     ttk.Combobox(frm, textvariable=source_var,
                                       values=list(SOURCES),
                                       state="readonly", width=16)),
-        ("Raised by:",  ttk.Entry(frm, textvariable=raisedby_var,
-                                    width=24)),
-        ("Raised date:", ttk.Entry(frm, textvariable=raiseddate_var,
-                                     width=14)),
+        ("Raised by:",  kit.StaffPicker(frm, raisedby_var, by="name")),
+        ("Raised date:", kit.DateField(frm, raiseddate_var)),
         ("Status:",     ttk.Combobox(frm, textvariable=status_var,
                                       values=list(ALERT_STATUSES),
                                       state="readonly", width=14)),
-        ("Assigned to:", ttk.Entry(frm, textvariable=assigned_var,
-                                     width=24)),
-        ("Resolved date:", ttk.Entry(frm,
-                                       textvariable=resolved_date_var,
-                                       width=14)),
+        ("Assigned to:", kit.StaffPicker(frm, assigned_var, by="name")),
+        ("Resolved date:", kit.DateField(frm, resolved_date_var)),
     ]
     for i, (label, widget) in enumerate(rows):
         ttk.Label(frm, text=label).grid(row=i, column=0, sticky="w",
@@ -155,9 +150,7 @@ def _alert_dialog(host, title: str,
         }
         dlg.destroy()
 
-    btns = ttk.Frame(frm)
-    btns.grid(row=len(rows) + 3, column=0, columnspan=2, sticky="e",
-              pady=(12, 0))
+    btns = footer
     ttk.Button(btns, text="Cancel",
                command=dlg.destroy).pack(side="right", padx=4)
     ttk.Button(btns, text="Save", command=_save).pack(side="right")
@@ -176,10 +169,13 @@ _SEVERITY_COLOURS = {
 @_safe_view
 def open_early_warning(host) -> None:
     logger.debug("GUI: open_early_warning")
-    host._clear_content()
-    root = host.content_frame
-    ttk.Label(root, text="Early Warning",
-              font=("", 16, "bold")).pack(anchor="w", pady=(0, 8))
+    kit.show_page(host, "Early Warning",
+                  lambda parent: _draw_early_warning(parent, host))
+
+
+def _draw_early_warning(parent, host) -> None:
+    root = parent
+    kit.page_heading(root, "Early Warning")
 
     summary_var = tk.StringVar()
     ttk.Label(root, textvariable=summary_var, foreground="#666").pack(
@@ -255,13 +251,13 @@ def open_early_warning(host) -> None:
             )
         except ValidationError as e:
             messagebox.showerror("Early Warning", str(e),
-                                 parent=host.root)
+                                 parent=root.winfo_toplevel())
             return
         except Exception as e:
             logger.exception("early_warning refresh failed")
             messagebox.showerror("Early Warning",
                                  f"Could not load:\n\n{e}",
-                                 parent=host.root)
+                                 parent=root.winfo_toplevel())
             return
         for a in rows:
             tree.insert("", "end", iid=str(a.alert_id), values=(
@@ -278,7 +274,9 @@ def open_early_warning(host) -> None:
                 f"Open High: {s['open_high']}")
         except Exception:
             summary_var.set(f"{len(rows)} alert(s) listed")
-        host.status_var.set(f"Early Warning: {len(rows)} alert(s)")
+        status_bar = getattr(host, "status_var", None)
+        if status_bar is not None:
+            status_bar.set(f"Early Warning: {len(rows)} alert(s)")
 
     tree.bind("<Double-1>", lambda _e: _edit(host, tree,
                                               on_done=_refresh))

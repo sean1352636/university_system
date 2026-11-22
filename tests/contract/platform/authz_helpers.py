@@ -28,7 +28,54 @@ AUTHORIZATION = frozenset({
 #: Route-local helpers that call an AUTHORIZATION gate internally. A route
 #: using one of these is gated; add a name here only when the helper
 #: unconditionally returns the gate's denial.
-LOCAL_GATE_HELPERS = frozenset({"_deny_unless_manager", "_authorize_student_access"})
+LOCAL_GATE_HELPERS = frozenset({
+    "_deny_unless_manager", "_authorize_student_access",
+    # Health / wellbeing / dental API (api/university/pastoral/_health_access.py
+    # and the route modules): each returns a 403 unless the caller is the
+    # health team, the student themselves, or holds break-glass access.
+    "deny_unless_may_view_health", "deny_unless_health_team", "health_scope",
+    "_deny_unless_patient_access", "_authorize_record",
+    # Helpdesk links / time / followers / incidents / e-mail review
+    # (api/university/pastoral/helpdesk_routes.py): runs a student_support
+    # service that refuses (403) anyone not working / seeing that ticket,
+    # not support staff, or not an administrator, as the service requires.
+    "_support_gated",
+    # Staff HR (api/university/staff/hr_routes.py, staff_hr_routes.py): runs an
+    # _hr_service function that refuses (403) anyone who is not the person,
+    # in their management line, an approver or HR, per staff_hr/access.py.
+    "_hr_gated",
+    # Financial aid / accessibility list scoping (api/university/finance/
+    # financial_aid_routes.py, pastoral/accessibility_routes.py): staff must
+    # hold the capability (require_staff), everyone else is pinned to their
+    # own subject, and a caller with no subject is refused (403).
+    "_pin_or_deny",
+    # Mentorship (api/university/pastoral/mentorship_routes.py): 403 unless
+    # the caller is staff or the relationship's mentor or mentee.
+    "_deny_unless_participant",
+    # Mobile devices / sessions (api/university/operations/mobility_routes.py):
+    # 403 unless the row's INTEGER user_id is the caller's JWT user_id, or the
+    # caller holds system_admin (require_staff).
+    "_deny_unless_own_device",
+    # Absence check-in / kiosk (api/university/academics/absence_routes.py):
+    # 403 unless the caller holds a register-taking capability (require_staff).
+    "_deny_unless_register_taker",
+    # Announcements (api/university/operations/announcement_routes.py): 403
+    # unless the caller is staff and created it, or is an administrator.
+    "_deny_unless_editor",
+    # Chat rooms (api/university/operations/chat_routes.py): 403 unless the
+    # caller is a member of the room, by local id, and not banned from it.
+    "_deny_unless_room_member",
+    # Dashboard (api/university/operations/dashboard_routes.py): 403 unless it
+    # is the caller's own student record or they hold a records role.
+    "_deny_unless_self_or_records_staff",
+    # Users (api/university/operations/user_routes.py): 403 unless it is the
+    # caller's own local profile or they are an administrator or staff.
+    "_deny_unless_self_or_reader",
+    # Documents (api/university/learners/document_routes.py): 403 unless the
+    # caller owns or uploaded it or is an administrator; the second admits
+    # administrators only.
+    "_deny_unless_document_reader", "_deny_unless_document_admin",
+})
 
 _SOURCE_CACHE: dict[str, ast.Module | None] = {}
 

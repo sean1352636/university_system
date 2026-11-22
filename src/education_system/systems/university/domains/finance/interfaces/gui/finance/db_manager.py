@@ -14,6 +14,7 @@ import csv
 from datetime import datetime, timedelta
 import json
 import threading
+from education_system.platform.delivery.gui.tk_threads import start_thread, ui
 import warnings
 from pathlib import Path
 from cryptography.fernet import Fernet
@@ -392,9 +393,7 @@ class DatabaseManager:
             # with source_type = 'student_finance'. No separate table creation needed.
 
             # Create indexes for student finance tables
-            cursor.execute('CREATE INDEX IF NOT EXISTS idx_student_finance_accounts_student ON student_finance_accounts(student_id)')
             cursor.execute('CREATE INDEX IF NOT EXISTS idx_transactions_source_type ON transactions(source_type)')
-            cursor.execute('CREATE INDEX IF NOT EXISTS idx_transactions_student ON transactions(student_id)')
             cursor.execute('CREATE INDEX IF NOT EXISTS idx_transactions_account ON transactions(account_id)')
             cursor.execute('CREATE INDEX IF NOT EXISTS idx_transactions_date ON transactions(created_at)')
 
@@ -748,13 +747,11 @@ class DatabaseManager:
 
                 def fix_database():
                     complete_database_fix()
-                    messagebox.showinfo(_("finance_gui.messages.success"), _("finance_gui.db_manager.fix_success"))
-                    self.update_system_status()
-                    self.update_status("Database fix completed")
+                    ui(self.root, messagebox.showinfo, _("finance_gui.messages.success"), _("finance_gui.db_manager.fix_success"))
+                    ui(self.root, self.update_system_status)
+                    ui(self.root, self.update_status, "Database fix completed")
 
-                thread = threading.Thread(target=fix_database)
-                thread.daemon = True
-                thread.start()
+                start_thread(self.root, fix_database)
 
             except Exception as e:
                 messagebox.showerror(_("finance_gui.messages.error"), _("finance_gui.db_manager.fix_failed", error=str(e)))
@@ -768,13 +765,11 @@ class DatabaseManager:
 
                 def quick_fix():
                     quick_fix_database()
-                    messagebox.showinfo(_("finance_gui.messages.success"), _("finance_gui.db_manager.quick_fix_success"))
-                    self.update_system_status()
-                    self.update_status("Quick database fix completed")
+                    ui(self.root, messagebox.showinfo, _("finance_gui.messages.success"), _("finance_gui.db_manager.quick_fix_success"))
+                    ui(self.root, self.update_system_status)
+                    ui(self.root, self.update_status, "Quick database fix completed")
 
-                thread = threading.Thread(target=quick_fix)
-                thread.daemon = True
-                thread.start()
+                start_thread(self.root, quick_fix)
 
             except Exception as e:
                 messagebox.showerror(_("finance_gui.messages.error"), _("finance_gui.db_manager.quick_fix_failed", error=str(e)))
@@ -809,9 +804,12 @@ class DatabaseManager:
             messagebox.showerror(_("finance_gui.messages.error"), _("finance_gui.db_manager.verify_fix_failed", error=str(e)))
 
     def update_status(self, message):
-        """Update status bar"""
+        """Update status bar via the main GUI's layout"""
+        layout = getattr(self.gui, 'layout', None)
         if hasattr(self.gui, 'update_status'):
             self.gui.update_status(message)
+        elif layout is not None and hasattr(layout, 'update_status'):
+            layout.update_status(message)
         else:
             print(f"Status: {message}")
 

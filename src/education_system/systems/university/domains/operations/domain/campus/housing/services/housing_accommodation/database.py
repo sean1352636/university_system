@@ -1,7 +1,7 @@
 from education_system.systems.university.domains.operations.domain.campus.housing.services.housing_accommodation import common as _common
 from education_system.systems.university.domains.operations.domain.campus.housing.services.housing_accommodation.common import (
-    sqlite3, datetime, random,
-    get_text, get_connection, generate_id,
+    sqlite3, datetime,
+    get_text, get_connection,
 )
 
 # Database initialization
@@ -276,119 +276,32 @@ def init_housing_db():
         )
         ''')
 
-        # Fetch the count of buildings to check if we need to create sample data
-        cursor.execute('SELECT COUNT(*) FROM housing_buildings')
-        building_count = cursor.fetchone()[0]
+        # No sample residences are created. An empty housing system is a real
+        # state: staff add buildings and rooms through Building Management
+        # (CLI menu 1, GUI "Buildings"/"Rooms"), including a CSV room import.
+        # The four US-style halls this used to invent ("Freshman Dormitory",
+        # "123 Campus Drive", random occupancy and rent) are removed from an
+        # existing database by tools/university/remove_seeded_housing.py.
 
-        # If no buildings exist, create sample data
-        if building_count == 0:
-            # Add sample buildings
-            sample_buildings = [
-                ('B001', 'University Residence Hall', '123 Campus Drive', 'North Campus', 100, 35, 1, 1, 1, 1),
-                ('B002', 'Graduate Housing Complex', '456 Scholar Avenue', 'South Campus', 80, 20, 1, 1, 1, 1),
-                ('B003', 'Freshman Dormitory', '789 College Road', 'East Campus', 150, 50, 0, 1, 0, 1),
-                ('B004', 'International House', '321 Global Street', 'West Campus', 60, 15, 1, 1, 1, 1)
-            ]
-
-            timestamp = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-            for building in sample_buildings:
-                cursor.execute('''
-                INSERT INTO housing_buildings
-                (building_id, building_name, address, campus_location, total_rooms, available_rooms,
-                has_elevator, has_accessible_rooms, has_kitchen, has_laundry, created_at, updated_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                ''', (building[0], building[1], building[2], building[3], building[4], building[5],
-                      building[6], building[7], building[8], building[9], timestamp, timestamp))
-
-            # Add sample rooms for each building
-            room_types = ['Single', 'Double', 'Triple', 'Suite', 'Studio', 'Apartment']
-            statuses = ['Available', 'Occupied', 'Maintenance', 'Reserved']
-
-            for building_id in ['B001', 'B002', 'B003', 'B004']:
-                # Define how many rooms to create for this building
-                if building_id == 'B001':
-                    floors = 4
-                    rooms_per_floor = 10
-                elif building_id == 'B002':
-                    floors = 3
-                    rooms_per_floor = 8
-                elif building_id == 'B003':
-                    floors = 5
-                    rooms_per_floor = 15
-                else:  # B004
-                    floors = 2
-                    rooms_per_floor = 10
-
-                for floor in range(1, floors + 1):
-                    for room_num in range(1, rooms_per_floor + 1):
-                        room_number = f"{floor}{str(room_num).zfill(2)}"
-                        room_id = f"{building_id}-{room_number}"
-                        room_type = random.choice(room_types)
-                        max_occupants = 1 if room_type == 'Single' else 2 if room_type == 'Double' else 3 if room_type == 'Triple' else 2 if room_type == 'Studio' else 4
-                        current_occupants = random.randint(0, max_occupants)
-                        is_accessible = random.choice([0, 1]) if floor == 1 else 0
-                        status = 'Occupied' if current_occupants > 0 else random.choice(statuses)
-                        monthly_rent = random.randint(400, 1200)
-
-                        cursor.execute('''
-                        INSERT INTO housing_rooms
-                        (room_id, building_id, room_number, floor_number, room_type, max_occupants, current_occupants,
-                        is_accessible, status, monthly_rent, created_at, updated_at)
-                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                        ''', (room_id, building_id, room_number, floor, room_type, max_occupants, current_occupants,
-                             is_accessible, status, monthly_rent, timestamp, timestamp))
-
-            # Create a test application and assignment for student S12345
-            application_id = generate_id('APP')
-            cursor.execute('''
-            INSERT INTO housing_applications
-            (application_id, student_id, application_date, preferred_building_id, preferred_room_type,
-            requested_move_in_date, requested_duration_months, special_requirements, status,
-            created_at, updated_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            ''', (application_id, 'S12345', timestamp, 'B001', 'Single',
-                 (datetime.datetime.now() + datetime.timedelta(days=30)).strftime('%Y-%m-%d'),
-                 9, None, 'Approved', timestamp, timestamp))
-
-            # Find an available room for assignment
-            cursor.execute('''
-            SELECT room_id, monthly_rent FROM housing_rooms
-            WHERE building_id = 'B001' AND room_type = 'Single' AND status = 'Available'
-            LIMIT 1
-            ''')
-            room_data = cursor.fetchone()
-
-            if room_data:
-                room_id, monthly_rent = room_data
-                assignment_id = generate_id('ASG')
-                move_in_date = (datetime.datetime.now() + datetime.timedelta(days=30)).strftime('%Y-%m-%d')
-                move_out_date = (datetime.datetime.now() + datetime.timedelta(days=30 + 9*30)).strftime('%Y-%m-%d')
-                contract_number = generate_id('CNT')
-
-                cursor.execute('''
-                INSERT INTO housing_assignments
-                (assignment_id, application_id, student_id, room_id, move_in_date, planned_move_out_date,
-                contract_number, monthly_rent, status, assigned_by, created_at, updated_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                ''', (assignment_id, application_id, 'S12345', room_id, move_in_date, move_out_date,
-                     contract_number, monthly_rent, 'Active', 'system', timestamp, timestamp))
-
-                # Update room status and occupancy
-                cursor.execute('''
-                UPDATE housing_rooms
-                SET current_occupants = current_occupants + 1, status = 'Occupied'
-                WHERE room_id = ?
-                ''', (room_id,))
-
-                # Create a test maintenance request
-                request_id = generate_id('REQ')
-                cursor.execute('''
-                INSERT INTO housing_maintenance_requests
-                (request_id, room_id, student_id, request_date, issue_type, description, priority, status,
-                created_at, updated_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                ''', (request_id, room_id, 'S12345', timestamp, 'Plumbing',
-                     'Leaking faucet in bathroom', 'Medium', 'Open', timestamp, timestamp))
+        # Occupancy is derived from occupying assignments (Active/Pending),
+        # never stored as a typed-in number: triggers keep
+        # housing_rooms.current_occupants equal to that count, and the resync
+        # corrects any value written before the triggers existed.
+        try:
+            from education_system.systems.university.domains.operations.domain.campus.housing.services.housing_accommodation.room_setup import (
+                install_occupancy_triggers, resync_room_occupancy,
+            )
+            install_occupancy_triggers(cursor)
+            corrected = resync_room_occupancy(cursor)
+            if corrected:
+                import logging
+                logging.getLogger(__name__).info(
+                    "Re-derived occupancy for %d room(s) from housing assignments",
+                    corrected)
+        except sqlite3.Error as e:
+            import logging
+            logging.getLogger(__name__).warning(
+                "Occupancy triggers not installed: %s", e)
 
         # ── Mirror housing_buildings into the unified `buildings` table
         # ──────────────────────────────────────────────────────────────

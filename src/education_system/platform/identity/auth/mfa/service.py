@@ -521,15 +521,6 @@ class MFAService:
                     secret_key = ?
             """, (user_id, datetime.now(), secret, datetime.now(), secret))
 
-            # Mirror into user_accounts where that table exists, so a
-            # university account enrolled before the move keeps working.
-            if self._has_table(cursor, "user_accounts"):
-                cursor.execute("""
-                    UPDATE user_accounts
-                    SET two_fa_secret = ?
-                    WHERE user_id = ?
-                """, (secret, user_id))
-
             # Generate backup recovery codes
             recovery_codes = self._generate_recovery_codes(user_id, cursor)
 
@@ -582,20 +573,13 @@ class MFAService:
         cursor = conn.cursor()
 
         try:
-            # Get the user's TOTP secret from the method row, falling back
-            # to the university's legacy user_accounts column for accounts
-            # enrolled before the secret moved onto mfa_methods.
+            # The user's TOTP secret lives on the method row. (The
+            # university's user_accounts no longer keeps a copy.)
             cursor.execute("""
                 SELECT secret_key FROM mfa_methods
                 WHERE user_id = ? AND method_type = 'totp'
             """, (user_id,))
             result = cursor.fetchone()
-
-            if (not result or not result[0]) and self._has_table(cursor, "user_accounts"):
-                cursor.execute("""
-                    SELECT two_fa_secret FROM user_accounts WHERE user_id = ?
-                """, (user_id,))
-                result = cursor.fetchone()
 
             if not result or not result[0]:
                 return {'success': False, 'error': 'TOTP not configured'}

@@ -104,7 +104,7 @@ This directory contains pre-configured backup templates for the University Manag
 
 ### Programmatically
 ```python
-from university_system.infrastructure.database.gui.data_backup_gui import load_backup_template
+from education_system.systems.university.infrastructure.database.data_backup import load_backup_template
 
 # Load a template
 load_backup_template("Daily Basic Backup")
@@ -186,7 +186,7 @@ You can create your own templates by:
 ## Template Locations
 
 Templates are loaded from:
-1. **Primary**: `university_system/templates/backup_templates/` (this directory)
+1. **Primary**: `src/education_system/systems/university/assets/templates/seeds/backup/` (this directory)
 2. **Fallback**: Application config file (for backward compatibility)
 
 ## Troubleshooting
@@ -211,6 +211,6 @@ Templates are loaded from:
 ## Support
 
 For issues or questions, check:
-- Application logs: `logs/backup_gui.log`
+- Application logs: `var/logs/university/`
 - System documentation: `docs/`
 - GitHub issues: Report problems at the repository

@@ -329,5 +329,5 @@ Staff can create prescriptions with medication, dosage, frequency, duration, and
 ---
 
 **Last Updated**: February 2026
-**Module**: `university_system/modules/domain/dentist/`
+**Module**: `src/education_system/systems/university/domains/health/domain/health/dentist/`
 **Support**: dentist@university.edu | (555) 123-DENT

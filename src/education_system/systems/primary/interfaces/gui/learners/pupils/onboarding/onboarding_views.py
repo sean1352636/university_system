@@ -20,6 +20,7 @@ from education_system.systems.primary.domain.learners.pupils import (
 from education_system.systems.primary.domain.learners.pupils.pupils import (
     ValidationError, YEAR_GROUPS,
 )
+from education_system.systems.primary.interfaces.gui import kit
 
 logger = logging.getLogger(__name__)
 
@@ -60,32 +61,32 @@ def _status_text(record) -> str:
 @_safe_view
 def open_onboarding(host) -> None:
     logger.debug("GUI: open_onboarding")
+    kit.show_page(host, "Onboarding", lambda parent: _draw_onboarding(parent, host))
 
-    win = tk.Toplevel(host.root)
-    win.title("Onboarding")
-    win.transient(host.root)
-    win.geometry("820x520")
 
-    top = ttk.Frame(win, padding=10)
+def _draw_onboarding(page: ttk.Frame, host) -> None:
+    win = page.winfo_toplevel()
+    kit.page_heading(page, "Onboarding", "New-pupil checklist progress.")
+
+    top = ttk.Frame(page, padding=(0, 0, 0, 6))
     top.pack(fill="x")
 
     summary_var = tk.StringVar()
     ttk.Label(top, textvariable=summary_var,
               font=("Segoe UI", 10, "bold")).pack(side="left")
 
-    filter_frame = ttk.Frame(win, padding=(10, 0, 10, 6))
+    filter_frame = ttk.Frame(page, padding=(0, 0, 0, 6))
     filter_frame.pack(fill="x")
     ttk.Label(filter_frame, text="Year:").pack(side="left")
     year_var = tk.StringVar(value="All")
-    year_choices = ["All"] + list(YEAR_GROUPS)
-    ttk.Combobox(filter_frame, textvariable=year_var, values=year_choices,
-                 state="readonly", width=6).pack(side="left", padx=(4, 12))
+    kit.YearGroupPicker(filter_frame, year_var, extra=("All",)).pack(
+        side="left", padx=(4, 12))
     pending_var = tk.BooleanVar(value=False)
     ttk.Checkbutton(filter_frame, text="Pending only",
                     variable=pending_var).pack(side="left")
 
     cols = ("pupil_id", "name", "year", "progress", "status")
-    tree = ttk.Treeview(win, columns=cols, show="headings", height=14)
+    tree = ttk.Treeview(page, columns=cols, show="headings", height=14)
     for col, label, width, anchor in [
         ("pupil_id", "Pupil ID", 90, "w"),
         ("name", "Name", 240, "w"),
@@ -95,9 +96,9 @@ def open_onboarding(host) -> None:
     ]:
         tree.heading(col, text=label)
         tree.column(col, width=width, anchor=anchor)
-    tree.pack(fill="both", expand=True, padx=10, pady=(0, 6))
+    tree.pack(fill="both", expand=True, pady=(0, 6))
 
-    btn_frame = ttk.Frame(win, padding=10)
+    btn_frame = ttk.Frame(page, padding=(0, 4))
     btn_frame.pack(fill="x")
 
     def _refresh() -> None:
@@ -194,7 +195,7 @@ def open_onboarding(host) -> None:
     ttk.Button(btn_frame, text="Refresh",
                command=_refresh).pack(side="left", padx=(8, 0))
     ttk.Button(btn_frame, text="Close",
-               command=win.destroy).pack(side="right")
+               command=lambda: kit.close_page(host, page)).pack(side="right")
 
     tree.bind("<Double-Button-1>", lambda _e: _edit())
     year_var.trace_add("write", lambda *_: _refresh())

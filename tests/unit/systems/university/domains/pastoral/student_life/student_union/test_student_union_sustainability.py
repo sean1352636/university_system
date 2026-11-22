@@ -8,7 +8,7 @@ from education_system.systems.university.infrastructure.database.db import sqlit
 from datetime import datetime
 from unittest.mock import Mock, patch, MagicMock
 
-from education_system.systems.university.domains.pastoral.domain.student_life.student_union.services import sustainability
+from education_system.systems.university.domains.student_life.domain.student_life.student_union.services import sustainability
 
 @pytest.fixture
 def mock_cursor():
@@ -56,7 +56,7 @@ class TestTrackCarbonFootprint:
         'Used reusable materials'  # notes
     ])
     @patch('builtins.print')
-    @patch('education_system.systems.university.domains.pastoral.domain.student_life.student_union.services.sustainability.auto_award_points')
+    @patch('education_system.systems.university.domains.student_life.domain.student_life.student_union.services.sustainability.auto_award_points')
     def test_track_footprint_success(self, mock_award, mock_print, mock_input,
                                      mock_cursor, mock_conn, sample_events):
         """Test successfully tracking carbon footprint."""
@@ -101,7 +101,7 @@ class TestWasteReductionTracking:
 
     @patch('builtins.input', side_effect=['1', '1', '10', '8'])
     @patch('builtins.print')
-    @patch('education_system.systems.university.domains.pastoral.domain.student_life.student_union.services.sustainability.auto_award_points')
+    @patch('education_system.systems.university.domains.student_life.domain.student_life.student_union.services.sustainability.auto_award_points')
     def test_log_waste_data_success(self, mock_award, mock_print, mock_input,
                                     mock_cursor, mock_conn):
         """Test logging waste data successfully."""
@@ -147,7 +147,7 @@ class TestGreenTransportTracking:
 
     @patch('builtins.input', side_effect=['1', '1', '5'])  # Log walking 5km
     @patch('builtins.print')
-    @patch('education_system.systems.university.domains.pastoral.domain.student_life.student_union.services.sustainability.auto_award_points')
+    @patch('education_system.systems.university.domains.student_life.domain.student_life.student_union.services.sustainability.auto_award_points')
     def test_log_sustainable_transport(self, mock_award, mock_print, mock_input,
                                        mock_cursor, mock_conn):
         """Test logging sustainable transport."""

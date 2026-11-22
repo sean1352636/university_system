@@ -17,7 +17,7 @@ import tempfile
 from education_system.systems.university.infrastructure.database.db import sqlite3
 from datetime import datetime
 
-from education_system.systems.university.domains.academics.domain.services.virtual_classroom.classroom_manager import (
+from education_system.systems.university.domains.teaching.domain.virtual_classroom.classroom_manager import (
     VirtualClassroomManager
 )
 

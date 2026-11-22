@@ -2,26 +2,32 @@
 
 Both subsystems run the same lifecycle (open → investigate → hear →
 sanction → close) against the same kind of subject (student or
-staff). They write to different tables today (``academic_misconduct_cases``
-and ``disciplinary_records``) for back-compat; this module unifies the
-read side and offers a single sanction-application path.
+staff). Academic misconduct is the university's academic integrity case
+(``integrity_cases``, run by ``application/integrity/review``); conduct
+cases are ``disciplinary_records``. This module unifies the read side and
+offers a single sanction-application path.
 
 Public surface:
 
-* ``open_case(kind, subject_id, ...)`` — write a row, publish
-  ``EVENT_CASE_OPENED``. ``kind='academic_misconduct'`` writes to the
-  AM table; anything else (``'disciplinary'``, ``'staff'``) writes to
-  ``disciplinary_records``. If ``assignment_submission_id`` is given on
-  an academic-misconduct case, the submission is held (#x).
+* ``open_case(kind, subject_id, ...)`` — open a case, publish
+  ``EVENT_CASE_OPENED``. ``kind='academic_misconduct'`` opens an academic
+  integrity case (the student and the integrity officers are e-mailed);
+  anything else (``'disciplinary'``, ``'staff'``) writes to
+  ``disciplinary_records``. ``assignment_submission_id`` links the
+  integrity case to the submission; the open case itself holds the
+  student's results and award (``integrity_review.blocking_cases``), so
+  the submission's status is no longer changed.
 * ``close_case(kind, case_id, outcome)`` — set status, publish
-  ``EVENT_CASE_CLOSED``.
+  ``EVENT_CASE_CLOSED``. An academic integrity case is closed only once it
+  has been decided in Academic Integrity.
 * ``apply_sanction(case_id, kind, sanction_type, ...)`` — central
   router that fans out into Finance / cert_bus / DM:
   - ``fine``        → ``raise_charge``
   - ``suspension``  → ``place_hold``
   - ``cert_revoke`` → ``cert_bus.delete_certification``
   Each fan-out preserves the gates / events of its target subsystem.
-* ``list_open(subject_id)`` — UNION over both tables.
+* ``list_open(subject_id)`` — unsettled integrity cases plus open
+  disciplinary records.
 * ``schedule_hearing(case_id, kind, when, panel_member_ids)`` —
   validates panel availability via HR's ``is_available_on``; persists
   to the calendar as an ``event_type='hearing'`` row.
@@ -41,6 +47,31 @@ logger = logging.getLogger(__name__)
 
 
 _AM_KIND = "academic_misconduct"
+#: Offence wording -> integrity case type; anything else is 'other'.
+_AM_TYPES = {
+    "plagiarism": "plagiarism", "cheating": "cheating", "collusion": "collusion",
+    "contract cheating": "contract_cheating", "fabrication": "fabrication",
+}
+
+
+def _open_integrity_case(conn, subject_id, opened_by, description, severity, offense_type,
+                         assignment_submission_id) -> int:
+    from education_system.systems.university.application.integrity import (
+        review as integrity_review,
+    )
+    out = integrity_review.open_case(
+        conn, None, student_id=str(subject_id),
+        case_type=_AM_TYPES.get(str(offense_type or "").strip().lower(), "other"),
+        description=description or f"{offense_type or 'Academic misconduct'} reported",
+        submission_id=assignment_submission_id, severity=severity, source="manual",
+        actor=str(opened_by or "cases_bus"))
+    conn.commit()
+    if out["emails"]:
+        from education_system.systems.university.infrastructure.ui.record_screens import (
+            send_emails,
+        )
+        send_emails(out["emails"])
+    return out["case_id"]
 
 
 def _publish(event: str, **payload: Any) -> None:
@@ -80,38 +111,9 @@ def open_case(
     try:
         with get_connection() as conn:
             if kind == _AM_KIND:
-                # Look up the student's name + course — the AM table
-                # has them NOT NULL. Fall back to the subject_id /
-                # 'Unknown' when we can't resolve real values.
-                student_name = str(subject_id)
-                course = "Unknown"
-                try:
-                    row = conn.execute(
-                        "SELECT TRIM(COALESCE(first_name,'') || ' ' || "
-                        "             COALESCE(last_name,'')) AS name, "
-                        "       COALESCE(course, 'Unknown') AS course "
-                        "FROM students WHERE student_id = ?",
-                        (str(subject_id),),
-                    ).fetchone()
-                    if row:
-                        student_name = row["name"] or student_name
-                        course = row["course"] or course
-                except sqlite3.OperationalError:
-                    pass
-
-                # Generate a human-readable case_id alongside the row.
-                ref = f"AM-{datetime.now().strftime('%Y%m%d%H%M%S')}"
-                cur = conn.execute(
-                    "INSERT INTO academic_misconduct_cases "
-                    "(case_id, student_name, student_id, course, "
-                    " violation_type, status, date_filed, severity, notes) "
-                    "VALUES (?, ?, ?, ?, ?, 'Under Review', ?, ?, ?)",
-                    (ref, student_name, str(subject_id), course,
-                     offense_type,
-                     (incident_date or today)[:10], severity,
-                     description),
-                )
-                new_id = cur.lastrowid
+                new_id = _open_integrity_case(conn, subject_id, opened_by, description,
+                                              severity, offense_type,
+                                              assignment_submission_id)
             else:
                 cur = conn.execute(
                     "INSERT INTO disciplinary_records "
@@ -129,29 +131,6 @@ def open_case(
     except Exception as exc:
         logger.warning("open_case(%s) failed: %s", kind, exc)
         return None
-
-    # Hold the linked assignment submission while AM is open (#x).
-    if kind == _AM_KIND and assignment_submission_id:
-        try:
-            with get_connection() as conn:
-                conn.execute(
-                    "UPDATE assignment_submissions "
-                    "SET status = 'held' WHERE id = ?",
-                    (int(assignment_submission_id),),
-                )
-                conn.commit()
-            try:
-                from education_system.systems.university.infrastructure.event_bus import (
-                    publish, EVENT_GRADE_CHANGED,
-                )
-                publish(EVENT_GRADE_CHANGED,
-                        submission_id=assignment_submission_id,
-                        action="held_for_misconduct",
-                        case_id=new_id, source="cases_bus")
-            except Exception:
-                logger.debug("Suppressed exception", exc_info=True)
-        except Exception as exc:
-            logger.warning("submission-hold for AM failed: %s", exc)
 
     _publish(
         "case.opened",
@@ -201,13 +180,12 @@ def close_case(*, kind: str, case_id: int,
     try:
         with get_connection() as conn:
             if kind == _AM_KIND:
-                conn.execute(
-                    "UPDATE academic_misconduct_cases "
-                    "SET status = 'Closed', ruling = ?, "
-                    "    updated_at = CURRENT_TIMESTAMP "
-                    "WHERE id = ?",
-                    (outcome, int(case_id)),
+                # Decided in Academic Integrity; only a decided case closes.
+                from education_system.systems.university.application.integrity import (
+                    review as integrity_review,
                 )
+                integrity_review.close(conn, None, int(case_id), outcome or "",
+                                       actor="cases_bus")
             else:
                 conn.execute(
                     "UPDATE disciplinary_records "
@@ -359,24 +337,25 @@ def list_open(subject_id: str | int | None = None) -> list[dict[str, Any]]:
                     "SELECT name FROM sqlite_master WHERE type='table'"
                 )
             }
-            if "academic_misconduct_cases" in tables:
-                params: list[Any] = []
-                sql = (
-                    "SELECT id AS case_id, 'academic_misconduct' AS kind, "
-                    "       student_id AS subject_id, "
-                    "       violation_type AS offense_type, "
-                    "       severity, status, date_filed AS opened_on, "
-                    "       hearing_date "
-                    "FROM academic_misconduct_cases "
-                    "WHERE LOWER(COALESCE(status,'open')) "
-                    "      NOT IN ('closed','resolved','dismissed') "
+            if "integrity_cases" in tables:
+                from education_system.systems.university.application.integrity import (
+                    review as integrity_review,
                 )
+                sql = ("SELECT id AS case_id, 'academic_misconduct' AS kind, "
+                       "       student_id AS subject_id, case_type AS offense_type, "
+                       "       severity, COALESCE(stage, status) AS status, "
+                       "       created_at AS opened_on, NULL AS hearing_date "
+                       "FROM integrity_cases WHERE COALESCE(stage, 'referred') <> 'closed' ")
+                params: list[Any] = []
                 if subject_id is not None:
                     sql += "AND student_id = ? "
                     params.append(str(subject_id))
-                sql += "ORDER BY date_filed DESC"
-                for r in conn.execute(sql, tuple(params)).fetchall():
-                    out.append(dict(r))
+                rows = [dict(r) for r in conn.execute(sql + "ORDER BY created_at DESC",
+                                                      tuple(params)).fetchall()]
+                blocking = {c["id"] for sid in {r["subject_id"] for r in rows}
+                            for c in integrity_review.blocking_cases(conn, sid)}
+                # Decided cases still in their appeal period are not open.
+                out.extend(r for r in rows if r["case_id"] in blocking)
             if "disciplinary_records" in tables:
                 params2: list[Any] = []
                 sql = (

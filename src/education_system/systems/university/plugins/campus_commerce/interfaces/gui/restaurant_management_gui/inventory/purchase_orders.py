@@ -160,7 +160,7 @@ def view_purchase_orders(self, parent_dialog):
                            po.notes
                     FROM purchase_orders po
                     LEFT JOIN restaurant_suppliers s ON po.supplier_id = s.supplier_id
-                    LEFT JOIN purchase_order_items poi ON po.po_id = poi.po_id
+                    LEFT JOIN purchase_order_items poi ON po.order_id = poi.po_id
                     WHERE 1=1
                 '''
                 params = []
@@ -170,7 +170,7 @@ def view_purchase_orders(self, parent_dialog):
                 if supplier_var.get() != 'All':
                     query += ' AND s.name = ?'
                     params.append(supplier_var.get())
-                query += ' GROUP BY po.po_id ORDER BY po.order_date DESC'
+                query += ' GROUP BY po.order_id ORDER BY po.order_date DESC'
                 cursor.execute(query, params)
                 orders = cursor.fetchall()
                 for order in orders:
@@ -213,7 +213,11 @@ def view_purchase_orders(self, parent_dialog):
                 cursor = conn.cursor()
                 # Get PO header details
                 cursor.execute('''
-                    SELECT po.*, s.name as supplier_name
+                    SELECT po.order_id, po.po_number, po.supplier_id, po.order_date,
+                           po.expected_delivery, po.actual_delivery, po.status,
+                           COALESCE(po.total_amount, 0), COALESCE(po.tax_amount, 0),
+                           COALESCE(po.shipping_cost, 0), po.notes, po.ordered_by,
+                           po.approved_by, po.received_by, s.name
                     FROM purchase_orders po
                     LEFT JOIN restaurant_suppliers s ON po.supplier_id = s.supplier_id
                     WHERE po.po_number = ?
@@ -584,14 +588,14 @@ def update_purchase_order(self, parent_dialog):
             if conn:
                 cursor = conn.cursor()
                 cursor.execute('''
-                    SELECT po.po_id, po.po_number, COALESCE(s.name, 'N/A'),
+                    SELECT po.order_id, po.po_number, COALESCE(s.name, 'N/A'),
                            po.order_date, po.status, po.total_amount,
                            COUNT(poi.po_item_id)
                     FROM purchase_orders po
                     LEFT JOIN restaurant_suppliers s ON po.supplier_id = s.supplier_id
-                    LEFT JOIN purchase_order_items poi ON po.po_id = poi.po_id
+                    LEFT JOIN purchase_order_items poi ON po.order_id = poi.po_id
                     WHERE po.status IN ('Pending', 'Approved')
-                    GROUP BY po.po_id
+                    GROUP BY po.order_id
                     ORDER BY po.order_date DESC
                 ''')
                 pos = cursor.fetchall()
@@ -634,10 +638,14 @@ def update_purchase_order(self, parent_dialog):
                 return
             cursor = conn.cursor()
             cursor.execute('''
-                SELECT po.*, s.name
+                SELECT po.order_id, po.po_number, po.supplier_id, po.order_date,
+                           po.expected_delivery, po.actual_delivery, po.status,
+                           COALESCE(po.total_amount, 0), COALESCE(po.tax_amount, 0),
+                           COALESCE(po.shipping_cost, 0), po.notes, po.ordered_by,
+                           po.approved_by, po.received_by, s.name
                 FROM purchase_orders po
                 LEFT JOIN restaurant_suppliers s ON po.supplier_id = s.supplier_id
-                WHERE po.po_id = ?
+                WHERE po.order_id = ?
             ''', (po_id,))
             po_data = cursor.fetchone()
             conn.close()
@@ -689,7 +697,7 @@ def update_purchase_order(self, parent_dialog):
         row += 1
         info_text = f"""
 ent Information:
-lier: {po_data[15]}
+lier: {po_data[14]}
 r Date: {po_data[3]}
 l Amount: £{po_data[7]:,.2f}
 Amount: £{po_data[8]:,.2f}
@@ -708,7 +716,7 @@ red By: {po_data[11] or 'N/A'}
                             expected_delivery = ?,
                             shipping_cost = ?,
                             notes = ?
-                        WHERE po_id = ?
+                        WHERE order_id = ?
                     ''', (fields['status'].get(),
                           fields['expected'].get() or None,
                           float(fields['shipping'].get() or 0),
@@ -763,14 +771,14 @@ def receive_purchase_order(self, parent_dialog):
             if conn:
                 cursor = conn.cursor()
                 cursor.execute('''
-                    SELECT po.po_id, po.po_number, COALESCE(s.name, 'N/A'),
+                    SELECT po.order_id, po.po_number, COALESCE(s.name, 'N/A'),
                            po.order_date, po.expected_delivery, po.total_amount,
                            COUNT(poi.po_item_id)
                     FROM purchase_orders po
                     LEFT JOIN restaurant_suppliers s ON po.supplier_id = s.supplier_id
-                    LEFT JOIN purchase_order_items poi ON po.po_id = poi.po_id
+                    LEFT JOIN purchase_order_items poi ON po.order_id = poi.po_id
                     WHERE po.status = 'Approved'
-                    GROUP BY po.po_id
+                    GROUP BY po.order_id
                     ORDER BY po.expected_delivery
                 ''')
                 pos = cursor.fetchall()
@@ -907,7 +915,7 @@ def receive_purchase_order(self, parent_dialog):
                     SET status = 'Received',
                         actual_delivery = ?,
                         received_by = ?
-                    WHERE po_id = ?
+                    WHERE order_id = ?
                 ''', (received_date.get(), received_by.get(), po_id))
                 # Update received quantities for each item
                 for item_id, entry in item_entries.items():
@@ -930,7 +938,7 @@ def receive_purchase_order(self, parent_dialog):
                         # Check if item exists in inventory
                         cursor.execute('''
                             SELECT item_id, quantity FROM restaurant_inventory
-                            WHERE LOWER(item_name) = LOWER(?)
+                            WHERE LOWER(name) = LOWER(?)
                         ''', (item_name,))
                         existing = cursor.fetchone()
                         if existing:
@@ -1008,7 +1016,7 @@ def purchase_order_reports(self, parent_dialog):
             cursor.execute("SELECT AVG(total_amount) FROM purchase_orders WHERE status != 'Cancelled'")
             avg_value = cursor.fetchone()[0] or 0
             cursor.execute('''
-                SELECT s.name, COUNT(po.po_id), SUM(po.total_amount)
+                SELECT s.name, COUNT(po.order_id), SUM(po.total_amount)
                 FROM purchase_orders po
                 JOIN restaurant_suppliers s ON po.supplier_id = s.supplier_id
                 WHERE po.status != 'Cancelled'

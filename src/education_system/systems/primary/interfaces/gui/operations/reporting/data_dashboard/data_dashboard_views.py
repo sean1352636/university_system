@@ -18,14 +18,15 @@ from education_system.systems.primary.domain.operations.reporting.data_dashboard
     Panel,
 )
 from education_system.platform.delivery.gui.portal_dismiss import forget_tab
+from education_system.systems.primary.interfaces.gui import kit
 
 logger = logging.getLogger(__name__)
 
 
-def _clear(gui) -> ttk.Frame:
-    for w in gui.content_frame.winfo_children():
-        w.destroy()
-    return gui.content_frame
+def _status(gui, text: str) -> None:
+    var = getattr(gui, "status_var", None)
+    if var is not None:
+        var.set(text)
 
 
 def _render_panel(parent: ttk.Frame, panel: Panel) -> None:
@@ -70,10 +71,11 @@ def _render_panel(parent: ttk.Frame, panel: Panel) -> None:
 
 
 def open_data_dashboard_window(gui) -> None:
-    frame = _clear(gui)
+    kit.show_page(gui, "Data Dashboard", lambda parent: _draw_data_dashboard(parent, gui))
 
-    ttk.Label(frame, text="Data Dashboard", font=("", 16, "bold")).pack(
-        anchor="w", pady=(0, 4))
+
+def _draw_data_dashboard(frame: ttk.Frame, gui) -> None:
+    kit.page_heading(frame, "Data Dashboard")
     meta_var = tk.StringVar(value="")
     ttk.Label(frame, textvariable=meta_var, foreground="#666").pack(
         anchor="w", pady=(0, 12))
@@ -83,7 +85,7 @@ def open_data_dashboard_window(gui) -> None:
 
     window_var = tk.StringVar(value=str(DEFAULT_WINDOW_DAYS))
     ttk.Label(bar, text="Window (days):").pack(side="left")
-    ttk.Entry(bar, textvariable=window_var, width=6).pack(
+    kit.NumberField(bar, window_var, from_=1, to=3650, width=6).pack(
         side="left", padx=(4, 12))
 
     nb = ttk.Notebook(frame)
@@ -123,7 +125,7 @@ def open_data_dashboard_window(gui) -> None:
             nb.add(tab, text=label)
             _render_panel(tab, p)
         meta_var.set(f"Generated {snap.generated_at} · window: last {snap.window_days} days")
-        gui.status_var.set("Data Dashboard refreshed")
+        _status(gui, "Data Dashboard refreshed")
 
     ttk.Button(bar, text="Refresh", command=_refresh).pack(
         side="left", padx=(8, 0))

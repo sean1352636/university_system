@@ -12,25 +12,21 @@ docs/sixth_form/
 │
 ├── security/                 # Security & Authentication
 │   ├── SECURITY.md          # Security features and best practices
-│   ├── AUTHENTICATION.md    # Authentication implementation guide
 │   ├── MFA_GUIDE.md         # Multi-factor authentication setup
-│   └── ROLES_PERMISSIONS.md # Role-based access control reference
+│   └── SESSION_TIMEOUT.md   # Idle auto-logout
 │
 ├── infrastructure/           # Infrastructure guides
-│   ├── DATABASE.md          # Database schema and usage
-│   ├── API_REFERENCE.md     # REST API endpoint reference
-│   └── LOGGING.md           # Logging configuration and log files
+│   ├── AUTHENTICATION.md    # Authentication implementation guide
+│   ├── CONFIGURATION.md     # Configuration reference
+│   └── DATABASE.md          # Database schema and usage
 │
 ├── development/              # Developer documentation
 │   ├── README.md            # Development environment setup
-│   ├── EXCEPTION_HANDLING.md    # Error handling patterns
-│   ├── TESTING_GUIDE.md     # Writing and running tests
-│   └── MODULE_DEVELOPMENT.md   # How to create new domain modules
+│   ├── ADDING_MODULES.md    # How to create new domain modules
+│   ├── API.md               # REST API reference
+│   └── TESTING_GUIDE.md     # Writing and running tests
 │
-└── guides/                   # User and administrator guides
-    ├── ADMIN_GUIDE.md       # System administration
-    ├── TEACHER_GUIDE.md     # Teacher workflows
-    └── STUDENT_GUIDE.md     # Student-facing features
+└── guides/                   # User and administrator guides, one per functional area
 ```
 
 ## Quick Start
@@ -55,6 +51,7 @@ New to the system? Start here:
 | Document | Description |
 |----------|-------------|
 | [DATABASE.md](infrastructure/DATABASE.md) | SQLite database schema, tables, and query patterns |
+| [CONFIGURATION.md](infrastructure/CONFIGURATION.md) | Environment variables, paths, and defaults |
 | [API_REFERENCE.md](../reference/API_REFERENCE.md) | Flask REST API endpoints and usage |
 
 ### Development
@@ -64,7 +61,7 @@ New to the system? Start here:
 | [Development README](development/README.md) | Development environment setup and conventions |
 | [TESTING_GUIDE.md](development/TESTING_GUIDE.md) | Testing framework and best practices |
 | [ADDING_MODULES.md](development/ADDING_MODULES.md) | Guide to building new domain modules |
-| [API.md](development/API.md) | Internal API surface for domain modules |
+| [API.md](development/API.md) | REST API for the sixth form |
 
 ### User Guides
 
@@ -90,10 +87,10 @@ The Sixth Form College Management System is a comprehensive platform for managin
 - **110+ domain modules** covering academics, student support, staff management, finance, facilities, communication, governance, and more
 - **Tkinter GUI** with tabbed interface and scrollable sidebar navigation
 - **Flask REST API** for headless and integration use cases
-- **SQLite database** at `college_system/data/db_files/sixthform.db`
-- **Role-based access control** with admin, teacher, and student roles
+- **SQLite database** at `var/data/sixth_form/sixthform.db`
+- **Role-based access control** with admin, staff, teacher, student, and parent roles, shared with the other six systems through the central `var/data/platform/db_files/auth.db`
 - **Multi-factor authentication** support
-- **Internationalization** with locale files under `college_system/data/locales/`
+- **Internationalization** through the shared engine in `src/education_system/platform/features/i18n/`
 
 ## Troubleshooting
 
@@ -111,13 +108,13 @@ Having issues? Check:
 source venv/bin/activate
 
 # Run the GUI application
-python -m education_system.college_system.run
+python -m education_system --college --gui
 
 # Run the API server
-python -m education_system.college_system.api.api_server
+python -m education_system --college --api
 
 # Run tests
-python -m pytest education_system/college_system/tests/
+python -m pytest tests/unit/systems/sixth_form/
 ```
 
 ### Key Resources
@@ -128,51 +125,48 @@ python -m pytest education_system/college_system/tests/
 ### Project Layout
 
 ```
-college_system/
-├── __init__.py              # Package init (version 1.0.0)
-├── core/                    # Core utilities
-│   ├── defaults.py          # Default config, credentials, constants
-│   ├── exceptions.py        # Exception hierarchy
-│   ├── i18n.py              # Internationalization support
-│   ├── logs.py              # Logging configuration
-│   ├── paths.py             # Centralized path definitions
-│   └── sql_safety.py        # SQL injection protection
-├── api/                     # Flask REST API
-│   ├── api_server.py        # App factory and server entry point
-│   ├── config.py            # Flask configuration
-│   ├── errors.py            # Global error handlers
-│   └── routes/              # API route blueprints
-├── infrastructure/          # Infrastructure layer
-│   ├── auth/                # Authentication (core, MFA, passwords, roles, sessions)
-│   ├── database/            # Database schema and access
-│   ├── security/            # Security audit
-│   └── validation/          # Input validation
-├── modules/domain/          # 110+ domain modules
-│   ├── students/            # Student records
-│   ├── courses/             # Course management
-│   ├── enrollment/          # Enrollment processing
-│   ├── attendance/          # Attendance tracking
-│   ├── grades/              # Grade management
-│   ├── timetable/           # Timetable scheduling
-│   └── ...                  # (see full list in QUICK_START.md)
-├── data/                    # Runtime data
-│   ├── db_files/            # SQLite database files
-│   ├── locales/             # Internationalization files
-│   └── config/              # Configuration files
-└── logs/                    # Application log files
-    └── app.log              # Main application log
+src/education_system/systems/sixth_form/
+├── manifest.py              # System key, display name and interfaces
+├── assets/templates/email/  # Email templates
+├── domain/                  # Domain modules, by area
+│   ├── academics/           # Courses, timetable, attendance, library, ...
+│   ├── admissions/          # Admissions, enrolments, onboarding
+│   ├── assessment/          # Exams, predicted grades, targets, reports
+│   ├── governance/          # Policies, GDPR, risk, user management
+│   ├── learners/            # Students, alumni, bulk operations, search
+│   ├── operations/          # Parent portal, data export
+│   ├── pastoral/            # Behaviour, SEND, health, wellbeing
+│   ├── progression/         # UCAS, destinations, work experience
+│   ├── safeguarding/        # Safeguarding
+│   └── staff/               # Staff records, CPD, appraisals
+├── domains/                 # Vertical slices
+│   ├── communications/      # Messages, notifications, announcements
+│   ├── finance/             # Fees, bursaries, funding
+│   └── operations/          # Assets, visitors, helpdesk, transport
+├── infrastructure/          # Database access, log store, scheduler, integrations
+└── interfaces/
+    ├── cli/cli_main.py      # CLI entry point, with menus by area
+    └── gui/gui_main.py      # GUI entry point, with windows by area
+
+src/education_system/api/sixth_form/
+├── access_gate.py           # Capability rule for every route
+├── routes/                  # API route blueprints
+└── schemas/
+
+var/data/sixth_form/sixthform.db   # SQLite database
 ```
+
+Authentication, API hosting, validation and other shared code live in `src/education_system/platform/`. See [PROJECT_STRUCTURE.md](../reference/PROJECT_STRUCTURE.md).
 
 ## Documentation Standards
 
 All documentation follows these standards:
 
 - Written in GitHub-flavored Markdown
-- Code examples are tested and working
 - Clear, concise, professional language
 - Organized by topic with cross-references
 
 ---
 
-**Last Updated**: March 2026
+**Last Updated**: October 2026
 **Version**: 1.0.0

@@ -271,8 +271,8 @@ class AnalyticsEmailMixin:
                 cursor.execute('''
                 SELECT DISTINCT s.student_id, s.first_name, s.last_name, s.email_address
                 FROM students s
-                JOIN scholarships sch ON s.student_id = sch.student_id
-                WHERE sch.status = 'Active' AND s.email_address IS NOT NULL AND s.email_address != ''
+                JOIN student_scholarships ss ON s.student_id = ss.student_id
+                WHERE LOWER(ss.status) = 'active' AND s.email_address IS NOT NULL AND s.email_address != ''
                 ''')
 
             for row in cursor.fetchall():

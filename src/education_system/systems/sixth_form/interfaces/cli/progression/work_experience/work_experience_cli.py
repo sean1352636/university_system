@@ -568,6 +568,16 @@ _MENU: list[tuple[str, Callable[[], None]]] = [
     ("Summary report",               show_summary),
 ]
 
+# H&S vetting, visits and the T Level placement gate (vetting_cli),
+# after the original entries so their numbers do not move.
+from education_system.systems.sixth_form.interfaces.cli.progression import (  # noqa: E402
+    _record_menus as _rm,
+)
+from education_system.systems.sixth_form.interfaces.cli.progression.work_experience import (  # noqa: E402
+    vetting_cli as _vetting_cli,
+)
+_MENU += [(label, _rm.guarded(fn)) for label, fn in _vetting_cli.MENU]
+
 
 def run() -> None:
     while True:

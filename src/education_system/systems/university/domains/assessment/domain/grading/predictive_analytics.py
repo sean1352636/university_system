@@ -294,12 +294,10 @@ def generate_early_warning_alert(cursor, student_id, first_name, last_name, cour
     """Generate an early warning alert for a student"""
     # Get specific risk factors
     cursor.execute('''
-    SELECT rd.factor_id, rf.name, rd.factor_value
-    FROM risk_details rd
-    JOIN risk_factors rf ON rd.factor_id = rf.factor_id
-    JOIN student_risk_assessment sra ON rd.risk_assessment_id = sra.id
-    WHERE sra.student_id = ?
-    ORDER BY rd.factor_contribution DESC
+    SELECT rf.id, COALESCE(rf.name, rf.factor_name), rf.factor_value
+    FROM risk_factors rf
+    WHERE rf.student_id = ?
+    ORDER BY COALESCE(rf.factor_value, 0) * COALESCE(rf.weight, 1) DESC
     ''', (student_id,))
 
     risk_details = cursor.fetchall()

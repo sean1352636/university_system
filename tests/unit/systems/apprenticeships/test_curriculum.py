@@ -16,12 +16,10 @@ from education_system.systems.apprenticeships.domain.programmes.curriculum impor
 from education_system.systems.apprenticeships.infrastructure.persistence.repositories import (
     staff_repository,
 )
-from education_system.systems.apprenticeships.services import (
-    apprentice_service,
-    learning_plan_service,
-    programme_service,
-)
-from education_system.systems.apprenticeships.services.access import Actor, PermissionDenied
+from education_system.systems.apprenticeships.application.apprentices import apprentice_service
+from education_system.systems.apprenticeships.application.learning import learning_plan_service
+from education_system.systems.apprenticeships.application.programmes import programme_service
+from education_system.systems.apprenticeships.application.security.access import Actor, PermissionDenied
 
 
 def _module(module_id, stage, position, title="M"):

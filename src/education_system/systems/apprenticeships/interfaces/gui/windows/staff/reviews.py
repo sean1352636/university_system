@@ -17,10 +17,8 @@ from typing import Any
 
 from education_system.systems.apprenticeships import config
 from education_system.systems.apprenticeships.interfaces.gui import widgets
-from education_system.systems.apprenticeships.services import (
-    apprentice_service,
-    review_service,
-)
+from education_system.systems.apprenticeships.application.apprentices import apprentice_service
+from education_system.systems.apprenticeships.application.learning import review_service
 
 logger = logging.getLogger(__name__)
 

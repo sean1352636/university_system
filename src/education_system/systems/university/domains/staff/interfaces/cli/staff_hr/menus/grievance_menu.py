@@ -1,9 +1,15 @@
 """
 Grievance Menu - Grievance and disciplinary management CLI.
+
+Every case read/write goes through GrievanceManager's ``*_as(actor, ...)``
+entry points: HR sees every case, a handler their cases, the parties
+their own (the subject of a discipline record never sees the
+investigation notes); reads are audited.
 """
 
 from datetime import datetime
 from education_system.systems.university.domains.staff.domain.staff_hr.services.managers.grievance_manager import GrievanceManager
+from education_system.systems.university.domains.staff.interfaces.cli.staff_hr.menus import _access as _hr
 from education_system.systems.university.domains.staff.interfaces.cli.staff_hr.validators import (
     validate_date, validate_required, validate_choice, validate_integer,
     get_date_input, get_choice_input, get_required_input, get_integer_input,
@@ -22,6 +28,7 @@ def display_grievance_menu(user_id: str, is_admin: bool = False) -> None:
         print("  1. File a Grievance")
         print("  2. View My Grievances")
         print("  3. View Grievance Status")
+        print(" 13. My Disciplinary Record")
 
         if is_admin:
             print("\n--- Grievance Administration ---")
@@ -51,6 +58,8 @@ def display_grievance_menu(user_id: str, is_admin: bool = False) -> None:
             _view_my_grievances(user_id)
         elif choice == '3':
             _view_grievance_status(user_id)
+        elif choice == '13':
+            _my_disciplinary_record(user_id)
         elif choice == '4' and is_admin:
             _view_all_grievances()
         elif choice == '5' and is_admin:
@@ -125,8 +134,8 @@ def _file_grievance(user_id: str) -> None:
         return
 
     try:
-        grievance_id = GrievanceManager.create_grievance(
-            complainant_id=user_id,
+        grievance_id = GrievanceManager.file_grievance_as(
+            _hr.actor(),
             category=category,
             description=description,
             respondent_id=respondent_id,
@@ -147,7 +156,9 @@ def _file_grievance(user_id: str) -> None:
 
 def _view_my_grievances(user_id: str) -> None:
     """View user's grievances."""
-    grievances = GrievanceManager.get_user_grievances(user_id)
+    grievances = [g for g in GrievanceManager.grievances_for(_hr.actor())
+                  if user_id in (g.get('complainant_id'), g.get('respondent_id'),
+                                 g.get('assigned_to'))]
 
     if not grievances:
         print("\nNo grievances found.")
@@ -164,8 +175,8 @@ def _view_my_grievances(user_id: str) -> None:
             print(f"   Status: {g.get('status')} | Filed: {g.get('filed_date')}")
             print(f"   Description: {g.get('description', '')[:60]}...")
 
-            if g.get('resolution'):
-                print(f"   Resolution: {g.get('resolution')[:60]}...")
+            if g.get('resolution_summary'):
+                print(f"   Resolution: {g.get('resolution_summary')[:60]}...")
 
     input("\nPress Enter to continue...")
 
@@ -180,16 +191,10 @@ def _view_grievance_status(user_id: str) -> None:
         print("Invalid ID.")
         return
 
-    grievance = GrievanceManager.get_grievance(grievance_id)
-
-    if not grievance:
-        print("Grievance not found.")
-        input("Press Enter to continue...")
-        return
-
-    # Verify ownership
-    if grievance.get('complainant_id') != user_id:
-        print("You can only view your own grievances.")
+    try:
+        grievance = GrievanceManager.view_grievance(_hr.actor(), grievance_id)
+    except PermissionError:
+        print("Grievance not found, or not one you may see.")
         input("Press Enter to continue...")
         return
 
@@ -206,12 +211,12 @@ def _view_grievance_status(user_id: str) -> None:
 
     print(f"\nDescription:\n{grievance.get('description')}")
 
-    if grievance.get('resolution'):
-        print(f"\nResolution:\n{grievance.get('resolution')}")
+    if grievance.get('resolution_summary'):
+        print(f"\nResolution:\n{grievance.get('resolution_summary')}")
         print(f"Resolution Date: {grievance.get('resolution_date')}")
 
-    # Show actions
-    actions = GrievanceManager.get_grievance_actions(grievance_id)
+    # Show actions (parties see only those marked visible to them)
+    actions = grievance.get('actions', [])
     if actions:
         print(f"\n--- Action History ({len(actions)}) ---")
         for a in actions:
@@ -237,11 +242,13 @@ def _view_all_grievances() -> None:
         '1': 'open', '2': 'investigating', '3': 'resolved', '5': None
     }
 
-    if filter_choice in status_map:
-        status = status_map[filter_choice]
-        grievances = GrievanceManager.search_grievances(status=status)
-    else:
-        grievances = GrievanceManager.search_grievances(status='active')
+    grievances = GrievanceManager.grievances_for(_hr.actor())
+    status = status_map[filter_choice] if filter_choice in status_map else 'active'
+    if status == 'active':
+        grievances = [g for g in grievances
+                      if g.get('status') not in ('resolved', 'closed', 'withdrawn')]
+    elif status:
+        grievances = [g for g in grievances if g.get('status') == status]
 
     if not grievances:
         print("\nNo grievances found.")
@@ -272,9 +279,10 @@ def _manage_grievance() -> None:
         print("Invalid ID.")
         return
 
-    grievance = GrievanceManager.get_grievance(grievance_id)
-    if not grievance:
-        print("Grievance not found.")
+    try:
+        grievance = GrievanceManager.view_grievance(_hr.actor(), grievance_id)
+    except PermissionError:
+        print("Grievance not found, or not one you may see.")
         input("Press Enter to continue...")
         return
 
@@ -293,53 +301,48 @@ def _manage_grievance() -> None:
     print("  0. Cancel")
 
     action = input("\nChoice: ").strip()
+    actor = _hr.actor()
 
-    if action == '1':
-        handler_id = input("Handler User ID: ").strip()
-        GrievanceManager.update_grievance(grievance_id, assigned_to=handler_id)
-        GrievanceManager.create_action(
-            grievance_id, 'assigned',
-            details=f"Assigned to {handler_id}"
-        )
-        print("Handler assigned.")
+    try:
+        if action == '1':
+            handler_id = input("Handler username: ").strip()
+            GrievanceManager.assign_grievance_as(actor, grievance_id, handler_id)
+            print("Handler assigned.")
 
-    elif action == '2':
-        print("Statuses: open, investigating, pending_response, resolved, closed")
-        new_status = input("New Status: ").strip()
-        GrievanceManager.update_grievance(grievance_id, status=new_status)
-        GrievanceManager.create_action(
-            grievance_id, 'status_change',
-            details=f"Status changed to {new_status}"
-        )
-        print("Status updated.")
+        elif action == '2':
+            print("Statuses: open, investigating, pending_response, resolved, closed")
+            new_status = input("New Status: ").strip()
+            GrievanceManager.update_grievance_as(actor, grievance_id, status=new_status)
+            GrievanceManager.add_action_as(actor, grievance_id, action_type='status_change',
+                                           details=f"Status changed to {new_status}")
+            print("Status updated.")
 
-    elif action == '3':
-        print("Priorities: low, normal, high, urgent")
-        priority = input("Priority: ").strip()
-        GrievanceManager.update_grievance(grievance_id, priority=priority)
-        print("Priority updated.")
+        elif action == '3':
+            print("Priorities: low, normal, high, urgent")
+            priority = input("Priority: ").strip()
+            GrievanceManager.update_grievance_as(actor, grievance_id, priority=priority)
+            print("Priority updated.")
 
-    elif action == '4':
-        action_type = input("Action Type (note, investigation, communication): ").strip() or 'note'
-        details = input("Details: ").strip()
-        taken_by = input("Your User ID: ").strip()
-        GrievanceManager.create_action(
-            grievance_id, action_type,
-            details=details, taken_by=taken_by
-        )
-        print("Action recorded.")
+        elif action == '4':
+            action_type = input("Action Type (note, investigation, communication): ").strip() or 'note'
+            details = input("Details: ").strip()
+            visible = input("Visible to the parties? (y/n, default y): ").strip().lower() != 'n'
+            GrievanceManager.add_action_as(actor, grievance_id, action_type=action_type,
+                                           details=details, is_visible_to_complainant=visible)
+            print("Action recorded.")
 
-    elif action == '5':
-        resolution = input("Resolution Details: ").strip()
-        if resolution:
-            GrievanceManager.resolve_grievance(grievance_id, resolution)
-            print("Grievance resolved.")
+        elif action == '5':
+            resolution = input("Resolution Details: ").strip()
+            if resolution:
+                GrievanceManager.resolve_grievance_as(actor, grievance_id, resolution)
+                print("Grievance resolved.")
 
-    elif action == '6':
-        reason = input("Escalation Reason: ").strip()
-        escalated_by = input("Your User ID: ").strip()
-        GrievanceManager.escalate_grievance(grievance_id, reason, escalated_by)
-        print("Grievance escalated.")
+        elif action == '6':
+            reason = input("Escalation Reason: ").strip()
+            GrievanceManager.escalate_grievance_as(actor, grievance_id, reason)
+            print("Grievance escalated.")
+    except (PermissionError, ValueError) as e:
+        print(f"\n{e}")
 
     input("\nPress Enter to continue...")
 
@@ -363,8 +366,8 @@ def _schedule_meeting() -> None:
     notes = input("Meeting Notes/Agenda: ").strip()
 
     try:
-        meeting_id = GrievanceManager.create_meeting(
-            grievance_id,
+        meeting_id = GrievanceManager.schedule_meeting_as(
+            _hr.actor(), grievance_id,
             meeting_type=meeting_type,
             scheduled_date=scheduled_date,
             scheduled_time=scheduled_time,
@@ -394,23 +397,23 @@ def _search_disciplinary_records() -> None:
     records = []
     if search_choice == '1':
         user_id = input("User ID: ").strip()
-        records = GrievanceManager.get_user_disciplinary_records(user_id)
+        records = GrievanceManager.disciplinary_records_for(_hr.actor(), user_id=user_id)
     elif search_choice == '2':
         print("Types: misconduct, performance, attendance, policy_violation, harassment, other")
         offense_type = input("Offense Type: ").strip()
-        records = GrievanceManager.search_disciplinary_records(offense_type=offense_type)
+        records = GrievanceManager.disciplinary_records_for(_hr.actor(), offense_type=offense_type)
     elif search_choice == '3':
         print("Severity: minor, moderate, major, severe")
         severity = input("Severity: ").strip()
-        records = GrievanceManager.search_disciplinary_records(severity=severity)
+        records = GrievanceManager.disciplinary_records_for(_hr.actor(), severity=severity)
     elif search_choice == '4':
         start_date = input("Start Date (YYYY-MM-DD): ").strip()
         end_date = input("End Date (YYYY-MM-DD): ").strip()
-        records = GrievanceManager.search_disciplinary_records(
-            start_date=start_date, end_date=end_date
+        records = GrievanceManager.disciplinary_records_for(
+            _hr.actor(), start_date=start_date, end_date=end_date
         )
     elif search_choice == '5':
-        records = GrievanceManager.search_disciplinary_records()
+        records = GrievanceManager.disciplinary_records_for(_hr.actor())
     else:
         print("Invalid choice.")
         return
@@ -451,7 +454,8 @@ def _create_disciplinary_record() -> None:
         )
         description = get_required_input("Description of offense: ", "Description")
         date_occurred = get_date_input("Date Occurred (YYYY-MM-DD): ", "Date Occurred")
-        reported_by = get_required_input("Reported By (User ID): ", "Reported By")
+        reported_by = input("Reported By (username, blank for you): ").strip() or None
+        officer = input("Investigating Officer (username, optional): ").strip() or None
     except ValidationError as e:
         print(f"Error: {e}")
         input("Press Enter to continue...")
@@ -461,15 +465,17 @@ def _create_disciplinary_record() -> None:
     evidence_path = input("Evidence File Path (optional): ").strip() or None
 
     try:
-        record_id = GrievanceManager.create_disciplinary_record(
-            user_id=user_id,
+        extra = {'reported_by': reported_by} if reported_by else {}
+        record_id = GrievanceManager.create_disciplinary_record_as(
+            _hr.actor(), user_id,
             offense_type=offense_type,
             severity=severity,
             description=description,
             date_occurred=date_occurred,
-            reported_by=reported_by,
+            investigating_officer=officer,
             witnesses=witnesses,
-            evidence_path=evidence_path
+            evidence_path=evidence_path,
+            **extra
         )
         print(f"\nDisciplinary record created. ID: {record_id}")
     except Exception as e:
@@ -488,9 +494,10 @@ def _manage_disciplinary_action() -> None:
         print("Invalid ID.")
         return
 
-    record = GrievanceManager.get_disciplinary_record(record_id)
-    if not record:
-        print("Record not found.")
+    try:
+        record = GrievanceManager.view_disciplinary_record(_hr.actor(), record_id)
+    except PermissionError:
+        print("Record not found, or not one you may see.")
         input("Press Enter to continue...")
         return
 
@@ -500,7 +507,7 @@ def _manage_disciplinary_action() -> None:
     print(f"Status: {record.get('status', 'pending')}")
 
     # Show existing actions
-    actions = GrievanceManager.get_disciplinary_actions(record_id)
+    actions = record.get('actions', [])
     if actions:
         print(f"\nExisting Actions ({len(actions)}):")
         for a in actions:
@@ -519,20 +526,18 @@ def _manage_disciplinary_action() -> None:
         action_type = input("Action Type: ").strip()
         effective_date = input("Effective Date (YYYY-MM-DD): ").strip()
         duration = input("Duration (e.g., '3 days', 'permanent', optional): ").strip() or None
-        imposed_by = input("Imposed By (User ID): ").strip()
-        notes = input("Notes: ").strip()
+        notes = input("Reason / notes: ").strip()
 
         # Calculate appeal deadline (usually 10 business days)
         appeal_deadline = input("Appeal Deadline (YYYY-MM-DD, optional): ").strip() or None
 
         try:
-            action_id = GrievanceManager.create_disciplinary_action(
-                record_id,
+            action_id = GrievanceManager.create_disciplinary_action_as(
+                _hr.actor(), record_id,
                 action_type=action_type,
                 effective_date=effective_date,
-                duration=duration,
-                imposed_by=imposed_by,
-                notes=notes,
+                conditions=duration,
+                reason=notes,
                 appeal_deadline=appeal_deadline
             )
             print(f"\nAction created. ID: {action_id}")
@@ -542,15 +547,18 @@ def _manage_disciplinary_action() -> None:
     elif choice == '2':
         print("\nStatuses: pending, under_review, action_taken, closed, appealed")
         new_status = input("New Status: ").strip()
-        GrievanceManager.update_disciplinary_record(record_id, status=new_status)
-        print("Status updated.")
+        try:
+            GrievanceManager.update_disciplinary_record_as(_hr.actor(), record_id, status=new_status)
+            print("Status updated.")
+        except PermissionError as e:
+            print(f"\n{e}")
 
     input("\nPress Enter to continue...")
 
 
 def _view_appeals() -> None:
     """View disciplinary appeals."""
-    appeals = GrievanceManager.get_pending_appeals()
+    appeals = GrievanceManager.pending_appeals_as(_hr.actor())
 
     if not appeals:
         print("\nNo pending appeals.")
@@ -569,28 +577,28 @@ def _view_appeals() -> None:
                 print("\n    Outcomes: upheld, modified, overturned")
                 outcome = input("    Decision: ").strip()
                 notes = input("    Decision Notes: ").strip()
-                decided_by = input("    Your User ID: ").strip()
-
-                GrievanceManager.resolve_appeal(
-                    a['appeal_id'],
-                    outcome=outcome,
-                    decision_notes=notes,
-                    decided_by=decided_by
-                )
-                print("    Appeal resolved.")
+                panel = input("    Panel members (optional): ").strip() or None
+                try:
+                    GrievanceManager.process_appeal_as(_hr.actor(), a['appeal_id'], outcome,
+                                                       notes, panel)
+                    print("    Appeal resolved.")
+                except PermissionError as e:
+                    print(f"    {e}")
 
     input("\nPress Enter to continue...")
 
 
 def _grievance_statistics() -> None:
     """View grievance statistics."""
-    stats = GrievanceManager.get_grievance_statistics()
+    stats = GrievanceManager.grievance_statistics_as(_hr.actor())
 
     print("\n--- Grievance Statistics ---")
-    print(f"Total Open: {stats.get('total_open', 0)}")
-    print(f"Total Investigating: {stats.get('total_investigating', 0)}")
-    print(f"Resolved This Month: {stats.get('resolved_this_month', 0)}")
-    print(f"Average Resolution Time: {stats.get('avg_resolution_days', 'N/A')} days")
+    print(f"Total: {stats.get('total', 0)}")
+    print(f"Open: {stats.get('open', 0)}")
+
+    print("\nBy Status:")
+    for status, count in stats.get('by_status', {}).items():
+        print(f"  {status}: {count}")
 
     print("\nBy Category:")
     for cat, count in stats.get('by_category', {}).items():
@@ -605,12 +613,14 @@ def _grievance_statistics() -> None:
 
 def _disciplinary_statistics() -> None:
     """View disciplinary statistics."""
-    stats = GrievanceManager.get_disciplinary_statistics()
+    stats = GrievanceManager.disciplinary_statistics_as(_hr.actor())
 
     print("\n--- Disciplinary Statistics ---")
-    print(f"Total Active Records: {stats.get('total_active', 0)}")
-    print(f"Actions This Month: {stats.get('actions_this_month', 0)}")
-    print(f"Pending Appeals: {stats.get('pending_appeals', 0)}")
+    print(f"Total Records: {stats.get('total', 0)}")
+
+    print("\nBy Status:")
+    for status, count in stats.get('by_status', {}).items():
+        print(f"  {status}: {count}")
 
     print("\nBy Offense Type:")
     for offense, count in stats.get('by_offense_type', {}).items():
@@ -625,3 +635,55 @@ def _disciplinary_statistics() -> None:
         print(f"  {action}: {count}")
 
     input("\nPress Enter to continue...")
+
+
+def _my_disciplinary_record(user_id: str) -> None:
+    """The signed-in person's own disciplinary records (no investigation
+    notes); acknowledge or appeal an action."""
+    actor = _hr.actor()
+    records = [r for r in GrievanceManager.disciplinary_records_for(actor)
+               if r.get('user_id') == user_id]
+    if not records:
+        print("\nYou have no disciplinary records.")
+        input("Press Enter to continue...")
+        return
+    for r in records:
+        print(f"\n  Record #{r.get('record_id')}: {r.get('offense_type')} "
+              f"({r.get('severity')}) on {r.get('date_occurred')} - {r.get('status')}")
+    try:
+        record_id = int(input("\nRecord ID to open (0 to return): ").strip() or 0)
+    except ValueError:
+        return
+    if not record_id:
+        return
+    try:
+        record = GrievanceManager.view_disciplinary_record(actor, record_id)
+    except PermissionError:
+        print("Record not found, or not one you may see.")
+        input("Press Enter to continue...")
+        return
+    print(f"\nDescription: {record.get('description')}")
+    for a in record.get('actions', []):
+        ack = 'acknowledged' if a.get('acknowledged_by_employee') else 'not acknowledged'
+        appeal = ', appealed' if a.get('appeal_submitted') else ''
+        print(f"  Action #{a.get('action_id')}: {a.get('action_type')} from "
+              f"{a.get('effective_date')} ({ack}{appeal})")
+    for ap in record.get('appeals', []):
+        print(f"  Appeal #{ap.get('appeal_id')}: {ap.get('status')} "
+              f"{ap.get('outcome') or ''}")
+    choice = input("\n[A]cknowledge an action, a[P]peal one, or Enter to return: ").strip().upper()
+    if choice not in ('A', 'P'):
+        return
+    try:
+        action_id = int(input("Action ID: ").strip())
+        if choice == 'A':
+            GrievanceManager.acknowledge_disciplinary_action_as(actor, action_id)
+            print("Acknowledged.")
+        else:
+            grounds = input("Grounds for appeal: ").strip()
+            if grounds:
+                GrievanceManager.submit_appeal_as(actor, action_id, grounds)
+                print("Appeal submitted.")
+    except (ValueError, PermissionError) as e:
+        print(f"\n{e}")
+    input("Press Enter to continue...")

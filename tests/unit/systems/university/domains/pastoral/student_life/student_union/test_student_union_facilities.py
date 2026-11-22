@@ -7,7 +7,7 @@ import pytest
 from education_system.systems.university.infrastructure.database.db import sqlite3
 from unittest.mock import Mock, patch
 
-from education_system.systems.university.domains.pastoral.domain.student_life.student_union.services import facilities
+from education_system.systems.university.domains.student_life.domain.student_life.student_union.services import facilities
 
 @pytest.fixture
 def mock_context():
@@ -34,8 +34,8 @@ class TestViewFacilities:
     """Tests for view_facilities function."""
 
     @patch('builtins.print')
-    @patch('education_system.systems.university.domains.pastoral.domain.student_life.student_union.services.facilities.get_connection')
-    @patch('education_system.systems.university.domains.pastoral.domain.student_life.student_union.services.facilities.ctx')
+    @patch('education_system.systems.university.domains.student_life.domain.student_life.student_union.services.facilities.get_connection')
+    @patch('education_system.systems.university.domains.student_life.domain.student_life.student_union.services.facilities.ctx')
     def test_view_facilities_success(self, mock_ctx, mock_get_conn, mock_print, sample_facilities):
         """Test viewing facilities successfully."""
         # Setup mocks
@@ -58,8 +58,8 @@ class TestViewFacilities:
         mock_conn.close.assert_called_once()
 
     @patch('builtins.print')
-    @patch('education_system.systems.university.domains.pastoral.domain.student_life.student_union.services.facilities._')
-    @patch('education_system.systems.university.domains.pastoral.domain.student_life.student_union.services.facilities.ctx')
+    @patch('education_system.systems.university.domains.student_life.domain.student_life.student_union.services.facilities._')
+    @patch('education_system.systems.university.domains.student_life.domain.student_life.student_union.services.facilities.ctx')
     def test_view_facilities_not_logged_in(self, mock_ctx, mock_i18n, mock_print):
         """Test viewing facilities when not logged in."""
         # Setup mocks
@@ -74,8 +74,8 @@ class TestViewFacilities:
                   for call in mock_print.call_args_list)
 
     @patch('builtins.print')
-    @patch('education_system.systems.university.domains.pastoral.domain.student_life.student_union.services.facilities._')
-    @patch('education_system.systems.university.domains.pastoral.domain.student_life.student_union.services.facilities.ctx')
+    @patch('education_system.systems.university.domains.student_life.domain.student_life.student_union.services.facilities._')
+    @patch('education_system.systems.university.domains.student_life.domain.student_life.student_union.services.facilities.ctx')
     def test_view_facilities_no_permission(self, mock_ctx, mock_i18n, mock_print):
         """Test viewing facilities without permission."""
         # Setup mocks
@@ -92,8 +92,8 @@ class TestViewFacilities:
                   for call in mock_print.call_args_list)
 
     @patch('builtins.print')
-    @patch('education_system.systems.university.domains.pastoral.domain.student_life.student_union.services.facilities.get_connection')
-    @patch('education_system.systems.university.domains.pastoral.domain.student_life.student_union.services.facilities.ctx')
+    @patch('education_system.systems.university.domains.student_life.domain.student_life.student_union.services.facilities.get_connection')
+    @patch('education_system.systems.university.domains.student_life.domain.student_life.student_union.services.facilities.ctx')
     def test_view_facilities_no_facilities(self, mock_ctx, mock_get_conn, mock_print):
         """Test viewing when no facilities available."""
         # Setup mocks
@@ -116,9 +116,9 @@ class TestViewFacilities:
         mock_conn.close.assert_called_once()
 
     @patch('builtins.print')
-    @patch('education_system.systems.university.domains.pastoral.domain.student_life.student_union.services.facilities._')
-    @patch('education_system.systems.university.domains.pastoral.domain.student_life.student_union.services.facilities.get_connection')
-    @patch('education_system.systems.university.domains.pastoral.domain.student_life.student_union.services.facilities.ctx')
+    @patch('education_system.systems.university.domains.student_life.domain.student_life.student_union.services.facilities._')
+    @patch('education_system.systems.university.domains.student_life.domain.student_life.student_union.services.facilities.get_connection')
+    @patch('education_system.systems.university.domains.student_life.domain.student_life.student_union.services.facilities.ctx')
     def test_view_facilities_database_error(self, mock_ctx, mock_get_conn, mock_i18n, mock_print):
         """Test handling of database errors."""
         # Setup mocks
@@ -141,9 +141,9 @@ class TestViewFacilities:
                   for call in mock_print.call_args_list)
 
     @patch('builtins.print')
-    @patch('education_system.systems.university.domains.pastoral.domain.student_life.student_union.services.facilities._')
-    @patch('education_system.systems.university.domains.pastoral.domain.student_life.student_union.services.facilities.get_connection')
-    @patch('education_system.systems.university.domains.pastoral.domain.student_life.student_union.services.facilities.ctx')
+    @patch('education_system.systems.university.domains.student_life.domain.student_life.student_union.services.facilities._')
+    @patch('education_system.systems.university.domains.student_life.domain.student_life.student_union.services.facilities.get_connection')
+    @patch('education_system.systems.university.domains.student_life.domain.student_life.student_union.services.facilities.ctx')
     def test_view_facilities_displays_all_fields(self, mock_ctx, mock_get_conn, mock_i18n, mock_print,
                                                   sample_facilities):
         """Test that all facility fields are displayed."""

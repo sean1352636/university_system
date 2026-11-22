@@ -7,7 +7,14 @@ from datetime import datetime
 
 from flask import Blueprint, g, jsonify, request
 
-from education_system.platform.delivery.api.university.auth import token_required
+from education_system.platform.delivery.api.university.auth import (
+    authorize_object,
+    current_subject_id,
+    is_staff,
+    require_staff,
+    staff_required,
+    token_required,
+)
 from education_system.platform.delivery.api.university.pagination import get_pagination_params, paginated_response
 from education_system.systems.university.infrastructure.exceptions import ValidationError
 from education_system.systems.university.infrastructure.sql_safety import escape_like
@@ -25,6 +32,15 @@ def _row_to_dict(row) -> dict:
     return {k: row[k] for k in row.keys()}
 
 
+#: A support request is one student's (``student_id`` is the JWT ``sub``).
+#: Staff handling them need ``view_all_support_tickets`` (admin, staff); a
+#: learner sees and raises only their own.
+SUPPORT_READ = "view_all_support_tickets"
+#: The accessibility-tools catalogue is open to read; adding to it needs
+#: ``manage_accommodations`` (admin, health_admin).
+TOOLS_MANAGE = "manage_accommodations"
+
+
 # ---- support-requests ----
 
 @student_affairs_bp.route("/support-requests", methods=["GET"])
@@ -34,6 +50,16 @@ def list_support_requests():
     student_id = request.args.get("student_id")
     status = request.args.get("status")
     category = request.args.get("category")
+    if is_staff():
+        denial = require_staff(permission=SUPPORT_READ)
+        if denial is not None:
+            return denial
+    else:
+        # Pin to the caller first; the free-text search spans every
+        # student, so it is staff-only.
+        student_id, search = current_subject_id(), None
+        if student_id is None:
+            return jsonify({"error": "Forbidden", "status": 403}), 403
 
     with get_connection() as conn:
         if search:
@@ -86,6 +112,9 @@ def get_support_request(request_id: int):
         ).fetchone()
     if not row:
         raise ValidationError(f"support-requests {request_id} not found")
+    denial = authorize_object(row["student_id"], permission=SUPPORT_READ)
+    if denial is not None:
+        return denial
     log_activity("view", "student_support_requests", user=g.current_user.get("sub"))
     return jsonify(_row_to_dict(row))
 
@@ -93,9 +122,15 @@ def get_support_request(request_id: int):
 @token_required
 def create_support_request():
     data = request.get_json(silent=True) or {}
+    if not is_staff():
+        # A learner raises a request for themselves, never for a named id.
+        data["student_id"] = current_subject_id()
     for field in ["student_id", "title", "description", "category"]:
-        if field not in data:
+        if not data.get(field):
             raise ValidationError(f"Missing required field: {field}")
+    denial = authorize_object(data["student_id"], permission=SUPPORT_READ)
+    if denial is not None:
+        return denial
 
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     with transaction() as conn:
@@ -177,6 +212,7 @@ def get_tool(tool_id: int):
 
 @student_affairs_bp.route("/tools", methods=["POST"])
 @token_required
+@staff_required(permission=TOOLS_MANAGE)
 def create_tool():
     data = request.get_json(silent=True) or {}
     for field in ["tool_name", "category"]:

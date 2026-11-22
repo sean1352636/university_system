@@ -333,7 +333,7 @@ def test_email_configuration(test_recipient=None):
     }
 
     try:
-        subject, body = render_template('email_system_test', template_vars)
+        subject, body = render_template('communications/email_system_test', template_vars)
     except Exception as e:
         log_event('error', f"Failed to render email template: {e}")
         print("Email test template could not be loaded; no test email was sent.")

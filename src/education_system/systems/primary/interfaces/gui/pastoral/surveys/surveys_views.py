@@ -22,6 +22,7 @@ from education_system.systems.primary.domain.pastoral.surveys.surveys import (
     Survey,
     ValidationError,
 )
+from education_system.systems.primary.interfaces.gui import kit
 
 logger = logging.getLogger(__name__)
 
@@ -38,14 +39,23 @@ _STATUS_TAGS = {
 
 def open_surveys_window(parent=None) -> None:
     data.init_db()
-    master = getattr(parent, "root", parent)
-    win = tk.Toplevel(master) if master is not None else tk.Tk()
-    win.title(f"Surveys — {branding.SYSTEM_NAME}")
-    win.geometry(WIN_GEOMETRY)
-    win.minsize(*WIN_MINSIZE)
+    if parent is None:
+        win = tk.Tk()
+        win.title(f"Surveys — {branding.SYSTEM_NAME}")
+        win.geometry(WIN_GEOMETRY)
+        win.minsize(*WIN_MINSIZE)
+        frame = ttk.Frame(win, padding=10)
+        frame.pack(fill="both", expand=True)
+        _draw_surveys(frame)
+        return
+    kit.show_page(parent, "Surveys", _draw_surveys)
 
-    nb = ttk.Notebook(win)
-    nb.pack(fill="both", expand=True, padx=10, pady=10)
+
+def _draw_surveys(page) -> None:
+    kit.page_heading(page, "Surveys",
+                     "Surveys for pupils, parents and staff: questions, responses and results")
+    nb = ttk.Notebook(page)
+    nb.pack(fill="both", expand=True)
 
     SurveysTab(nb, scope="open", label="Open")
     SurveysTab(nb, scope="all",  label="All")
@@ -90,8 +100,9 @@ class SurveysTab:
         self.f_name = ttk.Entry(bar, width=20)
         self.f_name.pack(side="left", padx=(2, 8))
         ttk.Label(bar, text="Created by:").pack(side="left")
-        self.f_creator = ttk.Entry(bar, width=14)
-        self.f_creator.pack(side="left", padx=(2, 8))
+        self.f_creator_var = tk.StringVar()
+        kit.StaffPicker(bar, self.f_creator_var, by="name", active_only=False,
+                        width=24).pack(side="left", padx=(2, 8))
         ttk.Button(bar, text="Apply",
                     command=self.refresh).pack(side="left",
                                                   padx=(8, 4))
@@ -196,7 +207,7 @@ class SurveysTab:
     def _clear(self) -> None:
         self.f_aud.current(0)
         self.f_name.delete(0, "end")
-        self.f_creator.delete(0, "end")
+        self.f_creator_var.set("")
         if self.f_status is not None:
             self.f_status.current(0)
         self.refresh()
@@ -207,8 +218,8 @@ class SurveysTab:
             f["audience"] = self.f_aud.get()
         if self.f_name.get().strip():
             f["name_like"] = self.f_name.get().strip()
-        if self.f_creator.get().strip():
-            f["created_by_like"] = self.f_creator.get().strip()
+        if self.f_creator_var.get().strip():
+            f["created_by_like"] = self.f_creator_var.get().strip()
         if self.f_status is not None and self.f_status.get():
             f["status"] = self.f_status.get()
         if self.scope == "open":
@@ -456,7 +467,7 @@ class SurveyEditor:
         self.win = tk.Toplevel(parent)
         self.win.title(f"Edit survey #{survey.survey_id}"
                           if survey else "New survey")
-        self.win.geometry("900x780")
+        self.win.geometry("900x700")
         self.win.transient(parent); self.win.after_idle(self.win.grab_set)
         self._build()
         if survey:
@@ -464,8 +475,7 @@ class SurveyEditor:
         self.win.wait_window()
 
     def _build(self) -> None:
-        body = ttk.Frame(self.win)
-        body.pack(fill="both", expand=True, padx=12, pady=10)
+        body, footer = kit.scrolled_form(self.win)
         body.grid_columnconfigure(1, weight=1)
         body.grid_columnconfigure(3, weight=1)
         self.vars: dict[str, tk.Variable] = {}
@@ -489,12 +499,20 @@ class SurveyEditor:
                           state="readonly", width=width).grid(
                 row=row, column=col + 1, sticky="ew", padx=4, pady=2)
 
+        def picker(row, col, label, key, make):
+            ttk.Label(body, text=label).grid(
+                row=row, column=col, sticky="w", padx=4, pady=2)
+            v = tk.StringVar()
+            self.vars[key] = v
+            make(v).grid(row=row, column=col + 1, sticky="w", padx=4, pady=2)
+
         entry(0, 0, "Name*", "name", width=48)
         combo(1, 0, "Audience*", "audience", AUDIENCES)
         combo(1, 2, "Status*", "status", STATUSES)
-        entry(2, 0, "Open on", "open_on")
-        entry(2, 2, "Close on", "close_on")
-        entry(3, 0, "Created by", "created_by")
+        picker(2, 0, "Open on", "open_on", lambda v: kit.DateField(body, v))
+        picker(2, 2, "Close on", "close_on", lambda v: kit.DateField(body, v))
+        picker(3, 0, "Created by", "created_by",
+               lambda v: kit.StaffPicker(body, v, by="name", width=30))
         self.bools["anonymous"] = tk.BooleanVar(value=True)
         ttk.Checkbutton(body, text="Anonymous responses",
                          variable=self.bools["anonymous"]).grid(
@@ -566,11 +584,9 @@ class SurveyEditor:
                                           foreground="#7a5800")
         self.locked_lbl.pack(side="right", padx=8)
 
-        bar = ttk.Frame(self.win)
-        bar.pack(fill="x", padx=12, pady=(0, 10))
-        ttk.Button(bar, text="Save",
+        ttk.Button(footer, text="Save",
                     command=self._save).pack(side="right", padx=4)
-        ttk.Button(bar, text="Cancel",
+        ttk.Button(footer, text="Cancel",
                     command=self.win.destroy).pack(side="right")
 
         self.questions: list[Question] = []
@@ -790,7 +806,7 @@ class ResponseDialog:
         self.result: Response | None = None
         self.win = tk.Toplevel(parent)
         self.win.title(f"Respond — {survey.name}")
-        self.win.geometry("700x720")
+        self.win.geometry("700x660")
         self.win.transient(parent); self.win.after_idle(self.win.grab_set)
         body = ttk.Frame(self.win)
         body.pack(fill="both", expand=True, padx=12, pady=10)
@@ -809,8 +825,9 @@ class ResponseDialog:
         ttk.Label(body, text="Respondent role").grid(
             row=2, column=0, sticky="w", padx=4, pady=4)
         self.role = tk.StringVar()
-        ttk.Entry(body, textvariable=self.role).grid(
-            row=2, column=1, sticky="ew", padx=4, pady=4)
+        kit.ChoiceField(body, self.role, choices=AUDIENCES, blank=True,
+                        editable=True, width=24).grid(
+            row=2, column=1, sticky="w", padx=4, pady=4)
 
         # Scrollable question area
         canvas = tk.Canvas(body, borderwidth=0,
@@ -865,8 +882,8 @@ class ResponseDialog:
                         anchor="w")
             elif q.type == "Number":
                 widget = tk.StringVar()
-                ttk.Entry(f, textvariable=widget,
-                            width=20).pack(anchor="w", pady=2)
+                kit.NumberField(f, widget, from_=-99999,
+                                to=99999, width=12).pack(anchor="w", pady=2)
             else:  # Text
                 widget = tk.Text(f, height=3, width=60,
                                    wrap="word")

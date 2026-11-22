@@ -11,37 +11,37 @@ logger = logging.getLogger(__name__)
 
 def _launch_roster(parent, auth):
     """Launch Class Roster Viewer."""
-    from education_system.systems.university.domains.academics.interfaces.gui.roster_viewer.roster_gui import ClassRosterGUI
+    from education_system.systems.university.domains.teaching.interfaces.gui.roster_viewer.roster_gui import ClassRosterGUI
     ClassRosterGUI(parent, auth=auth)
 
 
 def _launch_bulk_grade(parent, auth):
     """Launch Bulk Grade Import."""
-    from education_system.systems.university.domains.academics.interfaces.gui.bulk_grade_import.bulk_grade_gui import BulkGradeImportGUI
+    from education_system.systems.university.domains.assessment.interfaces.gui.bulk_grade_import.bulk_grade_gui import BulkGradeImportGUI
     BulkGradeImportGUI(parent, auth=auth)
 
 
 def _launch_messaging(parent, auth):
     """Launch Course Messaging."""
-    from education_system.systems.university.domains.academics.interfaces.gui.course_messaging.messaging_gui import CourseMessagingGUI
+    from education_system.systems.university.domains.teaching.interfaces.gui.course_messaging.messaging_gui import CourseMessagingGUI
     CourseMessagingGUI(parent, auth=auth)
 
 
 def _launch_attendance_grade(parent, auth):
     """Launch Attendance-Grade Config."""
-    from education_system.systems.university.domains.academics.interfaces.gui.attendance_grade.attendance_grade_gui import AttendanceGradeConfigGUI
+    from education_system.systems.university.domains.teaching.interfaces.gui.attendance_grade.attendance_grade_gui import AttendanceGradeConfigGUI
     AttendanceGradeConfigGUI(parent, auth=auth)
 
 
 def _launch_course_health(parent, auth):
     """Launch Course Health Dashboard."""
-    from education_system.systems.university.domains.academics.interfaces.gui.course_health.course_health_gui import CourseHealthDashboardGUI
+    from education_system.systems.university.domains.quality.interfaces.gui.course_health.course_health_gui import CourseHealthDashboardGUI
     CourseHealthDashboardGUI(parent, auth=auth)
 
 
 def _launch_semester_analytics(parent, auth):
     """Launch Semester Analytics."""
-    from education_system.systems.university.domains.academics.interfaces.gui.semester_analytics.semester_analytics_gui import SemesterAnalyticsGUI
+    from education_system.systems.university.domains.quality.interfaces.gui.semester_analytics.semester_analytics_gui import SemesterAnalyticsGUI
     SemesterAnalyticsGUI(parent, auth=auth)
 
 

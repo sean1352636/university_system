@@ -7,8 +7,6 @@ from education_system.platform.delivery.gui.tk_callback_filter import install_cl
 # Import GUI launchers
 from education_system.systems.university.shell.gui.main.imports.gui_imports import (
     launch_advanced_attendance_gui,
-    launch_mental_health_gui,
-    launch_early_warning_gui,
     launch_career_services_gui,
     launch_ai_features_gui,
     launch_blockchain_credentials_gui,
@@ -33,29 +31,6 @@ def show_academic_progress_gui(self):
         logger.error(f"Error launching Academic Progress GUI: {e}")
         messagebox.showerror(_t("common.error"), _t("student_success.errors.failed_to_launch", feature="Academic Progress", error=str(e)))
 
-def show_ai_study_gui(self):
-    """Launch AI Study Companion inside the main GUI's content
-    notebook when a workspace is available, falling back to a
-    Toplevel otherwise — same pattern as Student Records (8.117.38)."""
-    try:
-        from education_system.systems.university.domains.academics.interfaces.gui.ai_study.ai_study_gui import AIStudyGUI
-    except ImportError as e:
-        logger.error(f"Failed to import AI Study GUI: {e}")
-        messagebox.showerror(_t("common.error"), _t("student_success.errors.gui_not_available", feature="AI Study", error=str(e)))
-        return
-
-    title = "AI Study Companion"
-    opener = getattr(self, "open_in_workspace", None)
-    if callable(opener):
-        opener(title, lambda host: AIStudyGUI(parent=host, auth=self.auth))
-        return
-
-    try:
-        AIStudyGUI(parent=self.root, auth=self.auth)
-    except Exception as e:
-        logger.error(f"Error launching AI Study GUI: {e}")
-        messagebox.showerror(_t("common.error"), _t("student_success.errors.failed_to_launch", feature="AI Study", error=str(e)))
-
 def show_budget_tracker_gui(self):
     """Open the budget tracker.
 
@@ -73,7 +48,7 @@ def show_budget_tracker_gui(self):
 def show_student_jobs_gui(self):
     """Launch Student Job Board GUI"""
     try:
-        from education_system.systems.university.domains.pastoral.interfaces.gui.student_jobs.jobs_gui import StudentJobsGUI
+        from education_system.systems.university.domains.student_life.interfaces.gui.student_jobs.jobs_gui import StudentJobsGUI
         from education_system.systems.university.infrastructure.shared_context import get_auth
         auth = get_auth()
         gui = StudentJobsGUI(parent=self.root, auth=auth)
@@ -84,75 +59,10 @@ def show_student_jobs_gui(self):
         logger.error(f"Error launching Student Jobs GUI: {e}")
         messagebox.showerror(_t("common.error"), _t("student_success.errors.failed_to_launch", feature="Student Jobs", error=str(e)))
 
-def show_study_matching_gui(self):
-    """Launch Peer Study Matching inside the main GUI's content
-    notebook when a workspace is available, falling back to the
-    Toplevel path otherwise — same pattern as Student Records
-    (8.117.38)."""
-    try:
-        from education_system.systems.university.domains.academics.interfaces.gui.study_matching.study_matching_gui import StudyMatchingGUI
-        from education_system.systems.university.shell.gui.main.features.academic_link_bar import (
-            attach_quickbar, consume_context, format_context, style_guarded,
-        )
-
-        opener = getattr(self, "open_in_workspace", None)
-        if callable(opener):
-            ctx = consume_context(self)
-            title = "Study Matching"
-            if ctx:
-                try:
-                    tag = format_context(ctx)
-                    if tag:
-                        title = f"{title}  ◆ {tag}"
-                except Exception:
-                    logger.debug("Suppressed exception", exc_info=True)
-            opener(title, lambda host: StudyMatchingGUI(parent=host, auth=self.auth))
-            return
-
-        with style_guarded(self.root):
-            gui = StudyMatchingGUI(parent=self.root, auth=self.auth)
-        # Re-bind a Destroy guard once we have the real window handle.
-        try:
-            _w = getattr(gui, "window", None)
-            if _w is not None:
-                from education_system.systems.university.shell.gui.main.features.academic_link_bar import (
-                    _snapshot_base_styles, _restore_base_styles,
-                )
-                _t, _s = _snapshot_base_styles()
-                _w.bind(
-                    "<Destroy>",
-                    lambda _e: _restore_base_styles(_t, _s, parent=self.root),
-                    add="+",
-                )
-        except Exception:
-            logger.exception("Could not bind style-guard destroy hook for Study Matching")
-        # 8.117.32: removed the academic-hub topbar attachment that
-        # used to live here. The hub itself was deleted — sidebar
-        # accordion + Ctrl+K cover navigation. Inbound context is
-        # still consumed and tagged onto the window title.
-        try:
-            window = getattr(gui, "window", None)
-            if window is not None:
-                ctx = consume_context(self)
-                if ctx:
-                    try:
-                        window.title(window.title()
-                                     + f"  ◆ {format_context(ctx)}")
-                    except Exception:
-                        logger.debug("Suppressed exception", exc_info=True)
-        except Exception:
-            logger.exception("Could not apply context to Study Matching")
-    except ImportError as e:
-        logger.error(f"Failed to import Study Matching GUI: {e}")
-        messagebox.showerror(_t("common.error"), _t("student_success.errors.gui_not_available", feature="Study Matching", error=str(e)))
-    except Exception as e:
-        logger.error(f"Error launching Study Matching GUI: {e}")
-        messagebox.showerror(_t("common.error"), _t("student_success.errors.failed_to_launch", feature="Study Matching", error=str(e)))
-
 def show_course_planning_gui(self):
     """Launch Course Planning Assistant GUI"""
     try:
-        from education_system.systems.university.domains.academics.interfaces.gui.course_management_gui.course_planning_gui import CoursePlanningGUI
+        from education_system.systems.university.domains.curriculum.interfaces.gui.course_management_gui.course_planning_gui import CoursePlanningGUI
         from education_system.systems.university.infrastructure.shared_context import get_auth
         auth = get_auth()
         # CoursePlanningGUI creates its own Toplevel window
@@ -262,7 +172,7 @@ def _prefill_marketplace_search(gui, term):
 def show_wellness_hub_gui(self):
     """Launch Wellness Hub GUI"""
     try:
-        from education_system.systems.university.domains.pastoral.interfaces.gui.wellbeing.wellness.wellness_gui import WellnessGUI
+        from education_system.systems.university.domains.student_support.interfaces.gui.wellbeing.wellness.wellness_gui import WellnessGUI
         gui = WellnessGUI(parent=self.root, auth=self.auth)
     except ImportError as e:
         logger.error(f"Failed to import Wellness Hub GUI: {e}")
@@ -272,33 +182,53 @@ def show_wellness_hub_gui(self):
         messagebox.showerror(_t("common.error"), _t("student_success.errors.failed_to_launch", feature="Wellness Hub", error=str(e)))
 
 def show_accessibility_portal_gui(self):
-    """Launch Accessibility Portal inside the main GUI's content
-    notebook when a workspace is available, falling back to a
+    """Launch the Disability & Accessibility portal (the Accessibility
+    Portal and Medical Accommodations, merged 2026-10-19) inside the main
+    GUI's content notebook when a workspace is available, falling back to a
     Toplevel otherwise — same pattern as Student Records (8.117.38)."""
     try:
-        from education_system.systems.university.domains.operations.interfaces.gui.campus.accessibility.accessibility_gui import AccessibilityGUI
+        from education_system.systems.university.domains.student_support.interfaces.gui.disability.portal import DisabilityPortal
     except ImportError as e:
-        logger.error(f"Failed to import Accessibility Portal GUI: {e}")
-        messagebox.showerror(_t("common.error"), _t("student_success.errors.gui_not_available", feature="Accessibility Portal", error=str(e)))
+        logger.error(f"Failed to import Disability & Accessibility GUI: {e}")
+        messagebox.showerror(_t("common.error"), _t("student_success.errors.gui_not_available", feature="Disability & Accessibility", error=str(e)))
         return
 
-    title = "Accessibility Portal"
+    title = "Disability & Accessibility"
     opener = getattr(self, "open_in_workspace", None)
     if callable(opener):
-        opener(title, lambda host: AccessibilityGUI(parent=host))
+        opener(title, lambda host: DisabilityPortal(host, self.auth))
         return
 
     try:
-        AccessibilityGUI(parent=self.root)
+        DisabilityPortal(self.root, self.auth)
     except Exception as e:
-        logger.error(f"Error launching Accessibility Portal GUI: {e}")
-        messagebox.showerror(_t("common.error"), _t("student_success.errors.failed_to_launch", feature="Accessibility Portal", error=str(e)))
+        logger.error(f"Error launching Disability & Accessibility GUI: {e}")
+        messagebox.showerror(_t("common.error"), _t("student_success.errors.failed_to_launch", feature="Disability & Accessibility", error=str(e)))
+
+def show_wellbeing_casework_gui(self):
+    """Open Wellbeing Casework (counselling pathway, Support to Study, trusted
+    contacts, PEEPs) in the workspace when there is one, else a window."""
+    try:
+        from education_system.systems.university.domains.student_support.interfaces.gui.wellbeing.casework.hub import WellbeingCaseworkWindow
+    except ImportError as e:
+        logger.error(f"Failed to import Wellbeing Casework GUI: {e}")
+        messagebox.showerror(_t("common.error"), _t("student_success.errors.gui_not_available", feature="Wellbeing Casework", error=str(e)))
+        return
+    opener = getattr(self, "open_in_workspace", None)
+    if callable(opener):
+        opener("Wellbeing Casework", lambda host: WellbeingCaseworkWindow(host, self.auth))
+        return
+    try:
+        WellbeingCaseworkWindow(self.root, self.auth)
+    except Exception as e:
+        logger.error(f"Error launching Wellbeing Casework GUI: {e}")
+        messagebox.showerror(_t("common.error"), _t("student_success.errors.failed_to_launch", feature="Wellbeing Casework", error=str(e)))
 
 def show_events_discovery_gui(self):
     """Launch Events Discovery GUI"""
     try:
         import tkinter as tk
-        from education_system.systems.university.domains.pastoral.interfaces.gui.student_life.events.events_gui import EventsGUI
+        from education_system.systems.university.domains.student_life.interfaces.gui.student_life.events.events_gui import EventsGUI
         # Create a new Toplevel window
         window = tk.Toplevel(self.root)
         _install_clean_close(window)
@@ -315,7 +245,7 @@ def show_events_discovery_gui(self):
 def show_social_matching_gui(self):
     """Launch Social Matching GUI"""
     try:
-        from education_system.systems.university.domains.pastoral.interfaces.gui.social_matching.social_matching_gui import SocialMatchingGUI
+        from education_system.systems.university.domains.student_life.interfaces.gui.social_matching.social_matching_gui import SocialMatchingGUI
         gui = SocialMatchingGUI(parent=self.root)
     except ImportError as e:
         logger.error(f"Failed to import Social Matching GUI: {e}")
@@ -394,7 +324,7 @@ def show_advising_portal_gui(self):
     notebook when a workspace is available, falling back to a
     Toplevel otherwise — same pattern as Student Records (8.117.38)."""
     try:
-        from education_system.systems.university.domains.pastoral.interfaces.gui.advising.advising_gui import AdvisingPortalGUI
+        from education_system.systems.university.domains.student_support.interfaces.gui.advising.advising_gui import AdvisingPortalGUI
     except ImportError as e:
         logger.error(f"Failed to import Advising Portal GUI: {e}")
         messagebox.showerror(_t("common.error"), _t("student_success.errors.gui_not_available", feature="Advising Portal", error=str(e)))
@@ -425,11 +355,12 @@ def show_student_id_gui(self):
         messagebox.showerror(_t("common.error"), _t("student_success.errors.failed_to_launch", feature="Student ID", error=str(e)))
 
 
-def show_visa_compliance_gui(self):
-    """Launch Tier-4 / Student-Route Sponsorship GUI."""
+def show_visa_compliance_gui(self, student_id=None):
+    """Launch Tier-4 / Student-Route Sponsorship GUI, loaded for *student_id*
+    when given (the Student Records right-click item)."""
     try:
         from education_system.systems.university.domains.governance.interfaces.gui.compliance.international_compliance.visa_compliance_gui import VisaComplianceGUI
-        VisaComplianceGUI(parent=self.root)
+        VisaComplianceGUI(parent=self.root, student_id=str(student_id) if student_id else None)
     except ImportError as e:
         logger.error(f"Failed to import Visa Compliance GUI: {e}")
         messagebox.showerror(_t("common.error"), _t("student_success.errors.gui_not_available", feature="Visa Compliance", error=str(e)))
@@ -441,7 +372,7 @@ def show_visa_compliance_gui(self):
 def show_qa_dashboard_gui(self):
     """Launch External Quality Assurance dashboard (OfS / TEF / REF)."""
     try:
-        from education_system.systems.university.domains.academics.interfaces.gui.research.external_quality_assurance.qa_dashboard_gui import QADashboardGUI
+        from education_system.systems.university.domains.research.interfaces.gui.research.external_quality_assurance.qa_dashboard_gui import QADashboardGUI
         QADashboardGUI(parent=self.root, app=self)
     except ImportError as e:
         logger.error(f"Failed to import QA Dashboard GUI: {e}")
@@ -614,7 +545,7 @@ def show_todo_app_gui(self):
 def show_accessibility_tools_gui(self):
     """Launch the Accessibility & Accommodation Tools GUI"""
     try:
-        from education_system.systems.university.domains.pastoral.interfaces.gui.accessibility_tools_gui import (
+        from education_system.systems.university.domains.student_support.interfaces.gui.accessibility_tools_gui import (
             launch_accessibility_tools_gui
         )
         launch_accessibility_tools_gui(self.root, self.auth)
@@ -655,7 +586,7 @@ def _show_feature_gui(self, title, description, cli_instruction):
 def show_student_app_gui(self):
     """Launch Student App / Portal GUI"""
     try:
-        from education_system.systems.university.domains.pastoral.interfaces.gui.student_app.student_app_gui import StudentAppGUI
+        from education_system.systems.university.domains.student_life.interfaces.gui.student_app.student_app_gui import StudentAppGUI
         gui = StudentAppGUI(parent=self.root, auth=self.auth)
     except ImportError as e:
         logger.error(f"Failed to import Student App GUI: {e}")
@@ -665,23 +596,10 @@ def show_student_app_gui(self):
         messagebox.showerror(_t("common.error"), f"Failed to launch Student App: {e}")
 
 
-def show_enrolment_letters_gui(self):
-    """Launch the self-serve Enrolment Verification / Status Letters GUI."""
-    try:
-        from education_system.systems.university.domains.pastoral.interfaces.gui.student_app.documentation.documentation_gui import DocumentationGUI
-        DocumentationGUI(parent=self.root, auth=self.auth)
-    except ImportError as e:
-        logger.error(f"Failed to import Status Letters GUI: {e}")
-        messagebox.showerror(_t("common.error"), f"Status Letters GUI not available: {e}")
-    except Exception as e:
-        logger.error(f"Error launching Status Letters GUI: {e}")
-        messagebox.showerror(_t("common.error"), f"Failed to launch Status Letters: {e}")
-
-
 def show_achievement_badge_gui(self):
     """Launch Achievement Badge GUI"""
     try:
-        from education_system.systems.university.domains.pastoral.interfaces.gui.achievement_badges.achievement_badge_gui import AchievementBadgeGUI
+        from education_system.systems.university.domains.student_life.interfaces.gui.achievement_badges.achievement_badge_gui import AchievementBadgeGUI
         gui = AchievementBadgeGUI(parent=self.root, auth=self.auth)
     except ImportError as e:
         logger.error(f"Failed to import Achievement Badge GUI: {e}")
@@ -691,38 +609,16 @@ def show_achievement_badge_gui(self):
         messagebox.showerror(_t("common.error"), f"Failed to launch Achievement Badges: {e}")
 
 
-def show_study_recommendations_gui(self):
-    """Launch Study Recommendations inside the main GUI's content
-    notebook when a workspace is available, falling back to a Toplevel
-    otherwise — same pattern as Student Records (8.117.38)."""
-    try:
-        from education_system.systems.university.domains.academics.interfaces.gui.study_recommendations.study_recommendation_gui import StudyRecommendationGUI
-    except ImportError as e:
-        logger.error(f"Failed to import Study Recommendations GUI: {e}")
-        messagebox.showerror(_t("common.error"), f"Study Recommendations GUI not available: {e}")
-        return
-
-    title = "Study Recommendations"
-    opener = getattr(self, "open_in_workspace", None)
-    if callable(opener):
-        opener(title, lambda host: StudyRecommendationGUI(parent=host, auth=self.auth))
-        return
-
-    try:
-        StudyRecommendationGUI(parent=self.root, auth=self.auth)
-    except Exception as e:
-        logger.error(f"Error launching Study Recommendations GUI: {e}")
-        messagebox.showerror(_t("common.error"), f"Failed to launch Study Recommendations: {e}")
-
-
 def show_study_hub_gui(self):
     """Launch the Study Hub — planning, recommendations and partners.
 
-    Replaces the three separate launchers below, which opened three
-    windows over one student profile and one record of hours studied.
+    The one launcher for Study Recommendations and Study Matching, whose
+    own buttons and windows were folded into this one. Context handed
+    over by the academic quick-bar is tagged onto the tab title, as the
+    Study Matching launcher used to do.
     """
     try:
-        from education_system.systems.university.domains.academics.interfaces.gui.study_hub import (
+        from education_system.systems.university.domains.student_life.interfaces.gui.study_hub import (
             StudyHubGUI,
         )
     except ImportError as e:
@@ -733,6 +629,17 @@ def show_study_hub_gui(self):
         return
 
     title = "Study Hub"
+    try:
+        from education_system.systems.university.shell.gui.main.features.academic_link_bar import (
+            consume_context, format_context,
+        )
+        ctx = consume_context(self)
+        tag = format_context(ctx) if ctx else ""
+        if tag:
+            title = f"{title}  ◆ {tag}"
+    except Exception:
+        logger.debug("Suppressed exception", exc_info=True)
+
     opener = getattr(self, "open_in_workspace", None)
     if callable(opener):
         opener(title, lambda host: StudyHubGUI(parent=host, auth=self.auth))

@@ -373,11 +373,9 @@ def _ucas_applicants(*, exclude: set[str]) -> list[Any]:
 
 
 def _incomplete_transfers() -> list[Any]:
-    from education_system.systems.sixth_form.domain.learners.students import (
-        students as _students,
-    )
+    from education_system.systems.sixth_form.domain.learners.students import transfers
     try:
-        return _students.list_incomplete_transfers()
+        return transfers.list_incomplete_transfers()
     except Exception:
         logger.exception(
             "Could not list incomplete transfers — the board will show the "
@@ -518,7 +516,8 @@ def submit(student_id: str, *, moved_by: str | None = None,
             "; ".join(c.label for c in readiness.blockers))
 
     try:
-        after = _students.mark_transferred(student_id, moved_by=moved_by)
+        from education_system.systems.sixth_form.domain.learners.students import transfers
+        after = transfers.mark_transferred(student_id, moved_by=moved_by)
     except Exception as exc:
         logger.exception("Handover submission failed for %s", student_id)
         return SubmitResult(student_id, False, f"Transfer failed: {exc}")

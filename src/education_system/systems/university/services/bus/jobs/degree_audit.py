@@ -34,8 +34,8 @@ def run_degree_audit_sweep(*, cohort_year: int) -> dict[str, Any]:
     """Sweep degree audits for ``cohort_year`` and refresh the graduation KPI.
 
     Public entry point — call from the Course Management GUI's "Run audit"
-    button or a scheduled job. Reads ``student_plans`` + ``plan_courses``,
-    computes the on-track ratio, writes it into kpi_metrics under
+    button or a scheduled job. Reads ``semester_plans`` starting in that year
+    + ``planned_courses``, computes the on-track ratio, writes it into kpi_metrics under
     "Graduation Forecast", and returns the result for display.
     """
     on_track = 0
@@ -43,14 +43,14 @@ def run_degree_audit_sweep(*, cohort_year: int) -> dict[str, Any]:
     try:
         with get_connection() as conn:
             tbl = conn.execute(
-                "SELECT name FROM sqlite_master WHERE type='table' AND name='student_plans'"
+                "SELECT name FROM sqlite_master WHERE type='table' AND name='semester_plans'"
             ).fetchone()
             if not tbl:
                 return {"cohort_year": cohort_year, "on_track": 0, "total": 0, "rate": None}
             rows = conn.execute(
-                "SELECT plan_id, student_id FROM student_plans "
-                "WHERE academic_year = ?",
-                (str(cohort_year),),
+                "SELECT plan_id, student_id FROM semester_plans "
+                "WHERE start_semester LIKE ?",
+                (f"%{int(cohort_year)}%",),
             ).fetchall()
             total = len(rows)
             for r in rows:
@@ -78,8 +78,15 @@ def run_degree_audit_sweep(*, cohort_year: int) -> dict[str, Any]:
 def _plan_is_on_track(conn: Any, plan_id: int) -> bool:
     try:
         row = conn.execute(
-            "SELECT COUNT(*) FROM plan_courses "
-            "WHERE plan_id = ? AND status NOT IN ('completed', 'in_progress')",
+            # A planned course counts once the student is on it or has a mark
+            # for it (marks live in module_grades, not student_modules).
+            "SELECT COUNT(*) FROM planned_courses pc "
+            "JOIN semester_plans sp ON sp.plan_id = pc.plan_id "
+            "WHERE pc.plan_id = ? AND NOT EXISTS (SELECT 1 FROM student_modules sm "
+            "WHERE sm.student_id = sp.student_id AND sm.module_code = pc.course_id "
+            "AND LOWER(sm.status) IN ('enrolled', 'completed', 'complete', 'passed', 'pass', 'awarded')) "
+            "AND NOT EXISTS (SELECT 1 FROM module_grades mg "
+            "WHERE mg.student_id = sp.student_id AND mg.module_code = pc.course_id)",
             (plan_id,),
         ).fetchone()
         return bool(row and row[0] == 0)

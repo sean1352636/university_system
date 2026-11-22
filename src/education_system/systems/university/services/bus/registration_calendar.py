@@ -98,9 +98,13 @@ def ensure_schema(conn=None) -> bool:
     try:
         if own:
             conn = get_connection()
+        busy = conn.in_transaction
         for stmt in _SCHEMA:
             conn.execute(stmt)
-        conn.commit()
+        # Never commit a caller's open transaction (it would end their
+        # savepoints and publish half-done work); they commit it.
+        if not busy:
+            conn.commit()
         return True
     except Exception as exc:
         logger.warning("registration calendar schema init failed: %s", exc)

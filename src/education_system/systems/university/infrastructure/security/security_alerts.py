@@ -133,35 +133,19 @@ class SecurityAlertManager:
         return message
 
     def _send_email_alert(self, level: str, title: str, message: str) -> bool:
-        """Send email alert to configured recipients."""
+        """Send the alert to each configured recipient through the university
+        e-mail outbox (retries; delivered per the e-mail delivery mode)."""
         try:
-            msg = MIMEMultipart()
-            msg['From'] = os.getenv('SECURITY_ALERT_FROM', 'security@university.edu')
-            msg['To'] = ', '.join(self.alert_recipients)
-            msg['Subject'] = f"[{level}] Security Alert: {title}"
-
-            # Add priority header for high/critical
-            if level in ('HIGH', 'CRITICAL'):
-                msg['X-Priority'] = '1'
-                msg['Importance'] = 'high'
-
-            msg.attach(MIMEText(message, 'plain'))
-
-            # Send email
-            smtp_server = os.getenv('SMTP_HOST', 'localhost')
-            smtp_port = int(os.getenv('SMTP_PORT', '587'))
-            smtp_user = os.getenv('SMTP_USER')
-            smtp_password = os.getenv('SMTP_PASSWORD')
-
-            with smtplib.SMTP(smtp_server, smtp_port) as server:
-                server.starttls()
-                if smtp_user and smtp_password:
-                    server.login(smtp_user, smtp_password)
-                server.send_message(msg)
-
+            from education_system.systems.university.infrastructure.email import outbox_delivery
+            subject = f"[{level}] Security Alert: {title}"
+            accepted = 0
+            for address in self.alert_recipients:
+                result = outbox_delivery.enqueue(address, subject, message,
+                                                 category="security_alert",
+                                                 created_by="security-alerts")
+                accepted += result["status"] in ("queued", "stored")
             logger.info(f"Security alert email sent: {title}")
-            return True
-
+            return accepted > 0
         except Exception as e:
             logger.error(f"Failed to send email alert: {e}")
             return False

@@ -18,6 +18,7 @@ from education_system.systems.primary.domain.safeguarding.safeguarding import (
 from education_system.systems.primary.domain.learners.pupils.pupils import (
     ValidationError, YEAR_GROUPS,
 )
+from education_system.systems.primary.interfaces.gui import kit
 
 logger = logging.getLogger(__name__)
 
@@ -53,7 +54,7 @@ def _concern_dialog(host, title: str,
     dlg = tk.Toplevel(host.root)
     dlg.title(title)
     dlg.transient(host.root)
-    dlg.geometry("580x720")
+    dlg.geometry("700x660")
     dlg.update_idletasks()
     try:
         dlg.wait_visibility()
@@ -62,8 +63,7 @@ def _concern_dialog(host, title: str,
         logger.debug("grab_set skipped — dialog not viewable", exc_info=True)
 
     initial = initial or {}
-    frm = ttk.Frame(dlg, padding=12)
-    frm.pack(fill="both", expand=True)
+    frm, footer = kit.scrolled_form(dlg)
 
     pupil_var  = tk.StringVar(value=str(initial.get("pupil_id") or ""))
     cat_var    = tk.StringVar(value=str(initial.get("category")
@@ -97,46 +97,41 @@ def _concern_dialog(host, title: str,
         else bool(initial.get("confidential"))))
 
     rows: list[tuple[str, tk.Widget]] = [
-        ("Pupil ID:",     ttk.Entry(frm, textvariable=pupil_var,
-                                       width=14)),
+        ("Pupil:",        kit.PupilPicker(frm, pupil_var,
+                                       include_off_roll=bool(initial))),
         ("Category:",     ttk.Combobox(frm, textvariable=cat_var,
                                          values=list(CONCERN_CATEGORIES),
                                          state="readonly", width=36)),
         ("Severity:",     ttk.Combobox(frm, textvariable=sev_var,
                                          values=list(SEVERITIES),
                                          state="readonly", width=10)),
-        ("Incident date:", ttk.Entry(frm, textvariable=incdate_var,
-                                       width=14)),
-        ("Incident time:", ttk.Entry(frm, textvariable=inctime_var,
-                                       width=8)),
+        ("Incident date:", kit.DateField(frm, incdate_var)),
+        ("Incident time:", kit.TimeField(frm, inctime_var,
+                                         hours=range(0, 24))),
         ("Location:",     ttk.Entry(frm, textvariable=loc_var,
                                        width=24)),
-        ("Raised by:",    ttk.Entry(frm, textvariable=raisedby_var,
-                                       width=24)),
-        ("Raised date:",  ttk.Entry(frm, textvariable=raiseddate_var,
-                                       width=14)),
-        ("DSL reviewer:", ttk.Entry(frm, textvariable=dsl_var,
-                                       width=24)),
-        ("DSL review date:", ttk.Entry(frm, textvariable=review_var,
-                                         width=14)),
+        ("Raised by:",    kit.StaffPicker(frm, raisedby_var,
+                                          by="name", active_only=False)),
+        ("Raised date:",  kit.DateField(frm, raiseddate_var)),
+        ("DSL reviewer:", kit.StaffPicker(frm, dsl_var, by="name",
+                                          dsl_only=True)),
+        ("DSL review date:", kit.DateField(frm, review_var)),
         ("Status:",       ttk.Combobox(frm, textvariable=status_var,
                                          values=list(CONCERN_STATUSES),
                                          state="readonly", width=14)),
         ("Referral body:", ttk.Combobox(frm, textvariable=body_var,
                                           values=["", *REFERRAL_BODIES],
                                           state="readonly", width=24)),
-        ("Referral date:", ttk.Entry(frm, textvariable=refdate_var,
-                                       width=14)),
+        ("Referral date:", kit.DateField(frm, refdate_var)),
         ("Referral ref:", ttk.Entry(frm, textvariable=refref_var,
                                        width=18)),
-        ("Closed date:",  ttk.Entry(frm, textvariable=closed_var,
-                                       width=14)),
+        ("Closed date:",  kit.DateField(frm, closed_var)),
         ("Confidential:", ttk.Checkbutton(frm, variable=conf_var)),
     ]
     for i, (label, widget) in enumerate(rows):
         ttk.Label(frm, text=label).grid(row=i, column=0, sticky="w",
                                          pady=2)
-        widget.grid(row=i, column=1, sticky="ew", pady=2)
+        widget.grid(row=i, column=1, sticky="w", pady=2)
     frm.columnconfigure(1, weight=1)
 
     text_fields = [("Description (required):", "description", 4),
@@ -178,9 +173,7 @@ def _concern_dialog(host, title: str,
             result[k] = w.get("1.0", "end").strip()
         dlg.destroy()
 
-    btns = ttk.Frame(frm)
-    btns.grid(row=len(rows) + len(text_fields), column=0,
-              columnspan=2, sticky="e", pady=(12, 0))
+    btns = footer
     ttk.Button(btns, text="Cancel",
                command=dlg.destroy).pack(side="right", padx=4)
     ttk.Button(btns, text="Save", command=_save).pack(side="right")
@@ -194,7 +187,7 @@ def _action_dialog(host, concern_id: int,
     dlg = tk.Toplevel(host.root)
     dlg.title(f"Action — concern #{concern_id}")
     dlg.transient(host.root)
-    dlg.geometry("520x500")
+    dlg.geometry("600x540")
     dlg.update_idletasks()
     try:
         dlg.wait_visibility()
@@ -203,8 +196,7 @@ def _action_dialog(host, concern_id: int,
         pass
 
     initial = initial or {}
-    frm = ttk.Frame(dlg, padding=12)
-    frm.pack(fill="both", expand=True)
+    frm, footer = kit.scrolled_form(dlg)
 
     date_var = tk.StringVar(value=str(initial.get("action_date") or ""))
     type_var = tk.StringVar(value=str(initial.get("action_type")
@@ -212,12 +204,12 @@ def _action_dialog(host, concern_id: int,
     by_var   = tk.StringVar(value=str(initial.get("actioned_by") or ""))
 
     rows: list[tuple[str, tk.Widget]] = [
-        ("Date:", ttk.Entry(frm, textvariable=date_var, width=14)),
+        ("Date:", kit.DateField(frm, date_var)),
         ("Type:", ttk.Combobox(frm, textvariable=type_var,
                                  values=list(ACTION_TYPES),
                                  state="readonly", width=24)),
-        ("Actioned by:", ttk.Entry(frm, textvariable=by_var,
-                                      width=28)),
+        ("Actioned by:", kit.StaffPicker(frm, by_var, by="name",
+                                         active_only=False)),
     ]
     for label, widget in rows:
         row = ttk.Frame(frm)
@@ -250,8 +242,7 @@ def _action_dialog(host, concern_id: int,
             result[k] = w.get("1.0", "end").strip()
         dlg.destroy()
 
-    btns = ttk.Frame(frm)
-    btns.pack(fill="x", pady=(10, 0))
+    btns = footer
     ttk.Button(btns, text="Cancel",
                command=dlg.destroy).pack(side="right", padx=4)
     ttk.Button(btns, text="Save", command=_save).pack(side="right")
@@ -270,10 +261,12 @@ _SEVERITY_COLOURS = {
 @_safe_view
 def open_safeguarding(host) -> None:
     logger.debug("GUI: open_safeguarding")
-    host._clear_content()
-    root = host.content_frame
-    ttk.Label(root, text="Safeguarding",
-              font=("", 16, "bold")).pack(anchor="w", pady=(0, 8))
+    kit.show_page(host, "Safeguarding",
+                  lambda parent: _draw_safeguarding(parent, host))
+
+
+def _draw_safeguarding(root, host) -> None:
+    kit.page_heading(root, "Safeguarding")
 
     summary_var = tk.StringVar()
     ttk.Label(root, textvariable=summary_var, foreground="#666").pack(
@@ -372,7 +365,9 @@ def open_safeguarding(host) -> None:
                 f"Open Critical: {s['open_critical']}")
         except Exception:
             summary_var.set(f"{len(rows)} concern(s)")
-        host.status_var.set(f"Safeguarding: {len(rows)} record(s)")
+        status_bar = getattr(host, "status_var", None)
+        if status_bar is not None:
+            status_bar.set(f"Safeguarding: {len(rows)} record(s)")
 
     tree.bind("<Double-1>", lambda _e: _open_actions(host, tree))
     year_var.trace_add("write", lambda *_: _refresh())
@@ -408,6 +403,11 @@ def _new(host, *, on_done=None) -> None:
     )
     if on_done:
         on_done()
+
+
+def open_raise_concern(host) -> None:
+    """Raise a concern without opening the records, for staff who can't read them."""
+    _new(host)
 
 
 @_safe_view

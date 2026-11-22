@@ -24,6 +24,10 @@ from education_system.systems.university.infrastructure.communication.realtime_n
 
 logger = logging.getLogger(__name__)
 
+# The standalone ``notifications`` table was retired on purpose. This service's
+# records live where its base service writes them (``realtime_notifications``);
+# what the person actually sees goes to their inbox through messages_inbox.
+
 
 class InAppNotificationService:
     """Enhanced in-app notification service"""
@@ -85,7 +89,8 @@ class InAppNotificationService:
                 '''  # nosec B608 - identifier validated against a fixed allow-list
 
     def _heal_notification_actions_schema(self, conn) -> None:
-        """Repair the notification_actions FK on older DBs.
+        """Repair the notification_actions FK on older DBs (wrong target
+        column, or a notifications table that no longer exists).
 
         Deployments have shipped this FK pointing at whichever of
         ``notifications(id)`` / ``notifications(notification_id)`` the
@@ -106,20 +111,19 @@ class InAppNotificationService:
             if not row:
                 return
             pk_col = self._notifications_pk_column(conn)
-            if pk_col is None:
-                return
             fks = list(conn.execute("PRAGMA foreign_key_list(notification_actions)"))
             # row layout: (id, seq, table, from, to, on_update, on_delete, match)
-            broken = any(
-                r[2] == "notifications" and r[4] != pk_col
-                for r in fks
-            )
+            refs = [r for r in fks if r[2] == "notifications"]
+            # Broken when it names the wrong column, or when the notifications
+            # table is gone altogether (it was removed by design; an FK to a
+            # missing table fails every integrity check).
+            broken = bool(refs) and (pk_col is None or any(r[4] != pk_col for r in refs))
             if not broken:
                 return
             logger.warning(
-                "Repairing notification_actions FK (should REFERENCE "
-                "notifications(%s))", pk_col
-            )
+                "Repairing notification_actions FK (%s)",
+                f"should REFERENCE notifications({pk_col})" if pk_col
+                else "notifications table is absent; dropping the FK")
             # The 12-step ALTER TABLE recipe — must run with FK
             # enforcement off so the rename doesn't trigger the
             # broken constraint. We're already inside a transaction,
@@ -200,6 +204,22 @@ class InAppNotificationService:
         except Exception as e:
             logger.error(f"Error creating extended notification tables: {e}")
 
+    @staticmethod
+    def _recipient_id(user_id) -> int:
+        """``users.id`` for a student id, username or numeric id (0 if unknown)."""
+        from education_system.systems.university.infrastructure.email.messages_inbox import (
+            _resolve_user_id,
+        )
+        ref = str(user_id)
+        try:
+            with get_connection() as conn:
+                resolved = _resolve_user_id(conn.cursor(), ref)
+            if resolved is not None:
+                return int(resolved)
+        except Exception:
+            logger.debug("Could not resolve notification recipient", exc_info=True)
+        return int(ref) if ref.isdigit() else 0
+
     def create_notification(
         self,
         user_id: str,
@@ -230,7 +250,7 @@ class InAppNotificationService:
         # Create base notification
         notification = Notification(
             type=notification_type,
-            recipient_id=int(user_id) if user_id.isdigit() else 0,  # Convert user_id to int
+            recipient_id=self._recipient_id(user_id),
             title=title,
             message=message,
             data=data or {},
@@ -244,27 +264,16 @@ class InAppNotificationService:
         if not success:
             return None
 
-        # Get the notification ID from the database
-        try:
-            with get_connection() as conn:
-                cursor = conn.execute('''
-                    SELECT id FROM notifications
-                    WHERE recipient_id = ?
-                      AND title = ?
-                      AND message = ?
-                    ORDER BY created_at DESC
-                    LIMIT 1
-                ''', (notification.recipient_id, title, message))
+        notification_id = notification.id
 
-                row = cursor.fetchone()
-                notification_id = row[0] if row else None
-
-        except Exception as e:
-            logger.error(f"Error getting notification ID: {e}")
-            return None
+        # The Notifications Hub shows the inbox, so that is where it is delivered.
+        from education_system.systems.university.infrastructure.email.messages_inbox import (
+            deliver_inbox_message,
+        )
+        deliver_inbox_message(user_id, title, message)
 
         # Add actions if provided
-        if actions:
+        if actions and notification_id is not None:
             self._add_actions(notification_id, actions)
 
         logger.info(f"Created in-app notification {notification_id} for user {user_id}")
@@ -299,13 +308,13 @@ class InAppNotificationService:
                 cursor = conn.execute('''
                     SELECT id, type, title, message, data, priority,
                            created_at, expires_at
-                    FROM notifications
+                    FROM realtime_notifications
                     WHERE recipient_id = ?
                       AND read_at IS NULL
                       AND (expires_at IS NULL OR expires_at > ?)
                     ORDER BY priority DESC, created_at DESC
                     LIMIT ?
-                ''', (user_id, datetime.now(), limit))
+                ''', (self._recipient_id(user_id), datetime.now().isoformat(), limit))
 
                 notifications = []
                 for row in cursor.fetchall():
@@ -361,10 +370,10 @@ class InAppNotificationService:
         try:
             with transaction() as conn:
                 cursor = conn.execute('''
-                    UPDATE notifications
+                    UPDATE realtime_notifications
                     SET read_at = ?
                     WHERE recipient_id = ? AND read_at IS NULL
-                ''', (datetime.now(), user_id))
+                ''', (datetime.now().isoformat(), self._recipient_id(user_id)))
 
                 count = cursor.rowcount
                 logger.info(f"Marked {count} notifications as read for user {user_id}")
@@ -386,9 +395,9 @@ class InAppNotificationService:
 
                 # Delete notification
                 conn.execute('''
-                    DELETE FROM notifications
+                    DELETE FROM realtime_notifications
                     WHERE id = ? AND recipient_id = ?
-                ''', (notification_id, user_id))
+                ''', (notification_id, self._recipient_id(user_id)))
 
                 logger.info(f"Deleted notification {notification_id}")
                 return True
@@ -403,11 +412,11 @@ class InAppNotificationService:
             with get_connection() as conn:
                 query = '''
                     SELECT COUNT(*)
-                    FROM notifications
+                    FROM realtime_notifications
                     WHERE recipient_id = ?
                       AND (expires_at IS NULL OR expires_at > ?)
                 '''
-                params = [user_id, datetime.now()]
+                params = [self._recipient_id(user_id), datetime.now().isoformat()]
 
                 if unread_only:
                     query += ' AND read_at IS NULL'
@@ -548,12 +557,12 @@ class InAppNotificationService:
     def cleanup_expired_notifications(self, days_old: int = 30) -> int:
         """Delete old read notifications"""
         try:
-            cutoff_date = datetime.now() - timedelta(days=days_old)
+            cutoff_date = (datetime.now() - timedelta(days=days_old)).isoformat()
 
             with transaction() as conn:
                 # Delete old notifications
                 cursor = conn.execute('''
-                    DELETE FROM notifications
+                    DELETE FROM realtime_notifications
                     WHERE read_at IS NOT NULL
                       AND read_at < ?
                 ''', (cutoff_date,))
@@ -563,7 +572,7 @@ class InAppNotificationService:
                 # Clean up orphaned actions
                 conn.execute('''
                     DELETE FROM notification_actions
-                    WHERE notification_id NOT IN (SELECT id FROM notifications)
+                    WHERE notification_id NOT IN (SELECT id FROM realtime_notifications)
                 ''')
 
                 logger.info(f"Cleaned up {count} old notifications")

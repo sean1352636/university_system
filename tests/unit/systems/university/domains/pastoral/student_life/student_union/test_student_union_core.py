@@ -120,12 +120,12 @@ class TestAuthPropagation:
 
     def _reload_auth(self, suffix):
         import importlib
-        base = ("education_system.systems.university.domains.pastoral.domain"
-                ".student_life.student_union.")
+        base = ("education_system.systems.university.domains.student_life."
+                "domain.student_life.student_union.")
         return getattr(importlib.import_module(base + suffix), "auth", None)
 
     def test_set_auth_reaches_every_submodule(self, mock_auth):
-        from education_system.systems.university.domains.pastoral.domain.student_life.student_union.administration import (
+        from education_system.systems.university.domains.student_life.domain.student_life.student_union.administration import (
             student_union_core as core,
         )
         previous = core.auth
@@ -138,7 +138,7 @@ class TestAuthPropagation:
             core.set_auth(previous)
 
     def test_set_auth_all_is_equivalent(self, mock_auth):
-        from education_system.systems.university.domains.pastoral.domain.student_life.student_union.administration import (
+        from education_system.systems.university.domains.student_life.domain.student_life.student_union.administration import (
             student_union_core as core,
         )
         previous = core.auth

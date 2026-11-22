@@ -144,7 +144,7 @@ class FinancialAlertSystem:
                 alert_type TEXT NOT NULL,
                 message TEXT NOT NULL,
                 data TEXT,
-                created_date DATETIME DEFAULT CURRENT_TIMESTAMP,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                 resolved BOOLEAN DEFAULT FALSE
             )
             ''')

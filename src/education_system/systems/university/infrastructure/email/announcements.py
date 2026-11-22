@@ -591,37 +591,31 @@ def create_announcement_safe(dashboard, title, content, target_audience, is_urge
 
 
 
+# Whether this person still takes announcements by e-mail: preferences are kept
+# by username in email_preferences, and on unless turned off (the outbox applies
+# the same rule to bulk mail).
+_OPTED_IN_SQL = (
+    "NOT EXISTS (SELECT 1 FROM email_preferences ep WHERE ep.user_id = u.username "
+    "AND ep.event_kind IN ('announcements', 'all_bulk') AND ep.enabled = 0), 1")
+
+
 def _send_announcement_notifications(cursor, target_audience, title, content):
     """Helper function to send announcement notifications"""
 
     # Build recipient query based on target audience
     if target_audience == 'all':
-        cursor.execute('''
-        SELECT u.id, u.email, np.email_notifications, np.announcement_notifications
-        FROM users u
-        LEFT JOIN notification_preferences np ON u.id = np.user_id
-        ''')
+        # db-audit: ignore[DBW001] - fixed column expression
+        cursor.execute('SELECT u.id, u.email, ' + _OPTED_IN_SQL + ' FROM users u')
     elif target_audience == 'students':
-        cursor.execute('''
-        SELECT u.id, u.email, np.email_notifications, np.announcement_notifications
-        FROM users u
-        LEFT JOIN notification_preferences np ON u.id = np.user_id
-        WHERE u.role = 'student'
-        ''')
+        # db-audit: ignore[DBW001] - fixed column expression
+        cursor.execute('SELECT u.id, u.email, ' + _OPTED_IN_SQL + " FROM users u WHERE u.role = 'student'")
     elif target_audience == 'staff':
-        cursor.execute('''
-        SELECT u.id, u.email, np.email_notifications, np.announcement_notifications
-        FROM users u
-        LEFT JOIN notification_preferences np ON u.id = np.user_id
-        WHERE u.role IN ('staff', 'admin')
-        ''')
+        # db-audit: ignore[DBW001] - fixed column expression
+        cursor.execute('SELECT u.id, u.email, ' + _OPTED_IN_SQL
+                       + " FROM users u WHERE u.role IN ('staff', 'admin')")
     elif target_audience == 'instructors':
-        cursor.execute('''
-        SELECT u.id, u.email, np.email_notifications, np.announcement_notifications
-        FROM users u
-        LEFT JOIN notification_preferences np ON u.id = np.user_id
-        WHERE u.role = 'instructor'
-        ''')
+        # db-audit: ignore[DBW001] - fixed column expression
+        cursor.execute('SELECT u.id, u.email, ' + _OPTED_IN_SQL + " FROM users u WHERE u.role = 'instructor'")
     else:
         log_event('warning', f"Target audience '{target_audience}' not implemented for notifications")
         return

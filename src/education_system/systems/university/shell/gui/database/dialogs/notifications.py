@@ -20,7 +20,7 @@ class EmailConfigDialog:
     def __init__(self, parent):
         self.dialog = tk.Toplevel(parent)
         self.dialog.title(_t('gui.shell.database.dialogs.notifications.windows.email_configuration', default="Email Configuration"))
-        self.dialog.geometry("400x300")
+        self.dialog.geometry("440x380")
         self.dialog.transient(parent)
         self.dialog.grab_set()
 
@@ -47,9 +47,20 @@ class EmailConfigDialog:
         self.email_username_var = tk.StringVar()
         ttk.Entry(smtp_frame, textvariable=self.email_username_var, width=30).grid(row=2, column=1, padx=5)
 
-        ttk.Label(smtp_frame, text=_t('gui.shell.database.dialogs.notifications.labels.password', default="Password:")).grid(row=3, column=0, sticky="w", pady=2)
-        self.email_password_var = tk.StringVar()
-        ttk.Entry(smtp_frame, textvariable=self.email_password_var, show="*", width=30).grid(row=3, column=1, padx=5)
+        # No password here: backup alerts go through the university e-mail
+        # outbox, which uses the e-mail system's securely stored SMTP login.
+        ttk.Label(smtp_frame, foreground="#555555", wraplength=340,
+                  text="Alerts are sent by the university e-mail system (Communication Hub "
+                       "› Delivery); its password is kept in secure storage.").grid(
+            row=3, column=0, columnspan=2, sticky="w", pady=2)
+
+        # Buttons
+        button_frame = ttk.Frame(self.dialog)
+        button_frame.pack(side="bottom", fill="x", padx=10, pady=10)
+
+        ttk.Button(button_frame, text=_t('gui.shell.database.dialogs.notifications.buttons.test_email', default="Test Email"), command=self.test_email).pack(side="left", padx=5)
+        ttk.Button(button_frame, text=_t('gui.shell.database.dialogs.notifications.buttons.save', default="Save"), command=self.save_settings).pack(side="right", padx=5)
+        ttk.Button(button_frame, text=_t('gui.shell.database.dialogs.notifications.buttons.cancel', default="Cancel"), command=self.dialog.destroy).pack(side="right")
 
         # Recipients
         recipients_frame = ttk.LabelFrame(self.dialog, text=_t('gui.shell.database.dialogs.notifications.labels.recipients', default="Recipients"), padding=10)
@@ -59,20 +70,11 @@ class EmailConfigDialog:
         self.recipients_text = scrolledtext.ScrolledText(recipients_frame, height=6, wrap=tk.WORD)
         self.recipients_text.pack(fill="both", expand=True, pady=5)
 
-        # Buttons
-        button_frame = ttk.Frame(self.dialog)
-        button_frame.pack(fill="x", padx=10, pady=10)
-
-        ttk.Button(button_frame, text=_t('gui.shell.database.dialogs.notifications.buttons.test_email', default="Test Email"), command=self.test_email).pack(side="left", padx=5)
-        ttk.Button(button_frame, text=_t('gui.shell.database.dialogs.notifications.buttons.save', default="Save"), command=self.save_settings).pack(side="right", padx=5)
-        ttk.Button(button_frame, text=_t('gui.shell.database.dialogs.notifications.buttons.cancel', default="Cancel"), command=self.dialog.destroy).pack(side="right")
-
     def load_current_settings(self):
         """Load current email settings"""
         self.smtp_server_var.set(config.get("smtp_server", "smtp.gmail.com"))
         self.smtp_port_var.set(str(config.get("smtp_port", 587)))
         self.email_username_var.set(config.get("email_username", ""))
-        self.email_password_var.set(config.get("email_password", ""))
 
         recipients = config.get("notification_recipients", [])
         self.recipients_text.insert(1.0, "\n".join(recipients))
@@ -85,7 +87,6 @@ class EmailConfigDialog:
                 "smtp_server": self.smtp_server_var.get(),
                 "smtp_port": int(self.smtp_port_var.get()),
                 "email_username": self.email_username_var.get(),
-                "email_password": self.email_password_var.get(),
                 "notification_recipients": [self.email_username_var.get()],
                 "email_notifications": True
             }
@@ -116,7 +117,7 @@ class EmailConfigDialog:
             config["smtp_server"] = self.smtp_server_var.get()
             config["smtp_port"] = int(self.smtp_port_var.get())
             config["email_username"] = self.email_username_var.get()
-            config["email_password"] = self.email_password_var.get()
+            config["email_password"] = ""   # never kept in the backup config
 
             recipients_text = self.recipients_text.get(1.0, tk.END).strip()
             recipients = [email.strip() for email in recipients_text.split('\n') if email.strip()]

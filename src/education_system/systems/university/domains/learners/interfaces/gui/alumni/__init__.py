@@ -9,7 +9,7 @@ plus the main app class. Canonical import pattern:
         import AlumniGUIApp, launch_alumni_gui
 
 Live callers (verified 2026-05): the unified GUI's launcher registry, the
-staff portal, the alumni-management service's menu module, and the GUI
+staff portal and the GUI
 test suite. This is the canonical aggregator, not a deprecated shim — the
 mixin imports are exposed in __all__ so callers can subclass and reuse them.
 """
@@ -31,10 +31,17 @@ from education_system.systems.university.domains.learners.interfaces.gui.alumni.
 from education_system.systems.university.domains.learners.interfaces.gui.alumni.gamification import GamificationMixin
 from education_system.systems.university.domains.learners.interfaces.gui.alumni.notifications import NotificationsMixin
 
+
+def launch_alumni_relations_gui(root=None, auth=None):
+    """Older launcher name (the unified GUI's lazy import table uses it)."""
+    return launch_alumni_gui(auth)
+
+
 __all__ = [
     'AlumniGUIApp',
     'main',
     'launch_alumni_gui',
+    'launch_alumni_relations_gui',
     'DashboardMixin',
     'AlumniCRUDMixin',
     'DirectoryMixin',

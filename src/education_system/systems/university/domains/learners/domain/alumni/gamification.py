@@ -414,7 +414,7 @@ def generate_engagement_recommendations():
     if industry:
         cursor.execute('''
             SELECT COUNT(*) FROM job_postings
-            WHERE industry = ? AND is_active = 1
+            WHERE category = ? AND is_active = 1
         ''', (industry,))
 
         industry_jobs = cursor.fetchone()[0]

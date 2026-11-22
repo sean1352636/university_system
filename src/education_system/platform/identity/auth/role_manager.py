@@ -211,15 +211,22 @@ class RoleManager:
         ``sixthform``) resolve to the same canonical system as the new keys.
         """
         from education_system.platform.kernel.core.system_keys import canonical_system_key
+        target = canonical_system_key(system_key)
         conn = self._conn()
         try:
-            row = conn.execute(
-                "SELECT role FROM user_systems WHERE user_id = ? AND system_key = ?",
-                (user_id, canonical_system_key(system_key)),
-            ).fetchone()
-            return row["role"] if row else None
+            rows = conn.execute(
+                "SELECT system_key, role FROM user_systems WHERE user_id = ?",
+                (user_id,),
+            ).fetchall()
         finally:
             conn.close()
+        # Rows can still hold a legacy key (fecollege, apprenticeship), so both
+        # sides are normalised. A row stored under the canonical key wins.
+        matches = [r for r in rows if canonical_system_key(r["system_key"]) == target]
+        for row in matches:
+            if row["system_key"] == target:
+                return row["role"]
+        return matches[0]["role"] if matches else None
 
     def get_user_systems(self, user_id: int) -> list[dict]:
         """Get all systems a user has access to, with their role in each."""

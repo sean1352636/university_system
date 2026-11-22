@@ -13,6 +13,7 @@ from education_system.systems.primary.domain.assessment.progress import progress
 from education_system.systems.primary.domain.staff import staff as staff_data
 from education_system.systems.primary.domain import _pupils_bridge as student_data
 from education_system.platform import branding
+from education_system.systems.primary.interfaces.gui import kit
 from education_system.systems.primary.domain.assessment.progress.progress import (
     DEFAULT_PERIOD,
     DEFAULT_RATING,
@@ -39,13 +40,25 @@ WIN_MINSIZE = (1200, 800)
 
 def open_progress_window(parent=None) -> None:
     data.init_db()
-    master = getattr(parent, "root", parent)
-    win = tk.Toplevel(master) if master is not None else tk.Tk()
+    if parent is not None:
+        # Drawn in the main window's content area (or a window of its own
+        # when *parent* is not the main window).
+        kit.show_page(parent, "Progress Tracking", _draw_progress)
+        return
+    win = tk.Tk()
     win.title(f"Progress Tracking — {branding.SYSTEM_NAME}")
     win.geometry(WIN_GEOMETRY)
     win.minsize(*WIN_MINSIZE)
-    nb = ttk.Notebook(win)
-    nb.pack(fill="both", expand=True, padx=10, pady=10)
+    frame = ttk.Frame(win, padding=10)
+    frame.pack(fill="both", expand=True)
+    _draw_progress(frame)
+
+
+def _draw_progress(parent) -> None:
+    kit.page_heading(parent, "Progress Tracking",
+                     "Progress reviews, their targets, each pupil's history and a summary.")
+    nb = ttk.Notebook(parent)
+    nb.pack(fill="both", expand=True)
     ReviewsTab(nb)
     TargetsTab(nb)
     PerStudentTab(nb)
@@ -83,7 +96,8 @@ class ReviewsTab:
         bar = ttk.Frame(self.frame)
         bar.pack(fill="x", padx=8, pady=(8, 4))
         ttk.Label(bar, text="Student:").pack(side="left")
-        self.f_student = ttk.Entry(bar, width=12)
+        self.f_student = kit.PupilPicker(bar, include_off_roll=True, width=34)
+        self.f_student.bind_change(lambda _v: self.refresh())
         self.f_student.pack(side="left", padx=(2, 10))
         ttk.Label(bar, text="Period:").pack(side="left")
         self.f_period = ttk.Combobox(bar, values=("",) + REVIEW_PERIODS,
@@ -170,7 +184,7 @@ class ReviewsTab:
                     command=self.refresh).pack(side="right")
 
     def _clear(self) -> None:
-        self.f_student.delete(0, "end")
+        self.f_student.set("")
         self.f_period.current(0)
         self.f_status.current(0)
         self.f_risk.current(0)
@@ -406,13 +420,14 @@ class ReviewDialog:
         self.win = tk.Toplevel(parent)
         self.win.title("Edit Review" if existing else "New Review")
         self.win.transient(parent)
+        self.win.geometry("820x680")
         self.win.after_idle(self.win.grab_set)
         self.prefill: dict = {}
         self._build()
 
     def _build(self) -> None:
-        outer = ttk.Frame(self.win)
-        outer.pack(fill="both", expand=True, padx=12, pady=12)
+        # Tall form: the fields scroll on a small screen, Save/Cancel stay put.
+        outer, footer = kit.scrolled_form(self.win)
         r = 0
 
         def label(t: str):
@@ -444,10 +459,9 @@ class ReviewDialog:
         r += 1
 
         label("Date:")
-        self.date_e = ttk.Entry(outer, width=14)
-        self.date_e.insert(0, self.existing.review_date
-                                if self.existing
-                                else _date.today().isoformat())
+        self.date_e = kit.DateField(outer, tk.StringVar(
+            value=self.existing.review_date if self.existing
+            else _date.today().isoformat()))
         self.date_e.grid(row=r, column=1, sticky="w", padx=6)
         r += 1
 
@@ -460,9 +474,10 @@ class ReviewDialog:
         r += 1
 
         label("Academic year:")
-        self.year_e = ttk.Entry(outer, width=12)
-        if self.existing and self.existing.academic_year:
-            self.year_e.insert(0, self.existing.academic_year)
+        self.year_e = kit.AcademicYearPicker(outer, tk.StringVar(
+            value=self.existing.academic_year
+            if self.existing and self.existing.academic_year else ""),
+            blank=True)
         self.year_e.grid(row=r, column=1, sticky="w", padx=6)
         r += 1
 
@@ -508,7 +523,8 @@ class ReviewDialog:
         r += 1
 
         label("Attendance %:")
-        self.pct_e = ttk.Entry(outer, width=10)
+        self.pct_e = kit.NumberField(outer, from_=0, to=100, increment=0.1,
+                                     width=10)
         if (self.existing
                 and self.existing.attendance_pct is not None):
             self.pct_e.insert(
@@ -564,8 +580,7 @@ class ReviewDialog:
         self.notes_text.grid(row=r, column=1, sticky="w", padx=6)
         r += 1
 
-        bar = ttk.Frame(outer)
-        bar.grid(row=r, column=0, columnspan=3, pady=(12, 0))
+        bar = footer
         ttk.Button(bar, text="Save",
                     command=self._save).pack(side="left")
         ttk.Button(bar, text="Cancel",
@@ -692,9 +707,9 @@ class TargetDialog:
 
         ttk.Label(form, text="Due date:").grid(row=r, column=0,
                                                   sticky="e", pady=3)
-        self.due_e = ttk.Entry(form, width=14)
-        if self.existing and self.existing.due_date:
-            self.due_e.insert(0, self.existing.due_date)
+        self.due_e = kit.DateField(form, tk.StringVar(
+            value=self.existing.due_date
+            if self.existing and self.existing.due_date else ""))
         self.due_e.grid(row=r, column=1, sticky="w", padx=6)
         r += 1
 
@@ -760,7 +775,8 @@ class TargetsTab:
         bar = ttk.Frame(self.frame)
         bar.pack(fill="x", padx=8, pady=(8, 4))
         ttk.Label(bar, text="Student:").pack(side="left")
-        self.f_student = ttk.Entry(bar, width=12)
+        self.f_student = kit.PupilPicker(bar, include_off_roll=True, width=34)
+        self.f_student.bind_change(lambda _v: self.refresh())
         self.f_student.pack(side="left", padx=(2, 10))
         ttk.Label(bar, text="Area:").pack(side="left")
         self.f_area = ttk.Combobox(bar, values=("",) + TARGET_AREAS,
@@ -833,7 +849,7 @@ class TargetsTab:
                     command=self.refresh).pack(side="right")
 
     def _clear(self) -> None:
-        self.f_student.delete(0, "end")
+        self.f_student.set("")
         self.f_area.current(0)
         self.f_status.current(0)
         self.f_open.set(False)

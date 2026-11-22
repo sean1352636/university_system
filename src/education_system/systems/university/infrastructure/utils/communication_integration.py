@@ -135,7 +135,6 @@ def send_email_unified(
                 cc=cc,
                 bcc=bcc,
                 attachments=attachments,
-                **kwargs
             )
         else:
             return send_email(
@@ -148,11 +147,8 @@ def send_email_unified(
             )
 
     except Exception as e:
-        logger.error(f"Error sending email via central infrastructure: {e}")
-        # Fallback: log to console
-        print(f"[EMAIL FALLBACK] To: {recipient}")
-        print(f"[EMAIL FALLBACK] Subject: {subject}")
-        print(f"[EMAIL FALLBACK] Body: {body[:100]}...")
+        # Never echo the message body: it can hold personal data.
+        logger.error(f"Error sending email via central infrastructure to {recipient}: {e}")
         return False
 
 

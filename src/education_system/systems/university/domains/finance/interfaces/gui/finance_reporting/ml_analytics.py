@@ -5,6 +5,7 @@ from tkinter.scrolledtext import ScrolledText
 from tkinter import ttk, messagebox, filedialog, scrolledtext
 from tkinter.font import Font
 import threading
+from education_system.platform.delivery.gui.tk_threads import start_thread, ui
 from datetime import datetime, timedelta
 import json
 import webbrowser
@@ -68,21 +69,19 @@ def run_risk_analysis(self):
             anomaly_detector = AnomalyDetector()
             anomalies = anomaly_detector.detect_payment_anomalies()
 
-            self.root.after(0, lambda: [
+            ui(self.root, lambda: [
                 self.log_activity(f"Risk analysis completed - {len(risk_students)} students analyzed, {len(anomalies)} anomalies found"),
                 self.update_status("Ready"),
                 self.show_comprehensive_risk_results(risk_students, anomalies)
             ])
         except Exception as e:
-            self.root.after(0, lambda _e=e: [
+            ui(self.root, lambda _e=e: [
                 self.log_activity(f"Risk analysis error: {_e}"),
                 self.update_status("Error"),
                 messagebox.showerror(_t('gui.finance.finance_reporting.ml_analytics.dialogs.error', default="Error"), f"Risk analysis failed: {_e}")
             ])
 
-    thread = threading.Thread(target=risk_in_background)
-    thread.daemon = True
-    thread.start()
+    start_thread(self.root, risk_in_background)
 
 def show_comprehensive_risk_results(self, risk_students, anomalies):
     """Show comprehensive risk analysis results"""
@@ -214,22 +213,20 @@ def run_ml_model_training(self):
             # Train the model
             success = payment_predictor.train_model()
 
-            self.root.after(0, lambda: [
+            ui(self.root, lambda: [
                 self.log_activity(f"ML model training {'completed' if success else 'failed'}"),
                 self.update_status("Ready"),
                 self.show_ml_training_results(success)
             ])
 
         except Exception as e:
-            self.root.after(0, lambda _e=e: [
+            ui(self.root, lambda _e=e: [
                 self.log_activity(f"ML training error: {_e}"),
                 self.update_status("Error"),
                 messagebox.showerror(_t('gui.finance.finance_reporting.ml_analytics.dialogs.error', default="Error"), f"ML model training failed: {_e}")
             ])
 
-    thread = threading.Thread(target=train_in_background)
-    thread.daemon = True
-    thread.start()
+    start_thread(self.root, train_in_background)
 
 def show_ml_training_results(self, success):
     """Show ML training results in new window"""
@@ -267,22 +264,20 @@ def run_anomaly_detection(self):
             anomaly_detector = AnomalyDetector()
             anomalies = anomaly_detector.detect_payment_anomalies()
 
-            self.root.after(0, lambda: [
+            ui(self.root, lambda: [
                 self.log_activity(f"Anomaly detection completed - {len(anomalies)} anomalies found"),
                 self.update_status("Ready"),
                 self.show_anomaly_results(anomalies)
             ])
 
         except Exception as e:
-            self.root.after(0, lambda _e=e: [
+            ui(self.root, lambda _e=e: [
                 self.log_activity(f"Anomaly detection error: {_e}"),
                 self.update_status("Error"),
                 messagebox.showerror(_t('gui.finance.finance_reporting.ml_analytics.dialogs.error', default="Error"), f"Anomaly detection failed: {_e}")
             ])
 
-    thread = threading.Thread(target=detect_in_background)
-    thread.daemon = True
-    thread.start()
+    start_thread(self.root, detect_in_background)
 
 def show_anomaly_results(self, anomalies):
     """Show anomaly detection results in new window"""
@@ -340,22 +335,20 @@ def run_cash_flow_forecasting(self):
             cash_flow_forecaster = CashFlowForecaster()
             forecast = cash_flow_forecaster.generate_cash_flow_forecast(12)
 
-            self.root.after(0, lambda: [
+            ui(self.root, lambda: [
                 self.log_activity("Cash flow forecast completed"),
                 self.update_status("Ready"),
                 self.show_cash_flow_results(forecast)
             ])
 
         except Exception as e:
-            self.root.after(0, lambda _e=e: [
+            ui(self.root, lambda _e=e: [
                 self.log_activity(f"Cash flow forecast error: {_e}"),
                 self.update_status("Error"),
                 messagebox.showerror(_t('gui.finance.finance_reporting.ml_analytics.dialogs.error', default="Error"), f"Cash flow forecasting failed: {_e}")
             ])
 
-    thread = threading.Thread(target=forecast_in_background)
-    thread.daemon = True
-    thread.start()
+    start_thread(self.root, forecast_in_background)
 
 def show_cash_flow_results(self, forecast):
     """Show cash flow forecast results in new window"""
@@ -448,22 +441,20 @@ def run_peer_benchmarking(self):
                 'peer_data': peer_institutions
             }
 
-            self.root.after(0, lambda: [
+            ui(self.root, lambda: [
                 self.log_activity("Peer benchmarking analysis completed"),
                 self.update_status("Ready"),
                 self.show_benchmarking_results(benchmark_data)
             ])
 
         except Exception as e:
-            self.root.after(0, lambda _e=e: [
+            ui(self.root, lambda _e=e: [
                 self.log_activity(f"Peer benchmarking error: {_e}"),
                 self.update_status("Error"),
                 messagebox.showerror(_t('gui.finance.finance_reporting.ml_analytics.dialogs.error', default="Error"), f"Peer benchmarking failed: {_e}")
             ])
 
-    thread = threading.Thread(target=benchmark_in_background)
-    thread.daemon = True
-    thread.start()
+    start_thread(self.root, benchmark_in_background)
 
 def show_benchmarking_results_UNUSED_DUPLICATE(self, benchmark_data):
     """UNUSED DUPLICATE - Show peer benchmarking results in new window"""

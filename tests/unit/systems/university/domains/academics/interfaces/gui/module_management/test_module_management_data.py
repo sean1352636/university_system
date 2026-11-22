@@ -9,7 +9,7 @@ import sqlite3
 
 import pytest
 
-from education_system.systems.university.domains.academics.interfaces.gui.module_management import (
+from education_system.systems.university.domains.curriculum.interfaces.gui.module_management import (
     data,
 )
 from education_system.systems.university.services.bus.enrolment_bus import (

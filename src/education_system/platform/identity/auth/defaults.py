@@ -18,6 +18,11 @@ SYSTEMS = {
     "nursery": "Nursery",
     "apprenticeships": "Apprenticeships",
     "fe_college": "FE College",
+    "special_education": "Special Education (SEND)",
+    "adult_education": "Adult Education",
+    "alternative_provision": "Alternative Provision",
+    "training_provider": "Training Provider",
+    "local_authority": "Local Authority Education",
 }
 
 # Roles each system recognises. The five school-shaped systems share one
@@ -28,6 +33,21 @@ SYSTEM_ROLES = {
     "apprenticeships": (
         "admin", "staff", "apprentice", "employer", "end_point_assessor",
     ),
+    # SEND is a staff tool for now: SENCOs, SEN admin and support staff.
+    # No learner or parent screens exist yet, so there are no such roles.
+    "special_education": ("admin", "staff"),
+    # Adult Education is staff-only too: curriculum/admin staff and tutors.
+    # No learner portal yet, so no learner role.
+    "adult_education": ("admin", "staff"),
+    # Alternative Provision is staff-only too (key workers, DSLs, admin);
+    # no pupil or parent screens yet.
+    "alternative_provision": ("admin", "staff"),
+    # Training Provider is staff-only too (trainers, bookings and admin staff);
+    # no learner or client portal yet.
+    "training_provider": ("admin", "staff"),
+    # Local Authority Education is council staff only (admissions, attendance,
+    # SEND, transport officers); no parent or school portal yet.
+    "local_authority": ("admin", "staff"),
 }
 
 DEFAULT_SYSTEM_ROLES = ("admin", "staff", "teacher", "student", "parent")

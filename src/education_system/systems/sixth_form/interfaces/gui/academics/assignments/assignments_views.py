@@ -23,11 +23,17 @@ import subprocess
 import sys
 import tkinter as tk
 from pathlib import Path
-from tkinter import filedialog, messagebox, ttk
+from tkinter import ttk
+from education_system.systems.sixth_form.interfaces.gui._sidebar import SidebarBook
+from education_system.platform.delivery.gui.parented_dialogs import filedialog, messagebox
 from typing import Callable
 from education_system.platform import branding
 from education_system.systems.sixth_form.domain.academics.assignments import (
-    assignments as data,
+    crud as assignments_crud,
+    integrity as assignments_integrity,
+    models as assignments_models,
+    store as assignments_store,
+    submissions as assignments_submissions,
 )
 from education_system.systems.sixth_form.domain.learners.students import (
     students as student_data,
@@ -38,7 +44,7 @@ from education_system.systems.sixth_form.domain.staff import (
 from education_system.systems.sixth_form.domain.academics.courses import (
     courses as course_data,
 )
-from education_system.systems.sixth_form.domain.academics.assignments.assignments import (
+from education_system.systems.sixth_form.domain.academics.assignments.models import (
     ASSIGNMENT_ATTACHMENT_KINDS,
     ASSIGNMENT_STATUSES,
     ASSIGNMENT_TYPES,
@@ -60,21 +66,21 @@ WIN_MINSIZE = (1200, 800)
 
 
 def open_assignments_window(parent=None) -> None:
-    data.init_db()
+    assignments_store.init_db()
     master = getattr(parent, "root", parent)
     win = tk.Toplevel(master) if master is not None else tk.Tk()
     win.title(f"Assignments — {branding.SYSTEM_NAME}")
     win.geometry(WIN_GEOMETRY)
     win.minsize(*WIN_MINSIZE)
 
-    nb = ttk.Notebook(win)
+    nb = SidebarBook(win)
     nb.pack(fill="both", expand=True, padx=10, pady=10)
 
     AssignmentsTab(nb)
     SubmissionsTab(nb)
     # Imported late so this module and the marking views don't import
     # each other at load time.
-    from education_system.systems.sixth_form.domain.academics.assignments import (
+    from education_system.systems.sixth_form.interfaces.gui.academics.assignments import (
         assignments_insight_views,
         assignments_marking_views,
         assignments_planning_views,
@@ -337,7 +343,7 @@ class AssignmentsTab:
         for i in self.tree.get_children():
             self.tree.delete(i)
         try:
-            rows = data.list_assignments_with_detail(
+            rows = assignments_store.list_assignments_with_detail(
                 subject_name=self.f_subject.get().strip() or None,
                 teacher_like=self.f_teacher.get().strip() or None,
                 status=self.f_status.get() or None,
@@ -395,13 +401,13 @@ class AssignmentsTab:
             self.subs_tree.delete(i)
         if self._selected_id is None:
             return
-        detail = data.get_assignment_detail(self._selected_id)
+        detail = assignments_store.get_assignment_detail(self._selected_id)
         if detail is None:
             self._clear_detail()
             return
         a = detail.assignment
         material = len(
-            data.list_attachments(assignment_id=a.assignment_id))
+            assignments_submissions.list_attachments(assignment_id=a.assignment_id))
         self.detail_var.set(f"#{a.assignment_id}  {a.title}")
         self.subdetail_var.set(
             f"{a.subject_name}  ·  {a.assignment_type}  ·  "
@@ -422,7 +428,7 @@ class AssignmentsTab:
         for s in detail.submissions:
             marks = (f"{s.marks}" if s.marks is not None else "—")
             tags = [s.status] if s.status in SUBMISSION_STATUSES else []
-            due = data.effective_due_date(s, a)
+            due = assignments_submissions.effective_due_date(s, a)
             due_label = due or "—"
             if s.extended_due_date:
                 due_label = f"{due} *"
@@ -431,7 +437,7 @@ class AssignmentsTab:
                        + ("d" if s.is_draft and s.attempt_no else "")
                        if s.attempt_no else "—")
             file_count = len(
-                data.list_attachments(submission_id=s.submission_id))
+                assignments_submissions.list_attachments(submission_id=s.submission_id))
             sim = "—"
             if s.similarity_score is not None:
                 sim = f"{s.similarity_score:.0f}"
@@ -451,7 +457,7 @@ class AssignmentsTab:
     def _selected_assignment(self) -> Assignment | None:
         if self._selected_id is None:
             return None
-        return data.get_assignment(self._selected_id)
+        return assignments_store.get_assignment(self._selected_id)
 
     def _selected_sub_id(self) -> int | None:
         sel = self.subs_tree.selection()
@@ -494,7 +500,7 @@ class AssignmentsTab:
                 "All submissions go too."):
             return
         try:
-            data.delete_assignment(a.assignment_id)
+            assignments_store.delete_assignment(a.assignment_id)
         except Exception as e:
             messagebox.showerror("Delete failed", str(e))
             return
@@ -516,7 +522,7 @@ class AssignmentsTab:
         if sid is None:
             messagebox.showinfo(action, "Select a submission first.")
             return None
-        return data.get_submission(sid)
+        return assignments_store.get_submission(sid)
 
     def _submit_sub(self) -> None:
         sub = self._pick_sub("Submit work")
@@ -562,7 +568,7 @@ class AssignmentsTab:
         scope = (f"assignment #{scope_id}" if scope_id
                  else "every open assignment")
         try:
-            preview = data.sweep_late_submissions(
+            preview = assignments_integrity.sweep_late_submissions(
                 assignment_id=scope_id, dry_run=True)
         except Exception as e:
             messagebox.showerror("Late sweep", str(e))
@@ -580,7 +586,7 @@ class AssignmentsTab:
                 "already submitted is left alone."):
             return
         try:
-            result = data.sweep_late_submissions(assignment_id=scope_id)
+            result = assignments_integrity.sweep_late_submissions(assignment_id=scope_id)
         except Exception as e:
             messagebox.showerror("Late sweep", str(e))
             return
@@ -595,7 +601,7 @@ class AssignmentsTab:
             messagebox.showinfo("Mark",
                                   "Select a submission first.")
             return
-        sub = data.get_submission(sid)
+        sub = assignments_store.get_submission(sid)
         if sub is None:
             return
         a = self._selected_assignment()
@@ -609,7 +615,7 @@ class AssignmentsTab:
             messagebox.showinfo("Status",
                                   "Select a submission first.")
             return
-        sub = data.get_submission(sid)
+        sub = assignments_store.get_submission(sid)
         if sub is None:
             return
         SubStatusDialog(self.frame.winfo_toplevel(),
@@ -625,7 +631,7 @@ class AssignmentsTab:
                 "Delete", f"Delete submission #{sid}?"):
             return
         try:
-            data.delete_submission(sid)
+            assignments_crud.delete_submission(sid)
         except Exception as e:
             messagebox.showerror("Delete failed", str(e))
             return
@@ -722,7 +728,7 @@ class SubmissionsTab:
         for i in self.tree.get_children():
             self.tree.delete(i)
         try:
-            rows = data.list_submissions_with_detail(
+            rows = assignments_crud.list_submissions_with_detail(
                 status=self.f_status.get() or None,
                 student_id=self.f_student.get().strip() or None,
                 marked_only=self.marked_var.get(),
@@ -736,10 +742,10 @@ class SubmissionsTab:
         # column predicates (they read the effective deadline and the
         # per-assignment threshold), so narrow by id instead.
         flagged_ids = {s.submission_id
-                        for s in data.list_flagged_submissions()}
+                        for s in assignments_integrity.list_flagged_submissions()}
         if self.overdue_var.get():
             overdue = {s.submission_id
-                        for s in data.list_overdue_submissions()}
+                        for s in assignments_integrity.list_overdue_submissions()}
             rows = [r for r in rows
                     if r.submission.submission_id in overdue]
         if self.extended_var.get():
@@ -753,7 +759,7 @@ class SubmissionsTab:
             s = r.submission
             marks = f"{s.marks}" if s.marks is not None else "—"
             tags = [s.status] if s.status in SUBMISSION_STATUSES else []
-            due = data.effective_due_date(s)
+            due = assignments_submissions.effective_due_date(s)
             due_label = f"{due} *" if s.extended_due_date else (due or "—")
             if s.extended_due_date:
                 tags.append("Extended")
@@ -767,7 +773,7 @@ class SubmissionsTab:
                        + ("d" if s.is_draft and s.attempt_no else "")
                        if s.attempt_no else "—")
             file_count = len(
-                data.list_attachments(submission_id=s.submission_id))
+                assignments_submissions.list_attachments(submission_id=s.submission_id))
             self.tree.insert("", "end", iid=str(s.submission_id), values=(
                 s.submission_id, s.assignment_id,
                 s.student_id, r.student_name,
@@ -778,7 +784,7 @@ class SubmissionsTab:
         self.count_var.set(f"{len(rows)} submission(s).")
 
     def _late_sweep(self) -> None:
-        preview = data.sweep_late_submissions(dry_run=True)
+        preview = assignments_integrity.sweep_late_submissions(dry_run=True)
         if not preview["overdue"]:
             messagebox.showinfo("Late sweep", "Nothing overdue.")
             return
@@ -789,7 +795,7 @@ class SubmissionsTab:
                 "handed in.\n\nMark them Missing? Extensions are "
                 "honoured and work already submitted is left alone."):
             return
-        result = data.sweep_late_submissions()
+        result = assignments_integrity.sweep_late_submissions()
         messagebox.showinfo(
             "Late sweep",
             f"Marked {result['marked_missing']} submission(s) Missing.")
@@ -827,7 +833,7 @@ class SummaryTab:
             messagebox.showerror("Summary",
                                     "Window must be a number.")
             return
-        summ = data.summary(upcoming_window_days=win)
+        summ = assignments_integrity.summary(upcoming_window_days=win)
         lines = [
             f"Total assignments : {summ.total_assignments}",
             f"Open              : {summ.open_count}",
@@ -901,9 +907,9 @@ class AttachmentPanel:
         ttk.Label(bar, text="Kind:").pack(side="left")
         self.kind_cb = ttk.Combobox(bar, values=kinds,
                                        state="readonly", width=14)
-        self.kind_cb.set(data.DEFAULT_ASSIGNMENT_ATTACHMENT_KIND
+        self.kind_cb.set(assignments_models.DEFAULT_ASSIGNMENT_ATTACHMENT_KIND
                           if self.for_assignment
-                          else data.DEFAULT_SUBMISSION_ATTACHMENT_KIND)
+                          else assignments_models.DEFAULT_SUBMISSION_ATTACHMENT_KIND)
         self.kind_cb.pack(side="left", padx=(2, 8))
         ttk.Button(bar, text="Add files…",
                     command=self._add).pack(side="left")
@@ -940,7 +946,7 @@ class AttachmentPanel:
     def refresh(self) -> None:
         for i in self.tree.get_children():
             self.tree.delete(i)
-        for att in data.list_attachments(
+        for att in assignments_submissions.list_attachments(
                 assignment_id=self.assignment_id,
                 submission_id=self.submission_id):
             self.tree.insert(
@@ -956,7 +962,7 @@ class AttachmentPanel:
         if not sel:
             messagebox.showinfo("Attachments", "Select a file first.")
             return None
-        return data.get_attachment(int(sel[0]))
+        return assignments_submissions.get_attachment(int(sel[0]))
 
     def _add(self) -> None:
         picked = filedialog.askopenfilenames(
@@ -967,7 +973,7 @@ class AttachmentPanel:
         failures = []
         for path in picked:
             try:
-                data.attach_file(
+                assignments_submissions.attach_file(
                     source_path=path,
                     assignment_id=self.assignment_id,
                     submission_id=self.submission_id,
@@ -1024,7 +1030,7 @@ class AttachmentPanel:
                 "The stored file is removed from disk too."):
             return
         try:
-            data.delete_attachment(att.attachment_id)
+            assignments_submissions.delete_attachment(att.attachment_id)
         except Exception as e:
             messagebox.showerror("Remove failed", str(e))
             return
@@ -1055,7 +1061,7 @@ class SubmissionFilesDialog:
         self.win.geometry("980x520")
         self.win.transient(parent)
         grab_when_viewable(self.win)
-        latest = data.latest_version(submission.submission_id)
+        latest = assignments_submissions.latest_version(submission.submission_id)
         outer = ttk.Frame(self.win, padding=10)
         outer.pack(fill="both", expand=True)
         note = ("New files attach to the latest attempt "
@@ -1086,7 +1092,7 @@ class SubmitWorkDialog:
                  on_save: Callable[[], None]) -> None:
         self.submission = submission
         self.assignment = (assignment
-                            or data.get_assignment(
+                            or assignments_store.get_assignment(
                                 submission.assignment_id))
         self.on_save = on_save
         self._files: list[str] = []
@@ -1103,7 +1109,7 @@ class SubmitWorkDialog:
         outer = ttk.Frame(self.win, padding=12)
         outer.pack(fill="both", expand=True)
         names = _name_lookup()
-        due = data.effective_due_date(self.submission, self.assignment)
+        due = assignments_submissions.effective_due_date(self.submission, self.assignment)
         header = (f"{self.submission.student_id} — "
                   f"{names.get(self.submission.student_id, '?')}")
         ttk.Label(outer, text=header,
@@ -1191,7 +1197,7 @@ class SubmitWorkDialog:
                     "Submit", "Word count must be a whole number.")
                 return
         try:
-            version = data.submit_work(
+            version = assignments_submissions.submit_work(
                 self.submission.submission_id,
                 files=list(self._files),
                 word_count=word_count,
@@ -1206,7 +1212,7 @@ class SubmitWorkDialog:
                  f"Receipt: {version.receipt_ref}",
                  f"Fingerprint: {version.receipt_hash}"]
         if self.assignment:
-            check = data.check_word_limit(self.assignment, word_count)
+            check = assignments_submissions.check_word_limit(self.assignment, word_count)
             if check.applicable:
                 lines.append("")
                 lines.append(("⚠ " if check.breached else "")
@@ -1224,7 +1230,7 @@ class ExtensionDialog:
                  on_save: Callable[[], None]) -> None:
         self.submission = submission
         self.assignment = (assignment
-                            or data.get_assignment(
+                            or assignments_store.get_assignment(
                                 submission.assignment_id))
         self.on_save = on_save
         self.win = tk.Toplevel(parent)
@@ -1286,7 +1292,7 @@ class ExtensionDialog:
 
     def _save(self) -> None:
         try:
-            data.grant_extension(
+            assignments_submissions.grant_extension(
                 self.submission.submission_id,
                 self.date_e.get().strip(),
                 reason=self.reason_e.get().strip(),
@@ -1304,7 +1310,7 @@ class ExtensionDialog:
                 "assignment's own deadline."):
             return
         try:
-            data.revoke_extension(self.submission.submission_id)
+            assignments_submissions.revoke_extension(self.submission.submission_id)
         except Exception as e:
             messagebox.showerror("Revoke failed", str(e))
             return
@@ -1365,9 +1371,9 @@ class VersionHistoryDialog:
     def refresh(self) -> None:
         for i in self.tree.get_children():
             self.tree.delete(i)
-        versions = data.list_versions(self.submission.submission_id)
+        versions = assignments_submissions.list_versions(self.submission.submission_id)
         for v in versions:
-            files = data.list_attachments(version_id=v.version_id)
+            files = assignments_submissions.list_attachments(version_id=v.version_id)
             self.tree.insert(
                 "", "end", iid=str(v.version_id),
                 values=(v.attempt_no,
@@ -1390,7 +1396,7 @@ class VersionHistoryDialog:
         if vid is not None:
             try:
                 self.receipt_text.insert(
-                    "1.0", data.build_receipt_text(vid))
+                    "1.0", assignments_submissions.build_receipt_text(vid))
             except Exception as e:
                 self.receipt_text.insert("1.0", f"(no receipt: {e})")
         self.receipt_text.configure(state="disabled")
@@ -1401,7 +1407,7 @@ class VersionHistoryDialog:
             messagebox.showinfo("Receipt", "Select an attempt first.")
             return
         try:
-            data.issue_submission_receipt(vid, email=True)
+            assignments_submissions.issue_submission_receipt(vid, email=True)
         except Exception as e:
             messagebox.showerror("Receipt failed", str(e))
             return
@@ -1425,7 +1431,7 @@ class SimilarityDialog:
                  on_save: Callable[[], None]) -> None:
         self.submission = submission
         self.assignment = (assignment
-                            or data.get_assignment(
+                            or assignments_store.get_assignment(
                                 submission.assignment_id))
         self.on_save = on_save
         self.win = tk.Toplevel(parent)
@@ -1441,7 +1447,7 @@ class SimilarityDialog:
         form.pack(fill="both", expand=True)
         threshold = (self.assignment.effective_similarity_threshold
                       if self.assignment
-                      else data.DEFAULT_SIMILARITY_THRESHOLD)
+                      else assignments_models.DEFAULT_SIMILARITY_THRESHOLD)
         ttk.Label(form,
                    text=f"Review threshold for this assignment: "
                         f"{threshold:.0f}%",
@@ -1494,7 +1500,7 @@ class SimilarityDialog:
                                    "Score must be a number 0–100.")
             return
         try:
-            data.record_similarity(
+            assignments_integrity.record_similarity(
                 self.submission.submission_id, score=score,
                 provider=self.provider_e.get().strip() or None,
                 report_ref=self.report_e.get().strip() or None)
@@ -1506,7 +1512,7 @@ class SimilarityDialog:
 
     def _run(self) -> None:
         try:
-            result = data.run_similarity_check(
+            result = assignments_integrity.run_similarity_check(
                 self.submission.submission_id)
         except Exception as e:
             messagebox.showerror("Check failed", str(e))
@@ -1551,7 +1557,7 @@ class AssignmentStatusDialog:
 
     def _save(self) -> None:
         try:
-            data.set_assignment_status(
+            assignments_store.set_assignment_status(
                 self.existing.assignment_id, self.cb.get())
         except Exception as e:
             messagebox.showerror("Save failed", str(e))
@@ -1585,7 +1591,7 @@ class SubStatusDialog:
 
     def _save(self) -> None:
         try:
-            data.set_submission_status(
+            assignments_crud.set_submission_status(
                 self.submission.submission_id, self.cb.get())
         except Exception as e:
             messagebox.showerror("Save failed", str(e))
@@ -1642,7 +1648,7 @@ class AddStudentDialog:
             messagebox.showerror("Add", "Pick a student.")
             return
         try:
-            data.add_student(
+            assignments_crud.add_student(
                 self.assignment.assignment_id, self._ids[idx])
         except Exception as e:
             messagebox.showerror("Add failed", str(e))
@@ -1662,7 +1668,7 @@ class AddStudentDialog:
                                     "Class group id must be a number.")
             return
         try:
-            n = data.add_class_group(
+            n = assignments_crud.add_class_group(
                 self.assignment.assignment_id, gid)
         except Exception as e:
             messagebox.showerror("Add failed", str(e))
@@ -1745,7 +1751,7 @@ class MarkDialog:
                                     "Marks must be a number.")
             return
         try:
-            data.mark_submission(
+            assignments_crud.mark_submission(
                 self.submission.submission_id,
                 marks=marks,
                 grade=self.grade_e.get().strip() or None,
@@ -2051,10 +2057,10 @@ class AssignmentDialog:
         try:
             payload = self._collect()
             if self.existing:
-                data.update_assignment(
+                assignments_store.update_assignment(
                     self.existing.assignment_id, payload)
             else:
-                data.create_assignment(payload)
+                assignments_store.create_assignment(payload)
         except (ValidationError, Exception) as e:
             messagebox.showerror("Save failed", str(e))
             return

@@ -24,7 +24,7 @@ logger = logging.getLogger(__name__)
 VERSION: str = "1.0.0"
 RELEASE_NAME: str = "Primary School Edition"
 RELEASE_DATE: str = "2026-05-11"
-SYSTEM_KEY: str = "sixth_form"   # matches the launcher / role system key
+SYSTEM_KEY: str = "primary"   # matches the launcher / role system key
 
 AUTHORS: tuple[str, ...] = (
     "Sean Catchpole (lead developer)",
@@ -35,23 +35,24 @@ SUPPORT: str = "support@primary.sch.uk"
 
 # Tables to count in the local DB for the "quick stats" section.
 _STATS_TABLES: tuple[tuple[str, str], ...] = (
-    ("students",          "Students"),
+    ("pupils",            "Pupils"),
     ("staff",             "Staff"),
-    ("enrolments",        "Enrolments"),
-    ("courses",           "Courses"),
-    ("class_groups",      "Class groups"),
+    ("classes",           "Classes"),
+    ("subjects",          "Subjects"),
     ("timetable_slots",   "Timetable slots"),
-    ("attendance_records", "Attendance records"),
+    ("attendance_records", "Attendance marks"),
     ("homework_assignments", "Homework"),
-    ("ucas_applications", "UCAS applications"),
+    ("pupil_reading_levels", "Reading levels"),
+    ("phonics_screening_results", "Phonics check results"),
+    ("send_records",      "SEND register"),
+    ("pupil_premium_records", "Pupil Premium"),
     ("safeguarding_concerns", "Safeguarding concerns"),
     ("wellbeing_checkins", "Wellbeing check-ins"),
     ("parent_contacts",   "Parent contacts"),
     ("parents_evenings",  "Parents' evenings"),
-    ("notices",           "Notices"),
+    ("announcements",     "Announcements"),
     ("messages",          "Messages"),
-    ("fee_items",         "Fee items"),
-    ("bursary_applications", "Bursary applications"),
+    ("dinner_money_ledger", "Dinner money entries"),
     ("trips",             "Trips"),
     ("receipts",          "Receipts"),
     ("progress_reviews",  "Progress reviews"),

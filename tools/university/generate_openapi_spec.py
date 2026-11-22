@@ -3,17 +3,16 @@
 
 The runtime API server already serves the spec at ``/api/v1/openapi.json``
 via ``education_system.platform.delivery.api.docs.build_openapi_spec``. This script
-calls the same generator against each subsystem's app factory and writes
-the result to ``docs/api/openapi-<system>.json`` (and a single combined
-``docs/api/openapi.json`` from the unified server) so the spec is
-available offline, in version control, and to SDK generators / contract
-tests.
+calls the same generator against the unified server and writes the result
+to ``docs/api/openapi.json``, plus the University's part of it to
+``docs/api/openapi-university.json``, so the spec is available offline, in
+version control, and to SDK generators / contract tests.
 
 Usage::
 
-    python scripts/generate_openapi_spec.py            # writes both specs
-    python scripts/generate_openapi_spec.py --system university
-    python scripts/generate_openapi_spec.py --check    # exit non-zero if specs are stale
+    python tools/university/generate_openapi_spec.py            # writes both specs
+    python tools/university/generate_openapi_spec.py --system university
+    python tools/university/generate_openapi_spec.py --check    # exit non-zero if specs are stale
 
 The output paths are deterministic, so this script is safe to wire into
 CI as ``--check`` to fail builds when route changes haven't been
@@ -28,21 +27,11 @@ import logging
 import sys
 from pathlib import Path
 
-REPO_ROOT = Path(__file__).resolve().parent.parent
+REPO_ROOT = Path(__file__).resolve().parents[2]
 DOCS_API_DIR = REPO_ROOT / "docs" / "api"
 
 logging.basicConfig(level=logging.WARNING, format="%(levelname)s %(message)s")
 logger = logging.getLogger("generate_openapi_spec")
-
-
-def _build_university() -> dict:
-    from education_system.platform.delivery.api.university.api_server import create_app
-    from education_system.platform.delivery.api.docs import build_openapi_spec
-
-    app = create_app()
-    spec = build_openapi_spec(app)
-    spec["info"]["title"] = "Education System API — University"
-    return spec
 
 
 def _build_unified() -> dict:
@@ -52,6 +41,18 @@ def _build_unified() -> dict:
     app = create_unified_app()
     spec = build_openapi_spec(app)
     spec["info"]["title"] = "Education System API — Unified"
+    return spec
+
+
+def _build_university() -> dict:
+    """The University's routes, taken from the unified server (it has no app of its own)."""
+    spec = _build_unified()
+    spec["paths"] = {
+        path: methods
+        for path, methods in spec["paths"].items()
+        if path.startswith("/api/v1/university/")
+    }
+    spec["info"]["title"] = "Education System API — University"
     return spec
 
 

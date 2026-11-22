@@ -25,11 +25,9 @@ from education_system.systems.apprenticeships.interfaces.cli.commands import (
     signatures,
     training,
 )
-from education_system.systems.apprenticeships.services import (
-    apprentice_service,
-    learning_plan_service,
-)
-from education_system.systems.apprenticeships.services.access import Actor
+from education_system.systems.apprenticeships.application.apprentices import apprentice_service
+from education_system.systems.apprenticeships.application.learning import learning_plan_service
+from education_system.systems.apprenticeships.application.security.access import Actor
 
 logger = logging.getLogger(__name__)
 

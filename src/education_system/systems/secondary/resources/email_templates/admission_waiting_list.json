@@ -1,0 +1,31 @@
+{
+  "name": "admission_waiting_list",
+  "description": "Sent to the parent when the application is placed on the waiting list.",
+  "subject": "Waiting list: {child_name} ({application_ref})",
+  "body": [
+    "Dear {parent_name},",
+    "",
+    "We are sorry that we are not able to offer {child_first_name} a place in Year {year_group} for {academic_year} at the moment, as the year group is full.",
+    "",
+    "{child_first_name} has been placed on our waiting list and is currently at position {waiting_position}. The list is kept in the order of our published oversubscription criteria, so positions can go up or down as other children join or leave it.",
+    "",
+    "We will contact you straight away if a place becomes available. You also have the right to appeal against the decision not to offer a place - please contact us and we will tell you how.",
+    "",
+    "Yours sincerely,",
+    "Admissions, {school_name}"
+  ],
+  "placeholders": {
+    "parent_name": "The parent/carer's name",
+    "child_first_name": "The child's preferred or first name",
+    "child_name": "The child's preferred first name and surname",
+    "application_ref": "The application reference, e.g. APP00012",
+    "year_group": "The year group applied for",
+    "academic_year": "The academic year applied for, e.g. 2026/27",
+    "route": "Year 7 normal round or In-year",
+    "school_name": "The school's name",
+    "waiting_position": "The current position on the waiting list"
+  },
+  "defaults": {
+    "school_name": "Secondary School"
+  }
+}

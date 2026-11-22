@@ -238,10 +238,12 @@ def create_navigation_panel(self, parent):
         ('grade_tracking_gui', _t("nav.buttons.grade_tracking"), self.show_grade_tracking_gui),
         ('student_registration', _t("nav.buttons.student_registration"), self.show_student_registration_gui),
         ('library', _t("nav.buttons.library"), self.show_library_management),
-        ('ai_study', _t("nav.buttons.ai_study"), self.show_ai_study_gui),
-        ('study_matching_gui', _t("nav.buttons.study_matching"), self.show_study_matching_gui),
+        # Study Hub: one button for AI Study, Study Recommendations and
+        # Study Matching, which used to have a button each.
+        ('study_hub', '📘 Study Hub', self.show_study_hub_gui),
         ('office_hours', _t("nav.buttons.office_hours"), self.show_office_hours_gui),
-        ('absence_tracker', 'Absence Tracker', self.open_absence_tracker_gui),
+        # "Absence Tracker" removed 2026-10-18: it is part of the Attendance
+        # Tracker (its Absences tab). open_absence_tracker_gui is kept.
         # "Graduation System" removed: it opened the Degree Audit GUI, which
         # is already a Course Management tab, and four of its five tabs are
         # advising rather than graduation. The graduation half now lives in
@@ -251,7 +253,6 @@ def create_navigation_panel(self, parent):
         ('new_feature_module_evaluation_portal', 'Module Evaluation', self.show_new_feature_module_evaluation_portal),
         ('new_feature_lecturer_evaluation', 'Lecturer Evaluation', self.show_new_feature_lecturer_evaluation),
         ('new_feature_university_research', 'Research Portal', self.show_new_feature_university_research),
-        ('study_recommendations', 'Study Recommendations', self.show_study_recommendations_gui),
         ('new_feature_programme_governance', 'Programme Governance', self.show_new_feature_programme_governance),
         ('new_feature_pgr_admin', 'PGR Administration', self.show_new_feature_pgr_admin),
         ('new_feature_assessment_boards', 'Assessment Boards', self.show_new_feature_assessment_boards),
@@ -284,11 +285,13 @@ def create_navigation_panel(self, parent):
     finance_buttons_data = [
         ('finance_management', _t("nav.buttons.finance_management"), self.show_finance_management),
         ('my_finance', _t("nav.buttons.my_finance"), self.show_student_finance_account),
-        ('bank_app', _t("nav.buttons.bank_app", default="Student Bank"), self.show_bank_app_gui),
-        ('finance_reporting', 'Finance Reporting', self.show_finance_reporting_dashboard),
-        ('club_payment', 'Club Payments', self.show_club_payment_management),
-        ('new_feature_bursary', 'Bursaries', self.show_new_feature_bursary),
-        ('scholarship_finder', 'Scholarship Finder', self.show_scholarship_finder_gui),
+        # "Student Bank" removed 2026-10-18: merged into My Finance Account
+        # (same account; send money, full history and spending summary moved
+        # there). show_bank_app_gui now opens My Finance Account.
+        # Finance Reporting, Club Payments, Bursaries and Scholarship Finder
+        # removed 2026-10-18: each is already in the Finance window (Reports,
+        # Club Payments, Bursary Management, and Aid → scholarship finder).
+        # Their show_* handlers are kept.
     ]
 
     # ---------- Health & Wellness ----------
@@ -355,21 +358,31 @@ def create_navigation_panel(self, parent):
 
     # ---------- Student Services ----------
     student_services_buttons_data = [
+        ('student_handbook', 'Student Handbook', self.show_student_handbook),
         ('student_support', _t('nav.buttons.student_support'), self.open_student_support_portal_gui),
         ('helpdesk', _t('nav.buttons.helpdesk'), self.open_helpdesk_gui),
-        ('early_warning_system', _t('nav.buttons.early_warning'), self.show_early_warning_gui),
-        ('new_feature_intervention_support', 'Intervention Support', self.show_new_feature_intervention_support),
-        ('new_feature_intervention_outcomes', 'Intervention Outcomes', self.show_new_feature_intervention_outcomes),
+        # Early Warning & Interventions: one button for the Early Warning
+        # System, Intervention Support and Intervention Outcomes, which used
+        # to have a button and a window each.
+        ('new_feature_intervention_hub', '⚠️ Early Warning & Interventions', self.show_new_feature_intervention_hub),
         ('new_feature_safeguarding_system', 'Safeguarding', self.show_new_feature_safeguarding_system),
         ('new_feature_mentoring_matching', 'Peer Mentoring Matching', self.show_new_feature_mentoring_matching),
-        ('accessibility', _t('nav.buttons.accessibility'), self.show_accessibility_portal_gui),
+        # Accessibility Portal + Medical Accommodations merged 2026-10-19.
+        ('accessibility', 'Disability & Accessibility', self.show_accessibility_portal_gui),
+        # Counselling pathway, Support to Study, trusted contacts, PEEPs (2026-10-30).
+        ('wellbeing_casework', 'Wellbeing Casework', self.show_wellbeing_casework_gui),
         ('equality_diversity', 'Equality & Diversity', self.show_equality_diversity_gui),
         ('portfolio', _t('nav.buttons.portfolio'), self.show_portfolio_system_gui),
         ('advising_portal', _t('nav.buttons.advising_portal'), self.show_advising_portal_gui),
-        ('visa_compliance', 'Visa Sponsorship (Tier-4)', self.show_visa_compliance_gui),
-        ('enrolment_letters', 'Status Letters', self.show_enrolment_letters_gui),
+        # 'Visa Sponsorship (Tier-4)' removed 2026-10-19: a new student's visa
+        # is entered from Create Student, and an existing student's from the
+        # "Visa Sponsorship…" item on their Student Records right-click menu
+        # (show_visa_compliance_gui is kept for both).
+        # 'Status Letters' removed 2026-10-19: it is a tab of the Student App.
         ('student_app', 'Student App', self.show_student_app_gui),
-        ('mental_health', 'Mental Health & Wellness', self.show_mental_health_gui),
+        # "Mental Health & Wellness" removed 2026-10-19: it opened a placeholder
+        # window; mental health & wellness lives in the Health Portal
+        # (its Mental Health & Wellness section).
     ]
 
     # ---------- Career & Alumni ----------
@@ -391,7 +404,10 @@ def create_navigation_panel(self, parent):
         ('new_feature_fitness_to_practise', 'Fitness to Practise', self.show_new_feature_fitness_to_practise),
         ('new_feature_risk_management', 'Risk Management', self.show_new_feature_risk_management),
         ('information_rights', 'SAR / FOI Requests', self.show_information_rights_gui),
+        # "Case Management" was removed 2026-10-19 because its register was fed
+        # by nothing; academic appeals now run through it (2026-10-30).
         ('new_feature_case_management', 'Case Management', self.show_new_feature_case_management),
+        ('new_feature_academic_appeals', 'Academic Appeals', self.show_new_feature_academic_appeals),
     ]
 
     # ---------- Entertainment ----------
@@ -435,7 +451,7 @@ def create_navigation_panel(self, parent):
         ('blockchain_credentials', _t('nav.buttons.blockchain'), self.show_blockchain_credentials_gui),
         ('extras_launcher', _t('nav.buttons.extras'), self.show_extras_launcher),
         ('todo_app', _t('nav.buttons.todo_app'), self.show_todo_app_gui),
-        ('ai_detector', 'AI Detector', self.open_ai_detector_window),
+        ('ai_detector', 'AI Content Detector', self.open_ai_detector_window),
     ]
 
     # ---------- Security & Safety ----------
@@ -495,6 +511,7 @@ def create_navigation_panel(self, parent):
         ('student_mobility', 'Study Abroad & Exchange', self.show_student_mobility_gui),
         ('curriculum_specification', 'Curriculum Spec.', self.show_curriculum_specification_gui),
         ('new_feature_sso_providers', 'SSO Providers', self.show_new_feature_sso_providers),
+        ('new_feature_connectors', 'Connectors & Event Queue', self.show_new_feature_connectors),
     ]
 
     # ---------- Cross-System ----------
@@ -542,18 +559,17 @@ def create_navigation_panel(self, parent):
     support_wellbeing, inclusion_records = _partition(
         student_services_buttons_data,
         ['student_support', 'helpdesk',
-         'early_warning_system', 'new_feature_intervention_support',
-         'new_feature_intervention_outcomes', 'new_feature_mentoring_matching'],
+         'new_feature_intervention_hub',
+         'new_feature_mentoring_matching', 'wellbeing_casework'],
         ['new_feature_safeguarding_system', 'accessibility',
-         'equality_diversity', 'portfolio', 'advising_portal',
-         'visa_compliance', 'enrolment_letters'],
+         'equality_diversity', 'portfolio', 'advising_portal'],
     )
 
     admin_system, admin_admissions, admin_reporting = _partition(
         administration_buttons_data,
         ['user_management', 'system_admin_gui', 'security_dashboard',
          'new_feature_health_safety_portal', 'new_feature_background_checker',
-         'integration_marketplace', 'new_feature_sso_providers'],
+         'integration_marketplace', 'new_feature_sso_providers', 'new_feature_connectors'],
         ['admissions_crm', 'university_progression', 'ucas_management',
          'clearing_adjustment', 'prior_learning',
          'mitigating_circumstances', 'curriculum_specification',

@@ -14,6 +14,7 @@ from __future__ import annotations
 
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 
+from education_system.systems.university.domains.staff.interfaces.gui.staff_hr import _access as _hr
 import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext
 from datetime import datetime
@@ -49,7 +50,7 @@ class TeachingLoadGUI:
 
     def _get_user_id(self):
         """Get user ID from current user dict."""
-        return self.current_user.get('id') or self.current_user.get('username')
+        return _hr.user_key(self)
 
     def create_as_tab(self, notebook: ttk.Notebook):
         """Create as a tab in parent notebook."""
@@ -61,7 +62,8 @@ class TeachingLoadGUI:
         """Create as standalone window."""
         self.window = tk.Toplevel(self.root)
         self.window.title(_t('gui.staff.staff_hr.teaching_load.windows.teaching_load_management', default="Teaching Load Management"))
-        self.window.geometry("1200x700")
+        self.window.geometry("1400x900")
+        self.window.minsize(1200, 800)
         self.window.minsize(1000, 600)
 
         bottom_frame = ttk.Frame(self.window)
@@ -85,9 +87,11 @@ class TeachingLoadGUI:
         self._create_semester_comparison_tab()
         self._create_release_time_tab()
 
-        if self.current_user.get('role') in ['admin', 'Admin', 'administrator', 'staff']:
+        if _hr.can(self, 'manager'):
             self._create_department_view_tab()
+        if _hr.can(self, 'manager'):
             self._create_course_assignments_tab()
+        if _hr.can(self, 'hr'):
             self._create_standards_tab()
 
     # ==================== TAB 1: MY TEACHING LOAD ====================
@@ -1083,7 +1087,7 @@ class TeachingLoadGUI:
                     course_name=course_name,
                     section=section,
                     credit_hours=credits,
-                    contact_hours=contact_hours,
+                    contact_hours_pw=contact_hours,
                     enrolled_students=enrolled,
                     department=department,
                     is_new_prep=new_prep_var.get(),
@@ -1240,13 +1244,20 @@ class TeachingLoadGUI:
         semester = self.assign_semester_combo.get() or None
 
         try:
+            import csv
+            with open(file_path, encoding="utf-8-sig", newline="") as src:
+                rows = [{k.strip(): v.strip() for k, v in row.items() if k and v and v.strip()}
+                        for row in csv.DictReader(src)]
+            for row in rows:
+                if year:
+                    row.setdefault("academic_year", year)
+                if semester:
+                    row.setdefault("semester", semester)
             result = TeachingLoadManager.import_course_assignments(
-                file_path=file_path,
-                academic_year=year,
-                semester=semester
-            )
-            imported = result.get('imported', 0) if isinstance(result, dict) else result
-            messagebox.showinfo(_t('gui.staff.staff_hr.teaching_load.dialogs.success', default="Success"), f"Imported {imported} course assignments.")
+                rows, created_by=(self.current_user or {}).get("username"))
+            lines = [f"Imported {result['imported']} course assignments."]
+            lines += [f"Row {err['index'] + 2}: {err['error']}" for err in result["errors"][:15]]
+            messagebox.showinfo(_t('gui.staff.staff_hr.teaching_load.dialogs.success', default="Success"), "\n".join(lines))
             self._load_course_assignments()
         except Exception as e:
             messagebox.showerror(_t('gui.staff.staff_hr.teaching_load.dialogs.error', default="Error"), f"Import failed: {e}")

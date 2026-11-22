@@ -17,8 +17,8 @@ from education_system.systems.apprenticeships import config
 from education_system.systems.apprenticeships.domain.quality import surveys as rules
 from education_system.systems.apprenticeships.domain.quality.surveys import Survey
 from education_system.systems.apprenticeships.interfaces.cli import prompts
-from education_system.systems.apprenticeships.services import survey_service
-from education_system.systems.apprenticeships.services.access import Actor
+from education_system.systems.apprenticeships.application.quality import survey_service
+from education_system.systems.apprenticeships.application.security.access import Actor
 
 logger = logging.getLogger(__name__)
 

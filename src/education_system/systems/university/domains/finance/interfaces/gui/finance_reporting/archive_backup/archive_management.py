@@ -373,13 +373,17 @@ def run_archive_process(self, parent_window):
             if cursor.fetchone():
                 cursor.execute('''
                     INSERT INTO archived_financial_aid
-                    SELECT *, CURRENT_TIMESTAMP FROM financial_aid
-                    WHERE awarded_date < ?
+                        (student_id, aid_type, amount, academic_year, status,
+                         awarded_date, archived_date)
+                    SELECT student_id, aid_type, amount, academic_year, status,
+                           decision_date, CURRENT_TIMESTAMP
+                    FROM financial_aid
+                    WHERE decision_date < ?
                 ''', (five_years_ago,))
 
                 archived_count = cursor.rowcount
 
-                cursor.execute('DELETE FROM financial_aid WHERE awarded_date < ?', (five_years_ago,))
+                cursor.execute('DELETE FROM financial_aid WHERE decision_date < ?', (five_years_ago,))
 
                 total_archived += archived_count
                 log_progress(f"  ✓ Archived {archived_count} financial aid records")

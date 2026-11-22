@@ -140,6 +140,29 @@ def _periods_for_fiscal_year(fy: int):
         yield period_no, start, end
 
 
+def fiscal_year_for(value) -> int:
+    """The UK HE fiscal year (the year it ends in) of a date or ISO string."""
+    if not isinstance(value, date):
+        value = date.fromisoformat(str(value)[:10])
+    return _uk_he_fiscal_year_for(value)
+
+
+def seed_fiscal_year_periods(conn, fy: int) -> int:
+    """Ensure the 12 monthly periods of fiscal year ``fy`` exist (open).
+    Existing periods, whatever their status, are left alone. Returns how
+    many were created. Does not commit."""
+    cur = conn.cursor()
+    created = 0
+    for period_no, start, end in _periods_for_fiscal_year(int(fy)):
+        cur.execute(
+            "INSERT OR IGNORE INTO gl_periods (fiscal_year, period_no, start_date, end_date, status) "
+            "VALUES (?, ?, ?, ?, 'open')",
+            (int(fy), period_no, start, end),
+        )
+        created += cur.rowcount
+    return created
+
+
 def seed_current_fiscal_year_periods(conn, today=None):
     """Ensure 12 monthly periods exist for the fiscal year containing today.
 

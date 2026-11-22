@@ -251,6 +251,9 @@ include-package-data = true
     "manifest.schema.json",
     "*/plugin.json",
 ]
+"education_system.systems.secondary" = [
+    "resources/email_templates/*.json",
+]
 "education_system.platform.delivery.api.university" = [
     "static/*.html",
     "static/css/*.css",
@@ -299,7 +302,7 @@ exclude = [
     "dist",
     "migrations",
     "src/education_system/platform/features/extras/",
-    "src/education_system/systems/university/domains/academics/interfaces/gui/grade_tracking/dialogs/",
+    "src/education_system/systems/university/domains/assessment/interfaces/gui/grade_tracking/dialogs/",
 ]
 
 [tool.ruff.lint]
@@ -421,7 +424,7 @@ module = [
     # fe_college's interfaces are not loosened.
     "education_system.systems.nursery.interfaces.*",
     "education_system.systems.primary.interfaces.*",
-    "education_system.systems.secondary.interfaces.*",
+    "education_system.systems.secondary.app.*",
     "education_system.systems.sixth_form.interfaces.*",
 ]
 disallow_untyped_defs = false

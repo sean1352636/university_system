@@ -20,6 +20,7 @@ import sqlite3
 from dataclasses import dataclass, field
 from typing import Any
 from education_system import paths
+from education_system.systems.sixth_form.infrastructure import record_links as _links
 
 logger = logging.getLogger(__name__)
 
@@ -74,6 +75,9 @@ class TimetableSlot:
     room: str | None
     notes: str | None
     created_at: str
+    #: When the slot was archived / ended (kept for its attendance
+    #: history, gone from timetables). None = live.
+    archived_at: str | None = None
 
 
 @dataclass
@@ -107,6 +111,11 @@ def init_db() -> None:
     _cg.init_db()
     with _connect() as conn:
         conn.executescript(_SCHEMA)
+        cols = {r["name"] for r in conn.execute("PRAGMA table_info(timetable_slots)")}
+        if "archived_at" not in cols:
+            conn.execute("ALTER TABLE timetable_slots ADD COLUMN archived_at TEXT")
+            logger.info("Timetable: added column archived_at")
+        conn.commit()
     logger.debug("Timetable schema ready at %s", DB_PATH)
 
     _DB_READY = True
@@ -123,6 +132,7 @@ def _row(r: sqlite3.Row) -> TimetableSlot:
         room=r["room"],
         notes=r["notes"],
         created_at=r["created_at"],
+        archived_at=r["archived_at"] if "archived_at" in r.keys() else None,
     )
 
 
@@ -220,6 +230,7 @@ def _room_clash(
         return None
     sql = ("SELECT * FROM timetable_slots "
            "WHERE day = ? AND period = ? AND room IS NOT NULL "
+           "AND archived_at IS NULL "
            "AND LOWER(room) = LOWER(?)")
     args: list[Any] = [day, period, room]
     if excluding_slot_id is not None:
@@ -242,6 +253,7 @@ def _student_clashes(
                                     AND s2.group_id != s1.group_id
         JOIN timetable_slots t       ON t.group_id = s2.group_id
                                     AND t.day = ? AND t.period = ?
+                                    AND t.archived_at IS NULL
         WHERE s1.group_id = ?
     """
     args: list[Any] = [day, period, group_id]
@@ -279,6 +291,7 @@ def _teacher_clashes(
         JOIN class_groups cg ON cg.group_id = t.group_id
         JOIN courses      c  ON c.course_id = cg.course_id
         WHERE t.day = ? AND t.period = ? AND t.group_id != ?
+          AND t.archived_at IS NULL
     """
     args: list[Any] = [day, period, group_id]
     if excluding_slot_id is not None:
@@ -322,6 +335,20 @@ def _persist_with_clash_check(
             conn, payload["group_id"], payload["day"], payload["period"],
             excluding_slot_id=update_slot_id,
         )
+
+        if update_slot_id is None:
+            # An archived slot still holds this group's cell (it is kept for
+            # its attendance history); bring it back instead of clashing on
+            # UNIQUE(group_id, day, period).
+            old = conn.execute(
+                "SELECT slot_id FROM timetable_slots WHERE group_id = ? "
+                "AND day = ? AND period = ? AND archived_at IS NOT NULL",
+                (payload["group_id"], payload["day"], payload["period"]),
+            ).fetchone()
+            if old is not None:
+                conn.execute("UPDATE timetable_slots SET archived_at = NULL "
+                             "WHERE slot_id = ?", (old["slot_id"],))
+                update_slot_id = old["slot_id"]
 
         try:
             if update_slot_id is None:
@@ -416,9 +443,11 @@ def list_slots(
     room: str | None = None,
     teacher: str | None = None,
     student_id: str | None = None,
+    include_archived: bool = False,
 ) -> list[TimetableSlot]:
     """List slots. The teacher / student_id filters resolve to a set of
-    group_ids first, so they compose with the other filters."""
+    group_ids first, so they compose with the other filters. Archived
+    slots are left out unless *include_archived*."""
     init_db()
 
     extra_group_ids: set[int] | None = None
@@ -447,6 +476,8 @@ def list_slots(
 
     clauses: list[str] = []
     args: list[Any] = []
+    if not include_archived:
+        clauses.append("archived_at IS NULL")
     if group_id is not None:
         clauses.append("group_id = ?")
         args.append(group_id)
@@ -473,8 +504,55 @@ def list_slots(
         return [_row(r) for r in conn.execute(sql, args).fetchall()]
 
 
-def delete_slot(slot_id: int) -> bool:
+#: Rows that go with a slot but are configuration, not history.
+_STRUCTURE_TABLES: frozenset[str] = frozenset({"attendance_slot_weeks"})
+
+
+class SlotHasHistory(ValidationError):
+    """Refused: deleting this slot would destroy attendance history."""
+
+    def __init__(self, slot_id: int, counts: dict[str, int]):
+        self.slot_id = slot_id
+        self.counts = counts
+        super().__init__(
+            f"Slot #{slot_id} has history that deleting it would destroy "
+            f"({_links.describe(counts)}). Archive the slot instead — it "
+            f"leaves the timetable and its registers are kept.")
+
+
+def soft_record_counts(slot_id: int) -> dict[str, int]:
+    """Rows holding this slot's id without a foreign key (amendments,
+    closures, snapshots, cover …), found by column name."""
     init_db()
+    with _connect() as conn:
+        refs = _links.tables_with_column(
+            conn, "slot_id", exclude=("timetable_slots",))
+        return _links.soft_counts(conn, refs, slot_id)
+
+
+def linked_record_counts(slot_id: int) -> dict[str, int]:
+    """``{table: rows}`` a delete of this slot would remove or orphan."""
+    init_db()
+    with _connect() as conn:
+        hard = _links.cascade_counts(conn, "timetable_slots", "slot_id", slot_id)
+    return _links.merge(hard, soft_record_counts(slot_id))
+
+
+def history_counts(slot_id: int) -> dict[str, int]:
+    """Attendance / register history a delete of this slot would lose."""
+    return {t: n for t, n in linked_record_counts(slot_id).items()
+            if t not in _STRUCTURE_TABLES}
+
+
+def delete_slot(slot_id: int) -> bool:
+    """Delete a slot created by mistake; refused with
+    :class:`SlotHasHistory` once attendance or registers hang off it
+    (use :func:`archive_slot`)."""
+    init_db()
+    history = history_counts(slot_id)
+    if history:
+        logger.warning("delete_slot(%d) refused: %s", slot_id, history)
+        raise SlotHasHistory(slot_id, history)
     with _connect() as conn:
         cur = conn.execute(
             "DELETE FROM timetable_slots WHERE slot_id = ?", (slot_id,)
@@ -485,6 +563,39 @@ def delete_slot(slot_id: int) -> bool:
             return True
         logger.warning("delete_slot: unknown id %d", slot_id)
         return False
+
+
+def archive_slot(slot_id: int) -> bool:
+    """Take a slot off the timetable, keeping its attendance history."""
+    init_db()
+    with _connect() as conn:
+        cur = conn.execute(
+            "UPDATE timetable_slots SET archived_at = datetime('now') "
+            "WHERE slot_id = ? AND archived_at IS NULL", (slot_id,))
+        conn.commit()
+    if cur.rowcount:
+        logger.info("Archived timetable slot #%d", slot_id)
+    return bool(cur.rowcount)
+
+
+def restore_slot(slot_id: int) -> bool:
+    """Put an archived slot back on the timetable (refused on a room clash)."""
+    init_db()
+    s = get_slot(slot_id)
+    if s is None or s.archived_at is None:
+        return False
+    with _connect() as conn:
+        rc = _room_clash(conn, s.day, s.period, s.room,
+                         excluding_slot_id=slot_id)
+        if rc is not None:
+            raise ValidationError(
+                f"Room '{s.room}' is now booked at {day_name(s.day)} "
+                f"P{s.period} (slot #{rc.slot_id})")
+        conn.execute("UPDATE timetable_slots SET archived_at = NULL "
+                     "WHERE slot_id = ?", (slot_id,))
+        conn.commit()
+    logger.info("Restored timetable slot #%d", slot_id)
+    return True
 
 
 # ── Weekly grid view ───────────────────────────────────────────────

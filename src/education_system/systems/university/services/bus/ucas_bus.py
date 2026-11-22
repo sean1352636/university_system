@@ -1,15 +1,16 @@
 """Cross-domain port for UCAS applicant clear-down.
 
 Admitting a student is done in **Learners** (the student CRUD GUI), but the
-UCAS application belongs to **Admissions**, and the data being cleared belongs
-to the sixth form. The learners slice may not reach into another domain — its
+UCAS application belongs to **Admissions**, and the choice being closed is the
+sixth form's — which is told by event (``university.student.enrolled``) and
+marks its own choice *Placed*; nothing is deleted. The learners slice may not reach into another domain — its
 allow-list is already the largest in the university and is meant to shrink —
 so the call goes through here, the same way enrolment rules and finance holds
 do.
 
 Thin by design: the rules live in
 ``admissions.domain.ucas.post_admission``; this only forwards, and swallows
-nothing it should not. See that module for what is removed and what is kept.
+nothing it should not. See that module for what is recorded and published.
 """
 
 from __future__ import annotations

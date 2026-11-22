@@ -35,7 +35,7 @@ Guides covering courses, grading, assignments, library, research, and classroom 
 | 11 | [Module Scheduling](academics/module-scheduling.md) | Module timetables, room allocation, instructor assignment |
 | 12 | [Plagiarism Detection](academics/PLAGIARISM_DETECTION_GUIDE.md) | Plagiarism checking, similarity reports, academic integrity |
 | 13 | [Research Grants](academics/RESEARCH_GRANTS_GUIDE.md) | Grant applications, tracking, reporting |
-| 14 | [Virtual Classroom](academics/VIRTUAL_CLASSROOM_GUIDE.md) | Online collaboration, breakout rooms, polls, recording |
+| 14 | [Virtual Classroom](academics/VIRTUAL_CLASSROOM_GUIDE.md) | Classrooms, sessions, participants, attendance, recording |
 
 ## Student Life & Support
 
@@ -50,7 +50,7 @@ Guides covering student services, financial support, career development, social 
 | 19 | [Finance Management](student-life/finance-management.md) | Tuition, billing, payment plans, fee structures |
 | 20 | [Financial Aid](student-life/FINANCIAL_AID_GUIDE.md) | FAFSA, scholarships, grants, loans, work-study, disbursements |
 | 21 | [Helpdesk & Student Support](student-life/HELPDESK_SUPPORT_GUIDE.md) | Support tickets, counseling, crisis intervention, SLA management |
-| 22 | [Lost & Found, Feedback & Notifications](student-life/LOST_FOUND_FEEDBACK_NOTIFICATIONS_GUIDE.md) | Item tracking, campus feedback/suggestions, multi-channel notifications |
+| 22 | [Lost & Found, Feedback & Notifications](student-life/LOST_FOUND_FEEDBACK_NOTIFICATIONS_GUIDE.md) | Item tracking, campus feedback/suggestions, unread notifications inbox |
 | 23 | [Roommate, Social & Study Matching](student-life/ROOMMATE_SOCIAL_STUDY_MATCHING_GUIDE.md) | Roommate finder, interest matching, study groups, virtual study rooms |
 | 24 | [Scholarship Finder](student-life/SCHOLARSHIP_FINDER_GUIDE.md) | Scholarship search, applications, eligibility matching |
 | 25 | [Student Jobs](student-life/STUDENT_JOBS_GUIDE.md) | On-campus employment, work-study positions |
@@ -191,10 +191,10 @@ Guides covering system administration, security, databases, and platform feature
 ## Additional Resources
 
 - **Main Documentation**: `docs/README.md`
-- **API Documentation**: `docs/development/API.md`
-- **Architecture Guide**: `university_system/ARCHITECTURE.md`
+- **API Documentation**: `docs/university/development/API.md`
+- **Architecture Guide**: `docs/reference/PROJECT_STRUCTURE.md`
 - **Security Guide**: `SECURITY.md`
-- **Module Documentation**: `docs/modules/`
+- **Module Documentation**: `docs/university/modules/`
 
 ---
 

@@ -18,6 +18,8 @@ from education_system.systems.primary.domain.learners.pupils.bulk_operations.bul
 from education_system.systems.primary.domain.learners.pupils.pupils import (
     ValidationError, YEAR_GROUPS,
 )
+from education_system.systems.primary.domain.learners.pupils import pupils as pupils_data
+from education_system.systems.primary.interfaces.gui import kit
 
 logger = logging.getLogger(__name__)
 
@@ -98,19 +100,13 @@ def _show_result_dialog(parent, title: str, result: BulkResult) -> None:
 @_safe_view
 def open_bulk_operations(host) -> None:
     logger.debug("GUI: open_bulk_operations")
-    win = tk.Toplevel(host.root)
-    win.title("Bulk Operations")
-    win.transient(host.root)
-    win.geometry("520x360")
+    kit.show_page(host, "Bulk Operations", lambda parent: _draw_bulk_operations(parent, host))
 
-    frm = ttk.Frame(win, padding=14)
-    frm.pack(fill="both", expand=True)
 
-    ttk.Label(frm, text="Bulk Operations",
-              font=("Segoe UI", 13, "bold")).pack(anchor="w")
-    ttk.Label(frm,
-              text="Import, export, or batch-edit pupil records.",
-              foreground="#555").pack(anchor="w", pady=(0, 12))
+def _draw_bulk_operations(frm: ttk.Frame, host) -> None:
+    win = frm.winfo_toplevel()
+    kit.page_heading(frm, "Bulk Operations",
+                     "Import, export, or batch-edit pupil records.")
 
     def _import() -> None:
         path = filedialog.askopenfilename(
@@ -186,14 +182,101 @@ def open_bulk_operations(host) -> None:
             anchor="w", pady=3)
 
     ttk.Button(frm, text="Close",
-               command=win.destroy).pack(anchor="e", pady=(14, 0))
+               command=lambda: kit.close_page(host, frm)).pack(anchor="w", pady=(14, 0))
+
+
+#: SEND status values ``pupils._validate`` accepts (blank clears).
+_SEND_CHOICES = (("yes", "Yes"), ("no", "No"))
+
+
+def _pupils_on_roll() -> list:
+    try:
+        return pupils_data.list_pupils()
+    except Exception:
+        logger.exception("pupil list for bulk picker failed")
+        return []
+
+
+def _pupil_label(p) -> str:
+    year = "Reception" if p.year_group == "R" else f"Year {p.year_group}"
+    cls = f" {p.class_name}" if p.class_name else ""
+    return f"{p.full_name} ({p.pupil_id}) · {year}{cls}"
+
+
+class _PupilTicker(ttk.Frame):
+    """Pick the pupils a bulk action applies to: a list to tick from, with
+    a year-group filter and Select all / Clear. ``get()`` gives pupil ids."""
+
+    def __init__(self, master: tk.Misc, *, height: int = 10) -> None:
+        super().__init__(master)
+        rows = _pupils_on_roll()
+        self._all = [(p.pupil_id, _pupil_label(p)) for p in rows]
+        self._years = {p.pupil_id: p.year_group for p in rows}
+        self._chosen: set[str] = set()
+        bar = ttk.Frame(self)
+        bar.pack(fill="x", pady=(0, 4))
+        ttk.Label(bar, text="Year:").pack(side="left")
+        self.year_var = tk.StringVar()
+        kit.YearGroupPicker(bar, self.year_var, blank=True).pack(side="left", padx=(4, 8))
+        ttk.Button(bar, text="Select all shown",
+                   command=self._select_all).pack(side="left")
+        ttk.Button(bar, text="Clear",
+                   command=self._clear).pack(side="left", padx=4)
+        self.count_var = tk.StringVar(value="0 selected")
+        ttk.Label(bar, textvariable=self.count_var, foreground="#666").pack(side="right")
+        holder = ttk.Frame(self)
+        holder.pack(fill="both", expand=True)
+        self.box = tk.Listbox(holder, selectmode="multiple", height=height, width=56,
+                              exportselection=False)
+        sb = ttk.Scrollbar(holder, orient="vertical", command=self.box.yview)
+        self.box.configure(yscrollcommand=sb.set)
+        self.box.pack(side="left", fill="both", expand=True)
+        sb.pack(side="right", fill="y")
+        self.box.bind("<<ListboxSelect>>", lambda _e: self._remember())
+        self.year_var.trace_add("write", lambda *_a: self._fill())
+        self._shown: list[str] = []
+        self._fill()
+
+    def _fill(self) -> None:
+        year = self.year_var.get()
+        self.box.delete(0, "end")
+        self._shown = []
+        for pid, label in self._all:
+            if year and self._years.get(pid) != year:
+                continue
+            self._shown.append(pid)
+            self.box.insert("end", label)
+            if pid in self._chosen:
+                self.box.selection_set("end")
+        self._count()
+
+    def _remember(self) -> None:
+        picked = {self._shown[i] for i in self.box.curselection()}
+        self._chosen -= set(self._shown) - picked
+        self._chosen |= picked
+        self._count()
+
+    def _select_all(self) -> None:
+        self.box.selection_set(0, "end")
+        self._remember()
+
+    def _clear(self) -> None:
+        self._chosen.clear()
+        self.box.selection_clear(0, "end")
+        self._count()
+
+    def _count(self) -> None:
+        self.count_var.set(f"{len(self._chosen)} selected")
+
+    def get(self) -> list[str]:
+        return [pid for pid, _l in self._all if pid in self._chosen]
 
 
 def _open_bulk_update_dialog(parent) -> None:
     dlg = tk.Toplevel(parent)
     dlg.title("Bulk update")
     dlg.transient(parent)
-    dlg.geometry("440x320")
+    dlg.geometry("560x520")
     try:
         dlg.wait_visibility()
         dlg.grab_set()
@@ -212,8 +295,27 @@ def _open_bulk_update_dialog(parent) -> None:
 
     ttk.Label(frm, text="New value:").grid(row=1, column=0, sticky="w", pady=4)
     value_var = tk.StringVar()
-    value_entry = ttk.Entry(frm, textvariable=value_var, width=22)
-    value_entry.grid(row=1, column=1, sticky="w", pady=4)
+    value_holder = ttk.Frame(frm)
+    value_holder.grid(row=1, column=1, sticky="w", pady=4)
+
+    def _value_widget(*_a) -> None:
+        # The value box suits the field: year groups, the classes set up,
+        # or yes/no for SEND. A blank value clears the field.
+        for w in value_holder.winfo_children():
+            w.destroy()
+        f = field_var.get()
+        if f == "year_group":
+            value_var.set(YEAR_GROUPS[0])
+            kit.YearGroupPicker(value_holder, value_var).pack(side="left")
+        elif f == "send_status":
+            value_var.set("")
+            kit.ChoiceField(value_holder, value_var, choices=_SEND_CHOICES,
+                            blank=True, width=10).pack(side="left")
+        else:
+            value_var.set("")
+            kit.ClassPicker(value_holder, value_var).pack(side="left")
+    field_var.trace_add("write", _value_widget)
+    _value_widget()
 
     hint_var = tk.StringVar()
     ttk.Label(frm, textvariable=hint_var, foreground="#666").grid(
@@ -230,29 +332,21 @@ def _open_bulk_update_dialog(parent) -> None:
     field_var.trace_add("write", _update_hint)
     _update_hint()
 
-    ttk.Label(frm, text="Pupil IDs (one per line or comma-separated):").grid(
+    ttk.Label(frm, text="Pupils (tick each one to update):").grid(
         row=3, column=0, columnspan=2, sticky="w", pady=(8, 2))
-    ids_text = tk.Text(frm, height=8, width=42)
-    ids_text.grid(row=4, column=0, columnspan=2, sticky="nsew")
+    ticker = _PupilTicker(frm, height=10)
+    ticker.grid(row=4, column=0, columnspan=2, sticky="nsew")
     frm.rowconfigure(4, weight=1)
     frm.columnconfigure(1, weight=1)
 
     def _parse_ids() -> list[str]:
-        raw = ids_text.get("1.0", "end").strip()
-        if not raw:
-            return []
-        parts: list[str] = []
-        for chunk in raw.replace(",", "\n").splitlines():
-            chunk = chunk.strip()
-            if chunk:
-                parts.append(chunk)
-        return parts
+        return ticker.get()
 
     def _apply() -> None:
         ids = _parse_ids()
         if not ids:
             messagebox.showinfo("Bulk update",
-                                "Enter at least one pupil ID.",
+                                "Select at least one pupil.",
                                 parent=dlg)
             return
         if not messagebox.askyesno(
@@ -286,7 +380,7 @@ def _open_bulk_delete_dialog(parent) -> None:
     dlg = tk.Toplevel(parent)
     dlg.title("Bulk delete")
     dlg.transient(parent)
-    dlg.geometry("420x320")
+    dlg.geometry("560x460")
     try:
         dlg.wait_visibility()
         dlg.grab_set()
@@ -298,31 +392,23 @@ def _open_bulk_delete_dialog(parent) -> None:
 
     ttk.Label(
         frm,
-        text="Pupil IDs to delete (one per line or comma-separated):",
+        text="Pupils to delete (tick each one):",
     ).pack(anchor="w")
-    ids_text = tk.Text(frm, height=10)
-    ids_text.pack(fill="both", expand=True, pady=(4, 6))
+    ticker = _PupilTicker(frm, height=10)
+    ticker.pack(fill="both", expand=True, pady=(4, 6))
 
     confirm_var = tk.StringVar()
     ttk.Label(frm, text="Type DELETE to confirm:").pack(anchor="w")
     ttk.Entry(frm, textvariable=confirm_var, width=20).pack(anchor="w", pady=(2, 6))
 
     def _parse_ids() -> list[str]:
-        raw = ids_text.get("1.0", "end").strip()
-        if not raw:
-            return []
-        parts: list[str] = []
-        for chunk in raw.replace(",", "\n").splitlines():
-            chunk = chunk.strip()
-            if chunk:
-                parts.append(chunk)
-        return parts
+        return ticker.get()
 
     def _apply() -> None:
         ids = _parse_ids()
         if not ids:
             messagebox.showinfo("Bulk delete",
-                                "Enter at least one pupil ID.",
+                                "Select at least one pupil.",
                                 parent=dlg)
             return
         if confirm_var.get() != "DELETE":

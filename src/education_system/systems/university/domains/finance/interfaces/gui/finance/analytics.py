@@ -14,6 +14,8 @@ import csv
 from datetime import datetime, timedelta
 import json
 import threading
+from education_system.platform.delivery.gui.tk_threads import start_thread, ui
+from ._stdout_capture import capture_stdout
 import warnings
 from pathlib import Path
 from cryptography.fernet import Fernet
@@ -453,17 +455,18 @@ class AnalyticsManager:
             self.update_status(_("analytics_manager.messages.generating_analytics"))
 
             def generate_analytics():
-                old_stdout = sys.stdout
-                sys.stdout = mystdout = io.StringIO()
-
-                generate_predictive_analytics()
+                try:
+                    with capture_stdout() as mystdout:
+                        generate_predictive_analytics()
+                except Exception as e:
+                    ui(self.root, lambda err=e: messagebox.showerror(_("common.error"), _("analytics_manager.errors.failed_generate_analytics", error=err)))
+                    return
 
                 output = mystdout.getvalue()
-                sys.stdout = old_stdout
 
-                self.root.after(0, lambda: self.display_report_output(_("analytics_manager.dialogs.predictive_analytics_title"), output))
+                ui(self.root, lambda: self.display_report_output(_("analytics_manager.dialogs.predictive_analytics_title"), output))
 
-            threading.Thread(target=generate_analytics, daemon=True).start()
+            start_thread(self.root, generate_analytics)
 
         except Exception as e:
             messagebox.showerror(_("common.error"), _("analytics_manager.errors.failed_generate_analytics", error=e))
@@ -475,17 +478,18 @@ class AnalyticsManager:
             self.update_status(_("analytics_manager.messages.running_fraud_detection"))
 
             def detect_fraud():
-                old_stdout = sys.stdout
-                sys.stdout = mystdout = io.StringIO()
-
-                detect_payment_fraud()
+                try:
+                    with capture_stdout() as mystdout:
+                        detect_payment_fraud()
+                except Exception as e:
+                    ui(self.root, lambda err=e: messagebox.showerror(_("common.error"), _("analytics_manager.errors.failed_fraud_detection", error=err)))
+                    return
 
                 output = mystdout.getvalue()
-                sys.stdout = old_stdout
 
-                self.root.after(0, lambda: self.display_report_output(_("analytics_manager.dialogs.fraud_detection_title"), output))
+                ui(self.root, lambda: self.display_report_output(_("analytics_manager.dialogs.fraud_detection_title"), output))
 
-            threading.Thread(target=detect_fraud, daemon=True).start()
+            start_thread(self.root, detect_fraud)
 
         except Exception as e:
             messagebox.showerror(_("common.error"), _("analytics_manager.errors.failed_fraud_detection", error=e))
@@ -494,13 +498,10 @@ class AnalyticsManager:
     def gui_detect_payment_fraud_original(self):
         """GUI wrapper for detect_payment_fraud from original finance.py"""
         try:
-            old_stdout = sys.stdout
-            sys.stdout = mystdout = io.StringIO()
-
-            detect_payment_fraud()
+            with capture_stdout() as mystdout:
+                detect_payment_fraud()
 
             output = mystdout.getvalue()
-            sys.stdout = old_stdout
 
             self.display_report_output(_("analytics_manager.dialogs.fraud_detection_title"), output)
             self.update_status(_("analytics_manager.messages.running_fraud_detection"))

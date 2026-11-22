@@ -1,0 +1,33 @@
+{
+  "name": "medical_medicine_expiry",
+  "description": "Asks the family to replace a medicine the school holds for their child that has expired or expires soon.",
+  "subject": "Medicine at school {state} - {pupil_name}",
+  "body": [
+    "Dear {recipient_name},",
+    "",
+    "The {medicine} we keep in school for {pupil_name} {state} (expiry date {expiry_date}).",
+    "",
+    "Please bring in a replacement in its original packaging with the pharmacy label, and collect the old one so it can be disposed of safely.",
+    "",
+    "{note}",
+    "",
+    "If {pupil_name} no longer needs this medicine, please let the school office know.",
+    "",
+    "Best wishes,",
+    "{sender_name}",
+    "{school_name}"
+  ],
+  "placeholders": {
+    "recipient_name": "The contact's name",
+    "pupil_name": "The pupil's preferred first name and surname",
+    "medicine": "The medicine, strength and form",
+    "state": "has expired / expires soon",
+    "expiry_date": "The expiry date",
+    "note": "An optional message",
+    "sender_name": "The member of staff sending it",
+    "school_name": "The school's name"
+  },
+  "defaults": {
+    "school_name": "Secondary School"
+  }
+}

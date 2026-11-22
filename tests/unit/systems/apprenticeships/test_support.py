@@ -24,8 +24,8 @@ from education_system.systems.apprenticeships.infrastructure.persistence.reposit
     compliance_repository,
     support_repository,
 )
-from education_system.systems.apprenticeships.services import support_service
-from education_system.systems.apprenticeships.services.access import Actor, PermissionDenied
+from education_system.systems.apprenticeships.application.support import support_service
+from education_system.systems.apprenticeships.application.security.access import Actor, PermissionDenied
 
 TODAY = date(2026, 9, 10)
 

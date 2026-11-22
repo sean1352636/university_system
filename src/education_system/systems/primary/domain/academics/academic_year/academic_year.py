@@ -1,4 +1,4 @@
-"""Academic Year — calendar metadata for the Sixth Form System.
+"""Academic Year — calendar metadata for the Primary School System.
 
 Three related tables:
 

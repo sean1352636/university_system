@@ -1,0 +1,34 @@
+{
+  "name": "welcome_parent",
+  "description": "Sent to a parent or carer when their parent portal login is created from the pupil's contacts.",
+  "subject": "Your {school_name} parent portal login",
+  "body": [
+    "Dear {parent_name},",
+    "",
+    "A parent portal login has been set up for you so you can follow {pupil_first_name}'s time at {school_name}:",
+    "their timetable, homework, attendance, grades, reports, library books, clubs and school events.",
+    "",
+    "Your sign-in details:",
+    "    Username: {username}",
+    "    Password: {password}",
+    "",
+    "One login covers all of your children at the school.",
+    "Please change your password after you first sign in, and never share it.",
+    "",
+    "If you weren't expecting this e-mail, or have any problems signing in, please contact the school office.",
+    "",
+    "Best wishes,",
+    "{school_name}"
+  ],
+  "placeholders": {
+    "parent_name": "The contact's full name",
+    "pupil_first_name": "The pupil's preferred or first name",
+    "pupil_name": "The pupil's preferred first name and surname",
+    "username": "The parent's login username (firstname.lastname)",
+    "password": "The parent's first password",
+    "school_name": "The school's name"
+  },
+  "defaults": {
+    "school_name": "Secondary School"
+  }
+}

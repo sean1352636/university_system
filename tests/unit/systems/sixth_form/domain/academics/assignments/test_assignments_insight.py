@@ -14,10 +14,16 @@ import sqlite3
 import pytest
 
 from education_system.systems.sixth_form.domain.academics.assignments import (
-    assignments as cw,
     assignments_admin as admin,
     assignments_analytics as an,
     assignments_marking as mk,
+)
+from education_system.systems.sixth_form.domain.academics.assignments import (
+    crud as assignments_crud,
+    integrity as assignments_integrity,
+    models as assignments_models,
+    store as assignments_store,
+    submissions as assignments_submissions,
 )
 from education_system.systems.sixth_form.domain.academics.subjects import (
     subjects as subjects_mod,
@@ -64,7 +70,7 @@ def ins_db(tmp_path, monkeypatch):
     db_path = str(tmp_path / "sixthform.db")
     # ``assignments_analytics`` is deliberately absent: it owns no
     # tables and reads through core, which is redirected here.
-    for mod in (cw, mk, admin, students_mod, subjects_mod,
+    for mod in (assignments_store, mk, admin, students_mod, subjects_mod,
                  targets_mod):
         monkeypatch.setattr(mod, "DB_PATH", db_path)
         monkeypatch.setattr(mod, "_DB_READY", False)
@@ -89,15 +95,15 @@ def _assignment(**over):
                "set_date": _day(-40), "due_date": _day(-10),
                "max_marks": 50, "status": "Set"}
     payload.update(over)
-    return cw.create_assignment(payload)
+    return assignments_store.create_assignment(payload)
 
 
 def _marked(assignment, student_id, marks, *, submitted=-15):
-    sub = cw.add_student(assignment.assignment_id, student_id)
-    cw.submit_work(sub.submission_id, submitted_on=_day(submitted))
-    cw.mark_submission(sub.submission_id, marks=marks,
+    sub = assignments_crud.add_student(assignment.assignment_id, student_id)
+    assignments_submissions.submit_work(sub.submission_id, submitted_on=_day(submitted))
+    assignments_crud.mark_submission(sub.submission_id, marks=marks,
                         marked_by="Ms Owner")
-    return cw.get_submission(sub.submission_id)
+    return assignments_store.get_submission(sub.submission_id)
 
 
 # ── Deadline clashes (item 40) ─────────────────────────────────────
@@ -154,7 +160,7 @@ def test_student_clashes_see_an_unusual_combination(ins_db):
     second = _assignment(title="B", year_group="Year 13",
                           due_date=_day(4))
     for a in (first, second):
-        cw.add_student(a.assignment_id, ins_db.s1)
+        assignments_crud.add_student(a.assignment_id, ins_db.s1)
 
     assert admin.clashes() == []
     student = admin.student_clashes(ins_db.s1)
@@ -165,9 +171,9 @@ def test_student_clashes_see_an_unusual_combination(ins_db):
 def test_submitted_work_is_not_a_clash(ins_db):
     first = _assignment(title="A", due_date=_day(3))
     second = _assignment(title="B", due_date=_day(4))
-    done = cw.add_student(first.assignment_id, ins_db.s1)
-    cw.add_student(second.assignment_id, ins_db.s1)
-    cw.submit_work(done.submission_id, submitted_on=_day(0))
+    done = assignments_crud.add_student(first.assignment_id, ins_db.s1)
+    assignments_crud.add_student(second.assignment_id, ins_db.s1)
+    assignments_submissions.submit_work(done.submission_id, submitted_on=_day(0))
 
     assert admin.student_clashes(ins_db.s1) == []
 
@@ -176,8 +182,8 @@ def test_reschedule_suggests_moving_the_smallest_cohort(ins_db):
     big = _assignment(title="Big", due_date=_day(3))
     small = _assignment(title="Small", due_date=_day(4))
     for student in ins_db.students:
-        cw.add_student(big.assignment_id, student)
-    cw.add_student(small.assignment_id, ins_db.s1)
+        assignments_crud.add_student(big.assignment_id, student)
+    assignments_crud.add_student(small.assignment_id, ins_db.s1)
 
     suggestions = admin.suggest_reschedule(admin.clashes()[0])
 
@@ -189,10 +195,10 @@ def test_reschedule_suggests_moving_the_smallest_cohort(ins_db):
 
 def test_digest_collects_marking_and_missing(ins_db):
     a = _assignment(due_date=_day(-5))
-    handed = cw.add_student(a.assignment_id, ins_db.s1)
-    cw.submit_work(handed.submission_id, submitted_on=_day(-6))
-    cw.add_student(a.assignment_id, ins_db.s2)
-    cw.sweep_late_submissions()
+    handed = assignments_crud.add_student(a.assignment_id, ins_db.s1)
+    assignments_submissions.submit_work(handed.submission_id, submitted_on=_day(-6))
+    assignments_crud.add_student(a.assignment_id, ins_db.s2)
+    assignments_integrity.sweep_late_submissions()
 
     digest = admin.build_digest("Ms Owner")
 
@@ -206,7 +212,7 @@ def test_digest_lists_upcoming_deadlines(ins_db):
     _assignment(title="Soon", due_date=_day(2))
     _assignment(title="Far", due_date=_day(60))
     a = _assignment(title="Soon", due_date=_day(2))
-    cw.add_student(a.assignment_id, ins_db.s1)
+    assignments_crud.add_student(a.assignment_id, ins_db.s1)
 
     digest = admin.build_digest("Ms Owner", period="Weekly")
 
@@ -219,8 +225,8 @@ def test_a_digest_only_covers_that_teacher(ins_db):
     mine = _assignment(title="Mine", teacher="Ms Owner",
                         due_date=_day(-5))
     _assignment(title="Theirs", teacher="Mr Other", due_date=_day(-5))
-    cw.add_student(mine.assignment_id, ins_db.s1)
-    cw.sweep_late_submissions()
+    assignments_crud.add_student(mine.assignment_id, ins_db.s1)
+    assignments_integrity.sweep_late_submissions()
 
     digest = admin.build_digest("Ms Owner")
 
@@ -239,8 +245,8 @@ def test_an_empty_digest_is_not_sent(ins_db):
 
 def test_sending_a_digest_is_logged(ins_db):
     a = _assignment(due_date=_day(-5))
-    cw.add_student(a.assignment_id, ins_db.s1)
-    cw.sweep_late_submissions()
+    assignments_crud.add_student(a.assignment_id, ins_db.s1)
+    assignments_integrity.sweep_late_submissions()
 
     admin.send_digest("Ms Owner", notify=False)
 
@@ -250,7 +256,7 @@ def test_sending_a_digest_is_logged(ins_db):
 
 
 def test_an_invalid_digest_period_is_refused(ins_db):
-    with pytest.raises(cw.ValidationError, match="Digest period"):
+    with pytest.raises(assignments_models.ValidationError, match="Digest period"):
         admin.build_digest("Ms Owner", period="Hourly")
 
 
@@ -281,13 +287,13 @@ def test_cover_only_applies_inside_its_window(ins_db):
 
 def test_a_teacher_cannot_cover_themselves(ins_db):
     a = _assignment(teacher="Ms Owner")
-    with pytest.raises(cw.ValidationError, match="already owns"):
+    with pytest.raises(assignments_models.ValidationError, match="already owns"):
         admin.assign_cover(a.assignment_id, cover_marker="Ms Owner")
 
 
 def test_cover_cannot_end_before_it_starts(ins_db):
     a = _assignment()
-    with pytest.raises(cw.ValidationError, match="end before"):
+    with pytest.raises(assignments_models.ValidationError, match="end before"):
         admin.assign_cover(a.assignment_id, cover_marker="Mr Cover",
                             cover_from=_day(10), cover_until=_day(2))
 
@@ -325,13 +331,13 @@ def test_expired_cover_is_reported_not_enforced(ins_db):
     assert admin.list_covered() == []
     assert [x.assignment_id for x in admin.expired_cover()] \
         == [a.assignment_id]
-    assert cw.get_assignment(a.assignment_id).marker_on() == "Ms Owner"
+    assert assignments_store.get_assignment(a.assignment_id).marker_on() == "Ms Owner"
 
 
 def test_a_cover_marker_sees_the_work_in_their_digest(ins_db):
     a = _assignment(teacher="Ms Owner", due_date=_day(-5))
-    cw.add_student(a.assignment_id, ins_db.s1)
-    cw.sweep_late_submissions()
+    assignments_crud.add_student(a.assignment_id, ins_db.s1)
+    assignments_integrity.sweep_late_submissions()
     admin.assign_cover(a.assignment_id, cover_marker="Mr Cover")
 
     covering = admin.build_digest("Mr Cover")
@@ -364,8 +370,8 @@ def test_history_reports_state_per_entry(ins_db):
     marked = _assignment(title="Marked")
     missing = _assignment(title="Missing", due_date=_day(-5))
     _marked(marked, ins_db.s1, 40)
-    cw.add_student(missing.assignment_id, ins_db.s1)
-    cw.sweep_late_submissions()
+    assignments_crud.add_student(missing.assignment_id, ins_db.s1)
+    assignments_integrity.sweep_late_submissions()
 
     states = {e.assignment.title: e.state
               for e in an.student_history(ins_db.s1).entries}
@@ -530,7 +536,7 @@ def test_criterion_weaknesses_rank_weakest_first(ins_db):
     weak = mk.add_criterion(a.assignment_id,
                              {"title": "Weak", "max_marks": 25})
     for student in ins_db.students:
-        sub = cw.add_student(a.assignment_id, student)
+        sub = assignments_crud.add_student(a.assignment_id, student)
         mk.set_criterion_mark(sub.submission_id,
                                strong.criterion_id, marks=22)
         mk.set_criterion_mark(sub.submission_id,
@@ -562,8 +568,8 @@ def test_compare_subjects_and_teachers(ins_db):
 def test_cohort_summary(ins_db):
     a = _assignment(due_date=_day(-5))
     _marked(a, ins_db.s1, 40)
-    cw.add_student(a.assignment_id, ins_db.s2)
-    cw.sweep_late_submissions()
+    assignments_crud.add_student(a.assignment_id, ins_db.s2)
+    assignments_integrity.sweep_late_submissions()
 
     summary = an.cohort_summary()
 
@@ -576,7 +582,7 @@ def test_cohort_summary(ins_db):
 
 def test_an_empty_distribution_is_honest(ins_db):
     a = _assignment()
-    cw.add_student(a.assignment_id, ins_db.s1)
+    assignments_crud.add_student(a.assignment_id, ins_db.s1)
 
     distribution = an.assignment_distribution(a.assignment_id)
 
@@ -590,10 +596,10 @@ def test_an_empty_distribution_is_honest(ins_db):
 def test_non_submitters_are_ranked_and_levelled(ins_db):
     for i in range(an.REFERRAL_THRESHOLD):
         a = _assignment(title=f"Piece {i}", due_date=_day(-5))
-        cw.add_student(a.assignment_id, ins_db.s1)
+        assignments_crud.add_student(a.assignment_id, ins_db.s1)
         if i < an.CONCERN_THRESHOLD:
-            cw.add_student(a.assignment_id, ins_db.s2)
-    cw.sweep_late_submissions()
+            assignments_crud.add_student(a.assignment_id, ins_db.s2)
+    assignments_integrity.sweep_late_submissions()
 
     rows = an.non_submitters()
 
@@ -608,10 +614,10 @@ def test_the_rate_matters_as_well_as_the_count(ins_db):
     twenty."""
     for i in range(6):
         a = _assignment(title=f"Piece {i}", due_date=_day(-5))
-        cw.add_student(a.assignment_id, ins_db.s1)
+        assignments_crud.add_student(a.assignment_id, ins_db.s1)
         if i < 2:
-            cw.add_student(a.assignment_id, ins_db.s2)
-    cw.sweep_late_submissions()
+            assignments_crud.add_student(a.assignment_id, ins_db.s2)
+    assignments_integrity.sweep_late_submissions()
 
     rows = {r.student_id: r for r in an.non_submitters()}
 
@@ -622,9 +628,9 @@ def test_the_rate_matters_as_well_as_the_count(ins_db):
 
 def test_submitted_work_keeps_a_student_off_the_list(ins_db):
     a = _assignment(due_date=_day(-5))
-    sub = cw.add_student(a.assignment_id, ins_db.s1)
-    cw.submit_work(sub.submission_id, submitted_on=_day(-6))
-    cw.sweep_late_submissions()
+    sub = assignments_crud.add_student(a.assignment_id, ins_db.s1)
+    assignments_submissions.submit_work(sub.submission_id, submitted_on=_day(-6))
+    assignments_integrity.sweep_late_submissions()
 
     assert an.non_submitters(minimum=1) == []
 
@@ -632,8 +638,8 @@ def test_submitted_work_keeps_a_student_off_the_list(ins_db):
 def test_referral_candidates_only(ins_db):
     for i in range(an.CONCERN_THRESHOLD):
         a = _assignment(title=f"Piece {i}", due_date=_day(-5))
-        cw.add_student(a.assignment_id, ins_db.s1)
-    cw.sweep_late_submissions()
+        assignments_crud.add_student(a.assignment_id, ins_db.s1)
+    assignments_integrity.sweep_late_submissions()
 
     assert an.non_submitters() != []
     assert an.referral_candidates() == []
@@ -641,8 +647,8 @@ def test_referral_candidates_only(ins_db):
 
 def test_one_student_s_record(ins_db):
     a = _assignment(due_date=_day(-5))
-    cw.add_student(a.assignment_id, ins_db.s1)
-    cw.sweep_late_submissions()
+    assignments_crud.add_student(a.assignment_id, ins_db.s1)
+    assignments_integrity.sweep_late_submissions()
 
     record = an.student_non_submission(ins_db.s1)
 
@@ -702,7 +708,7 @@ def test_including_unmarked_drags_the_grade_down(ins_db):
     todo = _assignment(title="To come", max_marks=50,
                         weight_percent=50)
     _marked(done, ins_db.s1, 45)         # 90%
-    cw.add_student(todo.assignment_id, ins_db.s1)
+    assignments_crud.add_student(todo.assignment_id, ins_db.s1)
 
     optimistic = an.weighted_grade(ins_db.s1, "History")
     pessimistic = an.weighted_grade(ins_db.s1, "History",
@@ -745,9 +751,9 @@ def test_subject_weighted_grades_rank_highest_first(ins_db):
 def test_export_separates_raw_penalty_and_final(ins_db):
     a = _assignment(due_date=_day(-10),
                      late_penalty_percent_per_day=10, max_marks=50)
-    sub = cw.add_student(a.assignment_id, ins_db.s1)
-    cw.submit_work(sub.submission_id, submitted_on=_day(-8))
-    cw.mark_submission(sub.submission_id, marks=40)
+    sub = assignments_crud.add_student(a.assignment_id, ins_db.s1)
+    assignments_submissions.submit_work(sub.submission_id, submitted_on=_day(-8))
+    assignments_crud.mark_submission(sub.submission_id, marks=40)
 
     text = admin.export_marks(a.assignment_id)
     header, row = text.strip().splitlines()[:2]
@@ -785,7 +791,7 @@ def test_released_only_filters_the_export(ins_db):
 def test_a_blank_mark_sheet_carries_the_cohort(ins_db):
     a = _assignment()
     for student in ins_db.students:
-        cw.add_student(a.assignment_id, student)
+        assignments_crud.add_student(a.assignment_id, student)
 
     text = admin.export_template(a.assignment_id)
 
@@ -795,21 +801,21 @@ def test_a_blank_mark_sheet_carries_the_cohort(ins_db):
 
 def test_import_accepts_alternative_headers(ins_db):
     a = _assignment(max_marks=50)
-    cw.add_student(a.assignment_id, ins_db.s1)
+    assignments_crud.add_student(a.assignment_id, ins_db.s1)
 
     result = admin.import_marks(f"candidate,score\n{ins_db.s1},42\n",
                                  a.assignment_id)
 
     assert result.applied == 1
-    subs = cw.list_submissions(assignment_id=a.assignment_id)
+    subs = assignments_store.list_submissions(assignment_id=a.assignment_id)
     assert subs[0].marks == 42
 
 
 def test_import_refuses_a_file_with_a_bad_row(ins_db):
     """One bad row is fixed and re-imported, not half-applied."""
     a = _assignment(max_marks=50)
-    cw.add_student(a.assignment_id, ins_db.s1)
-    cw.add_student(a.assignment_id, ins_db.s2)
+    assignments_crud.add_student(a.assignment_id, ins_db.s1)
+    assignments_crud.add_student(a.assignment_id, ins_db.s2)
 
     result = admin.import_marks(
         f"student_id,marks\n{ins_db.s1},40\n{ins_db.s2},999\n",
@@ -817,14 +823,14 @@ def test_import_refuses_a_file_with_a_bad_row(ins_db):
 
     assert result.applied == 0
     assert len(result.errors) == 1
-    assert cw.list_submissions(
+    assert assignments_store.list_submissions(
         assignment_id=a.assignment_id)[0].marks is None
 
 
 def test_import_can_be_forced_to_apply_the_good_rows(ins_db):
     a = _assignment(max_marks=50)
-    cw.add_student(a.assignment_id, ins_db.s1)
-    cw.add_student(a.assignment_id, ins_db.s2)
+    assignments_crud.add_student(a.assignment_id, ins_db.s1)
+    assignments_crud.add_student(a.assignment_id, ins_db.s2)
 
     result = admin.import_marks(
         f"student_id,marks\n{ins_db.s1},40\n{ins_db.s2},999\n",
@@ -836,14 +842,14 @@ def test_import_can_be_forced_to_apply_the_good_rows(ins_db):
 
 def test_import_dry_run_writes_nothing(ins_db):
     a = _assignment(max_marks=50)
-    sub = cw.add_student(a.assignment_id, ins_db.s1)
+    sub = assignments_crud.add_student(a.assignment_id, ins_db.s1)
 
     result = admin.import_marks(f"student_id,marks\n{ins_db.s1},40\n",
                                  a.assignment_id, dry_run=True)
 
     assert result.applied == 0
     assert result.is_valid is True
-    assert cw.get_submission(sub.submission_id).marks is None
+    assert assignments_store.get_submission(sub.submission_id).marks is None
 
 
 def test_import_rejects_an_unknown_student(ins_db):
@@ -856,7 +862,7 @@ def test_import_rejects_an_unknown_student(ins_db):
 
 def test_import_needs_a_marks_column(ins_db):
     a = _assignment()
-    with pytest.raises(cw.ValidationError, match="marks column"):
+    with pytest.raises(assignments_models.ValidationError, match="marks column"):
         admin.import_marks(f"student_id\n{ins_db.s1}\n",
                             a.assignment_id)
 
@@ -864,13 +870,13 @@ def test_import_needs_a_marks_column(ins_db):
 def test_import_applies_the_late_penalty(ins_db):
     a = _assignment(due_date=_day(-10),
                      late_penalty_percent_per_day=10, max_marks=50)
-    sub = cw.add_student(a.assignment_id, ins_db.s1)
-    cw.submit_work(sub.submission_id, submitted_on=_day(-8))
+    sub = assignments_crud.add_student(a.assignment_id, ins_db.s1)
+    assignments_submissions.submit_work(sub.submission_id, submitted_on=_day(-8))
 
     admin.import_marks(f"student_id,marks\n{ins_db.s1},40\n",
                         a.assignment_id)
 
-    out = cw.get_submission(sub.submission_id)
+    out = assignments_store.get_submission(sub.submission_id)
     assert out.raw_marks == 40
     assert out.marks == 32.0
 
@@ -878,7 +884,7 @@ def test_import_applies_the_late_penalty(ins_db):
 def test_an_export_and_import_round_trip(ins_db):
     a = _assignment(max_marks=50)
     for student in ins_db.students:
-        cw.add_student(a.assignment_id, student)
+        assignments_crud.add_student(a.assignment_id, student)
     rows = "\n".join(f"{s},{30 + i}"
                      for i, s in enumerate(ins_db.students))
 
@@ -922,9 +928,9 @@ def test_a_coversheet_carries_the_rubric_and_mark(ins_db):
 def test_a_coversheet_shows_the_penalty_separately(ins_db):
     a = _assignment(due_date=_day(-10),
                      late_penalty_percent_per_day=10, max_marks=50)
-    sub = cw.add_student(a.assignment_id, ins_db.s1)
-    cw.submit_work(sub.submission_id, submitted_on=_day(-8))
-    cw.mark_submission(sub.submission_id, marks=40)
+    sub = assignments_crud.add_student(a.assignment_id, ins_db.s1)
+    assignments_submissions.submit_work(sub.submission_id, submitted_on=_day(-8))
+    assignments_crud.mark_submission(sub.submission_id, marks=40)
 
     sheet = admin.build_coversheet(sub.submission_id)
 
@@ -945,8 +951,8 @@ def test_a_coversheet_names_the_cover_marker(ins_db):
 
 def test_feedback_can_be_left_off(ins_db):
     a = _assignment()
-    sub = cw.add_student(a.assignment_id, ins_db.s1)
-    cw.mark_submission(sub.submission_id, marks=40,
+    sub = assignments_crud.add_student(a.assignment_id, ins_db.s1)
+    assignments_crud.mark_submission(sub.submission_id, marks=40,
                         feedback="Detailed comments here")
 
     assert "Detailed comments here" in admin.build_coversheet(
@@ -958,7 +964,7 @@ def test_feedback_can_be_left_off(ins_db):
 def test_coversheets_are_written_per_student(ins_db, tmp_path):
     a = _assignment()
     for student in ins_db.students:
-        cw.add_student(a.assignment_id, student)
+        assignments_crud.add_student(a.assignment_id, student)
 
     written = admin.write_coversheets(a.assignment_id,
                                        directory=tmp_path / "sheets")
@@ -971,7 +977,7 @@ def test_a_sample_pack_needs_a_sample(ins_db):
     a = _assignment()
     _marked(a, ins_db.s1, 40)
 
-    with pytest.raises(cw.ValidationError, match="standardisation"):
+    with pytest.raises(assignments_models.ValidationError, match="standardisation"):
         admin.build_sample_pack(a.assignment_id)
 
 

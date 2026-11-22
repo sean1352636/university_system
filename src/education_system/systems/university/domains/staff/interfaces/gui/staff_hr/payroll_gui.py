@@ -8,6 +8,11 @@ Provides interface for:
 - Running payroll (admin)
 - Tax configuration (admin)
 - Payroll reports (admin)
+- Pay structure and pensions (``pay_structure_gui``)
+
+"Admin" tabs are payroll's (``access.can(actor, 'payroll')``); overtime
+approvals are shown to line managers and payroll. Every manager call passes
+the signed-in session as ``actor`` so the manager checks it too.
 """
 
 from __future__ import annotations
@@ -21,13 +26,17 @@ from typing import Optional
 
 from education_system.systems.university.infrastructure.auth import UserAuth
 from education_system.systems.university.domains.staff.domain.staff_hr.services.managers.payroll_manager import PayrollManager
+from education_system.systems.university.domains.staff.interfaces.gui.staff_hr import _access
+from education_system.systems.university.domains.staff.interfaces.gui.staff_hr.pay_structure_gui import (
+    PayStructureTabsMixin,
+)
 from education_system.systems.university.domains.staff.interfaces.gui.staff_hr.validators import (
     FormValidator, ValidationError, validate_entry, validate_date_entry,
     validate_currency_entry, validate_combobox, show_validation_error
 )
 
 
-class PayrollGUI:
+class PayrollGUI(PayStructureTabsMixin):
     """GUI for payroll management."""
 
     def __init__(self, root, auth: Optional[UserAuth] = None, parent_notebook: Optional[ttk.Notebook] = None):
@@ -47,8 +56,12 @@ class PayrollGUI:
             self.create_main_window()
 
     def _get_user_id(self):
-        """Get user ID from current user dict."""
-        return self.current_user.get('id') or self.current_user.get('username')
+        """The signed-in person's username (the Staff HR key)."""
+        return _access.user_key(self)
+
+    @property
+    def actor(self):
+        return _access.actor(self)
 
     def create_as_tab(self, notebook: ttk.Notebook):
         """Create as a tab in parent notebook."""
@@ -60,8 +73,8 @@ class PayrollGUI:
         """Create as standalone window."""
         self.window = tk.Toplevel(self.root)
         self.window.title(_t('gui.staff.staff_hr.payroll.windows.payroll_management', default="Payroll Management"))
-        self.window.geometry("1200x700")
-        self.window.minsize(1000, 600)
+        self.window.geometry("1400x900")
+        self.window.minsize(1200, 800)
 
         bottom_frame = ttk.Frame(self.window)
         bottom_frame.pack(side=tk.BOTTOM, fill=tk.X, padx=10, pady=5)
@@ -80,14 +93,19 @@ class PayrollGUI:
         self.notebook = ttk.Notebook(parent)
         self.notebook.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
+        self.is_payroll = _access.can(self, 'payroll')
+        self.can_approve_overtime = self.is_payroll or _access.can(self, 'manager')
+
         self._create_payslips_tab()
         self._create_overtime_tab()
 
-        if self.current_user.get('role') in ['admin', 'Admin', 'administrator', 'staff']:
+        if self.is_payroll:
             self._create_allowances_tab()
             self._create_run_payroll_tab()
             self._create_tax_config_tab()
             self._create_reports_tab()
+            self._create_pay_structure_tab()
+        self._create_pensions_tab()
 
     # ==================== TAB 1: MY PAYSLIPS ====================
 
@@ -140,7 +158,7 @@ class PayrollGUI:
         for item in self.payslips_tree.get_children():
             self.payslips_tree.delete(item)
 
-        records = PayrollManager.get_user_payroll_history(self._get_user_id())
+        records = PayrollManager.get_user_payroll_history(self._get_user_id(), actor=self.actor)
 
         ytd_gross = 0.0
         ytd_tax = 0.0
@@ -152,20 +170,20 @@ class PayrollGUI:
             period_start = r.get('period_start', '')
             if period_start and period_start[:4] == str(current_year):
                 ytd_gross += r.get('gross_pay', 0) or 0
-                ytd_tax += r.get('tax', 0) or 0
+                ytd_tax += r.get('tax_deduction', 0) or 0
                 ytd_net += r.get('net_pay', 0) or 0
 
             self.payslips_tree.insert('', tk.END, values=(
                 r.get('period_name', ''),
                 r.get('payment_date', r.get('period_end', '')),
-                f"£{r.get('basic_salary', 0):.2f}",
-                f"£{r.get('overtime_pay', 0):.2f}",
-                f"£{r.get('allowances', 0):.2f}",
-                f"£{r.get('gross_pay', 0):.2f}",
-                f"£{r.get('tax', 0):.2f}",
-                f"£{r.get('national_insurance', 0):.2f}",
-                f"£{r.get('pension', 0):.2f}",
-                f"£{r.get('net_pay', 0):.2f}",
+                f"£{r.get('basic_salary', 0) or 0:.2f}",
+                f"£{r.get('overtime_pay', 0) or 0:.2f}",
+                f"£{r.get('allowances_total', 0) or 0:.2f}",
+                f"£{r.get('gross_pay', 0) or 0:.2f}",
+                f"£{r.get('tax_deduction', 0) or 0:.2f}",
+                f"£{r.get('ni_deduction', 0) or 0:.2f}",
+                f"£{r.get('pension_deduction', 0) or 0:.2f}",
+                f"£{r.get('net_pay', 0) or 0:.2f}",
             ))
 
         self.ytd_labels['gross'].config(text=f"£{ytd_gross:.2f}")
@@ -234,8 +252,8 @@ class PayrollGUI:
         self.overtime_tree.tag_configure('approved', background='#d4edda')
         self.overtime_tree.tag_configure('rejected', background='#f8d7da')
 
-        # Admin section: Pending Approvals
-        if self.current_user.get('role') in ['admin', 'Admin', 'administrator', 'staff']:
+        # Pending approvals: line managers (their reports) and payroll (everyone)
+        if self.can_approve_overtime:
             admin_frame = ttk.LabelFrame(tab, text=_t('gui.staff.staff_hr.payroll.labels.pending_approvals', default="Pending Approvals"), padding=10)
             admin_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
 
@@ -298,7 +316,8 @@ class PayrollGUI:
                 date=ot_date,
                 hours=hours,
                 rate_multiplier=rate_multiplier,
-                reason=reason
+                reason=reason,
+                actor=self.actor,
             )
             messagebox.showinfo(_t('gui.staff.staff_hr.payroll.dialogs.success', default="Success"), f"Overtime logged successfully. ID: {overtime_id}")
 
@@ -315,7 +334,7 @@ class PayrollGUI:
         for item in self.overtime_tree.get_children():
             self.overtime_tree.delete(item)
 
-        entries = PayrollManager.get_user_overtime(self._get_user_id())
+        entries = PayrollManager.get_user_overtime(self._get_user_id(), actor=self.actor)
 
         for entry in entries:
             status = entry.get('status', '').lower()
@@ -332,7 +351,7 @@ class PayrollGUI:
             for item in self.pending_ot_tree.get_children():
                 self.pending_ot_tree.delete(item)
 
-            pending = PayrollManager.get_pending_overtime()
+            pending = PayrollManager.get_pending_overtime(actor=self.actor)
             for entry in pending:
                 self.pending_ot_tree.insert('', tk.END, values=(
                     entry.get('overtime_id'),
@@ -354,7 +373,7 @@ class PayrollGUI:
         overtime_id = item['values'][0]
 
         try:
-            PayrollManager.approve_overtime(overtime_id, self._get_user_id())
+            PayrollManager.approve_overtime(overtime_id, self._get_user_id(), actor=self.actor)
             messagebox.showinfo(_t('gui.staff.staff_hr.payroll.dialogs.success', default="Success"), _t('gui.staff.staff_hr.payroll.dialogs.overtime_approved', default="Overtime approved"))
             self._load_overtime()
         except Exception as e:
@@ -371,7 +390,7 @@ class PayrollGUI:
         overtime_id = item['values'][0]
 
         try:
-            PayrollManager.reject_overtime(overtime_id, self._get_user_id())
+            PayrollManager.reject_overtime(overtime_id, self._get_user_id(), actor=self.actor)
             messagebox.showinfo(_t('gui.staff.staff_hr.payroll.dialogs.success', default="Success"), _t('gui.staff.staff_hr.payroll.dialogs.overtime_rejected', default="Overtime rejected"))
             self._load_overtime()
         except Exception as e:
@@ -394,7 +413,7 @@ class PayrollGUI:
         form_frame.pack(fill=tk.X, padx=10, pady=10)
 
         # Row 1
-        ttk.Label(form_frame, text=_t('gui.staff.staff_hr.payroll.labels.user_id', default="User ID:")).grid(row=0, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(form_frame, text=_t('gui.staff.staff_hr.payroll.labels.username', default="Username:")).grid(row=0, column=0, sticky='e', padx=10, pady=8)
         self.allow_user_entry = ttk.Entry(form_frame, width=20)
         self.allow_user_entry.grid(row=0, column=1, padx=10, pady=8, sticky='w')
 
@@ -405,7 +424,7 @@ class PayrollGUI:
         self.allow_type_combo.grid(row=0, column=3, padx=10, pady=8, sticky='w')
 
         # Row 2
-        ttk.Label(form_frame, text=_t('gui.staff.staff_hr.payroll.labels.amount', default="Amount ($):")).grid(row=1, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(form_frame, text=_t('gui.staff.staff_hr.payroll.labels.amount_gbp', default="Amount (£):")).grid(row=1, column=0, sticky='e', padx=10, pady=8)
         self.allow_amount_entry = ttk.Entry(form_frame, width=15)
         self.allow_amount_entry.grid(row=1, column=1, padx=10, pady=8, sticky='w')
 
@@ -480,7 +499,8 @@ class PayrollGUI:
                 allowance_type=allowance_type,
                 amount=amount,
                 frequency=frequency,
-                approved_by=self._get_user_id()
+                approved_by=self._get_user_id(),
+                actor=self.actor,
             )
             messagebox.showinfo(_t('gui.staff.staff_hr.payroll.dialogs.success', default="Success"), f"Allowance added successfully. ID: {allowance_id}")
 
@@ -497,16 +517,9 @@ class PayrollGUI:
         for item in self.allowances_tree.get_children():
             self.allowances_tree.delete(item)
 
-        # Get allowances - use the database connection directly to get all users' allowances
         try:
-            from education_system.systems.university.infrastructure.database.db import get_connection
-            with get_connection() as conn:
-                rows = conn.execute('''
-                    SELECT * FROM payroll_allowances
-                    ORDER BY user_id, allowance_type
-                ''').fetchall()
-                allowances = [dict(row) for row in rows]
-        except Exception:
+            allowances = PayrollManager.get_all_allowances(actor=self.actor)
+        except PermissionError:
             allowances = []
 
         for a in allowances:
@@ -535,7 +548,7 @@ class PayrollGUI:
             return
 
         try:
-            PayrollManager.deactivate_allowance(allowance_id)
+            PayrollManager.deactivate_allowance(allowance_id, actor=self.actor)
             messagebox.showinfo(_t('gui.staff.staff_hr.payroll.dialogs.success', default="Success"), _t('gui.staff.staff_hr.payroll.dialogs.allowance_deactivated', default="Allowance deactivated"))
             self._load_allowances()
         except Exception as e:
@@ -607,12 +620,15 @@ class PayrollGUI:
         self.periods_tree.tag_configure('draft', background='#e2e3e5')
         self.periods_tree.tag_configure('completed', background='#d4edda')
         self.periods_tree.tag_configure('processing', background='#fff3cd')
+        self.periods_tree.tag_configure('paid', background='#cce5ff')
 
         # Process payroll button and results
         action_frame = ttk.Frame(tab)
         action_frame.pack(fill=tk.X, padx=10, pady=5)
         ttk.Button(action_frame, text=_t('gui.staff.staff_hr.payroll.buttons.process_payroll_for_selected_period', default="Process Payroll for Selected Period"),
                    command=self._run_payroll).pack(side=tk.LEFT, padx=5)
+        ttk.Button(action_frame, text=_t('gui.staff.staff_hr.payroll.buttons.mark_paid', default="Mark Selected Paid"),
+                   command=self._mark_period_paid).pack(side=tk.LEFT, padx=5)
         ttk.Button(action_frame, text=_t('gui.staff.staff_hr.payroll.buttons.refresh', default="Refresh"), command=self._load_periods).pack(side=tk.LEFT, padx=5)
 
         self.payroll_result_label = ttk.Label(action_frame, text="", font=('Arial', 10))
@@ -663,7 +679,8 @@ class PayrollGUI:
                 start_date=start_date,
                 end_date=end_date,
                 payment_date=payment_date,
-                created_by=self._get_user_id()
+                created_by=self._get_user_id(),
+                actor=self.actor,
             )
             messagebox.showinfo(_t('gui.staff.staff_hr.payroll.dialogs.success', default="Success"), f"Pay period created successfully. ID: {period_id}")
 
@@ -707,16 +724,17 @@ class PayrollGUI:
         period_name = item['values'][1]
         period_status = item['values'][5]
 
-        if period_status.lower() == 'completed':
+        if period_status.lower() in ('completed', 'paid', 'closed'):
             messagebox.showwarning(_t('gui.staff.staff_hr.payroll.dialogs.warning', default="Warning"), _t('gui.staff.staff_hr.payroll.dialogs.this_period_has_already_been_processed', default="This period has already been processed"))
             return
 
         if not messagebox.askyesno(_t('gui.staff.staff_hr.payroll.dialogs.confirm', default="Confirm"),
-                f"Run payroll for period '{period_name}'?\nThis will process all active contracts."):
+                f"Run payroll for period '{period_name}'?\nThis pays every contract in the period "
+                f"(starters and leavers pro-rated) and e-mails each person that their payslip is ready."):
             return
 
         try:
-            result = PayrollManager.run_payroll(period_id, created_by=self._get_user_id())
+            result = PayrollManager.run_payroll(period_id, actor=self.actor)
 
             if result.get('error'):
                 messagebox.showerror(_t('gui.staff.staff_hr.payroll.dialogs.error', default="Error"), result['error'])
@@ -725,12 +743,30 @@ class PayrollGUI:
             summary = (
                 f"Payroll Complete: {result.get('total_records', 0)} records | "
                 f"Gross: £{result.get('total_gross', 0):.2f} | "
-                f"Net: £{result.get('total_net', 0):.2f}"
+                f"Net: £{result.get('total_net', 0):.2f} | "
+                f"Employer pension: £{result.get('total_employer_pension', 0):.2f} | "
+                f"Notices: {result.get('notices_sent', 0)}"
             )
             self.payroll_result_label.config(text=summary)
             messagebox.showinfo(_t('gui.staff.staff_hr.payroll.dialogs.success', default="Success"), summary)
             self._load_periods()
 
+        except Exception as e:
+            messagebox.showerror(_t('gui.staff.staff_hr.payroll.dialogs.error', default="Error"), str(e))
+
+    def _mark_period_paid(self):
+        """Mark the selected completed period paid (sends any notices not yet sent)."""
+        selection = self.periods_tree.selection()
+        if not selection:
+            messagebox.showinfo(_t('gui.staff.staff_hr.payroll.dialogs.info', default="Info"), _t('gui.staff.staff_hr.payroll.dialogs.please_select_a_period', default="Please select a period"))
+            return
+        values = self.periods_tree.item(selection[0])['values']
+        if str(values[5]).lower() != 'completed':
+            messagebox.showwarning(_t('gui.staff.staff_hr.payroll.dialogs.warning', default="Warning"), _t('gui.staff.staff_hr.payroll.dialogs.only_completed_periods_can_be_paid', default="Only a completed period can be marked paid"))
+            return
+        try:
+            PayrollManager.update_period_status(values[0], 'paid', actor=self.actor)
+            self._load_periods()
         except Exception as e:
             messagebox.showerror(_t('gui.staff.staff_hr.payroll.dialogs.error', default="Error"), str(e))
 
@@ -884,7 +920,8 @@ class PayrollGUI:
                 lower_limit=lower_limit,
                 upper_limit=upper_limit,
                 rate=rate,
-                personal_allowance=personal_allowance
+                personal_allowance=personal_allowance,
+                actor=self.actor,
             )
             messagebox.showinfo(_t('gui.staff.staff_hr.payroll.dialogs.success', default="Success"), f"Tax bracket created successfully. ID: {bracket_id}")
 
@@ -956,7 +993,8 @@ class PayrollGUI:
 
     def _load_report_periods(self):
         """Load periods into report combobox."""
-        periods = PayrollManager.get_periods(status='completed')
+        periods = [p for p in PayrollManager.get_periods()
+                   if str(p.get('status') or '').lower() in ('completed', 'paid', 'closed')]
         self._periods_data = {}
 
         display_values = []
@@ -983,7 +1021,7 @@ class PayrollGUI:
                 self.dept_tree.delete(item)
             return
 
-        summary = PayrollManager.get_payroll_summary(period_id)
+        summary = PayrollManager.get_payroll_summary(period_id, actor=self.actor)
 
         self.report_stats['records'].config(text=str(summary.get('total_records', 0)))
         self.report_stats['gross'].config(text=f"£{summary.get('total_gross', 0):.2f}")

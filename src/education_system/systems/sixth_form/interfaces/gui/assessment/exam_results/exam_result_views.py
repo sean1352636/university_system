@@ -7,6 +7,8 @@ Four-tab Notebook:
     + UMS for every entered candidate in one go.
   * Per-student — pick a student, see all their results.
   * Distribution — grade-distribution table for a series filter.
+  * Release & embargo, Qualification results, Import results and
+    Result history (exams office).
 """
 
 from __future__ import annotations
@@ -15,11 +17,13 @@ from education_system.systems.sixth_form.interfaces.gui._ui import grab_when_vie
 import logging
 import tkinter as tk
 from datetime import date as _date
-from tkinter import messagebox, ttk
+from tkinter import ttk
+from education_system.systems.sixth_form.interfaces.gui._sidebar import SidebarBook
+from education_system.platform.delivery.gui.parented_dialogs import messagebox
 from typing import Any, Callable
 from education_system.systems.sixth_form.domain.assessment.exam_entries import exam_entries
 from education_system.systems.sixth_form.domain.assessment.exam_results import exam_results
-from education_system.systems.sixth_form.domain.academics.subjects import subjects as entries_data
+from education_system.systems.sixth_form.domain.assessment.exam_entries import exam_entries as entries_data
 from education_system.systems.sixth_form.domain.assessment.exam_results import exam_results as data
 from education_system.systems.sixth_form.domain.learners.students import students as student_data
 from education_system.systems.sixth_form.domain.academics.subjects import subjects as subjects_data
@@ -33,7 +37,7 @@ from education_system.systems.sixth_form.domain.assessment.exam_results.exam_res
 )
 from education_system.systems.sixth_form.domain.assessment.gradebook.gradebook import LETTER_GRADES
 from education_system.systems.sixth_form.domain.learners.students.students import A_LEVEL_SUBJECTS
-from education_system.systems.sixth_form.domain.academics.subjects.subjects import EXAM_BOARDS
+from education_system.systems.sixth_form.domain.assessment.exam_entries.exam_entries import EXAM_BOARDS
 
 logger = logging.getLogger(__name__)
 
@@ -66,9 +70,20 @@ def _default_year() -> int:
 
 def open_directory(gui) -> None:
     frame = _clear(gui)
-    _heading(frame, "Results Day")
+    head = ttk.Frame(frame)
+    head.pack(fill="x")
+    _heading(head, "Results Day")
 
-    nb = ttk.Notebook(frame)
+    def _exams_office() -> None:
+        from education_system.systems.sixth_form.interfaces.gui.assessment.exams_office import (
+            exams_office_views,
+        )
+        exams_office_views.open_exams_office(gui)
+
+    ttk.Button(head, text="Exams Office →", command=_exams_office
+               ).place(relx=1.0, x=-4, y=4, anchor="ne")
+
+    nb = SidebarBook(frame)
     nb.pack(fill="both", expand=True)
 
     dir_tab = ttk.Frame(nb, padding=8)
@@ -84,6 +99,26 @@ def open_directory(gui) -> None:
     _build_bulk_tab(gui, bulk_tab)
     _build_student_tab(gui, student_tab)
     _build_distribution_tab(gui, dist_tab)
+
+    # Exams-office additions: embargo/release, qualification-level results,
+    # board file import, grade-change history.
+    from education_system.systems.sixth_form.interfaces.gui.assessment.exams_office import (
+        results_day_views,
+    )
+    for label, builder in (
+        ("Release & embargo", results_day_views.build_release_tab),
+        ("Qualification results", results_day_views.build_qualification_tab),
+        ("Import results", results_day_views.build_import_tab),
+        ("Result history", results_day_views.build_history_tab),
+    ):
+        tab = ttk.Frame(nb, padding=8)
+        nb.add(tab, text=label)
+        try:
+            builder(gui, tab)
+        except Exception as e:
+            logger.exception("Results day tab %s failed", label)
+            ttk.Label(tab, text=f"Could not load: {e}",
+                      foreground="#a33").pack(anchor="w")
 
 
 # ─── Directory tab ──────────────────────────────────────────────────

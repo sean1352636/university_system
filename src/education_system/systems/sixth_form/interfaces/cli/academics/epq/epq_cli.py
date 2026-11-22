@@ -214,9 +214,12 @@ def _print_full(p: EPQProject) -> None:
         for line in p.notes.splitlines():
             print(f"      {line}")
 
+    print(f"    Authentication   : "
+          + (f"{p.authenticated_by} on {p.authenticated_at}"
+             if p.is_authenticated else "not yet authenticated"))
     log = data.list_log_entries(p.project_id)
-    total = data.total_hours_for_project(p.project_id)
-    print(f"\n    Production log ({len(log)} entries, {total:.1f} hrs):")
+    chk = data.hours_check(p.project_id)
+    print(f"\n    Production log ({len(log)} entries, {chk.label}):")
     if not log:
         print("      (no entries)")
     else:
@@ -459,6 +462,44 @@ def save_milestone_flow() -> None:
         _pause()
 
 
+def authenticate_flow() -> None:
+    """Teacher authentication (JCQ) — needed before marking/grading."""
+    print("\n═══ Teacher authentication ═══")
+    p = _pick_project()
+    if p.is_authenticated:
+        print(f"  Already authenticated by {p.authenticated_by} on {p.authenticated_at}.")
+        if _yes_no("Revoke it (recorded in error)?", default=False):
+            data.revoke_authentication(p.project_id)
+            print("  ✓ Revoked.")
+        _pause()
+        return
+    chk = data.hours_check(p.project_id)
+    print(f"  Production log: {chk.label}")
+    declared = _yes_no("Has the candidate signed their declaration?", default=False)
+    teacher = _input("Authenticating teacher", default=p.supervisor or "")
+    reason = None
+    if not chk.met:
+        reason = _input("Reason for authenticating below the hours target")
+    try:
+        data.authenticate_project(p.project_id, teacher=teacher,
+                                  candidate_declared=declared,
+                                  hours_shortfall_reason=reason)
+        print("  ✓ Authenticated.")
+    except ValidationError as e:
+        print(f"  ✗ {e}")
+    _pause()
+
+
+def hours_report() -> None:
+    print("\n═══ Projects under the 120-hour target ═══")
+    rows = data.projects_below_target()
+    for proj, chk in rows:
+        print(f"  #{proj.project_id:<4} {proj.student_id:<10} "
+              f"{proj.working_title[:40]:<40} {chk.label}")
+    print(f"\n  {len(rows)} project(s).")
+    _pause()
+
+
 def show_summary() -> None:
     print("\n═══ EPQ Summary ═══")
     try:
@@ -502,6 +543,8 @@ _MENU: list[tuple[str, Callable[[], None]]] = [
     ("Add production-log entry",     add_log_entry),
     ("Save / update milestone",      save_milestone_flow),
     ("Summary report",               show_summary),
+    ("Teacher authentication",       authenticate_flow),
+    ("Hours vs 120-hour target",     hours_report),
 ]
 
 

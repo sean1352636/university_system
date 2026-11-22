@@ -13,8 +13,7 @@ from education_system.systems.university.shell.cli.database_manager import (
     DatabaseError, validate_database_integrity, fix_duplicate_emails,
     emergency_fix_database
 )
-from education_system.systems.university.services.analytics.student_analytics import StudentAnalytics
-from education_system.systems.university.infrastructure.utils.batch_operations import BatchOperationManager
+from education_system.systems.university.shared.analytics.student_analytics import StudentAnalytics
 
 auth = None
 
@@ -140,10 +139,12 @@ def display_analytics_menu():
     analytics.display_main_menu()
 
 
-def display_batch_menu():
-    """Standalone function to display batch operations menu for import into main.py"""
-    batch_manager = BatchOperationManager()
-    batch_manager.display_batch_menu()
+def display_batch_menu(auth=None):
+    """Batch operations (``shell/cli/batch_cli``)."""
+    from education_system.systems.university.shell.cli.batch_cli import (
+        display_batch_menu as _menu,
+    )
+    _menu(auth)
 
 
 __all__ = [

@@ -1,6 +1,6 @@
 # Multi-Factor Authentication (MFA) Guide
 
-This guide covers the setup, usage, and management of Multi-Factor Authentication in the Sixth Form College Management System. All details are based on the actual implementation in `infrastructure/auth/mfa_service.py` and `api/auth.py`.
+This guide covers the setup, usage, and management of Multi-Factor Authentication in the Sixth Form College Management System. All details are based on the actual implementation in `src/education_system/platform/identity/auth/mfa_service.py` and `src/education_system/platform/delivery/api/routes/auth_routes.py`.
 
 ---
 
@@ -57,10 +57,10 @@ MFA setup is initiated through the `MFAService.setup_totp()` method. This perfor
 
 1. Removes any existing MFA configuration for the user (allowing a fresh setup).
 2. Generates a new random Base32-encoded TOTP secret using `pyotp.random_base32()`.
-3. Creates a provisioning URI with the issuer name "College Management System".
+3. Creates a provisioning URI with the issuer name "Education System".
 4. Generates 10 single-use backup recovery codes.
 5. Stores the TOTP secret in the `mfa_secrets` database table with `is_enabled = 1`.
-6. Stores SHA-256 hashes of the recovery codes in the `mfa_recovery_codes` table.
+6. Stores bcrypt hashes of the recovery codes in the `mfa_recovery_codes` table.
 
 The method returns:
 
@@ -110,14 +110,14 @@ The system generates **10 recovery codes** at setup time (defined by `MFAService
 ### How Codes Are Stored
 
 - Recovery codes are **never stored in plaintext** in the database.
-- Each code is hashed using SHA-256 before storage in the `mfa_recovery_codes` table.
+- Each code is hashed using bcrypt before storage in the `mfa_recovery_codes` table.
 - The plaintext codes are shown to the user **only once** during setup. They cannot be retrieved later.
 
 ### Using a Recovery Code
 
 1. At the MFA verification prompt, enter a recovery code instead of a TOTP code.
-2. The system normalizes the code (strips whitespace, converts to uppercase) and computes its SHA-256 hash.
-3. If the hash matches an unused code in the database (`is_used = 0`), the code is accepted.
+2. The system normalizes the code (strips whitespace, converts to uppercase).
+3. If it matches the bcrypt hash of an unused code in the database (`is_used = 0`), the code is accepted.
 4. The code is then marked as used (`is_used = 1`) and cannot be used again.
 5. Login proceeds as normal.
 
@@ -184,7 +184,7 @@ For API-based login, the flow uses JWT tokens:
 3. POST to the MFA verification endpoint with the MFA token in the `Authorization: Bearer` header and the TOTP/recovery code in the request body.
 4. On success, the API returns a full JWT session token (valid for 24 hours by default).
 
-The MFA token is validated by the `@mfa_token_required` decorator, which checks:
+The MFA token is validated by the `POST /api/v1/auth/mfa/verify` route, which checks:
 - The token is valid and not expired.
 - The `purpose` field equals `"mfa_verify"` (preventing regular session tokens from being used for MFA verification).
 
@@ -309,17 +309,17 @@ if remaining <= 2:
 
 ## API Endpoints for MFA Operations
 
-The following describes the MFA-related API interactions based on the authentication infrastructure.
+The following describes the MFA-related API interactions. They are shared by all systems, in `src/education_system/platform/delivery/api/routes/auth_routes.py`.
 
 ### Login (Phase 1)
 
 ```
-POST /api/auth/login
+POST /api/v1/auth/login
 Content-Type: application/json
 
 {
     "username": "jdoe",
-    "password": "SecureP@ss1"
+    "password": "SecureP@ss1234"
 }
 ```
 
@@ -329,7 +329,8 @@ Content-Type: application/json
 {
     "mfa_required": true,
     "mfa_token": "<short-lived-jwt>",
-    "message": "MFA verification required."
+    "user_id": 42,
+    "username": "jdoe"
 }
 ```
 
@@ -338,7 +339,7 @@ The `mfa_token` is a JWT valid for 5 minutes with `purpose: "mfa_verify"`.
 ### MFA Verification (Phase 2)
 
 ```
-POST /api/auth/mfa/verify
+POST /api/v1/auth/mfa/verify
 Authorization: Bearer <mfa_token>
 Content-Type: application/json
 
@@ -350,7 +351,7 @@ Content-Type: application/json
 Or with a recovery code:
 
 ```
-POST /api/auth/mfa/verify
+POST /api/v1/auth/mfa/verify
 Authorization: Bearer <mfa_token>
 Content-Type: application/json
 
@@ -367,62 +368,14 @@ Content-Type: application/json
     "user": {
         "user_id": 42,
         "username": "jdoe",
-        "role": "staff"
+        "systems": [{"system_key": "sixth_form", "role": "staff"}]
     }
 }
 ```
 
-### MFA Setup
+### MFA Setup, Disabling and Status
 
-```
-POST /api/auth/mfa/setup
-Authorization: Bearer <session-jwt>
-```
-
-**Response:**
-
-```json
-{
-    "secret": "BASE32ENCODEDSECRET",
-    "provisioning_uri": "otpauth://totp/College%20Management%20System:jdoe?secret=...&issuer=...",
-    "recovery_codes": [
-        "ABCD-1234",
-        "EFGH-5678",
-        "..."
-    ]
-}
-```
-
-### Disable MFA
-
-```
-DELETE /api/auth/mfa
-Authorization: Bearer <session-jwt>
-```
-
-**Response:**
-
-```json
-{
-    "message": "MFA disabled successfully."
-}
-```
-
-### Check MFA Status
-
-```
-GET /api/auth/mfa/status
-Authorization: Bearer <session-jwt>
-```
-
-**Response:**
-
-```json
-{
-    "mfa_enabled": true,
-    "remaining_recovery_codes": 8
-}
-```
+The REST API has no routes for these. Users set up MFA through **Multi-Factor Authentication** in the GUI (`src/education_system/systems/sixth_form/interfaces/gui/mfa_views.py`) or the CLI (`src/education_system/systems/sixth_form/interfaces/cli/mfa_cli.py`), both of which call `MFAService`.
 
 ---
 
@@ -434,9 +387,9 @@ Authorization: Bearer <session-jwt>
 | Code length | 6 digits |
 | Code validity window | Current period +/- 1 step (30 seconds each) |
 | Recovery codes | 10 codes in `XXXX-XXXX` format |
-| Recovery code storage | SHA-256 hashed |
+| Recovery code storage | Bcrypt hashed |
 | Recovery code usage | Single-use (marked as used after consumption) |
 | MFA token expiry | 5 minutes |
 | Session token expiry (API) | 24 hours |
 | Session token expiry (GUI/CLI) | 30 minutes |
-| Issuer name | "College Management System" |
+| Issuer name | "Education System" |

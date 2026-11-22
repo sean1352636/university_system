@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import datetime as _dt
 import logging
 from typing import Callable
 
@@ -529,6 +530,27 @@ def show_summary() -> None:
 
 # ── Menu ─────────────────────────────────────────────────────────
 
+def room_day_flow() -> None:
+    print("\n═══ Room Day (lessons, exams, bookings) ═══")
+    try:
+        r = _pick_resource()
+        day = _input("Date (YYYY-MM-DD)",
+                     default=_dt.date.today().isoformat())
+    except _UserAbort:
+        return
+    try:
+        entries = data.room_day(r.resource_id, day)
+    except ValidationError as e:
+        print(f"\n  ✗ {e}")
+        _pause()
+        return
+    if not entries:
+        print(f"\n  {r.name} is free all day on {day}.")
+    for e in entries:
+        print(f"    {e.start_time}–{e.end_time}  {e.kind:<7}  {e.label}")
+    _pause()
+
+
 _MENU: list[tuple[str, Callable[[], None]]] = [
     ("List all bookings",          list_all),
     ("List bookings by status",    list_by_status),
@@ -544,6 +566,7 @@ _MENU: list[tuple[str, Callable[[], None]]] = [
     ("Edit resource",              edit_resource),
     ("Delete resource",            delete_resource_flow),
     ("Summary report",             show_summary),
+    ("Room day (lessons, exams, bookings)", room_day_flow),
 ]
 
 

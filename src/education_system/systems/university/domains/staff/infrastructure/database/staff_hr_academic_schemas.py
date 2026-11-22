@@ -445,7 +445,6 @@ def _init_academic_schemas() -> None:
                 # Sabbatical indexes
                 ('idx_sabbatical_apps_user', 'sabbatical_applications', 'user_id'),
                 ('idx_sabbatical_apps_status', 'sabbatical_applications', 'status'),
-                ('idx_sabbatical_eligibility_user', 'sabbatical_eligibility', 'user_id'),
             ]
 
             for idx_name, table, columns in indexes:

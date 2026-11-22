@@ -1,4 +1,4 @@
-"""CLI flows for Sixth Form Feedback."""
+"""CLI flows for Primary School Feedback."""
 
 from __future__ import annotations
 

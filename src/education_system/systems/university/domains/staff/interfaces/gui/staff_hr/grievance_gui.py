@@ -13,10 +13,14 @@ from __future__ import annotations
 
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 
+from education_system.systems.university.domains.staff.interfaces.gui.staff_hr import _access as _hr
 import tkinter as tk
-from tkinter import ttk, messagebox, scrolledtext
+from tkinter import ttk, messagebox, scrolledtext, simpledialog
 from datetime import datetime
 from typing import Optional
+import logging
+
+logger = logging.getLogger(__name__)
 
 from education_system.systems.university.infrastructure.auth import UserAuth
 from education_system.systems.university.domains.staff.domain.staff_hr.services.managers.grievance_manager import GrievanceManager
@@ -47,7 +51,7 @@ class GrievanceGUI:
 
     def _get_user_id(self):
         """Get user ID from current user dict."""
-        return self.current_user.get('id') or self.current_user.get('username')
+        return _hr.user_key(self)
 
     def create_as_tab(self, notebook: ttk.Notebook):
         """Create as a tab in parent notebook."""
@@ -59,7 +63,8 @@ class GrievanceGUI:
         """Create as standalone window."""
         self.window = tk.Toplevel(self.root)
         self.window.title(_t('gui.staff.staff_hr.grievance.windows.grievance_disciplinary_management', default="Grievance & Disciplinary Management"))
-        self.window.geometry("1200x700")
+        self.window.geometry("1400x900")
+        self.window.minsize(1200, 800)
         self.window.minsize(1000, 600)
 
         bottom_frame = ttk.Frame(self.window)
@@ -81,10 +86,13 @@ class GrievanceGUI:
 
         self._create_file_grievance_tab()
         self._create_my_grievances_tab()
+        self._create_my_disciplinary_tab()
 
-        if self.current_user.get('role') in ['admin', 'Admin', 'administrator', 'staff']:
+        if _hr.can(self, 'cases'):
             self._create_manage_grievances_tab()
+        if _hr.can(self, 'cases'):
             self._create_disciplinary_tab()
+        if _hr.can(self, 'cases'):
             self._create_statistics_tab()
 
     def _create_file_grievance_tab(self):
@@ -166,8 +174,8 @@ class GrievanceGUI:
         is_anonymous = self.grv_anonymous.get()
 
         try:
-            grievance_id = GrievanceManager.create_grievance(
-                complainant_id=self._get_user_id(),
+            grievance_id = GrievanceManager.file_grievance_as(
+                _hr.actor(self),
                 category=category,
                 description=description,
                 respondent_id=respondent,
@@ -234,7 +242,10 @@ class GrievanceGUI:
         for item in self.my_grv_tree.get_children():
             self.my_grv_tree.delete(item)
 
-        grievances = GrievanceManager.get_user_grievances(self._get_user_id())
+        me = self._get_user_id()
+        grievances = [g for g in GrievanceManager.grievances_for(_hr.actor(self))
+                      if me in (g.get('complainant_id'), g.get('respondent_id'),
+                                g.get('assigned_to'))]
 
         for g in grievances:
             status = g.get('status', '').lower()
@@ -256,8 +267,10 @@ class GrievanceGUI:
         item = self.my_grv_tree.item(selection[0])
         grv_id = int(item['values'][0].replace('GRV-', ''))
 
-        grievance = GrievanceManager.get_grievance(grv_id)
-        if not grievance:
+        try:
+            grievance = GrievanceManager.view_grievance(_hr.actor(self), grv_id)
+        except PermissionError as e:
+            messagebox.showerror(_t('gui.staff.staff_hr.grievance.dialogs.error', default="Error"), str(e))
             return
 
         self.grv_detail_text.config(state='normal')
@@ -273,8 +286,10 @@ Description:
 {grievance.get('description')}
 
 Resolution:
-{grievance.get('resolution', 'Pending...')}
+{grievance.get('resolution_summary') or 'Pending...'}
 """
+        for a in grievance.get('actions', []):
+            details += f"\n{a.get('action_date', '')[:16]}  {a.get('action_type')}: {a.get('details') or ''}"
         self.grv_detail_text.insert("1.0", details)
         self.grv_detail_text.config(state='disabled')
 
@@ -341,7 +356,12 @@ Resolution:
         else:
             status = status_filter
 
-        grievances = GrievanceManager.search_grievances(status=status)
+        grievances = GrievanceManager.grievances_for(_hr.actor(self))
+        if status == 'active':
+            grievances = [g for g in grievances
+                          if g.get('status') not in ('resolved', 'closed', 'withdrawn')]
+        elif status:
+            grievances = [g for g in grievances if g.get('status') == status]
 
         for g in grievances:
             priority = g.get('priority', 'normal').lower()
@@ -367,9 +387,11 @@ Resolution:
         item = self.admin_grv_tree.item(selection[0])
         grv_id = int(item['values'][0].replace('GRV-', ''))
 
-        GrievanceManager.update_grievance(grv_id, assigned_to=self._get_user_id())
-        GrievanceManager.create_action(grv_id, 'assigned',
-            details=f"Assigned to {self._get_user_id()}")
+        try:
+            GrievanceManager.assign_grievance_as(_hr.actor(self), grv_id, self._get_user_id())
+        except PermissionError as e:
+            messagebox.showerror(_t('gui.staff.staff_hr.grievance.dialogs.error', default="Error"), str(e))
+            return
         messagebox.showinfo(_t('gui.staff.staff_hr.grievance.dialogs.success', default="Success"), _t('gui.staff.staff_hr.grievance.dialogs.grievance_assigned_to_you', default="Grievance assigned to you"))
         self._load_all_grievances()
 
@@ -400,9 +422,13 @@ Resolution:
 
         def save():
             new_status = status_combo.get()
-            GrievanceManager.update_grievance(grv_id, status=new_status)
-            GrievanceManager.create_action(grv_id, 'status_change',
-                details=f"Status changed to {new_status}")
+            try:
+                GrievanceManager.update_grievance_as(_hr.actor(self), grv_id, status=new_status)
+                GrievanceManager.add_action_as(_hr.actor(self), grv_id, action_type='status_change',
+                                               details=f"Status changed to {new_status}")
+            except PermissionError as e:
+                messagebox.showerror(_t('gui.staff.staff_hr.grievance.dialogs.error', default="Error"), str(e), parent=dialog)
+                return
             dialog.destroy()
             self._load_all_grievances()
             messagebox.showinfo(_t('gui.staff.staff_hr.grievance.dialogs.success', default="Success"), _t('gui.staff.staff_hr.grievance.dialogs.status_updated', default="Status updated"))
@@ -437,7 +463,11 @@ Resolution:
             if not resolution:
                 messagebox.showerror(_t('gui.staff.staff_hr.grievance.dialogs.error', default="Error"), _t('gui.staff.staff_hr.grievance.dialogs.please_provide_resolution_details', default="Please provide resolution details"))
                 return
-            GrievanceManager.resolve_grievance(grv_id, resolution)
+            try:
+                GrievanceManager.resolve_grievance_as(_hr.actor(self), grv_id, resolution)
+            except (PermissionError, ValueError) as e:
+                messagebox.showerror(_t('gui.staff.staff_hr.grievance.dialogs.error', default="Error"), str(e), parent=dialog)
+                return
             dialog.destroy()
             self._load_all_grievances()
             messagebox.showinfo(_t('gui.staff.staff_hr.grievance.dialogs.success', default="Success"), _t('gui.staff.staff_hr.grievance.dialogs.grievance_resolved', default="Grievance resolved"))
@@ -454,8 +484,10 @@ Resolution:
         item = self.admin_grv_tree.item(selection[0])
         grv_id = int(item['values'][0].replace('GRV-', ''))
 
-        grievance = GrievanceManager.get_grievance(grv_id)
-        if not grievance:
+        try:
+            grievance = GrievanceManager.view_grievance(_hr.actor(self), grv_id)
+        except PermissionError as e:
+            messagebox.showerror(_t('gui.staff.staff_hr.grievance.dialogs.error', default="Error"), str(e))
             return
 
         # Details dialog
@@ -501,7 +533,7 @@ Resolution:
         actions_frame = ttk.LabelFrame(frame, text=_t('gui.staff.staff_hr.grievance.labels.action_history', default="Action History"), padding=10)
         actions_frame.pack(fill=tk.BOTH, expand=True, pady=5)
 
-        actions = GrievanceManager.get_grievance_actions(grv_id)
+        actions = grievance.get('actions', [])
         actions_list = tk.Listbox(actions_frame, height=5)
         for a in actions:
             actions_list.insert(tk.END, f"{a.get('action_date')} - {a.get('action_type')}: {a.get('details', '')[:50]}")
@@ -559,7 +591,7 @@ Resolution:
         for item in self.disc_tree.get_children():
             self.disc_tree.delete(item)
 
-        records = GrievanceManager.search_disciplinary_records()
+        records = GrievanceManager.disciplinary_records_for(_hr.actor(self))
 
         for r in records:
             severity = r.get('severity', '').lower()
@@ -585,7 +617,7 @@ Resolution:
         for item in self.disc_tree.get_children():
             self.disc_tree.delete(item)
 
-        records = GrievanceManager.get_user_disciplinary_records(user_id)
+        records = GrievanceManager.disciplinary_records_for(_hr.actor(self), user_id=user_id)
 
         for r in records:
             self.disc_tree.insert('', tk.END, values=(
@@ -631,6 +663,10 @@ Resolution:
         desc_text = scrolledtext.ScrolledText(frame, width=40, height=6)
         desc_text.grid(row=4, column=1, padx=10, pady=8)
 
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.grievance.labels.investigating_officer', default="Investigating Officer:")).grid(row=5, column=0, sticky='e', padx=10, pady=8)
+        officer_entry = ttk.Entry(frame, width=20)
+        officer_entry.grid(row=5, column=1, padx=10, pady=8, sticky='w')
+
         def save():
             user_id = user_entry.get().strip()
             if not user_id:
@@ -638,13 +674,13 @@ Resolution:
                 return
 
             try:
-                record_id = GrievanceManager.create_disciplinary_record(
-                    user_id=user_id,
+                record_id = GrievanceManager.create_disciplinary_record_as(
+                    _hr.actor(self), user_id,
                     offense_type=offense_combo.get(),
                     severity=severity_combo.get(),
                     description=desc_text.get("1.0", tk.END).strip(),
                     date_occurred=date_entry.get(),
-                    reported_by=self._get_user_id()
+                    investigating_officer=officer_entry.get().strip() or None,
                 )
                 messagebox.showinfo(_t('gui.staff.staff_hr.grievance.dialogs.success', default="Success"), f"Record created. ID: {record_id}")
                 dialog.destroy()
@@ -652,7 +688,7 @@ Resolution:
             except Exception as e:
                 messagebox.showerror(_t('gui.staff.staff_hr.grievance.dialogs.error', default="Error"), str(e))
 
-        ttk.Button(frame, text=_t('gui.staff.staff_hr.grievance.buttons.create_record', default="Create Record"), command=save).grid(row=5, column=0, columnspan=2, pady=20)
+        ttk.Button(frame, text=_t('gui.staff.staff_hr.grievance.buttons.create_record', default="Create Record"), command=save).grid(row=6, column=0, columnspan=2, pady=20)
 
     def _add_disciplinary_action(self):
         """Add disciplinary action."""
@@ -690,12 +726,11 @@ Resolution:
 
         def save():
             try:
-                GrievanceManager.create_disciplinary_action(
-                    record_id,
+                GrievanceManager.create_disciplinary_action_as(
+                    _hr.actor(self), record_id,
                     action_type=action_combo.get(),
                     effective_date=date_entry.get(),
-                    imposed_by=self._get_user_id(),
-                    notes=notes_text.get("1.0", tk.END).strip()
+                    reason=notes_text.get("1.0", tk.END).strip()
                 )
                 messagebox.showinfo(_t('gui.staff.staff_hr.grievance.dialogs.success', default="Success"), _t('gui.staff.staff_hr.grievance.dialogs.action_added', default="Action added"))
                 dialog.destroy()
@@ -714,11 +749,18 @@ Resolution:
         item = self.disc_tree.item(selection[0])
         record_id = item['values'][0]
 
-        record = GrievanceManager.get_disciplinary_record(record_id)
-        if not record:
+        try:
+            record = GrievanceManager.view_disciplinary_record(_hr.actor(self), record_id)
+        except PermissionError as e:
+            messagebox.showerror(_t('gui.staff.staff_hr.grievance.dialogs.error', default="Error"), str(e))
             return
+        self._show_disciplinary_record(record)
 
-        actions = GrievanceManager.get_disciplinary_actions(record_id)
+    def _show_disciplinary_record(self, record):
+        """Details dialog for a record from view_disciplinary_record (the
+        subject's copy has no investigation notes)."""
+        record_id = record.get('record_id')
+        actions = record.get('actions', [])
 
         dialog = tk.Toplevel(self.root)
         dialog.title(f"Disciplinary Record #{record_id}")
@@ -734,10 +776,16 @@ Severity: {record.get('severity', '').title()}
 Date: {record.get('date_occurred')}
 Status: {record.get('status', 'pending').title()}
 Reported By: {record.get('reported_by')}
+Investigating Officer: {record.get('investigating_officer') or '-'}
 
 Description:
 {record.get('description', '')}
 """
+        if 'investigation_notes' in record:
+            info += f"\nInvestigation Notes:\n{record.get('investigation_notes') or '-'}\n"
+        for ap in record.get('appeals', []):
+            info += (f"\nAppeal #{ap.get('appeal_id')} ({ap.get('status')}): "
+                     f"{ap.get('outcome') or 'awaiting decision'}")
         info_text = scrolledtext.ScrolledText(frame, height=10)
         info_text.insert("1.0", info)
         info_text.config(state='disabled')
@@ -746,9 +794,81 @@ Description:
         if actions:
             ttk.Label(frame, text=_t('gui.staff.staff_hr.grievance.labels.actions_taken', default="Actions Taken:"), font=('Arial', 10, 'bold')).pack(anchor='w', pady=5)
             for a in actions:
-                ttk.Label(frame, text=f"  - {a.get('action_type')}: {a.get('effective_date')}").pack(anchor='w')
+                ack = ' (acknowledged)' if a.get('acknowledged_by_employee') else ''
+                ttk.Label(frame, text=f"  - #{a.get('action_id')} {a.get('action_type')}: {a.get('effective_date')}{ack}").pack(anchor='w')
+            if record.get('viewer_role') == 'subject':
+                bar = ttk.Frame(frame)
+                bar.pack(fill=tk.X, pady=5)
+                ttk.Button(bar, text=_t('gui.staff.staff_hr.grievance.buttons.acknowledge', default="Acknowledge Latest Action"),
+                           command=lambda: self._acknowledge_action(actions[0], dialog)).pack(side=tk.LEFT, padx=5)
+                ttk.Button(bar, text=_t('gui.staff.staff_hr.grievance.buttons.appeal', default="Appeal Latest Action"),
+                           command=lambda: self._appeal_action(actions[0], dialog)).pack(side=tk.LEFT, padx=5)
 
         ttk.Button(frame, text=_t('gui.staff.staff_hr.grievance.buttons.close', default="Close"), command=dialog.destroy).pack(pady=10)
+
+    def _create_my_disciplinary_tab(self):
+        """The signed-in person's own disciplinary records (shown only when
+        they have any; investigation notes are never included)."""
+        me = self._get_user_id()
+        try:
+            records = [r for r in GrievanceManager.disciplinary_records_for(_hr.actor(self))
+                       if r.get('user_id') == me]
+        except Exception:
+            logger.warning("Could not load own disciplinary records", exc_info=True)
+            records = []
+        if not records:
+            return
+        tab = ttk.Frame(self.notebook)
+        self.notebook.add(tab, text=_t('gui.staff.staff_hr.grievance.tabs.my_disciplinary', default="My Disciplinary Record"))
+        columns = ('id', 'offense', 'severity', 'date', 'status')
+        self.my_disc_tree = ttk.Treeview(tab, columns=columns, show='headings', height=12)
+        for col, title in zip(columns, ("ID", "Offense", "Severity", "Date", "Status")):
+            self.my_disc_tree.heading(col, text=title)
+        self.my_disc_tree.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+        self.my_disc_tree.bind('<Double-1>', lambda e: self._view_my_disciplinary())
+        ttk.Button(tab, text=_t('gui.staff.staff_hr.grievance.buttons.view_details', default="View Details"),
+                   command=self._view_my_disciplinary).pack(anchor='w', padx=10, pady=5)
+        for r in records:
+            self.my_disc_tree.insert('', tk.END, values=(
+                r.get('record_id'), (r.get('offense_type') or '').replace('_', ' ').title(),
+                (r.get('severity') or '').title(), r.get('date_occurred', ''),
+                (r.get('status') or 'pending').replace('_', ' ').title()))
+
+    def _view_my_disciplinary(self):
+        selection = self.my_disc_tree.selection()
+        if not selection:
+            return
+        record_id = self.my_disc_tree.item(selection[0])['values'][0]
+        try:
+            record = GrievanceManager.view_disciplinary_record(_hr.actor(self), record_id)
+        except PermissionError as e:
+            messagebox.showerror(_t('gui.staff.staff_hr.grievance.dialogs.error', default="Error"), str(e))
+            return
+        self._show_disciplinary_record(record)
+
+    def _acknowledge_action(self, action, dialog):
+        try:
+            GrievanceManager.acknowledge_disciplinary_action_as(_hr.actor(self), action['action_id'])
+        except PermissionError as e:
+            messagebox.showerror(_t('gui.staff.staff_hr.grievance.dialogs.error', default="Error"), str(e), parent=dialog)
+            return
+        messagebox.showinfo(_t('gui.staff.staff_hr.grievance.dialogs.success', default="Success"), "Action acknowledged.", parent=dialog)
+        dialog.destroy()
+
+    def _appeal_action(self, action, dialog):
+        if action.get('appeal_submitted'):
+            messagebox.showinfo(_t('gui.staff.staff_hr.grievance.dialogs.success', default="Success"), "An appeal has already been submitted.", parent=dialog)
+            return
+        grounds = simpledialog.askstring("Appeal", "Grounds for your appeal:", parent=dialog)
+        if not grounds:
+            return
+        try:
+            GrievanceManager.submit_appeal_as(_hr.actor(self), action['action_id'], grounds)
+        except PermissionError as e:
+            messagebox.showerror(_t('gui.staff.staff_hr.grievance.dialogs.error', default="Error"), str(e), parent=dialog)
+            return
+        messagebox.showinfo(_t('gui.staff.staff_hr.grievance.dialogs.success', default="Success"), "Appeal submitted.", parent=dialog)
+        dialog.destroy()
 
     def _create_statistics_tab(self):
         """Create statistics tab."""
@@ -788,12 +908,12 @@ Description:
 
     def _load_statistics(self):
         """Load statistics."""
-        grv_stats = GrievanceManager.get_grievance_statistics()
+        grv_stats = GrievanceManager.grievance_statistics_as(_hr.actor(self))
         self.grv_stats['open'].config(text=str(grv_stats.get('total_open', 0)))
         self.grv_stats['investigating'].config(text=str(grv_stats.get('total_investigating', 0)))
         self.grv_stats['resolved'].config(text=str(grv_stats.get('resolved_this_month', 0)))
 
-        disc_stats = GrievanceManager.get_disciplinary_statistics()
+        disc_stats = GrievanceManager.disciplinary_statistics_as(_hr.actor(self))
         self.disc_stats['total'].config(text=str(disc_stats.get('total_active', 0)))
         self.disc_stats['pending'].config(text=str(disc_stats.get('actions_this_month', 0)))
         self.disc_stats['appeals'].config(text=str(disc_stats.get('pending_appeals', 0)))

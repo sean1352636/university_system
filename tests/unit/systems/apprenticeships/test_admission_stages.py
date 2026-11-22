@@ -15,12 +15,12 @@ from education_system.systems.apprenticeships import config
 from education_system.systems.apprenticeships.domain.admissions import stages as rules
 from education_system.systems.apprenticeships.domain.admissions.stages import AdmissionStage
 from education_system.systems.apprenticeships.domain.apprentices.models import ValidationError
-from education_system.systems.apprenticeships.services import (
+from education_system.systems.apprenticeships.application.apprentices import (
     admissions_service,
     apprentice_service,
-    programme_service,
 )
-from education_system.systems.apprenticeships.services.access import PermissionDenied
+from education_system.systems.apprenticeships.application.programmes import programme_service
+from education_system.systems.apprenticeships.application.security.access import PermissionDenied
 
 TODAY = date.today().isoformat()
 

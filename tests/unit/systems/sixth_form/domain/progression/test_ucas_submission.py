@@ -91,7 +91,7 @@ class TestSubmissionEmail:
             captured.append({"name": name, **context, **kwargs})
             return type("M", (), {"message_id": 7})()
 
-        import education_system.systems.sixth_form.domain.operations.communications.messages.email_templates as tpl
+        import education_system.systems.sixth_form.domains.communications.domain.messages.email_templates as tpl
         monkeypatch.setattr(tpl, "send_from_template", _capture)
 
         app = self._application(sf)
@@ -121,7 +121,7 @@ class TestSubmissionEmail:
     def test_an_application_with_no_choices_says_so(self, sf, monkeypatch):
         from education_system.systems.sixth_form.domain.progression.university import submission_notice
         captured: list[dict] = []
-        import education_system.systems.sixth_form.domain.operations.communications.messages.email_templates as tpl
+        import education_system.systems.sixth_form.domains.communications.domain.messages.email_templates as tpl
         monkeypatch.setattr(
             tpl, "send_from_template",
             lambda name, context, **kw: (
@@ -137,7 +137,7 @@ class TestSubmissionEmail:
             self, sf, monkeypatch):
         """The submission is already saved by the time this runs."""
         from education_system.systems.sixth_form.domain.progression.university import submission_notice
-        import education_system.systems.sixth_form.domain.operations.communications.messages.email_templates as tpl
+        import education_system.systems.sixth_form.domains.communications.domain.messages.email_templates as tpl
 
         def _boom(*_a, **_k):
             raise RuntimeError("mail server down")

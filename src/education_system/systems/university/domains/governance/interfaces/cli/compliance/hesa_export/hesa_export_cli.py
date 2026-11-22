@@ -17,6 +17,8 @@ def display_hesa_export_menu(auth):
         print("  5. Manage Field Mappings")
         print("  6. View Submission Log")
         print("  7. Return Statistics")
+        print("  8. Data Futures (reference periods, validation, SIDs, coding frames)")
+        print("  9. Student Loans Company (census confirmation, change notices)")
         print("\n  0. Back")
         print("=" * 70)
 
@@ -36,8 +38,17 @@ def display_hesa_export_menu(auth):
             print(f"\nReturn created with ID: {rid}")
         elif choice == '3':
             rid = int(input("Return ID: ").strip())
-            xml = service.generate_xml_export(rid)
-            print(f"\nXML generated ({len(xml)} characters)")
+            try:
+                xml = service.generate_xml_export(rid, actor=getattr(auth, "current_user", None))
+            except (ValueError, PermissionError) as exc:
+                print(f"\n✗ {exc}")
+                input("\nPress Enter to continue...")
+                continue
+            from education_system.systems.university.application.statutory import hesa_return
+            built = hesa_return.report(getattr(auth, "current_user", None), rid)
+            print(f"\nXML built ({len(xml)} characters): {built['report'].get('errors', 0)} "
+                  f"error(s), {built['report'].get('warnings', 0)} warning(s).")
+            print(f"Upload file: {built['return'].get('output_path') or 'none - fix the errors first'}")
             show = input("Display XML? (y/n): ").strip().lower()
             if show == 'y':
                 print(xml[:2000])
@@ -62,6 +73,18 @@ def display_hesa_export_menu(auth):
             logs = service.get_submission_log(rid)
             for log in logs:
                 print(f"  [{log.get('performed_at', '')}] {log['action']} - {log.get('details', '')}")
+        elif choice == '8':
+            from education_system.systems.university.domains.governance.interfaces.cli.compliance.statutory_returns.statutory_cli import (
+                hesa_menu,
+            )
+            hesa_menu(auth)
+            continue
+        elif choice == '9':
+            from education_system.systems.university.domains.governance.interfaces.cli.compliance.statutory_returns.statutory_cli import (
+                slc_menu,
+            )
+            slc_menu(auth)
+            continue
         elif choice == '7':
             stats = service.get_return_statistics()
             print(f"\nTotal returns: {stats['total']}")

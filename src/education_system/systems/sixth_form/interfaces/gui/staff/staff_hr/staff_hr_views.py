@@ -6,7 +6,9 @@ from education_system.systems.sixth_form.interfaces.gui._ui import grab_when_vie
 import datetime as _dt
 import logging
 import tkinter as tk
-from tkinter import messagebox, ttk
+from tkinter import ttk
+from education_system.systems.sixth_form.interfaces.gui._sidebar import SidebarBook
+from education_system.platform.delivery.gui.parented_dialogs import messagebox, simpledialog
 from education_system.platform import branding
 from education_system.systems.sixth_form.domain.staff.staff_hr import (
     staff_hr as data,
@@ -62,7 +64,7 @@ def open_staff_hr_window(parent=None) -> None:
     win.geometry(WIN_GEOMETRY)
     win.minsize(*WIN_MINSIZE)
 
-    nb = ttk.Notebook(win)
+    nb = SidebarBook(win)
     nb.pack(fill="both", expand=True, padx=10, pady=10)
 
     RecordsTab(nb, scope="active",     label="Active")
@@ -74,6 +76,11 @@ def open_staff_hr_window(parent=None) -> None:
     RecordsTab(nb, scope="all",        label="All Records")
     EventsTab(nb)
     SummaryTab(nb)
+    # KCSIE single central record (DSL / HR / admin only).
+    from education_system.systems.sixth_form.interfaces.gui.staff.staff_hr import (
+        single_central_record_views as _scr_views,
+    )
+    _scr_views.SCRTab(nb)
 
 
 def _staff_options() -> list[tuple[str, str]]:
@@ -120,6 +127,11 @@ class RecordsTab:
         self.f_scale.pack(side="left", padx=(2, 8))
         ttk.Button(bar, text="Apply",
                     command=self.refresh).pack(side="left", padx=4)
+        self.f_archived = tk.BooleanVar(value=False)
+        ttk.Checkbutton(bar, text="Include archived",
+                        variable=self.f_archived,
+                        command=self.refresh).pack(side="left",
+                                                   padx=(8, 0))
         ttk.Button(bar, text="New",
                     command=self._new).pack(side="left", padx=(16, 0))
 
@@ -153,6 +165,7 @@ class RecordsTab:
                                        foreground=fg)
         self.tree.tag_configure("alert", background="#ffd1d1",
                                   foreground="#8c0d0d")
+        self.tree.tag_configure("archived", foreground="#888888")
         self.tree.bind("<Double-Button-1>",
                          lambda _e: self._edit())
 
@@ -166,6 +179,7 @@ class RecordsTab:
                 ("Change status",     self._set_status),
                 ("Mark Left",         self._mark_left),
                 ("Delete",            self._delete),
+                ("Restore",           self._restore),
                 ("Refresh",           self.refresh),
         ):
             ttk.Button(actions, text=label,
@@ -193,6 +207,8 @@ class RecordsTab:
             f["reviews_overdue"] = True
         elif self.scope == "rtw_miss":
             f["rtw_missing"] = True
+        if self.f_archived.get():
+            f["include_archived"] = True
         return f
 
     def refresh(self) -> None:
@@ -224,7 +240,7 @@ class RecordsTab:
                          r.safeguarding_expires_on or "—",
                          r.next_review_due or "—",
                          ",".join(flags)),
-                tags=(tag,))
+                tags=(tag,) + (("archived",) if r.archived_at else ()))
         self.count.config(text=f"{len(rows)} record(s)")
 
     def _selected(self) -> HRRecord | None:
@@ -309,10 +325,29 @@ class RecordsTab:
             return
         if not messagebox.askyesno(
                 "Staff HR",
-                f"Delete HR record #{r.record_id}?",
+                f"Archive HR record #{r.record_id}?\n\n"
+                "It is archived, not deleted (UK retention): it leaves "
+                "the lists, who/when/why are recorded, and ticking "
+                "'Include archived' shows it again.",
                 parent=self.frame):
             return
-        data.delete_record(r.record_id)
+        reason = simpledialog.askstring(
+            "Staff HR", "Reason for archiving (optional):",
+            parent=self.frame)
+        if reason is None:
+            return
+        data.delete_record(r.record_id, reason=reason)
+        self.refresh()
+
+    def _restore(self) -> None:
+        r = self._selected()
+        if not r:
+            return
+        if not r.archived_at:
+            messagebox.showinfo("Staff HR", "That record is not archived.",
+                                parent=self.frame)
+            return
+        data.restore_record(r.record_id)
         self.refresh()
 
 

@@ -2,8 +2,8 @@
 
 A receipt is the formal record handed back to whoever paid: one
 sequentially-numbered document per payment event, with line items.
-Receipts can be linked back to a fee payment, a trip payment, a
-bursary disbursement, or be free-standing (cash handed in at the
+Receipts can be linked back to a dinner money top-up or a trip
+payment, or be free-standing (cash handed in at the
 office for something the system doesn't model elsewhere).
 
 Two tables:
@@ -34,6 +34,7 @@ from datetime import date as _date
 from decimal import Decimal, InvalidOperation
 from typing import Any
 from education_system import paths
+from education_system.systems.primary.infrastructure.schema_repair import repair_links
 
 logger = logging.getLogger(__name__)
 
@@ -41,7 +42,7 @@ DB_PATH = paths.PRIMARY_RECEIPTS_DB
 
 PAYMENT_METHODS: tuple[str, ...] = (
     "Cash", "Card", "Bank Transfer", "Cheque",
-    "Online Portal", "Direct Debit", "Voucher / Bursary",
+    "Online Portal", "Direct Debit", "Voucher",
     "Adjustment", "Other",
 )
 DEFAULT_METHOD: str = "Card"
@@ -50,7 +51,7 @@ STATUSES: tuple[str, ...] = ("Draft", "Issued", "Voided")
 DEFAULT_STATUS: str = "Draft"
 
 LINE_KINDS: tuple[str, ...] = (
-    "general", "fee", "trip", "bursary", "lunch", "exam", "other",
+    "general", "lunch", "trip", "club", "uniform", "other",
 )
 DEFAULT_LINE_KIND: str = "general"
 
@@ -78,7 +79,7 @@ CREATE TABLE IF NOT EXISTS receipts (
     void_reason     TEXT,
     created_at      TEXT DEFAULT (datetime('now')),
     updated_at      TEXT DEFAULT (datetime('now')),
-    FOREIGN KEY (student_id) REFERENCES students(student_id)
+    FOREIGN KEY (student_id) REFERENCES pupils(pupil_id)
         ON DELETE SET NULL
 );
 
@@ -171,6 +172,7 @@ def init_db() -> None:
         return
     from education_system.systems.primary.domain import _pupils_bridge as _students
     _students.init_db()
+    repair_links(DB_PATH)
     with _connect() as conn:
         conn.executescript(_SCHEMA)
     logger.debug("Receipts schema ready at %s", DB_PATH)
@@ -688,41 +690,39 @@ def receipts_for_student(student_id: str) -> list[Receipt]:
 
 # ── Import helpers from other modules ────────────────────────────
 
-def receipt_from_fee_payment(payment_id: int,
-                                received_by: str | None = None,
-                                issued: bool = True) -> Receipt:
-    """Create a receipt for an existing fee payment (status=Cleared
-    only). The line's source_id links back to the fee item."""
-    from education_system.systems.primary.domain.fees import fees as _fees
-    p = _fees.get_payment(payment_id)
-    if p is None:
-        raise ValidationError(f"No fee payment #{payment_id}")
-    if p.status != "Cleared":
+def receipt_from_dinner_money_topup(entry_id: int,
+                                    received_by: str | None = None,
+                                    issued: bool = True) -> Receipt:
+    """Create a receipt for a dinner money top-up (a ledger credit). The
+    line's source_id links back to the ledger entry."""
+    from education_system.systems.primary.domain.finance.dinner_money import (
+        dinner_money as _dm,
+    )
+    e = _dm.get(entry_id)
+    if e is None:
+        raise ValidationError(f"No dinner money entry #{entry_id}")
+    if e.amount_pence <= 0:
         raise ValidationError(
-            "Only cleared fee payments can be receipted")
-    item = _fees.get_item(p.fee_id)
-    if item is None:
-        raise ValidationError(f"Fee #{p.fee_id} not found")
+            "Only dinner money top-ups (credits) can be receipted")
     from education_system.systems.primary.domain import _pupils_bridge as _students
-    student = _students.get_student(item.student_id)
-    payer = student.full_name if student else item.student_id
-    method = p.method if p.method in PAYMENT_METHODS else DEFAULT_METHOD
+    pupil = _students.get_student(e.pupil_id)
+    payer = pupil.full_name if pupil else e.pupil_id
     return create_receipt(
         {
-            "issued_date": p.paid_on,
+            "issued_date": e.entry_date,
             "payer_name":  payer,
-            "student_id":  item.student_id,
-            "method":      method,
+            "student_id":  e.pupil_id,
+            "method":      DEFAULT_METHOD,
             "status":      "Issued" if issued else "Draft",
-            "received_by": received_by or p.recorded_by,
-            "reference":   p.reference,
-            "notes":       f"Imported from fee payment #{payment_id}",
+            "received_by": received_by or e.recorded_by,
+            "reference":   f"DM-{entry_id}",
+            "notes":       f"Imported from dinner money top-up #{entry_id}",
         },
         [{
-            "description": item.description,
-            "amount":      p.amount,
-            "kind":        "fee",
-            "source_id":   item.fee_id,
+            "description": e.description or "Dinner money top-up",
+            "amount":      e.amount_pence / 100.0,
+            "kind":        "lunch",
+            "source_id":   entry_id,
         }],
     )
 
@@ -764,7 +764,9 @@ def receipt_from_trip_payment(payment_id: int,
                 f"{trip.name} — trip payment",
             "amount":      p.amount,
             "kind":        "trip",
-            "source_id":   trip.trip_id,
+            # The payment, not the trip: one trip has many payments, and the
+            # dinner-money import likewise points at its ledger entry.
+            "source_id":   p.payment_id,
         }],
     )
 

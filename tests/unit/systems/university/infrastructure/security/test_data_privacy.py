@@ -12,7 +12,7 @@ import tempfile
 import os
 import json
 
-from education_system.systems.university.domains.pastoral.domain.health.portal.data_privacy import (
+from education_system.systems.university.domains.health.domain.health.portal.data_privacy import (
     ensure_integration_schema,
     ensure_security_schema,
     _first_existing_column,
@@ -190,42 +190,42 @@ class TestSchemaManagement:
         assert column is None
 
 class TestEncryptionManagement:
-    """Test encryption key management"""
+    """The managed health key (var/secrets/health_field_key), redirected to a
+    temp file here."""
 
-    def test_get_or_create_encryption_key_creates_new(self):
-        """Test creating new encryption key"""
-        with patch('education_system.systems.university.domains.pastoral.domain.health.portal.data_privacy.os.path.exists', return_value=False), \
-             patch('education_system.systems.university.domains.pastoral.domain.health.portal.data_privacy.os.chmod'), \
-             patch('builtins.open', create=True) as mock_open:
-            get_or_create_encryption_key()
+    @pytest.fixture
+    def key_file(self, tmp_path, monkeypatch):
+        from education_system import paths
+        from education_system.systems.university.domains.health.infrastructure.health import (
+            field_crypto,
+        )
+        target = tmp_path / "health_field_key"
+        monkeypatch.setattr(paths, "UNIVERSITY_HEALTH_FIELD_KEY_FILE", target)
+        field_crypto.reset()
+        yield target
+        field_crypto.reset()
 
-            # Verify file was written
-            mock_open.assert_called()
+    def test_get_or_create_encryption_key_creates_new(self, key_file):
+        """A missing key is created once, owner-only"""
+        key = get_or_create_encryption_key()
+        assert key_file.read_bytes().strip() == key
+        assert (key_file.stat().st_mode & 0o777) == 0o600
 
-    def test_get_or_create_encryption_key_uses_existing(self):
-        """Test using existing encryption key"""
-        test_key = b'test_encryption_key'
-        mock_file = MagicMock()
-        mock_file.__enter__ = Mock(return_value=mock_file)
-        mock_file.__exit__ = Mock(return_value=False)
-        mock_file.read = Mock(return_value=test_key)
-
-        with patch('education_system.systems.university.domains.pastoral.domain.health.portal.data_privacy.os.path.exists', return_value=True):
-            with patch('builtins.open', return_value=mock_file):
-                key = get_or_create_encryption_key()
-
-                assert key == test_key
+    def test_get_or_create_encryption_key_uses_existing(self, key_file):
+        """An existing key is read, never regenerated"""
+        first = get_or_create_encryption_key()
+        assert get_or_create_encryption_key() == first
 
 class TestAuditLogging:
     """Test audit logging functionality"""
 
-    @patch('education_system.systems.university.domains.pastoral.domain.health.portal.data_privacy.audit.audit_logger')
-    def test_log_audit_event(self, mock_logger):
-        """Test audit event logging"""
+    @patch('education_system.systems.university.domains.health.domain.health.records.db.audit.log_audit_event')
+    def test_log_audit_event(self, mock_record):
+        """Audit events go to the health audit trail + immutable log"""
         log_audit_event('user123', 'create', 'health_record', '456', 'Created new record')
 
-        mock_logger.info.assert_called_once()
-        call_args = str(mock_logger.info.call_args)
+        mock_record.assert_called_once()
+        call_args = str(mock_record.call_args)
 
         assert 'user123' in call_args
         assert 'create' in call_args

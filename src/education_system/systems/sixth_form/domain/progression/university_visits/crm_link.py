@@ -34,47 +34,18 @@ class CrmLinkError(RuntimeError):
     """Raised when the university system DB can't be reached or written."""
 
 
-def _uni_transaction():
-    """Open a transaction against the university system's DB.
+def _university():
+    """The university's platform adapter.
 
-    Import is deferred so the sixth-form module never hard-depends on
-    the university_system package at import time.
+    The sixth form never imports the university: the CRM rows are the
+    university's to write, so it is asked through the adapter registry.
     """
     try:
-        from education_system.systems.university.infrastructure.database.db import (
-            transaction,
-        )
+        from education_system.platform.cross_system.adapters import route_support
+        return route_support.adapter_for("university")
     except Exception as exc:
         raise CrmLinkError(
             f"university_system not available: {exc}") from None
-    return transaction()
-
-
-def _ensure_admissions_schema() -> None:
-    """Make sure the admissions tables exist in the university DB."""
-    try:
-        from education_system.systems.university.infrastructure.database.schemas.admissions_schemas import (
-            AdmissionsSchemas,
-        )
-    except Exception:
-        # Older university-system layouts don't ship the schemas class —
-        # the tables may already exist from runtime setup elsewhere.
-        return
-    try:
-        from education_system.systems.university.infrastructure.database.db import (
-            get_connection,
-        )
-        conn = get_connection()
-        try:
-            AdmissionsSchemas.create_schemas(conn)
-            conn.commit()
-        finally:
-            try:
-                conn.close()
-            except Exception:
-                pass
-    except Exception as exc:
-        logger.debug("AdmissionsSchemas bootstrap failed: %s", exc)
 
 
 def push_visit_to_university_crm(visit_id: int,
@@ -104,71 +75,54 @@ def push_visit_to_university_crm(visit_id: int,
     duration = _duration_minutes(visit.departure_time, visit.return_time)
     capacity = visit.capacity or max(len(attendees), 20)
 
-    _ensure_admissions_schema()
+    skipped: list[tuple[str, str]] = []
+    sent: list[dict] = []
+    by_key: dict[str, object] = {}
+    for a in attendees:
+        s = students_by_id.get(a.student_id)
+        if s is None:
+            skipped.append((a.student_id, "student not found"))
+            continue
+        key = str(a.attendee_id)
+        by_key[key] = a
+        sent.append({
+            "key": key,
+            "prospect_id": a.prospect_id,  # type: ignore[attr-defined]
+            "first_name": s.first_name or "",
+            "last_name": s.last_name or "",
+            "email": (s.email or "").strip(),
+            "date_of_birth": getattr(s, "dob", None) or "",
+            "high_school": school_name,
+            "source": f"School Visit — {visit.university_name}",
+            "attended": bool(a.attended),
+        })
 
+    tour = {
+        "tour_id": visit.campus_tour_id,  # type: ignore[attr-defined]
+        "tour_date": visit.visit_date, "tour_time": tour_time,
+        "tour_guide": tour_guide, "max_attendees": capacity,
+        "meeting_point": meeting_point, "duration_minutes": duration,
+        "status": _tour_status(visit.status),
+    }
+    # Unavailable university -> CrmLinkError; a database error from the
+    # university side propagates as before.
+    result = _university().record_school_visit(tour, sent)
+
+    tour_id = int(result["tour_id"])
     prospects_created = 0
     prospects_reused = 0
-    registrations_created = 0
-    skipped: list[tuple[str, str]] = []
-
-    with _uni_transaction() as conn:
-        # ── Tour upsert ─────────────────────────────────────────────
-        existing_tour_id = visit.campus_tour_id  # type: ignore[attr-defined]
-        tour_id: int
-        if existing_tour_id:
-            cur = conn.execute(
-                "SELECT 1 FROM campus_tours WHERE tour_id = ?",
-                (existing_tour_id,),
-            )
-            if cur.fetchone():
-                conn.execute(
-                    """UPDATE campus_tours SET
-                           tour_date = ?, tour_time = ?, tour_guide = ?,
-                           max_attendees = ?, meeting_point = ?,
-                           duration_minutes = ?, status = ?
-                       WHERE tour_id = ?""",
-                    (visit.visit_date, tour_time, tour_guide,
-                     capacity, meeting_point, duration,
-                     _tour_status(visit.status), existing_tour_id),
-                )
-                tour_id = existing_tour_id
-            else:
-                tour_id = _insert_tour(
-                    conn, visit.visit_date, tour_time, tour_guide,
-                    capacity, meeting_point, duration, visit.status)
+    for key, link in (result.get("prospects") or {}).items():
+        a = by_key.get(key)
+        if a is None:
+            continue
+        prospect_id = int(link["prospect_id"])
+        if link.get("created"):
+            prospects_created += 1
         else:
-            tour_id = _insert_tour(
-                conn, visit.visit_date, tour_time, tour_guide,
-                capacity, meeting_point, duration, visit.status)
-
-        # ── Per-attendee prospect + registration ───────────────────
-        for a in attendees:
-            s = students_by_id.get(a.student_id)
-            if s is None:
-                skipped.append((a.student_id, "student not found"))
-                continue
-            existing_prospect_id = a.prospect_id  # type: ignore[attr-defined]
-            if existing_prospect_id and _prospect_exists(
-                    conn, existing_prospect_id):
-                prospect_id = existing_prospect_id
-                prospects_reused += 1
-            else:
-                # Dedupe by email if a prospect with that email already exists.
-                email = (s.email or "").strip()
-                prospect_id = (_find_prospect_by_email(conn, email)
-                                if email else None)
-                if prospect_id is not None:
-                    prospects_reused += 1
-                else:
-                    prospect_id = _insert_prospect(
-                        conn, s, school_name=school_name,
-                        source=f"School Visit — {visit.university_name}")
-                    prospects_created += 1
-                data.set_attendee_link(a.attendee_id, prospect_id)
-
-            if _ensure_registration(conn, tour_id, prospect_id,
-                                    attended=a.attended):
-                registrations_created += 1
+            prospects_reused += 1
+        if prospect_id != a.prospect_id:  # type: ignore[attr-defined]
+            data.set_attendee_link(a.attendee_id, prospect_id)  # type: ignore[attr-defined]
+    registrations_created = int(result.get("registrations_created") or 0)
 
     data.set_visit_link(visit_id, tour_id)
     logger.info(
@@ -188,20 +142,6 @@ def push_visit_to_university_crm(visit_id: int,
 
 # ── helpers ───────────────────────────────────────────────────────
 
-def _insert_tour(conn, date: str, time: str, guide: str,
-                 capacity: int, meeting_point: str,
-                 duration_minutes: int, visit_status: str) -> int:
-    cur = conn.execute(
-        """INSERT INTO campus_tours
-               (tour_date, tour_time, tour_guide, max_attendees,
-                meeting_point, duration_minutes, status)
-           VALUES (?, ?, ?, ?, ?, ?, ?)""",
-        (date, time, guide, capacity, meeting_point,
-         duration_minutes, _tour_status(visit_status)),
-    )
-    return int(cur.lastrowid)
-
-
 def _tour_status(visit_status: str) -> str:
     return {
         "Planning":  "scheduled",
@@ -209,78 +149,6 @@ def _tour_status(visit_status: str) -> str:
         "Completed": "completed",
         "Cancelled": "cancelled",
     }.get(visit_status, "scheduled")
-
-
-def _prospect_exists(conn, prospect_id: int) -> bool:
-    return conn.execute(
-        "SELECT 1 FROM admission_prospects WHERE prospect_id = ?",
-        (prospect_id,),
-    ).fetchone() is not None
-
-
-def _find_prospect_by_email(conn, email: str) -> int | None:
-    if not email:
-        return None
-    r = conn.execute(
-        "SELECT prospect_id FROM admission_prospects WHERE email = ? "
-        "ORDER BY prospect_id LIMIT 1",
-        (email,),
-    ).fetchone()
-    if r is None:
-        return None
-    # sqlite3.Row supports both index + name access.
-    try:
-        return int(r["prospect_id"])
-    except Exception:
-        return int(r[0])
-
-
-def _insert_prospect(conn, student, *, school_name: str,
-                     source: str) -> int:
-    cur = conn.execute(
-        """INSERT INTO admission_prospects
-               (first_name, last_name, email, date_of_birth,
-                high_school, source, status)
-           VALUES (?, ?, ?, ?, ?, ?, 'prospect')""",
-        (student.first_name or "",
-         student.last_name or "",
-         (student.email or "").strip(),
-         getattr(student, "dob", None) or "",
-         school_name, source),
-    )
-    return int(cur.lastrowid)
-
-
-def _ensure_registration(conn, tour_id: int, prospect_id: int,
-                         *, attended: bool) -> bool:
-    """Insert a tour_registrations row if one doesn't already exist for
-    this (tour, prospect). Returns True if a row was inserted."""
-    r = conn.execute(
-        "SELECT registration_id FROM tour_registrations "
-        "WHERE tour_id = ? AND prospect_id = ?",
-        (tour_id, prospect_id),
-    ).fetchone()
-    if r is not None:
-        # Keep the attended flag in sync.
-        conn.execute(
-            "UPDATE tour_registrations SET attended = ? "
-            "WHERE tour_id = ? AND prospect_id = ?",
-            (1 if attended else 0, tour_id, prospect_id),
-        )
-        return False
-    conn.execute(
-        """INSERT INTO tour_registrations
-               (tour_id, prospect_id, num_guests, attended)
-           VALUES (?, ?, 0, ?)""",
-        (tour_id, prospect_id, 1 if attended else 0),
-    )
-    # Bump the attendee counter on the tour.
-    conn.execute(
-        "UPDATE campus_tours SET current_attendees = current_attendees + 1 "
-        "WHERE tour_id = ?",
-        (tour_id,),
-    )
-    return True
 
 
 def _duration_minutes(dep: str | None, ret: str | None) -> int:

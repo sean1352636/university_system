@@ -1,0 +1,1089 @@
+
+import logging
+
+logger = logging.getLogger(__name__)
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+# gui_course_management.py
+import tkinter as tk
+from tkinter import ttk, messagebox, filedialog, simpledialog, Toplevel
+from tkinter.scrolledtext import ScrolledText
+from education_system.systems.university.infrastructure.database.db import sqlite3
+from education_system.systems.university.infrastructure.i18n import get_text as _, init_i18n
+init_i18n()
+import os
+from pathlib import Path
+from education_system.systems.university.infrastructure.auth import UserAuth
+from education_system.systems.university.infrastructure.shared_context import get_auth
+from education_system import paths
+
+# Use centralized path configuration
+DEFAULT_DB_PATH = paths.UNIVERSITY_DEFAULT_DB_PATH
+_CENTRALDEFAULT_DB_PATH = paths.UNIVERSITY_DEFAULT_DB_PATH
+
+# --------------------------------------------------------------------
+# Override sqlite3.connect for this GUI. Many database calls within this
+# module reference 'courses.db' or str(DEFAULT_DB_PATH) directly. Without
+# overriding, these calls would create separate database files in the
+# working directory, leading to inconsistencies and missing tables. By
+# redirecting those names to the central student_records.db located in
+# university_system/data/db_files, we ensure a single database file is
+# used across the entire application. Only connections specifying no
+# database or targeting courses.db/student_records.db are redirected;
+# all other database paths are left untouched.
+
+_original_sqlite_connect = sqlite3.connect
+
+def _patched_sqlite_connect(database, *args, **kwargs):
+    try:
+        db_name = os.path.basename(str(database)) if database else ""
+        if not database or db_name in (str(DEFAULT_DB_PATH), "courses.db"):
+            return _original_sqlite_connect(str(_CENTRALDEFAULT_DB_PATH), *args, **kwargs)
+    except Exception:
+        logger.debug("Suppressed exception", exc_info=True)
+    return _original_sqlite_connect(database, *args, **kwargs)
+
+sqlite3.connect = _patched_sqlite_connect
+import re
+import csv
+import json
+from datetime import datetime, timedelta
+from typing import List, Dict, Optional, Tuple
+import threading
+import logging
+
+# Chart generation utilities — deferred, see _lazy_charts. Importing seaborn
+# here pulled matplotlib, pandas and scipy (~4.7s) into every Course Management
+# open, for charts only the analytics dialogs draw.
+from education_system.systems.university.domains.curriculum.interfaces.gui.course_management_gui._lazy_charts import (
+    CHARTS_AVAILABLE, plt, Figure, FigureCanvasTkAgg, sns, np,
+)
+from education_system.systems.university.infrastructure.ui.field_pickers import attach_combo, recent_years
+from education_system.systems.university.domains.curriculum.domain.course_management.instructor_service import (
+    send_assignment_email,
+    suitable_courses,
+    update_instructor,
+)
+from education_system.systems.university.domains.curriculum.interfaces.gui.course_management_gui.instructors.instructor_fields import (
+    DepartmentFields,
+    PreferredDaysField,
+    PreferredTimesField,
+)
+
+# Import email service
+try:
+    from education_system.systems.university.infrastructure.email.email_service import send_email
+    EMAIL_AVAILABLE = True
+except ImportError:
+    EMAIL_AVAILABLE = False
+    send_email = None
+
+# Import module scheduling constants for timetable integration
+try:
+    from education_system.systems.university.domains.teaching.domain.module_scheduling import (
+        DAYS_OF_WEEK, TIME_SLOTS, SESSION_TYPES
+    )
+except ImportError:
+    DAYS_OF_WEEK = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']
+    TIME_SLOTS = ['09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00']
+    SESSION_TYPES = ['Lecture', 'Lab', 'Tutorial', 'Seminar', 'Workshop']
+
+# Import the original course management functions
+try:
+    from education_system.systems.university.domains.curriculum.domain.course_management import (
+        add_prerequisite, create_course, create_enhanced_course,
+        display_enhanced_course_menu, find_alternative_courses,
+        generate_course_analytics, generate_enrollment_report,
+        initialize_enhanced_database, remove_prerequisite, search_courses,
+        update_course, update_schedule, view_all_courses, view_course_details
+    )
+    ORIGINAL_MODULE_AVAILABLE = True
+except ImportError:
+    ORIGINAL_MODULE_AVAILABLE = False
+    print(_("course_management.warnings.original_module_not_found"))
+
+# Import academic system launchers
+try:
+    from education_system.systems.university.domains.progression.domain.degree_audit.degree_audit_core import launch_degree_audit_gui
+    from education_system.systems.university.domains.quality.domain.evaluation.course_evaluation_core import launch_course_evaluation_gui
+    ACADEMIC_SYSTEMS_AVAILABLE = True
+except ImportError as e:
+    ACADEMIC_SYSTEMS_AVAILABLE = False
+    print(_("course_management.warnings.academic_systems_unavailable", error=str(e)))
+
+# =====================================================================
+# GUI APPLICATION CLASS
+# =====================================================================
+
+
+def _course_option(course):
+    """How a suitable course reads in the assign dropdown."""
+    return f"{course['code'] or 'N/A'} - {course['name'] or 'Unnamed'}"
+
+
+def _suitable_hint(courses):
+    """The line under the assign dropdown."""
+    if courses:
+        return _t('gui.academics.course_management_gui.instructors.instructors.labels.suitable_courses_hint',
+                  default="Courses in their department or specialisation, closest match to their specialisation first.")
+    return _t('gui.academics.course_management_gui.instructors.instructors.labels.no_suitable_courses',
+              default="No active course suits this instructor. Set their department and "
+                      "specialisation with Edit Instructor.")
+
+
+def _instructor_name(cursor, instructor_id):
+    """Display name for *instructor_id*, or None when it names nobody.
+
+    Used to say who a re-assignment displaced, so replacing a colleague on a
+    course is visible rather than silent.
+    """
+    if instructor_id in (None, ""):
+        return None
+    try:
+        cursor.execute(
+            "SELECT TRIM(COALESCE(first_name, '') || ' ' || COALESCE(last_name, '')) "
+            "FROM instructors WHERE id = ?",
+            (instructor_id,),
+        )
+        row = cursor.fetchone()
+    except sqlite3.Error:
+        logger.debug("could not resolve instructor %r", instructor_id, exc_info=True)
+        return None
+    if not row:
+        return None
+    return (row[0] or "").strip() or f"instructor {instructor_id}"
+
+
+def create_instructors_tab(self):
+    """Create the instructors tab with role-based access"""
+    instructors_frame = ttk.Frame(self.notebook)
+    self.notebook.add(instructors_frame, text=_("course_management.tabs.instructors"))
+
+    is_admin = self.is_admin()
+    is_staff = self.is_staff()
+
+    # Instructor controls - Admin and Staff only
+    if is_admin or is_staff:
+        controls_frame = ttk.LabelFrame(instructors_frame, text=_("course_management.labels.instructor_management"), padding=10)
+        controls_frame.pack(fill=tk.X, padx=5, pady=5)
+
+        # Admin only - Add instructor
+        if is_admin:
+            ttk.Button(controls_frame, text=_("course_management.buttons.add_instructor"), command=self.show_add_instructor).pack(side=tk.LEFT, padx=5)
+
+        # Admin and Staff can view instructors
+        ttk.Button(controls_frame, text=_("course_management.buttons.view_instructors"), command=self.refresh_instructor_list).pack(side=tk.LEFT, padx=5)
+
+        # Admin only - Assign to course
+        if is_admin:
+            ttk.Button(controls_frame, text=_("course_management.buttons.assign_to_course"), command=self.show_assign_instructor).pack(side=tk.LEFT, padx=5)
+
+    # Instructor list - displayed as a sortable table
+    list_frame = ttk.LabelFrame(instructors_frame, text=_("course_management.tabs.instructors"), padding=5)
+    list_frame.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
+
+    columns = ("id", "name", "email", "department", "specialization", "max_courses", "status")
+    headings = {
+        "id": "ID",
+        "name": "Name",
+        "email": "Email",
+        "department": "Department",
+        "specialization": "Specialization",
+        "max_courses": "Max Courses",
+        "status": "Status",
+    }
+    widths = {
+        "id": 50,
+        "name": 180,
+        "email": 240,
+        "department": 150,
+        "specialization": 170,
+        "max_courses": 90,
+        "status": 90,
+    }
+
+    tree = ttk.Treeview(list_frame, columns=columns, show="headings", selectmode="browse")
+    for col in columns:
+        tree.heading(col, text=headings[col])
+        anchor = tk.CENTER if col in ("id", "max_courses", "status") else tk.W
+        tree.column(col, width=widths[col], anchor=anchor, stretch=(col in ("name", "email", "specialization")))
+
+    # Zebra striping for readability
+    tree.tag_configure("oddrow", background="#f5f5f5")
+    tree.tag_configure("evenrow", background="#ffffff")
+
+    vsb = ttk.Scrollbar(list_frame, orient="vertical", command=tree.yview)
+    hsb = ttk.Scrollbar(list_frame, orient="horizontal", command=tree.xview)
+    tree.configure(yscrollcommand=vsb.set, xscrollcommand=hsb.set)
+
+    tree.grid(row=0, column=0, sticky="nsew")
+    vsb.grid(row=0, column=1, sticky="ns")
+    hsb.grid(row=1, column=0, sticky="ew")
+    list_frame.rowconfigure(0, weight=1)
+    list_frame.columnconfigure(0, weight=1)
+
+    self.instructor_tree = tree
+
+    # Status/count line beneath the table
+    self.instructor_count_label = ttk.Label(instructors_frame, text="")
+    self.instructor_count_label.pack(fill=tk.X, padx=5, pady=(0, 5))
+
+
+def show_add_instructor(self):
+    """Show add instructor dialog"""
+    dialog = InstructorCreateDialog(self.root, self.auth)
+    if dialog.result:
+        self.refresh_instructor_list()
+        self.update_status(f"Instructor '{dialog.result}' added successfully")
+
+
+def refresh_instructor_list(self):
+    """Refresh the instructor list"""
+    try:
+        tree = self.instructor_tree
+        # Clear existing rows
+        for item in tree.get_children():
+            tree.delete(item)
+
+        with sqlite3.connect(str(DEFAULT_DB_PATH)) as conn:
+            cursor = conn.cursor()
+
+            # Check if instructors table exists
+            cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='instructors'")
+            if not cursor.fetchone():
+                self.instructor_count_label.config(
+                    text=_t('gui.academics.course_management_gui.instructors.instructors.text.no_instructors_table_found_please_add_an_instructor_first', default="No instructors table found. Please add an instructor first.")
+                )
+                return
+
+            cursor.execute("""
+            SELECT id, first_name, last_name, email, department, specialization,
+                   max_courses_per_semester, status
+            FROM instructors
+            ORDER BY last_name, first_name
+            """)
+
+            instructors = cursor.fetchall()
+
+        if instructors:
+            for idx, instructor in enumerate(instructors):
+                id, first_name, last_name, email, dept, spec, max_courses, status = instructor
+                full_name = f"{first_name or ''} {last_name or ''}".strip() or "N/A"
+                tag = "evenrow" if idx % 2 == 0 else "oddrow"
+                tree.insert("", tk.END, values=(
+                    id,
+                    full_name,
+                    email or "N/A",
+                    dept or "N/A",
+                    spec or "N/A",
+                    max_courses if max_courses is not None else "N/A",
+                    status or "N/A",
+                ), tags=(tag,))
+            self.instructor_count_label.config(text=f"Total Instructors: {len(instructors)}")
+        else:
+            self.instructor_count_label.config(text=_t('gui.academics.course_management_gui.instructors.instructors.text.no_instructors_found_in_the_system', default="No instructors found in the system."))
+
+    except sqlite3.Error as e:
+        messagebox.showerror(_("common.database_error"), f"Failed to load instructors: {e}")
+
+
+def show_assign_instructor(self):
+    """Show assign instructor to course dialog"""
+    dialog = AssignInstructorDialog(self.root, self.auth)
+    if dialog.result:
+        self.update_status("Instructor assigned successfully")
+
+
+def create_instructor_wrapper(self):
+    """
+    Create a new instructor profile.
+    Calls the existing show_add_instructor() method.
+    """
+    self.show_add_instructor()
+
+
+def view_instructors_wrapper(self):
+    """
+    View all instructors in the system.
+    Refreshes the instructor list and switches to instructors tab.
+    """
+    self.refresh_instructor_list()
+    # Find and select the instructors tab (usually tab 3)
+    for i in range(self.notebook.index('end')):
+        if 'Instructor' in self.notebook.tab(i, 'text'):
+            self.notebook.select(i)
+            break
+    self.update_status("Instructor list refreshed")
+
+
+def assign_instructor_to_course_wrapper(self):
+    """
+    Assign an instructor to a course.
+    Calls the existing show_assign_instructor() method.
+    """
+    self.show_assign_instructor()
+
+
+class InstructorCreateDialog:
+    def __init__(self, parent, auth):
+        self.parent = parent
+        self.auth = auth
+        self.result = None
+
+        self.dialog = tk.Toplevel(parent)
+        self.dialog.title(_t('gui.academics.course_management_gui.instructors.instructors.windows.add_new_instructor', default="Add New Instructor"))
+        self.dialog.geometry("640x760")
+        self.dialog.minsize(600, 680)
+        self.dialog.transient(parent)
+        self.dialog.grab_set()
+
+        self.create_widgets()
+        self.dialog.focus_set()
+
+    def _update_university_email(self, *args):
+        """Auto-generate university email when name fields change."""
+        first = self.first_name_var.get().strip()
+        last = self.last_name_var.get().strip()
+        if first and last:
+            try:
+                from education_system.systems.university.infrastructure.defaults import UNIVERSITY_EMAIL_DOMAIN
+            except ImportError:
+                UNIVERSITY_EMAIL_DOMAIN = "university.edu"
+            clean_first = first.lower().replace(' ', '')
+            clean_last = last.lower().replace(' ', '')
+            self.university_email_var.set(f"{clean_first}.{clean_last}@{UNIVERSITY_EMAIL_DOMAIN}")
+        else:
+            self.university_email_var.set("")
+
+    def create_widgets(self):
+        main_frame = ttk.Frame(self.dialog)
+        main_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+
+        # Personal Information
+        personal_frame = ttk.LabelFrame(main_frame, text=_t('gui.academics.course_management_gui.instructors.instructors.labels.personal_information', default="Personal Information"), padding=10)
+        personal_frame.pack(fill=tk.X, pady=5)
+
+        ttk.Label(personal_frame, text=_t('gui.academics.course_management_gui.instructors.instructors.labels.first_name', default="First Name:")).grid(row=0, column=0, sticky=tk.W)
+        self.first_name_var = tk.StringVar()
+        self.first_name_var.trace_add('write', self._update_university_email)
+        ttk.Entry(personal_frame, textvariable=self.first_name_var, width=25).grid(row=0, column=1, sticky=tk.W, padx=5)
+
+        ttk.Label(personal_frame, text=_t('gui.academics.course_management_gui.instructors.instructors.labels.last_name', default="Last Name:")).grid(row=1, column=0, sticky=tk.W)
+        self.last_name_var = tk.StringVar()
+        self.last_name_var.trace_add('write', self._update_university_email)
+        ttk.Entry(personal_frame, textvariable=self.last_name_var, width=25).grid(row=1, column=1, sticky=tk.W, padx=5)
+
+        ttk.Label(personal_frame, text=_t('gui.academics.course_management_gui.instructors.instructors.labels.university_email', default="University Email:")).grid(row=2, column=0, sticky=tk.W)
+        self.university_email_var = tk.StringVar()
+        uni_email_entry = ttk.Entry(personal_frame, textvariable=self.university_email_var, width=35, state='readonly')
+        uni_email_entry.grid(row=2, column=1, sticky=tk.W, padx=5)
+        ttk.Label(personal_frame, text=_t('gui.academics.course_management_gui.instructors.instructors.labels.auto_generated_from_name', default="(auto-generated from name)"), font=('Arial', 8)).grid(row=3, column=1, sticky=tk.W, padx=5)
+
+        ttk.Label(personal_frame, text=_t('gui.academics.course_management_gui.instructors.instructors.labels.personal_email', default="Personal Email:")).grid(row=4, column=0, sticky=tk.W)
+        self.personal_email_var = tk.StringVar()
+        ttk.Entry(personal_frame, textvariable=self.personal_email_var, width=35).grid(row=4, column=1, sticky=tk.W, padx=5)
+        ttk.Label(personal_frame, text=_t('gui.academics.course_management_gui.instructors.instructors.labels.optional', default="(optional)"), font=('Arial', 8)).grid(row=5, column=1, sticky=tk.W, padx=5)
+
+        # Professional Information
+        prof_frame = ttk.LabelFrame(main_frame, text=_t('gui.academics.course_management_gui.instructors.instructors.labels.professional_information', default="Professional Information"), padding=10)
+        prof_frame.pack(fill=tk.X, pady=5)
+
+        self.department_var = tk.StringVar()
+        self.specialization_var = tk.StringVar()
+        DepartmentFields(prof_frame, self.department_var, self.specialization_var, row=0)
+
+        ttk.Label(prof_frame, text=_t('gui.academics.course_management_gui.instructors.instructors.labels.max_courses_semester', default="Max Courses/Semester:")).grid(row=2, column=0, sticky=tk.W)
+        self.max_courses_var = tk.StringVar(value="4")
+        ttk.Entry(prof_frame, textvariable=self.max_courses_var, width=10).grid(row=2, column=1, sticky=tk.W, padx=5)
+
+        ttk.Label(prof_frame, text=_t('gui.academics.course_management_gui.instructors.instructors.labels.max_hours_week', default="Max Hours/Week:")).grid(row=3, column=0, sticky=tk.W)
+        self.max_hours_var = tk.StringVar(value="40")
+        ttk.Entry(prof_frame, textvariable=self.max_hours_var, width=10).grid(row=3, column=1, sticky=tk.W, padx=5)
+
+        # Scheduling Preferences
+        sched_frame = ttk.LabelFrame(main_frame, text=_t('gui.academics.course_management_gui.instructors.instructors.labels.scheduling_preferences', default="Scheduling Preferences"), padding=10)
+        sched_frame.pack(fill=tk.X, pady=5)
+
+        ttk.Label(sched_frame, text=_t('gui.academics.course_management_gui.instructors.instructors.labels.preferred_days', default="Preferred Days:")).grid(row=0, column=0, sticky=tk.W)
+        self.preferred_days = PreferredDaysField(sched_frame, row=0)
+        ttk.Label(sched_frame, text=_t('gui.academics.course_management_gui.instructors.instructors.labels.up_to_four_days', default="(up to four different days)"), font=('Arial', 8)).grid(row=1, column=1, sticky=tk.W, padx=5)
+
+        ttk.Label(sched_frame, text=_t('gui.academics.course_management_gui.instructors.instructors.labels.preferred_times', default="Preferred Times:")).grid(row=2, column=0, sticky=tk.W)
+        self.preferred_times = PreferredTimesField(sched_frame, row=2)
+
+        # Buttons
+        button_frame = ttk.Frame(main_frame)
+        button_frame.pack(fill=tk.X, pady=10)
+
+        ttk.Button(button_frame, text=_t('gui.academics.course_management_gui.instructors.instructors.buttons.add_instructor', default="Add Instructor"), command=self.add_instructor).pack(side=tk.RIGHT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.academics.course_management_gui.instructors.instructors.buttons.cancel', default="Cancel"), command=self.dialog.destroy).pack(side=tk.RIGHT, padx=5)
+
+    def add_instructor(self):
+        try:
+            # Validate inputs
+            first_name = self.first_name_var.get().strip()
+            last_name = self.last_name_var.get().strip()
+
+            if not first_name or not last_name:
+                messagebox.showerror(_("common.validation_error"), _t('gui.academics.course_management_gui.instructors.instructors.dialogs.first_name_and_last_name_are_required', default="First name and last name are required."))
+                return
+
+            university_email = self.university_email_var.get().strip()
+            if not university_email:
+                messagebox.showerror(_("common.validation_error"), _t('gui.academics.course_management_gui.instructors.instructors.dialogs.university_email_could_not_be_generated_please_enter_first_and_l', default="University email could not be generated. Please enter first and last name."))
+                return
+
+            personal_email = self.personal_email_var.get().strip()
+            if personal_email:
+                email_pattern = r'^[A-Za-z0-9._%+-]+@(?:[A-Za-z0-9-]+\.)+[A-Za-z]{2,}$'
+                if not re.match(email_pattern, personal_email):
+                    messagebox.showerror(_("common.validation_error"), _t('gui.academics.course_management_gui.instructors.instructors.dialogs.please_enter_a_valid_personal_email_address', default="Please enter a valid personal email address."))
+                    return
+
+            department = self.department_var.get().strip()
+            specialization = self.specialization_var.get().strip()
+            if not department or not specialization:
+                messagebox.showerror(_("common.validation_error"), _t('gui.academics.course_management_gui.instructors.instructors.dialogs.department_and_specialisation_are_required', default="Please choose a department and a specialisation."), parent=self.dialog)
+                return
+
+            try:
+                max_courses = int(self.max_courses_var.get())
+            except ValueError:
+                messagebox.showerror(_("common.validation_error"), _t('gui.academics.course_management_gui.instructors.instructors.dialogs.max_courses_must_be_a_number', default="Max courses must be a number."))
+                return
+
+            try:
+                max_hours = int(self.max_hours_var.get())
+            except ValueError:
+                messagebox.showerror(_("common.validation_error"), _t('gui.academics.course_management_gui.instructors.instructors.dialogs.max_hours_must_be_a_number', default="Max hours must be a number."))
+                return
+
+            preferred_days = self.preferred_days.get()
+            preferred_times = self.preferred_times.get()
+
+            # Delegate to the unified service so this dialog, the module-scheduling
+            # dialog and the CLI all create instructors through one code path.
+            from education_system.systems.university.domains.curriculum.domain.course_management.instructor_service import (
+                create_instructor as create_instructor_service,
+            )
+
+            result = create_instructor_service(
+                first_name=first_name,
+                last_name=last_name,
+                email=None,  # auto-generate the university email
+                department=department,
+                specialization=specialization,
+                max_courses=max_courses,
+                max_hours=max_hours,
+                preferred_days=preferred_days,
+                preferred_times=preferred_times,
+                auth=self.auth,
+            )
+
+            if not result.ok:
+                messagebox.showerror(_("common.error"), result.error or "Failed to add instructor.")
+                return
+
+            if result.account_created:
+                account_msg = (f"\n\nLogin Account Created:\n  Username: {result.username}"
+                               f"\n  Temporary Password: {result.temp_password}")
+            else:
+                account_msg = (f"\n\nLogin account could not be created automatically."
+                               f"\n  Suggested username: {result.username}"
+                               f"\n  Temporary password: {result.temp_password}")
+
+            email_msg = (f"\n\nWelcome email sent to {result.email}" if result.welcome_email_sent
+                         else "\n\nWelcome email could not be sent. Please notify instructor manually.")
+
+            messagebox.showinfo(
+                _("common.success"),
+                f"Instructor {first_name} {last_name} added successfully!\n"
+                f"University Email: {result.email}"
+                f"{account_msg}{email_msg}"
+            )
+            self.result = f"{first_name} {last_name}"
+            self.dialog.destroy()
+
+        except sqlite3.Error as e:
+            messagebox.showerror(_("common.database_error"), f"Failed to add instructor: {e}")
+        except Exception as e:
+            messagebox.showerror(_("common.error"), f"Error: {e}")
+
+
+class InstructorDetailsDialog:
+    """Pop-up shown when an instructor row is double-clicked.
+
+    Presents the instructor's details in an editable form and a section for
+    assigning them to a course. When ``editable`` is False (non-admin users)
+    the form is read-only and the assignment controls are hidden, so staff can
+    still inspect an instructor without being able to change anything.
+    """
+
+    def __init__(self, parent, auth, instructor_id, editable=True):
+        self.parent = parent
+        self.auth = auth
+        self.instructor_id = instructor_id
+        self.editable = editable
+        self.result = None  # set to True if details/assignment were changed
+
+        self.instructor = self._load_instructor()
+        if not self.instructor:
+            messagebox.showerror(_("common.error"), _t('gui.academics.course_management_gui.instructors.instructors.dialogs.instructor_not_found', default="Instructor not found."))
+            return
+
+        self.dialog = tk.Toplevel(parent)
+        name = f"{self.instructor['first_name'] or ''} {self.instructor['last_name'] or ''}".strip()
+        self.dialog.title(f"Instructor: {name}" if name else "Instructor Details")
+        self.dialog.geometry("640x720")
+        self.dialog.minsize(600, 640)
+        self.dialog.transient(parent)
+        self.dialog.grab_set()
+
+        self.create_widgets()
+        self.dialog.focus_set()
+
+    def _load_instructor(self):
+        """Fetch the instructor row as a dict, or None if it is missing."""
+        try:
+            with sqlite3.connect(str(DEFAULT_DB_PATH)) as conn:
+                conn.row_factory = sqlite3.Row
+                cursor = conn.cursor()
+                cursor.execute(
+                    """
+                    SELECT id, first_name, last_name, email, department, specialization,
+                           max_courses_per_semester, max_hours_per_week,
+                           preferred_days, preferred_times, status
+                    FROM instructors WHERE id = ?
+                    """,
+                    (self.instructor_id,),
+                )
+                row = cursor.fetchone()
+                return dict(row) if row else None
+        except sqlite3.Error as e:
+            messagebox.showerror(_("common.database_error"), f"Failed to load instructor: {e}")
+            return None
+
+    def create_widgets(self):
+        main_frame = ttk.Frame(self.dialog)
+        main_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+
+        notebook = ttk.Notebook(main_frame)
+        notebook.pack(fill=tk.BOTH, expand=True)
+
+        details_tab = ttk.Frame(notebook)
+        notebook.add(details_tab, text=_t('gui.academics.course_management_gui.instructors.instructors.tabs.details', default="Details"))
+        self._build_details_tab(details_tab)
+
+        # Course assignment is an admin-only action, mirroring the tab buttons.
+        if self.editable:
+            assign_tab = ttk.Frame(notebook)
+            notebook.add(assign_tab, text=_t('gui.academics.course_management_gui.instructors.instructors.tabs.assign_to_course', default="Assign to Course"))
+            self._build_assign_tab(assign_tab)
+
+    # ---- Details tab -------------------------------------------------
+    def _build_details_tab(self, tab):
+        entry_state = "normal" if self.editable else "readonly"
+        ins = self.instructor
+
+        personal_frame = ttk.LabelFrame(tab, text=_t('gui.academics.course_management_gui.instructors.instructors.labels.personal_information', default="Personal Information"), padding=10)
+        personal_frame.pack(fill=tk.X, pady=5)
+
+        ttk.Label(personal_frame, text=_t('gui.academics.course_management_gui.instructors.instructors.labels.first_name', default="First Name:")).grid(row=0, column=0, sticky=tk.W)
+        self.first_name_var = tk.StringVar(value=ins["first_name"] or "")
+        ttk.Entry(personal_frame, textvariable=self.first_name_var, width=25, state=entry_state).grid(row=0, column=1, sticky=tk.W, padx=5)
+
+        ttk.Label(personal_frame, text=_t('gui.academics.course_management_gui.instructors.instructors.labels.last_name', default="Last Name:")).grid(row=1, column=0, sticky=tk.W)
+        self.last_name_var = tk.StringVar(value=ins["last_name"] or "")
+        ttk.Entry(personal_frame, textvariable=self.last_name_var, width=25, state=entry_state).grid(row=1, column=1, sticky=tk.W, padx=5)
+
+        ttk.Label(personal_frame, text=_t('gui.academics.course_management_gui.instructors.instructors.labels.email', default="Email:")).grid(row=2, column=0, sticky=tk.W)
+        self.email_var = tk.StringVar(value=ins["email"] or "")
+        # Email is the login/account key — always read-only here.
+        ttk.Entry(personal_frame, textvariable=self.email_var, width=35, state="readonly").grid(row=2, column=1, sticky=tk.W, padx=5)
+
+        prof_frame = ttk.LabelFrame(tab, text=_t('gui.academics.course_management_gui.instructors.instructors.labels.professional_information', default="Professional Information"), padding=10)
+        prof_frame.pack(fill=tk.X, pady=5)
+
+        self.department_var = tk.StringVar(value=ins["department"] or "")
+        self.specialization_var = tk.StringVar(value=ins["specialization"] or "")
+        DepartmentFields(prof_frame, self.department_var, self.specialization_var, row=0, editable=self.editable)
+
+        ttk.Label(prof_frame, text=_t('gui.academics.course_management_gui.instructors.instructors.labels.max_courses_semester', default="Max Courses/Semester:")).grid(row=2, column=0, sticky=tk.W)
+        self.max_courses_var = tk.StringVar(value=str(ins["max_courses_per_semester"] if ins["max_courses_per_semester"] is not None else 4))
+        ttk.Entry(prof_frame, textvariable=self.max_courses_var, width=10, state=entry_state).grid(row=2, column=1, sticky=tk.W, padx=5)
+
+        ttk.Label(prof_frame, text=_t('gui.academics.course_management_gui.instructors.instructors.labels.max_hours_week', default="Max Hours/Week:")).grid(row=3, column=0, sticky=tk.W)
+        self.max_hours_var = tk.StringVar(value=str(ins["max_hours_per_week"] if ins["max_hours_per_week"] is not None else 40))
+        ttk.Entry(prof_frame, textvariable=self.max_hours_var, width=10, state=entry_state).grid(row=3, column=1, sticky=tk.W, padx=5)
+
+        ttk.Label(prof_frame, text=_t('gui.academics.course_management_gui.instructors.instructors.labels.status', default="Status:")).grid(row=4, column=0, sticky=tk.W)
+        self.status_var = tk.StringVar(value=ins["status"] or "Active")
+        status_state = "readonly" if self.editable else "disabled"
+        ttk.Combobox(prof_frame, textvariable=self.status_var, width=15, state=status_state,
+                     values=["Active", "Inactive", "On Leave"]).grid(row=4, column=1, sticky=tk.W, padx=5)
+
+        sched_frame = ttk.LabelFrame(tab, text=_t('gui.academics.course_management_gui.instructors.instructors.labels.scheduling_preferences', default="Scheduling Preferences"), padding=10)
+        sched_frame.pack(fill=tk.X, pady=5)
+
+        ttk.Label(sched_frame, text=_t('gui.academics.course_management_gui.instructors.instructors.labels.preferred_days', default="Preferred Days:")).grid(row=0, column=0, sticky=tk.W)
+        self.preferred_days = PreferredDaysField(sched_frame, row=0, value=ins["preferred_days"] or "", editable=self.editable)
+
+        ttk.Label(sched_frame, text=_t('gui.academics.course_management_gui.instructors.instructors.labels.preferred_times', default="Preferred Times:")).grid(row=1, column=0, sticky=tk.W)
+        self.preferred_times = PreferredTimesField(sched_frame, row=1, value=ins["preferred_times"] or "", editable=self.editable)
+
+        button_frame = ttk.Frame(tab)
+        button_frame.pack(fill=tk.X, pady=10)
+        if self.editable:
+            ttk.Button(button_frame, text=_t('gui.academics.course_management_gui.instructors.instructors.buttons.save_changes', default="Save Changes"), command=self.save_details).pack(side=tk.RIGHT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.academics.course_management_gui.instructors.instructors.buttons.close', default="Close"), command=self.dialog.destroy).pack(side=tk.RIGHT, padx=5)
+
+    def save_details(self):
+        user = getattr(self.auth, "current_user", None)
+        updated_by = (user.get("username") or "") if isinstance(user, dict) else ""
+        result = update_instructor(
+            self.instructor_id,
+            updated_by=updated_by,
+            first_name=self.first_name_var.get(),
+            last_name=self.last_name_var.get(),
+            department=self.department_var.get(),
+            specialization=self.specialization_var.get(),
+            max_courses=self.max_courses_var.get(),
+            max_hours=self.max_hours_var.get(),
+            preferred_days=self.preferred_days.get(),
+            preferred_times=self.preferred_times.get(),
+            status=self.status_var.get(),
+        )
+        if not result.ok:
+            messagebox.showerror(_("common.validation_error"), result.error, parent=self.dialog)
+            return
+        if not result.changes:
+            messagebox.showinfo(
+                _("common.success"),
+                _t('gui.academics.course_management_gui.instructors.instructors.dialogs.nothing_changed',
+                   default="Nothing was changed, so no email was sent."),
+                parent=self.dialog)
+            return
+
+        self.result = True
+        lines = "\n".join(f"  {line}" for line in result.changes)
+        sent = f"\n\n{result.email} has been emailed these changes." if result.email_sent else ""
+        notes = "".join(f"\n\n{note}" for note in result.warnings)
+        messagebox.showinfo(_("common.success"),
+                            f"Instructor updated:\n{lines}{sent}{notes}", parent=self.dialog)
+        self.dialog.destroy()
+
+    # ---- Assign tab --------------------------------------------------
+    def _build_assign_tab(self, tab):
+        name = f"{self.instructor['first_name'] or ''} {self.instructor['last_name'] or ''}".strip()
+        ttk.Label(tab, text=f"Assign {name or 'this instructor'} to a course",
+                  font=("Arial", 11, "bold")).pack(pady=10)
+
+        course_frame = ttk.LabelFrame(tab, text=_t('gui.academics.course_management_gui.instructors.instructors.labels.select_course', default="Select Course"), padding=10)
+        course_frame.pack(fill=tk.X, pady=5)
+        ttk.Label(course_frame, text=_t('gui.academics.course_management_gui.instructors.instructors.labels.course', default="Course:")).pack(anchor=tk.W)
+        self.course_combo = ttk.Combobox(course_frame, width=50, state="readonly")
+        self.course_combo.pack(fill=tk.X, pady=2)
+        self.course_hint = ttk.Label(course_frame, font=("Arial", 8), wraplength=560)
+        self.course_hint.pack(anchor=tk.W)
+
+        schedule_frame = ttk.LabelFrame(tab, text=_t('gui.academics.course_management_gui.instructors.instructors.labels.schedule_information', default="Schedule Information"), padding=10)
+        schedule_frame.pack(fill=tk.X, pady=5)
+        ttk.Label(schedule_frame, text=_t('gui.academics.course_management_gui.instructors.instructors.labels.semester', default="Semester:")).grid(row=0, column=0, sticky=tk.W)
+        self.semester_var = tk.StringVar(value=_t('gui.academics.course_management_gui.instructors.instructors.values.fall', default="Fall"))
+        ttk.Combobox(schedule_frame, textvariable=self.semester_var,
+                     values=["Fall", "Spring", "Summer", "Winter"]).grid(row=0, column=1, sticky=tk.W, padx=5)
+        ttk.Label(schedule_frame, text=_t('gui.academics.course_management_gui.instructors.instructors.labels.year', default="Year:")).grid(row=1, column=0, sticky=tk.W)
+        self.year_var = tk.StringVar(value=str(datetime.now().year))
+        attach_combo(schedule_frame, recent_years(ahead=3, back=3),
+                     textvariable=self.year_var, width=10).grid(row=1, column=1, sticky=tk.W, padx=5)
+
+        current_frame = ttk.LabelFrame(tab, text=_t('gui.academics.course_management_gui.instructors.instructors.labels.current_assignments', default="Current Assignments"), padding=10)
+        current_frame.pack(fill=tk.BOTH, expand=True, pady=5)
+        self.assignments_list = tk.Listbox(current_frame, height=6)
+        self.assignments_list.pack(fill=tk.BOTH, expand=True)
+
+        button_frame = ttk.Frame(tab)
+        button_frame.pack(fill=tk.X, pady=10)
+        ttk.Button(button_frame, text=_t('gui.academics.course_management_gui.instructors.instructors.buttons.assign', default="Assign"), command=self.assign_to_course).pack(side=tk.RIGHT, padx=5)
+
+        self._load_assign_data()
+        self._refresh_assignments()
+
+    def _load_assign_data(self):
+        """Offer the courses that suit this instructor's saved details."""
+        try:
+            courses = suitable_courses(self.instructor["department"], self.instructor["specialization"])
+        except sqlite3.Error as e:
+            messagebox.showerror(_("common.database_error"), f"Failed to load courses: {e}", parent=self.dialog)
+            courses = []
+        options = [_course_option(c) for c in courses]
+        self.course_combo['values'] = options
+        self.course_id_map = {opt: c["id"] for opt, c in zip(options, courses)}
+        self.course_info_map = dict(zip(options, courses))
+        self.course_hint.config(text=_suitable_hint(courses))
+
+    def _refresh_assignments(self):
+        """List the courses this instructor is currently scheduled for."""
+        self.assignments_list.delete(0, tk.END)
+        try:
+            with sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30.0) as conn:
+                conn.execute("PRAGMA journal_mode=WAL")
+                cursor = conn.cursor()
+                cursor.execute(
+                    "SELECT name FROM sqlite_master WHERE type='table' AND name='course_schedule'"
+                )
+                if not cursor.fetchone():
+                    self.assignments_list.insert(tk.END, "No assignments yet.")
+                    return
+                cursor.execute(
+                    """
+                    SELECT c.course_code, c.course_name, s.semester, s.year
+                    FROM course_schedule s
+                    JOIN courses c ON c.id = s.course_id
+                    WHERE s.instructor_id = ?
+                    ORDER BY s.year DESC, s.semester
+                    """,
+                    (self.instructor_id,),
+                )
+                rows = cursor.fetchall()
+            if rows:
+                for code, cname, semester, year in rows:
+                    self.assignments_list.insert(tk.END, f"{code or 'N/A'} - {cname or 'Unnamed'}  ({semester} {year})")
+            else:
+                self.assignments_list.insert(tk.END, "No assignments yet.")
+        except sqlite3.Error:
+            self.assignments_list.insert(tk.END, "Could not load assignments.")
+
+    def assign_to_course(self):
+        course_text = self.course_combo.get()
+        if not course_text:
+            messagebox.showwarning(_("common.selection_required"), _t('gui.academics.course_management_gui.instructors.instructors.dialogs.please_select_a_course', default="Please select a course."))
+            return
+        course_id = self.course_id_map.get(course_text)
+        if not course_id:
+            messagebox.showerror(_("common.error"), _t('gui.academics.course_management_gui.instructors.instructors.dialogs.invalid_course_selection', default="Invalid course selection."))
+            return
+        try:
+            year_int = int(self.year_var.get())
+        except ValueError:
+            messagebox.showerror(_("common.error"), _t('gui.academics.course_management_gui.instructors.instructors.dialogs.please_enter_a_valid_year', default="Please enter a valid year."))
+            return
+        semester = self.semester_var.get()
+
+        try:
+            timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            with sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30.0) as conn:
+                conn.execute("PRAGMA journal_mode=WAL")
+                cursor = conn.cursor()
+                cursor.execute('''
+                CREATE TABLE IF NOT EXISTS course_schedule (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    course_id TEXT NOT NULL,
+                    semester TEXT NOT NULL,
+                    year INTEGER NOT NULL,
+                    start_time TEXT,
+                    end_time TEXT,
+                    days_of_week TEXT,
+                    classroom TEXT,
+                    instructor_id INTEGER,
+                    created_at TEXT NOT NULL,
+                    FOREIGN KEY (course_id) REFERENCES courses (id),
+                    UNIQUE(course_id, semester, year)
+                )
+                ''')
+                # Read the *current* instructor too, not just whether a row
+                # exists: re-assigning the same person to the same course and
+                # slot used to run a no-op UPDATE and still report success, so
+                # a duplicate assignment looked like a new one.
+                cursor.execute(
+                    "SELECT id, instructor_id FROM course_schedule "
+                    "WHERE course_id = ? AND semester = ? AND year = ?",
+                    (course_id, semester, year_int),
+                )
+                existing = cursor.fetchone()
+
+                if existing and str(existing[1]) == str(self.instructor_id):
+                    messagebox.showinfo(
+                        _t('gui.academics.course_management_gui.instructors.instructors.dialogs.already_assigned',
+                           default="Already Assigned"),
+                        f"This instructor is already assigned to {course_text} "
+                        f"for {semester} {year_int}.\n\n"
+                        f"Nothing has been changed.",
+                    )
+                    return
+
+                replaced = _instructor_name(cursor, existing[1]) if existing else None
+
+                # Taking over a slot removes whoever currently holds it, and
+                # nothing else records that it happened — so confirm first
+                # rather than silently displacing a colleague.
+                if replaced and not messagebox.askyesno(
+                        _t('gui.academics.course_management_gui.instructors.instructors.dialogs.replace_instructor',
+                           default="Replace Instructor?"),
+                        f"{course_text} for {semester} {year_int} is currently "
+                        f"assigned to {replaced}.\n\n"
+                        f"Reassigning it will remove them from this slot. Continue?"):
+                    return
+
+                if existing:
+                    cursor.execute("UPDATE course_schedule SET instructor_id = ? WHERE id = ?",
+                                   (self.instructor_id, existing[0]))
+                else:
+                    cursor.execute(
+                        "INSERT INTO course_schedule (course_id, semester, year, instructor_id, created_at) "
+                        "VALUES (?, ?, ?, ?, ?)",
+                        (course_id, semester, year_int, self.instructor_id, timestamp),
+                    )
+                conn.commit()
+
+            self.result = True
+            self._refresh_assignments()
+            note = f"\n\nThis replaced {replaced}." if replaced else ""
+            name = f"{self.instructor['first_name'] or ''} {self.instructor['last_name'] or ''}".strip()
+            email_msg = send_assignment_email(
+                {"name": name, "email": self.instructor["email"]},
+                self.course_info_map.get(course_text, {}), semester, year_int)
+            messagebox.showinfo(_("common.success"),
+                                f"Assigned to {course_text} for {semester} {year_int}.{note}{email_msg}")
+        except sqlite3.Error as e:
+            messagebox.showerror(_("common.database_error"), f"Failed to assign instructor: {e}")
+
+
+class AssignInstructorDialog:
+    def __init__(self, parent, auth):
+        self.parent = parent
+        self.auth = auth
+        self.result = None
+
+        self.dialog = tk.Toplevel(parent)
+        self.dialog.title(_t('gui.academics.course_management_gui.instructors.instructors.windows.assign_instructor_to_course', default="Assign Instructor to Course"))
+        self.dialog.geometry("640x560")
+        self.dialog.minsize(600, 500)
+        self.dialog.transient(parent)
+        self.dialog.grab_set()
+
+        self.create_widgets()
+        self.load_data()
+        self.dialog.focus_set()
+
+    def create_widgets(self):
+        main_frame = ttk.Frame(self.dialog)
+        main_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+
+        ttk.Label(main_frame, text=_t('gui.academics.course_management_gui.instructors.instructors.labels.assign_instructor_to_course', default="Assign Instructor to Course"), font=("Arial", 12, "bold")).pack(pady=10)
+
+        # Instructor first: their department and specialisation decide the courses
+        instructor_frame = ttk.LabelFrame(main_frame, text=_t('gui.academics.course_management_gui.instructors.instructors.labels.select_instructor', default="Select Instructor"), padding=10)
+        instructor_frame.pack(fill=tk.X, pady=5)
+
+        ttk.Label(instructor_frame, text=_t('gui.academics.course_management_gui.instructors.instructors.labels.instructor', default="Instructor:")).pack(anchor=tk.W)
+        self.instructor_combo = ttk.Combobox(instructor_frame, width=50, state="readonly")
+        self.instructor_combo.pack(fill=tk.X, pady=2)
+        self.instructor_combo.bind("<<ComboboxSelected>>", self._instructor_chosen)
+
+        # Course selection
+        course_frame = ttk.LabelFrame(main_frame, text=_t('gui.academics.course_management_gui.instructors.instructors.labels.select_course', default="Select Course"), padding=10)
+        course_frame.pack(fill=tk.X, pady=5)
+
+        ttk.Label(course_frame, text=_t('gui.academics.course_management_gui.instructors.instructors.labels.course', default="Course:")).pack(anchor=tk.W)
+        self.course_combo = ttk.Combobox(course_frame, width=50, state="readonly")
+        self.course_combo.pack(fill=tk.X, pady=2)
+        self.course_hint = ttk.Label(course_frame, font=("Arial", 8), wraplength=560,
+                                     text=_t('gui.academics.course_management_gui.instructors.instructors.labels.choose_instructor_first', default="Choose an instructor to see the courses that suit them."))
+        self.course_hint.pack(anchor=tk.W)
+
+        # Schedule information
+        schedule_frame = ttk.LabelFrame(main_frame, text=_t('gui.academics.course_management_gui.instructors.instructors.labels.schedule_information', default="Schedule Information"), padding=10)
+        schedule_frame.pack(fill=tk.X, pady=5)
+
+        ttk.Label(schedule_frame, text=_t('gui.academics.course_management_gui.instructors.instructors.labels.semester', default="Semester:")).grid(row=0, column=0, sticky=tk.W)
+        self.semester_var = tk.StringVar(value=_t('gui.academics.course_management_gui.instructors.instructors.values.fall', default="Fall"))
+        semester_combo = ttk.Combobox(schedule_frame, textvariable=self.semester_var,
+                                     values=["Fall", "Spring", "Summer", "Winter"])
+        semester_combo.grid(row=0, column=1, sticky=tk.W, padx=5)
+
+        ttk.Label(schedule_frame, text=_t('gui.academics.course_management_gui.instructors.instructors.labels.year', default="Year:")).grid(row=1, column=0, sticky=tk.W)
+        self.year_var = tk.StringVar(value=str(datetime.now().year))
+        attach_combo(schedule_frame, recent_years(ahead=3, back=3),
+                     textvariable=self.year_var, width=10).grid(row=1, column=1, sticky=tk.W, padx=5)
+
+        # Buttons
+        button_frame = ttk.Frame(main_frame)
+        button_frame.pack(fill=tk.X, pady=10)
+
+        ttk.Button(button_frame, text=_t('gui.academics.course_management_gui.instructors.instructors.buttons.assign', default="Assign"), command=self.assign_instructor).pack(side=tk.RIGHT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.academics.course_management_gui.instructors.instructors.buttons.cancel', default="Cancel"), command=self.dialog.destroy).pack(side=tk.RIGHT, padx=5)
+
+    def load_data(self):
+        self.course_id_map = {}
+        self.course_info_map = {}
+        self.instructor_id_map = {}
+        self.instructor_info_map = {}
+        try:
+            conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30.0); conn.execute("PRAGMA journal_mode=WAL")
+            try:
+                cursor = conn.cursor()
+                cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='instructors'")
+                instructors = []
+                if cursor.fetchone():
+                    cursor.execute(
+                        "SELECT id, first_name, last_name, email, department, specialization FROM instructors "
+                        "WHERE LOWER(COALESCE(status, 'active')) = 'active' ORDER BY last_name, first_name")
+                    instructors = cursor.fetchall()
+            finally:
+                conn.close()
+        except sqlite3.Error as e:
+            messagebox.showerror(_("common.database_error"), f"Failed to load data: {e}", parent=self.dialog)
+            return
+
+        if not instructors:
+            self.instructor_combo['values'] = ["No instructors found"]
+            return
+        for i in instructors:
+            name = f"{i[1] or ''} {i[2] or ''}".strip() or f"Instructor {i[0]}"
+            # With the address, so two people of the same name stay distinct.
+            option = f"{name} ({i[3]})" if i[3] else name
+            self.instructor_id_map[option] = i[0]
+            self.instructor_info_map[option] = {
+                "id": i[0], "name": name, "email": i[3], "department": i[4], "specialization": i[5],
+            }
+        self.instructor_combo['values'] = list(self.instructor_id_map)
+
+    def _instructor_chosen(self, _event=None):
+        """List the courses that suit whoever was just picked."""
+        instructor = self.instructor_info_map.get(self.instructor_combo.get())
+        self.course_combo.set("")
+        if not instructor:
+            self.course_combo['values'] = []
+            return
+        try:
+            courses = suitable_courses(instructor["department"], instructor["specialization"])
+        except sqlite3.Error as e:
+            messagebox.showerror(_("common.database_error"), f"Failed to load courses: {e}", parent=self.dialog)
+            courses = []
+        options = [_course_option(c) for c in courses]
+        self.course_combo['values'] = options
+        self.course_id_map = {opt: c["id"] for opt, c in zip(options, courses)}
+        self.course_info_map = dict(zip(options, courses))
+        self.course_hint.config(text=_suitable_hint(courses))
+
+    def assign_instructor(self):
+        try:
+            course_text = self.course_combo.get()
+            instructor_text = self.instructor_combo.get()
+            semester = self.semester_var.get()
+            year = self.year_var.get()
+
+            if not course_text or not instructor_text:
+                messagebox.showwarning(_("common.selection_required"), _t('gui.academics.course_management_gui.instructors.instructors.dialogs.please_select_both_course_and_instructor', default="Please select both course and instructor."))
+                return
+
+            course_id = self.course_id_map.get(course_text)
+            instructor_id = self.instructor_id_map.get(instructor_text)
+
+            if not course_id or not instructor_id:
+                messagebox.showerror(_("common.error"), _t('gui.academics.course_management_gui.instructors.instructors.dialogs.invalid_selection', default="Invalid selection."))
+                return
+
+            try:
+                year_int = int(year)
+            except ValueError:
+                messagebox.showerror(_("common.error"), _t('gui.academics.course_management_gui.instructors.instructors.dialogs.please_enter_a_valid_year', default="Please enter a valid year."))
+                return
+
+            # Create schedule table if it doesn't exist and assign instructor
+            conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30.0); conn.execute("PRAGMA journal_mode=WAL")
+            try:
+                cursor = conn.cursor()
+
+                cursor.execute('''
+                CREATE TABLE IF NOT EXISTS course_schedule (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    course_id TEXT NOT NULL,
+                    semester TEXT NOT NULL,
+                    year INTEGER NOT NULL,
+                    start_time TEXT,
+                    end_time TEXT,
+                    days_of_week TEXT,
+                    classroom TEXT,
+                    instructor_id INTEGER,
+                    created_at TEXT NOT NULL,
+                    FOREIGN KEY (course_id) REFERENCES courses (id),
+                    UNIQUE(course_id, semester, year)
+                )
+                ''')
+
+                timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
+                # Read the current instructor as well as the row id: assigning
+                # the same person to the same course and slot twice used to run
+                # a no-op UPDATE, mail them again and report success, which is
+                # indistinguishable from a real assignment.
+                cursor.execute(
+                    "SELECT id, instructor_id FROM course_schedule "
+                    "WHERE course_id = ? AND semester = ? AND year = ?",
+                    (course_id, semester, year_int))
+                existing = cursor.fetchone()
+
+                if existing and str(existing[1]) == str(instructor_id):
+                    messagebox.showinfo(
+                        _t('gui.academics.course_management_gui.instructors.instructors.dialogs.already_assigned',
+                           default="Already Assigned"),
+                        f"{instructor_text} is already assigned to {course_text} "
+                        f"for {semester} {year_int}.\n\n"
+                        f"Nothing has been changed, and no notification was sent.",
+                        parent=self.dialog,
+                    )
+                    return
+
+                replaced = _instructor_name(cursor, existing[1]) if existing else None
+
+                # Taking over a slot removes whoever currently holds it, and
+                # nothing else records that it happened — so confirm first
+                # rather than silently displacing a colleague.
+                if replaced and not messagebox.askyesno(
+                        _t('gui.academics.course_management_gui.instructors.instructors.dialogs.replace_instructor',
+                           default="Replace Instructor?"),
+                        f"{course_text} for {semester} {year_int} is currently "
+                        f"assigned to {replaced}.\n\n"
+                        f"Reassigning it to {instructor_text} will remove them "
+                        f"from this slot. Continue?",
+                        parent=self.dialog):
+                    return
+
+                if existing:
+                    # Update existing schedule
+                    cursor.execute("UPDATE course_schedule SET instructor_id = ? WHERE id = ?",
+                                  (instructor_id, existing[0]))
+                else:
+                    # Create new schedule
+                    cursor.execute('''
+                    INSERT INTO course_schedule (course_id, semester, year, instructor_id, created_at)
+                    VALUES (?, ?, ?, ?, ?)
+                    ''', (course_id, semester, year_int, instructor_id, timestamp))
+
+                conn.commit()
+            finally:
+                conn.close()
+
+            # Notify the instructor by email that they've been assigned
+            email_msg = self._send_assignment_email(instructor_text, course_text, semester, year_int)
+
+            note = f"\n\nThis replaced {replaced}." if replaced else ""
+            messagebox.showinfo(
+                _("common.success"),
+                f"Instructor assigned to {course_text} for {semester} {year}{note}{email_msg}"
+            )
+            self.result = True
+            self.dialog.destroy()
+
+        except sqlite3.Error as e:
+            messagebox.showerror(_("common.database_error"), f"Failed to assign instructor: {e}")
+
+    def _send_assignment_email(self, instructor_text, course_text, semester, year):
+        """Email the instructor to let them know which course they've been assigned to."""
+        return send_assignment_email(
+            self.instructor_info_map.get(instructor_text, {}),
+            self.course_info_map.get(course_text, {}),
+            semester, year,
+        )

@@ -21,20 +21,20 @@ Solutions to common issues with the Sixth Form College Management System.
 
 **Symptom**: You see a message such as "Account locked" or "Too many failed login attempts" when trying to log in.
 
-**Cause**: The system locks an account after 5 consecutive failed login attempts (`MAX_LOGIN_ATTEMPTS = 5` in `core/defaults.py`).
+**Cause**: The system locks an account after 3 consecutive failed login attempts (`MAX_LOGIN_ATTEMPTS = 3` in `src/education_system/platform/identity/auth/defaults.py`). The lockout lasts 15 minutes (`LOCKOUT_DURATION_MINUTES`).
 
 **Solution**:
 
-1. Wait for the lockout period to expire (if a timed lockout is configured), or
+1. Wait 15 minutes for the lockout to expire, or
 2. Have an administrator unlock the account through the **User Management** module, or
-3. If no other admin account is available, reset the lock directly in the database:
+3. If no other admin account is available, reset the lock directly in the central auth database:
 
 ```bash
 source venv/bin/activate
 python -c "
 import sqlite3
-conn = sqlite3.connect('education_system/college_system/data/db_files/sixthform.db')
-conn.execute(\"UPDATE users SET failed_attempts = 0, locked = 0 WHERE username = 'admin'\")
+conn = sqlite3.connect('var/data/platform/db_files/auth.db')
+conn.execute(\"UPDATE users SET failed_login_attempts = 0, locked_until = NULL WHERE username = 'admin1'\")
 conn.commit()
 conn.close()
 print('Account unlocked.')
@@ -43,7 +43,7 @@ print('Account unlocked.')
 
 ### Forgotten Default Password
 
-The default credentials seeded on first run are:
+The development credentials, seeded only when `EDU_DEV_SEED=true`, are:
 
 | Role | Username | Password |
 |------|----------|----------|
@@ -51,19 +51,20 @@ The default credentials seeded on first run are:
 | Admin | `admin1` | `admin1234` |
 | Staff | `staff1` | `staff1234` |
 | Student | `student1` | `student1234` |
+| Parent | `parent1` | `parent1234` |
 
-If these have been changed and forgotten, an administrator must reset the password through User Management or directly in the database using the password hashing utility in `infrastructure/auth/password_manager.py`.
+If these have been changed and forgotten, an administrator must reset the password through User Management or directly in the auth database using the password hashing utility in `src/education_system/platform/identity/auth/password_manager.py`.
 
 ### JWT Token Errors
 
 **Symptom**: API requests return `401 Unauthorized` or "Token expired" errors.
 
-**Cause**: JWT tokens expire after 24 hours by default (`JWT_EXPIRY_HOURS = 24`).
+**Cause**: JWT tokens expire after 24 hours by default (`JWT_EXPIRY_HOURS` environment variable).
 
 **Solutions**:
 
 - Re-authenticate to obtain a fresh token.
-- Check that the `COLLEGE_JWT_SECRET` environment variable matches between the server that issued the token and the server validating it. The default value is `change-me-in-production` -- this must be set to a strong secret in production.
+- Check that the `JWT_SECRET_KEY` environment variable matches between the server that issued the token and the server validating it. It must be set to a strong secret in production.
 - Verify that the system clocks are synchronized if running across multiple machines.
 
 ### MFA Issues
@@ -73,19 +74,19 @@ If these have been changed and forgotten, an administrator must reset the passwo
 **Solutions**:
 
 - Ensure the device clock is accurate. TOTP codes are time-based and a drift of more than 30 seconds will cause failures.
-- If MFA recovery is needed, an administrator can disable MFA for the account through the MFA management interface or by updating the user record in the database.
-- Check the MFA service implementation in `infrastructure/auth/mfa_service.py` for the accepted time window.
+- If MFA recovery is needed, an administrator can disable MFA for the account through the MFA management interface or by updating the user record in the auth database.
+- Check the MFA service implementation in `src/education_system/platform/identity/auth/mfa_service.py` for the accepted time window.
 
 ### Session Timeout
 
 **Symptom**: You are logged out unexpectedly.
 
-**Cause**: Sessions expire after 30 minutes of inactivity by default (`SESSION_TIMEOUT_MINUTES = 30`).
+**Cause**: The GUI and CLI log out after 30 minutes of inactivity by default.
 
-**Solution**: Set the `COLLEGE_SESSION_TIMEOUT` environment variable to a longer value (in minutes) if needed:
+**Solution**: Set the `EDU_SIXTHFORM_IDLE_TIMEOUT_MINUTES` environment variable to a longer value (in minutes) if needed:
 
 ```bash
-export COLLEGE_SESSION_TIMEOUT=60
+export EDU_SIXTHFORM_IDLE_TIMEOUT_MINUTES=60
 ```
 
 ---
@@ -109,14 +110,14 @@ export COLLEGE_SESSION_TIMEOUT=60
 
 ```bash
 # Find processes using the database file
-lsof education_system/college_system/data/db_files/sixthform.db
+lsof var/data/sixth_form/sixthform.db
 ```
 
 3. If a stale lock exists (e.g., after a crash), remove the WAL and SHM files if present:
 
 ```bash
-rm -f education_system/college_system/data/db_files/sixthform.db-wal
-rm -f education_system/college_system/data/db_files/sixthform.db-shm
+rm -f var/data/sixth_form/sixthform.db-wal
+rm -f var/data/sixth_form/sixthform.db-shm
 ```
 
 4. Restart the application.
@@ -131,13 +132,10 @@ rm -f education_system/college_system/data/db_files/sixthform.db-shm
 
 ```bash
 # The application creates these automatically, but you can do it manually:
-mkdir -p education_system/college_system/data/db_files
-mkdir -p education_system/college_system/data/locales/en
-mkdir -p education_system/college_system/data/config
-mkdir -p education_system/college_system/logs
+mkdir -p var/data/sixth_form
 ```
 
-Then restart the application. The `init_db()` and `seed_default_data()` functions in `infrastructure/database/schema.py` will recreate the schema and seed default accounts.
+Then restart the application. Each module's `init_db()` will recreate its tables the next time it is used. Default accounts live in the central auth database, and are seeded when `EDU_DEV_SEED=true`.
 
 ### Schema Migration Issues
 
@@ -150,15 +148,15 @@ Then restart the application. The `init_db()` and `seed_default_data()` function
 1. Back up the existing database:
 
 ```bash
-cp education_system/college_system/data/db_files/sixthform.db \
-   education_system/college_system/data/db_files/sixthform.db.backup
+cp var/data/sixth_form/sixthform.db \
+   var/backups/sixth_form/sixthform.db.backup
 ```
 
-2. If the application includes migration scripts, run them. Otherwise, the simplest approach for development environments is to delete the database and let it be recreated:
+2. This database is not managed by Alembic; each module adds its own new tables and columns in `init_db()`. If that does not resolve it, the simplest approach for development environments is to delete the database and let it be recreated:
 
 ```bash
-rm education_system/college_system/data/db_files/sixthform.db
-# Restart the application -- schema and seed data will be recreated
+rm var/data/sixth_form/sixthform.db
+# Restart the application -- the schema will be recreated
 ```
 
 **Warning**: Deleting the database destroys all data. Only do this in development or after making a backup.
@@ -169,12 +167,12 @@ To manually back up the database:
 
 ```bash
 # Backup
-cp education_system/college_system/data/db_files/sixthform.db \
-   education_system/college_system/data/db_files/sixthform_$(date +%Y%m%d_%H%M%S).db
+cp var/data/sixth_form/sixthform.db \
+   var/backups/sixth_form/sixthform_$(date +%Y%m%d_%H%M%S).db
 
 # Restore from backup
-cp education_system/college_system/data/db_files/sixthform_20260308_120000.db \
-   education_system/college_system/data/db_files/sixthform.db
+cp var/backups/sixth_form/sixthform_20260308_120000.db \
+   var/data/sixth_form/sixthform.db
 ```
 
 ---
@@ -194,8 +192,8 @@ cp education_system/college_system/data/db_files/sixthform_20260308_120000.db \
 lsof -i :5000
 
 # Use a different port
-export COLLEGE_API_PORT=5001
-python -m education_system.college_system.api.api_server
+export API_PORT=5001
+python -m education_system --college --api
 ```
 
 2. **Missing dependencies**: Flask or Flask-CORS is not installed.
@@ -207,18 +205,18 @@ pip install flask flask-cors
 3. **Import errors**: The package is not on the Python path.
 
 ```bash
-# Run from the project root directory
-cd education_system
-python -m education_system.college_system.api.api_server
+# Install the project from the repository root
+pip install -e .
+python -m education_system --college --api
 ```
 
 ### CORS Errors in Browser
 
 **Symptom**: Browser console shows "Access-Control-Allow-Origin" errors when calling the API from a frontend.
 
-**Cause**: The Flask-CORS configuration may not cover the requesting origin.
+**Cause**: The requesting origin is not in the allowed list.
 
-**Solution**: CORS is enabled globally in `api/api_server.py` via `CORS(app)`. If you need to restrict origins, configure it in `api/config.py`. For development, the default allows all origins.
+**Solution**: Add the origin to the comma-separated `API_CORS_ORIGINS` environment variable. The unified server (`src/education_system/platform/delivery/api/unified_server.py`) refuses a wildcard in production, and allows only localhost origins in development.
 
 ### API Returns 500 Internal Server Error
 
@@ -226,12 +224,13 @@ python -m education_system.college_system.api.api_server
 
 **Solutions**:
 
-1. Check the application log at `college_system/logs/app.log` for the full traceback.
-2. Enable Flask debug mode for more detailed error pages (development only):
+1. Check the server's console output for the full traceback.
+2. Restart with more detailed logging (development only):
 
 ```bash
-export COLLEGE_API_DEBUG=true
-python -m education_system.college_system.api.api_server
+export APP_ENV=development
+export LOG_LEVEL=DEBUG
+python -m education_system --college --api
 ```
 
 3. Verify the database exists and is accessible.
@@ -244,7 +243,7 @@ python -m education_system.college_system.api.api_server
 
 - Include the JWT token in the `Authorization` header as `Bearer <token>`.
 - Verify the token has not expired (default: 24 hours).
-- Ensure `COLLEGE_JWT_SECRET` is consistent across server restarts. If the secret changes, all existing tokens become invalid.
+- Ensure `JWT_SECRET_KEY` is consistent across server restarts. If the secret changes, all existing tokens become invalid.
 
 ---
 
@@ -276,7 +275,7 @@ Or set up a virtual framebuffer for testing:
 
 ```bash
 sudo apt-get install xvfb
-xvfb-run python -m education_system.college_system.run
+xvfb-run python -m education_system --college --gui
 ```
 
 ### GUI Freezes or Becomes Unresponsive
@@ -288,7 +287,7 @@ xvfb-run python -m education_system.college_system.run
 **Solutions**:
 
 - Wait for the operation to complete. Database operations on large datasets may take time.
-- Check `college_system/logs/app.log` for errors that may indicate an infinite loop or deadlock.
+- Check the console output, launching with `--verbose` if needed, for errors that may indicate an infinite loop or deadlock.
 - If the application is completely stuck, terminate the process and restart.
 
 ### Sidebar Modules Not Loading
@@ -297,12 +296,12 @@ xvfb-run python -m education_system.college_system.run
 
 **Solutions**:
 
-- Check the console and log file for import errors. A syntax error or missing dependency in one module can prevent it from loading.
-- Verify that the `modules/domain/__init__.py` file correctly lists all module registrations.
-- Run a quick import check:
+- Check the console for import errors. A syntax error or missing dependency in one module can prevent it from loading.
+- Verify that the module is listed in `NAV_CATEGORIES` in `src/education_system/systems/sixth_form/interfaces/gui/gui_main.py`, and that your role has the capability for its label in `MENU_CAPABILITIES`, in `domain/governance/user_management/access.py`. A label missing from that map is admin-only.
+- Run a quick import check, naming the window that will not open:
 
 ```bash
-python -c "from education_system.college_system.modules.domain import *"
+python -c "from education_system.systems.sixth_form.interfaces.gui.academics.enrichment import enrichment_views"
 ```
 
 Any import errors will be printed to the console.
@@ -337,28 +336,20 @@ Any import errors will be printed to the console.
 
 ### Check the Log Files
 
-The primary log file is located at:
+The launcher logs to the console. Log entries include a timestamp and the message, for example:
 
 ```
-college_system/logs/app.log
+2026-03-08 10:15:32 - Message text
 ```
 
-Log entries follow the format:
-
-```
-2026-03-08 10:15:32,123 - module.name - INFO - Message text
-```
-
-- **INFO**: Normal operations (logged to file only).
-- **WARNING**: Potential issues (logged to file and console).
+- **INFO**: Normal operations (hidden by default).
+- **WARNING**: Potential issues (shown on the console).
 - **ERROR**: Failures that need attention.
 
-To increase log verbosity, modify the logging level in `core/logs.py` or set it programmatically:
+To increase log verbosity, launch with `--verbose` (or set `EDU_VERBOSE=1`):
 
-```python
-from education_system.college_system.core.logs import configure_logging
-import logging
-configure_logging(level=logging.DEBUG)
+```bash
+python -m education_system --college --gui --verbose
 ```
 
 ### Verify the Python Environment
@@ -377,41 +368,26 @@ python -c "import flask; print(flask.__version__)"
 Use the SQLite command-line tool to inspect the database:
 
 ```bash
-sqlite3 education_system/college_system/data/db_files/sixthform.db
+sqlite3 var/data/sixth_form/sixthform.db
 
 # List all tables
 .tables
 
 # Check a specific table's schema
-.schema users
+.schema students
 
 # Count records
-SELECT COUNT(*) FROM users;
+SELECT COUNT(*) FROM students;
 
 # Exit
 .quit
 ```
 
-### Check the Exception Hierarchy
+### Check the Exception Types
 
-The system uses a structured exception hierarchy rooted at `CollegeSystemError`. Key exception classes defined in `core/exceptions.py`:
+There is no system-wide exception hierarchy. Each domain module defines its own `ValidationError`, for example `education_system.systems.sixth_form.domain.academics.enrichment.enrichment.ValidationError`. Authentication failures raise `AuthError` and `MFAError` from `education_system.platform.identity.auth.exceptions`.
 
-| Exception | Purpose |
-|-----------|---------|
-| `CollegeSystemError` | Base exception for all system errors |
-| `DatabaseError` | Database operation failures |
-| `AuthError` | Authentication and authorization failures |
-| `ValidationError` | Input validation failures |
-| `StudentError` | Student record errors |
-| `CourseError` | Course management errors |
-| `EnrollmentError` | Enrollment processing errors |
-| `GradeError` | Grade management errors |
-| `AttendanceError` | Attendance tracking errors |
-| `TimetableError` | Timetable scheduling errors |
-| `AssignmentError` | Assignment management errors |
-| `NotificationError` | Notification delivery errors |
-
-When debugging, catch `CollegeSystemError` to handle all application-level errors, or catch specific subclasses for targeted handling.
+When debugging, catch the `ValidationError` of the module you are calling.
 
 ### Reset to a Clean State
 
@@ -419,15 +395,13 @@ If all else fails and you are in a development environment, you can reset the sy
 
 ```bash
 # Remove the database (destroys all data)
-rm -f education_system/college_system/data/db_files/sixthform.db
+rm -f var/data/sixth_form/sixthform.db
 
-# Remove log files
-rm -f education_system/college_system/logs/app.log
-
-# Restart the application -- database and defaults will be recreated
+# Restart the application -- the database will be recreated
+python -m education_system --college --gui
 ```
 
 ---
 
-**Last Updated**: March 2026
+**Last Updated**: October 2026
 **Version**: 1.0.0

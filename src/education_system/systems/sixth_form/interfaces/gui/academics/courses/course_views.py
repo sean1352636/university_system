@@ -10,7 +10,8 @@ from __future__ import annotations
 import logging
 import tkinter as tk
 from datetime import date
-from tkinter import messagebox, ttk
+from tkinter import ttk
+from education_system.platform.delivery.gui.parented_dialogs import messagebox
 from typing import Any, Callable
 from education_system.systems.sixth_form.domain.academics.courses import courses as data
 from education_system.systems.sixth_form.domain.academics.courses.courses import (
@@ -21,6 +22,7 @@ from education_system.systems.sixth_form.domain.academics.courses.courses import
 )
 from education_system.systems.sixth_form.domain.academics.subjects import subjects as subjects_data
 from education_system.systems.sixth_form.domain.learners.students.students import A_LEVEL_SUBJECTS
+from education_system.systems.sixth_form.infrastructure.record_links import describe
 
 
 def _active_subjects() -> list[str]:
@@ -87,6 +89,11 @@ def _course_form(
     room_var    = tk.StringVar(value=(existing.room or "") if is_edit else "")
     max_var = tk.StringVar(
         value=str(existing.max_students) if is_edit else str(DEFAULT_MAX_STUDENTS))
+    qtype_var = tk.StringVar(
+        value=(existing.qualification_type or "") if is_edit else "")
+    hours_var = tk.StringVar(
+        value=("" if not is_edit or existing.planned_hours is None
+               else f"{existing.planned_hours:g}"))
 
     def row(idx: int, label: str, widget: tk.Widget) -> None:
         ttk.Label(form, text=label).grid(
@@ -110,6 +117,16 @@ def _course_form(
     description_text.grid(row=8, column=1, sticky="ew", pady=4)
     if is_edit and existing.description:
         description_text.insert("1.0", existing.description)
+    # Which qualification the course teaches (blank = the subject's own),
+    # so e.g. a GCSE English resit course and the A level are distinct.
+    from education_system.systems.sixth_form.domain.academics.qualifications import (
+        grade_scales as _gs,
+    )
+    row(9, "Qualification type", ttk.Combobox(
+        form, textvariable=qtype_var, values=["", *_gs.QUALIFICATION_TYPES],
+        state="readonly", width=28))
+    row(10, "Planned hours / learner / year", ttk.Entry(
+        form, textvariable=hours_var, width=10))
 
     bar = ttk.Frame(frame)
     bar.pack(anchor="w", pady=(12, 0))
@@ -125,6 +142,8 @@ def _course_form(
             "room":          room_var.get(),
             "max_students":  max_var.get(),
             "description":   description_text.get("1.0", "end").strip(),
+            "qualification_type": qtype_var.get(),
+            "planned_hours":      hours_var.get(),
         }
         try:
             saved = on_save(payload)
@@ -196,6 +215,7 @@ def open_directory(gui) -> None:
     yg_var = tk.StringVar()
     year_var = tk.StringVar()
     search_var = tk.StringVar()
+    archived_var = tk.BooleanVar(value=False)
 
     ttk.Label(filt, text="Subject:").pack(side="left")
     ttk.Combobox(
@@ -234,6 +254,7 @@ def open_directory(gui) -> None:
                 year_group=int(yg_var.get()) if yg_var.get() else None,
                 academic_year=year_var.get().strip() or None,
                 search=search_var.get().strip() or None,
+                include_archived=archived_var.get(),
             )
         except Exception as e:
             logger.exception("Failed to load courses")
@@ -268,7 +289,8 @@ def open_directory(gui) -> None:
 
         for c in rows:
             tree.insert("", "end", iid=str(c.course_id), values=(
-                c.course_id, c.course_code, c.subject, c.title,
+                c.course_id, c.course_code, c.subject,
+                c.title + (" (archived)" if c.archived_at else ""),
                 c.year_group, c.academic_year,
                 c.teacher or "—", c.room or "—", c.max_students,
             ))
@@ -295,21 +317,30 @@ def open_directory(gui) -> None:
         ttk.Button(actions_holder, text="Delete",
                    command=lambda: (_require() and _delete_with_confirm(gui, _selected()))
                    ).pack(side="left", padx=(0, 6))
+        ttk.Button(actions_holder, text="Restore",
+                   command=lambda: (_require() and _restore(gui, _selected()))
+                   ).pack(side="left", padx=(0, 6))
         ttk.Button(actions_holder, text="New Course",
                    command=lambda: open_add_course(gui)
                    ).pack(side="left", padx=(12, 6))
         ttk.Button(actions_holder, text="Refresh", command=refresh
                    ).pack(side="left")
+        ttk.Button(actions_holder, text="Programme Reports",
+                   command=lambda: _programme_reports(gui)
+                   ).pack(side="left", padx=(12, 0))
 
         tree.bind("<Double-1>",
                   lambda _e: (_selected() and open_profile(gui, _selected())))
         gui.status_var.set(f"Courses: {len(rows)} match(es)")
 
+    ttk.Checkbutton(filt, text="Show archived", variable=archived_var,
+                    command=refresh).pack(side="left", padx=(8, 0))
     ttk.Button(filt, text="Apply", command=refresh).pack(side="left", padx=(8, 0))
     ttk.Button(
         filt, text="Clear",
         command=lambda: (subject_var.set(""), yg_var.set(""),
-                         year_var.set(""), search_var.set(""), refresh()),
+                         year_var.set(""), search_var.set(""),
+                         archived_var.set(False), refresh()),
     ).pack(side="left", padx=(4, 0))
     refresh()
 
@@ -349,6 +380,10 @@ def open_profile(gui, course_id: int) -> None:
     field(6, "Room",          c.room or "—")
     field(7, "Max students",  str(c.max_students))
     field(8, "Created",       c.created_at)
+    field(11, "Qualification", data.effective_qualification_type(c)
+          + ("" if c.qualification_type else " (from subject)"))
+    field(12, "Planned hours", "—" if c.planned_hours is None
+          else f"{c.planned_hours:g} / learner / year")
     if c.description:
         ttk.Separator(grid, orient="horizontal").grid(
             row=9, column=0, columnspan=2, sticky="ew", pady=(10, 6))
@@ -369,12 +404,79 @@ def open_profile(gui, course_id: int) -> None:
                ).pack(side="left", padx=(0, 6))
     ttk.Button(actions, text="Back to Courses",
                command=lambda: open_directory(gui)).pack(side="left")
+    _learners_on_course(gui, frame, c)
     gui.status_var.set(f"Viewing course #{course_id}")
 
 
+def _learners_on_course(gui, frame: ttk.Frame, c: Course) -> None:
+    """Learners whose active learning aim matches this course, flagging
+    anyone not yet in one of the course's class groups."""
+    box = ttk.LabelFrame(frame, text="Learners on this qualification "
+                                     "(learning aims)", padding=6)
+    box.pack(fill="both", expand=True, pady=(12, 0))
+    try:
+        aims = data.learners_on_course(c.course_id)
+        from education_system.systems.sixth_form.domain.academics.class_groups import (
+            class_groups as _cg,
+        )
+        from education_system.systems.sixth_form.domain.learners.students import (
+            students as _students,
+        )
+        grouped: set[str] = set()
+        for g in _cg.list_groups(course_id=c.course_id):
+            grouped.update(_cg.list_members(g.group_id))
+        names = {s.student_id: s.full_name for s in _students.list_students()}
+    except Exception as exc:
+        logger.exception("Could not list learners for course %d", c.course_id)
+        ttk.Label(box, text=f"Error: {exc}", foreground="#a33").pack(anchor="w")
+        return
+    missing = [a for a in aims if a.student_id not in grouped]
+    ttk.Label(box, foreground="#555", text=(
+        f"{len(aims)} learner(s) with an active "
+        f"{data.effective_qualification_type(c)} {c.subject} aim; "
+        f"{len(missing)} not in any class group of this course.")).pack(anchor="w")
+    bar = ttk.Frame(box)
+    bar.pack(fill="x", pady=(4, 0))
+    tree = ttk.Treeview(box, columns=("sid", "name", "start", "end", "grouped"),
+                        show="headings", height=10)
+    for col, text, width in (("sid", "Student", 100), ("name", "Name", 220),
+                             ("start", "Aim start", 100), ("end", "Planned end", 100),
+                             ("grouped", "In a class group", 120)):
+        tree.heading(col, text=text)
+        tree.column(col, width=width, anchor="w")
+    for a in aims:
+        tree.insert("", "end", iid=f"{a.student_id}|{a.aim_id}", values=(
+            a.student_id, names.get(a.student_id, "(unknown)"), a.start_date,
+            a.planned_end_date or "—", "Yes" if a.student_id in grouped else "NO"))
+    tree.pack(fill="both", expand=True)
+
+    def open_programme() -> None:
+        sel = tree.selection()
+        if not sel:
+            messagebox.showinfo("No selection", "Pick a learner first.",
+                                parent=gui.root)
+            return
+        from education_system.systems.sixth_form.interfaces.gui.academics.qualifications import (
+            study_programme_views,
+        )
+        study_programme_views.open_study_programme(gui.root, sel[0].split("|")[0])
+
+    ttk.Button(bar, text="Study Programme", command=open_programme).pack(side="left")
+
+
+def _programme_reports(gui) -> None:
+    from education_system.systems.sixth_form.interfaces.gui.academics.qualifications import (
+        study_programme_views,
+    )
+    study_programme_views.open_programme_reports(gui.root, tab="aims")
+
+
 def _delete_with_confirm(gui, course_id: int) -> None:
+    """Delete a course created by mistake; one with history is archived."""
     try:
         c = data.get_course(course_id)
+        linked = data.linked_record_counts(course_id) if c else {}
+        history = data.history_counts(course_id) if c else {}
     except Exception as exc:
         logger.exception("Failed to load course %d", course_id)
         messagebox.showerror("Error", f"Could not load course: {exc}",
@@ -384,12 +486,40 @@ def _delete_with_confirm(gui, course_id: int) -> None:
         messagebox.showerror("Not found", f"No course #{course_id}",
                              parent=gui.root)
         return
-    ok = messagebox.askyesno(
-        "Delete course",
-        f"Delete course {c.course_code} ({c.subject}, Year {c.year_group} "
-        f"{c.academic_year})?",
-        parent=gui.root,
-    )
+    label = f"{c.course_code} ({c.subject}, Year {c.year_group} {c.academic_year})"
+    if history:
+        if c.archived_at:
+            messagebox.showinfo(
+                "Course archived",
+                f"{label} has recorded history ({describe(history)}), so it "
+                "cannot be deleted. It is already archived; use Restore to "
+                "bring it back.", parent=gui.root)
+            return
+        if not messagebox.askyesno(
+                "Archive course",
+                f"{label} cannot be deleted — that would destroy:\n\n"
+                f"{describe(history)}\n\n"
+                "Archive it instead? The course, its class groups and their "
+                "timetable slots are hidden from lists and timetables; all "
+                "history is kept and it can be restored.",
+                parent=gui.root):
+            return
+        try:
+            data.archive_course(course_id)
+        except Exception as exc:
+            logger.exception("GUI archive failed for course %d", course_id)
+            messagebox.showerror("Error", f"Could not archive: {exc}",
+                                 parent=gui.root)
+            return
+        gui.status_var.set(f"Archived course #{course_id}")
+        open_directory(gui)
+        return
+    msg = f"Delete course {label}?"
+    if linked:
+        msg += (f"\n\nThis also deletes: {describe(linked)}.\n"
+                "No attendance, registers or assignments are recorded "
+                "against it.")
+    ok = messagebox.askyesno("Delete course", msg, parent=gui.root)
     if not ok:
         logger.debug("GUI delete cancelled for course #%d", course_id)
         return
@@ -406,3 +536,19 @@ def _delete_with_confirm(gui, course_id: int) -> None:
     else:
         messagebox.showerror("Error", "Could not delete course.",
                              parent=gui.root)
+
+
+def _restore(gui, course_id: int) -> None:
+    try:
+        restored = data.restore_course(course_id)
+    except Exception as exc:
+        logger.exception("GUI restore failed for course %d", course_id)
+        messagebox.showerror("Error", f"Could not restore: {exc}",
+                             parent=gui.root)
+        return
+    if not restored:
+        messagebox.showinfo("Restore", "That course is not archived.",
+                            parent=gui.root)
+        return
+    gui.status_var.set(f"Restored course #{course_id}")
+    open_directory(gui)

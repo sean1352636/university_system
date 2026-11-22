@@ -30,11 +30,12 @@ def render(host, source_system: str, *, parent=None, read_only: bool = False) ->
               "confirmation and enrolment; this dashboard displays its live status."),
         foreground="#555", wraplength=900, justify="left",
     ).pack(anchor="w", pady=(2, 10))
-    columns = ("status", "university_status", "application", "reference",
-               "created", "transition")
+    columns = ("status", "university_status", "entry", "application",
+               "reference", "created", "transition")
     tree = ttk.Treeview(frame, columns=columns, show="headings", height=15)
     for key, title, width in (
         ("status", "Progress", 200), ("university_status", "University status", 150),
+        ("entry", "Entry / route", 150),
         ("application", "Application ID", 100), ("reference", "UCAS / ref", 110),
         ("created", "Created", 140), ("transition", "Transition", 240),
     ):
@@ -63,8 +64,14 @@ def render(host, source_system: str, *, parent=None, read_only: bool = False) ->
             # no record there yet.
             status = ("Unavailable" if failed
                       else row.get("university_status") or "—")
+            entry = " · ".join(p for p in (
+                row.get("entry_label"),
+                (f"via {row['handover_route']}"
+                 if row.get("handover_route")
+                 and row.get("handover_route") != "Firm" else ""),
+            ) if p) or "—"
             tree.insert("", "end", iid=row["transition_id"], values=(
-                row["application_status"], status,
+                row["application_status"], status, entry,
                 row.get("university_application_id") or "—",
                 row.get("application_reference") or "—",
                 row.get("initiated_at") or "—", row["transition_id"]))
@@ -111,7 +118,8 @@ def _new(host, source_system: str, after) -> None:
     body.pack(fill="both", expand=True)
     ucas_route = source_system in service.UCAS_SOURCES
     definitions = (
-        ("student", "College learner ID" if ucas_route else "Apprentice ID"),
+        ("student", "Learner ref (e.g. AE000012)" if source_system == "adult_education"
+         else "College learner ID" if ucas_route else "Apprentice ID"),
         ("ucas", "UCAS personal ID (10 digits)" if ucas_route
          else "UCAS personal ID (optional)"),
         ("predicted", "Predicted qualifications"),

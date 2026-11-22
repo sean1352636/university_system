@@ -6,7 +6,7 @@ from utils.ai.university_chatbot.
 """
 
 import pytest
-from education_system.systems.university.infrastructure.ai import university_chatbot
+from education_system.systems.university.shared.ai import chatbot as university_chatbot
 
 
 class TestChatbotExports:

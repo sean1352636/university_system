@@ -24,8 +24,9 @@ ENV PYTHONPATH=/app/src
 # Create non-root user
 RUN adduser --disabled-password --gecos "" appuser
 
-# Create data directories with correct ownership
-RUN mkdir -p data/db_files data/uploads data/reports logs backups \
+# All runtime state lives under var/. Create it here so a named volume mounted
+# on /app/var starts out owned by appuser.
+RUN mkdir -p var \
     && chown -R appuser:appuser /app
 
 # Switch to non-root user

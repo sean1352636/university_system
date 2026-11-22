@@ -1,0 +1,1167 @@
+"""Grade management and rubric grading"""
+import logging
+
+logger = logging.getLogger(__name__)
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
+import tkinter as tk
+from tkinter import ttk, filedialog, scrolledtext
+from education_system.systems.university.domains.assessment.interfaces.gui.assignment_system._dialogs import messagebox
+from education_system.systems.university.domains.assessment.interfaces.gui.assignment_system._dialogs import make_toplevel
+import os
+import shutil
+import threading
+from datetime import datetime, timedelta
+from pathlib import Path
+import json
+import csv
+from PIL import Image, ImageTk
+from education_system.systems.university.infrastructure.database.db import sqlite3, DEFAULT_DB_PATH
+from education_system.systems.university.infrastructure.auth import UserAuth
+from education_system import paths
+from collections import deque
+
+
+def _publish_grade_change(submission_id, *, student_id=None, module_code=None,
+                          assignment_title=None, percentage=None):
+    """Notify sibling academic GUIs that a final grade landed.
+
+    Best-effort: any failure (bus import, payload issue) is swallowed —
+    a missed refresh must never block the grade commit itself.
+    """
+    try:
+        from education_system.systems.university.infrastructure.event_bus import (
+            publish, EVENT_GRADE_CHANGED, EVENT_ASSIGNMENT_CHANGED,
+        )
+        payload = {
+            "submission_id": submission_id,
+            "student_id": student_id,
+            "module_code": module_code,
+            "assignment_title": assignment_title,
+            "percentage": percentage,
+            "source": "assignment_grading",
+        }
+        publish(EVENT_GRADE_CHANGED, **payload)
+        publish(EVENT_ASSIGNMENT_CHANGED, **payload)
+    except Exception:
+        logger.debug("Suppressed exception", exc_info=True)
+
+
+
+from education_system.systems.university.domains.assessment.interfaces.gui.assignment_system._qa import (  # noqa: E402
+    _apply_qa_rules,
+    _marker_label,
+    _marker_labels,
+    _qa_note,
+)
+
+
+class GradingManager:
+    """Grade management and rubric grading"""
+
+    def __init__(self, gui):
+        """Initialize manager with reference to main GUI"""
+        self.gui = gui
+        self.root = gui.root
+        self.auth = gui.auth
+        self.assignment_system = gui.assignment_system
+        self.style = gui.style
+
+    def _check_permission(self, permission):
+        """Check if user has permission"""
+        try:
+            return self.auth.check_permission(permission)
+        except (AttributeError, Exception):
+            return self.auth.user_role in ['Admin', 'Faculty']
+
+    def show_grade_submissions(self):
+        """Show grading interface"""
+        self.gui.layout.clear_content_area()
+
+        title = ttk.Label(self.gui.layout.content_area, text=_t('gui.academics.assignment_system.grading_manager.labels.grade_submissions', default="Grade Submissions"), style='Title.TLabel')
+        title.pack(anchor='w', pady=(0, 20))
+
+        # Create main grading interface
+        grading_frame = ttk.PanedWindow(self.gui.layout.content_area, orient='horizontal')
+        grading_frame.pack(fill='both', expand=True)
+
+        # Left panel - submissions list
+        left_panel = ttk.Frame(grading_frame)
+        grading_frame.add(left_panel, weight=1)
+
+        ttk.Label(left_panel, text=_t('gui.academics.assignment_system.grading_manager.labels.ungraded_submissions', default="Ungraded Submissions"), style='Header.TLabel').pack(anchor='w', pady=(0, 10))
+
+        # Submissions tree
+        columns = ('ID', 'Student', 'Assignment', 'Submitted')
+        self.grading_tree = ttk.Treeview(left_panel, columns=columns, show='headings', height=15)
+
+        for col in columns:
+            self.grading_tree.heading(col, text=col)
+            self.grading_tree.column(col, width=120)
+
+        self.grading_tree.pack(fill='both', expand=True)
+        self.grading_tree.bind('<<TreeviewSelect>>', self.on_submission_select)
+
+        # Right panel - grading interface
+        right_panel = ttk.Frame(grading_frame)
+        grading_frame.add(right_panel, weight=1)
+
+        self.grading_details_frame = ttk.LabelFrame(right_panel, text=_t('gui.academics.assignment_system.grading_manager.labels.grading_details', default="Grading Details"), padding=10)
+        self.grading_details_frame.pack(fill='both', expand=True)
+
+        # Load ungraded submissions
+        self.load_ungraded_submissions()
+
+        # Refresh button
+        refresh_btn = ttk.Button(left_panel, text=_t('gui.academics.assignment_system.grading_manager.buttons.refresh', default="Refresh"), command=self.load_ungraded_submissions)
+        refresh_btn.pack(pady=(10, 0))
+
+
+    def load_ungraded_submissions(self):
+        """Load ungraded submissions"""
+        # Clear existing items
+        for item in self.grading_tree.get_children():
+            self.grading_tree.delete(item)
+
+        try:
+            conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+            cursor = conn.cursor()
+
+            cursor.execute('''
+            SELECT s.id, s.student_id, st.first_name, st.last_name, a.title, s.submission_date
+            FROM assignment_submissions s
+            JOIN assignments a ON s.assignment_id = a.id
+            JOIN students st ON s.student_id = st.student_id
+            WHERE s.grade IS NULL AND s.status = 'submitted'
+            ORDER BY s.submission_date
+            ''')
+
+            submissions = cursor.fetchall()
+            labels = _marker_labels([(row[0], f"{row[2]} {row[3]}") for row in submissions])
+
+            for submission in submissions:
+                sid, student_id, fname, lname, title, date = submission
+                student_name = labels.get(sid, f"{fname} {lname}")
+                self.grading_tree.insert('', 'end', values=(sid, student_name, title, date))
+
+            conn.close()
+
+        except Exception as e:
+            messagebox.showerror(_t('gui.academics.assignment_system.grading_manager.dialogs.error', default="Error"), f"Failed to load submissions: {e}")
+
+
+    def on_submission_select(self, event):
+        """Handle submission selection for grading"""
+        selection = self.grading_tree.selection()
+        if not selection:
+            return
+
+        item = self.grading_tree.item(selection[0])
+        submission_id = item['values'][0]
+
+        self.show_grading_interface(submission_id)
+
+
+    def show_grading_interface(self, submission_id):
+        """Show grading interface for selected submission"""
+        # The grading details frame is created by show_grade_submissions(). When
+        # grading is launched from the submission manager, that view may not have
+        # been built yet, so build it first to avoid an AttributeError.
+        frame = getattr(self, 'grading_details_frame', None)
+        if frame is None or not frame.winfo_exists():
+            self.show_grade_submissions()
+
+        # Clear existing grading interface
+        for widget in self.grading_details_frame.winfo_children():
+            widget.destroy()
+
+        try:
+            conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+            # Rows come back keyed by column name. Every field below used to
+            # be read by position against an ``s.*`` that was assumed to have
+            # 11 columns; assignment_submissions has 24, so each one was off
+            # by thirteen. "Max Marks" was reading ``late_days`` — 0 for an
+            # on-time submission — which divided by zero on every keystroke
+            # and made the form refuse any grade with "Grade must be between
+            # 0 and 0".
+            conn.row_factory = sqlite3.Row
+            cursor = conn.cursor()
+
+            # Get submission details
+            cursor.execute('''
+            SELECT s.*, a.title AS assignment_title, a.max_marks AS assignment_max_marks,
+                   st.first_name AS student_first_name, st.last_name AS student_last_name,
+                   a.module_code AS assignment_module_code
+            FROM assignment_submissions s
+            JOIN assignments a ON s.assignment_id = a.id
+            JOIN students st ON s.student_id = st.student_id
+            WHERE s.id = ?
+            ''', (submission_id,))
+
+            submission = cursor.fetchone()
+            if not submission:
+                return
+
+            # A max_marks of 0 or NULL cannot be graded against; fall back to
+            # the usual 100 so the form stays usable and say so.
+            max_marks = submission["assignment_max_marks"]
+            try:
+                max_marks = float(max_marks or 0)
+            except (TypeError, ValueError):
+                max_marks = 0.0
+            marks_note = ""
+            if max_marks <= 0:
+                max_marks = 100.0
+                marks_note = "  (assignment has no mark total set — assuming 100)"
+
+            file_path = submission["file_path"]
+            submitted = submission["submission_date"] or submission["submitted_at"] or "—"
+
+            # Cache identifiers used by the attendance integration
+            student_id_for_attendance = submission["student_id"]
+            module_code_for_attendance = submission["assignment_module_code"]
+
+            # Display submission details
+            student_label = _marker_label(
+                submission_id,
+                f"{submission['student_first_name']} {submission['student_last_name']}")
+            details_text = f"Student: {student_label}\n"
+            details_text += f"Assignment: {submission['assignment_title']}\n"
+            details_text += f"Module: {module_code_for_attendance}\n"
+            details_text += f"File: {submission['file_name'] or '—'}\n"
+            details_text += f"Submitted: {submitted}\n"
+            details_text += f"Max Marks: {max_marks:g}{marks_note}"
+
+            ttk.Label(self.grading_details_frame, text=details_text, justify='left').pack(anchor='w', pady=(0, 10))
+
+            # Inline attendance warning (rendered only when below threshold)
+            try:
+                warning = self.gui.attendance_warning(
+                    student_id_for_attendance, module_code_for_attendance
+                )
+            except Exception:
+                warning = None
+            if warning:
+                tk.Label(
+                    self.grading_details_frame,
+                    text=f"⚠ {warning}",
+                    fg='#c0392b',
+                    wraplength=520,
+                    justify='left',
+                    anchor='w',
+                ).pack(fill='x', pady=(0, 10))
+
+            # File / context actions
+            file_frame = ttk.Frame(self.grading_details_frame)
+            file_frame.pack(fill='x', pady=(0, 20))
+
+            ttk.Button(file_frame, text=_t('gui.academics.assignment_system.grading_manager.buttons.open_file', default="Open File"),
+                      command=lambda: self.open_submission_file(file_path)).pack(side='left', padx=(0, 10))
+            ttk.Button(file_frame, text=_t('gui.academics.assignment_system.grading_manager.buttons.download_file', default="Download File"),
+                      command=lambda: self.download_file(file_path)).pack(side='left', padx=(0, 10))
+            ttk.Button(
+                file_frame, text=_t('gui.academics.assignment_system.grading_manager.buttons.attendance', default="Attendance"),
+                command=lambda: self.gui.show_student_attendance(
+                    student_id_for_attendance, module_code_for_attendance,
+                ),
+            ).pack(side='left', padx=(0, 10))
+            ttk.Button(
+                file_frame, text=_t('gui.academics.assignment_system.grading_manager.buttons.module_resources', default="Module Resources"),
+                command=lambda: self.gui.show_module_resources(
+                    module_code_for_attendance, student_id=student_id_for_attendance,
+                ),
+            ).pack(side='left')
+
+            # Grading form
+            grading_form = ttk.LabelFrame(self.grading_details_frame, text=_t('gui.academics.assignment_system.grading_manager.labels.grade_assignment', default="Grade Assignment"), padding=10)
+            grading_form.pack(fill='x', pady=(0, 20))
+
+            # Grade input
+            ttk.Label(grading_form, text=f"Grade (0-{max_marks:g}):").grid(row=0, column=0, sticky='w', pady=5)
+            self.grade_var = tk.StringVar()
+            grade_entry = ttk.Entry(grading_form, textvariable=self.grade_var, width=10)
+            grade_entry.grid(row=0, column=1, sticky='w', pady=5, padx=(10, 0))
+
+            # Percentage display
+            self.percentage_var = tk.StringVar()
+            percentage_label = ttk.Label(grading_form, textvariable=self.percentage_var)
+            percentage_label.grid(row=0, column=2, sticky='w', pady=5, padx=(10, 0))
+
+            # Update percentage when grade changes
+            grade_entry.bind('<KeyRelease>', lambda e: self.update_percentage(max_marks))
+
+            # Feedback
+            ttk.Label(grading_form, text=_t('gui.academics.assignment_system.grading_manager.labels.feedback', default="Feedback:")).grid(row=1, column=0, sticky='nw', pady=5)
+            self.feedback_text = scrolledtext.ScrolledText(grading_form, height=6, width=50)
+            self.feedback_text.grid(row=1, column=1, columnspan=2, sticky='ew', pady=5, padx=(10, 0))
+
+            grading_form.grid_columnconfigure(1, weight=1)
+
+            # Submit grade button
+            submit_grade_btn = ttk.Button(grading_form, text=_t('gui.academics.assignment_system.grading_manager.buttons.submit_grade', default="Submit Grade"),
+                                        command=lambda: self.submit_grade(submission_id, max_marks))
+            submit_grade_btn.grid(row=2, column=1, sticky='e', pady=(20, 0))
+
+            conn.close()
+
+        except Exception as e:
+            messagebox.showerror(_t('gui.academics.assignment_system.grading_manager.dialogs.error', default="Error"), f"Failed to load submission details: {e}")
+
+
+    def update_percentage(self, max_marks):
+        """Update the live percentage next to the grade box.
+
+        Guarded against a zero mark total: this fires on every keystroke, so
+        an assignment with no max_marks produced a ZeroDivisionError traceback
+        per character typed.
+        """
+        try:
+            grade = float(self.grade_var.get()) if self.grade_var.get() else 0
+        except ValueError:
+            self.percentage_var.set("(0.0%)")
+            return
+        try:
+            total = float(max_marks or 0)
+        except (TypeError, ValueError):
+            total = 0.0
+        if total <= 0:
+            self.percentage_var.set("(n/a)")
+            return
+        self.percentage_var.set(f"({(grade / total) * 100:.1f}%)")
+
+
+    def submit_grade(self, submission_id, max_marks):
+        """Submit grade for submission"""
+        try:
+            total = float(max_marks or 0)
+        except (TypeError, ValueError):
+            total = 0.0
+        if total <= 0:
+            # Refusing every grade with "between 0 and 0" told the marker
+            # nothing about what was actually wrong.
+            messagebox.showerror(
+                _t('gui.academics.assignment_system.grading_manager.dialogs.error', default="Error"),
+                "This assignment has no mark total set, so a grade cannot be "
+                "recorded against it.\n\nSet its maximum marks in Manage "
+                "Assignments first.")
+            return
+
+        try:
+            grade = float(self.grade_var.get())
+            if not (0 <= grade <= total):
+                messagebox.showerror(_t('gui.academics.assignment_system.grading_manager.dialogs.error', default="Error"), f"Grade must be between 0 and {total:g}")
+                return
+        except ValueError:
+            messagebox.showerror(_t('gui.academics.assignment_system.grading_manager.dialogs.error', default="Error"), _t('gui.academics.assignment_system.grading_manager.dialogs.please_enter_a_valid_grade', default="Please enter a valid grade"))
+            return
+
+        feedback = self.feedback_text.get(1.0, tk.END).strip()
+        percentage = (grade / total) * 100
+
+        try:
+            conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+            cursor = conn.cursor()
+
+            cursor.execute('''
+            UPDATE assignment_submissions
+            SET grade = ?, graded_by = ?, graded_date = ?, feedback = ?
+            WHERE id = ?
+            ''', (percentage, self.auth.current_user['id'],
+                  datetime.now().strftime('%Y-%m-%d %H:%M:%S'), feedback, submission_id))
+
+            # Get submission details for email
+            cursor.execute('''
+                SELECT s.student_id, s.first_name, s.last_name, s.email_address,
+                       a.title, a.module_code, m.module_name
+                FROM assignment_submissions asub
+                JOIN students s ON asub.student_id = s.student_id
+                JOIN assignments a ON asub.assignment_id = a.id
+                JOIN modules m ON a.module_code = m.module_code
+                WHERE asub.id = ?
+            ''', (submission_id,))
+
+            submission_details = cursor.fetchone()
+
+            conn.commit()
+            conn.close()
+
+            qa = _apply_qa_rules(submission_id, percentage, self.auth.current_user['id'], feedback)
+            percentage = qa["grade"]
+
+            # Send grade release email — only once the mark is visible to the student
+            if submission_details and qa["released"]:
+                try:
+                    self._send_grade_release_email(
+                        student_id=submission_details[0],
+                        student_name=f"{submission_details[1]} {submission_details[2]}",
+                        student_email=submission_details[3],
+                        assignment_title=submission_details[4],
+                        module_code=submission_details[5],
+                        module_name=submission_details[6],
+                        grade=percentage,
+                        max_marks=max_marks,
+                        feedback=feedback
+                    )
+                except Exception as email_error:
+                    print(f"Warning: Failed to send grade email: {email_error}")
+
+            # The gradebook (student_grades) and module result (module_grades)
+            # are written by the QA service when the mark is released.
+            if submission_details:
+                try:
+                    from education_system.systems.university.domains.assessment.interfaces.gui.assignment_system.integrations import (
+                        push_assignment_kpi,
+                    )
+                    # Best-effort KPI push — runs only if a matching KPI is registered
+                    push_assignment_kpi("Average Assignment Grade", percentage)
+                except Exception as kpi_err:
+                    print(f"Warning: KPI sync failed: {kpi_err}")
+
+            _publish_grade_change(
+                submission_id,
+                student_id=submission_details[0] if submission_details else None,
+                module_code=submission_details[5] if submission_details else None,
+                assignment_title=submission_details[4] if submission_details else None,
+                percentage=percentage,
+            )
+
+            messagebox.showinfo(_t('gui.academics.assignment_system.grading_manager.dialogs.success', default="Success"), f"Grade submitted: {percentage:.1f}% ({grade}/{max_marks}){_qa_note(qa)}")
+
+            # Refresh the submissions list
+            self.load_ungraded_submissions()
+
+            # Clear grading interface
+            for widget in self.grading_details_frame.winfo_children():
+                widget.destroy()
+
+        except Exception as e:
+            messagebox.showerror(_t('gui.academics.assignment_system.grading_manager.dialogs.error', default="Error"), f"Failed to submit grade: {e}")
+
+
+    def grade_with_rubrics(self):
+        """Enhanced grading interface with rubric support"""
+        if not self._check_permission('manage_assignments'):
+            return
+
+        self.gui.layout.clear_content_area()
+
+        title = ttk.Label(self.gui.layout.content_area, text=_t('gui.academics.assignment_system.grading_manager.labels.grade_with_rubrics', default="Grade with Rubrics"), style='Title.TLabel')
+        title.pack(anchor='w', pady=(0, 20))
+
+        # Create grading interface with rubric selection
+        grading_frame = ttk.PanedWindow(self.gui.layout.content_area, orient='horizontal')
+        grading_frame.pack(fill='both', expand=True)
+
+        # Left panel - submissions
+        left_panel = ttk.Frame(grading_frame)
+        grading_frame.add(left_panel, weight=1)
+
+        ttk.Label(left_panel, text=_t('gui.academics.assignment_system.grading_manager.labels.ungraded_submissions', default="Ungraded Submissions"), style='Header.TLabel').pack(anchor='w', pady=(0, 10))
+
+        # Submissions tree
+        columns = ('ID', 'Student', 'Assignment', 'Submitted')
+        self.rubric_grading_tree = ttk.Treeview(left_panel, columns=columns, show='headings', height=15)
+
+        for col in columns:
+            self.rubric_grading_tree.heading(col, text=col)
+            self.rubric_grading_tree.column(col, width=120)
+
+        self.rubric_grading_tree.pack(fill='both', expand=True)
+        self.rubric_grading_tree.bind('<<TreeviewSelect>>', self.on_rubric_submission_select)
+
+        # Right panel - rubric grading
+        right_panel = ttk.Frame(grading_frame)
+        grading_frame.add(right_panel, weight=2)
+
+        self.rubric_grading_frame = ttk.LabelFrame(right_panel, text=_t('gui.academics.assignment_system.grading_manager.labels.rubric_grading', default="Rubric Grading"), padding=10)
+        self.rubric_grading_frame.pack(fill='both', expand=True)
+
+        # Load submissions
+        self.load_rubric_grading_submissions()
+
+
+    def load_rubric_grading_submissions(self):
+        """Load submissions for rubric grading"""
+        # Clear existing items
+        for item in self.rubric_grading_tree.get_children():
+            self.rubric_grading_tree.delete(item)
+
+        try:
+            conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+            cursor = conn.cursor()
+
+            cursor.execute('''
+            SELECT s.id, s.student_id, st.first_name, st.last_name, a.title, s.submission_date, a.rubric_id
+            FROM assignment_submissions s
+            JOIN assignments a ON s.assignment_id = a.id
+            JOIN students st ON s.student_id = st.student_id
+            WHERE s.grade IS NULL AND s.status = 'submitted' AND a.rubric_id IS NOT NULL
+            ORDER BY s.submission_date
+            ''')
+
+            submissions = cursor.fetchall()
+            labels = _marker_labels([(row[0], f"{row[2]} {row[3]}") for row in submissions])
+
+            for submission in submissions:
+                sid, student_id, fname, lname, title, date, rubric_id = submission
+                student_name = labels.get(sid, f"{fname} {lname}")
+                self.rubric_grading_tree.insert('', 'end', values=(sid, student_name, title, date))
+
+            conn.close()
+
+        except Exception as e:
+            messagebox.showerror(_t('gui.academics.assignment_system.grading_manager.dialogs.error', default="Error"), f"Failed to load submissions: {e}")
+
+
+    def on_rubric_submission_select(self, event):
+        """Handle submission selection for rubric grading"""
+        selection = self.rubric_grading_tree.selection()
+        if not selection:
+            return
+
+        item = self.rubric_grading_tree.item(selection[0])
+        submission_id = item['values'][0]
+
+        self.show_rubric_grading_interface(submission_id)
+
+
+    def show_rubric_grading_interface(self, submission_id):
+        """Show rubric grading interface for selected submission"""
+        # Clear existing interface
+        for widget in self.rubric_grading_frame.winfo_children():
+            widget.destroy()
+
+        try:
+            conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+            cursor = conn.cursor()
+
+            # Get submission and rubric details
+            # By name, not position — see load_submission_for_grading.
+            conn.row_factory = sqlite3.Row
+            cursor = conn.cursor()
+            cursor.execute('''
+            SELECT s.*, a.title AS assignment_title, a.rubric_id AS assignment_rubric_id,
+                   st.first_name AS student_first_name, st.last_name AS student_last_name
+            FROM assignment_submissions s
+            JOIN assignments a ON s.assignment_id = a.id
+            JOIN students st ON s.student_id = st.student_id
+            WHERE s.id = ?
+            ''', (submission_id,))
+
+            submission = cursor.fetchone()
+            if not submission:
+                return
+
+            rubric_id = submission["assignment_rubric_id"]
+
+            # Display submission info
+            student_label = _marker_label(
+                submission_id,
+                f"{submission['student_first_name']} {submission['student_last_name']}")
+            info_text = (f"Student: {student_label}\n"
+                         f"Assignment: {submission['assignment_title']}\n"
+                         f"File: {submission['file_name'] or '—'}")
+            ttk.Label(self.rubric_grading_frame, text=info_text, justify='left').pack(anchor='w', pady=(0, 20))
+
+            # Get rubric criteria
+            cursor.execute('''
+            SELECT id, criteria_name, criteria_description, max_points
+            FROM rubric_criteria
+            WHERE rubric_id = ?
+            ORDER BY order_index
+            ''', (rubric_id,))
+
+            criteria = cursor.fetchall()
+
+            if not criteria:
+                ttk.Label(self.rubric_grading_frame, text=_t('gui.academics.assignment_system.grading_manager.labels.no_rubric_criteria_found', default="No rubric criteria found")).pack()
+                conn.close()
+                return
+
+            # Create rubric grading interface
+            criteria_frame = ttk.LabelFrame(self.rubric_grading_frame, text=_t('gui.academics.assignment_system.grading_manager.labels.grading_criteria', default="Grading Criteria"), padding=10)
+            criteria_frame.pack(fill='both', expand=True)
+
+            self.criteria_scores = {}
+            self.criteria_feedback = {}
+
+            for criterion in criteria:
+                crit_id, name, desc, max_points = criterion
+
+                crit_frame = ttk.LabelFrame(criteria_frame, text=f"{name} (Max: {max_points} points)", padding=5)
+                crit_frame.pack(fill='x', pady=5)
+
+                if desc:
+                    ttk.Label(crit_frame, text=desc, font=('Arial', 9)).pack(anchor='w')
+
+                # Score input
+                score_frame = ttk.Frame(crit_frame)
+                score_frame.pack(fill='x', pady=5)
+
+                ttk.Label(score_frame, text=_t('gui.academics.assignment_system.grading_manager.labels.score', default="Score:")).pack(side='left')
+                score_var = tk.StringVar()
+                self.criteria_scores[crit_id] = score_var
+                ttk.Entry(score_frame, textvariable=score_var, width=8).pack(side='left', padx=5)
+                ttk.Label(score_frame, text=f"/ {max_points}").pack(side='left')
+
+                # Feedback
+                ttk.Label(crit_frame, text=_t('gui.academics.assignment_system.grading_manager.labels.feedback', default="Feedback:")).pack(anchor='w', pady=(5, 0))
+                feedback_text = tk.Text(crit_frame, height=2, width=50)
+                feedback_text.pack(fill='x', pady=2)
+                self.criteria_feedback[crit_id] = feedback_text
+
+            # Overall feedback
+            overall_frame = ttk.LabelFrame(self.rubric_grading_frame, text=_t('gui.academics.assignment_system.grading_manager.labels.overall_feedback', default="Overall Feedback"), padding=10)
+            overall_frame.pack(fill='x', pady=(10, 0))
+
+            self.overall_feedback_text = scrolledtext.ScrolledText(overall_frame, height=4, width=50)
+            self.overall_feedback_text.pack(fill='x')
+
+            # Submit button
+            submit_frame = ttk.Frame(self.rubric_grading_frame)
+            submit_frame.pack(fill='x', pady=(10, 0))
+
+            ttk.Button(submit_frame, text=_t('gui.academics.assignment_system.grading_manager.buttons.calculate_total_submit_grade', default="Calculate Total & Submit Grade"),
+                      command=lambda: self.submit_rubric_grade(submission_id, criteria)).pack(side='right')
+
+            conn.close()
+
+        except Exception as e:
+            messagebox.showerror(_t('gui.academics.assignment_system.grading_manager.dialogs.error', default="Error"), f"Failed to load rubric grading interface: {e}")
+
+
+    def submit_rubric_grade(self, submission_id, criteria):
+        """Submit grade using rubric"""
+        try:
+            total_earned = 0
+            total_possible = 0
+
+            # Validate and calculate scores
+            for criterion in criteria:
+                crit_id, name, desc, max_points = criterion
+                score_var = self.criteria_scores[crit_id]
+
+                try:
+                    score = float(score_var.get() or 0)
+                    if not (0 <= score <= max_points):
+                        messagebox.showerror(_t('gui.academics.assignment_system.grading_manager.dialogs.error', default="Error"), f"Score for {name} must be between 0 and {max_points}")
+                        return
+                    total_earned += score
+                    total_possible += max_points
+                except ValueError:
+                    messagebox.showerror(_t('gui.academics.assignment_system.grading_manager.dialogs.error', default="Error"), f"Invalid score for {name}")
+                    return
+
+            if total_possible == 0:
+                messagebox.showerror(_t('gui.academics.assignment_system.grading_manager.dialogs.error', default="Error"), _t('gui.academics.assignment_system.grading_manager.dialogs.no_criteria_points_available', default="No criteria points available"))
+                return
+
+            # Calculate percentage
+            percentage = (total_earned / total_possible) * 100
+
+            # Confirm grade submission
+            result = messagebox.askyesno(_t('gui.academics.assignment_system.grading_manager.dialogs.confirm_grade', default="Confirm Grade"),
+                                        f"Total Score: {total_earned}/{total_possible} ({percentage:.1f}%)\n\n"
+                                        f"Submit this grade?")
+            if not result:
+                return
+
+            # Save to database
+            conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+            try:
+                cursor = conn.cursor()
+
+                timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                overall_feedback = self.overall_feedback_text.get(1.0, tk.END).strip()
+
+                # Update main submission
+                cursor.execute('''
+                UPDATE assignment_submissions
+                SET grade = ?, graded_by = ?, graded_date = ?, feedback = ?
+                WHERE id = ?
+                ''', (percentage, self.auth.current_user['id'], timestamp, overall_feedback, submission_id))
+
+                # Save individual criterion grades
+                for criterion in criteria:
+                    crit_id, name, desc, max_points = criterion
+                    score = float(self.criteria_scores[crit_id].get() or 0)
+                    feedback = self.criteria_feedback[crit_id].get(1.0, tk.END).strip()
+
+                    cursor.execute('''
+                    INSERT INTO grades (submission_id, rubric_criteria_id, points_earned, max_points,
+                                      percentage, feedback, graded_by, graded_date)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                    ''', (submission_id, crit_id, score, max_points,
+                          (score/max_points)*100, feedback, self.auth.current_user['id'], timestamp))
+
+                conn.commit()
+
+                qa = _apply_qa_rules(submission_id, percentage, self.auth.current_user['id'],
+                                     overall_feedback)
+                percentage = qa["grade"]
+
+                # Send grade notification email — only once the mark is visible
+                rubric_meta = None
+                try:
+                    # Get student email and assignment details
+                    cursor.execute('''
+                    SELECT s.student_id, s.email_address, a.title, a.module_code
+                    FROM assignment_submissions sub
+                    JOIN students s ON sub.student_id = s.student_id
+                    JOIN assignments a ON sub.assignment_id = a.id
+                    WHERE sub.id = ?
+                    ''', (submission_id,))
+                    result = cursor.fetchone()
+
+                    if result:
+                        student_id_val, student_email, assignment_title, module_code = result
+                        rubric_meta = (student_id_val, assignment_title, module_code)
+                    if result and qa["released"]:
+                        from education_system.systems.university.infrastructure.email.email_service import send_grade_notification
+                        import logging
+                        send_grade_notification(
+                            student_email,
+                            assignment_title,
+                            module_code,
+                            f"{percentage:.1f}%",
+                            overall_feedback if overall_feedback else None
+                        )
+                except Exception as e:
+                    import logging
+                    logging.warning(f"Failed to send grade notification email: {e}")
+
+            finally:
+                conn.close()
+
+            _publish_grade_change(
+                submission_id,
+                student_id=rubric_meta[0] if rubric_meta else None,
+                module_code=rubric_meta[2] if rubric_meta else None,
+                assignment_title=rubric_meta[1] if rubric_meta else None,
+                percentage=percentage,
+            )
+
+            messagebox.showinfo(_t('gui.academics.assignment_system.grading_manager.dialogs.success', default="Success"), f"Grade submitted: {percentage:.1f}% ({total_earned}/{total_possible}){_qa_note(qa)}")
+
+            # Refresh submissions list
+            self.load_rubric_grading_submissions()
+
+            # Clear grading interface
+            for widget in self.rubric_grading_frame.winfo_children():
+                widget.destroy()
+
+        except Exception as e:
+            messagebox.showerror(_t('gui.academics.assignment_system.grading_manager.dialogs.error', default="Error"), f"Failed to submit grade: {e}")
+
+    # SYSTEM MAINTENANCE METHOD
+
+    def show_detailed_grading(self):
+        """Show detailed grading interface with rubric support"""
+        self.gui.layout.clear_content_area()
+
+        title = ttk.Label(self.gui.layout.content_area, text=_t('gui.academics.assignment_system.grading_manager.labels.detailed_grading', default="Detailed Grading"), style='Title.TLabel')
+        title.pack(anchor='w', pady=(0, 20))
+
+        # Create main grading interface with rubric support
+        grading_frame = ttk.PanedWindow(self.gui.layout.content_area, orient='horizontal')
+        grading_frame.pack(fill='both', expand=True)
+
+        # Left panel - submissions list (same as existing)
+        left_panel = ttk.Frame(grading_frame)
+        grading_frame.add(left_panel, weight=1)
+
+        ttk.Label(left_panel, text=_t('gui.academics.assignment_system.grading_manager.labels.submissions_to_grade', default="Submissions to Grade"), style='Header.TLabel').pack(anchor='w', pady=(0, 10))
+
+        # Right panel - enhanced grading with rubric
+        right_panel = ttk.Frame(grading_frame)
+        grading_frame.add(right_panel, weight=2)
+
+        # Rubric selection
+        rubric_frame = ttk.LabelFrame(right_panel, text=_t('gui.academics.assignment_system.grading_manager.labels.select_grading_rubric', default="Select Grading Rubric"), padding=10)
+        rubric_frame.pack(fill='x', pady=(0, 10))
+
+        self.rubric_var = tk.StringVar()
+        rubric_combo = ttk.Combobox(rubric_frame, textvariable=self.rubric_var, width=40)
+        rubric_combo.pack(side='left', padx=(0, 10))
+
+        ttk.Button(rubric_frame, text=_t('gui.academics.assignment_system.grading_manager.buttons.load_rubric', default="Load Rubric"), command=self.load_rubric_for_grading).pack(side='left')
+
+        # Detailed grading area
+        self.detailed_grading_frame = ttk.Frame(right_panel)
+        self.detailed_grading_frame.pack(fill='both', expand=True)
+
+
+    def load_rubric_for_grading(self):
+        """Load rubric criteria for detailed grading"""
+        # Clear existing grading interface
+        for widget in self.detailed_grading_frame.winfo_children():
+            widget.destroy()
+
+        if not self.rubric_var.get():
+            ttk.Label(self.detailed_grading_frame, text=_t('gui.academics.assignment_system.grading_manager.labels.please_select_a_rubric', default="Please select a rubric")).pack(pady=20)
+            return
+
+        # Create rubric-based grading interface
+        criteria_frame = ttk.LabelFrame(self.detailed_grading_frame, text=_t('gui.academics.assignment_system.grading_manager.labels.grading_criteria', default="Grading Criteria"), padding=10)
+        criteria_frame.pack(fill='both', expand=True)
+
+        # Sample criteria (would be loaded from database)
+        sample_criteria = [
+            ("Content Quality", 25, "Quality and accuracy of content"),
+            ("Organization", 20, "Structure and logical flow"),
+            ("Writing Style", 15, "Grammar, clarity, and style"),
+            ("Citations", 10, "Proper use of references")
+        ]
+
+        self.criteria_scores = {}
+        total_frame = ttk.Frame(criteria_frame)
+
+        for i, (name, max_points, description) in enumerate(sample_criteria):
+            criterion_frame = ttk.LabelFrame(criteria_frame, text=f"{name} (Max: {max_points} points)", padding=5)
+            criterion_frame.pack(fill='x', pady=5)
+
+            ttk.Label(criterion_frame, text=description, font=('Arial', 9)).pack(anchor='w')
+
+            score_frame = ttk.Frame(criterion_frame)
+            score_frame.pack(fill='x', pady=5)
+
+            ttk.Label(score_frame, text=_t('gui.academics.assignment_system.grading_manager.labels.score', default="Score:")).pack(side='left')
+            score_var = tk.StringVar()
+            self.criteria_scores[name] = score_var
+            ttk.Entry(score_frame, textvariable=score_var, width=8).pack(side='left', padx=5)
+            ttk.Label(score_frame, text=f"/ {max_points}").pack(side='left')
+
+            # Feedback for this criterion
+            ttk.Label(criterion_frame, text=_t('gui.academics.assignment_system.grading_manager.labels.feedback', default="Feedback:")).pack(anchor='w', pady=(5, 0))
+            feedback_text = tk.Text(criterion_frame, height=2, width=50)
+            feedback_text.pack(fill='x', pady=2)
+
+        # Total score frame
+        total_frame.pack(fill='x', pady=10)
+        ttk.Button(total_frame, text=_t('gui.academics.assignment_system.grading_manager.buttons.calculate_total_submit_grade', default="Calculate Total & Submit Grade"),
+                  command=self.calculate_and_submit_grade).pack(side='right')
+
+
+    def calculate_and_submit_grade(self):
+        """Calculate total grade from rubric scores"""
+        total_score = 0
+        max_total = 70  # Sum of sample max points
+
+        for criterion, score_var in self.criteria_scores.items():
+            try:
+                score = float(score_var.get() or 0)
+                total_score += score
+            except ValueError:
+                messagebox.showerror(_t('gui.academics.assignment_system.grading_manager.dialogs.error', default="Error"), f"Invalid score for {criterion}")
+                return
+
+        percentage = (total_score / max_total) * 100
+
+        result = messagebox.askyesno(_t('gui.academics.assignment_system.grading_manager.dialogs.confirm_grade', default="Confirm Grade"),
+                                    f"Total Score: {total_score}/{max_total} ({percentage:.1f}%)\n\n"
+                                    f"Submit this grade?")
+        if result:
+            messagebox.showinfo(_t('gui.academics.assignment_system.grading_manager.dialogs.success', default="Success"), _t('gui.academics.assignment_system.grading_manager.dialogs.grade_submitted_successfully', default="Grade submitted successfully!"))
+            self.load_ungraded_submissions()  # Refresh list
+
+
+    def grade_submission(self, submission_id=None):
+        """Interactive grading interface for a specific submission or open grading workspace"""
+        if submission_id:
+            # Grade specific submission
+            self.show_grading_interface(submission_id)
+        else:
+            # Show grading workspace
+            self.show_grade_submissions()
+
+
+    def _grade_simple(self, submission_id):
+        """Simple grading without rubric - basic points-based grading"""
+        try:
+            conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+            cursor = conn.cursor()
+
+            # Get submission details
+            # By name, not position — see load_submission_for_grading.
+            conn.row_factory = sqlite3.Row
+            cursor = conn.cursor()
+            cursor.execute('''
+            SELECT s.*, a.title AS assignment_title, a.max_marks AS assignment_max_marks,
+                   st.first_name AS student_first_name, st.last_name AS student_last_name
+            FROM assignment_submissions s
+            JOIN assignments a ON s.assignment_id = a.id
+            JOIN students st ON s.student_id = st.student_id
+            WHERE s.id = ?
+            ''', (submission_id,))
+
+            submission = cursor.fetchone()
+            conn.close()
+
+            if not submission:
+                messagebox.showerror(_t('gui.academics.assignment_system.grading_manager.dialogs.error', default="Error"), _t('gui.academics.assignment_system.grading_manager.dialogs.submission_not_found', default="Submission not found"))
+                return
+
+            # Create simple grading dialog
+            dialog = make_toplevel(self.root)
+            try:
+                dialog_max_marks = float(submission["assignment_max_marks"] or 0)
+            except (TypeError, ValueError):
+                dialog_max_marks = 0.0
+            marks_known = dialog_max_marks > 0
+            if not marks_known:
+                dialog_max_marks = 100.0
+
+            # The Open/Download buttons below close over this; it was never
+            # assigned here, so both raised NameError when clicked.
+            file_path = submission["file_path"]
+
+            dialog.title(f"Grade Submission - {submission['assignment_title']}")
+            dialog.geometry("500x400")
+            dialog.transient(self.root)
+            dialog.grab_set()
+
+            # Submission info
+            info_frame = ttk.LabelFrame(dialog, text=_t('gui.academics.assignment_system.grading_manager.labels.submission_details', default="Submission Details"), padding=10)
+            info_frame.pack(fill='x', padx=10, pady=10)
+
+            student_label = _marker_label(
+                submission_id,
+                f"{submission['student_first_name']} {submission['student_last_name']}")
+            info_text = f"Student: {student_label}\n"
+            info_text += f"Assignment: {submission['assignment_title']}\n"
+            info_text += f"File: {submission['file_name'] or '—'}\n"
+            info_text += (f"Submitted: {submission['submission_date'] or submission['submitted_at'] or '—'}\n")
+            info_text += f"Max Marks: {dialog_max_marks:g}"
+            if not marks_known:
+                info_text += "  (not set — assuming 100)"
+
+            ttk.Label(info_frame, text=info_text, justify='left').pack(anchor='w')
+
+            # File actions
+            file_frame = ttk.Frame(info_frame)
+            file_frame.pack(fill='x', pady=(10, 0))
+
+            ttk.Button(file_frame, text=_t('gui.academics.assignment_system.grading_manager.buttons.open_file', default="Open File"),
+                      command=lambda: self.open_submission_file(file_path)).pack(side='left', padx=(0, 10))
+            ttk.Button(file_frame, text=_t('gui.academics.assignment_system.grading_manager.buttons.download_file', default="Download File"),
+                      command=lambda: self.download_file(file_path)).pack(side='left')
+
+            # Grading section
+            grade_frame = ttk.LabelFrame(dialog, text=_t('gui.academics.assignment_system.grading_manager.labels.grade', default="Grade"), padding=10)
+            grade_frame.pack(fill='both', expand=True, padx=10, pady=(0, 10))
+
+            ttk.Label(grade_frame, text=f"Score (out of {dialog_max_marks:g}):").pack(anchor='w', pady=(0, 5))
+
+            score_frame = ttk.Frame(grade_frame)
+            score_frame.pack(fill='x', pady=(0, 10))
+
+            score_var = tk.StringVar()
+            ttk.Entry(score_frame, textvariable=score_var, width=10).pack(side='left')
+            ttk.Label(score_frame, text=f" / {dialog_max_marks:g}").pack(side='left', padx=(5, 0))
+
+            # Percentage display
+            percentage_var = tk.StringVar()
+            percentage_label = ttk.Label(score_frame, textvariable=percentage_var, font=('Arial', 10, 'bold'))
+            percentage_label.pack(side='left', padx=(20, 0))
+
+            def update_percentage(*args):
+                try:
+                    score = float(score_var.get()) if score_var.get() else 0
+                except ValueError:
+                    percentage_var.set("(0.0%)")
+                    return
+                if dialog_max_marks <= 0:
+                    percentage_var.set("(n/a)")
+                    return
+                percentage_var.set(f"({(score / dialog_max_marks) * 100:.1f}%)")
+
+            score_var.trace('w', update_percentage)
+
+            # Feedback
+            ttk.Label(grade_frame, text=_t('gui.academics.assignment_system.grading_manager.labels.feedback', default="Feedback:")).pack(anchor='w', pady=(10, 5))
+            feedback_text = scrolledtext.ScrolledText(grade_frame, height=8, width=50)
+            feedback_text.pack(fill='both', expand=True)
+
+            # Submit button
+            def submit_simple_grade():
+                try:
+                    score = float(score_var.get())
+                    max_marks = dialog_max_marks
+
+                    if not (0 <= score <= max_marks):
+                        messagebox.showerror(_t('gui.academics.assignment_system.grading_manager.dialogs.error', default="Error"), f"Score must be between 0 and {max_marks:g}", parent=dialog)
+                        return
+
+                    feedback = feedback_text.get(1.0, tk.END).strip()
+                    percentage = (score / max_marks) * 100
+
+                    # Save to database
+                    conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+                    simple_meta = None
+                    try:
+                        cursor = conn.cursor()
+
+                        timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
+                        cursor.execute('''
+                        UPDATE assignment_submissions
+                        SET grade = ?, graded_by = ?, graded_date = ?, feedback = ?
+                        WHERE id = ?
+                        ''', (percentage, self.auth.current_user['id'], timestamp, feedback, submission_id))
+
+                        try:
+                            cursor.execute('''
+                            SELECT sub.student_id, a.title, a.module_code
+                            FROM assignment_submissions sub
+                            JOIN assignments a ON sub.assignment_id = a.id
+                            WHERE sub.id = ?
+                            ''', (submission_id,))
+                            simple_meta = cursor.fetchone()
+                        except Exception:
+                            simple_meta = None
+
+                        conn.commit()
+                    finally:
+                        conn.close()
+
+                    qa = _apply_qa_rules(submission_id, percentage, self.auth.current_user['id'],
+                                         feedback)
+                    percentage = qa["grade"]
+
+                    _publish_grade_change(
+                        submission_id,
+                        student_id=simple_meta[0] if simple_meta else None,
+                        module_code=simple_meta[2] if simple_meta else None,
+                        assignment_title=simple_meta[1] if simple_meta else None,
+                        percentage=percentage,
+                    )
+
+                    messagebox.showinfo(_t('gui.academics.assignment_system.grading_manager.dialogs.success', default="Success"), f"Grade submitted: {percentage:.1f}% ({score}/{max_marks}){_qa_note(qa)}", parent=dialog)
+                    dialog.destroy()
+
+                    # Refresh grading list if available
+                    if hasattr(self, 'grading_tree'):
+                        self.load_ungraded_submissions()
+
+                except ValueError:
+                    messagebox.showerror(_t('gui.academics.assignment_system.grading_manager.dialogs.error', default="Error"), _t('gui.academics.assignment_system.grading_manager.dialogs.please_enter_a_valid_score', default="Please enter a valid score"), parent=dialog)
+                except Exception as e:
+                    messagebox.showerror(_t('gui.academics.assignment_system.grading_manager.dialogs.error', default="Error"), f"Failed to submit grade: {e}", parent=dialog)
+
+            button_frame = ttk.Frame(dialog)
+            button_frame.pack(fill='x', padx=10, pady=(0, 10))
+
+            ttk.Button(button_frame, text=_t('gui.academics.assignment_system.grading_manager.buttons.submit_grade', default="Submit Grade"), command=submit_simple_grade,
+                      style='Accent.TButton').pack(side='right')
+            ttk.Button(button_frame, text=_t('gui.academics.assignment_system.grading_manager.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(side='right', padx=(0, 10))
+
+        except Exception as e:
+            messagebox.showerror(_t('gui.academics.assignment_system.grading_manager.dialogs.error', default="Error"), f"Failed to open grading interface: {e}")
+
+
+    def _launch_gui_feature(self, callback, feature_name):
+        """Helper to launch GUI features with error handling"""
+        try:
+            callback()
+        except Exception as e:
+            messagebox.showerror(_t('gui.academics.assignment_system.grading_manager.dialogs.error', default="Error"), f"Error launching {feature_name}: {str(e)}")
+
+
+    def open_submission_file(self, file_path):
+        """Open submission file with default application"""
+        if not file_path or not os.path.exists(file_path):
+            messagebox.showerror(_t('gui.academics.assignment_system.grading_manager.dialogs.error', default="Error"), _t('gui.academics.assignment_system.grading_manager.dialogs.file_not_found', default="File not found"))
+            return
+
+        try:
+            import platform
+            import subprocess
+
+            if platform.system() == 'Windows':
+                os.startfile(file_path)
+            elif platform.system() == 'Darwin':  # macOS
+                subprocess.run(['open', file_path])
+            else:  # Linux
+                subprocess.run(['xdg-open', file_path])
+        except Exception as e:
+            messagebox.showerror(_t('gui.academics.assignment_system.grading_manager.dialogs.error', default="Error"), f"Failed to open file: {e}")
+
+
+    def download_file(self, file_path):
+        """Download (copy) submission file to user-selected location"""
+        if not file_path or not os.path.exists(file_path):
+            messagebox.showerror(_t('gui.academics.assignment_system.grading_manager.dialogs.error', default="Error"), _t('gui.academics.assignment_system.grading_manager.dialogs.file_not_found', default="File not found"))
+            return
+
+        try:
+            # Get file name
+            file_name = os.path.basename(file_path)
+
+            # Ask user where to save
+            save_path = filedialog.asksaveasfilename(
+                initialfile=file_name,
+                defaultextension=os.path.splitext(file_name)[1],
+                filetypes=[("All files", "*.*")]
+            )
+
+            if save_path:
+                shutil.copy2(file_path, save_path)
+                messagebox.showinfo(_t('gui.academics.assignment_system.grading_manager.dialogs.success', default="Success"), f"File saved to:\n{save_path}")
+
+        except Exception as e:
+            messagebox.showerror(_t('gui.academics.assignment_system.grading_manager.dialogs.error', default="Error"), f"Failed to download file: {e}")
+
+    def _send_grade_release_email(self, student_id, student_name, student_email,
+                                   assignment_title, module_code, module_name,
+                                   grade, max_marks, feedback):
+        """Send email notification when grade is released"""
+        if not student_email:
+            print(f"Warning: No email address for student {student_id}")
+            return
+
+        try:
+            from education_system.systems.university.infrastructure.email.email_service import send_email
+
+            # Use email template
+            try:
+                from education_system.systems.university.infrastructure.email.template_utils import render_template
+                subject, body = render_template("assignment_grade_released", {
+                    "first_name": student_name.split()[0],
+                    "module_code": module_code,
+                    "module_name": module_name,
+                    "assignment_title": assignment_title,
+                    "grade_percentage": f"{grade:.1f}",
+                    "grade_points": f"{grade * max_marks / 100:.1f}",
+                    "max_marks": str(max_marks),
+                    "feedback": feedback or 'No additional feedback provided.'
+                })
+            except Exception:
+                # Fallback to hardcoded email
+                subject = f"Grade Released: {assignment_title}"
+                body = f"""Dear {student_name.split()[0]},
+
+Your grade has been released for the following assignment:
+
+Module: {module_code} - {module_name}
+Assignment: {assignment_title}
+Grade: {grade:.1f}% ({grade * max_marks / 100:.1f}/{max_marks})
+
+Feedback:
+{feedback or 'No additional feedback provided.'}
+
+You can view your complete submission and grading details in the Assignment System.
+
+Best regards,
+Academic Administration Team
+"""
+
+            send_email(student_email, subject, body)
+            print(f"Grade release email sent to {student_email}")
+
+        except Exception as e:
+            print(f"Failed to send grade release email: {e}")
+            import traceback
+            traceback.print_exc()
+
+

@@ -33,10 +33,8 @@ from education_system.systems.university.infrastructure.utils.gui_language_selec
 # Import finance integration for student finance account payments
 try:
     from education_system.systems.university.domains.finance.infrastructure.finance_integration import (
-        process_student_finance_account_payment,
         get_student_finance_account_balance,
         get_student_info,
-        LOW_BALANCE_THRESHOLD
     )
     FINANCE_ACCOUNT_AVAILABLE = True
 except ImportError:
@@ -72,6 +70,21 @@ except ImportError:
 # Import get_db_connection from main_gui
 from education_system.systems.university.plugins.campus_commerce.interfaces.gui.restaurant_management_gui.core.main_gui import get_db_connection
 from education_system.systems.university.infrastructure.email.sign_off import office_name
+# Finance posting lives in the domain service (shared with the CLI).
+from education_system.systems.university.plugins.campus_commerce.domain.services.restaurant.operations.settlement import (
+    refund_order_payment,
+    settle_order_payment,
+)
+
+
+def _processed_by(self):
+    """Username of the signed-in operator, if the GUI knows one."""
+    user = getattr(self, 'current_user', None)
+    if isinstance(user, dict):
+        return user.get('username')
+    auth = getattr(self, 'auth', None)
+    cu = getattr(auth, 'current_user', None)
+    return cu.get('username') if isinstance(cu, dict) else None
 
 
 def ensure_payment_columns():
@@ -301,75 +314,28 @@ def refund_order(self):
                                           "This action cannot be undone."):
                     return
                 try:
-                    conn = get_db_connection()
-                    if conn:
-                        cursor = conn.cursor()
-                        # Create unified refunds table if doesn't exist
-                        cursor.execute('''
-                            CREATE TABLE IF NOT EXISTS unified_refunds (
-                                refund_id INTEGER PRIMARY KEY AUTOINCREMENT,
-                                source_type TEXT NOT NULL,
-                                source_refund_id TEXT,
-                                reference_type TEXT,
-                                reference_id TEXT,
-                                student_id TEXT,
-                                customer_name TEXT,
-                                customer_email TEXT,
-                                amount DECIMAL(10,2) NOT NULL,
-                                original_amount DECIMAL(10,2),
-                                currency TEXT DEFAULT 'GBP',
-                                refund_type TEXT,
-                                refund_method TEXT,
-                                refund_reference TEXT,
-                                reason TEXT,
-                                status TEXT DEFAULT 'pending',
-                                department TEXT,
-                                processed_by TEXT,
-                                requested_by TEXT,
-                                approved_by TEXT,
-                                refund_date TEXT,
-                                request_date TEXT,
-                                approval_date TEXT,
-                                notes TEXT,
-                                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-                            )
-                        ''')
-                        # Insert refund record
-                        cursor.execute('''
-                            INSERT INTO unified_refunds (source_type, reference_type, reference_id, amount, refund_type, reason, notes, department, status, request_date)
-                            VALUES ('restaurant', 'order', ?, ?, ?, ?, ?, 'restaurant', 'processed', datetime('now'))
-                        ''', (order_id, refund_amount, refund_type_var.get(), reason, notes))
-                        refund_row_id = cursor.lastrowid
-                        # Update order status
-                        new_status = 'Refunded' if refund_type_var.get() == 'Full' else 'Partially Refunded'
-                        cursor.execute('''
-                            UPDATE orders
-                            SET order_status = ?, total_amount = total_amount - ?
-                            WHERE order_id = ?
-                        ''', (new_status, refund_amount, order_id))
-                        conn.commit()
-                        conn.close()
+                    # Shared domain service: marks the order refunded, deducts the
+                    # amount from the order total and posts the refund to Finance.
+                    outcome = refund_order_payment(
+                        order_id, refund_amount, payment_method,
+                        refund_type=refund_type_var.get(), reason=reason, notes=notes,
+                        processed_by=_processed_by(self), deduct_from_total=True,
+                    )
+                    if not outcome['success']:
+                        messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.orders.payments.dialogs.error', default="Error"), outcome['message'])
+                        return
+                    # Send refund receipt email
+                    send_refund_receipt_email(order_id, refund_amount, payment_method,
+                                             refund_type_var.get(), reason)
 
-                        # Auto-post to GL (cash has moved). Never raises.
-                        try:
-                            from education_system.systems.university.domains.finance.domain.ledger import notify_ledger
-                            notify_ledger('refund', refund_row_id, posted_by='restaurant')
-                        except Exception as _e:
-                            import logging
-                            logging.getLogger(__name__).warning("ledger hook failed: %s", _e)
-
-                        # Send refund receipt email
-                        send_refund_receipt_email(order_id, refund_amount, payment_method,
-                                                 refund_type_var.get(), reason)
-
-                        messagebox.showinfo(_t('gui.operations.commerce.restaurant_management_gui.orders.payments.dialogs.success', default="Success"),
-                                          "Refund processed successfully!\n\n" +
-                                          f"Amount: £{refund_amount:.2f}\n" +
-                                          f"Method: {payment_method}\n\n" +
-                                          f"Funds will be returned to customer's {payment_method}.\n\n" +
-                                          "✓ Refund confirmation email sent")
-                        refund_dialog.destroy()
-                        self.view_orders_gui()  # Refresh
+                    messagebox.showinfo(_t('gui.operations.commerce.restaurant_management_gui.orders.payments.dialogs.success', default="Success"),
+                                      "Refund processed successfully!\n\n" +
+                                      f"Amount: £{refund_amount:.2f}\n" +
+                                      f"Method: {payment_method}\n\n" +
+                                      f"Funds will be returned to customer's {payment_method}.\n\n" +
+                                      "✓ Refund confirmation email sent")
+                    refund_dialog.destroy()
+                    self.view_orders_gui()  # Refresh
                 except (sqlite3.Error, tk.TclError) as e:
                     messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.orders.payments.dialogs.error', default="Error"), f"Failed to process refund: {e}")
             button_frame = ttk.Frame(main_frame)
@@ -627,14 +593,13 @@ def process_cash_payment(self, order_id, total_amount):
                     INSERT INTO cash_transactions (order_id, cash_tendered, change_given)
                     VALUES (?, ?, ?)
                 ''', (order_id, tendered, change))
-                # Update order
-                cursor.execute('''
-                    UPDATE orders
-                    SET order_status = 'Paid', payment_method = 'Cash'
-                    WHERE order_id = ?
-                ''', (order_id,))
                 conn.commit()
                 conn.close()
+
+                # Shared domain service: marks the order Paid and posts to Finance.
+                settle_order_payment(order_id, total_amount, 'Cash', status='Paid',
+                                     student_id="EXTERNAL", notes='Restaurant order payment',
+                                     processed_by=_processed_by(self))
 
                 # Send payment receipt email
                 send_payment_receipt_email(order_id, total_amount, 'Cash',
@@ -729,14 +694,14 @@ def process_card_payment(self, order_id, total_amount):
                         (transaction_id, order_id, card_type, card_last4, amount, authorization_code)
                         VALUES (?, ?, ?, ?, ?, ?)
                     ''', (transaction_id, order_id, card_type, card_last4 or None, total_amount, auth_code))
-                    # Update order
-                    cursor.execute('''
-                        UPDATE orders
-                        SET order_status = 'Paid', payment_method = ?
-                        WHERE order_id = ?
-                    ''', (card_type, order_id))
                     conn.commit()
                     conn.close()
+
+                    # Shared domain service: marks the order Paid and posts to Finance.
+                    settle_order_payment(order_id, total_amount, card_type, status='Paid',
+                                         student_id="EXTERNAL",
+                                         notes=f'Restaurant order payment via {card_type}',
+                                         processed_by=_processed_by(self))
                     status_label.config(text=_t('gui.operations.commerce.restaurant_management_gui.orders.payments.text.payment_authorized', default="Payment Authorized!"), foreground='green')
 
                     # Send payment receipt email
@@ -1024,167 +989,92 @@ class PaymentDialog:
         ttk.Button(button_frame, text=_t('gui.operations.commerce.restaurant_management_gui.orders.payments.buttons.cancel', default="Cancel"), command=self.cancel).pack(side='left', padx=10)
 
     def process_payment(self):
-        """Process the payment"""
+        """Process the payment.
+
+        The order update and the Finance posting (finance-account debit or
+        ``record_payment_to_finance``) happen in the domain service
+        ``restaurant.operations.settlement.settle_order_payment``, shared
+        with the CLI.
+        """
         payment_method = self.payment_var.get()
         if not payment_method:
             messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.orders.payments.dialogs.error', default="Error"), _t('gui.operations.commerce.restaurant_management_gui.orders.payments.dialogs.please_select_a_payment_method', default="Please select a payment method"))
             return
 
-        # Validate student ID for Finance Account payments
+        try:
+            conn = get_db_connection()
+            if not conn:
+                messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.orders.payments.dialogs.error', default="Error"), _t('gui.operations.commerce.restaurant_management_gui.orders.payments.dialogs.database_connection_failed', default="Database connection failed"))
+                return
+            row = conn.execute('SELECT total_amount FROM orders WHERE order_id = ?', (self.order_id,)).fetchone()
+            conn.close()
+            if not row:
+                messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.orders.payments.dialogs.error', default="Error"), _t('gui.operations.commerce.restaurant_management_gui.orders.payments.dialogs.order_not_found', default="Order not found"))
+                return
+            total_amount = row[0]
+        except sqlite3.Error as e:
+            messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.orders.payments.dialogs.error', default="Error"), f"Failed to process payment: {str(e)}")
+            return
+
+        student_id = None
         if payment_method == 'Finance Account':
             student_id = self.student_id_var.get().strip()
             if not student_id:
                 messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.orders.payments.dialogs.error', default="Error"), _t('gui.operations.commerce.restaurant_management_gui.orders.payments.dialogs.please_enter_a_student_id_for_finance_account_payments', default="Please enter a Student ID for Finance Account payments"))
                 return
-
-            # Process payment via finance system
-            success = self._process_student_account_payment(student_id)
-            if not success:
+            if not self._check_student_account_balance(student_id, total_amount):
                 return
 
-        try:
-            conn = get_db_connection()
-            if conn:
-                cursor = conn.cursor()
-                cursor.execute('UPDATE orders SET payment_method = ?, order_status = ? WHERE order_id = ?',
-                              (payment_method, 'Completed', self.order_id))
-                conn.commit()
-                conn.close()
+        settlement = settle_order_payment(
+            self.order_id, total_amount, payment_method, status='Completed',
+            student_id=student_id or "EXTERNAL",
+            processed_by=_processed_by(self) or "System",
+        )
+        if payment_method == 'Finance Account':
+            if not settlement.get('success'):
+                messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.orders.payments.dialogs.payment_failed', default="Payment Failed"), settlement.get('message') or 'Payment failed')
+                return
+            self._show_finance_account_receipt(student_id, total_amount, settlement.get('account_result') or {})
+        elif settlement.get('message') and not settlement.get('success'):
+            # Order is paid locally; the Finance posting failed and was logged.
+            logger.warning("Finance posting failed for order %s: %s", self.order_id, settlement['message'])
 
-            self.result = True
-            self.dialog.destroy()
-            messagebox.showinfo(_t('gui.operations.commerce.restaurant_management_gui.orders.payments.dialogs.success', default="Success"), _t('gui.operations.commerce.restaurant_management_gui.orders.payments.dialogs.payment_processed_successfully', default="Payment processed successfully"))
+        self.result = True
+        self.dialog.destroy()
+        messagebox.showinfo(_t('gui.operations.commerce.restaurant_management_gui.orders.payments.dialogs.success', default="Success"), _t('gui.operations.commerce.restaurant_management_gui.orders.payments.dialogs.payment_processed_successfully', default="Payment processed successfully"))
 
-            # Send order confirmation email if using Finance Account
-            if payment_method == 'Finance Account':
-                self._send_order_confirmation_email(student_id)
+        # Send order confirmation email if using Finance Account
+        if payment_method == 'Finance Account':
+            self._send_order_confirmation_email(student_id)
 
-        except sqlite3.Error as e:
-            messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.orders.payments.dialogs.error', default="Error"), f"Failed to process payment: {str(e)}")
-
-    def _process_student_account_payment(self, student_id):
-        """Process payment through student's finance account balance"""
-        try:
-            # Get order details
-            conn = get_db_connection()
-            if not conn:
-                messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.orders.payments.dialogs.error', default="Error"), _t('gui.operations.commerce.restaurant_management_gui.orders.payments.dialogs.database_connection_failed', default="Database connection failed"))
-                return False
-
-            cursor = conn.cursor()
-            cursor.execute('SELECT total_amount FROM orders WHERE order_id = ?', (self.order_id,))
-            result = cursor.fetchone()
-            if not result:
-                messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.orders.payments.dialogs.error', default="Error"), _t('gui.operations.commerce.restaurant_management_gui.orders.payments.dialogs.order_not_found', default="Order not found"))
-                conn.close()
-                return False
-
-            total_amount = result[0]
-            conn.close()
-
-            # Use finance account integration if available
-            if FINANCE_ACCOUNT_AVAILABLE:
-                # Check balance first
-                current_balance = get_student_finance_account_balance(student_id)
-                if current_balance is None:
-                    messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.orders.payments.dialogs.error', default="Error"),
-                        f"No finance account found for student {student_id}.\n"
-                        "Please create a finance account first or use a different payment method.")
-                    return False
-
-                if current_balance < total_amount:
-                    messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.orders.payments.dialogs.insufficient_balance', default="Insufficient Balance"),
-                        f"Student finance account balance is insufficient.\n\n"
-                        f"Current Balance: £{current_balance:.2f}\n"
-                        f"Required Amount: £{total_amount:.2f}\n\n"
-                        f"Please top up the account or use a different payment method.")
-                    return False
-
-                # Process the payment from finance account
-                payment_result = process_student_finance_account_payment(
-                    student_id=student_id,
-                    amount=total_amount,
-                    description=f"Restaurant order #{self.order_id}",
-                    transaction_source="Restaurant",
-                    transaction_ref=str(self.order_id),
-                    processed_by="System",
-                    check_balance=True,
-                    send_low_balance_alert=True
-                )
-
-                if not payment_result['success']:
-                    messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.orders.payments.dialogs.payment_failed', default="Payment Failed"), payment_result['message'])
-                    return False
-
-                new_balance = payment_result.get('new_balance', 0)
-                low_balance_email_sent = payment_result.get('email_sent', False)
-
-                # Get student name for display
-                student_info = get_student_info(student_id)
-                student_name = student_info.get('full_name', student_id) if student_info else student_id
-
-                success_msg = f"Payment of £{total_amount:.2f} deducted from {student_name}'s finance account.\nNew Balance: £{new_balance:.2f}"
-
-                if low_balance_email_sent:
-                    success_msg += "\n\n⚠ Low balance alert email sent to student"
-
-                messagebox.showinfo(_t('gui.operations.commerce.restaurant_management_gui.orders.payments.dialogs.finance_account_payment', default="Finance Account Payment"), success_msg)
-                return True
-
-            # Fallback: Legacy method - add to student_fees without balance deduction
-            conn = get_db_connection()
-            if not conn:
-                messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.orders.payments.dialogs.error', default="Error"), _t('gui.operations.commerce.restaurant_management_gui.orders.payments.dialogs.database_connection_failed', default="Database connection failed"))
-                return False
-
-            cursor = conn.cursor()
-
-            # Get student details
-            cursor.execute('SELECT first_name, last_name, email FROM students WHERE student_id = ?', (student_id,))
-            student_result = cursor.fetchone()
-            if not student_result:
-                messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.orders.payments.dialogs.error', default="Error"), f"Student ID {student_id} not found in system")
-                conn.close()
-                return False
-
-            first_name, last_name, email = student_result
-
-            # Note: a legacy INSERT into student_fees with non-existent columns
-            # (fee_id, fee_type, description, paid_status, created_date) was
-            # removed here — student_fees is tuition AR, not a commerce ledger.
-            # The unified record_payment() call below is the correct path.
-
-            # 8.117.104: unified record_payment() with source_type='restaurant'.
-            try:
-                from education_system.systems.university.domains.finance.domain.core.unified_payments import (
-                    record_payment as _record_payment,
-                )
-                _record_payment(
-                    student_id=student_id,
-                    amount=total_amount,
-                    payment_method='Finance Account',
-                    source_type='restaurant',
-                    source_payment_id=str(self.order_id),
-                    payment_type='purchase',
-                    reference_type='restaurant_order',
-                    reference_id=str(self.order_id),
-                    department='restaurant',
-                    description=f'Restaurant payment for order #{self.order_id}',
-                )
-            except Exception:
-                logger.debug("Suppressed exception", exc_info=True)
-
-            conn.commit()
-            conn.close()
-
-            messagebox.showinfo(_t('gui.operations.commerce.restaurant_management_gui.orders.payments.dialogs.finance_integration', default="Finance Integration"),
-                f"Payment of £{total_amount:.2f} charged to {first_name} {last_name}'s student account (legacy)")
-
-            return True
-
-        except sqlite3.Error as e:
-            messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.orders.payments.dialogs.error', default="Error"), f"Failed to process student account payment: {e}")
+    def _check_student_account_balance(self, student_id, total_amount):
+        """Pre-flight balance check for a finance-account payment (read-only)."""
+        if not FINANCE_ACCOUNT_AVAILABLE:
+            messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.orders.payments.dialogs.error', default="Error"), "Finance system is unavailable")
             return False
+        current_balance = get_student_finance_account_balance(student_id)
+        if current_balance is None:
+            messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.orders.payments.dialogs.error', default="Error"),
+                f"No finance account found for student {student_id}.\n"
+                "Please create a finance account first or use a different payment method.")
+            return False
+        if current_balance < total_amount:
+            messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.orders.payments.dialogs.insufficient_balance', default="Insufficient Balance"),
+                f"Student finance account balance is insufficient.\n\n"
+                f"Current Balance: £{current_balance:.2f}\n"
+                f"Required Amount: £{total_amount:.2f}\n\n"
+                f"Please top up the account or use a different payment method.")
+            return False
+        return True
+
+    def _show_finance_account_receipt(self, student_id, total_amount, payment_result):
+        new_balance = payment_result.get('new_balance', 0)
+        student_info = get_student_info(student_id)
+        student_name = student_info.get('full_name', student_id) if student_info else student_id
+        success_msg = f"Payment of £{total_amount:.2f} deducted from {student_name}'s finance account.\nNew Balance: £{new_balance:.2f}"
+        if payment_result.get('email_sent'):
+            success_msg += "\n\n⚠ Low balance alert email sent to student"
+        messagebox.showinfo(_t('gui.operations.commerce.restaurant_management_gui.orders.payments.dialogs.finance_account_payment', default="Finance Account Payment"), success_msg)
 
     def _send_order_confirmation_email(self, student_id):
         """Send order confirmation email to student"""
@@ -1197,7 +1087,7 @@ class PaymentDialog:
             cursor = conn.cursor()
 
             # Get student details
-            cursor.execute('SELECT first_name, last_name, email FROM students WHERE student_id = ?', (student_id,))
+            cursor.execute('SELECT first_name, last_name, email_address FROM students WHERE student_id = ?', (student_id,))
             student_result = cursor.fetchone()
             if not student_result:
                 conn.close()
@@ -1376,7 +1266,7 @@ def send_payment_receipt_email(order_id, amount, payment_method, **kwargs):
         student_id = kwargs.get('student_id')
         if student_id:
             cursor.execute('''
-                SELECT email, first_name, last_name FROM students
+                SELECT email_address, first_name, last_name FROM students
                 WHERE student_id = ?
             ''', (student_id,))
             student_row = cursor.fetchone()
@@ -1522,7 +1412,7 @@ def send_refund_receipt_email(order_id, refund_amount, payment_method, refund_ty
 
                 # Try to get email from students table
                 cursor.execute('''
-                    SELECT email, first_name, last_name FROM students
+                    SELECT email_address, first_name, last_name FROM students
                     WHERE student_id = ?
                 ''', (customer_name,))  # customer_name might be student_id
                 student_row = cursor.fetchone()

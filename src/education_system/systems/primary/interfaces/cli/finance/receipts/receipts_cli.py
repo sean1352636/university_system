@@ -494,10 +494,10 @@ def delete_flow(receipt_id: int | None = None) -> None:
     _pause()
 
 
-def import_fee_payment_flow() -> None:
-    print("\n═══ Import Fee Payment ═══")
+def import_dinner_money_flow() -> None:
+    print("\n═══ Import Dinner Money Top-up ═══")
     try:
-        pid = int(_input("Fee payment ID", allow_empty=False))
+        pid = int(_input("Dinner money entry ID", allow_empty=False))
         received_by = _input("Received by (optional)")
         issued = _input("Issue immediately? (y/n)",
                           default="y").lower() in ("y", "yes")
@@ -505,7 +505,7 @@ def import_fee_payment_flow() -> None:
         print("\n  Cancelled / bad input.")
         return
     try:
-        r = data.receipt_from_fee_payment(pid, received_by or None,
+        r = data.receipt_from_dinner_money_topup(pid, received_by or None,
                                             issued=issued)
     except ValidationError as e:
         print(f"\n  ✗ {e}")
@@ -553,12 +553,12 @@ def summary() -> None:
     print(f"  This week (issued)    : {_money(s.daily_this_week)}")
     print(f"  This month (issued)   : {_money(s.daily_this_month)}")
     print("\n  By method (issued):")
-    for m in PAYMENT_METHODS:
+    for m in s.by_method:
         v = s.by_method.get(m, 0.0)
         if v:
             print(f"    {m:<18} : {_money(v)}")
     print("\n  By line kind (issued):")
-    for k in LINE_KINDS:
+    for k in sorted(s.by_kind, key=lambda k: (k not in LINE_KINDS, k)):
         v = s.by_kind.get(k, 0.0)
         if v:
             print(f"    {k:<10} : {_money(v)}")
@@ -624,7 +624,7 @@ _MENU: list[tuple[str, Callable[[], None]]] = [
     ("Issue",                 issue_flow),
     ("Void",                  void_flow),
     ("Delete (Draft)",        delete_flow),
-    ("Import Fee Payment",    import_fee_payment_flow),
+    ("Import Dinner Money Top-up", import_dinner_money_flow),
     ("Import Trip Payment",   import_trip_payment_flow),
     ("Summary",               summary),
 ]

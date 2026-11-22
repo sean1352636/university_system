@@ -67,10 +67,12 @@ ON_PLACEMENT: str = "On placement"
 ABSENT: str = "Absent"
 LEFT_EARLY: str = "Left early"
 NOT_TIMETABLED: str = "Not timetabled"
+# Signed out at reception (:mod:`attendance_signout`) and not back yet.
+SIGNED_OUT: str = "Signed out"
 
 PRESENCE_REASONS: tuple[str, ...] = (
     IN_LESSON, ON_SITE_TAP, EXPECTED_UNMARKED, OFF_SITE, ON_PLACEMENT,
-    ABSENT, LEFT_EARLY, NOT_TIMETABLED,
+    ABSENT, LEFT_EARLY, NOT_TIMETABLED, SIGNED_OUT,
 )
 
 # Reasons that put somebody on the "should be at the assembly point" list.
@@ -292,6 +294,41 @@ def _placement_ids(date: str) -> dict[str, str]:
         return {}
 
 
+def _signed_out(date: str, at_time: str | None) -> dict[str, Any]:
+    """Learners signed out of site and not back, from the sign-out log."""
+    try:
+        from education_system.systems.sixth_form.domain.academics.attendance import (  # noqa: E501
+            attendance_signout as _signout,
+        )
+        return _signout.off_site_index(date=date, at_time=at_time)
+    except Exception:                       # pragma: no cover - optional dep
+        logger.debug("Sign-out lookup unavailable for roll call",
+                     exc_info=True)
+        return {}
+
+
+def _signout_note(trip: Any) -> str:
+    back = (f", due back {trip.expected_back}" if trip.expected_back
+            else "" if trip.returning else ", left for the day")
+    why = trip.reason + (f" ({trip.detail})" if trip.detail else "")
+    return f"Signed out {trip.out_time}: {why}{back}"
+
+
+def confirmed_off_site(*, date: str | None = None,
+                       at_time: str | None = None) -> list[Presence]:
+    """Who the sign-out log says is off site — the "Confirmed off site"
+    list a marshal reads instead of searching for them."""
+    date = core._validate_date(date or _dt.date.today().isoformat())
+    from education_system.systems.sixth_form.domain.learners.students import (
+        students as _students,
+    )
+    names = {s.student_id: s.full_name for s in _students.list_students()}
+    return [Presence(student_id=sid, full_name=names.get(sid, sid),
+                     reason=SIGNED_OUT, detail=_signout_note(trip),
+                     last_seen=trip.out_time)
+            for sid, trip in _signed_out(date, at_time).items()]
+
+
 def _entrance_taps(date: str) -> dict[str, str]:
     """Learners who came through a door terminal today."""
     try:
@@ -330,6 +367,7 @@ def expected_on_site(*, date: str | None = None,
     students = {s.student_id: s for s in _students.list_students()}
     placements = _placement_ids(date)
     taps = _entrance_taps(date)
+    signed_out = _signed_out(date, now)
 
     records = core.list_records(date=date)
     by_student: dict[str, list[Any]] = {}
@@ -348,6 +386,16 @@ def expected_on_site(*, date: str | None = None,
                                 full_name=student.full_name,
                                 reason=ON_PLACEMENT,
                                 detail=placements[student_id]))
+            continue
+
+        # Signed out at reception and not back: off site, whatever the
+        # morning's registers say.
+        if student_id in signed_out:
+            trip = signed_out[student_id]
+            out.append(Presence(
+                student_id=student_id, full_name=student.full_name,
+                reason=SIGNED_OUT, detail=_signout_note(trip),
+                last_seen=trip.out_time))
             continue
 
         marks = by_student.get(student_id, [])
@@ -541,6 +589,16 @@ def start_drill(
         drill_id = int(cur.lastrowid or 0)
     logger.warning("Roll call started: %s #%d, %d person(s) expected on site",
                    kind, drill_id, len(snapshot))
+    # Anyone the snapshot still expects but who has since signed out
+    # (the snapshot and the sign-out log are read a moment apart) is
+    # pre-marked Confirmed off site from the log, so no marshal goes
+    # looking for them. A marshal can still overrule it.
+    away = _signed_out(date, at_time)
+    for presence in snapshot:
+        trip = away.get(presence.student_id)
+        if trip is not None:
+            account_for(drill_id, [presence.student_id], state=EXCUSED,
+                        marked_by="Sign-out log", notes=_signout_note(trip))
     out = get_drill(drill_id)
     assert out is not None
     return out
@@ -711,8 +769,14 @@ def status(drill_id: int) -> RollCallStatus:
         raise ValidationError(f"No roll call with id {drill_id}")
     marks = {m.student_id: m for m in list_marks(drill_id)}
     out = RollCallStatus(drill=drill)
+    # "Confirmed off site" reads the sign-out log: somebody on the list
+    # who signed out (with no marshal's word either way) is off site.
+    away = (_signed_out(drill.date, None) if drill.is_running else {})
     for presence in drill.snapshot:
         mark = marks.get(presence.student_id)
+        if mark is None and presence.student_id in away:
+            out.excused.append(presence.student_id)
+            continue
         if mark is None or mark.state == MISSING:
             out.missing.append(presence)
         elif mark.state == EXCUSED:

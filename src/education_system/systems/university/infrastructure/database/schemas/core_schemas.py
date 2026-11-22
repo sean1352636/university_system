@@ -33,7 +33,7 @@ def init_grade_system_db():
         # the per-course 18-module curriculum, and the student grade columns)
         # exists alongside the core student/module tables.
         try:
-            from education_system.systems.university.domains.academics.domain.services.admissions_selection import (
+            from education_system.systems.university.domains.admissions.domain.services.admissions_selection import (
                 ensure_selection_schema,
             )
             ensure_selection_schema()
@@ -790,7 +790,7 @@ def init_courses_tables():
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS course_analytics (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    course_id INTEGER NOT NULL,
+                    course_id TEXT NOT NULL,
                     semester TEXT NOT NULL,
                     year INTEGER NOT NULL,
                     total_enrolled INTEGER DEFAULT 0,
@@ -817,7 +817,7 @@ def init_courses_tables():
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS course_history (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    course_id INTEGER NOT NULL,
+                    course_id TEXT NOT NULL,
                     field_name TEXT NOT NULL,
                     old_value TEXT,
                     new_value TEXT,
@@ -844,7 +844,7 @@ def init_courses_tables():
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS course_schedule (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    course_id INTEGER NOT NULL,
+                    course_id TEXT NOT NULL,
                     semester TEXT NOT NULL,
                     year INTEGER NOT NULL,
                     start_time TEXT,
@@ -862,8 +862,8 @@ def init_courses_tables():
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS course_waitlist (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    course_id INTEGER NOT NULL,
-                    student_id INTEGER NOT NULL,
+                    course_id TEXT NOT NULL,
+                    student_id TEXT NOT NULL,
                     position INTEGER NOT NULL,
                     added_at TEXT NOT NULL,
                     status TEXT DEFAULT 'Waiting',
@@ -882,7 +882,7 @@ def init_courses_tables():
                             department TEXT,
                             instructor_id TEXT,
                             academic_year_id TEXT,
-                            semester_id TEXT,
+                            semester_id INTEGER,
                             status TEXT DEFAULT 'active',
                             date_added TEXT NOT NULL, course_code TEXT, course_name TEXT, level TEXT, credit_hours INTEGER, current_enrollment INTEGER DEFAULT 0, max_enrollment INTEGER DEFAULT 30,
                             FOREIGN KEY (academic_year_id) REFERENCES academic_years (id),

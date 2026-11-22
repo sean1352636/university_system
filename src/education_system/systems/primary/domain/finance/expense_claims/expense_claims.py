@@ -750,10 +750,19 @@ def _claim_dict(c: Claim) -> dict[str, Any]:
     }
 
 
+def _require_status(c: Claim, allowed: tuple[str, ...], action: str) -> None:
+    """Refuse a step the claim's current status does not allow."""
+    if c.status not in allowed:
+        raise ValidationError(
+            f"A {c.status} claim cannot be {action} "
+            f"(only {' or '.join(allowed)})")
+
+
 def submit(claim_id: int) -> Claim:
     c = get_claim(claim_id)
     if c is None:
         raise ValidationError(f"No claim with id {claim_id}")
+    _require_status(c, ("Draft", "Rejected"), "submitted")
     if c.line_count == 0:
         raise ValidationError(
             "Cannot submit a claim with no lines")
@@ -767,6 +776,7 @@ def begin_review(claim_id: int) -> Claim:
     c = get_claim(claim_id)
     if c is None:
         raise ValidationError(f"No claim with id {claim_id}")
+    _require_status(c, ("Submitted",), "put under review")
     return update_claim(claim_id,
                               {**_claim_dict(c),
                                 "status": "Under Review"})
@@ -777,6 +787,7 @@ def approve(claim_id: int, *,
     c = get_claim(claim_id)
     if c is None:
         raise ValidationError(f"No claim with id {claim_id}")
+    _require_status(c, ("Submitted", "Under Review"), "approved")
     data = _claim_dict(c)
     data["status"] = "Approved"
     data["approved_on"] = _dt.date.today().isoformat()
@@ -790,6 +801,7 @@ def reject(claim_id: int, *,
     c = get_claim(claim_id)
     if c is None:
         raise ValidationError(f"No claim with id {claim_id}")
+    _require_status(c, ("Submitted", "Under Review"), "rejected")
     data = _claim_dict(c)
     data["status"] = "Rejected"
     data["rejected_on"] = _dt.date.today().isoformat()
@@ -820,6 +832,8 @@ def cancel(claim_id: int) -> Claim:
     c = get_claim(claim_id)
     if c is None:
         raise ValidationError(f"No claim with id {claim_id}")
+    _require_status(c, ("Draft", "Submitted", "Under Review", "Approved", "Rejected"),
+                    "cancelled")
     return update_claim(claim_id,
                               {**_claim_dict(c),
                                 "status": "Cancelled"})

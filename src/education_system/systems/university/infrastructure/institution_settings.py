@@ -48,6 +48,14 @@ DEFAULT_INSTITUTION_SETTINGS: Dict[str, Any] = {
     # MFA recovery code format (display only, not actual format)
     "mfa_recovery_code_format": "NNNN-NNNN",
     "mfa_recovery_code_hint": "8 digits with hyphen in middle",
+
+    # Statutory identifiers (HESA / OfS / UCAS / SLC / UKVI returns). Blank
+    # until an administrator enters them; the returns refuse to build while
+    # they are blank rather than inventing a number.
+    "ukprn": "",
+    "hesa_provider_id": "",
+    "ucas_institution_code": "",
+    "sponsor_licence_number": "",
 }
 
 # Module-level settings cache
@@ -233,8 +241,53 @@ def get_mfa_recovery_format_hint() -> str:
     return get_setting("mfa_recovery_code_hint", DEFAULT_INSTITUTION_SETTINGS["mfa_recovery_code_hint"])
 
 
+STATUTORY_IDENTIFIERS = {
+    "ukprn": ("UKPRN", r"^1\d{7}$", "8 digits starting with 1 (UK Register of Learning Providers)"),
+    "hesa_provider_id": ("HESA provider identifier", r"^\d{4}$", "4 digits (HESA INSTID)"),
+    "ucas_institution_code": ("UCAS institution code", r"^[A-Z0-9]{3,5}$",
+                              "letters/digits as shown on UCAS (e.g. T20)"),
+    "sponsor_licence_number": ("Home Office sponsor licence number", r"^[A-Z0-9]{6,12}$",
+                               "as shown in the Sponsor Management System"),
+}
+
+
+def statutory_identifiers() -> Dict[str, str]:
+    """The institution's statutory identifiers ('' where not set)."""
+    settings = load_settings()
+    return {key: str(settings.get(key) or "").strip() for key in STATUTORY_IDENTIFIERS}
+
+
+def set_statutory_identifier(key: str, value: str) -> str:
+    """Validate and save one statutory identifier; returns the stored value."""
+    import re
+
+    if key not in STATUTORY_IDENTIFIERS:
+        raise ValueError(f"Unknown identifier {key!r}")
+    label, pattern, hint = STATUTORY_IDENTIFIERS[key]
+    value = str(value or "").strip().upper()
+    if value and not re.match(pattern, value):
+        raise ValueError(f"{label} must be {hint}")
+    if not save_settings({key: value}):
+        raise OSError(f"Could not save the {label}")
+    return value
+
+
+def require_statutory_identifier(key: str) -> str:
+    """The identifier, or ValueError naming what to set first."""
+    value = statutory_identifiers().get(key, "")
+    if not value:
+        label = STATUTORY_IDENTIFIERS[key][0]
+        raise ValueError(f"Set the institution's {label} first (Statutory Returns → "
+                         "Institution identifiers)")
+    return value
+
+
 __all__ = [
     "DEFAULT_INSTITUTION_SETTINGS",
+    "STATUTORY_IDENTIFIERS",
+    "statutory_identifiers",
+    "set_statutory_identifier",
+    "require_statutory_identifier",
     "load_settings",
     "get_setting",
     "save_settings",

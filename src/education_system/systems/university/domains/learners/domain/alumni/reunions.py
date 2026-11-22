@@ -21,7 +21,7 @@ def manage_existing_reunion():
         conn = get_db_connection()
         cursor = conn.cursor()
 
-        cursor.execute('SELECT * FROM alumni_reunions WHERE reunion_id = ?', (reunion_id,))
+        cursor.execute('SELECT * FROM class_reunions WHERE reunion_id = ?', (reunion_id,))
         reunion = cursor.fetchone()
 
         if not reunion:
@@ -40,29 +40,32 @@ def manage_existing_reunion():
             new_date = input("Enter new date (YYYY-MM-DD, or press Enter to skip): ")
 
             if new_location:
-                cursor.execute('UPDATE alumni_reunions SET location = ? WHERE reunion_id = ?', (new_location, reunion_id))
+                cursor.execute('UPDATE class_reunions SET location = ? WHERE reunion_id = ?', (new_location, reunion_id))
             if new_date:
-                cursor.execute('UPDATE alumni_reunions SET reunion_date = ? WHERE reunion_id = ?', (new_date, reunion_id))
+                cursor.execute('UPDATE class_reunions SET reunion_date = ? WHERE reunion_id = ?', (new_date, reunion_id))
 
             conn.commit()
             print("Reunion updated successfully!")
 
         elif choice == '2':
+            # RSVPs aren't stored; those invited are the alumni of that class.
             cursor.execute('''
-                SELECT user_id, rsvp_status
-                FROM alumni_reunion_attendees
-                WHERE reunion_id = ?
+                SELECT a.alumni_id, a.first_name, a.last_name
+                FROM alumni a
+                JOIN class_reunions r ON r.graduation_year = a.graduation_year
+                WHERE r.reunion_id = ?
+                ORDER BY a.last_name, a.first_name
             ''', (reunion_id,))
             attendees = cursor.fetchall()
 
-            print("\nAttendees:")
+            print("\nInvited (class of this reunion):")
             for attendee in attendees:
-                print(f"User ID: {attendee[0]}, RSVP: {attendee[1]}")
+                print(f"Alumni ID: {attendee[0]}, {attendee[1]} {attendee[2]}")
 
         elif choice == '3':
             confirm = input("Are you sure you want to cancel this reunion? (yes/no): ")
             if confirm.lower() == 'yes':
-                cursor.execute('UPDATE alumni_reunions SET status = "cancelled" WHERE reunion_id = ?', (reunion_id,))
+                cursor.execute("UPDATE class_reunions SET status = 'cancelled' WHERE reunion_id = ?", (reunion_id,))
                 conn.commit()
                 print("Reunion cancelled.")
 
@@ -82,9 +85,10 @@ def view_class_reunions():
         cursor = conn.cursor()
 
         cursor.execute('''
-            SELECT reunion_id, class_year, reunion_date, location, status
-            FROM alumni_reunions
-            WHERE status = 'active' OR status = 'upcoming'
+            SELECT reunion_id, graduation_year, COALESCE(reunion_date, ''), COALESCE(location, ''),
+                   COALESCE(status, 'upcoming')
+            FROM class_reunions
+            WHERE LOWER(COALESCE(status, 'upcoming')) NOT IN ('cancelled', 'completed')
             ORDER BY reunion_date ASC
         ''')
 
@@ -125,9 +129,9 @@ def manage_class_reunions():
     if choice == '1':
         create_class_reunion(cursor)
     elif choice == '2':
-        view_class_reunions(cursor)
+        view_class_reunions()
     elif choice == '3':
-        manage_existing_reunion(cursor)
+        manage_existing_reunion()
     else:
         print("Invalid choice.")
 

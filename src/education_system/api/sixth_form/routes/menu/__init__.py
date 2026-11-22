@@ -8,6 +8,7 @@ from education_system.api.sixth_form.routes.menu.academic_management_routes impo
 from education_system.api.sixth_form.routes.menu.assessment_grades_routes import assessment_grades_menu_bp
 from education_system.api.sixth_form.routes.menu.cross_system_routes import cross_system_menu_bp
 from education_system.api.sixth_form.routes.menu.finance_bursaries_routes import finance_bursaries_menu_bp
+from education_system.api.sixth_form.routes.menu.operations_routes import operations_menu_bp
 from education_system.api.sixth_form.routes.menu.pastoral_wellbeing_routes import pastoral_wellbeing_menu_bp
 from education_system.api.sixth_form.routes.menu.reports_analytics_routes import reports_analytics_menu_bp
 from education_system.api.sixth_form.routes.menu.staff_communication_routes import staff_communication_menu_bp
@@ -20,6 +21,7 @@ MENU_BLUEPRINTS = [
     assessment_grades_menu_bp,
     cross_system_menu_bp,
     finance_bursaries_menu_bp,
+    operations_menu_bp,
     pastoral_wellbeing_menu_bp,
     reports_analytics_menu_bp,
     staff_communication_menu_bp,

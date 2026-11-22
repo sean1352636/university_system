@@ -141,6 +141,16 @@ class Readiness:
             return "Check"
         return "Ready"
 
+    @property
+    def entry_label(self) -> str:
+        """"Deferred to 2028" for a gap-year entry, else ""."""
+        return self.destination.entry_label if self.destination else ""
+
+    @property
+    def route(self) -> str | None:
+        """Which choice placed the learner (Firm, Insurance, Clearing…)."""
+        return self.destination.route if self.destination else None
+
     def summary(self) -> str:
         """Human-readable reason text, blockers first. Empty when clean."""
         lines = [f"✗ {c.label}: {c.detail}" for c in self.blockers]
@@ -194,6 +204,23 @@ def _check_not_transferred(student) -> Check:
     )
 
 
+def _route_label(destination: university_handover.Destination) -> str:
+    return {
+        university_handover.ROUTE_INSURANCE: "Insurance choice",
+        university_handover.ROUTE_CLEARING: "Clearing placement",
+        university_handover.ROUTE_ADJUSTMENT: "Adjustment placement",
+        university_handover.ROUTE_EXTRA: "UCAS Extra placement",
+    }.get(destination.route or "", "Firm choice")
+
+
+#: Routes whose place was offered after results, against results already
+#: in — there is no conditional offer left to discharge.
+_PLACEMENT_ROUTES = (
+    university_handover.ROUTE_CLEARING,
+    university_handover.ROUTE_ADJUSTMENT,
+)
+
+
 def _check_destination(destination: university_handover.Destination,
                        firm: dict | None) -> Check:
     """Is *this* university the learner's confirmed destination?
@@ -204,26 +231,42 @@ def _check_destination(destination: university_handover.Destination,
     for a college with no UCAS module — but "we could not tell" is not
     the same claim as "yes", and admitting somebody is the wrong place to
     let the two blur.
+
+    ``firm`` is the choice that *placed* the learner: the Firm, or the
+    Insurance once results day confirmed it, or a Clearing / Adjustment /
+    Extra placement.
     """
+    label = _route_label(destination)
+    if destination.route == university_handover.ROUTE_UNPLACED:
+        return Check(
+            "destination", "Confirmed destination",
+            passed=False,
+            detail=(f"No confirmed place — results day recorded "
+                    f"'{destination.confirmation}' and no Clearing placement "
+                    f"is recorded"),
+        )
     if not destination.is_home:
         return Check(
             "destination", "Confirmed destination",
             passed=False,
-            detail=(f"Firm choice is {destination.institution or 'elsewhere'}"
+            detail=(f"{label} is {destination.institution or 'elsewhere'}"
                     f" — not this university"),
         )
     if firm is None:
         return Check(
             "destination", "Confirmed destination",
             passed=False,
-            detail="No Firm UCAS choice recorded, so this university is not "
-                   "a confirmed destination",
+            detail=("Insurance confirmed on results day, but no Insurance "
+                    "choice is recorded"
+                    if destination.route == university_handover.ROUTE_INSURANCE
+                    else "No Firm UCAS choice recorded, so this university "
+                         "is not a confirmed destination"),
         )
     if not university_handover.home_university_names():
         return Check(
             "destination", "Confirmed destination",
             passed=False, blocking=False,
-            detail=(f"Firm choice is {firm.get('university') or 'unnamed'}, "
+            detail=(f"{label} is {firm.get('university') or 'unnamed'}, "
                     f"but this platform has no configured institution name "
                     f"to compare it against (set "
                     f"{university_handover.HOME_UNIVERSITY_ENV})"),
@@ -231,45 +274,83 @@ def _check_destination(destination: university_handover.Destination,
     return Check(
         "destination", "Confirmed destination",
         passed=True,
-        detail=f"Firm UCAS choice: {destination.institution}",
+        detail=f"{label}: {destination.institution}",
     )
 
 
-def _check_offer(firm: dict | None) -> Check:
-    """A firm *accepted offer*, not merely a firm choice."""
+def _check_offer(firm: dict | None,
+                 destination: university_handover.Destination | None = None
+                 ) -> Check:
+    """A firm *accepted offer*, not merely a firm choice.
+
+    For a learner placed after results the accepted offer is the
+    placement itself; for one whose Firm was missed it is the Insurance
+    offer.
+    """
+    route = destination.route if destination else None
+    if firm is not None and route in _PLACEMENT_ROUTES + (
+            university_handover.ROUTE_EXTRA,):
+        placed_on = firm.get("placed_on")
+        return Check(
+            "offer", "Accepted offer", passed=True,
+            detail=(f"Placed through {route}"
+                    + (f" on {placed_on}" if placed_on else "")),
+        )
     if firm is None:
         return Check(
             "offer", "Accepted offer", passed=False,
             detail="No Firm UCAS choice, so no accepted offer",
         )
     decision = (firm.get("decision_status") or "").strip()
+    held_as = ("Insurance" if route == university_handover.ROUTE_INSURANCE
+               else "Firm")
     if decision in OFFER_DECISIONS:
         return Check(
             "offer", "Accepted offer", passed=True,
-            detail=f"{decision} accepted as Firm",
+            detail=f"{decision} accepted as {held_as}",
         )
     return Check(
         "offer", "Accepted offer", passed=False,
-        detail=(f"Firm choice decision is {decision or 'not recorded'} — "
+        detail=(f"{held_as} choice decision is {decision or 'not recorded'} — "
                 f"no offer has been made and accepted"),
     )
 
 
 def _check_conditions(firm: dict | None,
-                      application: dict | None) -> Check:
+                      application: dict | None,
+                      destination: university_handover.Destination | None = None
+                      ) -> Check:
     """Have the offer's conditions been discharged?
 
     An unconditional offer has none. A conditional one is discharged by
     the application reaching Confirmed (or Clearing) — that *is* the
     record of results day going the learner's way, and it is a fact the
     college holds rather than a grade comparison this module would have
-    to invent by parsing "AAB including Mathematics".
+    to invent by parsing "AAB including Mathematics". A results-day
+    confirmation of this very choice ("Firm confirmed" / "Insurance
+    confirmed") says the same thing, and so does a post-results
+    placement, which has no conditions left.
     """
+    route = destination.route if destination else None
+    outcome = destination.confirmation if destination else None
+    if route in _PLACEMENT_ROUTES:
+        return Check(
+            "conditions", "Offer conditions", passed=True,
+            detail=f"Placed through {route} after results — no conditions "
+                   f"outstanding",
+        )
     decision = (firm or {}).get("decision_status") or ""
     if decision == "Unconditional Offer":
         return Check(
             "conditions", "Offer conditions", passed=True,
             detail="Unconditional offer — no conditions to meet",
+        )
+    if route in (university_handover.ROUTE_FIRM,
+                 university_handover.ROUTE_INSURANCE) \
+            and outcome == f"{route} confirmed":
+        return Check(
+            "conditions", "Offer conditions", passed=True,
+            detail=f"Results day: {outcome}",
         )
     status = (application or {}).get("status") or ""
     if status in SETTLED_APPLICATION_STATUSES:
@@ -291,6 +372,61 @@ def _check_conditions(firm: dict | None,
                 f"{status.lower() or 'unset'} — conditions are not yet "
                 f"confirmed as met"),
     )
+
+
+def _check_entry_year(destination: university_handover.Destination) -> Check:
+    """Advisory: a deferred (gap year) entry is not this year's arrival.
+
+    The handover may still go — UCAS confirms a deferred place in the
+    cycle the learner applied in — but the university holds it for the
+    later year rather than converting it now, and staff should see that
+    before they press anything.
+    """
+    if destination.deferred:
+        return Check(
+            "entry_year", "Entry year", passed=False, blocking=False,
+            detail=(f"{destination.entry_label} (gap year) — the handover "
+                    f"may proceed; the university holds the place for that "
+                    f"year and does not enrol them this year"),
+        )
+    year = destination.entry_year
+    return Check(
+        "entry_year", "Entry year", passed=True,
+        detail=(f"Entry {year}" if year else "Entry year not recorded"),
+    )
+
+
+def _check_reference(record: dict[str, Any]) -> Check:
+    """Advisory: only an approved reference crosses."""
+    if record.get("reference"):
+        ref = record["reference"]
+        return Check(
+            "reference", "Reference approved", passed=True,
+            detail=(f"{ref.get('signoff_stage') or 'Submitted'} — "
+                    f"{ref.get('referee') or 'referee not named'}"),
+        )
+    note = next((a["note"] for a in record.get("handover_advisories") or []
+                 if a.get("key") == "reference"),
+                "No approved reference on record")
+    return Check("reference", "Reference approved", passed=False,
+                 blocking=False, detail=note + " — it will be reported as "
+                                               "missing")
+
+
+def _check_contextual(record: dict[str, Any]) -> Check:
+    """Informational: whether contextual flags will travel.
+
+    Always passes — the section is optional — but says which way it will
+    go, so nobody is surprised by "withheld" on the university's board.
+    """
+    if record.get("_contextual_consent") or record.get("contextual_flags"):
+        return Check("contextual", "Contextual admissions data", passed=True,
+                     detail="Consent recorded — the flags the college holds "
+                            "will be sent")
+    return Check("contextual", "Contextual admissions data", passed=True,
+                 detail=(f"Withheld — no '"
+                         f"{university_handover.CONTEXTUAL_CONSENT_PURPOSE}' "
+                         f"consent recorded"))
 
 
 def _check_results(firm: dict | None, record: dict[str, Any]) -> Check:
@@ -429,7 +565,8 @@ def assess(student, *, journey=_UNSET) -> Readiness:
     """
     student_id = getattr(student, "student_id", "?")
     try:
-        record = university_handover.build_record(student)
+        record = university_handover.build_record(
+            student, include_contextual=False)
     except Exception:
         logger.exception("Could not assemble the handover record for %s",
                          student_id)
@@ -451,10 +588,13 @@ def assess(student, *, journey=_UNSET) -> Readiness:
         _check_not_transferred(student),
         _check_not_already_here(student, journey),
         _check_destination(destination, firm),
-        _check_offer(firm),
-        _check_conditions(firm, application),
+        _check_offer(firm, destination),
+        _check_conditions(firm, application, destination),
         _check_results(firm, record),
         _check_consent(record),
+        _check_entry_year(destination),
+        _check_reference(record),
+        _check_contextual(record),
     )
     return Readiness(
         student_id=student_id,

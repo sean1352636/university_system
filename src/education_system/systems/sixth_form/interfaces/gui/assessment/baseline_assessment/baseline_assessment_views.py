@@ -6,7 +6,9 @@ from education_system.systems.sixth_form.interfaces.gui._ui import grab_when_vie
 import datetime as _dt
 import logging
 import tkinter as tk
-from tkinter import messagebox, ttk
+from tkinter import ttk
+from education_system.systems.sixth_form.interfaces.gui._sidebar import SidebarBook
+from education_system.platform.delivery.gui.parented_dialogs import messagebox
 from typing import Callable
 from education_system.platform import branding
 from education_system.systems.sixth_form.domain.assessment.baseline_assessment import (
@@ -40,7 +42,7 @@ def open_baseline_assessment_window(parent=None) -> None:
     win.geometry(WIN_GEOMETRY)
     win.minsize(*WIN_MINSIZE)
 
-    nb = ttk.Notebook(win)
+    nb = SidebarBook(win)
     nb.pack(fill="both", expand=True, padx=10, pady=10)
 
     RecordsTab(nb)
@@ -450,13 +452,23 @@ class RecordDialog:
         r += 1
         ttk.Label(form, text="Baseline grade:").grid(
             row=r, column=0, sticky="e", pady=3)
+        # Choices follow the subject's grade scale (BTEC, T Level…),
+        # then GCSE 9-1; free text is still accepted.
         self.grade_cb = ttk.Combobox(
             form,
             values=[""] + list(A_LEVEL_GRADES) + list(GCSE_GRADES),
-            width=10)
+            width=14)
         if self.existing and self.existing.baseline_grade:
             self.grade_cb.set(self.existing.baseline_grade)
         self.grade_cb.grid(row=r, column=1, sticky="w", padx=6)
+        self.subject_cb.bind("<<ComboboxSelected>>",
+                             lambda _e: self._refresh_grade_scale())
+        self.subject_cb.bind("<FocusOut>",
+                             lambda _e: self._refresh_grade_scale())
+        if self.student_cb is not None:
+            self.student_cb.bind("<<ComboboxSelected>>",
+                                 lambda _e: self._refresh_grade_scale())
+        self._refresh_grade_scale()
         self.primary_var = tk.BooleanVar(
             value=(self.existing.is_primary
                    if self.existing else False))
@@ -489,6 +501,20 @@ class RecordDialog:
                     command=self._save).pack(side="left")
         ttk.Button(bar, text="Cancel",
                     command=self.win.destroy).pack(side="left", padx=8)
+
+    def _refresh_grade_scale(self) -> None:
+        if self.existing:
+            sid = self._student_id
+        elif self.student_cb is not None and self.student_cb.current() >= 0:
+            sid = self._student_ids[self.student_cb.current()]
+        else:
+            sid = None
+        subject = self.subject_cb.get().strip() or None
+        try:
+            grades = data.grades_for(sid, subject)
+        except Exception:
+            grades = tuple(A_LEVEL_GRADES) + tuple(GCSE_GRADES)
+        self.grade_cb.configure(values=[""] + list(grades))
 
     def _collect(self) -> dict:
         if self.existing:

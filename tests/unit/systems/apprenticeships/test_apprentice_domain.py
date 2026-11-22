@@ -40,7 +40,7 @@ from education_system.systems.apprenticeships.domain.apprentices.withdrawals imp
 from education_system.systems.apprenticeships.infrastructure.persistence.repositories import (
     apprentice_repository,
 )
-from education_system.systems.apprenticeships.services import apprentice_service
+from education_system.systems.apprenticeships.application.apprentices import apprentice_service
 
 
 def _apprentice(**overrides) -> Apprentice:

@@ -10,7 +10,8 @@ from __future__ import annotations
 
 import logging
 import tkinter as tk
-from tkinter import messagebox, ttk
+from tkinter import ttk
+from education_system.platform.delivery.gui.parented_dialogs import messagebox
 from typing import Any, Callable
 from education_system.systems.sixth_form.domain.academics.subjects import subjects as data
 from education_system.systems.sixth_form.domain.academics.subjects.subjects import (
@@ -61,6 +62,12 @@ def _subject_form(
     board_var = tk.StringVar(
         value=(existing.exam_board or "") if is_edit else "")
     active_var = tk.BooleanVar(value=existing.is_active if is_edit else True)
+    qtype_var = tk.StringVar(
+        value=(existing.qualification_type or "") if is_edit else "")
+    glh_var = tk.StringVar(
+        value=("" if not is_edit or existing.guided_learning_hours is None
+               else f"{existing.guided_learning_hours:g}"))
+    aim_code_var = tk.StringVar(value=(existing.aim_code or "") if is_edit else "")
 
     def row(idx: int, label: str, widget: tk.Widget) -> None:
         ttk.Label(form, text=label).grid(
@@ -78,6 +85,17 @@ def _subject_form(
     ttk.Label(form, text="Description").grid(
         row=4, column=0, sticky="ne", padx=(0, 8), pady=4)
     description_text.grid(row=4, column=1, sticky="ew", pady=4)
+    # Learning-aim defaults. Blank qualification type = derive it from the
+    # qualification above (BTEC derives as the single award).
+    from education_system.systems.sixth_form.domain.academics.qualifications import (
+        grade_scales as _gs,
+    )
+    row(5, "Qualification type", ttk.Combobox(
+        form, textvariable=qtype_var, values=["", *_gs.QUALIFICATION_TYPES],
+        state="readonly", width=28))
+    row(6, "Guided learning hours / year", ttk.Entry(
+        form, textvariable=glh_var, width=10))
+    row(7, "Aim / QAN code", ttk.Entry(form, textvariable=aim_code_var, width=16))
     if is_edit and existing.description:
         description_text.insert("1.0", existing.description)
 
@@ -91,6 +109,9 @@ def _subject_form(
             "exam_board":    board_var.get(),
             "description":   description_text.get("1.0", "end").strip(),
             "is_active":     active_var.get(),
+            "qualification_type":    qtype_var.get(),
+            "guided_learning_hours": glh_var.get(),
+            "aim_code":              aim_code_var.get(),
         }
         try:
             saved = on_save(payload)
@@ -296,6 +317,14 @@ def open_directory(gui) -> None:
                    ).pack(side="left", padx=(12, 6))
         ttk.Button(actions_holder, text="Refresh", command=refresh
                    ).pack(side="left")
+        # Study programme tools: option blocks per year and the
+        # college-wide condition-of-funding / bands / withdrawal reports.
+        ttk.Button(actions_holder, text="Option Blocks",
+                   command=lambda: _study_programme_window(gui, "blocks")
+                   ).pack(side="left", padx=(12, 6))
+        ttk.Button(actions_holder, text="Programme Reports",
+                   command=lambda: _study_programme_window(gui, "reports")
+                   ).pack(side="left")
 
         tree.bind("<Double-1>",
                   lambda _e: (_selected() and open_profile(gui, _selected())))
@@ -346,6 +375,12 @@ def open_profile(gui, subject_id: int) -> None:
     field(4, "Created", s.created_at)
     field(5, "Students using", str(usage["students"]))
     field(6, "Courses using", str(usage["courses"]))
+    field(9, "Qualification type", s.effective_qualification_type
+          + ("" if s.qualification_type else " (from qualification)"))
+    field(10, "Guided learning h", "—" if s.guided_learning_hours is None
+          else f"{s.guided_learning_hours:g}")
+    field(11, "Aim / QAN code", s.aim_code or "—")
+    field(12, "Learning aims", str(usage.get("aims", 0)))
     if s.description:
         ttk.Separator(grid, orient="horizontal").grid(
             row=7, column=0, columnspan=2, sticky="ew", pady=(10, 6))
@@ -375,6 +410,16 @@ def open_profile(gui, subject_id: int) -> None:
     ttk.Button(actions, text="Back to Subjects",
                command=lambda: open_directory(gui)).pack(side="left")
     gui.status_var.set(f"Viewing subject #{subject_id}")
+
+
+def _study_programme_window(gui, which: str) -> None:
+    from education_system.systems.sixth_form.interfaces.gui.academics.qualifications import (
+        study_programme_views,
+    )
+    if which == "blocks":
+        study_programme_views.open_option_blocks(gui.root)
+    else:
+        study_programme_views.open_programme_reports(gui.root)
 
 
 def _toggle_and_refresh(gui, subject_id: int, activate: bool) -> None:

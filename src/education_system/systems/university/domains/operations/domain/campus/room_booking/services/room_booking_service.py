@@ -114,6 +114,24 @@ class RoomBookingService:
             row = conn.execute(sql, params).fetchone()
         return row["booking_id"] if row else None
 
+    def _timetable_clash(self, room_id: int, start: str, end: str) -> str | None:
+        """A timetabled teaching session in the room at that time, or None.
+
+        Bookings and the teaching timetable used to be checked only against
+        themselves, so an exam could be booked over a lecture. The dated
+        sessions (term dates, holidays, cancellations and moves applied) come
+        from the shared rule in ``application/teaching/occurrences``.
+        """
+        from education_system.systems.university.application.teaching import (
+            occurrences as timetable_occurrences,
+        )
+        try:
+            with self._connect() as conn:
+                return timetable_occurrences.timetable_clash_for_booking(conn, room_id, start, end)
+        except Exception as exc:  # a schema problem must not block bookings
+            logger.warning("timetable check for room %s unavailable: %s", room_id, exc)
+            return None
+
     # ------------------------------------------------------------------
     # CRUD
     # ------------------------------------------------------------------
@@ -139,6 +157,9 @@ class RoomBookingService:
         clash = self._check_clash(room_id, start, end)
         if clash is not None:
             raise RoomBookingError(f"clash with booking #{clash}")
+        session = self._timetable_clash(room_id, start, end)
+        if session:
+            raise RoomBookingError(f"clash with timetabled session {session}")
 
         with self._connect() as conn:
             cur = conn.execute(
@@ -173,6 +194,9 @@ class RoomBookingService:
         clash = self._check_clash(row["room_id"], start, end, ignore_booking_id=booking_id)
         if clash is not None:
             raise RoomBookingError(f"clash with booking #{clash}")
+        session = self._timetable_clash(row["room_id"], start, end)
+        if session:
+            raise RoomBookingError(f"clash with timetabled session {session}")
 
         with self._connect() as conn:
             conn.execute(

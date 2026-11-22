@@ -575,14 +575,14 @@ class TestInterfaceWiring:
     """The features are only worth having if a user can reach them."""
 
     def test_attendance_menu_offers_the_register_tools(self):
-        from education_system.systems.sixth_form.domain.academics.attendance import (
+        from education_system.systems.sixth_form.interfaces.cli.academics.attendance import (
             attendance_cli,
         )
         labels = [label for label, _ in attendance_cli._MENU]
         assert any("Register Tools" in label for label in labels)
 
     def test_register_cli_covers_every_feature(self):
-        from education_system.systems.sixth_form.domain.academics.attendance import (
+        from education_system.systems.sixth_form.interfaces.cli.academics.attendance import (
             attendance_register_cli,
         )
         labels = [label for label, _ in attendance_register_cli._MENU]
@@ -594,7 +594,7 @@ class TestInterfaceWiring:
             assert expected in labels
 
     def test_gui_exposes_the_lifecycle_tabs(self):
-        from education_system.systems.sixth_form.domain.academics.attendance import (
+        from education_system.systems.sixth_form.interfaces.gui.academics.attendance import (
             attendance_register_views as views,
         )
         assert callable(views.build_sessions_tab)
@@ -606,7 +606,7 @@ class TestInterfaceWiring:
         import ast
         import inspect
 
-        from education_system.systems.sixth_form.domain.academics.attendance import (
+        from education_system.systems.sixth_form.interfaces.gui.academics.attendance import (
             attendance_register_views as views,
         )
         tree = ast.parse(inspect.getsource(views))

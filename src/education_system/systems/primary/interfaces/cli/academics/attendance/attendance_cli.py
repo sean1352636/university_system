@@ -235,7 +235,7 @@ def _delete_record() -> None:
         print("  Could not delete.")
 
 
-_DISPATCH = {"Attendance": open_attendance}
+_DISPATCH = {"Attendance": open_attendance, "Attendance Register": open_attendance}
 
 
 def dispatch(label: str) -> bool:

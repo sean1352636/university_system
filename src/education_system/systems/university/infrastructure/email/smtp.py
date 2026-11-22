@@ -35,6 +35,8 @@ _HTML_BODY_RE = re.compile(
     re.IGNORECASE,
 )
 
+_FULL_DOCUMENT_RE = re.compile(r'^\s*(?:<!doctype\s+html|<html\b)', re.IGNORECASE)
+
 _BLOCK_BREAK_RE = re.compile(
     r'</(?:p|div|tr|h[1-6]|li|ul|ol|table|thead|tbody)\s*>|<br\s*/?>', re.IGNORECASE)
 _CELL_BREAK_RE = re.compile(r'</(?:td|th)\s*>', re.IGNORECASE)
@@ -81,6 +83,19 @@ def _text_part(text: str, subtype: str) -> MIMEText:
     return MIMEText(text, subtype, 'utf-8')
 
 
+def _branded(make, styled):
+    """``make(html_layout)``, or ``None`` when the design is off or fails.
+    A problem in the design must never stop an e-mail going out."""
+    try:
+        from education_system.systems.university.infrastructure.email import html_layout
+        if styled is None and not html_layout.enabled():
+            return None
+        return make(html_layout)
+    except Exception:
+        logger.warning("Branded e-mail layout failed; sending plain text", exc_info=True)
+        return None
+
+
 def build_message(
     subject: str,
     body: str,
@@ -89,24 +104,61 @@ def build_message(
     cc: Optional[str] = None,
     bcc: Optional[str] = None,
     html_body: Optional[str] = None,
+    reply_to: Optional[str] = None,
+    styled: Optional[bool] = None,
 ) -> MIMEMultipart:
     """Assemble the outgoing message, using multipart/alternative for HTML.
+
+    A plain-text body is sent with a branded HTML version beside it (see
+    ``html_layout``), and an HTML fragment is framed the same way; a full HTML
+    document is sent as written. ``styled`` forces the choice; ``None`` follows
+    the ``html_layout`` e-mail setting.
 
     ``html_body`` may be passed explicitly; otherwise an HTML-looking ``body``
     is detected and paired with a generated plain-text alternative. Callers
     that already have both (a template's body_text plus body_html) should pass
     ``body`` as the text and ``html_body`` as the markup.
     """
+    logo = None
     if html_body is None and body_is_html(body):
         html_body = body
         body = html_to_plain_text(body)
+        if styled is not False and not _FULL_DOCUMENT_RE.match(html_body):
+            fragment = html_body
+            branded = _branded(lambda layout: layout.email_html(subject, fragment, True, body),
+                               styled)
+            if branded:
+                html_body, logo = branded
+    elif html_body is None and body and styled is not False:
+        # Plain text gets the branded HTML version beside it; the text part
+        # below is the original, unchanged.
+        branded = _branded(lambda layout: layout.email_html(subject, body), styled)
+        if branded:
+            html_body, logo = branded
 
     if html_body is not None:
         msg = MIMEMultipart('alternative')
         # Order matters: least-preferred part first, so clients that can
         # render HTML pick the last one.
         msg.attach(_text_part(body or '', 'plain'))
-        msg.attach(_text_part(html_body, 'html'))
+        if logo:
+            # The header logo travels with the page (multipart/related) and is
+            # shown by Content-ID, so mail clients that block remote images
+            # still show it.
+            from email.mime.image import MIMEImage
+            from education_system.systems.university.infrastructure.email.html_layout import (
+                LOGO_CID,
+            )
+            related = MIMEMultipart('related')
+            related.attach(_text_part(html_body, 'html'))
+            image = MIMEImage(logo['data'], logo['subtype'])
+            image.add_header('Content-ID', f'<{LOGO_CID}>')
+            image.add_header('Content-Disposition', 'inline',
+                             filename=f"logo.{'jpg' if logo['subtype'] == 'jpeg' else logo['subtype']}")
+            related.attach(image)
+            msg.attach(related)
+        else:
+            msg.attach(_text_part(html_body, 'html'))
     else:
         msg = MIMEMultipart()
         msg.attach(_text_part(body or '', 'plain'))
@@ -118,6 +170,8 @@ def build_message(
         msg['Cc'] = cc
     if bcc:
         msg['Bcc'] = bcc
+    if reply_to:
+        msg['Reply-To'] = reply_to
     return msg
 
 
@@ -226,79 +280,95 @@ class SMTPClient:
             True if email was sent successfully, False otherwise
         """
         try:
-            # Validate all header fields against CRLF injection
-            self._validate_email_header(recipient_email)
-            self._validate_email_header(subject)
-            if cc:
-                self._validate_email_header(cc)
-            if bcc:
-                self._validate_email_header(bcc)
-
-            msg = build_message(
-                subject=subject,
-                body=body,
-                from_header=f"{self.config.sender_name} <{self.config.sender_email}>",
-                to_header=recipient_email,
-                cc=cc,
-                bcc=bcc,
-                html_body=html_body,
-            )
-
-            if attachments:
-                # Attachments are siblings of the *whole* body, so a
-                # multipart/alternative body has to be nested inside a
-                # multipart/mixed wrapper rather than gaining a file part —
-                # otherwise clients treat the attachment as another
-                # representation of the message and show only one of them.
-                if msg.get_content_subtype() == 'alternative':
-                    wrapper = MIMEMultipart('mixed')
-                    for header in ('From', 'To', 'Subject', 'Cc', 'Bcc'):
-                        if msg[header]:
-                            wrapper[header] = msg[header]
-                            del msg[header]
-                    wrapper.attach(msg)
-                    msg = wrapper
-
-                for file_path in attachments.split(','):
-                    file_path = file_path.strip()
-                    if not file_path or not os.path.isfile(file_path):
-                        raise AttachmentError(
-                            f"Attachment does not exist or is not a file: {file_path}",
-                            code="EMAIL_ATTACHMENT_NOT_FOUND",
-                            details={"path": file_path},
-                        )
-                    if os.path.getsize(file_path) > config.get('attachment_size_limit', 10 * 1024 * 1024):
-                        raise AttachmentError(
-                            f"Attachment exceeds the configured size limit: {file_path}",
-                            code="EMAIL_ATTACHMENT_TOO_LARGE",
-                            details={"path": file_path},
-                        )
-                    with open(file_path, 'rb') as file:
-                        part = MIMEApplication(file.read(), Name=os.path.basename(file_path))
-                        part['Content-Disposition'] = f'attachment; filename="{os.path.basename(file_path)}"'
-                        msg.attach(part)
-
-            all_recipients = [recipient_email]
-            if cc:
-                all_recipients.extend(cc.split(','))
-            if bcc:
-                all_recipients.extend(bcc.split(','))
-
-            context = ssl.create_default_context()
-            with smtplib.SMTP(self.config.smtp_server, self.config.smtp_port) as server:
-                # Always use TLS when available (STARTTLS on port 587)
-                if self.config.use_tls or self.config.smtp_port in (587, 465):
-                    server.starttls(context=context)
-                if self.config.use_authentication and self.config.username and self.config.password:
-                    server.login(self.config.username, self.config.password)
-                server.sendmail(self.config.sender_email, all_recipients, msg.as_string())
-
-            logger.info("Email sent successfully to %s", recipient_email)
+            self.send_or_raise(recipient_email, subject, body, cc, bcc, attachments, html_body)
             return True
-
         except Exception as e:
             logger.error("SMTP send failed: %s", e)
             return False
+
+    def send_or_raise(
+        self,
+        recipient_email: str,
+        subject: str,
+        body: str,
+        cc: Optional[str] = None,
+        bcc: Optional[str] = None,
+        attachments: Optional[str] = None,
+        html_body: Optional[str] = None,
+        reply_to: Optional[str] = None,
+    ) -> None:
+        """:meth:`send`, raising the SMTP error instead of returning False, so
+        the outbox can tell a refused address from a temporary failure."""
+        # Validate all header fields against CRLF injection
+        self._validate_email_header(recipient_email)
+        self._validate_email_header(subject)
+        if cc:
+            self._validate_email_header(cc)
+        if bcc:
+            self._validate_email_header(bcc)
+        if reply_to:
+            self._validate_email_header(reply_to)
+
+        msg = build_message(
+            subject=subject,
+            body=body,
+            from_header=f"{self.config.sender_name} <{self.config.sender_email}>",
+            to_header=recipient_email,
+            cc=cc,
+            html_body=html_body,
+            reply_to=reply_to,
+        )
+
+        if attachments:
+            # Attachments are siblings of the *whole* body, so a
+            # multipart/alternative body has to be nested inside a
+            # multipart/mixed wrapper rather than gaining a file part —
+            # otherwise clients treat the attachment as another
+            # representation of the message and show only one of them.
+            if msg.get_content_subtype() == 'alternative':
+                wrapper = MIMEMultipart('mixed')
+                for header in ('From', 'To', 'Subject', 'Cc', 'Bcc', 'Reply-To'):
+                    if msg[header]:
+                        wrapper[header] = msg[header]
+                        del msg[header]
+                wrapper.attach(msg)
+                msg = wrapper
+
+            for file_path in attachments.split(','):
+                file_path = file_path.strip()
+                if not file_path or not os.path.isfile(file_path):
+                    raise AttachmentError(
+                        f"Attachment does not exist or is not a file: {file_path}",
+                        code="EMAIL_ATTACHMENT_NOT_FOUND",
+                        details={"path": file_path},
+                    )
+                if os.path.getsize(file_path) > config.get('attachment_size_limit', 10 * 1024 * 1024):
+                    raise AttachmentError(
+                        f"Attachment exceeds the configured size limit: {file_path}",
+                        code="EMAIL_ATTACHMENT_TOO_LARGE",
+                        details={"path": file_path},
+                    )
+                with open(file_path, 'rb') as file:
+                    part = MIMEApplication(file.read(), Name=os.path.basename(file_path))
+                    part['Content-Disposition'] = f'attachment; filename="{os.path.basename(file_path)}"'
+                    msg.attach(part)
+
+        all_recipients = [recipient_email]
+        if cc:
+            all_recipients.extend(cc.split(','))
+        if bcc:
+            all_recipients.extend(bcc.split(','))
+
+        context = ssl.create_default_context()
+        with smtplib.SMTP(self.config.smtp_server, self.config.smtp_port) as server:
+            # Always use TLS when available (STARTTLS on port 587)
+            if self.config.use_tls or self.config.smtp_port in (587, 465):
+                server.starttls(context=context)
+            if self.config.use_authentication and self.config.username and self.config.password:
+                server.login(self.config.username, self.config.password)
+            server.sendmail(self.config.sender_email, all_recipients, msg.as_string())
+
+        logger.info("Email sent successfully to %s", recipient_email)
 
 
 class EmailService:
@@ -379,58 +449,13 @@ class EmailService:
 
 # Backward compatibility function that uses deferred imports
 def send_email_via_smtp(recipient_email, subject, body, cc, bcc, attachments, current_time):
-    """Send via SMTP and log result.
-
-    This function maintains backward compatibility with existing code while
-    using the new SMTPClient class internally. Database logging functions
-    are imported at call time to avoid circular dependencies.
-    """
-    # Deferred imports to avoid circular dependencies
-    from education_system.systems.university.infrastructure.email.email_service import get_appropriate_sender_id, safe_log_email
-    from education_system.systems.university.infrastructure.email.reports import log_email_metrics
-
-    # Use the new SMTPClient
-    client = SMTPClient()
-    result = client.send(recipient_email, subject, body, cc, bcc, attachments)
-
-    # The wire gets the HTML; the in-app inbox is a plain text widget, so store
-    # the readable rendering rather than the markup.
-    stored_body = html_to_plain_text(body) if body_is_html(body) else body
-
-    if result:
-        try:
-            def _log_and_inbox(cursor):
-                cursor.execute("SELECT id FROM users WHERE email = ?", (recipient_email,))
-                recipient_user = cursor.fetchone()
-                if recipient_user:
-                    recipient_id = recipient_user[0]
-                    sender_id = get_appropriate_sender_id(
-                        cursor,
-                        config['sender_email'],
-                        config['sender_name'],
-                        current_time,
-                    )
-
-                    cursor.execute('''
-                    INSERT INTO messages (
-                        sender_id, recipient_id, subject, message, content,
-                        attachment_path, is_read, sent_at
-                    )
-                    VALUES (?, ?, ?, ?, ?, ?, 0, ?)
-                    ''', (sender_id, recipient_id, subject, stored_body, stored_body,
-                          attachments, current_time))
-
-                safe_log_email(cursor, recipient_email, subject, current_time, 'sent',
-                               sender_email=config['sender_email'], sender_name=config['sender_name'],
-                               cc_recipients=cc, bcc_recipients=bcc, attachment_info=attachments)
-
-            execute_db_operation(_log_and_inbox)
-            log_email_metrics('sent')
-        except Exception as e:
-            logger.warning("Failed to log email after successful send: %s", e)
-
-        return True
-    else:
-        log_email_metrics('failed')
-        log_event('error', f"SMTP send failed for {recipient_email}")
+    """Kept for old callers: the message goes to the university outbox,
+    which sends it according to the delivery mode, with retries."""
+    from education_system.systems.university.infrastructure.email import outbox_delivery
+    try:
+        result = outbox_delivery.enqueue(recipient_email, subject, body, cc=cc, bcc=bcc,
+                                         attachments=attachments)
+    except Exception as exc:
+        log_event('error', f"E-mail to {recipient_email} not added to the outbox: {exc}")
         return False
+    return result["status"] in ("queued", "stored")

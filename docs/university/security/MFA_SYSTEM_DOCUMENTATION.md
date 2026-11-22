@@ -108,7 +108,7 @@ mfa_recovery_codes      → Backup recovery codes
 ### Component Structure
 
 ```
-university_system/infrastructure/auth/
+src/education_system/systems/university/infrastructure/auth/
 ├── mfa_service.py           # Core MFA service logic
 ├── mfa_gui.py              # GUI components (setup/verification)
 ├── mfa_admin_gui.py        # Admin management panel
@@ -116,8 +116,8 @@ university_system/infrastructure/auth/
 ├── sms_provider.py         # SMS OTP delivery
 └── email_otp_service.py    # Email OTP delivery
 
-university_system/infrastructure/database/migrations/
-└── add_mfa_system.py       # Database migration script
+src/education_system/migrations/versions/
+└── 877b10b0175b_baseline.py  # Alembic baseline (creates the MFA tables)
 ```
 
 ---
@@ -146,18 +146,18 @@ pip install -r requirements.lock
 ### 2. Run Database Migration
 
 ```bash
-python3 university_system/infrastructure/database/migrations/add_mfa_system.py
+python -m alembic -c src/education_system/alembic.ini upgrade head
 ```
 
-This creates all necessary MFA tables and populates default enforcement policies.
+This creates all necessary MFA tables. The launcher also applies pending migrations at startup.
 
 ### 3. Verify Installation
 
 ```bash
-python3 test_mfa_simple.py
+pytest tests/unit/systems/university/infrastructure/auth/test_mfa_service.py -v --timeout=60
 ```
 
-You should see all checks passing with ✓ marks.
+You should see all checks passing.
 
 ---
 
@@ -207,7 +207,7 @@ You should see all checks passing with ✓ marks.
 
 ```python
 # Show MFA admin panel
-from university_system.infrastructure.auth.mfa_admin_gui import show_mfa_admin
+from education_system.systems.university.infrastructure.auth.mfa_admin_gui import show_mfa_admin
 
 show_mfa_admin(parent_window, admin_user_id=1)
 ```
@@ -221,7 +221,7 @@ show_mfa_admin(parent_window, admin_user_id=1)
 #### View Active Methods
 
 ```python
-from university_system.infrastructure.auth.mfa_service import MFAService
+from education_system.systems.university.infrastructure.auth.mfa_service import MFAService
 
 service = MFAService()
 methods = service.get_user_mfa_methods(user_id)
@@ -287,7 +287,7 @@ service.revoke_trusted_device(user_id, device_id)
 ### Accessing Admin Panel
 
 ```python
-from university_system.infrastructure.auth.mfa_admin_gui import show_mfa_admin
+from education_system.systems.university.infrastructure.auth.mfa_admin_gui import show_mfa_admin
 import tkinter as tk
 
 root = tk.Tk()
@@ -449,7 +449,7 @@ for user_id, count in cursor.fetchall():
 #### Basic Integration
 
 ```python
-from university_system.infrastructure.auth.mfa_integration import integrate_mfa_check
+from education_system.systems.university.infrastructure.auth.mfa_integration import integrate_mfa_check
 
 class UserAuth:
     def login(self, username, password):
@@ -499,7 +499,7 @@ class UserAuth:
 #### GUI Integration
 
 ```python
-from university_system.infrastructure.auth.mfa_integration import (
+from education_system.systems.university.infrastructure.auth.mfa_integration import (
     show_mfa_for_login,
     show_mfa_setup_for_login
 )
@@ -683,7 +683,7 @@ result = service.check_mfa_required(user_id, role)
 
 ### SMS Provider Configuration
 
-Create `university_system/config/sms_config.json`:
+Create `var/data/university/config/sms_config.json`:
 
 ```json
 {
@@ -708,7 +708,7 @@ export TWILIO_PHONE_NUMBER="+1234567890"
 
 ### Email Provider Configuration
 
-Create `university_system/config/email_config.json`:
+Create `var/data/platform/config/email_config.json`:
 
 ```json
 {
@@ -875,7 +875,7 @@ conn.commit()
 ```bash
 # Check database path
 # Run migration manually
-python3 university_system/infrastructure/database/migrations/add_mfa_system.py /path/to/database.db
+python -m alembic -c src/education_system/alembic.ini upgrade head
 
 # Check for errors in output
 ```

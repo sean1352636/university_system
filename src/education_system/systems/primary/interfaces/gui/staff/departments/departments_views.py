@@ -21,9 +21,7 @@ from education_system.systems.primary.domain.staff.departments.departments impor
     STATUSES,
     ValidationError,
 )
-from education_system.systems.primary.domain.staff import (
-    staff as staff_data,
-)
+from education_system.systems.primary.interfaces.gui import kit
 
 logger = logging.getLogger(__name__)
 
@@ -41,14 +39,26 @@ _STATUS_TAGS = {
 
 def open_departments_window(parent=None) -> None:
     data.init_db()
-    master = getattr(parent, "root", parent)
-    win = tk.Toplevel(master) if master is not None else tk.Tk()
-    win.title(f"Departments — {branding.SYSTEM_NAME}")
-    win.geometry(WIN_GEOMETRY)
-    win.minsize(*WIN_MINSIZE)
+    if parent is None:
+        # Run on its own (no main window): a standalone window as before.
+        win = tk.Tk()
+        win.title(f"Departments — {branding.SYSTEM_NAME}")
+        win.geometry(WIN_GEOMETRY)
+        win.minsize(*WIN_MINSIZE)
+        frame = ttk.Frame(win, padding=10)
+        frame.pack(fill="both", expand=True)
+        _draw_departments(frame, None)
+        return
+    kit.show_page(parent, "Departments",
+                  lambda page: _draw_departments(page, parent))
 
-    nb = ttk.Notebook(win)
-    nb.pack(fill="both", expand=True, padx=10, pady=10)
+
+def _draw_departments(parent, host) -> None:
+    kit.page_heading(parent, "Departments",
+                     "Departments and faculties: heads, budgets and "
+                     "staff memberships.")
+    nb = ttk.Notebook(parent)
+    nb.pack(fill="both", expand=True)
 
     DepartmentsTab(nb, scope="active",      label="Active")
     DepartmentsTab(nb, scope="over_budget", label="Over Budget")
@@ -57,26 +67,39 @@ def open_departments_window(parent=None) -> None:
     SummaryTab(nb)
 
 
-def _staff_options() -> list[tuple[str | None, str]]:
-    rows = sorted(staff_data.list_staff(),
-                   key=lambda s: s.staff_id)
-    opts: list[tuple[str | None, str]] = [(None, "(none)")]
-    for s in rows:
-        full = f"{getattr(s, 'first_name', '')} " \
-               f"{getattr(s, 'last_name', '')}".strip()
-        opts.append((s.staff_id,
-                       f"{s.staff_id} — {full}"))
-    return opts
+def _subject_code_choices() -> list[tuple[str, str]]:
+    try:
+        from education_system.systems.primary.domain.academics.subjects import (
+            subjects,
+        )
+        return [(s.code, f"{s.name} ({s.code})") for s in subjects.list_all()
+                if s.code]
+    except Exception:  # noqa: BLE001 - an empty list beats a broken form
+        logger.exception("subject list for departments failed")
+        return []
 
 
-def _staff_options_required() -> list[tuple[str, str]]:
-    rows = sorted(staff_data.list_staff(),
-                   key=lambda s: s.staff_id)
-    return [(s.staff_id,
-             f"{s.staff_id} — "
-             f"{getattr(s, 'first_name', '')} "
-             f"{getattr(s, 'last_name', '')}".strip())
-            for s in rows]
+def _pick_subject_codes(owner, var: tk.StringVar) -> None:
+    """Tick subjects from the list; writes them comma-separated into
+    *var* (the format the Subjects field has always held)."""
+    current = [c.strip() for c in var.get().split(",") if c.strip()]
+    choices = _subject_code_choices()
+    known = {v for v, _l in choices}
+    choices += [(c, c) for c in current if c not in known]
+    win, frm = kit.dialog(owner, "Subjects")
+    win.transient(owner.winfo_toplevel()); win.after_idle(win.grab_set)
+    picker = kit.MultiPicker(frm, choices, selected=current, height=12)
+    picker.pack(fill="both", expand=True)
+
+    def ok() -> None:
+        var.set(", ".join(picker.get()))
+        win.destroy()
+
+    bar = ttk.Frame(frm)
+    bar.pack(fill="x", pady=(8, 0))
+    ttk.Button(bar, text="OK", command=ok).pack(side="right", padx=4)
+    ttk.Button(bar, text="Cancel", command=win.destroy).pack(side="right")
+    win.wait_window()
 
 
 # ── Departments tab ─────────────────────────────────────
@@ -101,16 +124,14 @@ class DepartmentsTab:
         bar = ttk.Frame(self.top)
         bar.pack(fill="x", pady=(0, 4))
         ttk.Label(bar, text="Faculty:").pack(side="left")
-        self.f_fac = ttk.Combobox(bar, values=("",) + FACULTIES,
-                                    state="readonly", width=22)
-        self.f_fac.current(0)
+        self.f_fac = kit.ChoiceField(bar, tk.StringVar(), choices=FACULTIES,
+                                     blank=True, width=22)
         self.f_fac.pack(side="left", padx=(2, 8))
         if self.scope == "all":
             ttk.Label(bar, text="Status:").pack(side="left")
-            self.f_status = ttk.Combobox(bar,
-                                           values=("",) + STATUSES,
-                                           state="readonly", width=14)
-            self.f_status.current(0)
+            self.f_status = kit.ChoiceField(bar, tk.StringVar(),
+                                            choices=STATUSES, blank=True,
+                                            width=14)
             self.f_status.pack(side="left", padx=(2, 8))
         else:
             self.f_status = None
@@ -313,7 +334,10 @@ class DepartmentsTab:
         d = self._selected()
         if not d:
             return
-        amt = _prompt_text(self.frame, "Amount (£)")
+        amt = _prompt_value(
+            self.frame, "Amount (£)",
+            make=lambda m, v: kit.NumberField(m, v, increment=0.01,
+                                              to=999999, width=12))
         if not amt:
             return
         try:
@@ -365,8 +389,9 @@ class DepartmentsTab:
         m = self._selected_member()
         if not m:
             return
-        when = _prompt_text(self.frame, "Left on (YYYY-MM-DD)",
-                              initial=_dt.date.today().isoformat())
+        when = _prompt_value(self.frame, "Left on",
+                             initial=_dt.date.today().isoformat(),
+                             make=lambda m, v: kit.DateField(m, v))
         if not when:
             return
         try:
@@ -399,10 +424,10 @@ class PerStaffTab:
         bar = ttk.Frame(self.frame)
         bar.pack(fill="x", padx=8, pady=(8, 4))
         ttk.Label(bar, text="Staff:").pack(side="left")
-        self.combo = ttk.Combobox(bar, state="readonly", width=42)
-        opts = _staff_options_required()
-        self._opts = opts
-        self.combo["values"] = [lbl for _, lbl in opts]
+        self.staff_var = tk.StringVar()
+        self.combo = kit.StaffPicker(bar, self.staff_var, active_only=False,
+                                     width=42)
+        self.combo.bind_change(lambda _v: self._show())
         self.combo.pack(side="left", padx=(2, 8))
         ttk.Button(bar, text="Show",
                     command=self._show).pack(side="left")
@@ -413,10 +438,9 @@ class PerStaffTab:
         self.text.config(state="disabled")
 
     def _show(self) -> None:
-        idx = self.combo.current()
-        if idx < 0:
+        sid = self.staff_var.get().strip()
+        if not sid:
             return
-        sid = self._opts[idx][0]
         rows = data.memberships_for_staff(sid)
         self.text.config(state="normal")
         self.text.delete("1.0", "end")
@@ -489,19 +513,18 @@ class DepartmentEditor:
                  department: Department | None = None) -> None:
         self.department = department
         self.result: Department | None = None
-        self.win = tk.Toplevel(parent)
+        self.win = tk.Toplevel(parent.winfo_toplevel())
         self.win.title(f"Edit dept #{department.department_id}"
                           if department else "New department")
-        self.win.geometry("820x780")
-        self.win.transient(parent); self.win.after_idle(self.win.grab_set)
+        self.win.geometry("900x680")
+        self.win.transient(parent.winfo_toplevel()); self.win.after_idle(self.win.grab_set)
         self._build()
         if department:
             self._load()
         self.win.wait_window()
 
     def _build(self) -> None:
-        body = ttk.Frame(self.win)
-        body.pack(fill="both", expand=True, padx=12, pady=10)
+        body, footer = kit.scrolled_form(self.win)
         body.grid_columnconfigure(1, weight=1)
         body.grid_columnconfigure(3, weight=1)
         self.vars: dict[str, tk.Variable] = {}
@@ -520,9 +543,17 @@ class DepartmentEditor:
                 row=row, column=col, sticky="w", padx=4, pady=2)
             v = tk.StringVar()
             self.vars[key] = v
-            ttk.Combobox(body, textvariable=v, values=values,
-                          state="readonly", width=width).grid(
-                row=row, column=col + 1, sticky="ew", padx=4, pady=2)
+            kit.ChoiceField(body, v, choices=values, width=width).grid(
+                row=row, column=col + 1, sticky="w", padx=4, pady=2)
+
+        def money(row, col, label, key):
+            ttk.Label(body, text=label).grid(
+                row=row, column=col, sticky="w", padx=4, pady=2)
+            v = tk.StringVar()
+            self.vars[key] = v
+            kit.NumberField(body, v, increment=0.01, to=9999999,
+                            width=12).grid(
+                row=row, column=col + 1, sticky="w", padx=4, pady=2)
 
         entry(0, 0, "Name*", "name", width=48)
         entry(1, 0, "Code", "code")
@@ -530,31 +561,34 @@ class DepartmentEditor:
 
         ttk.Label(body, text="Head of Dept").grid(
             row=2, column=0, sticky="w", padx=4, pady=2)
-        self.hod_combo = ttk.Combobox(body, state="readonly",
-                                          width=42)
-        opts = _staff_options()
-        self._staff_opts = opts
-        self.hod_combo["values"] = [lbl for _, lbl in opts]
-        self.hod_combo.current(0)
-        self.hod_combo.grid(row=2, column=1, sticky="ew",
-                                padx=4, pady=2)
+        self.hod_var = tk.StringVar()
+        kit.StaffPicker(body, self.hod_var, active_only=False,
+                        width=30).grid(row=2, column=1, sticky="w",
+                                       padx=4, pady=2)
 
         ttk.Label(body, text="Deputy Head").grid(
             row=2, column=2, sticky="w", padx=4, pady=2)
-        self.deputy_combo = ttk.Combobox(body, state="readonly",
-                                              width=42)
-        self.deputy_combo["values"] = [lbl for _, lbl in opts]
-        self.deputy_combo.current(0)
-        self.deputy_combo.grid(row=2, column=3, sticky="ew",
-                                    padx=4, pady=2)
+        self.deputy_var = tk.StringVar()
+        kit.StaffPicker(body, self.deputy_var, active_only=False,
+                        width=30).grid(row=2, column=3, sticky="w",
+                                       padx=4, pady=2)
 
         entry(3, 0, "Location", "location")
         combo(3, 2, "Status*", "status", STATUSES)
-        entry(4, 0, "Budget year", "budget_year")
-        entry(4, 2, "Budget total (£)", "budget_total")
-        entry(5, 0, "Budget allocated (£)", "budget_allocated")
-        entry(5, 2, "Budget spent (£)", "budget_spent")
+        ttk.Label(body, text="Budget year").grid(
+            row=4, column=0, sticky="w", padx=4, pady=2)
+        self.vars["budget_year"] = tk.StringVar()
+        kit.AcademicYearPicker(body, self.vars["budget_year"],
+                               blank=True).grid(
+            row=4, column=1, sticky="w", padx=4, pady=2)
+        money(4, 2, "Budget total (£)", "budget_total")
+        money(5, 0, "Budget allocated (£)", "budget_allocated")
+        money(5, 2, "Budget spent (£)", "budget_spent")
         entry(6, 0, "Subjects", "subject_codes", width=48)
+        ttk.Button(body, text="Pick…",
+                   command=lambda: _pick_subject_codes(
+                       self.win, self.vars["subject_codes"])).grid(
+            row=6, column=2, sticky="w", padx=4, pady=2)
 
         row = 7
         for key, label in (
@@ -570,8 +604,7 @@ class DepartmentEditor:
             self.texts[key] = t
             row += 1
 
-        bar = ttk.Frame(self.win)
-        bar.pack(fill="x", padx=12, pady=(0, 10))
+        bar = footer
         ttk.Button(bar, text="Save",
                     command=self._save).pack(side="right", padx=4)
         ttk.Button(bar, text="Cancel",
@@ -595,23 +628,16 @@ class DepartmentEditor:
         self.vars["budget_spent"].set(
             str(d.budget_spent)
             if d.budget_spent is not None else "")
-        for i, (sid, _) in enumerate(self._staff_opts):
-            if sid == d.head_of_department:
-                self.hod_combo.current(i)
-            if sid == d.deputy_head:
-                self.deputy_combo.current(i)
+        self.hod_var.set(d.head_of_department or "")
+        self.deputy_var.set(d.deputy_head or "")
         for k in self.texts:
             self.texts[k].delete("1.0", "end")
             self.texts[k].insert("1.0", getattr(d, k) or "")
 
     def _save(self) -> None:
-        hidx = self.hod_combo.current()
-        didx = self.deputy_combo.current()
         payload: dict = {
-            "head_of_department":
-                self._staff_opts[hidx][0] if hidx >= 0 else None,
-            "deputy_head":
-                self._staff_opts[didx][0] if didx >= 0 else None,
+            "head_of_department": self.hod_var.get().strip() or None,
+            "deputy_head": self.deputy_var.get().strip() or None,
         }
         for k, v in self.vars.items():
             payload[k] = v.get().strip()
@@ -637,29 +663,25 @@ class MembershipEditor:
         self.department_id = department_id
         self.membership = membership
         self.result: Membership | None = None
-        self.win = tk.Toplevel(parent)
+        self.win = tk.Toplevel(parent.winfo_toplevel())
         self.win.title(f"Edit membership #{membership.membership_id}"
                           if membership else "New membership")
-        self.win.geometry("560x500")
-        self.win.transient(parent); self.win.after_idle(self.win.grab_set)
+        self.win.geometry("620x500")
+        self.win.transient(parent.winfo_toplevel()); self.win.after_idle(self.win.grab_set)
         body = ttk.Frame(self.win)
         body.pack(fill="both", expand=True, padx=12, pady=10)
         body.grid_columnconfigure(1, weight=1)
         ttk.Label(body, text="Staff*").grid(
             row=0, column=0, sticky="w", padx=4, pady=4)
-        self.staff_combo = ttk.Combobox(body, state="readonly",
-                                            width=42)
-        opts = _staff_options_required()
-        self._staff_opts = opts
-        self.staff_combo["values"] = [lbl for _, lbl in opts]
-        self.staff_combo.grid(row=0, column=1, sticky="ew",
-                                  padx=4, pady=4)
+        self.staff_var = tk.StringVar()
+        kit.StaffPicker(body, self.staff_var, active_only=False,
+                        width=42).grid(row=0, column=1, sticky="w",
+                                       padx=4, pady=4)
         ttk.Label(body, text="Role*").grid(
             row=1, column=0, sticky="w", padx=4, pady=4)
         self.role = tk.StringVar(value=DEFAULT_DEPT_ROLE)
-        ttk.Combobox(body, textvariable=self.role,
-                      values=DEPT_ROLES, state="readonly").grid(
-            row=1, column=1, sticky="ew", padx=4, pady=4)
+        kit.ChoiceField(body, self.role, choices=DEPT_ROLES).grid(
+            row=1, column=1, sticky="w", padx=4, pady=4)
         self.is_primary = tk.BooleanVar()
         ttk.Checkbutton(body, text="Primary department",
                          variable=self.is_primary).grid(
@@ -669,13 +691,12 @@ class MembershipEditor:
             row=3, column=0, sticky="w", padx=4, pady=4)
         self.joined = tk.StringVar(
             value=_dt.date.today().isoformat())
-        ttk.Entry(body, textvariable=self.joined,
-                    width=14).grid(
+        kit.DateField(body, self.joined).grid(
             row=3, column=1, sticky="w", padx=4, pady=4)
         ttk.Label(body, text="Left on").grid(
             row=4, column=0, sticky="w", padx=4, pady=4)
         self.left = tk.StringVar()
-        ttk.Entry(body, textvariable=self.left, width=14).grid(
+        kit.DateField(body, self.left).grid(
             row=4, column=1, sticky="w", padx=4, pady=4)
         ttk.Label(body, text="Notes").grid(
             row=5, column=0, sticky="nw", padx=4, pady=4)
@@ -685,10 +706,7 @@ class MembershipEditor:
                           padx=4, pady=4)
 
         if membership:
-            for i, (sid, _) in enumerate(self._staff_opts):
-                if sid == membership.staff_id:
-                    self.staff_combo.current(i)
-                    break
+            self.staff_var.set(membership.staff_id or "")
             self.role.set(membership.role_in_department)
             self.is_primary.set(membership.is_primary)
             self.joined.set(membership.joined_on)
@@ -704,14 +722,14 @@ class MembershipEditor:
         self.win.wait_window()
 
     def _save(self) -> None:
-        idx = self.staff_combo.current()
-        if idx < 0:
+        staff_id = self.staff_var.get().strip()
+        if not staff_id:
             messagebox.showerror("Departments",
                                     "Pick a staff member.",
                                     parent=self.win)
             return
         payload = {
-            "staff_id": self._staff_opts[idx][0],
+            "staff_id": staff_id,
             "role_in_department": self.role.get(),
             "is_primary": self.is_primary.get(),
             "joined_on": self.joined.get().strip(),
@@ -733,14 +751,17 @@ class MembershipEditor:
         self.win.destroy()
 
 
-def _prompt_text(parent, title: str, *,
-                  initial: str = "") -> str | None:
-    win = tk.Toplevel(parent)
-    win.title(title); win.geometry("360x140")
-    win.transient(parent); win.after_idle(win.grab_set)
+def _prompt_value(parent, title: str, *, initial: str = "",
+                  make) -> str | None:
+    """A small modal asking for one value; *make(master, var)* builds the
+    picker bound to *var*. Returns the value, or None on Cancel."""
+    owner = parent.winfo_toplevel()
+    win = tk.Toplevel(owner)
+    win.title(title); win.geometry("460x150")
+    win.transient(owner); win.after_idle(win.grab_set)
     ttk.Label(win, text=title).pack(anchor="w", padx=8, pady=8)
     var = tk.StringVar(value=initial)
-    ttk.Entry(win, textvariable=var).pack(fill="x", padx=8)
+    make(win, var).pack(anchor="w", padx=8)
     result: dict = {"value": None}
 
     def ok() -> None:
@@ -758,13 +779,12 @@ def _prompt_text(parent, title: str, *,
 
 def _prompt_choice(parent, title: str, options: list[str], *,
                     default: str | None = None) -> str | None:
-    win = tk.Toplevel(parent)
+    win = tk.Toplevel(parent.winfo_toplevel())
     win.title(title); win.geometry("320x140")
-    win.transient(parent); win.after_idle(win.grab_set)
+    win.transient(parent.winfo_toplevel()); win.after_idle(win.grab_set)
     ttk.Label(win, text=title).pack(anchor="w", padx=8, pady=8)
     var = tk.StringVar(value=default or (options[0] if options else ""))
-    ttk.Combobox(win, textvariable=var, values=options,
-                  state="readonly").pack(fill="x", padx=8)
+    kit.ChoiceField(win, var, choices=options).pack(fill="x", padx=8)
     result: dict = {"value": None}
 
     def ok() -> None:

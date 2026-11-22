@@ -191,50 +191,25 @@ class MusicShopGUI:
         if not refund_method:
             return
 
-        # Process refund
+        # Process refund through the service (local write + Finance posting +
+        # student-account credit all live in TransactionManager.refund_order)
         try:
-            with get_db_connection() as conn:
-                # Update transaction status to refunded
-                conn.execute('''
-                    UPDATE transactions
-                    SET status = 'refunded'
-                    WHERE transaction_id = ? AND source_type = 'music_shop'
-                ''', (transaction_id,))
+            processed_by = self.current_user.get('username', 'System') if self.current_user else 'System'
+            result = TransactionManager.refund_order(
+                int(order_id), amount, refund_method,
+                reason=f"Refund of transaction {transaction_id}",
+                processed_by=processed_by,
+                transaction_id=transaction_id,
+            )
+            if not result.get('success'):
+                messagebox.showerror(_t("musicshop.msg_titles.error"), result.get('message', 'Failed to process refund'))
+                return
+            refund_ref = result.get('refund_ref') or f"MUSIC-REFUND-{datetime.now().strftime('%Y%m%d%H%M%S')}"
 
-                # Generate refund reference
-                refund_ref = f"MUSIC-REFUND-{datetime.now().strftime('%Y%m%d%H%M%S')}"
-
-                # Insert refund record into unified_refunds table
-                processed_by = self.current_user.get('username', 'System') if self.current_user else 'System'
-                cur = conn.execute('''
-                    INSERT INTO unified_refunds
-                    (source_type, reference_id, reference_type, refund_date, amount,
-                     refund_method, refund_reference, student_id, processed_by, notes, status)
-                    VALUES ('music_shop', ?, 'order', ?, ?, ?, ?, ?, ?, ?, 'processed')
-                ''', (str(order_id), datetime.now().strftime('%Y-%m-%d %H:%M:%S'), amount, refund_method,
-                      refund_ref, customer_id, processed_by, f'musicshop_transaction_{transaction_id}'))
-                refund_row_id = cur.lastrowid
-
-                conn.commit()
-
-            # Auto-post to GL (cash has moved). Never raises.
-            try:
-                from education_system.systems.university.domains.finance.domain.ledger import notify_ledger
-                notify_ledger('refund', refund_row_id, posted_by=processed_by)
-            except Exception as _e:
-                import logging
-                logging.getLogger(__name__).warning("ledger hook failed: %s", _e)
-
-            # Automatically mark order as refunded
-            if order_id:
-                OrderManager.update_order_status(order_id, 'refunded')
-
-            # If student account refund, add to their account
-            if refund_method == 'Student Account':
-                success = self.add_musicshop_refund_to_student_account(customer_id, amount, refund_ref)
-                if not success:
-                    messagebox.showwarning(_t("musicshop.msg_titles.partial_success"),
-                                         _t('gui.operations.commerce.musicshop.musicshop_gui_parts.musicshopgui_create_refunds_tab.dialogs.refund_recorded_but_failed_to_credit_student_account_please_cred', default="Refund recorded but failed to credit student account. Please credit manually."))
+            # If student account refund, warn when the credit failed
+            if refund_method == 'Student Account' and not result.get('credited'):
+                messagebox.showwarning(_t("musicshop.msg_titles.partial_success"),
+                                     _t('gui.operations.commerce.musicshop.musicshop_gui_parts.musicshopgui_create_refunds_tab.dialogs.refund_recorded_but_failed_to_credit_student_account_please_cred', default="Refund recorded but failed to credit student account. Please credit manually."))
 
             # Send refund receipt email
             self.send_musicshop_refund_receipt(transaction_id, customer_id, amount, refund_method, refund_ref)
@@ -311,62 +286,6 @@ class MusicShopGUI:
         dialog.wait_window()
         return result['method']
 
-    def add_musicshop_refund_to_student_account(self, customer_id, amount, refund_ref):
-        """Add refund amount to student finance account"""
-        try:
-            with get_db_connection() as conn:
-                # Check if student finance account exists
-                cursor = conn.execute(
-                    'SELECT account_id, balance FROM student_finance_accounts WHERE student_id = ?',
-                    (customer_id,)
-                )
-                account = cursor.fetchone()
-
-                if not account:
-                    # Create account with refund amount
-                    conn.execute('''
-                        INSERT INTO student_finance_accounts (student_id, balance, created_at)
-                        VALUES (?, ?, ?)
-                    ''', (customer_id, amount, datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
-
-                    # Get the new account_id
-                    cursor = conn.execute(
-                        'SELECT account_id, balance FROM student_finance_accounts WHERE student_id = ?',
-                        (customer_id,)
-                    )
-                    account = cursor.fetchone()
-                    account_id = account[0]
-                    balance_before = 0
-                    balance_after = amount
-                else:
-                    # Update existing account
-                    account_id = account[0]
-                    balance_before = account[1]
-                    balance_after = balance_before + amount
-
-                    conn.execute('''
-                        UPDATE student_finance_accounts
-                        SET balance = balance + ?
-                        WHERE student_id = ?
-                    ''', (amount, customer_id))
-
-                # Record transaction
-                processed_by = self.current_user.get('username', 'System') if self.current_user else 'System'
-                conn.execute('''
-                    INSERT INTO transactions
-                    (source_type, account_id, student_id, transaction_type, amount, balance_before,
-                     balance_after, description, reference_id, processed_by)
-                    VALUES ('student_finance', ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                ''', (account_id, customer_id, 'credit', amount, balance_before, balance_after,
-                      'Music Shop Purchase Refund', refund_ref, processed_by))
-
-                conn.commit()
-                return True
-
-        except Exception as e:
-            logger.error(f"Error adding refund to student account: {e}")
-            return False
-
     def send_musicshop_refund_receipt(self, transaction_id, customer_id, amount, method, refund_ref):
         """Send refund receipt email to customer"""
         try:
@@ -394,7 +313,7 @@ class MusicShopGUI:
                     logger.debug("Could not retrieve updated student finance balance")
 
             # Use JSON template for email
-            subject, body = render_template('commerce/musicshop/refund_receipt', {
+            subject, body = render_template('finance_commerce/commerce/musicshop/refund_receipt', {
                 'customer_name': customer_name,
                 'refund_ref': refund_ref,
                 'original_transaction': str(transaction_id),

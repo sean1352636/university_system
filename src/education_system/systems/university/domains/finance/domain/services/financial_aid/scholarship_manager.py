@@ -123,7 +123,7 @@ class ScholarshipManager:
                     UPDATE scholarship_applications
                     SET status = ?, reviewer_id = ?, review_date = CURRENT_TIMESTAMP,
                         review_score = ?, review_comments = ?
-                    WHERE app_id = ?
+                    WHERE application_id = ?
                 """, (status, reviewer_id, review_score, review_comments, app_id))
                 conn.commit()
                 return cursor.rowcount > 0
@@ -216,7 +216,7 @@ class ScholarshipManager:
             with self._get_connection() as conn:
                 cursor = conn.cursor()
                 cursor.execute("""
-                    SELECT sa.*, s.name as scholarship_name
+                    SELECT sa.*, s.scholarship_name
                     FROM scholarship_awards sa
                     JOIN scholarships s ON sa.scholarship_id = s.scholarship_id
                     WHERE sa.student_id = ?

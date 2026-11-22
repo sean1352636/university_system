@@ -153,11 +153,13 @@ def display_staff_hr_menu() -> None:
         input("Press Enter to continue...")
         return
 
-    current_user = auth.current_user
-    user_id = current_user.get('id') or current_user.get('username')
-    user_role = current_user.get('role', 'staff')
-    is_admin = user_role in ('admin', 'Admin', 'administrator')
-    is_manager = 'manager' in user_role.lower() if user_role else False
+    from education_system.systems.university.domains.staff.domain.staff_hr import access
+    # Staff HR keys people by username (never current_user['id']); what each
+    # person may open comes from their HR roles and reporting line.
+    user_id = access.username_of(auth)
+    caps = _capabilities(auth)
+    is_admin = caps['hr']
+    is_manager = caps['manager']
 
     # Import menu handlers
     from education_system.systems.university.domains.staff.interfaces.cli.staff_hr.menus import (
@@ -212,21 +214,27 @@ def display_staff_hr_menu() -> None:
         add_option("My Documents", "documents")
         add_option("Workload Overview", "workload")
 
-        # Manager/Admin options
-        if is_admin or is_manager:
+        # Line managers and HR
+        if caps['manager'] or caps['operations']:
             print("\n--- Management ---")
             add_option("Staff Directory", "directory")
-            add_option("Asset Management", "assets")
-            add_option("Leave Approvals", "leave_approvals")
-            add_option("Timesheet Approvals", "time_approvals")
+            if caps['operations']:
+                add_option("Asset Management", "assets")
+            if caps['manager']:
+                add_option("Leave Approvals", "leave_approvals")
+                add_option("Timesheet Approvals", "time_approvals")
 
-        if is_admin:
+        if any(caps[c] for c in ('recruitment', 'hr', 'hr_admin', 'reports')):
             print("\n--- Administration ---")
-            add_option("Recruitment", "recruitment")
-            add_option("Onboarding", "onboarding")
-            add_option("Exit Management", "exit")
-            add_option("Admin Tools", "admin_tools")
-            add_option("Reports & Analytics", "reports")
+            if caps['recruitment']:
+                add_option("Recruitment", "recruitment")
+            if caps['hr']:
+                add_option("Onboarding", "onboarding")
+                add_option("Exit Management", "exit")
+            if caps['hr'] or caps['hr_admin']:
+                add_option("Admin Tools", "admin_tools")
+            if caps['reports']:
+                add_option("Reports & Analytics", "reports")
 
         # Academic Operations (Grant Budget / Travel / Cover / Curriculum / Schedule)
         print("\n--- Academic Operations ---")
@@ -255,7 +263,7 @@ def display_staff_hr_menu() -> None:
                 break  # Return to main menu
             elif 1 <= choice_num < option_num:
                 selected = options[choice_num - 1]
-                _handle_menu_selection(selected, user_id, is_admin, is_manager)
+                _handle_menu_selection(selected, user_id, is_admin, is_manager, caps)
             else:
                 print("\nInvalid choice. Please try again.")
         except ValueError:
@@ -269,9 +277,32 @@ def display_staff_hr_menu() -> None:
             input("Press Enter to continue...")
 
 
+def _capabilities(actor) -> dict:
+    """``{capability: bool}`` for every Staff HR capability (access.CAPABILITIES)."""
+    from education_system.systems.university.domains.staff.domain.staff_hr import access
+    out = {}
+    for cap in access.CAPABILITIES:
+        try:
+            out[cap] = access.can(actor, cap)
+        except Exception:
+            logger.warning("Staff HR capability %s check failed", cap, exc_info=True)
+            out[cap] = False
+    return out
+
+
+def _caps_from_flags(is_admin: bool, is_manager: bool) -> dict:
+    """Old callers pass two booleans; map them onto the capabilities."""
+    from education_system.systems.university.domains.staff.domain.staff_hr import access
+    caps = {cap: bool(is_admin) for cap in access.CAPABILITIES}
+    caps['manager'] = bool(is_admin or is_manager)
+    return caps
+
+
 def _handle_menu_selection(selected: str, user_id: str,
-                           is_admin: bool, is_manager: bool) -> None:
-    """Handle menu selection."""
+                           is_admin: bool, is_manager: bool,
+                           caps: Optional[dict] = None) -> None:
+    """Handle menu selection (``caps``: see :func:`_capabilities`)."""
+    caps = caps or _caps_from_flags(is_admin, is_manager)
     from education_system.systems.university.domains.staff.interfaces.cli.staff_hr.menus import (
         display_profile_menu,
         display_leave_menu,
@@ -296,25 +327,25 @@ def _handle_menu_selection(selected: str, user_id: str,
         if selected == 'profile':
             display_profile_menu(user_id)
         elif selected == 'leave':
-            display_leave_menu(user_id, is_admin or is_manager)
+            display_leave_menu(user_id, caps['manager'], auth=auth)
         elif selected == 'time':
-            display_time_menu(user_id, is_admin or is_manager)
+            display_time_menu(user_id, caps['manager'])
         elif selected == 'training':
-            display_training_menu(user_id, is_admin)
+            display_training_menu(user_id, caps['hr'])
         elif selected == 'appraisal':
-            display_appraisal_menu(user_id, is_admin or is_manager)
+            display_appraisal_menu(user_id, caps['manager'])
         elif selected == 'my_assets':
             display_asset_menu(user_id, admin_mode=False)
         elif selected == 'academic':
             display_academic_menu(user_id)
         elif selected == 'communication':
-            display_communication_menu(user_id, is_admin)
+            display_communication_menu(user_id, caps['operations'])
         elif selected == 'directory':
             display_directory_menu()
         elif selected == 'assets':
-            display_asset_menu(user_id, admin_mode=True)
+            display_asset_menu(user_id, admin_mode=caps['operations'])
         elif selected == 'leave_approvals':
-            display_leave_menu(user_id, approval_mode=True)
+            display_leave_menu(user_id, approval_mode=True, auth=auth)
         elif selected == 'time_approvals':
             display_time_menu(user_id, approval_mode=True)
         elif selected == 'recruitment':
@@ -324,15 +355,15 @@ def _handle_menu_selection(selected: str, user_id: str,
         elif selected == 'admin_tools':
             display_admin_menu(user_id)
         elif selected == 'reports':
-            display_reports_menu(user_id)
+            display_reports_menu(user_id, auth=auth)
         elif selected == 'contract':
-            display_contract_menu(user_id, is_admin)
+            display_contract_menu(user_id, caps['hr'], auth=auth)
         elif selected == 'expense':
-            display_expense_menu(user_id, is_admin)
+            display_expense_menu(user_id, caps['manager'])
         elif selected == 'grievance':
-            display_grievance_menu(user_id, is_admin)
+            display_grievance_menu(user_id, caps['cases'])
         elif selected == 'exit':
-            display_exit_menu(user_id, is_admin)
+            display_exit_menu(user_id, caps['hr'])
         elif selected == 'schedule':
             _display_schedule_view(user_id)
         elif selected == 'documents':
@@ -341,10 +372,10 @@ def _handle_menu_selection(selected: str, user_id: str,
             _display_workload_view(user_id)
         elif selected in ('grant_budget', 'travel', 'cover',
                           'curriculum', 'faculty_schedule'):
-            _handle_academic_operations(selected, user_id, is_admin, is_manager)
+            _handle_academic_operations(selected, user_id, is_admin, is_manager, caps)
         elif selected in ('payroll', 'mentoring', 'sabbatical',
                           'peer_review', 'ip'):
-            _handle_staff_development(selected, user_id, is_admin, is_manager)
+            _handle_staff_development(selected, user_id, is_admin, is_manager, caps)
         else:
             print(f"\nFeature '{selected}' is not available.")
             input("Press Enter to continue...")
@@ -356,9 +387,11 @@ def _handle_menu_selection(selected: str, user_id: str,
 
 
 def _handle_academic_operations(selected: str, user_id: str,
-                                is_admin: bool, is_manager: bool) -> None:
+                                is_admin: bool, is_manager: bool,
+                                caps: Optional[dict] = None) -> None:
     """Dispatch to the academic operations submenus (Grant Budget,
     Travel, Cover, Curriculum, Faculty Schedule)."""
+    caps = caps or _caps_from_flags(is_admin, is_manager)
     from education_system.systems.university.domains.staff.interfaces.cli.staff_hr.menus import (
         display_grant_budget_menu,
         display_travel_menu,
@@ -368,21 +401,23 @@ def _handle_academic_operations(selected: str, user_id: str,
     )
 
     if selected == 'grant_budget':
-        display_grant_budget_menu(user_id, is_admin)
+        display_grant_budget_menu(user_id, caps['operations'])
     elif selected == 'travel':
-        display_travel_menu(user_id, is_admin or is_manager)
+        display_travel_menu(user_id, caps['manager'])
     elif selected == 'cover':
-        display_cover_menu(user_id, is_admin or is_manager)
+        display_cover_menu(user_id, caps['manager'])
     elif selected == 'curriculum':
-        display_curriculum_menu(user_id, is_admin)
+        display_curriculum_menu(user_id, caps['manager'])
     elif selected == 'faculty_schedule':
         display_faculty_schedule_menu(user_id)
 
 
 def _handle_staff_development(selected: str, user_id: str,
-                             is_admin: bool, is_manager: bool) -> None:
+                             is_admin: bool, is_manager: bool,
+                             caps: Optional[dict] = None) -> None:
     """Dispatch to the staff development & IP submenus (Payroll,
     Mentoring, Sabbatical, Peer Review, IP / Patents)."""
+    caps = caps or _caps_from_flags(is_admin, is_manager)
     from education_system.systems.university.domains.staff.interfaces.cli.staff_hr.menus import (
         display_payroll_menu,
         display_mentoring_menu,
@@ -392,15 +427,15 @@ def _handle_staff_development(selected: str, user_id: str,
     )
 
     if selected == 'payroll':
-        display_payroll_menu(user_id, is_admin)
+        display_payroll_menu(user_id, caps['payroll'], auth=auth)
     elif selected == 'mentoring':
-        display_mentoring_menu(user_id, is_admin)
+        display_mentoring_menu(user_id, caps['hr'])
     elif selected == 'sabbatical':
-        display_sabbatical_menu(user_id, is_admin)
+        display_sabbatical_menu(user_id, caps['manager'])
     elif selected == 'peer_review':
-        display_peer_review_menu(user_id, is_admin)
+        display_peer_review_menu(user_id, caps['manager'])
     elif selected == 'ip':
-        display_ip_menu(user_id, is_admin)
+        display_ip_menu(user_id, caps['operations'])
 
 
 def _display_schedule_view(user_id) -> None:

@@ -52,12 +52,16 @@ class StudentPortalCLI:
             print("\n--- GPA & Credits ---")
             try:
                 row = conn.execute(
-                    "SELECT AVG(grade_point) AS gpa, SUM(credits) AS total_credits "
+                    "SELECT (SELECT gpa FROM students WHERE student_id = ?) AS gpa, "
+                    "AVG(final_score) AS average_mark, SUM(credits_awarded) AS total_credits "
                     "FROM module_grades WHERE student_id = ?",
-                    (self.student_id,),
+                    (self.student_id, self.student_id),
                 ).fetchone()
-                if row and row['gpa'] is not None:
-                    print(f"  Current GPA:    {row['gpa']:.2f}")
+                if row and (row['gpa'] is not None or row['average_mark'] is not None):
+                    if row['gpa'] is not None:
+                        print(f"  Current GPA:    {row['gpa']:.2f}")
+                    if row['average_mark'] is not None:
+                        print(f"  Average Mark:   {row['average_mark']:.1f}")
                     print(f"  Total Credits:  {row['total_credits'] or 0}")
                 else:
                     print("  No grade data available yet.")
@@ -85,9 +89,11 @@ class StudentPortalCLI:
             print("\n--- Upcoming Assignments ---")
             try:
                 assignments = conn.execute(
-                    "SELECT title, due_date FROM assignments "
-                    "WHERE student_id = ? AND due_date > date('now') "
-                    "ORDER BY due_date ASC LIMIT 10",
+                    "SELECT a.title, a.due_date FROM assignments a "
+                    "JOIN student_modules sm ON sm.module_code = a.module_code "
+                    "WHERE sm.student_id = ? AND LOWER(sm.status) = 'enrolled' "
+                    "AND a.due_date > date('now') "
+                    "ORDER BY a.due_date ASC LIMIT 10",
                     (self.student_id,),
                 ).fetchall()
                 if assignments:
@@ -121,9 +127,26 @@ class StudentPortalCLI:
             print(f"\n  Academic Progress module is not available: {e}")
             input("Press Enter to continue...")
 
+    def _handle_progression_outcome(self):
+        """The student's released assessment-board progression outcome."""
+        from education_system.systems.university.domains.assessment.interfaces.cli.boards import (
+            assessment_boards_cli,
+        )
+        assessment_boards_cli.set_auth(self.auth)
+        assessment_boards_cli.display_my_progression_outcome()
+        input("Press Enter to continue...")
+
+    def _handle_academic_appeals(self):
+        """The student's own academic appeals (submit, review, CoP letter)."""
+        from education_system.systems.university.domains.governance.interfaces.cli.case_management import (  # noqa: E501
+            appeals_cli,
+        )
+        appeals_cli.set_auth(self.auth)
+        appeals_cli.display_appeals_menu()
+
     def _handle_grade_tracking(self):
         try:
-            from education_system.systems.university.domains.academics.interfaces.gui.grade_tracking_management_gui import display_enhanced_grade_menu
+            from education_system.systems.university.domains.assessment.interfaces.gui.grade_tracking_management_gui import display_enhanced_grade_menu
             if display_enhanced_grade_menu:
                 display_enhanced_grade_menu()
             else:
@@ -135,7 +158,7 @@ class StudentPortalCLI:
 
     def _handle_course_planning(self):
         try:
-            from education_system.systems.university.domains.academics.interfaces.gui.course_management_gui.cli.course_planning_cli import display_course_planning_menu
+            from education_system.systems.university.domains.curriculum.interfaces.gui.course_management_gui.cli.course_planning_cli import display_course_planning_menu
             display_course_planning_menu()
         except ImportError as e:
             print(f"\n  Course Planning module is not available: {e}")
@@ -143,7 +166,7 @@ class StudentPortalCLI:
 
     def _handle_library(self):
         try:
-            from education_system.systems.university.domains.academics.domain.services.library.menu import display_library_menu
+            from education_system.systems.university.domains.library.domain.library.menu import display_library_menu
             display_library_menu()
         except ImportError as e:
             print(f"\n  Library module is not available: {e}")
@@ -151,23 +174,22 @@ class StudentPortalCLI:
 
     def _handle_office_hours(self):
         try:
-            from education_system.systems.university.domains.academics.interfaces.cli.office_hours_cli import display_office_hours_menu
+            from education_system.systems.university.domains.teaching.interfaces.cli.office_hours_cli import display_office_hours_menu
             display_office_hours_menu(self.auth)
         except ImportError as e:
             print(f"\n  Office Hours module is not available: {e}")
             input("Press Enter to continue...")
 
     def _handle_student_registration(self):
-        try:
-            from education_system.systems.university.shell.cli.student_operations import display_student_records_menu
-            display_student_records_menu()
-        except ImportError as e:
-            print(f"\n  Student Registration module is not available: {e}")
-            input("Press Enter to continue...")
+        """Module registration (enrol, choose options, drop, annual registration)."""
+        from education_system.systems.university.domains.curriculum.domain.course_management.module_registration_menu import (
+            display_module_registration_menu,
+        )
+        display_module_registration_menu(self.auth)
 
     def _handle_academic_calendar(self):
         try:
-            from education_system.systems.university.domains.academics.domain.services.academic_calendar.cli import display_academic_calendar_menu
+            from education_system.systems.university.domains.teaching.domain.academic_calendar.cli import display_academic_calendar_menu
             display_academic_calendar_menu()
         except ImportError as e:
             print(f"\n  Academic Calendar module is not available: {e}")
@@ -175,7 +197,7 @@ class StudentPortalCLI:
 
     def _handle_timetable(self):
         try:
-            from education_system.systems.university.domains.academics.domain.services.timetable import display_timetable_optimizer_menu
+            from education_system.systems.university.domains.teaching.domain.timetable import display_timetable_optimizer_menu
             display_timetable_optimizer_menu()
         except ImportError as e:
             print(f"\n  Timetable module is not available: {e}")
@@ -191,7 +213,7 @@ class StudentPortalCLI:
 
     def _handle_health_portal(self):
         try:
-            from education_system.systems.university.domains.pastoral.interfaces.cli.health_portal import (
+            from education_system.systems.university.domains.health.interfaces.cli.health_portal import (
                 display_health_portal_menu,
             )
             display_health_portal_menu(self.auth)
@@ -201,10 +223,10 @@ class StudentPortalCLI:
 
     def _handle_student_union(self):
         try:
-            from education_system.systems.university.domains.pastoral.interfaces.gui.student_union_management_gui import display_student_union_menu
+            from education_system.systems.university.domains.student_life.interfaces.gui.student_union_management_gui import display_student_union_menu
             if display_student_union_menu:
                 try:
-                    from education_system.systems.university.domains.pastoral.domain.student_life.student_union import set_auth as _su_set_auth
+                    from education_system.systems.university.domains.student_life.domain.student_life.student_union import set_auth as _su_set_auth
                     _su_set_auth(self.auth)
                 except ImportError:
                     pass
@@ -226,7 +248,7 @@ class StudentPortalCLI:
 
     def _handle_career_services(self):
         try:
-            from education_system.systems.university.domains.pastoral.domain.services.career_services.career_services_core import display_career_services_menu
+            from education_system.systems.university.domains.student_life.domain.career_services.career_services_core import display_career_services_menu
             display_career_services_menu(self.auth)
         except ImportError as e:
             print(f"\n  Career Services module is not available: {e}")
@@ -266,7 +288,7 @@ class StudentPortalCLI:
 
     def _handle_helpdesk(self):
         try:
-            from education_system.systems.university.domains.pastoral.domain.services.helpdesk import display_helpdesk_menu
+            from education_system.systems.university.domains.student_support.domain.helpdesk import display_helpdesk_menu
             display_helpdesk_menu(self.auth)
         except ImportError as e:
             print(f"\n  Helpdesk module is not available: {e}")
@@ -274,7 +296,7 @@ class StudentPortalCLI:
 
     def _handle_internship_portal(self):
         try:
-            from education_system.systems.university.domains.pastoral.domain.services.internship_management import display_internship_menu
+            from education_system.systems.university.domains.student_life.domain.internship_management import display_internship_menu
             display_internship_menu()
         except ImportError as e:
             print(f"\n  Internship Portal module is not available: {e}")
@@ -324,9 +346,17 @@ class StudentPortalCLI:
             print(f"\n  Error changing password: {e}")
         input("Press Enter to continue...")
 
+    def _handle_student_handbook(self):
+        try:
+            from education_system.systems.university.domains.student_life.interfaces.cli.student_handbook import run_student_handbook_cli
+            run_student_handbook_cli(self.auth)
+        except ImportError as e:
+            print(f"\n  Student Handbook is not available: {e}")
+            input("Press Enter to continue...")
+
     def _handle_course_catalog(self):
         try:
-            from education_system.systems.university.domains.academics.interfaces.cli.course_catalog_cli import display_course_catalog_menu
+            from education_system.systems.university.domains.curriculum.interfaces.cli.course_catalog_cli import display_course_catalog_menu
             display_course_catalog_menu(self.auth)
         except ImportError as e:
             print(f"\n  Course Catalog module is not available: {e}")
@@ -334,7 +364,7 @@ class StudentPortalCLI:
 
     def _handle_transfer_credits(self):
         try:
-            from education_system.systems.university.domains.academics.interfaces.cli.transfer_credits_cli import display_transfer_credits_menu
+            from education_system.systems.university.domains.curriculum.interfaces.cli.transfer_credits_cli import display_transfer_credits_menu
             display_transfer_credits_menu(self.auth)
         except ImportError as e:
             print(f"\n  Transfer Credits module is not available: {e}")
@@ -368,7 +398,8 @@ class StudentPortalCLI:
             print("    4.  Course Planning")
             print("    5.  Library")
             print("    6.  Office Hours")
-            print("    7.  Student Registration")
+            print("    7.  Module Registration")
+            print("    P.  My Progression Outcome")
 
             print("\n  SCHEDULE:")
             print("    8.  Academic Calendar")
@@ -394,6 +425,8 @@ class StudentPortalCLI:
             print("\n  SUPPORT:")
             print("    19. Helpdesk")
             print("    20. Internship Portal")
+            print("    26. Student Handbook")
+            print("    A.  Academic Appeals")
 
             print("\n  COMMUNICATION:")
             print("    21. Communication Hub")
@@ -427,6 +460,10 @@ class StudentPortalCLI:
                     logger.debug("Suppressed exception", exc_info=True)
                 self._return_to_login = True
                 break
+            elif choice.lower() == 'p':
+                self._handle_progression_outcome()
+            elif choice.lower() == 'a':
+                self._handle_academic_appeals()
             elif choice == '1':
                 self.view_dashboard()
             elif choice == '2':
@@ -477,6 +514,8 @@ class StudentPortalCLI:
                 self._handle_course_catalog()
             elif choice == '25':
                 self._handle_transfer_credits()
+            elif choice == '26':
+                self._handle_student_handbook()
             else:
                 print("\n  Invalid choice. Please try again.")
                 input("Press Enter to continue...")

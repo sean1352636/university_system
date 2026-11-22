@@ -14,6 +14,7 @@ Fees are stored in pence to avoid float drift.
 
 from __future__ import annotations
 
+import datetime as _dt
 import logging
 import re
 import sqlite3
@@ -41,6 +42,10 @@ DAYS_OF_WEEK: tuple[str, ...] = (
 )
 
 ATTENDANCE_STATUSES: tuple[str, ...] = ("booked", "attended", "absent", "late")
+_WEEKDAY_NAMES: tuple[str, ...] = DAYS_OF_WEEK + ("Saturday", "Sunday")
+
+# Statuses that hold a place against the session's capacity.
+_OCCUPYING_STATUSES: tuple[str, ...] = ("booked", "attended", "late")
 ATTENDANCE_LABELS: dict[str, str] = {
     "booked":   "Booked (planned)",
     "attended": "Attended",
@@ -477,8 +482,8 @@ def _count_attendees(session_id: int, date: str) -> int:
         return conn.execute(
             "SELECT COUNT(*) FROM wraparound_attendance "
             "WHERE session_id = ? AND date = ? "
-            "AND status IN ('booked', 'attended', 'late')",
-            (session_id, date),
+            f"AND status IN ({', '.join('?' * len(_OCCUPYING_STATUSES))})",
+            (session_id, date, *_OCCUPYING_STATUSES),
         ).fetchone()[0]
 
 
@@ -494,19 +499,37 @@ def book(data: dict[str, Any]) -> Attendance:
     if pupils_data.get_pupil(payload["pupil_id"]) is None:
         raise ValidationError(f"No pupil with id {payload['pupil_id']}")
     try:
+        weekday = _WEEKDAY_NAMES[
+            _dt.date.fromisoformat(payload["date"]).weekday()]
+    except ValueError as e:
+        raise ValidationError("Date must be a real calendar date") from e
+    try:
         with _connect() as conn:
             existing = conn.execute(
                 "SELECT * FROM wraparound_attendance "
                 "WHERE session_id = ? AND pupil_id = ? AND date = ?",
                 (payload["session_id"], payload["pupil_id"], payload["date"]),
             ).fetchone()
-            if existing is None:
+            # A new booking must fall on a day the session runs (a session
+            # with no days set runs every school day). Existing rows can
+            # still be updated after the session's days change.
+            if existing is None and weekday not in (sess.day_list
+                                                    or DAYS_OF_WEEK):
+                raise ValidationError(
+                    f"Session {sess.name!r} does not run on {weekday}s")
+            # Capacity applies whenever this write takes a place that the
+            # row did not already hold (new row, or absent -> booked).
+            takes_place = payload["status"] in _OCCUPYING_STATUSES and (
+                existing is None
+                or existing["status"] not in _OCCUPYING_STATUSES)
+            if takes_place:
                 if sess.capacity is not None and (
                         _count_attendees(payload["session_id"], payload["date"])
                         >= sess.capacity):
                     raise ValidationError(
                         f"Session {sess.name!r} is full for {payload['date']} "
                         f"(capacity {sess.capacity})")
+            if existing is None:
                 cur = conn.execute(
                     """INSERT INTO wraparound_attendance
                            (session_id, pupil_id, date, status, notes)

@@ -378,7 +378,6 @@ def _init_facilities_schemas() -> None:
 
             cursor.execute('CREATE INDEX IF NOT EXISTS idx_assets_status ON assets(status)')
 
-            cursor.execute('CREATE INDEX IF NOT EXISTS idx_assets_tag ON assets(asset_tag)')
 
             cursor.execute('CREATE INDEX IF NOT EXISTS idx_assets_department ON assets(department)')
 

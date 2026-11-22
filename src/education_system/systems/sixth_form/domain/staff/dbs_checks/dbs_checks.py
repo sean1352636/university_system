@@ -1,7 +1,8 @@
 """DBS Checks data layer for Sixth Form System.
 
 Single-table register of DBS checks. One row per check per staff
-member (FK cascade). Distinct from the personal DBS fields on the
+member. The rows outlive the staff record (no cascade: the single
+central record must be retained after someone leaves). Distinct from the personal DBS fields on the
 HR record — this is the *register* that the safeguarding /
 compliance lead maintains for SCR (single central record) audits.
 
@@ -54,6 +55,15 @@ STATUSES: tuple[str, ...] = (
 )
 DEFAULT_STATUS = "Applied"
 
+# A DBS row is single-central-record evidence, so "Delete" archives it:
+# hidden from the register, kept (with who and why) for audit.
+ARCHIVE_REASONS: tuple[str, ...] = (
+    "Entered in error",
+    "Duplicate",
+    "Superseded by a later check",
+    "Other",
+)
+
 
 class ValidationError(Exception):
     pass
@@ -84,6 +94,13 @@ class DBSCheck:
     status: str
     created_on: str
     updated_on: str
+    archived_on: str | None = None
+    archived_by: str | None = None
+    archive_reason: str | None = None
+
+    @property
+    def is_archived(self) -> bool:
+        return bool(self.archived_on)
 
     @property
     def is_active(self) -> bool:
@@ -152,10 +169,8 @@ def _connect() -> Iterator[sqlite3.Connection]:
         conn.close()
 
 
-def init_db() -> None:
-    with _connect() as conn:
-        conn.execute("""
-            CREATE TABLE IF NOT EXISTS dbs_checks (
+_DDL = """
+            CREATE TABLE IF NOT EXISTS {name} (
                 check_id INTEGER PRIMARY KEY AUTOINCREMENT,
                 staff_id TEXT NOT NULL,
                 dbs_number TEXT,
@@ -178,11 +193,33 @@ def init_db() -> None:
                 notes TEXT,
                 status TEXT NOT NULL,
                 created_on TEXT NOT NULL,
-                updated_on TEXT NOT NULL,
-                FOREIGN KEY(staff_id) REFERENCES staff(staff_id)
-                  ON DELETE CASCADE
+                updated_on TEXT NOT NULL
             )
-        """)
+        """
+
+_RETENTION_CHECKED = False
+
+
+def init_db() -> None:
+    global _RETENTION_CHECKED
+    with _connect() as conn:
+        conn.execute(_DDL.format(name="dbs_checks"))
+    if not _RETENTION_CHECKED:
+        # SCR retention: the register used to cascade-delete with the
+        # staff row. One-off rebuild without the cascade (backed up first).
+        from education_system.systems.sixth_form.domain.safeguarding import (
+            _retention,
+        )
+        _retention.rebuild_table(_paths.SIXTH_FORM_DBS_CHECKS_DB,
+                                 "dbs_checks", _DDL,
+                                 label="scr_retention")
+        _RETENTION_CHECKED = True
+        with _connect() as conn:
+            cols = {r["name"] for r in conn.execute(
+                "PRAGMA table_info(dbs_checks)").fetchall()}
+            for col in ("archived_on", "archived_by", "archive_reason"):
+                if col not in cols:
+                    conn.execute(f"ALTER TABLE dbs_checks ADD COLUMN {col} TEXT")
 
 
 def _check_date(label: str, value: str | None) -> None:
@@ -296,6 +333,10 @@ def _row(r: sqlite3.Row) -> DBSCheck:
         status=r["status"],
         created_on=r["created_on"],
         updated_on=r["updated_on"],
+        archived_on=r["archived_on"] if "archived_on" in r.keys() else None,
+        archived_by=r["archived_by"] if "archived_by" in r.keys() else None,
+        archive_reason=(r["archive_reason"]
+                        if "archive_reason" in r.keys() else None),
     )
 
 
@@ -376,13 +417,65 @@ def update_check(check_id: int,
     return get_check(check_id)
 
 
-def delete_check(check_id: int) -> bool:
+def delete_check(check_id: int, *, reason: str | None = None,
+                 by: str | None = None, detail: str | None = None) -> bool:
+    """Archive a check — the row is single central record evidence.
+
+    It leaves the register and every count, but stays in the table with
+    who archived it and why (:func:`list_archived`, :func:`restore_check`).
+    """
     init_db()
+    reason = (reason or "").strip()
+    if reason not in ARCHIVE_REASONS:
+        raise ValidationError(
+            f"Say why: one of {', '.join(ARCHIVE_REASONS)}")
+    by = (by or "").strip()
+    if not by:
+        raise ValidationError("Archiving a DBS check must name who did it")
+    if reason == "Other" and not (detail or "").strip():
+        raise ValidationError("Give a few words of detail for 'Other'")
+    why = reason + (f" — {detail.strip()}" if (detail or "").strip() else "")
+    now = _dt.datetime.now().isoformat(timespec="seconds")
     with _connect() as conn:
         cur = conn.execute(
-            "DELETE FROM dbs_checks WHERE check_id=?",
-            (check_id,))
+            "UPDATE dbs_checks SET archived_on=?, archived_by=?, "
+            "archive_reason=?, updated_on=? "
+            "WHERE check_id=? AND archived_on IS NULL",
+            (now, by, why, now, check_id))
+        done = cur.rowcount > 0
+    if done:
+        logger.info("DBS check #%s archived by %s: %s", check_id, by, why)
+    return done
+
+
+def restore_check(check_id: int, *, by: str) -> bool:
+    """Bring an archived check back onto the register."""
+    init_db()
+    if not (by or "").strip():
+        raise ValidationError("Restoring a DBS check must name who did it")
+    now = _dt.datetime.now().isoformat(timespec="seconds")
+    with _connect() as conn:
+        cur = conn.execute(
+            "UPDATE dbs_checks SET archived_on=NULL, archived_by=NULL, "
+            "archive_reason=NULL, updated_on=?, "
+            "notes=COALESCE(notes || ' | ', '') || ? "
+            "WHERE check_id=? AND archived_on IS NOT NULL",
+            (now, f"Restored from archive by {by.strip()} on {now[:10]}",
+             check_id))
         return cur.rowcount > 0
+
+
+def list_archived(*, staff_id: str | None = None) -> list[DBSCheck]:
+    init_db()
+    sql = "SELECT * FROM dbs_checks WHERE archived_on IS NOT NULL"
+    params: list[Any] = []
+    if staff_id:
+        sql += " AND staff_id=?"
+        params.append(staff_id)
+    with _connect() as conn:
+        rows = conn.execute(sql + " ORDER BY archived_on DESC",
+                            params).fetchall()
+    return [_row(r) for r in rows]
 
 
 def get_check(check_id: int) -> DBSCheck | None:
@@ -399,6 +492,7 @@ def latest_for_staff(staff_id: str) -> DBSCheck | None:
     with _connect() as conn:
         r = conn.execute(
             "SELECT * FROM dbs_checks WHERE staff_id=? "
+            "AND archived_on IS NULL "
             "ORDER BY COALESCE(issued_on, applied_on, '') "
             "DESC, check_id DESC LIMIT 1",
             (staff_id,)).fetchone()
@@ -419,7 +513,7 @@ def list_checks(*,
                      risk_assessment_pending: bool = False,
                      ) -> list[DBSCheck]:
     init_db()
-    sql = "SELECT * FROM dbs_checks WHERE 1=1"
+    sql = "SELECT * FROM dbs_checks WHERE archived_on IS NULL"
     params: list[Any] = []
     if staff_id:
         sql += " AND staff_id=?"
@@ -697,6 +791,7 @@ __all__ = [
     "DBSCheck", "DBSSummary",
     "init_db",
     "create_check", "update_check", "delete_check",
+    "restore_check", "list_archived", "ARCHIVE_REASONS",
     "get_check", "list_checks", "checks_for_staff",
     "latest_for_staff",
     "issue_certificate", "see_certificate",

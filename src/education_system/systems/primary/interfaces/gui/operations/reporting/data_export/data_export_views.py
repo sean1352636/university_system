@@ -9,7 +9,6 @@ from pathlib import Path
 from tkinter import filedialog, messagebox, ttk
 from typing import Any
 
-from education_system.platform import branding
 from education_system.systems.primary.domain.operations.reporting.data_export import (
     data_export as data,
 )
@@ -19,6 +18,7 @@ from education_system.systems.primary.domain.operations.reporting.data_export.da
     Preset,
     ValidationError,
 )
+from education_system.systems.primary.interfaces.gui import kit
 
 logger = logging.getLogger(__name__)
 
@@ -28,13 +28,24 @@ WIN_MINSIZE = (1200, 800)
 
 def open_data_export_window(parent=None) -> None:
     data.init_db()
-    master = getattr(parent, "root", parent)
-    win = tk.Toplevel(master) if master is not None else tk.Tk()
-    win.title(f"Data Export — {branding.SYSTEM_NAME}")
-    win.geometry(WIN_GEOMETRY)
-    win.minsize(*WIN_MINSIZE)
-    nb = ttk.Notebook(win)
-    nb.pack(fill="both", expand=True, padx=10, pady=10)
+    if parent is None:
+        root = tk.Tk()
+        root.title("Data Export")
+        root.geometry(WIN_GEOMETRY)
+        root.minsize(*WIN_MINSIZE)
+        frame = ttk.Frame(root, padding=10)
+        frame.pack(fill="both", expand=True)
+        _draw_data_export(frame)
+        return
+    kit.show_page(parent, "Data Export", _draw_data_export)
+
+
+def _draw_data_export(parent: ttk.Frame) -> None:
+    kit.page_heading(parent, "Data Export",
+                     "Run a preset bundle of datasets to a folder, manage presets and "
+                     "review past export jobs.")
+    nb = ttk.Notebook(parent)
+    nb.pack(fill="both", expand=True)
     RunTab(nb)
     PresetsTab(nb)
     JobsTab(nb)
@@ -67,7 +78,7 @@ class RunTab:
                             lambda _e: self._on_preset_change())
 
         ttk.Label(top, text="Format:").pack(side="left")
-        self.fmt_cb = ttk.Combobox(top, values=FORMATS,
+        self.fmt_cb = ttk.Combobox(top, values=list(FORMATS),
                                     state="readonly", width=10)
         self.fmt_cb.set(DEFAULT_FORMAT)
         self.fmt_cb.pack(side="left", padx=(2, 10))

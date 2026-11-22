@@ -1,0 +1,33 @@
+{
+  "name": "exclusion_notice",
+  "description": "The formal notice of a suspension or permanent exclusion, sent to contacts with parental responsibility.",
+  "subject": "{headline} - {pupil_name}",
+  "body": [
+    "Dear {recipient_name},",
+    "",
+    "{intro}",
+    "",
+    "{details}",
+    "",
+    "{closing}",
+    "",
+    "If you would like to discuss this, please contact the school office.",
+    "",
+    "Yours sincerely,",
+    "{sender_name}",
+    "{school_name}"
+  ],
+  "placeholders": {
+    "recipient_name": "The contact's name",
+    "pupil_name": "The pupil's preferred first name and surname",
+    "headline": "Suspension / Permanent exclusion",
+    "intro": "The decision: what, and the dates",
+    "details": "The reason, the return date and the family's duties in the first five days",
+    "closing": "The family's right to make representations, and education from day six",
+    "sender_name": "The headteacher (the decision maker)",
+    "school_name": "The school's name"
+  },
+  "defaults": {
+    "school_name": "Secondary School"
+  }
+}

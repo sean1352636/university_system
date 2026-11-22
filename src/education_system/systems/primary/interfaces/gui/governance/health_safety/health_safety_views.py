@@ -33,6 +33,7 @@ from education_system.systems.primary.domain.staff import (
     staff as staff_data,
 )
 from education_system.systems.primary.domain import _pupils_bridge as student_data
+from education_system.systems.primary.interfaces.gui import kit
 
 logger = logging.getLogger(__name__)
 
@@ -56,12 +57,33 @@ _SEVERITY_TAGS = {
 
 def open_health_safety_window(parent=None) -> None:
     data.init_db()
-    master = getattr(parent, "root", parent)
-    win = tk.Toplevel(master) if master is not None else tk.Tk()
-    win.title(f"Health & Safety — {branding.SYSTEM_NAME}")
-    win.geometry(WIN_GEOMETRY)
-    win.minsize(*WIN_MINSIZE)
-    HSPanel(win)
+    if parent is None:
+        # Stand-alone (no main window): a window of its own, as before.
+        win = tk.Tk()
+        win.title(f"Health & Safety — {branding.SYSTEM_NAME}")
+        win.geometry(WIN_GEOMETRY)
+        win.minsize(*WIN_MINSIZE)
+        frame = ttk.Frame(win, padding=10)
+        frame.pack(fill="both", expand=True)
+        _draw_health_safety(frame)
+        return
+    kit.show_page(parent, "Health & Safety", _draw_health_safety)
+
+
+def _draw_health_safety(parent) -> None:
+    kit.page_heading(parent, "Health & Safety",
+                     "Incident register with corrective actions, RIDDOR flags and "
+                     "a summary.")
+    HSPanel(parent)
+
+
+def _location_choices() -> list[str]:
+    """Locations already used on the register (the box stays editable)."""
+    try:
+        return sorted({i.location for i in data.list_incidents() if i.location})
+    except Exception:  # noqa: BLE001 - an empty list beats a broken form
+        logger.exception("H&S locations for picker failed")
+        return []
 
 
 def _staff_options() -> list[tuple[str, str]]:
@@ -89,14 +111,17 @@ def _student_options() -> list[tuple[str, str]]:
 # ── Main panel ─────────────────────────────────────────────────────
 
 class HSPanel:
-    def __init__(self, win: tk.Toplevel) -> None:
-        self.win = win
+    def __init__(self, host: tk.Misc) -> None:
+        # *host* is the page frame the panel draws into; dialogs are
+        # parented to its window.
+        self.host = host
+        self.win = host.winfo_toplevel()
         self._build()
         self.refresh()
 
     def _build(self) -> None:
-        bar = ttk.Frame(self.win)
-        bar.pack(fill="x", padx=10, pady=(10, 4))
+        bar = ttk.Frame(self.host)
+        bar.pack(fill="x", pady=(0, 4))
         ttk.Label(bar, text="Status:").pack(side="left")
         self.f_status = ttk.Combobox(
             bar, values=("",) + STATUSES,
@@ -118,12 +143,15 @@ class HSPanel:
         self.f_category.current(0)
         self.f_category.pack(side="left", padx=(2, 8))
 
-        ttk.Label(bar, text="From:").pack(side="left")
-        self.f_from = ttk.Entry(bar, width=11)
+        bar2 = ttk.Frame(self.host)
+        bar2.pack(fill="x", pady=(0, 4))
+        ttk.Label(bar2, text="From:").pack(side="left")
+        self.f_from = kit.DateField(bar2, tk.StringVar())
         self.f_from.pack(side="left", padx=(2, 6))
-        ttk.Label(bar, text="To:").pack(side="left")
-        self.f_to = ttk.Entry(bar, width=11)
+        ttk.Label(bar2, text="To:").pack(side="left")
+        self.f_to = kit.DateField(bar2, tk.StringVar())
         self.f_to.pack(side="left", padx=(2, 8))
+        bar = bar2
 
         ttk.Label(bar, text="Search:").pack(side="left")
         self.f_search = ttk.Entry(bar, width=18)
@@ -135,8 +163,8 @@ class HSPanel:
                     command=self._clear).pack(side="left")
 
         # Table
-        table_frame = ttk.Frame(self.win)
-        table_frame.pack(fill="both", expand=True, padx=10, pady=4)
+        table_frame = ttk.Frame(self.host)
+        table_frame.pack(fill="both", expand=True, pady=4)
         cols = ("id", "date", "location", "category", "severity",
                  "status", "affected", "actions")
         self.tree = ttk.Treeview(
@@ -166,8 +194,8 @@ class HSPanel:
                           lambda _e: self._view_detail())
 
         # Action bar
-        bbar = ttk.Frame(self.win)
-        bbar.pack(fill="x", padx=10, pady=(4, 10))
+        bbar = ttk.Frame(self.host)
+        bbar.pack(fill="x", pady=(4, 0))
         for label, cmd in (
                 ("Refresh",         self.refresh),
                 ("New Incident",    self._new),
@@ -186,8 +214,9 @@ class HSPanel:
     def _clear(self) -> None:
         for w in (self.f_status, self.f_severity, self.f_category):
             w.current(0)
-        for w in (self.f_from, self.f_to, self.f_search):
-            w.delete(0, "end")
+        for d in (self.f_from, self.f_to):
+            d.set("")
+        self.f_search.delete(0, "end")
         self.refresh()
 
     def _filters(self) -> dict[str, Any]:
@@ -314,7 +343,7 @@ class IncidentEditor:
         self.win.title(
             f"Edit incident #{incident.incident_id}"
             if incident else "New H&S incident")
-        self.win.geometry("880x820")
+        self.win.geometry("900x660")
         self.win.transient(parent)
         self.win.after_idle(self.win.grab_set)
         self._student_opts = _student_options()
@@ -327,8 +356,7 @@ class IncidentEditor:
         self.win.wait_window()
 
     def _build(self) -> None:
-        body = ttk.Frame(self.win)
-        body.pack(fill="both", expand=True, padx=12, pady=10)
+        body, footer = kit.scrolled_form(self.win)
         body.grid_columnconfigure(1, weight=1)
         body.grid_columnconfigure(3, weight=1)
         self.vars: dict[str, tk.Variable] = {}
@@ -344,6 +372,17 @@ class IncidentEditor:
                 row=row, column=col + 1, sticky="ew",
                 padx=4, pady=2)
 
+        def picker(row, col, label, key, make):
+            ttk.Label(body, text=label).grid(
+                row=row, column=col, sticky="w", padx=4, pady=2)
+            v = tk.StringVar()
+            self.vars[key] = v
+            make(v).grid(row=row, column=col + 1, sticky="w",
+                         padx=4, pady=2)
+
+        def date(row, col, label, key):
+            picker(row, col, label, key, lambda v: kit.DateField(body, v))
+
         def combo(row, col, label, key, values,
                     width=20, readonly=True):
             ttk.Label(body, text=label).grid(
@@ -357,9 +396,12 @@ class IncidentEditor:
                        padx=4, pady=2)
             return cb
 
-        entry(0, 0, "Date*", "incident_date")
-        entry(0, 2, "Time (HH:MM)", "incident_time")
-        entry(1, 0, "Location*", "location")
+        date(0, 0, "Date*", "incident_date")
+        picker(0, 2, "Time", "incident_time",
+               lambda v: kit.TimeField(body, v, hours=range(0, 24)))
+        picker(1, 0, "Location*", "location",
+               lambda v: kit.ChoiceField(body, v, choices=_location_choices(),
+                                         editable=True, width=26))
         combo(1, 2, "Type*", "incident_type",
                 INCIDENT_TYPES)
         combo(2, 0, "Category*", "category", CATEGORIES)
@@ -417,7 +459,7 @@ class IncidentEditor:
                                        padx=4, pady=2)
 
         combo(5, 0, "Status*", "status", STATUSES)
-        entry(5, 2, "Review due", "review_due")
+        date(5, 2, "Review due", "review_due")
 
         # Flags
         flags = ttk.LabelFrame(body, text="Flags")
@@ -434,7 +476,7 @@ class IncidentEditor:
                 row=0, column=col, sticky="w", padx=6, pady=4)
 
         entry(7, 0, "RIDDOR ref", "riddor_reference")
-        entry(7, 2, "RIDDOR reported on",
+        date(7, 2, "RIDDOR reported on",
                  "riddor_reported_on")
 
         # Text fields
@@ -455,8 +497,7 @@ class IncidentEditor:
             row += 1
 
         # Buttons
-        bar = ttk.Frame(self.win)
-        bar.pack(fill="x", padx=12, pady=(0, 10))
+        bar = footer
         ttk.Button(bar, text="Save",
                     command=self._save).pack(side="right", padx=4)
         ttk.Button(bar, text="Cancel",
@@ -556,7 +597,7 @@ class IncidentDetail:
         self.on_change = on_change
         self.win = tk.Toplevel(parent)
         self.win.title(f"Incident #{incident_id} — detail")
-        self.win.geometry("960x760")
+        self.win.geometry("960x680")
         self.win.transient(parent)
         self.win.after_idle(self.win.grab_set)
         self._build()
@@ -566,7 +607,7 @@ class IncidentDetail:
 
     def _build(self) -> None:
         # Top: incident summary text
-        self.summary = tk.Text(self.win, height=18, wrap="word",
+        self.summary = tk.Text(self.win, height=15, wrap="word",
                                   font=("TkDefaultFont", 10))
         self.summary.pack(fill="x", padx=10, pady=(10, 4))
         self.summary.config(state="disabled")
@@ -718,8 +759,8 @@ class IncidentDetail:
         a = self._selected_action()
         if a is None:
             return
-        when = _prompt_text(
-            self.win, "Completed on (YYYY-MM-DD)",
+        when = _prompt_date(
+            self.win, "Completed on",
             initial=_dt.date.today().isoformat())
         if not when:
             return
@@ -756,7 +797,7 @@ class ActionEditor:
         self.win.title(
             f"Edit action #{action.action_id}"
             if action else "New action")
-        self.win.geometry("620x420")
+        self.win.geometry("680x440")
         self.win.transient(parent)
         self.win.after_idle(self.win.grab_set)
         self._staff_opts = _staff_options()
@@ -794,7 +835,7 @@ class ActionEditor:
                 row=row, column=0, sticky="w", padx=4, pady=4)
             v = tk.StringVar()
             self.vars[key] = v
-            ttk.Entry(body, textvariable=v, width=24).grid(
+            kit.DateField(body, v).grid(
                 row=row, column=1, sticky="w", padx=4, pady=4)
 
         def combo(row, label, key, values):
@@ -806,10 +847,10 @@ class ActionEditor:
                           state="readonly", width=22).grid(
                 row=row, column=1, sticky="w", padx=4, pady=4)
 
-        entry(2, "Due date (YYYY-MM-DD)", "due_date")
+        entry(2, "Due date", "due_date")
         combo(3, "Priority", "priority", ACTION_PRIORITIES)
         combo(4, "Status", "status", ACTION_STATUSES)
-        entry(5, "Completed on (YYYY-MM-DD)", "completed_on")
+        entry(5, "Completed on", "completed_on")
 
         ttk.Label(body, text="Notes").grid(
             row=6, column=0, sticky="nw", padx=4, pady=4)
@@ -947,6 +988,33 @@ def _prompt_text(parent, title: str, *,
     ttk.Label(win, text=title).pack(anchor="w", padx=8, pady=8)
     var = tk.StringVar(value=initial)
     ttk.Entry(win, textvariable=var).pack(fill="x", padx=8)
+    result: dict = {"value": None}
+
+    def ok() -> None:
+        result["value"] = var.get().strip()
+        win.destroy()
+
+    bar = ttk.Frame(win)
+    bar.pack(fill="x", padx=8, pady=12)
+    ttk.Button(bar, text="OK", command=ok).pack(side="right",
+                                                       padx=4)
+    ttk.Button(bar, text="Cancel",
+                command=win.destroy).pack(side="right")
+    win.wait_window()
+    return result["value"]
+
+
+def _prompt_date(parent, title: str, *,
+                  initial: str = "") -> str | None:
+    """Like :func:`_prompt_text` but with date drop-downs."""
+    win = tk.Toplevel(parent)
+    win.title(title)
+    win.geometry("420x140")
+    win.transient(parent)
+    win.after_idle(win.grab_set)
+    ttk.Label(win, text=title).pack(anchor="w", padx=8, pady=8)
+    var = tk.StringVar(value=initial)
+    kit.DateField(win, var).pack(anchor="w", padx=8)
     result: dict = {"value": None}
 
     def ok() -> None:

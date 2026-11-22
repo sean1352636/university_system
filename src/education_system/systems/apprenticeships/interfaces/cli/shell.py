@@ -15,8 +15,8 @@ from education_system.platform import branding
 from education_system.systems.apprenticeships import SYSTEM_NAME, VERSION
 from education_system.systems.apprenticeships.interfaces.cli import prompts
 from education_system.systems.apprenticeships.interfaces.cli.menus import menu_for
-from education_system.systems.apprenticeships.services import preferences
-from education_system.systems.apprenticeships.services.access import Actor, resolve
+from education_system.systems.apprenticeships.application.workspace import preferences
+from education_system.systems.apprenticeships.application.security.access import Actor, resolve
 
 logger = logging.getLogger(__name__)
 

@@ -6,7 +6,9 @@ from education_system.systems.sixth_form.interfaces.gui._ui import grab_when_vie
 import datetime as _dt
 import logging
 import tkinter as tk
-from tkinter import messagebox, ttk
+from tkinter import ttk
+from education_system.systems.sixth_form.interfaces.gui._sidebar import SidebarBook
+from education_system.platform.delivery.gui.parented_dialogs import messagebox
 from education_system.platform import branding
 from education_system.systems.sixth_form.domain.staff.dbs_checks import (
     dbs_checks as data,
@@ -51,7 +53,7 @@ def open_dbs_checks_window(parent=None) -> None:
     win.geometry(WIN_GEOMETRY)
     win.minsize(*WIN_MINSIZE)
 
-    nb = ttk.Notebook(win)
+    nb = SidebarBook(win)
     nb.pack(fill="both", expand=True, padx=10, pady=10)
 
     DBSTab(nb, scope="active",          label="Active")
@@ -164,6 +166,7 @@ class DBSTab:
                 ("Start renewal",       self._start_renewal),
                 ("Change status",       self._set_status),
                 ("Delete",              self._delete),
+                ("Archived…",           self._archived),
                 ("Refresh",             self.refresh),
         ):
             ttk.Button(actions, text=label,
@@ -355,16 +358,86 @@ class DBSTab:
         self.refresh()
 
     def _delete(self) -> None:
+        """Archive, not erase: a DBS row is single central record evidence."""
         c = self._selected()
         if not c:
             return
-        if not messagebox.askyesno(
-                "DBS Checks",
-                f"Delete check #{c.check_id}?",
-                parent=self.frame):
-            return
-        data.delete_check(c.check_id)
-        self.refresh()
+        dlg = tk.Toplevel(self.frame)
+        dlg.title(f"Archive DBS check #{c.check_id}")
+        dlg.transient(self.frame.winfo_toplevel())
+        body = ttk.Frame(dlg, padding=12)
+        body.pack(fill="both", expand=True)
+        ttk.Label(body, text="The check leaves the register but is kept for the "
+                             "single central record, with who archived it and why.",
+                  wraplength=380).grid(row=0, column=0, columnspan=2, sticky="w",
+                                       pady=(0, 8))
+        reason = tk.StringVar(value=data.ARCHIVE_REASONS[0])
+        detail = tk.StringVar()
+        ttk.Label(body, text="Reason:").grid(row=1, column=0, sticky="e", pady=3)
+        ttk.Combobox(body, textvariable=reason, values=data.ARCHIVE_REASONS,
+                     state="readonly", width=30).grid(row=1, column=1, sticky="w")
+        ttk.Label(body, text="Detail:").grid(row=2, column=0, sticky="e", pady=3)
+        ttk.Entry(body, textvariable=detail, width=34).grid(row=2, column=1,
+                                                           sticky="w")
+
+        def go() -> None:
+            try:
+                data.delete_check(c.check_id, reason=reason.get(),
+                                  detail=detail.get(), by=_who())
+            except ValidationError as e:
+                messagebox.showerror("DBS Checks", str(e), parent=dlg)
+                return
+            dlg.destroy()
+            self.refresh()
+
+        bar = ttk.Frame(body)
+        bar.grid(row=3, column=0, columnspan=2, sticky="e", pady=(10, 0))
+        ttk.Button(bar, text="Archive", command=go).pack(side="left")
+        ttk.Button(bar, text="Cancel", command=dlg.destroy).pack(side="left",
+                                                               padx=6)
+
+    def _archived(self) -> None:
+        rows = data.list_archived()
+        dlg = tk.Toplevel(self.frame)
+        dlg.title("Archived DBS checks")
+        dlg.transient(self.frame.winfo_toplevel())
+        bar = ttk.Frame(dlg, padding=(8, 8, 8, 0))
+        bar.pack(fill="x")
+        tree = ttk.Treeview(dlg, show="headings", height=12, columns=(
+            "id", "staff", "dbs", "status", "on", "by", "why"))
+        for col, title, width in (("id", "#", 50), ("staff", "Staff", 90),
+                                  ("dbs", "DBS no.", 110), ("status", "Status", 120),
+                                  ("on", "Archived", 140), ("by", "By", 100),
+                                  ("why", "Reason", 260)):
+            tree.heading(col, text=title)
+            tree.column(col, width=width, anchor="w")
+        for r in rows:
+            tree.insert("", "end", iid=str(r.check_id), values=(
+                r.check_id, r.staff_id, r.dbs_number or "", r.status,
+                r.archived_on or "", r.archived_by or "", r.archive_reason or ""))
+
+        def restore() -> None:
+            sel = tree.selection()
+            if not sel:
+                return
+            try:
+                data.restore_check(int(sel[0]), by=_who())
+            except ValidationError as e:
+                messagebox.showerror("DBS Checks", str(e), parent=dlg)
+                return
+            tree.delete(sel[0])
+            self.refresh()
+
+        ttk.Button(bar, text="Restore selected", command=restore).pack(side="left")
+        tree.pack(fill="both", expand=True, padx=8, pady=8)
+
+
+def _who() -> str:
+    """The signed-in user, for the archive trail."""
+    from education_system.systems.sixth_form.domain.governance.user_management import (
+        access,
+    )
+    return access.current().username or ""
 
 
 class SummaryTab:

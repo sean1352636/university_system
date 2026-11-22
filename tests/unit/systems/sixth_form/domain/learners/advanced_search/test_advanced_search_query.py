@@ -10,23 +10,26 @@ from __future__ import annotations
 import pytest
 
 from education_system.systems.sixth_form.domain.learners.advanced_search import (
-    advanced_search as A,
+    _db as search_db,
+    history as search_history,
+    matching as search_matching,
+    models as search_models,
+    query as search_query,
 )
 
 
 def _match(query: str, doc: dict, **opt_kw) -> bool:
-    opts = A.QueryOptions(**opt_kw)
-    return A._doc_match(A.parse_query(query, opts), doc, opts)
+    opts = search_models.QueryOptions(**opt_kw)
+    return search_matching._doc_match(search_query.parse_query(query, opts), doc, opts)
 
 
 # ── tmp-DB fixture for the persistence-backed features ────────────
 
 @pytest.fixture
 def fresh_db(tmp_path, monkeypatch):
-    monkeypatch.setattr(A, "DB_PATH", str(tmp_path / "adv.db"))
-    monkeypatch.setattr(A, "_DB_READY", False)
-    A.init_db()
-    return A
+    monkeypatch.setattr(search_db, "DB_PATH", str(tmp_path / "adv.db"))
+    monkeypatch.setattr(search_db, "_DB_READY", False)
+    search_db.init_db()
 
 
 # ── 1. Field-prefixed phrases (spaces inside the value) ───────────
@@ -61,41 +64,41 @@ def test_date_range():
 
 
 def test_bad_range_raises():
-    with pytest.raises(A.ValidationError):
-        A.parse_query("grade:Z..Q", A.QueryOptions())
+    with pytest.raises(search_models.ValidationError):
+        search_query.parse_query("grade:Z..Q", search_models.QueryOptions())
 
 
 # ── 3. Aggregates ──────────────────────────────────────────────────
 
 def test_aggregate_count_parses():
-    node = A.parse_query("count(behaviour)>3", A.QueryOptions())
-    assert isinstance(node, A._Aggregate)
+    node = search_query.parse_query("count(behaviour)>3", search_models.QueryOptions())
+    assert isinstance(node, search_query._Aggregate)
     assert (node.func, node.scope, node.op, node.value) == (
         "count", "behaviour", ">", 3.0)
 
 
 def test_aggregate_bare_metric_shorthand():
-    node = A.parse_query("avg(attendance)<85", A.QueryOptions())
+    node = search_query.parse_query("avg(attendance)<85", search_models.QueryOptions())
     assert node.func == "avg" and node.field == "attendance"
     assert node.scope == "progress_reviews"
 
 
 def test_aggregate_scoped_field():
-    node = A.parse_query("avg(progress_reviews.attendance)>=90",
-                         A.QueryOptions())
+    node = search_query.parse_query("avg(progress_reviews.attendance)>=90",
+                         search_models.QueryOptions())
     assert node.scope == "progress_reviews" and node.field == "attendance"
 
 
 def test_aggregate_unknown_scope_raises():
-    with pytest.raises(A.ValidationError):
-        A.parse_query("count(nope)>1", A.QueryOptions())
+    with pytest.raises(search_models.ValidationError):
+        search_query.parse_query("count(nope)>1", search_models.QueryOptions())
 
 
 def test_aggregate_metric_helpers():
-    agg = A._Aggregate("avg", "progress_reviews", "attendance", "<", 85.0)
-    assert A._agg_metric(agg, 0, [80.0, 90.0]) == 85.0
-    cnt = A._Aggregate("count", "behaviour", None, ">", 2.0)
-    assert A._agg_metric(cnt, 5, []) == 5.0
+    agg = search_query._Aggregate("avg", "progress_reviews", "attendance", "<", 85.0)
+    assert search_query._agg_metric(agg, 0, [80.0, 90.0]) == 85.0
+    cnt = search_query._Aggregate("count", "behaviour", None, ">", 2.0)
+    assert search_query._agg_metric(cnt, 5, []) == 5.0
 
 
 # ── 4. Relative comparisons ────────────────────────────────────────
@@ -141,14 +144,14 @@ def test_regex_field_scoped():
 
 
 def test_invalid_regex_raises():
-    with pytest.raises(A.ValidationError):
-        A.parse_query("/(unclosed/", A.QueryOptions())
+    with pytest.raises(search_models.ValidationError):
+        search_query.parse_query("/(unclosed/", search_models.QueryOptions())
 
 
 # ── 7. Inline scope directives ─────────────────────────────────────
 
 def test_scope_directive_extraction():
-    clean, inc, exc = A._extract_scope_directives(
+    clean, inc, exc = search_query._extract_scope_directives(
         "maths scope:students,staff -scope:audit_logs in:notices")
     assert clean == "maths"
     assert inc == ["students", "staff", "notices"]
@@ -156,28 +159,28 @@ def test_scope_directive_extraction():
 
 
 def test_scope_directive_none():
-    clean, inc, exc = A._extract_scope_directives("just a query")
+    clean, inc, exc = search_query._extract_scope_directives("just a query")
     assert clean == "just a query" and inc == [] and exc == []
 
 
 # ── 8. Macros ──────────────────────────────────────────────────────
 
 def test_macro_expands_saved_query(fresh_db):
-    fresh_db.create_saved_search(
+    search_history.create_saved_search(
         {"name": "at_risk", "query": "attendance:<85", "scopes": ["students"]})
-    assert fresh_db.expand_macros("@at_risk and maths") == \
+    assert search_query.expand_macros("@at_risk and maths") == \
         "(attendance:<85) and maths"
 
 
 def test_macro_unknown_left_literal(fresh_db):
-    assert fresh_db.expand_macros("@nope foo") == "@nope foo"
+    assert search_query.expand_macros("@nope foo") == "@nope foo"
 
 
 def test_macro_cycle_guarded(fresh_db):
-    fresh_db.create_saved_search(
+    search_history.create_saved_search(
         {"name": "a_loop", "query": "@a_loop x", "scopes": ["students"]})
     # Must terminate (depth/seen guard) and not raise.
-    out = fresh_db.expand_macros("@a_loop")
+    out = search_query.expand_macros("@a_loop")
     assert isinstance(out, str)
 
 
@@ -196,12 +199,12 @@ def test_diacritics_can_be_disabled():
 
 def test_did_you_mean_corrects_typo(fresh_db):
     # "studetn" is one transposition from the scope-label word "students".
-    out = fresh_db.did_you_mean("studetn")
+    out = search_query.did_you_mean("studetn")
     assert out and "student" in out[0].lower()
 
 
 def test_did_you_mean_empty_for_good_term(fresh_db):
-    assert fresh_db.did_you_mean("students") == []
+    assert search_query.did_you_mean("students") == []
 
 
 # ── Regression: booleans / wildcards / fuzzy unaffected ───────────

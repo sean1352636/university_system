@@ -2,34 +2,73 @@
 
 from datetime import datetime, timedelta
 
-try:
-    import pandas as pd  # type: ignore
-except Exception:
-    pd = None  # type: ignore
+import importlib.util
 
-try:
-    import matplotlib.pyplot as plt  # type: ignore
-    MATPLOTLIB_AVAILABLE = True
-except Exception:
-    MATPLOTLIB_AVAILABLE = False
-    class _MatplotlibDummy:
-        def __getattr__(self, name):
-            return self
-        def __call__(self, *args, **kwargs):  # pragma: no cover
-            return None
-    plt = _MatplotlibDummy()
+# pandas, matplotlib and seaborn are loaded on first use, not at import.
+# Importing them costs ~10s, and this module is imported by the first
+# log_event() of a session (logs._init_log_management) -- which runs inside
+# the e-mail save's write transaction, so every other writer hit "database
+# is locked" while they loaded. The names below behave as before once used.
 
-try:
-    import seaborn as sns  # type: ignore
-    SEABORN_AVAILABLE = True
-except Exception:
-    SEABORN_AVAILABLE = False
-    class _SeabornDummy:
-        def __getattr__(self, name):
-            return self
-        def __call__(self, *args, **kwargs):  # pragma: no cover
-            return None
-    sns = _SeabornDummy()
+
+class _MatplotlibDummy:
+    def __getattr__(self, name):
+        return self
+    def __call__(self, *args, **kwargs):  # pragma: no cover
+        return None
+
+
+class _SeabornDummy:
+    def __getattr__(self, name):
+        return self
+    def __call__(self, *args, **kwargs):  # pragma: no cover
+        return None
+
+
+class _LazyModule:
+    """Stands in for a module; ``loader()`` runs on the first attribute use."""
+
+    def __init__(self, loader):
+        self._loader = loader
+        self._module = None
+        self._loaded = False
+
+    def __getattr__(self, name):
+        if not self._loaded:
+            self._module = self._loader()
+            self._loaded = True
+        return getattr(self._module, name)
+
+
+def _load_pandas():
+    try:
+        import pandas  # type: ignore
+        return pandas
+    except Exception:
+        return None
+
+
+def _load_pyplot():
+    try:
+        import matplotlib.pyplot  # type: ignore
+        return matplotlib.pyplot
+    except Exception:
+        return _MatplotlibDummy()
+
+
+def _load_seaborn():
+    try:
+        import seaborn  # type: ignore
+        return seaborn
+    except Exception:
+        return _SeabornDummy()
+
+
+pd = _LazyModule(_load_pandas)  # type: ignore
+plt = _LazyModule(_load_pyplot)  # type: ignore
+sns = _LazyModule(_load_seaborn)  # type: ignore
+MATPLOTLIB_AVAILABLE = importlib.util.find_spec("matplotlib") is not None
+SEABORN_AVAILABLE = importlib.util.find_spec("seaborn") is not None
 
 from education_system.systems.university.infrastructure.logging.log_management.database import LogDatabase
 

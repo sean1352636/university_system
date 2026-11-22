@@ -10,6 +10,7 @@ import random
 import string
 
 from education_system.paths import UNIVERSITY_DEFAULT_DB_PATH
+from education_system.systems.university.domains.operations.domain.campus.mobility.services import taxi_booking_service
 
 try:
     from education_system.systems.university.infrastructure.database.db import get_connection
@@ -145,29 +146,15 @@ def get_service_by_id(service_id):
 
 # ==================== TICKET BOOKING ====================
 
-def create_ticket(service_id, customer_name, pickup, dropoff, distance, total_fare, payment_method):
-    """Create a new ticket."""
-    try:
-        ticket_number = generate_ticket_number()
-        now = datetime.now()
-
-        with get_connection() as conn:
-            conn.execute("""
-                INSERT INTO taxi_booking_tickets
-                (ticket_number, service_id, customer_name, pickup_location, dropoff_location,
-                 distance_km, total_fare, payment_method, booking_date, booking_time)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """, (
-                ticket_number, service_id, customer_name, pickup, dropoff, distance,
-                total_fare, payment_method, now.strftime("%Y-%m-%d"), now.strftime("%H:%M:%S")
-            ))
-            conn.commit()
-            cursor = conn.execute("SELECT last_insert_rowid()")
-            ticket_id = cursor.fetchone()[0]
-        return ticket_id, ticket_number
-    except Exception as e:
-        print(f"Error creating ticket: {e}")
-        return None, None
+def create_ticket(service_id, customer_name, pickup, dropoff, distance, total_fare, payment_method,
+                  student_id=None):
+    """Create a new ticket via the taxi domain service, which takes the fare
+    and posts it to Finance."""
+    current_user = get_current_user()
+    return taxi_booking_service.create_ticket(
+        service_id, customer_name, pickup, dropoff, distance, total_fare, payment_method,
+        student_id=student_id, processed_by=current_user.get('username') or current_user.get('name'),
+    )
 
 def get_all_tickets():
     """Get all tickets with service details."""
@@ -336,13 +323,24 @@ def book_taxi_menu():
     payment_methods = {'1': 'Cash', '2': 'Card', '3': 'Student Account'}
     payment_method = payment_methods.get(payment_choice, 'Cash')
 
+    student_id = current_user.get('student_id') or (
+        current_user.get('username') if current_user.get('id') is not None else None)
+    if payment_method == 'Student Account':
+        total_fare *= 0.85  # same 15% student-account discount as the GUI
+        if not student_id:
+            student_id = input("  Student ID to charge: ").strip()
+            if not student_id:
+                print("  ❌ A student account payment needs a student ID.")
+                return
+
     confirm = input(f"\n  Confirm booking for £{total_fare:.2f}? (yes/no): ").strip().lower()
     if confirm != 'yes':
         print("  Booking cancelled.")
         return
 
     ticket_id, ticket_number = create_ticket(
-        service_id, customer_name, pickup, dropoff, distance, total_fare, payment_method
+        service_id, customer_name, pickup, dropoff, distance, total_fare, payment_method,
+        student_id=student_id
     )
 
     if ticket_id:

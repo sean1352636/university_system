@@ -5,11 +5,13 @@ from education_system.systems.sixth_form.interfaces.gui._ui import grab_when_vie
 
 import logging
 import tkinter as tk
-from tkinter import messagebox, simpledialog, ttk
+from tkinter import ttk
+from education_system.systems.sixth_form.interfaces.gui._sidebar import SidebarBook
+from education_system.platform.delivery.gui.parented_dialogs import messagebox, simpledialog
 from typing import Callable
-from education_system.systems.sixth_form.interfaces import user_accounts as data
+from education_system.systems.sixth_form.domain.governance.user_management import user_accounts as data
 from education_system.platform import branding
-from education_system.systems.sixth_form.interfaces.user_accounts import (
+from education_system.systems.sixth_form.domain.governance.user_management.user_accounts import (
     DEFAULT_ROLE,
     ROLES,
     SYSTEM_KEY,
@@ -34,7 +36,7 @@ def open_user_accounts_window(parent=None, *, auth) -> None:
     win.title(f"User Accounts — {branding.SYSTEM_NAME}")
     win.geometry(WIN_GEOMETRY)
     win.minsize(*WIN_MINSIZE)
-    nb = ttk.Notebook(win)
+    nb = SidebarBook(win)
     nb.pack(fill="both", expand=True, padx=10, pady=10)
     UsersTab(nb, auth)
     SummaryTab(nb, auth)

@@ -27,15 +27,15 @@ CATEGORIES: tuple[str, ...] = (
     "Awards",
     "Parents' Evening",
     "Trip / Visit",
-    "Bursary / Finance",
+    "Payments / Finance",
     "Disciplinary",
     "Reference",
     "Offer Letter",
     "Rejection Letter",
     "Reminder",
     "Safeguarding",
-    "Examinations",
-    "UCAS",
+    "SATs & Assessments",
+    "Transition",
     "End of Year",
     "Other",
 )
@@ -47,8 +47,7 @@ RECIPIENT_TYPES: tuple[str, ...] = (
     "Both",
     "Staff",
     "External Agency",
-    "University",
-    "Employer",
+    "Secondary School",
     "Other",
 )
 DEFAULT_RECIPIENT_TYPE = "Parent / Carer"

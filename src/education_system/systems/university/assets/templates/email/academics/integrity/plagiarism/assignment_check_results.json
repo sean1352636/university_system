@@ -1,0 +1,11 @@
+{
+  "subject": "Checks on your submission: $assignment_title",
+  "body": "Dear $first_name,\n\nYour submission for '$assignment_title' ($module_code) has been through the university's similarity check and AI-writing indicators.\n\nSimilarity check\n$similarity_result\n\nAI-writing indicators\n$ai_result\n\nThese results are not a finding against you. They help staff decide whether to look more closely, and a member of staff makes that decision. You would be told about any concern and could respond.\n\nBest regards,\nAcademic Integrity Team",
+  "variables": {
+    "first_name": {"type": "string", "required": true, "description": "Student's first name"},
+    "assignment_title": {"type": "string", "required": true, "description": "Assignment title"},
+    "module_code": {"type": "string", "required": true, "description": "Module code"},
+    "similarity_result": {"type": "string", "required": true, "description": "Similarity result, or that it is being reviewed or was not run"},
+    "ai_result": {"type": "string", "required": true, "description": "AI-writing reading, or that it is being reviewed or was not taken"}
+  }
+}

@@ -16,6 +16,9 @@ from typing import Optional, List, Dict, Any, Tuple
 
 from education_system.systems.university.infrastructure.database.db import get_connection, transaction
 from education_system.systems.university.infrastructure.activity_logger import log_activity
+from education_system.systems.university.plugins.campus_commerce.domain import finance_posting
+
+FINANCE_SOURCE = 'Gym'
 
 # Constants
 MEMBERSHIP_TYPES = {
@@ -198,8 +201,15 @@ class MembershipManager:
     def create_membership(user_id: str, user_name: str, user_email: str,
                          membership_type: str, months: int = 1,
                          emergency_contact: str = None, emergency_phone: str = None,
-                         health_conditions: str = None, created_by: str = None) -> Optional[Dict]:
-        """Create a new gym membership."""
+                         health_conditions: str = None, created_by: str = None,
+                         payment_method: str = None) -> Optional[Dict]:
+        """Create a new gym membership.
+
+        When ``payment_method`` is given the fee is taken here as well
+        (``TransactionManager.record_payment``), which posts it to Finance.
+        A declined student-account payment aborts the signup and returns
+        ``None``.
+        """
         try:
             if membership_type not in MEMBERSHIP_TYPES:
                 return None
@@ -228,9 +238,10 @@ class MembershipManager:
             log_activity('create', 'gym_membership',
                         details={'membership_id': membership_id, 'member_number': member_number, 'type': membership_type})
 
-            # Cross-domain: post the membership fee through the
-            # unified commerce bus (charges student finance ledger,
-            # earns loyalty points, applies SU/tier discount).
+            # Cross-domain: price the fee through the commerce bus
+            # (SU/tier discount). The Finance payment itself is posted by
+            # TransactionManager.record_payment below; the bus's paid-sale
+            # row is student-ledger history and loyalty only.
             final_fee = total_fee
             sale_meta: Dict = {}
             try:
@@ -241,16 +252,41 @@ class MembershipManager:
                     user_id, total_fee, source="gym",
                 )
                 final_fee = final_fee_calc
-                sale_meta = commerce_bus.post_sale(
-                    user_id,
-                    source="gym",
-                    amount=final_fee,
-                    description=f"Gym {membership_type} ({months}mo)",
-                    reference_id=member_number,
-                    processed_by=created_by or "gym",
-                )
             except Exception:
+                commerce_bus = None
                 logger.debug("Suppressed exception", exc_info=True)
+
+            payment = None
+            if payment_method:
+                payment = TransactionManager.record_payment(
+                    user_id=user_id,
+                    transaction_type='membership',
+                    amount=final_fee,
+                    payment_method=payment_method,
+                    member_id=membership_id,
+                    processed_by=created_by,
+                    description=f"Gym membership - {membership['name']} ({months} month(s))",
+                )
+                if payment is None:
+                    # No money moved (student account declined): undo the signup.
+                    with transaction() as conn:
+                        conn.execute("DELETE FROM gym_memberships WHERE membership_id = ?",
+                                     (membership_id,))
+                    logger.warning("Gym membership %s not created: payment declined", member_number)
+                    return None
+
+            if commerce_bus is not None:
+                try:
+                    sale_meta = commerce_bus.post_sale(
+                        user_id,
+                        source="gym",
+                        amount=final_fee,
+                        description=f"Gym {membership_type} ({months}mo)",
+                        reference_id=member_number,
+                        processed_by=created_by or "gym",
+                    )
+                except Exception:
+                    logger.debug("Suppressed exception", exc_info=True)
 
             # Cross-domain: enrolling in any gym membership grants the
             # student access to the SU "Sports & Fitness" club (free
@@ -283,6 +319,7 @@ class MembershipManager:
                 'start_date': start_date.isoformat(),
                 'end_date': end_date.isoformat(),
                 'loyalty': sale_meta,
+                'payment': payment,
             }
         except Exception as e:
             print(f"Error creating membership: {e}")
@@ -331,8 +368,14 @@ class MembershipManager:
             return []
 
     @staticmethod
-    def renew_membership(membership_id: int, months: int = 1) -> Optional[Dict]:
-        """Renew a membership."""
+    def renew_membership(membership_id: int, months: int = 1,
+                         payment_method: str = None, processed_by: str = None) -> Optional[Dict]:
+        """Renew a membership.
+
+        With ``payment_method`` the renewal fee is taken and posted to
+        Finance first; a declined student-account payment returns ``None``
+        without extending the membership.
+        """
         try:
             membership = MembershipManager.get_membership(membership_id=membership_id)
             if not membership:
@@ -343,6 +386,20 @@ class MembershipManager:
             new_end = new_start + timedelta(days=30 * months)
             total_fee = membership['monthly_fee'] * months
 
+            payment = None
+            if payment_method:
+                payment = TransactionManager.record_payment(
+                    user_id=membership['user_id'],
+                    transaction_type='membership_renewal',
+                    amount=total_fee,
+                    payment_method=payment_method,
+                    member_id=membership_id,
+                    processed_by=processed_by,
+                    description=f"Gym membership renewal ({months} month(s))",
+                )
+                if payment is None:
+                    return None
+
             with transaction() as conn:
                 conn.execute('''
                     UPDATE gym_memberships
@@ -352,7 +409,8 @@ class MembershipManager:
 
             return {
                 'new_end_date': new_end.isoformat(),
-                'total_fee': total_fee
+                'total_fee': total_fee,
+                'payment': payment,
             }
         except Exception as e:
             print(f"Error renewing membership: {e}")
@@ -537,27 +595,51 @@ class PTSessionManager:
     @staticmethod
     def book_session(member_id: int, trainer_name: str, session_date: str,
                     session_time: str, session_type: str = 'single',
-                    duration: int = 60) -> Optional[Dict]:
-        """Book a personal training session."""
+                    duration: int = 60, payment_method: str = None,
+                    processed_by: str = None) -> Optional[Dict]:
+        """Book a personal training session.
+
+        With ``payment_method`` the fee is taken and posted to Finance and
+        the session is marked paid; a declined student-account payment
+        returns ``None`` without booking.
+        """
         try:
             booking_ref = generate_booking_ref()
             fee = PT_SESSION_FEES.get(session_type, PT_SESSION_FEES['single'])
+
+            payment = None
+            if payment_method:
+                membership = MembershipManager.get_membership(membership_id=member_id)
+                if not membership:
+                    return None
+                payment = TransactionManager.record_payment(
+                    user_id=membership['user_id'],
+                    transaction_type='pt_session',
+                    amount=fee,
+                    payment_method=payment_method,
+                    member_id=member_id,
+                    processed_by=processed_by,
+                    description=f"Personal training - {session_type} ({booking_ref})",
+                )
+                if payment is None:
+                    return None
 
             with transaction() as conn:
                 conn.execute('''
                     INSERT INTO gym_pt_sessions
                     (booking_ref, member_id, trainer_name, session_date, session_time,
-                     duration_minutes, session_type, fee)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                     duration_minutes, session_type, fee, payment_status)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ''', (booking_ref, member_id, trainer_name, session_date, session_time,
-                      duration, session_type, fee))
+                      duration, session_type, fee, 'paid' if payment else 'pending'))
 
                 session_id = conn.execute("SELECT last_insert_rowid()").fetchone()[0]
 
             return {
                 'session_id': session_id,
                 'booking_ref': booking_ref,
-                'fee': fee
+                'fee': fee,
+                'payment': payment,
             }
         except Exception as e:
             print(f"Error booking PT session: {e}")
@@ -634,29 +716,122 @@ class TransactionManager:
     @staticmethod
     def record_payment(user_id: str, transaction_type: str, amount: float,
                       payment_method: str, member_id: int = None,
-                      processed_by: str = None) -> Optional[Dict]:
-        """Record a payment transaction."""
+                      processed_by: str = None, description: str = None,
+                      reference: str = None) -> Optional[Dict]:
+        """Record a gym payment and post it to Finance.
+
+        This is the single place gym money reaches Finance: the GUI and
+        both CLIs call it. A student-account payment is debited first and a
+        decline returns ``None`` (nothing recorded); for cash/card the local
+        row is written and a finance posting failure is logged, never
+        rolled back.
+        """
         try:
-            reference = generate_reference()
+            reference = reference or generate_reference()
+            description = description or f"Gym {transaction_type.replace('_', ' ')}"
+
+            finance = finance_posting.post_sale(
+                student_id=user_id,
+                amount=amount,
+                payment_method=payment_method,
+                transaction_source=FINANCE_SOURCE,
+                transaction_ref=reference,
+                description=description,
+                processed_by=processed_by,
+            ) if finance_posting.is_student_account(payment_method) else None
+            if finance is not None and not finance['success']:
+                logger.warning("Gym payment %s declined: %s", reference, finance['message'])
+                return None
 
             with transaction() as conn:
                 conn.execute('''
                     INSERT INTO transactions
                     (source_type, reference_number, customer_id, student_id, transaction_type, amount,
-                     payment_method, processed_by)
-                    VALUES ('gym', ?, ?, ?, ?, ?, ?, ?)
+                     payment_method, description, processed_by)
+                    VALUES ('gym', ?, ?, ?, ?, ?, ?, ?, ?)
                 ''', (reference, member_id, user_id, transaction_type, amount,
-                      payment_method, processed_by))
+                      payment_method, description, processed_by))
 
                 transaction_id = conn.execute("SELECT last_insert_rowid()").fetchone()[0]
+
+            if finance is None:
+                finance = finance_posting.post_sale(
+                    student_id=user_id,
+                    amount=amount,
+                    payment_method=payment_method,
+                    transaction_source=FINANCE_SOURCE,
+                    transaction_ref=reference,
+                    description=description,
+                    processed_by=processed_by,
+                )
 
             return {
                 'transaction_id': transaction_id,
                 'reference': reference,
-                'amount': amount
+                'amount': amount,
+                'finance_payment_id': finance.get('payment_id'),
+                'new_balance': finance.get('new_balance'),
             }
         except Exception as e:
             print(f"Error recording payment: {e}")
+            return None
+
+    @staticmethod
+    def record_refund(transaction_id: int, amount: float, refund_method: str,
+                      processed_by: str = None, reason: str = None) -> Optional[Dict]:
+        """Refund a gym payment: mark it refunded, log the refund row and
+        post the refund to Finance (crediting the student account when
+        that is the refund method). Returns ``None`` if the payment is
+        unknown or already refunded.
+        """
+        try:
+            with get_connection() as conn:
+                cursor = conn.execute('''
+                    SELECT student_id, transaction_type, reference_number, status
+                    FROM transactions WHERE source_type = 'gym' AND transaction_id = ?
+                ''', (transaction_id,))
+                row = cursor.fetchone()
+            if not row:
+                return None
+            user_id, transaction_type, original_ref, status = row[0], row[1], row[2], row[3]
+            if status == 'refunded':
+                return None
+
+            refund_ref = f"REFUND-{generate_reference()}"
+            method_key = (refund_method or 'cash').lower().replace(' ', '_')
+            with transaction() as conn:
+                conn.execute('''
+                    UPDATE transactions SET status = 'refunded'
+                    WHERE source_type = 'gym' AND transaction_id = ?
+                ''', (transaction_id,))
+                conn.execute('''
+                    INSERT INTO transactions
+                    (source_type, reference_number, student_id, transaction_type, amount,
+                     payment_method, status, processed_by, description)
+                    VALUES ('gym', ?, ?, ?, ?, ?, 'completed', ?, ?)
+                ''', (refund_ref, user_id, f'refund_{transaction_type}', amount,
+                      method_key, processed_by, reason or 'Gym Service Refund'))
+
+            finance = finance_posting.post_refund(
+                student_id=user_id,
+                amount=amount,
+                transaction_source=FINANCE_SOURCE,
+                transaction_ref=refund_ref,
+                refund_method=refund_method or 'cash',
+                reason=reason or 'Gym Service Refund',
+                processed_by=processed_by,
+                notes=f"original {original_ref}",
+            )
+            return {
+                'refund_ref': refund_ref,
+                'user_id': user_id,
+                'amount': amount,
+                'finance_refund_id': finance.get('refund_id'),
+                'credited': finance.get('credited'),
+                'new_balance': finance.get('new_balance'),
+            }
+        except Exception as e:
+            logger.error("Error recording gym refund: %s", e)
             return None
 
     @staticmethod

@@ -8,6 +8,9 @@ Four tabs:
   aspiration.
 * Summary     — Gatsby-benchmark counts, pathway breakdown, alerts
   (upcoming scheduled / follow-ups / students with no recent session).
+
+Plus Gatsby coverage, Evidence, Session links and Employers
+(``gatsby_views``): which benchmarks each learner has met and why.
 """
 
 from __future__ import annotations
@@ -16,7 +19,9 @@ from education_system.systems.sixth_form.interfaces.gui._ui import grab_when_vie
 import logging
 import tkinter as tk
 from datetime import date as _date
-from tkinter import messagebox, ttk
+from tkinter import ttk
+from education_system.systems.sixth_form.interfaces.gui._sidebar import SidebarBook
+from education_system.platform.delivery.gui.parented_dialogs import messagebox
 from typing import Any, Callable
 from education_system.systems.sixth_form.domain.progression.careers import careers
 from education_system.systems.sixth_form.domain.progression.careers import careers as data
@@ -69,7 +74,7 @@ def open_directory(gui) -> None:
     frame = _clear(gui)
     _heading(frame, "Careers Guidance")
 
-    nb = ttk.Notebook(frame)
+    nb = SidebarBook(frame)
     nb.pack(fill="both", expand=True)
 
     sessions_tab = ttk.Frame(nb, padding=8)
@@ -85,6 +90,19 @@ def open_directory(gui) -> None:
     _build_aspir_tab(gui, aspir_tab)
     _build_student_tab(gui, student_tab)
     _build_summary_tab(gui, summary_tab)
+
+    # Gatsby coverage per learner, its evidence, and the employer
+    # directory — added after the original four tabs.
+    from education_system.systems.sixth_form.interfaces.gui.progression import (
+        _record_tabs as _rt,
+    )
+    from education_system.systems.sixth_form.interfaces.gui.progression.careers import (
+        gatsby_views as _gatsby,
+    )
+    _rt.notebook_tab(nb, "Gatsby coverage", lambda t: _gatsby.build_coverage_tab(gui, t))
+    _rt.notebook_tab(nb, "Evidence", lambda t: _gatsby.build_evidence_tab(gui, t))
+    _rt.notebook_tab(nb, "Session links", lambda t: _gatsby.build_session_links_tab(gui, t))
+    _rt.notebook_tab(nb, "Employers", lambda t: _gatsby.build_employers_tab(gui, t))
 
 
 # ─── Sessions tab ──────────────────────────────────────────────────

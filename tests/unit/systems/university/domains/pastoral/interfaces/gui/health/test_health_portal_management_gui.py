@@ -14,9 +14,9 @@ import os
 import tempfile
 import threading
 
-_MOD = 'education_system.systems.university.domains.pastoral.interfaces.gui.health.health_portal_management_gui'
+_MOD = 'education_system.systems.university.domains.health.interfaces.gui.health.health_portal_management_gui'
 
-from education_system.systems.university.domains.pastoral.interfaces.gui.health.health_portal_management_gui import HealthPortalManagementGUI
+from education_system.systems.university.domains.health.interfaces.gui.health.health_portal_management_gui import HealthPortalManagementGUI
 from education_system.systems.university.infrastructure.auth import UserAuth
 
 @pytest.fixture

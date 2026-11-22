@@ -19,6 +19,27 @@ services:
       replicas: 1
       restart_policy: {condition: on-failure}
       resources: {limits: {cpus: "1.0", memory: 1G}}
+  worker:
+    # University background jobs: event outbox and connector feeds, e-mail
+    # outbox, timed e-mails, retention and the daily sweeps. Shares the API's
+    # data volume; one replica only (the jobs are not meant to run twice).
+    image: education-system:${IMAGE_TAG:-latest}
+    command: >-
+      /bin/sh -c 'API_SECRET_KEY="$$(cat /run/secrets/api_secret_key)"
+      JWT_SECRET_KEY="$$(cat /run/secrets/jwt_secret_key)"
+      CREDENTIAL_SIGNING_KEY="$$(cat /run/secrets/credential_signing_key)"
+      python -m education_system.launcher.university_worker'
+    environment:
+      APP_ENV: production
+      PYTHONPATH: /app/src
+      MULTI_TENANT_REQUIRED: "true"
+    secrets: [api_secret_key, jwt_secret_key, credential_signing_key]
+    volumes: [education_data:/app/var]
+    networks: [backend]
+    deploy:
+      replicas: 1
+      restart_policy: {condition: on-failure}
+      resources: {limits: {cpus: "0.5", memory: 512M}}
   verifier:
     image: education-system:${IMAGE_TAG:-latest}
     command: >-

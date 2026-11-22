@@ -16,13 +16,15 @@ docker build -t education-system:latest -f docker/Dockerfile .
 docker compose -f docker/docker-compose.yml up -d
 
 # Or run standalone container
-docker run -d -p 8000:8000 \
-  -v $(pwd)/data:/app/data \
-  -v $(pwd)/logs:/app/logs \
+docker run -d -p 5000:5000 \
+  -v $(pwd)/var:/app/var \
   --env-file .env.production \
   --name education-system \
-  education-system:latest
+  education-system:latest \
+  python -m education_system --api
 ```
+
+`docker/docker-compose.yml` runs the API under Gunicorn behind nginx and keeps all runtime state in the `app-var` volume, mounted at `/app/var`. Pass `API_SECRET_KEY`, `JWT_SECRET_KEY` and `CREDENTIAL_SIGNING_KEY` from the host or a `.env` file; they're required when `APP_ENV=production`. To use the CLI against that volume, run `docker compose -f docker/docker-compose.yml run --rm app python -m education_system --cli`. The image's own default command is the CLI. For orchestrated deployments, use `deploy/docker-stack.yml` or `deploy/kubernetes/`.
 
 #### Manual Deployment
 
@@ -32,10 +34,11 @@ export APP_ENV=production
 export DEBUG=False
 
 # 2. Install production dependencies
-pip install -r requirements.lock
+make install
+pip install -e . --no-deps
 
-# 3. Configure production database (PostgreSQL/MySQL recommended)
-# Edit .env with production database credentials
+# 3. Configure production secrets in .env (JWT_SECRET_KEY, API_SECRET_KEY, API_CORS_ORIGINS)
+# Databases are SQLite files under var/data/
 
 # 4. Run the application
 python -m education_system --gui  # For GUI
@@ -56,7 +59,7 @@ The system includes **6 professionally configured backup templates** for differe
 5. **Selective Tables** - Backup only critical database tables
 6. **Remote SFTP** - Secure off-site backups via SFTP
 
-**Documentation**: See [Backup Templates README](../../education_system/systems/university/assets/templates/backup_templates/README.md) for detailed template descriptions, configuration options, and usage examples.
+**Documentation**: See [Backup Templates README](../../src/education_system/systems/university/assets/templates/seeds/backup/README.md) for detailed template descriptions, configuration options, and usage examples.
 
 **Using Templates via GUI**:
 1. Open Data Backup GUI from the main interface
@@ -66,7 +69,7 @@ The system includes **6 professionally configured backup templates** for differe
 5. Save and run backup
 
 #### Automatic Backups
-- **Location**: `backups/` directory (centralized via `paths.py`)
+- **Location**: `var/backups/` directory (centralized via `paths.py`)
 - **Schedule**: Daily at 2 AM (configurable per template)
 - **Retention**: 7-30 days (configurable via retention policies)
 - **Includes**: Database, configuration files, uploads
@@ -75,28 +78,20 @@ The system includes **6 professionally configured backup templates** for differe
 #### Manual Backup
 
 ```bash
-# Create full backup using Make
-make db-backup
-
 # Create backup programmatically
-python -m university_system.infrastructure.database.database_utils --backup
-
-# Using Data Backup GUI
-python -m university_system.infrastructure.database.gui.data_backup_gui
+python -c "from education_system.systems.university.infrastructure.database.data_backup import create_enhanced_backup; create_enhanced_backup(manual=True)"
 ```
+
+Or use the Data Backup screen in the University GUI (`systems/university/shell/gui/database/backup_gui.py`).
 
 #### Restore from Backup
 
 ```bash
-# Restore using Make
-make db-restore BACKUP_FILE=backups/backup_20250101.db
-
 # Restore programmatically
-python -m university_system.infrastructure.database.database_utils --restore backups/backup_20250101.db
-
-# Using Data Backup GUI (recommended for selective restore)
-python -m university_system.infrastructure.database.gui.data_backup_gui
+python -c "from education_system.systems.university.infrastructure.database.data_backup import restore_from_backup; restore_from_backup('var/backups/university/database/<backup file>')"
 ```
+
+The Data Backup screen in the University GUI is recommended for selective restore.
 
 #### Backup Features
 - **Multiple backup types**: Full, incremental, differential, selective
@@ -107,19 +102,19 @@ python -m university_system.infrastructure.database.gui.data_backup_gui
 - **Email notifications**: Success/failure alerts
 - **Integrity verification**: Hash-based backup validation
 - **Deduplication**: Reduce storage usage
-- **Activity logging**: Complete audit trail in `logs/backup.log`
+- **Activity logging**: Complete audit trail in the backup log under `var/logs/`
 
 ### Database Migration
 
 ```bash
 # 1. Backup current database
-make db-backup
+python -c "from education_system.systems.university.infrastructure.database.data_backup import create_enhanced_backup; create_enhanced_backup(manual=True)"
 
-# 2. Run migrations
-python -m university_system.infrastructure.database.migrate
+# 2. Run migrations (the launcher also applies them at startup)
+alembic -c src/education_system/alembic.ini upgrade head
 
 # 3. Verify migration
-python -m university_system.infrastructure.database.verify
+alembic -c src/education_system/alembic.ini current
 ```
 
 ---

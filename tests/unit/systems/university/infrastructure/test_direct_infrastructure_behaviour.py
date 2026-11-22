@@ -9,7 +9,7 @@ from education_system.systems.university.infrastructure.communication.realtime_n
     Notification,
     NotificationType,
 )
-from education_system.systems.university.domains.pastoral.infrastructure.health.export_writer import write_csv
+from education_system.systems.university.domains.health.infrastructure.health.export_writer import write_csv
 from education_system.systems.university.infrastructure.monitoring.metrics import MetricsCollector
 from education_system.systems.university.infrastructure.performance.cache import (
     CacheManager as PerformanceCache,

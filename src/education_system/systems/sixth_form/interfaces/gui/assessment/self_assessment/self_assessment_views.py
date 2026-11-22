@@ -6,7 +6,9 @@ from education_system.systems.sixth_form.interfaces.gui._ui import grab_when_vie
 import datetime as _dt
 import logging
 import tkinter as tk
-from tkinter import messagebox, ttk
+from tkinter import ttk
+from education_system.systems.sixth_form.interfaces.gui._sidebar import SidebarBook
+from education_system.platform.delivery.gui.parented_dialogs import messagebox
 from typing import Callable
 from education_system.platform import branding
 from education_system.systems.sixth_form.domain.assessment.self_assessment import (
@@ -26,6 +28,9 @@ from education_system.systems.sixth_form.domain.assessment.self_assessment.self_
 from education_system.systems.sixth_form.domain.learners.students import (
     students as student_data,
 )
+from education_system.systems.sixth_form.domain.academics.subjects import (
+    subjects as subjects_data,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -43,14 +48,18 @@ _STATUS_TAGS = {
 
 
 def open_self_assessment_window(parent=None) -> None:
-    data.init_db()
     master = getattr(parent, "root", parent)
+    try:
+        data.init_db()
+    except Exception:
+        _load_failed(master, "the self-assessment store")
+        return
     win = tk.Toplevel(master) if master is not None else tk.Tk()
     win.title(f"Self-Assessments — {branding.SYSTEM_NAME}")
     win.geometry(WIN_GEOMETRY)
     win.minsize(*WIN_MINSIZE)
 
-    nb = ttk.Notebook(win)
+    nb = SidebarBook(win)
     nb.pack(fill="both", expand=True, padx=10, pady=10)
 
     AssessmentsTab(nb, scope="open",             label="Open")
@@ -61,10 +70,42 @@ def open_self_assessment_window(parent=None) -> None:
 
 
 def _student_options() -> list[tuple[str, str]]:
-    rows = sorted(student_data.list_students(),
-                   key=lambda s: s.student_id)
+    try:
+        rows = sorted(student_data.list_students(),
+                       key=lambda s: s.student_id)
+    except Exception:
+        logger.exception("Self-Assessment: could not load students")
+        return []
     return [(s.student_id, f"{s.student_id} — {s.full_name}")
             for s in rows]
+
+
+def _subject_options() -> list[str]:
+    try:
+        return subjects_data.get_active_names()
+    except Exception:
+        logger.exception("Self-Assessment: could not load subjects")
+        return []
+
+
+def _load_failed(parent, what: str) -> None:
+    logger.exception("Self-Assessment: could not load %s", what)
+    messagebox.showwarning(
+        "Self-Assessment",
+        f"Could not load {what}. The error has been logged.",
+        parent=parent)
+
+
+def _guarded(fn: Callable, parent, what: str) -> Callable:
+    """Wrap a button callback so an unexpected error is logged and
+    shown as a warning instead of a silent Tk traceback."""
+    def run(*args):
+        try:
+            return fn(*args)
+        except Exception:
+            _load_failed(parent, what)
+            return None
+    return run
 
 
 # ══ Table tab ════════════════════════════════════════════════════
@@ -110,9 +151,13 @@ class AssessmentsTab:
                     command=self.refresh).pack(side="left",
                                                   padx=(8, 4))
         ttk.Button(bar, text="Clear",
-                    command=self._clear).pack(side="left")
+                    command=_guarded(self._clear, self.frame,
+                                     "self-assessments")
+                    ).pack(side="left")
         ttk.Button(bar, text="New",
-                    command=self._new).pack(side="left", padx=(16, 0))
+                    command=_guarded(self._new, self.frame,
+                                     "the assessment form")
+                    ).pack(side="left", padx=(16, 0))
 
         table_frame = ttk.Frame(self.frame)
         table_frame.pack(fill="both", expand=True, padx=8, pady=4)
@@ -136,7 +181,9 @@ class AssessmentsTab:
         for status, (bg, fg) in _STATUS_TAGS.items():
             self.tree.tag_configure(status, background=bg,
                                        foreground=fg)
-        self.tree.bind("<Double-Button-1>", lambda _e: self._edit())
+        self.tree.bind("<Double-Button-1>",
+                       _guarded(lambda _e: self._edit(), self.frame,
+                                "the assessment"))
 
         actions = ttk.Frame(self.frame)
         actions.pack(fill="x", padx=8, pady=(4, 8))
@@ -150,7 +197,9 @@ class AssessmentsTab:
                 ("Refresh",       self.refresh),
         ):
             ttk.Button(actions, text=label,
-                        command=cmd).pack(side="left", padx=4)
+                        command=_guarded(cmd, self.frame,
+                                         "the assessment")
+                        ).pack(side="left", padx=4)
         self.count = ttk.Label(actions, text="")
         self.count.pack(side="right")
 
@@ -186,6 +235,10 @@ class AssessmentsTab:
         except ValidationError as e:
             messagebox.showerror("Self-Assessment", str(e),
                                     parent=self.frame)
+            return
+        except Exception:
+            self.count.config(text="Could not load assessments")
+            _load_failed(self.frame, "self-assessments")
             return
         for a in rows:
             avg = (f"{a.average_score:.2f}"
@@ -302,7 +355,9 @@ class PerStudentTab:
         self._opts = opts
         self.combo.pack(side="left", padx=(2, 8))
         ttk.Button(bar, text="Show",
-                    command=self._show).pack(side="left")
+                    command=_guarded(self._show, self.frame,
+                                     "the student's assessments")
+                    ).pack(side="left")
 
         self.text = tk.Text(self.frame, wrap="word",
                               font=("TkFixedFont", 10))
@@ -314,8 +369,12 @@ class PerStudentTab:
         if idx < 0:
             return
         sid = self._opts[idx][0]
-        rows = data.assessments_for_student(sid)
-        summ = data.student_summary(sid)
+        try:
+            rows = data.assessments_for_student(sid)
+            summ = data.student_summary(sid)
+        except Exception:
+            _load_failed(self.frame, f"self-assessments for {sid}")
+            return
         self.text.config(state="normal")
         self.text.delete("1.0", "end")
         self.text.insert("end",
@@ -325,7 +384,7 @@ class PerStudentTab:
                             f"Awaiting review    : {summ.awaiting_review}\n"
                             f"Reviewed           : {summ.reviewed}\n"
                             f"Most-recent score  : "
-                            f"{summ.most_recent_score if summ.most_recent_score is not None else '—'}\n\n")
+                            f"{summ.average_score if summ.average_score is not None else '—'}\n\n")
         for a in rows:
             avg = (f"{a.average_score:.2f}"
                     if a.average_score is not None else "—")
@@ -333,6 +392,8 @@ class PerStudentTab:
                                 f"#{a.assessment_id}  "
                                 f"{a.assessment_date}  "
                                 f"{a.assessment_type}  "
+                                f"{a.subject_name or ''}  "
+                                f"{a.period or ''}  "
                                 f"avg={avg}  [{a.status}]\n")
             if a.strengths:
                 self.text.insert("end",
@@ -368,7 +429,15 @@ class SummaryTab:
         self.text.config(state="disabled")
 
     def refresh(self) -> None:
-        s = data.summary()
+        try:
+            s = data.summary()
+        except Exception:
+            self.text.config(state="normal")
+            self.text.delete("1.0", "end")
+            self.text.insert("end", "Could not load the summary.\n")
+            self.text.config(state="disabled")
+            _load_failed(self.frame, "the self-assessment summary")
+            return
         self.text.config(state="normal")
         self.text.delete("1.0", "end")
         self.text.insert("end", "Self-Assessments Summary\n")
@@ -454,8 +523,13 @@ class SelfAssessmentEditor:
 
         entry(1, 0, "Date* (YYYY-MM-DD)", "assessment_date")
         combo(1, 2, "Type*", "assessment_type", ASSESSMENT_TYPES)
-        entry(2, 0, "Term", "term")
-        entry(2, 2, "Year group", "year_group")
+        ttk.Label(body, text="Subject").grid(
+            row=2, column=0, sticky="w", padx=4, pady=2)
+        self.vars["subject_name"] = tk.StringVar()
+        ttk.Combobox(body, textvariable=self.vars["subject_name"],
+                      values=_subject_options(), width=20).grid(
+            row=2, column=1, sticky="ew", padx=4, pady=2)
+        entry(2, 2, "Period (e.g. Autumn 1)", "period")
         combo(3, 0, "Status*", "status", STATUSES)
         entry(3, 2, "Reviewer", "reviewer")
         entry(4, 0, "Reviewed on (YYYY-MM-DD)", "reviewed_on")
@@ -522,7 +596,7 @@ class SelfAssessmentEditor:
                 self.student_combo.current(i)
                 break
         for key in ("assessment_date", "assessment_type",
-                     "term", "year_group", "status",
+                     "subject_name", "period", "status",
                      "reviewer", "reviewed_on"):
             self.vars[key].set(getattr(a, key) or "")
         for d in DIMENSIONS:
@@ -557,6 +631,9 @@ class SelfAssessmentEditor:
         except ValidationError as e:
             messagebox.showerror("Self-Assessment", str(e),
                                     parent=self.win)
+            return
+        except Exception:
+            _load_failed(self.win, "the assessment (save failed)")
             return
         self.win.destroy()
 
@@ -623,6 +700,9 @@ class ReviewDialog:
         except ValidationError as e:
             messagebox.showerror("Self-Assessment", str(e),
                                     parent=self.win)
+            return
+        except Exception:
+            _load_failed(self.win, "the review (save failed)")
             return
         self.win.destroy()
 

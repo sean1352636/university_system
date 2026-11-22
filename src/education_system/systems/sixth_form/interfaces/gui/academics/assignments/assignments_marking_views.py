@@ -14,12 +14,16 @@ from education_system.systems.sixth_form.interfaces.gui._ui import grab_when_vie
 
 import logging
 import tkinter as tk
-from tkinter import messagebox, ttk
+from tkinter import ttk
+from education_system.platform.delivery.gui.parented_dialogs import messagebox
 from typing import Callable
 
 from education_system.systems.sixth_form.domain.academics.assignments import (
-    assignments as data,
     assignments_marking as marking,
+)
+from education_system.systems.sixth_form.domain.academics.assignments import (
+    store as assignments_store,
+    submissions as assignments_submissions,
 )
 from education_system.systems.sixth_form.domain.academics.assignments.assignments_marking import (
     COMMENT_CATEGORIES,
@@ -164,7 +168,7 @@ class MarkingTab:
     # ── Data ──────────────────────────────────────────────────────
     def refresh(self) -> None:
         try:
-            rows = data.list_assignments()
+            rows = assignments_store.list_assignments()
         except Exception as e:
             messagebox.showerror("Marking", str(e))
             return
@@ -194,7 +198,7 @@ class MarkingTab:
     def _assignment(self):
         if self._selected_id is None:
             return None
-        return data.get_assignment(self._selected_id)
+        return assignments_store.get_assignment(self._selected_id)
 
     def _columns(self) -> tuple[list[str], dict[str, str], dict[str, int]]:
         cols = ["id", "student", "name", "status", "raw", "pen",
@@ -314,7 +318,7 @@ class MarkingTab:
         if not sel:
             messagebox.showinfo(action, "Select a student first.")
             return None
-        return data.get_submission(int(sel[0]))
+        return assignments_store.get_submission(int(sel[0]))
 
     def _need_assignment(self, action: str):
         a = self._assignment()
@@ -1146,7 +1150,7 @@ class PenaltyDialog:
         outer.pack(fill="both", expand=True)
         penalty = marking.compute_late_penalty(self.assignment,
                                                 self.submission)
-        due = data.effective_due_date(self.submission, self.assignment)
+        due = assignments_submissions.effective_due_date(self.submission, self.assignment)
 
         rows = [
             ("Deadline", due or "—"),
@@ -1317,7 +1321,7 @@ class BoundariesDialog:
 
     def _regrade(self) -> int:
         n = 0
-        for sub in data.list_submissions(
+        for sub in assignments_store.list_submissions(
                 assignment_id=self.assignment.assignment_id):
             if sub.raw_marks is None:
                 continue

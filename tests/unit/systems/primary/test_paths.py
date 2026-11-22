@@ -15,7 +15,7 @@ def paths_mod():
 
 
 def test_package_root_is_primary_package(paths_mod):
-    assert paths_mod.PRIMARY_PACKAGE_ROOT.name == "primarysch_system"
+    assert paths_mod.PRIMARY_PACKAGE_ROOT.name == "primary"
     assert paths_mod.PRIMARY_PACKAGE_ROOT.is_dir()
 
 

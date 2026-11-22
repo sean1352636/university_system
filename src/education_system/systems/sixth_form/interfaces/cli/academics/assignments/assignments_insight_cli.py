@@ -14,10 +14,14 @@ import logging
 from typing import Callable
 
 from education_system.systems.sixth_form.domain.academics.assignments import (
-    assignments as data,
     assignments_admin as admin,
     assignments_analytics as analytics,
 )
+from education_system.systems.sixth_form.domain.academics.assignments import (
+    models as assignments_models,
+    store as assignments_store,
+)
+import datetime as _dt
 from education_system.systems.sixth_form.interfaces.cli.academics.assignments.assignments_cli import (
     _input,
     _pause,
@@ -202,10 +206,10 @@ def cohort_flow() -> None:
     print(f"\n  {distribution.message}")
     if distribution.by_grade:
         print("\n  Grade distribution:")
-        for grade in analytics.GRADE_ORDER:
+        for grade in analytics.grade_order(distribution.qualification_type):
             n = distribution.by_grade.get(grade, 0)
             if n:
-                print(f"    {grade:<3} {n:>4}  {'█' * min(n, 40)}")
+                print(f"    {grade:<12} {n:>4}  {'█' * min(n, 40)}")
     _pause()
 
 
@@ -368,9 +372,9 @@ def set_weight_flow() -> None:
         print("\n  Cancelled.")
         return
     try:
-        out = data.update_assignment(a.assignment_id,
+        out = assignments_store.update_assignment(a.assignment_id,
                                       {"weight_percent": weight or None})
-    except data.ValidationError as e:
+    except assignments_models.ValidationError as e:
         print(f"\n  ✗ {e}")
         _pause()
         return
@@ -452,7 +456,7 @@ def digest_flow() -> None:
         return
     try:
         digest = admin.build_digest(teacher, period=period)
-    except data.ValidationError as e:
+    except assignments_models.ValidationError as e:
         print(f"\n  ✗ {e}")
         _pause()
         return
@@ -499,7 +503,7 @@ def assign_cover_flow() -> None:
         print(f"\n  Owned by: {a.teacher or '—'}")
         marker = _input("Cover marker", allow_empty=False)
         start = _input("From (YYYY-MM-DD)",
-                        default=data._dt.date.today().isoformat())
+                        default=_dt.date.today().isoformat())
         until = _input("Until (blank for open-ended)")
         reason = _input("Reason")
     except _UserAbort:
@@ -510,7 +514,7 @@ def assign_cover_flow() -> None:
                                   cover_from=start,
                                   cover_until=until or None,
                                   reason=reason or None)
-    except data.ValidationError as e:
+    except assignments_models.ValidationError as e:
         print(f"\n  ✗ {e}")
         _pause()
         return
@@ -537,7 +541,7 @@ def cover_teacher_flow() -> None:
         rows = admin.cover_for_teacher(teacher, cover_marker=marker,
                                         cover_until=until or None,
                                         reason=reason or None)
-    except data.ValidationError as e:
+    except assignments_models.ValidationError as e:
         print(f"\n  ✗ {e}")
         _pause()
         return
@@ -662,7 +666,7 @@ def import_flow() -> None:
     try:
         preview = admin.import_marks(path, a.assignment_id,
                                       dry_run=True)
-    except (data.ValidationError, OSError) as e:
+    except (assignments_models.ValidationError, OSError) as e:
         print(f"\n  ✗ {e}")
         _pause()
         return
@@ -748,7 +752,7 @@ def sample_pack_flow() -> None:
         return
     try:
         text = admin.build_sample_pack(a.assignment_id)
-    except data.ValidationError as e:
+    except assignments_models.ValidationError as e:
         print(f"\n  ✗ {e}")
         _pause()
         return

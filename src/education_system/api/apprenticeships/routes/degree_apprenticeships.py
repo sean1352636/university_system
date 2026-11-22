@@ -9,10 +9,10 @@ from __future__ import annotations
 from dataclasses import asdict
 from typing import Any
 
-from education_system.systems.apprenticeships.services import (
+from education_system.systems.apprenticeships.application.programmes import (
     degree_apprenticeship_service as service,
 )
-from education_system.systems.apprenticeships.services.access import Actor
+from education_system.systems.apprenticeships.application.security.access import Actor
 
 
 def map_programme(actor: Actor, payload: dict[str, Any]) -> dict[str, Any]:

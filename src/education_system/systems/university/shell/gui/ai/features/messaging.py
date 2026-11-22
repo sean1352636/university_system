@@ -8,7 +8,7 @@ import time
 from datetime import datetime
 from uuid import uuid4
 
-from education_system.systems.university.infrastructure.ai.university_chatbot import (
+from education_system.systems.university.shared.ai.chatbot import (
     LIBRARIES_AVAILABLE,
 )
 from education_system.systems.university.infrastructure.activity_logger import log_activity
@@ -80,7 +80,14 @@ class MessagingMixin:
         preference_context = (
             self.response_instruction() if hasattr(self, "response_instruction") else ""
         )
-        request_message = message + attachment_context + preference_context
+        # The chatbot matches keywords in the text it receives, so these must
+        # not be glued onto the message: "Response preferences: balanced
+        # detail" matched "balance" and turned every question into a fee
+        # lookup. They travel alongside it instead.
+        request_extras = {
+            "attachment_context": attachment_context.strip(),
+            "response_preferences": preference_context.strip(),
+        }
         self._last_user_message = message
         self._last_request_message = message
 
@@ -118,7 +125,7 @@ class MessagingMixin:
         self._request_started[token] = time.monotonic()
         threading.Thread(
             target=self._process_message,
-            args=(request_message, token),
+            args=(message, token, request_extras),
             daemon=True,
         ).start()
         self.root.after(50, self._poll_response)
@@ -326,16 +333,20 @@ class MessagingMixin:
         message_id = None
         if hasattr(self, "_save_conversation_message"):
             message_id = self._save_conversation_message(sender, message, msg_type)
-        if msg_type == "bot" and message_id:
+        feedback_key = message_id
+        if msg_type == "bot" and hasattr(self, "remember_turn"):
+            # Ratings also go to the logged turn, even with history switched off.
+            feedback_key = self.remember_turn(message_id)
+        if msg_type == "bot" and feedback_key:
             ttk.Button(
                 actions,
                 text=_t("chatbot.helpful", default="Helpful"),
-                command=lambda mid=message_id: self.record_feedback(mid, True),
+                command=lambda key=feedback_key: self.record_feedback(key, True),
             ).pack(side=tk.LEFT, padx=(8, 2))
             ttk.Button(
                 actions,
                 text=_t("chatbot.not_helpful", default="Not helpful"),
-                command=lambda mid=message_id: self.record_feedback(mid, False),
+                command=lambda key=feedback_key: self.record_feedback(key, False),
             ).pack(side=tk.LEFT, padx=2)
 
         if msg_type == "bot":
@@ -445,7 +456,10 @@ class MessagingMixin:
                 )
                 or ""
             )
-        self.conversation_store.save_feedback(message_id, helpful, comment)
+        if isinstance(message_id, int):
+            self.conversation_store.save_feedback(message_id, helpful, comment)
+        if hasattr(self, "send_turn_feedback"):
+            self.send_turn_feedback(message_id, helpful, comment)
         self.set_activity_status("Feedback saved")
 
     def show_sources(self, sources):
@@ -705,7 +719,7 @@ class MessagingMixin:
                 target=self.chatbot.text_to_speech, args=(response,), daemon=True
             ).start()
 
-    def _process_message(self, message, token):
+    def _process_message(self, message, token, extras=None):
         """Process message with chatbot (runs in a background thread).
 
         Must not touch any Tk widget — it only computes the reply and hands it
@@ -714,8 +728,15 @@ class MessagingMixin:
         try:
             user_id = self.current_user.get("username", "gui_user")
 
-            # Process message with chatbot
-            response = self.chatbot.process_message(message, user_id, session_id=self.session_id)
+            # Process message with chatbot; last_turn_id names the logged turn
+            # the person can rate.
+            self.chatbot.last_turn_id = None
+            response = self.chatbot.process_message(
+                message, user_id, session_id=self.session_id, **(extras or {})
+            )
+            turns = getattr(self, "_turn_by_token", None)
+            if turns is not None:
+                turns[token] = getattr(self.chatbot, "last_turn_id", None)
 
             # Log activity
             log_activity(
@@ -788,6 +809,7 @@ class MessagingMixin:
             if hasattr(self, "stop_button"):
                 self.stop_button.config(state=tk.DISABLED)
             return
+        self._pending_turn_id = getattr(self, "_turn_by_token", {}).pop(token, None)
         self._handle_bot_response(response, sources=sources)
 
     def retry_offline_queue(self):

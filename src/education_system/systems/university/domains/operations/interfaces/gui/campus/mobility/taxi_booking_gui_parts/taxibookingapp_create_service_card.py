@@ -357,27 +357,18 @@ class TaxiBookingApp:
                 )
                 return
 
-            # Process the payment
-            payment_result = process_student_finance_account_payment(
-                student_id=student_id,
-                amount=total,
-                description=f"Taxi booking: {pickup} to {dropoff}",
-                transaction_source="TaxiBooking",
-                transaction_ref=f"TAXI-{datetime.now().strftime('%Y%m%d%H%M%S')}",
-                processed_by=self.current_user.get('username', 'System') if self.current_user else 'System'
+        # Create ticket — the domain service takes the fare (student account
+        # draw-down or cash/card posting) and writes the booking.
+        try:
+            ticket_id, ticket_number = self.db.create_ticket(
+                service_id, name, pickup, dropoff, distance, total, payment,
+                student_id=self._get_current_user_student_id(),
+                processed_by=self.current_user.get('username', 'System') if self.current_user else 'System',
             )
-
-            if not payment_result.get('success'):
-                messagebox.showerror(
-                    _t("taxi.error.payment_error"),
-                    payment_result.get('message', _t("taxi.error.payment_failed"))
-                )
-                return
-
-        # Create ticket
-        ticket_id, ticket_number = self.db.create_ticket(
-            service_id, name, pickup, dropoff, distance, total, payment
-        )
+        except Exception as exc:
+            messagebox.showerror(_t("taxi.error.payment_error"),
+                                 _t("taxi.error.payment_failed", default=str(exc)))
+            return
 
         # Send confirmation email
         now = datetime.now()

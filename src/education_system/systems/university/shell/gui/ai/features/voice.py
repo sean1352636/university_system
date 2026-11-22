@@ -4,6 +4,8 @@ import tkinter as tk
 from tkinter import messagebox
 import threading
 
+from education_system.platform.delivery.gui.tk_threads import start_thread, ui
+
 # Import internationalization (i18n) for multi-language support
 try:
     from education_system.systems.university.infrastructure.i18n import (
@@ -38,7 +40,7 @@ class VoiceMixin:
 
         # Record voice in thread
         duration = float(getattr(self, 'voice_duration_var', tk.StringVar(value="5")).get())
-        threading.Thread(target=self._record_voice, args=(duration,), daemon=True).start()
+        start_thread(self.root, self._record_voice, duration)
 
     def _record_voice(self, duration):
         """Record voice input (runs in separate thread)"""
@@ -48,12 +50,12 @@ class VoiceMixin:
 
             # Update UI in main thread
             if text:
-                self.root.after(0, self._handle_voice_result, text)
+                ui(self.root, self._handle_voice_result, text)
             else:
-                self.root.after(0, self._handle_voice_error, "No speech detected")
+                ui(self.root, self._handle_voice_error, "No speech detected")
 
         except Exception:
-            self.root.after(0, self._handle_voice_error, None)
+            ui(self.root, self._handle_voice_error, None)
 
     def _handle_voice_result(self, text):
         """Handle successful voice recognition"""
@@ -87,16 +89,16 @@ class VoiceMixin:
         self.voice_status_label.config(text=_t('gui.shell.ai.features.voice.text.testing_microphone', default="Testing microphone..."), foreground='blue')
 
         # Run test in thread
-        threading.Thread(target=self._run_voice_test, daemon=True).start()
+        start_thread(self.root, self._run_voice_test)
 
     def _run_voice_test(self):
         """Run voice test (in separate thread)"""
         try:
             result = self.chatbot.test_voice_interface()
-            self.root.after(0, self._handle_voice_test_result, result)
+            ui(self.root, self._handle_voice_test_result, result)
         except Exception as e:
             error_result = {"status": "error", "message": str(e)}
-            self.root.after(0, self._handle_voice_test_result, error_result)
+            ui(self.root, self._handle_voice_test_result, error_result)
 
     def _handle_voice_test_result(self, result):
         """Handle voice test result"""

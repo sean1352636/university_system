@@ -14,9 +14,10 @@ import pytest
 from unittest.mock import MagicMock, patch
 
 from education_system.systems.university.infrastructure.database.db import get_connection
-from education_system.systems.university.domains.academics.domain.services.course_management import (
+from education_system.systems.university.domains.curriculum.domain.course_management import (
     curriculum_extensions as ce,
 )
+from education_system.systems.university.domains.teaching.domain.academic_calendar import terms
 
 pytestmark = pytest.mark.unit
 
@@ -129,6 +130,17 @@ def make_section(term_id, code="CS", section="001", enrolled=0):
         conn.close()
 
 
+def make_meeting(section_id, day="Monday"):
+    conn = get_connection()
+    try:
+        cur = conn.execute("INSERT INTO section_meetings (section_id, day_of_week) VALUES (?, ?)",
+                           (section_id, day))
+        conn.commit()
+        return cur.lastrowid
+    finally:
+        conn.close()
+
+
 # ---------------------------------------------------------------------------
 # Schema
 # ---------------------------------------------------------------------------
@@ -199,32 +211,82 @@ class TestPickers:
 # ---------------------------------------------------------------------------
 
 class TestTermsAndSections:
-    def test_add_term_persists(self, seed, auth, monkeypatch):
-        feed(monkeypatch, ["Spring 2027", "Semester", "2026-27", "", "", "Open"])
-        ce._add_term(auth)
+    def test_menu_no_longer_edits_terms(self, seed):
+        # The Academic Calendar owns terms; this CLI only lists them.
+        assert not hasattr(ce, "_add_term") and not hasattr(ce, "_delete_term")
+
+    def test_term_owner_creates_a_term(self, seed):
+        terms.create_term("Spring 2027", "Semester", "2026-27", status="Open")
         rows = query("SELECT name, status FROM academic_terms WHERE name=?",
                      ("Spring 2027",))
         assert rows and rows[0][1] == "Open"
 
-    def test_add_term_requires_name(self, seed, auth, monkeypatch):
-        feed(monkeypatch, [""])
-        ce._add_term(auth)
+    def test_term_owner_requires_a_name(self, seed):
+        with pytest.raises(terms.TermError):
+            terms.create_term("")
         assert query("SELECT COUNT(*) FROM academic_terms")[0][0] == 0
 
-    def test_add_term_duplicate_handled(self, seed, auth, monkeypatch):
+    def test_term_owner_refuses_a_duplicate(self, seed):
         make_term("Fall 2026")
-        feed(monkeypatch, ["Fall 2026", "Semester", "", "", "", "Planned"])
-        ce._add_term(auth)  # must not raise
+        with pytest.raises(terms.TermError, match="already exists"):
+            terms.create_term("Fall 2026")
         assert query("SELECT COUNT(*) FROM academic_terms WHERE name=?",
                      ("Fall 2026",))[0][0] == 1
 
-    def test_delete_term_cascades_sections(self, seed, auth, monkeypatch):
+    def test_term_owner_delete_cascades_sections(self, seed):
         tid = make_term()
         make_section(tid)
-        feed(monkeypatch, [str(tid), "y"])
-        ce._delete_term(auth)
+        assert terms.delete_term(tid, cascade_sections=True) == 1
         assert query("SELECT COUNT(*) FROM academic_terms")[0][0] == 0
         assert query("SELECT COUNT(*) FROM course_sections")[0][0] == 0
+
+    def test_delete_section_clears_its_meetings_from_the_calendar(self, seed, auth, monkeypatch):
+        tid = make_term()
+        sid = make_section(tid)
+        mid = make_meeting(sid)
+        cleared = []
+        monkeypatch.setattr(ce.section_rules, "clear_calendar", cleared.extend)
+        feed(monkeypatch, [str(tid), str(sid)])
+        ce._delete_section(auth)
+        assert query("SELECT COUNT(*) FROM course_sections")[0][0] == 0
+        assert query("SELECT COUNT(*) FROM section_meetings")[0][0] == 0
+        assert cleared == [mid]
+
+    def test_delete_section_is_refused_while_in_use(self, seed, auth, monkeypatch, capsys):
+        tid = make_term()
+        sid = make_section(tid)
+        make_meeting(sid)
+        monkeypatch.setattr(ce.section_rules, "delete_blockers",
+                            lambda _conn, _section: {"waitlist": 1})
+        feed(monkeypatch, [str(tid), str(sid)])
+        ce._delete_section(auth)
+        assert "still in use" in capsys.readouterr().out
+        assert query("SELECT COUNT(*) FROM course_sections")[0][0] == 1
+        assert query("SELECT COUNT(*) FROM section_meetings")[0][0] == 1
+
+    def test_remove_meeting_clears_it_from_the_calendar(self, seed, auth, monkeypatch):
+        tid = make_term()
+        sid = make_section(tid)
+        mid = make_meeting(sid)
+        cleared = []
+        monkeypatch.setattr(ce.section_rules, "clear_calendar", cleared.extend)
+        monkeypatch.setattr(ce, "_pick_section_in_term", lambda _cur, _term: sid)
+        feed(monkeypatch, [str(mid)])
+        ce._remove_meeting(auth, tid)
+        assert query("SELECT COUNT(*) FROM section_meetings")[0][0] == 0
+        assert cleared == [str(mid)]
+
+    def test_remove_meeting_ignores_an_id_not_on_the_section(self, seed, auth, monkeypatch):
+        tid = make_term()
+        sid = make_section(tid)
+        make_meeting(sid)
+        cleared = []
+        monkeypatch.setattr(ce.section_rules, "clear_calendar", cleared.extend)
+        monkeypatch.setattr(ce, "_pick_section_in_term", lambda _cur, _term: sid)
+        feed(monkeypatch, ["99999"])
+        ce._remove_meeting(auth, tid)
+        assert query("SELECT COUNT(*) FROM section_meetings")[0][0] == 1
+        assert cleared == []
 
     def test_add_section_persists(self, seed, auth, monkeypatch):
         tid = make_term()

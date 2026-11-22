@@ -32,7 +32,16 @@ SYSTEM_KEYS: tuple[str, ...] = (
     "university",
     "apprenticeships",
     "fe_college",
+    "special_education",
+    "adult_education",
+    "alternative_provision",
+    "training_provider",
+    "local_authority",
 )
+
+#: Systems whose package folder is not named after their key. Empty since the
+#: five placeholder scaffolds were moved to remove/ (2026-11-06).
+_MANIFEST_MODULES: dict[str, str] = {}
 
 
 @lru_cache(maxsize=None)
@@ -44,7 +53,8 @@ def get(key: str) -> SystemManifest:
     """
     if key not in SYSTEM_KEYS:
         raise KeyError(f"unknown system {key!r}; expected one of {list(SYSTEM_KEYS)}")
-    module = import_module(f"education_system.systems.{key}.manifest")
+    module = import_module(
+        _MANIFEST_MODULES.get(key, f"education_system.systems.{key}.manifest"))
     return module.MANIFEST
 
 

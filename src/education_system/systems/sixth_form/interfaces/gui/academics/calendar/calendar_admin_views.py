@@ -13,7 +13,8 @@ from education_system.systems.sixth_form.interfaces.gui._ui import grab_when_vie
 import datetime as _dt
 import logging
 import tkinter as tk
-from tkinter import messagebox, simpledialog, ttk
+from tkinter import ttk
+from education_system.platform.delivery.gui.parented_dialogs import messagebox, simpledialog
 
 from education_system.systems.sixth_form.domain.academics.calendar import (
     calendar as data,

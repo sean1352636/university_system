@@ -8,11 +8,14 @@ so they can never collide with the hand-written resource routes that already
 exist — those remain the real implementation where they exist.
 
 Re-runnable: the menus are the source of truth, so regenerate after a menu
-changes rather than editing the output. Hand edits will be overwritten.
+changes rather than editing the output. A handler whose body has been
+replaced with a real implementation is kept as it is (matched by its route);
+if its menu entry is gone the run stops instead of deleting it.
 """
 
 from __future__ import annotations
 
+import ast
 import pathlib
 import sys
 
@@ -65,9 +68,37 @@ def {fn}():
 '''
 
 
-def generate() -> dict[str, int]:
+def _implemented(path: pathlib.Path) -> dict[str, str]:
+    """Hand-written handlers in an existing file, by route slug -> source
+    (decorators included). A generated handler only returns feature_pending."""
+    if not path.exists():
+        return {}
+    src = path.read_text(encoding="utf-8")
+    lines = src.splitlines(keepends=True)
+    out: dict[str, str] = {}
+    for node in ast.parse(src).body:
+        if not isinstance(node, ast.FunctionDef) or not node.decorator_list:
+            continue
+        body = [b for b in node.body
+                if not (isinstance(b, ast.Expr) and isinstance(b.value, ast.Constant))]
+        call = body[0].value if len(body) == 1 and isinstance(body[0], ast.Return) else None
+        if isinstance(call, ast.Call) and getattr(call.func, "id", "") == "feature_pending":
+            continue
+        route = next((d for d in node.decorator_list if isinstance(d, ast.Call)
+                      and getattr(d.func, "attr", "") == "route"), None)
+        if route is None or not route.args or not isinstance(route.args[0], ast.Constant):
+            continue
+        start = min(d.lineno for d in node.decorator_list)
+        out[str(route.args[0].value).lstrip("/")] = "".join(lines[start - 1:node.end_lineno])
+    return out
+
+
+def generate(only: set[str] | None = None) -> dict[str, int]:
+    """Write the menu routes for every system, or just those in *only*."""
     counts: dict[str, int] = {}
     for system, menu in all_menus().items():
+        if only and system not in only:
+            continue
         package = ROOT / system / "routes" / "menu"
         package.mkdir(parents=True, exist_ok=True)
         modules: list[tuple[str, str]] = []
@@ -80,16 +111,25 @@ def generate() -> dict[str, int]:
             text = HEADER.format(category=category, title=system.replace("_", " ").title(),
                                  system=system, var=var, bp_name=bp_name,
                                  cat_slug=cat_slug)
+            target = package / f"{cat_snake}_routes.py"
+            kept = _implemented(target)
             seen: set[str] = set()
             for feature in features:
                 fn = f"{cat_snake}_{snake(feature)}"[:60]
                 if fn in seen:
                     continue
                 seen.add(fn)
-                text += HANDLER.format(var=var, slug=slugify(feature), fn=fn,
-                                       feature=feature.replace('"', "'"))
+                slug = slugify(feature)
+                if slug in kept:
+                    text += "\n" + kept.pop(slug) + "\n"
+                else:
+                    text += HANDLER.format(var=var, slug=slug, fn=fn,
+                                           feature=feature.replace('"', "'"))
                 made += 1
-            (package / f"{cat_snake}_routes.py").write_text(text, encoding="utf-8")
+            if kept:
+                raise SystemExit(f"{target}: implemented handler(s) for /{', /'.join(kept)} "
+                                 "have no menu entry any more - move or delete them by hand")
+            target.write_text(text, encoding="utf-8")
             modules.append((f"{cat_snake}_routes", var))
 
         imports = "\n".join(
@@ -116,5 +156,6 @@ __all__ = ["MENU_BLUEPRINTS"]
 
 
 if __name__ == "__main__":
-    for system, n in generate().items():
+    # Optional system keys limit the run: python tools/gen_menu_routes.py secondary
+    for system, n in generate(set(sys.argv[1:]) or None).items():
         print(f"  {system:16} {n:3} menu routes")

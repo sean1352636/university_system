@@ -17,6 +17,7 @@ from education_system.systems.primary.domain.admissions.admissions import (
 from education_system.systems.primary.domain.learners.pupils.pupils import (
     ValidationError, YEAR_GROUPS,
 )
+from education_system.systems.primary.interfaces.gui import kit
 
 logger = logging.getLogger(__name__)
 
@@ -49,7 +50,7 @@ def _safe_view(func: Callable[..., None]) -> Callable[..., None]:
 _FIELDS = [
     ("applicant_first", "First name"),
     ("applicant_last",  "Last name"),
-    ("date_of_birth",   "Date of birth (YYYY-MM-DD)"),
+    ("date_of_birth",   "Date of birth"),
     ("year_applying",   "Year applying"),
     ("parent_name",     "Parent name"),
     ("parent_phone",    "Parent phone"),
@@ -58,12 +59,24 @@ _FIELDS = [
 ]
 
 
-def _form_dialog(host, title: str, initial: dict[str, Any] | None = None
-                 ) -> dict[str, str] | None:
-    dlg = tk.Toplevel(host.root)
+def _owner(host, widget: tk.Misc | None = None) -> tk.Misc:
+    """The window messages and pop-ups belong to: the page's own window
+    (main window or pop-out) when known, otherwise the main window."""
+    if widget is not None:
+        try:
+            return widget.winfo_toplevel()
+        except tk.TclError:
+            pass
+    return getattr(host, "root", host)
+
+
+def _form_dialog(host, title: str, initial: dict[str, Any] | None = None,
+                 *, owner: tk.Misc | None = None) -> dict[str, str] | None:
+    parent_win = _owner(host, owner)
+    dlg = tk.Toplevel(parent_win)
     dlg.title(title)
-    dlg.transient(host.root)
-    dlg.geometry("440x420")
+    dlg.transient(parent_win)
+    dlg.geometry("560x460")
     dlg.update_idletasks()
     try:
         dlg.wait_visibility()
@@ -71,8 +84,7 @@ def _form_dialog(host, title: str, initial: dict[str, Any] | None = None
     except tk.TclError:
         logger.debug("grab_set skipped — dialog not viewable", exc_info=True)
 
-    frm = ttk.Frame(dlg, padding=12)
-    frm.pack(fill="both", expand=True)
+    frm, footer = kit.scrolled_form(dlg)
     initial = initial or {}
     vars_: dict[str, tk.Variable] = {}
 
@@ -80,13 +92,15 @@ def _form_dialog(host, title: str, initial: dict[str, Any] | None = None
         ttk.Label(frm, text=f"{label}:").grid(row=i, column=0, sticky="w",
                                                pady=2)
         if key == "year_applying":
-            v = tk.StringVar(value=str(initial.get(key, YEAR_GROUPS[0])))
-            ttk.Combobox(frm, textvariable=v, values=list(YEAR_GROUPS),
-                         state="readonly", width=10).grid(
+            v = tk.StringVar(value=str(initial.get(key) or YEAR_GROUPS[0]))
+            kit.YearGroupPicker(frm, v).grid(row=i, column=1, sticky="w", pady=2)
+        elif key == "date_of_birth":
+            v = tk.StringVar(value=str(initial.get(key) or ""))
+            kit.DateField(frm, v, years=kit.pupil_birth_years(), today=False).grid(
                 row=i, column=1, sticky="w", pady=2)
         else:
             v = tk.StringVar(value=str(initial.get(key) or ""))
-            ttk.Entry(frm, textvariable=v, width=32).grid(
+            ttk.Entry(frm, textvariable=v, width=34).grid(
                 row=i, column=1, sticky="ew", pady=2)
         vars_[key] = v
     frm.columnconfigure(1, weight=1)
@@ -98,12 +112,9 @@ def _form_dialog(host, title: str, initial: dict[str, Any] | None = None
         result = {k: (v.get() or "").strip() for k, v in vars_.items()}
         dlg.destroy()
 
-    btns = ttk.Frame(frm)
-    btns.grid(row=len(_FIELDS), column=0, columnspan=2, sticky="e",
-              pady=(12, 0))
-    ttk.Button(btns, text="Cancel", command=dlg.destroy).pack(side="right",
-                                                               padx=4)
-    ttk.Button(btns, text="Save", command=_save).pack(side="right")
+    ttk.Button(footer, text="Cancel", command=dlg.destroy).pack(side="right",
+                                                                 padx=4)
+    ttk.Button(footer, text="Save", command=_save).pack(side="right")
 
     dlg.wait_window()
     return result
@@ -112,10 +123,11 @@ def _form_dialog(host, title: str, initial: dict[str, Any] | None = None
 @_safe_view
 def open_admissions(host) -> None:
     logger.debug("GUI: open_admissions")
-    host._clear_content()
-    root = host.content_frame
-    ttk.Label(root, text="Admissions", font=("", 16, "bold")).pack(
-        anchor="w", pady=(0, 8))
+    kit.show_page(host, "Admissions", lambda parent: _draw_admissions(parent, host))
+
+
+def _draw_admissions(root: ttk.Frame, host) -> None:
+    kit.page_heading(root, "Admissions", "Applications for a place, from first contact to enrolment.")
 
     summary_var = tk.StringVar()
     ttk.Label(root, textvariable=summary_var, foreground="#666").pack(
@@ -125,12 +137,11 @@ def open_admissions(host) -> None:
     bar.pack(fill="x", pady=(0, 6))
     ttk.Label(bar, text="Filter status:").pack(side="left", padx=(0, 6))
     filter_var = tk.StringVar(value="")
-    ttk.Combobox(bar, textvariable=filter_var,
-                 values=["", *STATUSES], state="readonly", width=12).pack(
+    kit.ChoiceField(bar, filter_var, choices=STATUSES, blank=True, width=12).pack(
         side="left", padx=(0, 8))
     ttk.Button(bar, text="New",
-               command=lambda: _new(host, on_done=_refresh)).pack(side="left",
-                                                                  padx=2)
+               command=lambda: _new(host, on_done=_refresh, owner=root)).pack(side="left",
+                                                                              padx=2)
     ttk.Button(bar, text="Edit",
                command=lambda: _edit_selected(host, tree, on_done=_refresh)
                ).pack(side="left", padx=2)
@@ -174,7 +185,7 @@ def open_admissions(host) -> None:
             logger.exception("admissions refresh failed")
             messagebox.showerror("Admissions",
                                  f"Could not load applications:\n\n{e}",
-                                 parent=host.root)
+                                 parent=root.winfo_toplevel())
             return
         for a in rows:
             tree.insert("", "end", iid=a.application_id, values=(
@@ -192,7 +203,8 @@ def open_admissions(host) -> None:
             logger.exception("admissions status_counts failed")
             summary_var.set("(counts unavailable)")
         detail_var.set("(select a row to see details)")
-        host.status_var.set(f"Admissions: {len(rows)} record(s)")
+        if getattr(host, "status_var", None) is not None:
+            host.status_var.set(f"Admissions: {len(rows)} record(s)")
 
     def _on_select(_e=None) -> None:
         sel = tree.focus()
@@ -229,14 +241,14 @@ def _selected_id(tree: ttk.Treeview, host) -> str | None:
     if not sel:
         messagebox.showinfo("Admissions",
                             "Select an application first.",
-                            parent=host.root)
+                            parent=_owner(host, tree))
         return None
     return sel
 
 
 @_safe_view
-def _new(host, *, on_done=None) -> None:
-    fields = _form_dialog(host, "New application")
+def _new(host, *, on_done=None, owner: tk.Misc | None = None) -> None:
+    fields = _form_dialog(host, "New application", owner=owner)
     if not fields:
         return
     a = data.create_application(fields)
@@ -244,7 +256,7 @@ def _new(host, *, on_done=None) -> None:
         "Admissions",
         f"Created application {a.application_id}\nFor {a.applicant_name} "
         f"(year {a.year_applying})",
-        parent=host.root,
+        parent=_owner(host, owner),
     )
     if on_done:
         on_done()
@@ -258,10 +270,11 @@ def _edit_selected(host, tree: ttk.Treeview, *, on_done=None) -> None:
     a = data.get_application(aid)
     if a is None:
         messagebox.showerror("Admissions", f"No application with id {aid}",
-                             parent=host.root)
+                             parent=_owner(host, tree))
         return
     initial = {k: getattr(a, k) for k, _ in _FIELDS}
-    fields = _form_dialog(host, f"Edit {a.application_id}", initial=initial)
+    fields = _form_dialog(host, f"Edit {a.application_id}", initial=initial,
+                          owner=tree)
     if not fields:
         return
     data.update_application(aid, fields)
@@ -278,9 +291,10 @@ def _status_selected(host, tree: ttk.Treeview, *, on_done=None) -> None:
     if a is None:
         return
 
-    dlg = tk.Toplevel(host.root)
+    owner = _owner(host, tree)
+    dlg = tk.Toplevel(owner)
     dlg.title(f"Status — {aid}")
-    dlg.transient(host.root)
+    dlg.transient(owner)
     dlg.geometry("320x140")
     dlg.update_idletasks()
     try:
@@ -295,8 +309,7 @@ def _status_selected(host, tree: ttk.Treeview, *, on_done=None) -> None:
     ttk.Label(frm, text=f"Current status: {a.status}",
               foreground="#666").pack(anchor="w", pady=(0, 8))
     new_var = tk.StringVar(value=a.status)
-    ttk.Combobox(frm, textvariable=new_var, values=list(STATUSES),
-                 state="readonly").pack(fill="x")
+    kit.ChoiceField(frm, new_var, choices=STATUSES).pack(fill="x")
 
     def _save() -> None:
         try:
@@ -328,21 +341,21 @@ def _enrol_selected(host, tree: ttk.Treeview, *, on_done=None) -> None:
             "Enrol",
             f"Only 'accepted' applications can be enrolled "
             f"(currently '{a.status}').",
-            parent=host.root,
+            parent=_owner(host, tree),
         )
         return
     if not messagebox.askyesno(
             "Enrol applicant",
             f"Create a pupil record for {a.applicant_name} "
             f"(year {a.year_applying})?",
-            parent=host.root):
+            parent=_owner(host, tree)):
         return
     _app, pupil = data.enrol_application(aid)
     messagebox.showinfo(
         "Enrolled",
         f"{a.applicant_name} is now pupil {pupil.pupil_id}\n"
         f"Email: {pupil.email}",
-        parent=host.root,
+        parent=_owner(host, tree),
     )
     if on_done:
         on_done()
@@ -359,7 +372,7 @@ def _delete_selected(host, tree: ttk.Treeview, *, on_done=None) -> None:
     if not messagebox.askyesno(
             "Delete application",
             f"Delete application {aid} ({a.applicant_name})?",
-            parent=host.root):
+            parent=_owner(host, tree)):
         return
     data.delete_application(aid)
     if on_done:

@@ -1,11 +1,11 @@
 # Webhook System Guide
 
-The Education System includes a shared webhook service for dispatching event notifications to external services. Webhooks are available across all four subsystems.
+The Education System includes a shared webhook service for dispatching event notifications to external services. Webhooks are available across all seven systems.
 
 ## Overview
 
-- **Database:** `shared/data/db_files/webhooks.db` (SQLite)
-- **Service:** `education_system.shared.webhooks.WebhookService`
+- **Database:** `var/data/platform/db_files/webhooks.db` (SQLite)
+- **Service:** `education_system.platform.integrations.webhooks.WebhookService`
 - **API routes:** `/api/v1/webhooks/*` (admin only)
 - **Retry policy:** 3 attempts with exponential backoff (1 min, 5 min, 15 min)
 - **Security:** HMAC-SHA256 payload signing, SSRF protection
@@ -39,7 +39,7 @@ Content-Type: application/json
 ### Via Python
 
 ```python
-from education_system.shared.webhooks import WebhookService
+from education_system.platform.integrations.webhooks import WebhookService
 
 svc = WebhookService()
 
@@ -58,7 +58,7 @@ sub_id = svc.subscribe(
 |-----------|----------|---------|-------------|
 | `url` | Yes | | HTTPS endpoint to receive POST requests |
 | `event_types` | No | `["*"]` | List of event types to subscribe to, or `["*"]` for all |
-| `system_key` | No | `"all"` | Filter events by system (`university`, `college`, `school`, `primary`, `all`) |
+| `system_key` | No | `"all"` | Filter events by system (`university`, `sixth_form`, `secondary`, `primary`, `nursery`, `fe_college`, `apprenticeships`, `all`) |
 | `secret` | No | | HMAC-SHA256 secret for payload signing |
 | `description` | No | | Human-readable description |
 

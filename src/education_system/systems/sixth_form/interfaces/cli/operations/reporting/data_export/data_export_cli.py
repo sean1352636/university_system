@@ -390,9 +390,23 @@ def delete_job_flow() -> None:
         print(f"  ✗ No job #{jid}")
         _pause()
         return
-    remove = _yes_no(
-        "Also delete the on-disk output folder & archive?",
-        default=False)
+    preview = data.removal_preview(jid)
+    remove = False
+    if preview["files"]:
+        print("\n  Files written by this export job:")
+        for f in preview["files"]:
+            print(f"    - {f}")
+        if preview["folder"]:
+            print(f"  The folder {preview['folder']} was created by this "
+                  "export and will be empty, so it will be removed too.")
+        else:
+            print("  The output folder itself and any other files in it "
+                  "are kept.")
+        remove = _yes_no(
+            f"Also delete these {len(preview['files'])} file(s)?",
+            default=False)
+    else:
+        print("\n  (No files from this job remain on disk.)")
     if _input(f"Delete job #{jid}? Type 'yes'",
               default="no").lower() != "yes":
         print("\n  Cancelled.")

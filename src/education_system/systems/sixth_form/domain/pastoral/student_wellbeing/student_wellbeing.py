@@ -16,6 +16,15 @@ Distinct from the staff-facing `wellbeing` module which holds pastoral
 check-ins/sessions/flags. This module is intentionally lightweight and
 opinionated towards student self-care.
 
+**One mood log.** Journal entries are stored in the staff module's
+``wellbeing_checkins`` table with ``source = 'self'`` (energy, sleep
+hours and gratitude columns were added there), so pastoral staff see
+the same mood history the student logs. The old
+``student_wellbeing_entries`` table is kept, unchanged, and its rows are
+copied across once (idempotently) by
+:func:`wellbeing.migrate_student_wellbeing_entries`. ``entry_id`` is
+now the check-in id.
+
 Cascade: deleting a student wipes all three record types.
 """
 
@@ -28,6 +37,9 @@ from dataclasses import dataclass
 from typing import Any
 
 from education_system import paths
+from education_system.systems.sixth_form.domain.pastoral.wellbeing import (
+    wellbeing as _wb,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -201,19 +213,27 @@ def init_db() -> None:
     _students.init_db()
     with _connect() as conn:
         conn.executescript(_SCHEMA)
+    # Journal entries live in wellbeing_checkins; this also copies any
+    # rows still only in the old student_wellbeing_entries table.
+    _wb.init_db()
+    with _connect() as conn:
+        _wb.migrate_student_wellbeing_entries(conn)
+        conn.commit()
     logger.debug("Student wellbeing schema ready at %s", DB_PATH)
 
     _DB_READY = True
 
 
 def _row_entry(r: sqlite3.Row) -> JournalEntry:
+    """Map a ``wellbeing_checkins`` row (source='self') to an entry."""
     return JournalEntry(
-        entry_id=r["entry_id"], student_id=r["student_id"],
-        entry_date=r["entry_date"],
+        entry_id=r["checkin_id"], student_id=r["student_id"],
+        entry_date=r["checkin_date"],
         mood_score=r["mood_score"], energy_score=r["energy_score"],
         stress_score=r["stress_score"], sleep_hours=r["sleep_hours"],
         notes=r["notes"], gratitude=r["gratitude"],
-        created_at=r["created_at"], updated_at=r["updated_at"],
+        created_at=r["created_at"],
+        updated_at=r["updated_at"] or r["created_at"],
     )
 
 
@@ -326,11 +346,11 @@ def create_entry(data: dict[str, Any]) -> JournalEntry:
     with _connect() as conn:
         try:
             cur = conn.execute(
-                """INSERT INTO student_wellbeing_entries
-                       (student_id, entry_date, mood_score, energy_score,
+                """INSERT INTO wellbeing_checkins
+                       (student_id, checkin_date, mood_score, energy_score,
                         stress_score, sleep_hours, notes, gratitude,
-                        created_at, updated_at)
-                   VALUES (?, ?, ?, ?, ?, ?, ?, ?,
+                        source, created_at, updated_at)
+                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'self',
                            datetime('now'), datetime('now'))""",
                 (p["student_id"], p["entry_date"], p["mood_score"],
                  p["energy_score"], p["stress_score"], p["sleep_hours"],
@@ -355,7 +375,8 @@ def get_entry(entry_id: int) -> JournalEntry | None:
     init_db()
     with _connect() as conn:
         r = conn.execute(
-            "SELECT * FROM student_wellbeing_entries WHERE entry_id = ?",
+            "SELECT * FROM wellbeing_checkins "
+            "WHERE checkin_id = ? AND source = 'self'",
             (entry_id,),
         ).fetchone()
         return _row_entry(r) if r else None
@@ -365,8 +386,9 @@ def get_entry_for(student_id: str, entry_date: str) -> JournalEntry | None:
     init_db()
     with _connect() as conn:
         r = conn.execute(
-            """SELECT * FROM student_wellbeing_entries
-                  WHERE student_id = ? AND entry_date = ?""",
+            """SELECT * FROM wellbeing_checkins
+                  WHERE student_id = ? AND checkin_date = ?
+                    AND source = 'self'""",
             (student_id.strip(), entry_date.strip()),
         ).fetchone()
         return _row_entry(r) if r else None
@@ -381,16 +403,16 @@ def list_entries(
     high_stress: int | None = None,
 ) -> list[JournalEntry]:
     init_db()
-    clauses: list[str] = []
+    clauses: list[str] = ["source = 'self'"]
     args: list[Any] = []
     if student_id:
         clauses.append("student_id = ?")
         args.append(student_id.strip())
     if date_from:
-        clauses.append("entry_date >= ?")
+        clauses.append("checkin_date >= ?")
         args.append(_validate_date(date_from, "date_from"))
     if date_to:
-        clauses.append("entry_date <= ?")
+        clauses.append("checkin_date <= ?")
         args.append(_validate_date(date_to, "date_to"))
     if low_mood is not None:
         clauses.append("mood_score IS NOT NULL AND mood_score <= ?")
@@ -399,8 +421,8 @@ def list_entries(
         clauses.append("stress_score IS NOT NULL AND stress_score >= ?")
         args.append(high_stress)
     where = ("WHERE " + " AND ".join(clauses)) if clauses else ""
-    sql = (f"SELECT * FROM student_wellbeing_entries {where} "
-           "ORDER BY entry_date DESC, entry_id DESC")
+    sql = (f"SELECT * FROM wellbeing_checkins {where} "
+           "ORDER BY checkin_date DESC, checkin_id DESC")
     with _connect() as conn:
         return [_row_entry(r) for r in conn.execute(sql, args).fetchall()]
 
@@ -436,12 +458,12 @@ def update_entry(entry_id: int, data: dict[str, Any]) -> JournalEntry:
     with _connect() as conn:
         try:
             conn.execute(
-                """UPDATE student_wellbeing_entries SET
-                       entry_date = ?, mood_score = ?, energy_score = ?,
+                """UPDATE wellbeing_checkins SET
+                       checkin_date = ?, mood_score = ?, energy_score = ?,
                        stress_score = ?, sleep_hours = ?,
                        notes = ?, gratitude = ?,
                        updated_at = datetime('now')
-                   WHERE entry_id = ?""",
+                   WHERE checkin_id = ? AND source = 'self'""",
                 (p["entry_date"], p["mood_score"], p["energy_score"],
                  p["stress_score"], p["sleep_hours"],
                  p["notes"], p["gratitude"], entry_id),
@@ -461,7 +483,8 @@ def delete_entry(entry_id: int) -> bool:
     init_db()
     with _connect() as conn:
         cur = conn.execute(
-            "DELETE FROM student_wellbeing_entries WHERE entry_id = ?",
+            "DELETE FROM wellbeing_checkins "
+            "WHERE checkin_id = ? AND source = 'self'",
             (entry_id,),
         )
         conn.commit()

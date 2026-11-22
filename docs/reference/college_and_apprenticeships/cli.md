@@ -1,6 +1,6 @@
 # CLI
 
-Apprenticeships only — `fe_college` has no CLI.
+Apprenticeships only. FE College has its own CLI at `systems/fe_college/cli_main.py`.
 
 ```bash
 python -m education_system --apprenticeships --cli

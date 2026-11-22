@@ -13,7 +13,9 @@ from __future__ import annotations
 import logging
 import tkinter as tk
 from datetime import date as _date
-from tkinter import messagebox, ttk
+from tkinter import ttk
+from education_system.systems.sixth_form.interfaces.gui._sidebar import SidebarBook
+from education_system.platform.delivery.gui.parented_dialogs import messagebox
 from typing import Any, Callable
 from education_system.systems.sixth_form.domain.academics.class_groups import class_groups
 from education_system.systems.sixth_form.domain.academics.homework import homework
@@ -63,7 +65,7 @@ def open_directory(gui) -> None:
     frame = _clear(gui)
     _heading(frame, "Homework & Coursework")
 
-    nb = ttk.Notebook(frame)
+    nb = SidebarBook(frame)
     nb.pack(fill="both", expand=True)
 
     assn_tab = ttk.Frame(nb, padding=8)

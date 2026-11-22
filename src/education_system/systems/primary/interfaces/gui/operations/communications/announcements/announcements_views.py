@@ -5,8 +5,10 @@ from __future__ import annotations
 import datetime as _dt
 import logging
 import tkinter as tk
-from tkinter import messagebox, ttk
-from education_system.platform import branding
+from tkinter import ttk
+
+from education_system.platform.delivery.gui.parented_dialogs import make_toplevel, messagebox
+from education_system.systems.primary.interfaces.gui import kit
 from education_system.systems.primary.domain.operations.communications.announcements import (
     announcements as data,
 )
@@ -38,16 +40,22 @@ _STATUS_TAGS = {
 }
 
 
+def _priority_choices() -> list[tuple[str, str]]:
+    return [(str(p), f"{p} - {priority_label(p)}") for p in PRIORITIES]
+
+
 def open_announcements_window(parent=None) -> None:
     data.init_db()
-    master = getattr(parent, "root", parent)
-    win = tk.Toplevel(master) if master is not None else tk.Tk()
-    win.title(f"Announcements — {branding.SYSTEM_NAME}")
-    win.geometry(WIN_GEOMETRY)
-    win.minsize(*WIN_MINSIZE)
+    kit.show_page(parent, "Announcements",
+                  lambda frame: _draw_announcements(frame, parent))
 
-    nb = ttk.Notebook(win)
-    nb.pack(fill="both", expand=True, padx=10, pady=10)
+
+def _draw_announcements(parent: ttk.Frame, host=None) -> None:
+    kit.page_heading(parent, "Announcements",
+                     "School announcements and banners - draft, schedule, publish, pin "
+                     "and expire.")
+    nb = ttk.Notebook(parent)
+    nb.pack(fill="both", expand=True)
 
     AnnouncementsTab(nb, scope="live",      label="Live Now")
     AnnouncementsTab(nb, scope="scheduled", label="Scheduled")
@@ -71,33 +79,23 @@ class AnnouncementsTab:
         bar = ttk.Frame(self.frame)
         bar.pack(fill="x", padx=8, pady=(8, 4))
         ttk.Label(bar, text="Category:").pack(side="left")
-        self.f_cat = ttk.Combobox(bar,
-                                    values=("",) + CATEGORIES,
-                                    state="readonly", width=20)
-        self.f_cat.current(0)
+        self.f_cat = kit.ChoiceField(bar, tk.StringVar(), choices=CATEGORIES, blank=True,
+                                     width=20)
         self.f_cat.pack(side="left", padx=(2, 8))
         if self.scope == "all":
             ttk.Label(bar, text="Status:").pack(side="left")
-            self.f_status = ttk.Combobox(bar,
-                                           values=("",) + STATUSES,
-                                           state="readonly",
-                                           width=14)
-            self.f_status.current(0)
+            self.f_status = kit.ChoiceField(bar, tk.StringVar(), choices=STATUSES,
+                                            blank=True, width=14)
             self.f_status.pack(side="left", padx=(2, 8))
         else:
             self.f_status = None
         ttk.Label(bar, text="Audience:").pack(side="left")
-        self.f_aud = ttk.Combobox(bar,
-                                    values=("",) + AUDIENCES,
-                                    state="readonly", width=12)
-        self.f_aud.current(0)
+        self.f_aud = kit.ChoiceField(bar, tk.StringVar(), choices=AUDIENCES, blank=True,
+                                     width=12)
         self.f_aud.pack(side="left", padx=(2, 8))
         ttk.Label(bar, text="Min P:").pack(side="left")
-        self.f_pri = ttk.Combobox(bar,
-                                    values=("",) + tuple(str(p)
-                                                           for p in PRIORITIES),
-                                    state="readonly", width=4)
-        self.f_pri.current(0)
+        self.f_pri = kit.ChoiceField(bar, tk.StringVar(), choices=_priority_choices(),
+                                     blank=True, width=12)
         self.f_pri.pack(side="left", padx=(2, 8))
         ttk.Label(bar, text="Title:").pack(side="left")
         self.f_title = ttk.Entry(bar, width=20)
@@ -252,9 +250,8 @@ class AnnouncementsTab:
         a = self._selected()
         if not a:
             return
-        when = _prompt_text(self.frame,
-                              "Publish on (YYYY-MM-DD)",
-                              initial=a.publish_on or "")
+        when = _prompt_date(self.frame, "Publish on",
+                            initial=a.publish_on or "")
         if not when:
             return
         try:
@@ -413,20 +410,19 @@ class AnnouncementEditor:
                  announcement: Announcement | None = None) -> None:
         self.announcement = announcement
         self.result: Announcement | None = None
-        self.win = tk.Toplevel(parent)
+        self.win = make_toplevel(parent.winfo_toplevel())
         self.win.title(
             f"Edit announcement #{announcement.announcement_id}"
             if announcement else "New announcement")
-        self.win.geometry("860x820")
-        self.win.transient(parent); self.win.after_idle(self.win.grab_set)
+        self.win.geometry("860x700")
+        self.win.after_idle(self.win.grab_set)
         self._build()
         if announcement:
             self._load()
         self.win.wait_window()
 
     def _build(self) -> None:
-        body = ttk.Frame(self.win)
-        body.pack(fill="both", expand=True, padx=12, pady=10)
+        body, footer = kit.scrolled_form(self.win)
         body.grid_columnconfigure(1, weight=1)
         body.grid_columnconfigure(3, weight=1)
         self.vars: dict[str, tk.Variable] = {}
@@ -441,24 +437,26 @@ class AnnouncementEditor:
             ttk.Entry(body, textvariable=v, width=width).grid(
                 row=row, column=col + 1, sticky="ew", padx=4, pady=2)
 
-        def combo(row, col, label, key, values, width=22):
+        def picker(row, col, label, key, make):
             ttk.Label(body, text=label).grid(
                 row=row, column=col, sticky="w", padx=4, pady=2)
             v = tk.StringVar()
             self.vars[key] = v
-            ttk.Combobox(body, textvariable=v, values=values,
-                          state="readonly", width=width).grid(
-                row=row, column=col + 1, sticky="ew", padx=4, pady=2)
+            make(v).grid(row=row, column=col + 1, sticky="w", padx=4, pady=2)
+
+        def combo(row, col, label, key, values, width=22):
+            picker(row, col, label, key,
+                   lambda v: kit.ChoiceField(body, v, choices=values, width=width))
 
         entry(0, 0, "Title*", "title", width=48)
         combo(1, 0, "Category*", "category", CATEGORIES)
-        combo(1, 2, "Priority*", "priority",
-                 tuple(str(p) for p in PRIORITIES))
-        entry(2, 0, "Author", "author")
+        combo(1, 2, "Priority*", "priority", _priority_choices())
+        picker(2, 0, "Author", "author",
+               lambda v: kit.StaffPicker(body, v, by="name", width=30))
         combo(2, 2, "Status*", "status", STATUSES)
-        entry(3, 0, "Publish on (YYYY-MM-DD)", "publish_on")
-        entry(3, 2, "Expires on (YYYY-MM-DD)", "expires_on")
-        entry(4, 0, "Published on", "published_on")
+        picker(3, 0, "Publish on", "publish_on", lambda v: kit.DateField(body, v))
+        picker(3, 2, "Expires on", "expires_on", lambda v: kit.DateField(body, v))
+        picker(4, 0, "Published on", "published_on", lambda v: kit.DateField(body, v))
         entry(4, 2, "Attachments ref", "attachments_ref")
         entry(5, 0, "Linked to", "linked_to", width=48)
 
@@ -504,11 +502,9 @@ class AnnouncementEditor:
             self.texts[key] = t
             row += 1
 
-        bar = ttk.Frame(self.win)
-        bar.pack(fill="x", padx=12, pady=(0, 10))
-        ttk.Button(bar, text="Save",
+        ttk.Button(footer, text="Save",
                     command=self._save).pack(side="right", padx=4)
-        ttk.Button(bar, text="Cancel",
+        ttk.Button(footer, text="Cancel",
                     command=self.win.destroy).pack(side="right")
 
         self.vars["category"].set(DEFAULT_CATEGORY)
@@ -560,14 +556,15 @@ class AnnouncementEditor:
         self.win.destroy()
 
 
-def _prompt_text(parent, title: str, *,
-                  initial: str = "") -> str | None:
-    win = tk.Toplevel(parent)
-    win.title(title); win.geometry("360x140")
-    win.transient(parent); win.after_idle(win.grab_set)
+def _prompt_date(parent, title: str, *,
+                 initial: str = "") -> str | None:
+    """Ask for one date (YYYY-MM-DD) with the date drop-downs."""
+    win = make_toplevel(parent.winfo_toplevel())
+    win.title(title)
+    win.after_idle(win.grab_set)
     ttk.Label(win, text=title).pack(anchor="w", padx=8, pady=8)
-    var = tk.StringVar(value=initial)
-    ttk.Entry(win, textvariable=var).pack(fill="x", padx=8)
+    var = tk.StringVar(value=initial or _dt.date.today().isoformat())
+    kit.DateField(win, var).pack(anchor="w", padx=8)
     result: dict = {"value": None}
 
     def ok() -> None:
@@ -585,13 +582,12 @@ def _prompt_text(parent, title: str, *,
 
 def _prompt_choice(parent, title: str, options: list[str], *,
                     default: str | None = None) -> str | None:
-    win = tk.Toplevel(parent)
+    win = make_toplevel(parent.winfo_toplevel())
     win.title(title); win.geometry("320x140")
-    win.transient(parent); win.after_idle(win.grab_set)
+    win.after_idle(win.grab_set)
     ttk.Label(win, text=title).pack(anchor="w", padx=8, pady=8)
     var = tk.StringVar(value=default or (options[0] if options else ""))
-    ttk.Combobox(win, textvariable=var, values=options,
-                  state="readonly").pack(fill="x", padx=8)
+    kit.ChoiceField(win, var, choices=options).pack(fill="x", padx=8)
     result: dict = {"value": None}
 
     def ok() -> None:

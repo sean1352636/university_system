@@ -6,7 +6,9 @@ from education_system.systems.sixth_form.interfaces.gui._ui import grab_when_vie
 import logging
 import tkinter as tk
 from datetime import date as _date
-from tkinter import messagebox, ttk
+from tkinter import ttk
+from education_system.systems.sixth_form.interfaces.gui._sidebar import SidebarBook
+from education_system.platform.delivery.gui.parented_dialogs import messagebox
 from typing import Any, Callable
 
 from education_system.systems.sixth_form.domain.governance.gdpr import gdpr as data
@@ -43,13 +45,17 @@ def open_gdpr_window(parent=None) -> None:
     win.title(f"GDPR — {branding.SYSTEM_NAME}")
     win.geometry(WIN_GEOMETRY)
     win.minsize(*WIN_MINSIZE)
-    nb = ttk.Notebook(win)
+    nb = SidebarBook(win)
     nb.pack(fill="both", expand=True, padx=10, pady=10)
     RequestsTab(nb)
     ProcessingTab(nb)
     BreachesTab(nb)
     ConsentsTab(nb)
     OverviewTab(nb)
+    from education_system.systems.sixth_form.interfaces.gui.governance.gdpr import (
+        gdpr_sar_retention_views,
+    )
+    gdpr_sar_retention_views.add_gdpr_tabs(nb)
 
 
 def _set_text(text: tk.Text, body: str) -> None:

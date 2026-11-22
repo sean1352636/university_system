@@ -20,8 +20,9 @@ from functools import partial
 from education_system.systems.apprenticeships import config
 from education_system.systems.apprenticeships.interfaces.cli import prompts
 from education_system.systems.apprenticeships.interfaces.cli.commands import apprentices
-from education_system.systems.apprenticeships.services import apprentice_service, training_service
-from education_system.systems.apprenticeships.services.access import Actor
+from education_system.systems.apprenticeships.application.apprentices import apprentice_service
+from education_system.systems.apprenticeships.application.learning import training_service
+from education_system.systems.apprenticeships.application.security.access import Actor
 
 logger = logging.getLogger(__name__)
 

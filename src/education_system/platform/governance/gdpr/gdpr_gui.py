@@ -8,7 +8,11 @@ data retention.
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
 
-from education_system.platform.governance.gdpr.gdpr_service import GDPRService, SYSTEM_LABELS
+from education_system.platform.governance.gdpr.gdpr_service import (
+    AmbiguousSubjectError,
+    GDPRService,
+    SYSTEM_LABELS,
+)
 
 HEADER_BG = "#1a5276"
 HEADER_FG = "white"
@@ -180,7 +184,27 @@ class GDPRComplianceFrame(tk.Frame):
             return
 
         try:
-            report = self._svc.generate_sar_report(name)
+            try:
+                report = self._svc.generate_sar_report(name)
+            except AmbiguousSubjectError as amb:
+                # A shared name must not merge two people's data: ask
+                # which person (per system) the request is for.
+                from tkinter import simpledialog
+                ids = {}
+                for system, rows in amb.candidates.items():
+                    listing = "\n".join(
+                        f"{r['id']}: {r['name']} (born {r['date_of_birth'] or '?'})"
+                        for r in rows[:20])
+                    sid = simpledialog.askstring(
+                        "More than one match",
+                        f"'{name}' matches more than one person in "
+                        f"{SYSTEM_LABELS.get(system, system)}:\n\n{listing}"
+                        "\n\nEnter the student id for this request:",
+                        parent=self)
+                    if not sid or not sid.strip():
+                        return
+                    ids[system] = sid.strip()
+                report = self._svc.generate_sar_report(name, student_ids=ids)
             self._report_text.config(state="normal")
             self._report_text.delete("1.0", "end")
             self._report_text.insert("end", report)
@@ -263,16 +287,52 @@ class GDPRComplianceFrame(tk.Frame):
                                    parent=self)
             return
 
+        # Dry run first: exact matches only, and a name shared by more
+        # than one person needs the student id before anything changes.
+        student_id = None
+        try:
+            preview = self._svc.preview_anonymisation(name, system)
+            if preview["ambiguous"]:
+                from tkinter import simpledialog
+                listing = "\n".join(
+                    f"{preview['id_column'] or 'rowid'} {r['id']}: {r['name']}"
+                    f" (born {r['date_of_birth'] or '?'})"
+                    for r in preview["rows"][:20])
+                student_id = simpledialog.askstring(
+                    "More than one match",
+                    f"'{name}' matches more than one person:\n\n{listing}"
+                    "\n\nEnter the student id to anonymise:",
+                    parent=self)
+                if not student_id or not student_id.strip():
+                    return
+                student_id = student_id.strip()
+                preview = self._svc.preview_anonymisation(
+                    name, system, student_id=student_id)
+        except Exception as e:
+            messagebox.showerror("Error", str(e), parent=self)
+            return
+        if not preview["rows"]:
+            messagebox.showinfo(
+                "No match",
+                f"No record exactly matching '{name}' in "
+                f"{SYSTEM_LABELS.get(system, system)}.", parent=self)
+            return
+        affected = "\n".join(
+            f"{preview['id_column'] or 'rowid'} {r['id']}: {r['name']}"
+            f" (born {r['date_of_birth'] or '?'})"
+            for r in preview["rows"][:10])
+
         # Strong confirmation: user must type the student name
         dlg = tk.Toplevel(self)
         dlg.title("Confirm Anonymisation")
-        dlg.geometry("400x200")
+        dlg.geometry("460x300")
         dlg.transient(self.winfo_toplevel())
         dlg.grab_set()
 
         tk.Label(
-            dlg, text=f"This will PERMANENTLY anonymise all data for\n"
-                      f"'{name}' in {SYSTEM_LABELS.get(system, system)}.\n\n"
+            dlg, text=f"This will PERMANENTLY anonymise in "
+                      f"{SYSTEM_LABELS.get(system, system)}:\n{affected}\n\n"
+                      f"Fields: {', '.join(preview['columns'])}\n\n"
                       f"Type the student's name to confirm:",
             font=("Helvetica", 10), wraplength=350, justify="center",
         ).pack(pady=15)
@@ -284,7 +344,8 @@ class GDPRComplianceFrame(tk.Frame):
             if confirm_var.get().strip() == name:
                 dlg.destroy()
                 try:
-                    count = self._svc.anonymise_student(name, system)
+                    count = self._svc.anonymise_student(
+                        name, system, student_id=student_id)
                     self._anon_result_var.set(
                         f"Successfully anonymised {count} record(s) for "
                         f"'{name}' in {SYSTEM_LABELS.get(system, system)}."

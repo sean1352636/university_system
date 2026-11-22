@@ -48,15 +48,18 @@ def _print_rows(rows: list[StudentRow]) -> None:
     print()
     print(f"  {'Student':<10}  {'Name':<24}  {'Risk':<8}  "
           f"{'Overall':<24}  {'Att%':<6}  "
-          f"{'Open':>4}  {'Over':>4}  {'Met':>4}  {'Period':<22}")
-    print("  " + "-" * 118)
+          f"{'Open':>4}  {'Over':>4}  {'Met':>4}  {'Period':<22}  "
+          f"{'Grades ok/risk/below':<20}")
+    print("  " + "-" * 140)
     for r in rows:
         att = "—" if r.attendance_pct is None else f"{r.attendance_pct:.1f}"
         print(f"  {r.student_id:<10}  {r.full_name[:24]:<24}  "
               f"{(r.risk or '—'):<8}  "
               f"{(r.overall or '—')[:24]:<24}  {att:<6}  "
               f"{r.open_targets:>4}  {r.overdue_targets:>4}  "
-              f"{r.met_targets:>4}  {(r.latest_period or '—')[:22]:<22}")
+              f"{r.met_targets:>4}  {(r.latest_period or '—')[:22]:<22}  "
+              + (f"{r.grade_on_track}/{r.grade_at_risk}/{r.grade_below}"
+                 f" of {r.grade_targets}" if r.grade_targets else "—"))
     print(f"\n  {len(rows)} student(s).")
 
 
@@ -69,6 +72,7 @@ def _print_header(d: Dashboard) -> None:
     print(f"  Unreviewed        : {d.unreviewed_students}")
     print(f"  High/Critical     : {d.high_risk_students}")
     print(f"  With overdue tgts : {d.overdue_target_students}")
+    print(f"  Below grade target: {d.below_target_students}")
 
 
 # ── Flows ─────────────────────────────────────────────────────────
@@ -99,6 +103,16 @@ def risk_distribution() -> None:
         n = d.by_status.get(s, 0)
         if n:
             print(f"    {s:<12} : {n}")
+    print("\n  Grade targets (Target Setting):")
+    for st, n in d.grade_targets_by_status.items():
+        if n:
+            print(f"    {st:<14} : {n}")
+    _pause()
+
+
+def below_grade_target() -> None:
+    print("\n═══ Students Below a Grade Target ═══")
+    _print_rows(data.students_below_grade_target())
     _pause()
 
 
@@ -149,6 +163,7 @@ _MENU: list[tuple[str, Callable[[], None]]] = [
     ("Students Without a Review",   unreviewed),
     ("Students With Overdue Targets", overdue),
     ("Filter by Risk",              filter_by_risk),
+    ("Students Below a Grade Target", below_grade_target),
 ]
 
 

@@ -6,7 +6,11 @@ latest review, attendance %, open/met/missed targets and risk; plus
 cohort distributions (risk, overall rating, status) and lists of
 students needing attention (high risk, overdue targets, no review).
 
-No DB of its own — it is a derived view.
+Academic targets come from Target Setting (the one store for them —
+progress reviews write their Academic targets through to it), so each
+row also carries the student's per-subject grade-target position.
+
+No DB of its own — it is a derived view over progress + target setting.
 """
 
 from __future__ import annotations
@@ -37,6 +41,11 @@ class StudentRow:
     met_targets: int
     missed_targets: int
     overdue_targets: int
+    # Per-subject grade targets (Target Setting).
+    grade_targets: int = 0
+    grade_on_track: int = 0
+    grade_at_risk: int = 0
+    grade_below: int = 0
 
     @property
     def has_review(self) -> bool:
@@ -49,6 +58,8 @@ class StudentRow:
         if self.overdue_targets:
             return True
         if not self.has_review:
+            return True
+        if self.grade_below:
             return True
         return False
 
@@ -66,6 +77,9 @@ class Dashboard:
     by_status: dict[str, int]
     rows: list[StudentRow]
     summary: progress.Summary
+    # Grade-target position across the cohort (Target Setting statuses).
+    grade_targets_by_status: dict[str, int] = field(default_factory=dict)
+    below_target_students: int = 0
 
     @property
     def review_coverage_pct(self) -> float | None:
@@ -88,6 +102,7 @@ def build_dashboard(
     risk_filter: str | None = None,
     only_unreviewed: bool = False,
     only_overdue: bool = False,
+    only_below_target: bool = False,
 ) -> Dashboard:
     """Assemble the full dashboard. Filters are applied to ``rows``
     after row construction — the cohort-wide counters always reflect
@@ -98,6 +113,18 @@ def build_dashboard(
     all_students = students.list_students()
     all_reviews = progress.list_reviews()
     all_targets = progress.list_targets()
+    grade_by_student: dict[str, list[Any]] = {}
+    grade_by_status: dict[str, int] = {}
+    try:
+        from education_system.systems.sixth_form.domain.assessment.target_setting import (
+            target_setting as _ts,
+        )
+        grade_by_status = {st: 0 for st in _ts.STATUSES}
+        for gt in _ts.list_targets():
+            grade_by_student.setdefault(gt.student_id, []).append(gt)
+            grade_by_status[gt.status] = grade_by_status.get(gt.status, 0) + 1
+    except Exception:
+        logger.exception("Could not read grade targets for the dashboard")
 
     reviews_by_student: dict[str, list[progress.Review]] = {}
     for r in all_reviews:
@@ -115,7 +142,7 @@ def build_dashboard(
     by_risk = {r: 0 for r in progress.RISK_LEVELS}
     by_overall = {r: 0 for r in progress.RATINGS}
     by_status = {s: 0 for s in progress.REVIEW_STATUSES}
-    reviewed = high_risk = overdue_students = 0
+    reviewed = high_risk = overdue_students = below_students = 0
 
     rows: list[StudentRow] = []
     for s in all_students:
@@ -143,6 +170,15 @@ def build_dashboard(
             missed_targets=missed_n,
             overdue_targets=overdue_n,
         )
+        grades = grade_by_student.get(sid, [])
+        row.grade_targets = len(grades)
+        row.grade_on_track = sum(1 for g in grades if g.status in
+                                 ("On Track", "Above Target", "Met"))
+        row.grade_at_risk = sum(1 for g in grades if g.status == "At Risk")
+        row.grade_below = sum(1 for g in grades
+                              if g.status == "Below Target")
+        if row.grade_below:
+            below_students += 1
 
         if latest is not None:
             reviewed += 1
@@ -162,6 +198,8 @@ def build_dashboard(
         rows = [r for r in rows if not r.has_review]
     if only_overdue:
         rows = [r for r in rows if r.overdue_targets]
+    if only_below_target:
+        rows = [r for r in rows if r.grade_below]
 
     rows.sort(key=lambda r: (
         # Critical/High first; then overdue count desc; then name.
@@ -182,6 +220,8 @@ def build_dashboard(
         by_status=by_status,
         rows=rows,
         summary=progress.summary(),
+        grade_targets_by_status=grade_by_status,
+        below_target_students=below_students,
     )
 
 
@@ -199,3 +239,8 @@ def students_without_review() -> list[StudentRow]:
 def students_with_overdue_targets() -> list[StudentRow]:
     d = build_dashboard(only_overdue=True)
     return d.rows
+
+
+def students_below_grade_target() -> list[StudentRow]:
+    """Rows with at least one subject below its minimum grade target."""
+    return build_dashboard(only_below_target=True).rows

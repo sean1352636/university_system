@@ -32,7 +32,7 @@ KNOWN_VIOLATIONS: set[tuple[str, str]] = {
     # an explicit cross-slice read of medical data.
     (
         "application/services/integrations.py",
-        f"{_UNI}.domains.pastoral.domain.health.wellness",
+        f"{_UNI}.domains.student_support.domain.wellbeing.wellness.services.wellness_service",
     ),
 }
 

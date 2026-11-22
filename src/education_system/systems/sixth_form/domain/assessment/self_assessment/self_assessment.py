@@ -194,6 +194,8 @@ class StudentSummary:
                                       # most-recent ratings
     by_type: dict[str, int]
     most_recent: str | None
+    awaiting_review: int = 0         # status in Submitted/Under Review
+    reviewed: int = 0                # Reviewed/Acknowledged/Archived
 
 
 @dataclass
@@ -205,6 +207,7 @@ class Summary:
     awaiting_review: int             # status in Submitted/Under Review
     distinct_students: int
     average_per_dimension: dict[str, float | None]
+    reviewed: int = 0                # Reviewed/Acknowledged/Archived
 
 
 # ── DB plumbing ────────────────────────────────────────────────────
@@ -657,6 +660,8 @@ def student_summary(student_id: str) -> StudentSummary:
     rows = assessments_for_student(student_id)
     by_type: dict[str, int] = {}
     open_count = 0
+    awaiting = 0
+    reviewed = 0
     most_recent_score: float | None = None
     most_recent: str | None = None
     for i, a in enumerate(rows):
@@ -664,6 +669,10 @@ def student_summary(student_id: str) -> StudentSummary:
             a.assessment_type, 0) + 1
         if a.is_open:
             open_count += 1
+        if a.status in ("Submitted", "Under Review"):
+            awaiting += 1
+        if a.is_reviewed:
+            reviewed += 1
         if i == 0:
             # First row is the newest because of the ORDER BY in
             # list_assessments.
@@ -676,6 +685,8 @@ def student_summary(student_id: str) -> StudentSummary:
         average_score=most_recent_score,
         by_type=by_type,
         most_recent=most_recent,
+        awaiting_review=awaiting,
+        reviewed=reviewed,
     )
 
 
@@ -688,6 +699,7 @@ def summary() -> Summary:
     by_type = {t: 0 for t in ASSESSMENT_TYPES}
     open_count = 0
     awaiting = 0
+    reviewed = 0
     students: set[str] = set()
     sums = {d: 0 for d in DIMENSIONS}
     counts = {d: 0 for d in DIMENSIONS}
@@ -700,6 +712,8 @@ def summary() -> Summary:
             open_count += 1
         if a.status in ("Submitted", "Under Review"):
             awaiting += 1
+        if a.is_reviewed:
+            reviewed += 1
         for d in DIMENSIONS:
             v = getattr(a, d)
             if v is not None:
@@ -716,6 +730,7 @@ def summary() -> Summary:
         awaiting_review=awaiting,
         distinct_students=len(students),
         average_per_dimension=averages,
+        reviewed=reviewed,
     )
 
 

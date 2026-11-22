@@ -17,8 +17,8 @@ from functools import partial
 from education_system.systems.apprenticeships import config
 from education_system.systems.apprenticeships.domain.records.audit import AuditRecord
 from education_system.systems.apprenticeships.interfaces.cli import prompts
-from education_system.systems.apprenticeships.services import compliance_service
-from education_system.systems.apprenticeships.services.access import Actor
+from education_system.systems.apprenticeships.application.compliance import compliance_service
+from education_system.systems.apprenticeships.application.security.access import Actor
 
 logger = logging.getLogger(__name__)
 

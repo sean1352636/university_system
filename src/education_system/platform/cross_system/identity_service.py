@@ -17,7 +17,9 @@ a person the registry already knows. In order:
 2. an NHS number or UPN matches — strong identifiers win over names;
 3. the normalised legal name and date of birth match, **unless** the
    candidate carries a different NHS number/UPN, or already holds a
-   *different, still-open* record in the same system.
+   *different, still-open* record in the same system — and only when
+   exactly one journey survives those exclusions. Two equally good
+   matches link to neither.
 
 Case 3's exclusions are what stop two different people who share a name
 and birthday being folded into one journey. The cost of being cautious is
@@ -56,6 +58,24 @@ SYSTEM_SLOTS: dict[str, tuple[str, str]] = {
     "fe_college": ("fe_college_pk", "fe_college_student_id"),
     "apprenticeships": ("apprenticeships_pk", "apprenticeships_learner_id"),
     "university": ("university_pk", "university_student_id"),
+    # A PRU / AP placement. Not a phase: pupils come from primary or
+    # secondary and usually go back (see platform.cross_system.ap_referrals).
+    "alternative_provision": ("alternative_provision_pk",
+                              "alternative_provision_pupil_id"),
+    # The SEND service's case (register, EHCP). Not a phase either: the
+    # pupil stays at their school (see platform.cross_system.send_referrals).
+    "special_education": ("special_education_pk", "special_education_learner_id"),
+    # Adult community learning. Adults move to and from FE College and go on
+    # to university (see platform.cross_system.adult_education_applications).
+    "adult_education": ("adult_education_pk", "adult_education_learner_id"),
+    # Short courses and certificates. Apprenticeship providers and FE colleges
+    # send learners for training; learners go on to an apprenticeship or FE
+    # (see platform.cross_system.training_provider_requests).
+    "training_provider": ("training_provider_pk", "training_provider_learner_id"),
+    # The local authority's record of a child (admissions, attendance and
+    # welfare, exclusions, SEND). Not a phase: it runs alongside the school
+    # place (see platform.cross_system.local_authority_links).
+    "local_authority": ("local_authority_pk", "local_authority_child_id"),
 }
 
 # The post-16 systems a learner may hold *concurrently* with another. A
@@ -65,6 +85,17 @@ SYSTEM_SLOTS: dict[str, tuple[str, str]] = {
 # live system per learner should consult this before closing the other.
 CONCURRENT_SYSTEMS: frozenset[str] = frozenset({
     "apprenticeships", "fe_college", "university", "sixth_form",
+    # Dual registration: the pupil stays on the home school's roll while
+    # attending alternative provision.
+    "alternative_provision",
+    # A SEND service case runs alongside the school place.
+    "special_education",
+    # An adult course is usually part-time, alongside FE or other study.
+    "adult_education",
+    # A short course runs alongside an apprenticeship or an FE programme.
+    "training_provider",
+    # The local authority's casework runs alongside the school place.
+    "local_authority",
 })
 
 #: ``student_journey.status`` of a journey folded into another. The row is
@@ -522,6 +553,7 @@ def _resolve_existing(*, system: str, student_id: str | None,
                                           date_of_birth, db_path=db_path)
     if not candidates:
         return None
+    survivors: list[str] = []
     conn = connect(db_path)
     try:
         for cand in candidates:
@@ -541,9 +573,26 @@ def _resolve_existing(*, system: str, student_id: str | None,
                     system, student_id or "-", cand["journey_id"],
                     "; ".join(conflict))
                 continue
-            return cand["journey_id"]
+            survivors.append(cand["journey_id"])
     finally:
         conn.close()
+    if len(survivors) == 1:
+        if not (nhs or pupil):
+            logger.info(
+                "Linked %s record %s to journey %s on name + date of birth "
+                "alone (no NHS number or UPN to confirm)", system,
+                student_id or "-", survivors[0])
+        return survivors[0]
+    if len(survivors) > 1:
+        # Two or more live journeys fit equally well. Picking the first is
+        # a coin toss over whose record this learner joins; a separate
+        # journey is the recoverable mistake — find_duplicate_candidates
+        # surfaces it and merge_journeys resolves it.
+        logger.warning(
+            "Not linking %s record %s on name + date of birth: %d journeys "
+            "match (%s). A separate journey will be created for review as a "
+            "possible duplicate", system, student_id or "-", len(survivors),
+            ", ".join(survivors))
     return None
 
 

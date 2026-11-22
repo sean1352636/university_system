@@ -10,7 +10,7 @@ import hashlib
 from pathlib import Path
 from datetime import datetime, timedelta
 from unittest.mock import Mock, patch, MagicMock
-from education_system.systems.university.domains.academics.domain.services.assignments.assignment_submission import (
+from education_system.systems.university.domains.assessment.domain.assignments.assignment_submission import (
     AssignmentSubmission
 )
 from education_system.systems.university.infrastructure.database.db import get_connection, transaction
@@ -274,7 +274,7 @@ class TestLogging:
 class TestNotifications:
     """Test notification functionality"""
 
-    @patch('education_system.systems.university.domains.academics.domain.services.assignments.assignment_submission.send_email')
+    @patch('education_system.systems.university.domains.assessment.domain.assignments.assignment_submission.send_email')
     def test_send_notification(self, mock_send_email, assignment_service):
         """Test sending in-app notification"""
         result = assignment_service._send_notification(
@@ -288,7 +288,7 @@ class TestNotifications:
         # Should return True or not raise exception
         assert result is not None
 
-    @patch('education_system.systems.university.domains.academics.domain.services.assignments.assignment_submission.send_email')
+    @patch('education_system.systems.university.domains.assessment.domain.assignments.assignment_submission.send_email')
     def test_send_email_notification(self, mock_send_email, assignment_service):
         """Test sending email notification"""
         mock_send_email.return_value = True
@@ -321,7 +321,7 @@ class TestNotifications:
 class TestDueDateReminders:
     """Test due date reminder functionality"""
 
-    @patch('education_system.systems.university.domains.academics.domain.services.assignments.assignment_submission.send_email')
+    @patch('education_system.systems.university.domains.assessment.domain.assignments.assignment_submission.send_email')
     def test_run_due_date_reminders(self, mock_send_email, assignment_service):
         """Test running due date reminders"""
         mock_send_email.return_value = True

@@ -656,6 +656,26 @@ def ensure_student_finance_account_exists(student_id: str) -> bool:
         logger.error(f"Error ensuring student account exists: {e}")
         return False
 
+def _open_account_for_top_up(student_id: str, create_if_missing: bool, processed_by: str):
+    """``True`` if an account was opened now, ``False`` if one existed, or the
+    reason (str) the top-up cannot go ahead."""
+    _ensure_finance_tables_exist()
+    with get_finance_db_connection() as conn:
+        if conn.execute('SELECT 1 FROM student_finance_accounts WHERE student_id = ?',
+                        (student_id,)).fetchone():
+            return False
+        student = conn.execute('SELECT student_id FROM students WHERE student_id = ?',
+                               (student_id,)).fetchone()
+    if not create_if_missing:
+        return f"Finance account not found for student {student_id}"
+    if not student or str(student_id).upper().startswith('ERASED-'):
+        return f"No student {student_id} on record to open a finance account for"
+    if not ensure_student_finance_account_exists(student_id):
+        return f"Could not open a finance account for student {student_id}"
+    logger.info("Finance account opened for %s by %s (top-up / refund)", student_id, processed_by)
+    return True
+
+
 def send_payment_receipt_email(
     student_id: str,
     amount: float,
@@ -1054,7 +1074,8 @@ def top_up_student_finance_account(
     amount: float,
     payment_method: str,
     processed_by: str = "System",
-    description: Optional[str] = None
+    description: Optional[str] = None,
+    create_if_missing: bool = True,
 ) -> Dict[str, Any]:
     """
     Top up a student's finance account balance.
@@ -1065,14 +1086,20 @@ def top_up_student_finance_account(
         payment_method: Method of top-up (e.g., "card", "cash", "bank_transfer")
         processed_by: Username of person processing the top-up
         description: Optional description
+        create_if_missing: Open an account for the student if they have none
+            (a refund to a student who never paid by account). Only for a
+            student on record who has not been erased; with ``False`` a
+            missing account is an error.
 
     Returns:
-        Dictionary with success status, message, and new balance
+        Dictionary with success status, message, new balance and
+        ``account_created`` (True when this call opened the account)
     """
     result = {
         'success': False,
         'message': '',
-        'new_balance': None
+        'new_balance': None,
+        'account_created': False,
     }
 
     try:
@@ -1080,7 +1107,11 @@ def top_up_student_finance_account(
             result['message'] = "Top-up amount must be positive"
             return result
 
-        ensure_student_finance_account_exists(student_id)
+        opened = _open_account_for_top_up(student_id, create_if_missing, processed_by)
+        if isinstance(opened, str):
+            result['message'] = opened
+            return result
+        result['account_created'] = opened
 
         with transaction() as conn:
             cursor = conn.cursor()
@@ -1116,7 +1147,8 @@ def top_up_student_finance_account(
             ''', (account_id, student_id, amount, current_balance, new_balance, desc, processed_by))
 
         result['success'] = True
-        result['message'] = f"Account topped up with \u00a3{amount:.2f}"
+        result['message'] = f"Account topped up with \u00a3{amount:.2f}" + (
+            " (finance account opened for this student)" if result['account_created'] else "")
         result['new_balance'] = new_balance
 
         logger.info(f"Finance account top-up: {student_id} - \u00a3{amount:.2f} via {payment_method}")

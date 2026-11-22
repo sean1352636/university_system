@@ -144,6 +144,28 @@ def _validate(data: dict[str, Any]) -> dict[str, Any]:
     return out
 
 
+def _check_retake(conn: sqlite3.Connection, payload: dict[str, Any],
+                  exclude_id: int | None = None) -> None:
+    """Attempt 2 is a retake: it needs an attempt 1 the pupil did not pass."""
+    if payload["attempt"] != 2:
+        return
+    first = conn.execute(
+        "SELECT result_id, score FROM phonics_screening_results "
+        "WHERE pupil_id = ? AND attempt = 1 AND result_id IS NOT ? "
+        "ORDER BY academic_year DESC, result_id DESC LIMIT 1",
+        (payload["pupil_id"], exclude_id),
+    ).fetchone()
+    if first is None:
+        raise ValidationError(
+            f"Pupil {payload['pupil_id']} has no attempt 1 result - "
+            "attempt 2 is the retake for pupils who did not pass")
+    if first["score"] >= PASS_MARK:
+        raise ValidationError(
+            f"Pupil {payload['pupil_id']} passed attempt 1 "
+            f"(#{first['result_id']}) - only pupils who did not pass "
+            "retake the check")
+
+
 def create(data: dict[str, Any]) -> ScreeningResult:
     init_db()
     payload = _validate(data)
@@ -162,6 +184,7 @@ def create(data: dict[str, Any]) -> ScreeningResult:
                     f"A result for pupil {payload['pupil_id']} in "
                     f"{payload['academic_year']} attempt {payload['attempt']} "
                     f"already exists (#{dup['result_id']})")
+            _check_retake(conn, payload)
             cur = conn.execute(
                 """INSERT INTO phonics_screening_results
                        (pupil_id, academic_year, attempt, score,
@@ -230,6 +253,7 @@ def update(result_id: int, data: dict[str, Any]) -> ScreeningResult:
                     f"A result for pupil {payload['pupil_id']} in "
                     f"{payload['academic_year']} attempt {payload['attempt']} "
                     f"already exists (#{dup['result_id']})")
+            _check_retake(conn, payload, exclude_id=result_id)
             conn.execute(
                 """UPDATE phonics_screening_results SET
                        pupil_id = ?, academic_year = ?, attempt = ?,

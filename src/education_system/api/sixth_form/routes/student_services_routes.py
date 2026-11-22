@@ -14,6 +14,8 @@ import os
 
 from flask import Blueprint, g, jsonify, request
 
+from education_system.api.sixth_form import access_gate
+
 logger = logging.getLogger(__name__)
 
 student_services_bp = Blueprint(
@@ -22,6 +24,7 @@ student_services_bp = Blueprint(
 
 
 def _token_required(view):
+    view = access_gate.gate(view)
     try:
         from education_system.platform.delivery.api.auth import token_required
         return token_required(view)
@@ -203,20 +206,16 @@ def delete_enrolment(enrolment_id):
 
 # ── Alumni ──────────────────────────────────────────────────────────
 
-def _alumni():
-    from education_system.systems.sixth_form.domain.learners.alumni import (  # noqa: E501
-        alumni as data,
-    )
-    return data
-
-
 @student_services_bp.route("/alumni", methods=["GET"])
 @_token_required
 def list_alumni():
-    data = _alumni()
+    from education_system.systems.sixth_form.domain.learners.alumni import (
+        db as alumni_db,
+        records as alumni_records,
+    )
     args = request.args
     try:
-        rows = data.list_alumni(
+        rows = alumni_records.list_alumni(
             leaving_year=args.get("leaving_year"),
             destination_type=args.get("destination_type"),
             status=args.get("status"),
@@ -231,7 +230,7 @@ def list_alumni():
             include_deleted=args.get("include_deleted", "").lower()
             in ("1", "true", "yes"),
         )
-    except data.ValidationError as e:
+    except alumni_db.ValidationError as e:
         return jsonify({"error": str(e)}), 400
     return jsonify({"alumni": _dump(rows), "count": len(rows)})
 
@@ -239,8 +238,8 @@ def list_alumni():
 @student_services_bp.route("/alumni/<int:alumni_id>", methods=["GET"])
 @_token_required
 def get_alumnus(alumni_id):
-    data = _alumni()
-    obj = data.get_alumnus(alumni_id)
+    from education_system.systems.sixth_form.domain.learners.alumni import records as alumni_records
+    obj = alumni_records.get_alumnus(alumni_id)
     if obj is None:
         return jsonify({"error": "Alumnus not found"}), 404
     return jsonify(_dump(obj))
@@ -249,10 +248,13 @@ def get_alumnus(alumni_id):
 @student_services_bp.route("/alumni", methods=["POST"])
 @_token_required
 def create_alumnus():
-    data = _alumni()
+    from education_system.systems.sixth_form.domain.learners.alumni import (
+        db as alumni_db,
+        records as alumni_records,
+    )
     try:
-        obj = data.create_alumnus(request.get_json(silent=True) or {})
-    except data.ValidationError as e:
+        obj = alumni_records.create_alumnus(request.get_json(silent=True) or {})
+    except alumni_db.ValidationError as e:
         return jsonify({"error": str(e)}), 400
     return jsonify(_dump(obj)), 201
 
@@ -260,13 +262,16 @@ def create_alumnus():
 @student_services_bp.route("/alumni/<int:alumni_id>", methods=["PUT"])
 @_token_required
 def update_alumnus(alumni_id):
-    data = _alumni()
-    if data.get_alumnus(alumni_id) is None:
+    from education_system.systems.sixth_form.domain.learners.alumni import (
+        db as alumni_db,
+        records as alumni_records,
+    )
+    if alumni_records.get_alumnus(alumni_id) is None:
         return jsonify({"error": "Alumnus not found"}), 404
     try:
-        obj = data.update_alumnus(
+        obj = alumni_records.update_alumnus(
             alumni_id, request.get_json(silent=True) or {})
-    except data.ValidationError as e:
+    except alumni_db.ValidationError as e:
         return jsonify({"error": str(e)}), 400
     return jsonify(_dump(obj))
 
@@ -274,7 +279,7 @@ def update_alumnus(alumni_id):
 @student_services_bp.route("/alumni/<int:alumni_id>", methods=["DELETE"])
 @_token_required
 def delete_alumnus(alumni_id):
-    data = _alumni()
-    if not data.delete_alumnus(alumni_id):
+    from education_system.systems.sixth_form.domain.learners.alumni import records as alumni_records
+    if not alumni_records.delete_alumnus(alumni_id):
         return jsonify({"error": "Alumnus not found"}), 404
     return jsonify({"deleted": alumni_id})

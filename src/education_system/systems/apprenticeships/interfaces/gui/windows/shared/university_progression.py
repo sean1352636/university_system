@@ -13,7 +13,7 @@ from __future__ import annotations
 
 from education_system.platform.cross_system import university_applications_gui
 from education_system.systems.apprenticeships.interfaces.gui import widgets
-from education_system.systems.apprenticeships.services.access import (
+from education_system.systems.apprenticeships.application.security.access import (
     PermissionDenied,
     require,
 )

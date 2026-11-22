@@ -641,5 +641,5 @@ The Health Portal provides comprehensive healthcare services for students, inclu
 ---
 
 **Last Updated**: January 2026
-**Module**: `university_system/modules/domain/health/gui/health_portal_gui.py`
+**Module**: `src/education_system/systems/university/domains/health/interfaces/gui/health/health_portal/`
 **Support**: health@university.edu | (555) 123-HLTH

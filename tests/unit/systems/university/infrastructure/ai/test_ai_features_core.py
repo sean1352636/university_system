@@ -3,14 +3,14 @@ Test suite for ai_features_core.py
 
 Tests all AI features managers: ChatbotManager, RecommendationEngine,
 AutoGradingManager, ContentSuggestionManager, SentimentAnalysisManager,
-and PlagiarismDetectionManager.
+(PlagiarismDetectionManager now runs the real check in application/integrity/plagiarism_checks, tested there).
 """
 
 import pytest
 from datetime import datetime
 from education_system.systems.university.infrastructure.database.db import get_connection, transaction
 from education_system.systems.university.infrastructure.database.schemas.ai_features_schemas import init_ai_features_system_db
-from education_system.systems.university.services.ai_features.ai_features_core import (
+from education_system.systems.university.shared.ai.features.ai_features_core import (
     ChatbotManager,
     RecommendationEngine,
     AutoGradingManager,
@@ -356,113 +356,6 @@ class TestSentimentAnalysisManager:
                 sentiment_category='positive'
             )
             assert analysis_id > 0
-
-
-class TestPlagiarismDetectionManager:
-    """Test PlagiarismDetectionManager functionality"""
-
-    def test_check_plagiarism_low_similarity(self, setup_db):
-        """Test plagiarism check with low similarity (not flagged)"""
-        check_id = PlagiarismDetectionManager.check_plagiarism(
-            submission_id=9100,
-            student_id='test_student_001',
-            document_text='Original work by the student',
-            similarity_score=0.15,
-            matched_sources=''
-        )
-
-        assert check_id is not None
-        assert isinstance(check_id, int)
-        assert check_id > 0
-
-        # Verify not flagged
-        with get_connection() as conn:
-            cursor = conn.cursor()
-            cursor.execute(
-                'SELECT flagged FROM ai_plagiarism_checks WHERE check_id = ?',
-                (check_id,)
-            )
-            row = cursor.fetchone()
-            assert row['flagged'] == 0
-
-    def test_check_plagiarism_high_similarity(self, setup_db):
-        """Test plagiarism check with high similarity (flagged)"""
-        check_id = PlagiarismDetectionManager.check_plagiarism(
-            submission_id=9200,
-            student_id='test_student_002',
-            document_text='Copied content from multiple sources',
-            similarity_score=0.65,
-            matched_sources='Wikipedia, Other essay'
-        )
-
-        # Verify flagged (>30% threshold)
-        with get_connection() as conn:
-            cursor = conn.cursor()
-            cursor.execute(
-                'SELECT flagged FROM ai_plagiarism_checks WHERE check_id = ?',
-                (check_id,)
-            )
-            row = cursor.fetchone()
-            assert row['flagged'] == 1
-
-    def test_check_plagiarism_threshold_boundary(self, setup_db):
-        """Test plagiarism check at 30% threshold"""
-        # Just below threshold
-        check_id1 = PlagiarismDetectionManager.check_plagiarism(
-            submission_id=9300,
-            student_id='test_student_003',
-            document_text='Test document',
-            similarity_score=0.29
-        )
-
-        # At threshold
-        check_id2 = PlagiarismDetectionManager.check_plagiarism(
-            submission_id=9301,
-            student_id='test_student_004',
-            document_text='Test document',
-            similarity_score=0.30
-        )
-
-        # Just above threshold
-        check_id3 = PlagiarismDetectionManager.check_plagiarism(
-            submission_id=9302,
-            student_id='test_student_005',
-            document_text='Test document',
-            similarity_score=0.31
-        )
-
-        with get_connection() as conn:
-            cursor = conn.cursor()
-
-            cursor.execute('SELECT flagged FROM ai_plagiarism_checks WHERE check_id = ?', (check_id1,))
-            assert cursor.fetchone()['flagged'] == 0
-
-            cursor.execute('SELECT flagged FROM ai_plagiarism_checks WHERE check_id = ?', (check_id2,))
-            assert cursor.fetchone()['flagged'] == 0
-
-            cursor.execute('SELECT flagged FROM ai_plagiarism_checks WHERE check_id = ?', (check_id3,))
-            assert cursor.fetchone()['flagged'] == 1
-
-    def test_check_with_matched_sources(self, setup_db):
-        """Test plagiarism check with matched sources"""
-        check_id = PlagiarismDetectionManager.check_plagiarism(
-            submission_id=9400,
-            student_id='test_student_006',
-            document_text='Document with sources',
-            similarity_score=0.45,
-            matched_sources='Source A, Source B, Source C'
-        )
-
-        # Verify sources stored
-        with get_connection() as conn:
-            cursor = conn.cursor()
-            cursor.execute(
-                'SELECT matched_sources FROM ai_plagiarism_checks WHERE check_id = ?',
-                (check_id,)
-            )
-            row = cursor.fetchone()
-            assert 'Source A' in row['matched_sources']
-            assert 'Source B' in row['matched_sources']
 
 
 class TestErrorHandling:

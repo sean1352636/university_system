@@ -5,7 +5,7 @@ from __future__ import annotations
 import logging
 import tkinter as tk
 from datetime import date as _date, timedelta as _td
-from tkinter import filedialog, messagebox, ttk
+from tkinter import filedialog, ttk
 from typing import Any
 
 from education_system.platform import branding
@@ -21,6 +21,14 @@ from education_system.systems.primary.domain.governance.audit.audit_reports.audi
     ReportResult,
     ValidationError,
 )
+from education_system.platform.delivery.gui.parented_dialogs import messagebox
+from education_system.systems.primary.domain.operations.communications.activity_feed.activity_feed import (
+    ACTIONS,
+    KNOWN_ENTITY_TYPES,
+    SEVERITIES,
+    SOURCES,
+)
+from education_system.systems.primary.interfaces.gui import kit
 
 logger = logging.getLogger(__name__)
 
@@ -28,8 +36,8 @@ WIN_GEOMETRY = "1400x900"
 WIN_MINSIZE = (1200, 800)
 
 _FILTER_KEYS: tuple[tuple[str, str], ...] = (
-    ("date_from",    "From (YYYY-MM-DD)"),
-    ("date_to",      "To   (YYYY-MM-DD)"),
+    ("date_from",    "From"),
+    ("date_to",      "To"),
     ("actor",        "Actor"),
     ("action",       "Action"),
     ("entity_type",  "Entity type"),
@@ -43,17 +51,48 @@ _FILTER_KEYS: tuple[tuple[str, str], ...] = (
 
 def open_audit_reports_window(parent=None) -> None:
     data.init_db()
-    master = getattr(parent, "root", parent)
-    win = tk.Toplevel(master) if master is not None else tk.Tk()
-    win.title(f"Audit Reports — {branding.SYSTEM_NAME}")
-    win.geometry(WIN_GEOMETRY)
-    win.minsize(*WIN_MINSIZE)
-    nb = ttk.Notebook(win)
-    nb.pack(fill="both", expand=True, padx=10, pady=10)
+    if parent is None:
+        # Stand-alone (no main window): a window of its own, as before.
+        win = tk.Tk()
+        win.title(f"Audit Reports — {branding.SYSTEM_NAME}")
+        win.geometry(WIN_GEOMETRY)
+        win.minsize(*WIN_MINSIZE)
+        frame = ttk.Frame(win, padding=10)
+        frame.pack(fill="both", expand=True)
+        _draw_audit_reports(frame)
+        return
+    kit.show_page(parent, "Audit Reports", _draw_audit_reports)
+
+
+def _draw_audit_reports(parent) -> None:
+    kit.page_heading(parent, "Audit Reports",
+                     "Run audit-log reports, keep saved definitions and snapshots, "
+                     "and see an overview.")
+    nb = ttk.Notebook(parent)
+    nb.pack(fill="both", expand=True)
     RunTab(nb)
     SavedTab(nb)
     RunsTab(nb)
     OverviewTab(nb)
+
+
+def _filter_widget(cell: tk.Misc, key: str, var: tk.StringVar) -> tk.Misc:
+    """The picker for one report filter, bound to *var* (empty = any)."""
+    if key in ("date_from", "date_to"):
+        return kit.DateField(cell, var)
+    if key == "severity":
+        return kit.ChoiceField(cell, var, choices=SEVERITIES, blank=True, width=14)
+    if key == "source":
+        return kit.ChoiceField(cell, var, choices=SOURCES, blank=True, width=14)
+    if key == "action":
+        return kit.ChoiceField(cell, var, choices=ACTIONS, blank=True,
+                               editable=True, width=20)
+    if key == "entity_type":
+        return kit.ChoiceField(cell, var, choices=KNOWN_ENTITY_TYPES, blank=True,
+                               editable=True, width=20)
+    if key == "limit":
+        return kit.NumberField(cell, var, from_=1, to=10000, increment=100)
+    return ttk.Entry(cell, textvariable=var)
 
 
 def _set_text(text: tk.Text, body: str) -> None:
@@ -123,10 +162,10 @@ class RunTab:
             cell = ttk.Frame(filt)
             cell.grid(row=row, column=col, sticky="ew", padx=4, pady=2)
             filt.columnconfigure(col, weight=1)
-            ttk.Label(cell, text=label, width=20,
+            ttk.Label(cell, text=label, width=16,
                        anchor="e").pack(side="left")
             v = tk.StringVar()
-            ttk.Entry(cell, textvariable=v).pack(
+            _filter_widget(cell, key, v).pack(
                 side="left", fill="x", expand=True, padx=4)
             self._filter_vars[key] = v
         # Sensible defaults.
@@ -352,7 +391,7 @@ class DefDialog(tk.Toplevel):
     def __init__(self, master, existing=None, *, on_save) -> None:
         super().__init__(master)
         self.title("Saved Report")
-        self.geometry("640x560")
+        self.geometry("1000x620")
         self.transient(master.winfo_toplevel())
         self.after_idle(self.grab_set)
         self._on_save = on_save
@@ -384,8 +423,9 @@ class DefDialog(tk.Toplevel):
 
         ttk.Label(wrap, text="Created by:").grid(row=3, column=0,
                                                      sticky="e", **pad)
-        self.by_e = ttk.Entry(wrap, width=42)
-        self.by_e.grid(row=3, column=1, sticky="ew", **pad)
+        self.by_var = tk.StringVar()
+        self.by_e = kit.StaffPicker(wrap, self.by_var, by="name")
+        self.by_e.grid(row=3, column=1, sticky="w", **pad)
 
         filt = ttk.LabelFrame(wrap, text="Filters", padding=6)
         filt.grid(row=4, column=0, columnspan=2, sticky="ew", **pad)
@@ -395,10 +435,10 @@ class DefDialog(tk.Toplevel):
             cell = ttk.Frame(filt)
             cell.grid(row=row, column=col, sticky="ew", padx=4, pady=2)
             filt.columnconfigure(col, weight=1)
-            ttk.Label(cell, text=label, width=20,
+            ttk.Label(cell, text=label, width=16,
                        anchor="e").pack(side="left")
             v = tk.StringVar()
-            ttk.Entry(cell, textvariable=v).pack(
+            _filter_widget(cell, key, v).pack(
                 side="left", fill="x", expand=True, padx=4)
             self._filter_vars[key] = v
 
@@ -419,7 +459,7 @@ class DefDialog(tk.Toplevel):
             except ValueError:
                 pass
             self.desc_e.insert(0, e.description or "")
-            self.by_e.insert(0, e.created_by or "")
+            self.by_var.set(e.created_by or "")
             for k, v in self._filter_vars.items():
                 if k in e.filters:
                     v.set(str(e.filters[k]))
@@ -431,7 +471,7 @@ class DefDialog(tk.Toplevel):
                 REPORT_TYPES[self.type_cb.current()]
                 if self.type_cb.current() >= 0 else REPORT_TYPES[0],
             "description": self.desc_e.get().strip(),
-            "created_by": self.by_e.get().strip() or None,
+            "created_by": self.by_var.get().strip() or None,
             "filters": {k: v.get().strip()
                          for k, v in self._filter_vars.items()
                          if v.get().strip()},

@@ -56,43 +56,23 @@ class PaymentMixin:
 
                 method = payment_method_var.get()
 
-                # Handle Student Account payment
+                # Student Account: pre-check the balance for a clear message;
+                # the debit and the Finance posting happen in AccountManager.deposit
                 if method == "Student Account":
-                    if student_balance < amount:
+                    if (student_balance or 0) < amount:
                         messagebox.showerror(
                             _t("common.error", default="Error"),
-                            f"Insufficient balance. Current balance: £{student_balance:.2f}"
+                            f"Insufficient balance. Current balance: £{(student_balance or 0):.2f}"
                         )
-                        return
-                    # Process student account payment
-                    payment_result = process_student_finance_account_payment(
-                        student_id=student_id,
-                        amount=amount,
-                        description="Betting shop deposit",
-                        transaction_source="BettingShop",
-                        transaction_ref=f"deposit_{self.user_id}",
-                        processed_by=self.current_user.get('username', 'System')
-                    )
-                    if not payment_result.get('success'):
-                        messagebox.showerror(_t("common.error", default="Error"), payment_result.get('message', "Failed to process student account payment"))
                         return
 
                 transaction_id = AccountManager.deposit(
-                    self.user_id, amount, method, self.current_user.get('username')
+                    self.user_id, amount, method, self.current_user.get('username'),
+                    student_id=student_id,
                 )
 
                 if transaction_id:
-                    # Record revenue in central finance system
-                    record_payment_to_finance(
-                        student_id=student_id,
-                        amount=amount,
-                        payment_method=method,
-                        transaction_source='BettingShop',
-                        transaction_ref=f"DEP-{transaction_id}",
-                        notes=f"Betting deposit via {method}",
-                        created_by=self.current_user.get('username')
-                    )
-                    logger.info(f"Revenue recorded: £{amount:.2f} for betting deposit")
+                    logger.info(f"Deposit recorded: £{amount:.2f} via {method}")
 
                     # Send receipt
                     self.send_deposit_receipt(amount, method, transaction_id)
@@ -226,60 +206,25 @@ class PaymentMixin:
         ttk.Button(dialog, text=_t("betting.btn.withdraw", default="Withdraw"), command=confirm_withdrawal).pack(pady=20)
 
     def withdraw_to_student_account(self, amount: float, student_id: str, current_balance: float):
-        """Withdraw betting funds to student finance account"""
+        """Withdraw betting funds to student finance account (via the betting service)."""
         try:
-            # Import the function to ensure student account exists
-            from education_system.systems.university.domains.finance.infrastructure.finance_integration import ensure_student_finance_account_exists
-
-            # Ensure student account exists
-            ensure_student_finance_account_exists(student_id)
-
-            # Get old balance
             old_balance = current_balance if current_balance is not None else 0.0
-            new_balance = old_balance + amount
 
-            # Withdraw from betting account first
-            transaction_id = AccountManager.withdraw(
-                self.user_id, amount, 'Student Finance Account', self.current_user.get('username')
+            result = AccountManager.withdraw_to_student_account(
+                self.user_id, amount, student_id, self.current_user.get('username')
             )
-
+            transaction_id = result.get('transaction_id')
             if not transaction_id:
                 messagebox.showerror(_t("common.error", default="Error"),
                                    _t('gui.operations.commerce.betting.services.payments.dialogs.failed_to_withdraw_from_betting_account', default="Failed to withdraw from betting account"))
                 return False
+            if result.get('new_balance') is None:
+                messagebox.showerror(_t("common.error", default="Error"),
+                                   f"Error processing withdrawal to student account: {result.get('message')}")
+                return False
 
-            # Generate withdrawal reference
-            withdrawal_ref = f"BETTING-WITHDRAWAL-{datetime.now().strftime('%Y%m%d%H%M%S')}"
-
-            # Add funds to student finance account
-            with transaction() as conn:
-                cursor = conn.cursor()
-
-                # Update student account balance
-                cursor.execute('''
-                    UPDATE student_finance_accounts
-                    SET balance = balance + ?
-                    WHERE student_id = ?
-                ''', (amount, student_id))
-
-                # Get account_id for the transaction
-                cursor.execute('''
-                    SELECT account_id FROM student_finance_accounts WHERE student_id = ?
-                ''', (student_id,))
-                account_result = cursor.fetchone()
-                account_id = account_result[0] if account_result else None
-
-                # Log transaction in student finance system
-                cursor.execute('''
-                    INSERT INTO transactions
-                    (source_type, account_id, student_id, transaction_type, amount, balance_after, description,
-                     reference_id, processed_by, created_at)
-                    VALUES ('student_finance', ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                ''', (account_id, student_id, 'credit', amount, new_balance,
-                      f'Betting shop withdrawal - {withdrawal_ref}',
-                      withdrawal_ref,
-                      self.current_user.get('username', 'System'),
-                      datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
+            withdrawal_ref = result['reference']
+            new_balance = float(result['new_balance'])
 
             # Update UI
             self.update_balance_display()
@@ -317,26 +262,3 @@ class PaymentMixin:
             messagebox.showerror(_t("common.error", default="Error"),
                                f"Error processing withdrawal to student account: {str(e)}")
             return False
-
-    def record_revenue_transaction(self, amount: float, description: str):
-        """Record deposit as revenue in finance system.
-
-        8.117.104: routed through unified record_payment() with
-        source_type='betting'.
-        """
-        try:
-            from education_system.systems.university.domains.finance.domain.core.unified_payments import (
-                record_payment as _record_payment,
-            )
-            _record_payment(
-                student_id=self.user_id,
-                amount=amount,
-                payment_method='betting_deposit',
-                source_type='betting',
-                payment_type='deposit',
-                department='betting',
-                description=description,
-                created_by=self.current_user.get('username'),
-            )
-        except Exception as e:
-            print(f"Error recording revenue: {e}")

@@ -32,8 +32,8 @@ def reverse_env(tmp_path, monkeypatch):
                        'GCSE English 6; GCSE Maths 7')""")
     monkeypatch.setattr(students, "DB_PATH", sixth_db)
     monkeypatch.setattr(students, "_DB_READY", False)
-    monkeypatch.setattr(students, "_provision_login_account", lambda _student: None)
-    monkeypatch.setattr(students, "_send_welcome_email", lambda _student: None)
+    monkeypatch.setattr(students, "_provision_login_account", lambda *_a, **_k: None)
+    monkeypatch.setattr(students, "_send_welcome_email", lambda *_a, **_k: None)
     yield auth_db, fe_db
     persistence.set_db_path(None)
 

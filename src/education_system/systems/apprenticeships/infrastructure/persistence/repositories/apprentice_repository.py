@@ -16,6 +16,7 @@ from education_system.systems.apprenticeships.infrastructure.persistence.reposit
     col,
     connect,
     init_db,
+    to_bool,
     to_float,
     to_int,
 )
@@ -66,6 +67,9 @@ _FIELDS = (
     "username", "programme_id", "employer_id", "workplace_id", "tutor_id",
     "status", "start_date", "planned_end_date", "actual_end_date",
     "weekly_hours", "funding_model", "prior_learning", "support_needs", "notes",
+    "middle_name", "preferred_name", "gender", "address_line1", "address_line2",
+    "town", "postcode", "emergency_contact_name", "emergency_contact_relationship",
+    "emergency_contact_phone", "has_lldd", "has_ehcp", "medical_notes",
 )
 
 
@@ -94,6 +98,19 @@ def _map(row: Any) -> Apprentice:
         notes=col(row, "notes"),
         created_at=col(row, "created_at", ""),
         updated_at=col(row, "updated_at", ""),
+        middle_name=col(row, "middle_name"),
+        preferred_name=col(row, "preferred_name"),
+        gender=col(row, "gender"),
+        address_line1=col(row, "address_line1"),
+        address_line2=col(row, "address_line2"),
+        town=col(row, "town"),
+        postcode=col(row, "postcode"),
+        emergency_contact_name=col(row, "emergency_contact_name"),
+        emergency_contact_relationship=col(row, "emergency_contact_relationship"),
+        emergency_contact_phone=col(row, "emergency_contact_phone"),
+        has_lldd=to_bool(col(row, "has_lldd")),
+        has_ehcp=to_bool(col(row, "has_ehcp")),
+        medical_notes=col(row, "medical_notes"),
     )
 
 
@@ -184,6 +201,35 @@ def get_by_uln(uln: str) -> Apprentice | None:
     with connect() as conn:
         row = conn.execute("SELECT * FROM apprentices WHERE uln = ?", (uln,)).fetchone()
     return _map(row) if row else None
+
+
+def find_possible_duplicates(
+    given_name: str, family_name: str, date_of_birth: str | None,
+    email: str | None = None, *, exclude_id: int | None = None,
+) -> list[Apprentice]:
+    """Records that look like the same person: same name and date of birth,
+    or the same email address. Names and email ignore case."""
+    init_db()
+    clauses = []
+    params: list[Any] = []
+    if date_of_birth:
+        clauses.append(
+            "(LOWER(TRIM(given_name)) = LOWER(?) AND LOWER(TRIM(family_name)) = LOWER(?) "
+            "AND date_of_birth = ?)"
+        )
+        params += [given_name.strip(), family_name.strip(), date_of_birth]
+    if email and email.strip():
+        clauses.append("LOWER(TRIM(email)) = LOWER(?)")
+        params.append(email.strip())
+    if not clauses:
+        return []
+    sql = f"SELECT * FROM apprentices WHERE ({' OR '.join(clauses)})"
+    if exclude_id is not None:
+        sql += " AND apprentice_id <> ?"
+        params.append(exclude_id)
+    with connect() as conn:
+        rows = conn.execute(sql + " ORDER BY apprentice_id", params).fetchall()
+    return [_map(r) for r in rows]
 
 
 def list_summaries(

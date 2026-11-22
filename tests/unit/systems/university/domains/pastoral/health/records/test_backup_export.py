@@ -13,7 +13,7 @@ from datetime import datetime, timedelta
 from unittest.mock import Mock, patch, MagicMock, mock_open, call
 from io import StringIO
 
-from education_system.systems.university.domains.pastoral.domain.health.records import backup_export
+from education_system.systems.university.domains.health.domain.health.records import backup_export
 from education_system.systems.university.infrastructure.database.db import get_connection
 
 
@@ -369,7 +369,7 @@ class TestCreateDatabaseBackup:
     @patch('builtins.print')
     def test_create_backup(self, mock_print, mock_auth, temp_dir):
         """Test creating a database backup."""
-        with patch('education_system.systems.university.domains.pastoral.domain.health.records.backup_export.DEFAULT_DB_PATH'):
+        with patch('education_system.systems.university.domains.health.domain.health.records.backup_export.DEFAULT_DB_PATH'):
             # Create mock database file
             mock_db = Path(temp_dir) / 'test.db'
             mock_db.touch()

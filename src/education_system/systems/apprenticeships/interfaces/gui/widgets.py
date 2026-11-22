@@ -22,7 +22,7 @@ from typing import Any
 from education_system.platform import branding
 from education_system.platform.delivery.gui import window_sizing
 from education_system.systems.apprenticeships import config
-from education_system.systems.apprenticeships.services import preferences
+from education_system.systems.apprenticeships.application.workspace import preferences
 
 logger = logging.getLogger(__name__)
 
@@ -427,6 +427,10 @@ class FilterBar:
 # Forms
 # ═════════════════════════════════════════════════════════════════════
 
+# More fields than this and the form scrolls inside its dialog.
+_SCROLL_AFTER_FIELDS = 18
+
+
 class FormDialog:
     """A modal create/edit form built from a field spec.
 
@@ -457,6 +461,9 @@ class FormDialog:
         self._texts: dict[str, tk.Text] = {}
         self.result: Any = None
         self.saved = False
+        # What the form held when Save succeeded, for callers that need a
+        # field the save callback did not use (an "also do this" tick box).
+        self.values_at_save: dict[str, Any] = {}
 
         self.win = tk.Toplevel(parent)
         self.win.title(title)
@@ -479,33 +486,49 @@ class FormDialog:
             ).grid(row=row, column=0, columnspan=2, sticky="w", pady=(0, 8))
             row += 1
 
+        # A long form (the apprentice record runs to thirty fields) scrolls
+        # inside the dialog so the Save button stays on a 768-pixel screen.
+        # Short forms are laid out exactly as before.
+        form_row = row
+        if len(self._fields) > _SCROLL_AFTER_FIELDS:
+            form = self._scrolling_area(body, form_row)
+            row = 0
+        else:
+            form = body
+
         for field in self._fields:
             key = field["key"]
             kind = field.get("kind", "entry")
+            if kind == "section":
+                ttk.Label(form, text=field["label"], font=("", 10, "bold")).grid(
+                    row=row, column=0, columnspan=2, sticky="w", pady=(10, 2)
+                )
+                row += 1
+                continue
             label = field["label"] + (" *" if field.get("required") else "")
-            ttk.Label(body, text=label).grid(row=row, column=0, sticky="ne", pady=4, padx=(0, 8))
+            ttk.Label(form, text=label).grid(row=row, column=0, sticky="ne", pady=4, padx=(0, 8))
 
             if kind == "text":
-                widget = tk.Text(body, width=44, height=4, wrap="word")
+                widget = tk.Text(form, width=44, height=4, wrap="word")
                 widget.insert("1.0", str(field.get("value") or ""))
                 widget.grid(row=row, column=1, sticky="we", pady=4)
                 self._texts[key] = widget
             elif kind == "check":
                 var: tk.Variable = tk.BooleanVar(value=bool(field.get("value")))
-                ttk.Checkbutton(body, variable=var).grid(row=row, column=1, sticky="w", pady=4)
+                ttk.Checkbutton(form, variable=var).grid(row=row, column=1, sticky="w", pady=4)
                 self._vars[key] = var
             elif kind == "combo":
                 var = tk.StringVar(value=str(field.get("value") or ""))
                 options = [str(o) for o in field.get("options", ())]
                 combo = ttk.Combobox(
-                    body, textvariable=var, values=options, width=42,
+                    form, textvariable=var, values=options, width=42,
                     state="readonly" if not field.get("editable") else "normal",
                 )
                 combo.grid(row=row, column=1, sticky="we", pady=4)
                 self._vars[key] = var
             else:
                 var = tk.StringVar(value=str(field.get("value") or ""))
-                ttk.Entry(body, textvariable=var, width=45).grid(
+                ttk.Entry(form, textvariable=var, width=45).grid(
                     row=row, column=1, sticky="we", pady=4
                 )
                 self._vars[key] = var
@@ -514,10 +537,13 @@ class FormDialog:
             if hint:
                 row += 1
                 ttk.Label(
-                    body, text=hint, foreground=config.MUTED_FG, font=("", 8),
+                    form, text=hint, foreground=config.MUTED_FG, font=("", 8),
                 ).grid(row=row, column=1, sticky="w")
             row += 1
 
+        form.columnconfigure(1, weight=1)
+        if form is not body:
+            row = form_row + 1
         body.columnconfigure(1, weight=1)
         self._error = ttk.Label(body, text="", foreground=config.ERROR_FG, wraplength=520)
         self._error.grid(row=row, column=0, columnspan=2, sticky="w", pady=(6, 0))
@@ -529,6 +555,40 @@ class FormDialog:
         ttk.Button(bar, text=save_label, command=self._save).pack(side="right", padx=(0, 6))
         self.win.bind("<Escape>", lambda _e: self.win.destroy())
 
+    def _scrolling_area(self, body: ttk.Frame, row: int) -> ttk.Frame:
+        """A scrolling frame in grid *row* of *body*, sized to fit the screen."""
+        holder = ttk.Frame(body)
+        holder.grid(row=row, column=0, columnspan=2, sticky="nsew")
+        body.rowconfigure(row, weight=1)
+        canvas = tk.Canvas(holder, highlightthickness=0, width=600)
+        bar = ttk.Scrollbar(holder, orient="vertical", command=canvas.yview)
+        inner = ttk.Frame(canvas, padding=(0, 0, 12, 0))
+        window = canvas.create_window((0, 0), window=inner, anchor="nw")
+
+        def resize(_event: Any = None) -> None:
+            canvas.configure(scrollregion=canvas.bbox("all"))
+            # As tall as the form needs, but never taller than the screen
+            # leaves room for once the title and buttons are drawn.
+            room = max(240, self.win.winfo_screenheight() - 260)
+            canvas.configure(height=min(inner.winfo_reqheight(), room),
+                             width=max(600, inner.winfo_reqwidth()))
+
+        inner.bind("<Configure>", resize)
+        canvas.bind("<Configure>", lambda e: canvas.itemconfigure(window, width=e.width))
+        canvas.configure(yscrollcommand=bar.set)
+        canvas.pack(side="left", fill="both", expand=True)
+        bar.pack(side="right", fill="y")
+
+        def wheel(event: Any) -> None:
+            step = -1 if getattr(event, "num", None) == 4 else 1 if getattr(event, "num", None) == 5 \
+                else int(-1 * (event.delta / 120))
+            canvas.yview_scroll(step, "units")
+
+        for sequence in ("<MouseWheel>", "<Button-4>", "<Button-5>"):
+            self.win.bind(sequence, wheel)
+        self.win.resizable(True, True)
+        return inner
+
     def values(self) -> dict[str, Any]:
         data: dict[str, Any] = {k: v.get() for k, v in self._vars.items()}
         for key, widget in self._texts.items():
@@ -536,8 +596,9 @@ class FormDialog:
         return data
 
     def _save(self) -> None:
+        values = self.values()
         try:
-            self.result = self._on_save(self.values())
+            self.result = self._on_save(values)
         except Exception as exc:
             # Stay open with the message inline. Losing a half-filled
             # form to a modal error box is the single most annoying
@@ -545,6 +606,7 @@ class FormDialog:
             self._error.config(text=str(exc))
             logger.debug("Form %s rejected", self.win.title(), exc_info=True)
             return
+        self.values_at_save = values
         self.saved = True
         self.win.destroy()
 
@@ -572,7 +634,7 @@ def _report(exc: Exception, title: str) -> None:
     from education_system.systems.apprenticeships.domain.apprentices.models import (
         ValidationError,
     )
-    from education_system.systems.apprenticeships.services.access import PermissionDenied
+    from education_system.systems.apprenticeships.application.security.access import PermissionDenied
 
     if isinstance(exc, PermissionDenied):
         messagebox.showwarning("Not permitted", str(exc))

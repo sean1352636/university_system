@@ -1,1 +1,1 @@
-"""Secondary-school `modules/shared/gui` package."""
+"""Primary School shared GUI screens (account, settings, about)."""

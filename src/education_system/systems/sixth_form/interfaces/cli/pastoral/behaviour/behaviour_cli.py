@@ -485,7 +485,17 @@ _MENU: list[tuple[str, Callable[[], None]]] = [
     ("Edit Entry",       edit_entry),
     ("Delete Entry",     delete_entry_flow),
     ("Summary",          summary),
+    ("Escalation & Thresholds ▸", lambda: _extra("escalation_menu")),
+    ("Learner Agreement ▸",       lambda: _extra("agreement_menu")),
+    ("Dress Code / ID Badges ▸",  lambda: _extra("breaches_menu")),
 ]
+
+
+def _extra(name: str) -> None:
+    from education_system.systems.sixth_form.interfaces.cli.pastoral.behaviour import (
+        escalation_cli,
+    )
+    getattr(escalation_cli, name)()
 
 
 def run() -> None:

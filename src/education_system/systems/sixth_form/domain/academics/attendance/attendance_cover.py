@@ -23,6 +23,14 @@ how cover gets shared fairly or not at all).
 Marks saved through :func:`save_cover_register` carry the ``cover`` data
 source, so "was this taken by the usual teacher?" stays answerable
 forever, not just while somebody remembers.
+
+One cover store: ``cover_requests`` (:mod:`academics.cover.cover`) is
+the record of cover. This table is the register's view of it and is kept
+in step both ways — :func:`arrange` / :func:`allocate` / :func:`cancel` /
+:func:`delete_cover` write through to ``cover_requests``, and every
+cover-request change for a timetabled lesson writes back here (with
+``_sync=False`` so neither side bounces the write back). Recording a
+staff absence therefore puts the missed lessons on this sheet too.
 """
 
 from __future__ import annotations
@@ -281,6 +289,7 @@ def arrange(
     room: str | None = None,
     notes: str | None = None,
     actor: str | None = None,
+    _sync: bool = True,
 ) -> Cover:
     """Record that a lesson needs covering.
 
@@ -332,11 +341,31 @@ def arrange(
                 slot_id, date, absent or "?", cover or "unallocated")
     out = cover_for(slot_id, date)
     assert out is not None
+    if _sync:
+        _write_through(out)
     return out
 
 
+def _write_through(row: Cover) -> None:
+    """Mirror a register cover row into cover_requests (the one cover
+    store)."""
+    try:
+        from education_system.systems.sixth_form.domain.academics.cover import (
+            cover as _cover,
+        )
+        if not _cover.same_database(DB_PATH):
+            return
+        _cover.upsert_for_slot(
+            row.slot_id, row.date, absent_teacher=row.absent_teacher,
+            cover_teacher=row.cover_teacher, register_reason=row.reason,
+            room=row.room, register_state=row.state)
+    except Exception:
+        logger.exception("Could not mirror register cover #%d to "
+                         "cover_requests", row.cover_id)
+
+
 def allocate(cover_id: int, cover_teacher: str, *,
-             actor: str | None = None) -> Cover:
+             actor: str | None = None, _sync: bool = True) -> Cover:
     """Put a name against an unallocated lesson."""
     init_db()
     existing = get_cover(cover_id)
@@ -364,11 +393,13 @@ def allocate(cover_id: int, cover_teacher: str, *,
     logger.info("Cover #%d allocated to %s", cover_id, teacher)
     out = get_cover(cover_id)
     assert out is not None
+    if _sync:
+        _write_through(out)
     return out
 
 
 def cancel(cover_id: int, *, reason: str | None = None,
-           actor: str | None = None) -> Cover:
+           actor: str | None = None, _sync: bool = True) -> Cover:
     """Stand the cover down — the teacher came in after all."""
     init_db()
     existing = get_cover(cover_id)
@@ -388,20 +419,36 @@ def cancel(cover_id: int, *, reason: str | None = None,
                 cover_id, note or "no reason given", actor or "?")
     out = get_cover(cover_id)
     assert out is not None
+    if _sync:
+        _write_through(out)
     return out
 
 
-def delete_cover(cover_id: int) -> bool:
+def delete_cover(cover_id: int, *, _sync: bool = True) -> bool:
     """Remove an arrangement outright — for one entered by mistake.
 
     Prefer :func:`cancel` for anything that was ever real: who was asked
     to cover what is worth keeping even when it did not happen.
     """
     init_db()
+    existing = get_cover(cover_id) if _sync else None
     with _connect() as conn:
         cur = conn.execute(
             "DELETE FROM attendance_cover WHERE cover_id = ?", (cover_id,))
         conn.commit()
+    if existing is not None and cur.rowcount:
+        # Entered by mistake here means entered by mistake there too.
+        try:
+            from education_system.systems.sixth_form.domain.academics.cover import (
+                cover as _cover,
+            )
+            req = (_cover.request_for_slot(existing.slot_id, existing.date)
+                   if _cover.same_database(DB_PATH) else None)
+            if req is not None:
+                _cover.delete_request(req.cover_id, _sync=False)
+        except Exception:
+            logger.exception("Could not remove cover request for register "
+                             "cover #%d", cover_id)
     return bool(cur.rowcount)
 
 

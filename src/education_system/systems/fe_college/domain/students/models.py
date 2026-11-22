@@ -14,7 +14,9 @@ from datetime import date, datetime
 
 from education_system.systems.fe_college.config import (
     ACTIVE_STUDENT_STATUSES,
+    GENDERS,
     LEARNER_TYPES,
+    MEDICAL_NOTES_MAX_LENGTH,
     MODES_OF_STUDY,
     STUDENT_STATUSES,
 )
@@ -33,6 +35,15 @@ class ValidationError(ValueError):
 # malformed one, because a wrong ULN silently corrupts the funding return.
 _ULN_RE = re.compile(r"^\d{10}$")
 _EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
+# The shape of a UK postcode: outward code, optional space, inward code.
+_POSTCODE_RE = re.compile(r"^[A-Z]{1,2}[0-9][A-Z0-9]? ?[0-9][A-Z]{2}$")
+_PHONE_RE = re.compile(r"^[0-9 +()\-]+$")
+
+
+def normalise_postcode(value: str) -> str:
+    """Upper-case with one space before the inward code (``LS1 1AA``)."""
+    compact = (value or "").strip().upper().replace(" ", "")
+    return f"{compact[:-3]} {compact[-3:]}" if len(compact) > 3 else compact
 
 
 def parse_date(value: str | date | None) -> date | None:
@@ -83,10 +94,15 @@ class Student:
     first_name: str
     last_name: str
     date_of_birth: date | None = None
+    middle_name: str = ""
+    preferred_name: str = ""
+    gender: str = ""
     uln: str = ""
     email: str = ""
     phone: str = ""
-    address: str = ""
+    address: str = ""                 # address line 1
+    address_line2: str = ""
+    town: str = ""
     postcode: str = ""
     learner_type: str = LEARNER_TYPES[0]
     mode_of_study: str = MODES_OF_STUDY[0]
@@ -97,8 +113,11 @@ class Student:
     end_date: date | None = None
     prior_attainment: str = ""
     has_ehcp: bool = False            # Education, Health and Care Plan
+    has_lldd: bool = False            # learning difficulty or disability
     learning_support: str = ""
+    medical_notes: str = ""
     emergency_contact_name: str = ""
+    emergency_contact_relationship: str = ""
     emergency_contact_phone: str = ""
     notes: str = ""
     created_at: str = ""
@@ -109,6 +128,17 @@ class Student:
     @property
     def full_name(self) -> str:
         return f"{self.first_name} {self.last_name}".strip()
+
+    @property
+    def legal_name(self) -> str:
+        """First, middle and last name, as on official documents."""
+        return " ".join(p for p in (self.first_name, self.middle_name, self.last_name) if p)
+
+    @property
+    def full_address(self) -> str:
+        """The home address on one line (blank if none recorded)."""
+        parts = (self.address, self.address_line2, self.town, self.postcode)
+        return ", ".join(p.strip() for p in parts if p and p.strip())
 
     @property
     def display_name(self) -> str:
@@ -151,6 +181,20 @@ class Student:
             raise ValidationError("ULN must be exactly 10 digits")
         if self.email and not _EMAIL_RE.match(self.email.strip()):
             raise ValidationError(f"'{self.email}' is not a valid email address")
+        if self.gender and self.gender not in GENDERS:
+            raise ValidationError(f"Gender must be one of: {', '.join(GENDERS)}")
+        if self.postcode.strip() and not _POSTCODE_RE.match(self.postcode.strip().upper()):
+            raise ValidationError(f"'{self.postcode.strip()}' is not a valid UK postcode")
+        contact_phone = self.emergency_contact_phone.strip()
+        if contact_phone and (not _PHONE_RE.match(contact_phone)
+                              or not 7 <= sum(c.isdigit() for c in contact_phone) <= 15):
+            raise ValidationError("Emergency phone must be a phone number (7 to 15 digits)")
+        # An emergency contact nobody can ring is no contact at all.
+        if bool(self.emergency_contact_name.strip()) != bool(contact_phone):
+            raise ValidationError("An emergency contact needs both a name and a phone number")
+        if len(self.medical_notes.strip()) > MEDICAL_NOTES_MAX_LENGTH:
+            raise ValidationError(
+                f"Medical notes must be {MEDICAL_NOTES_MAX_LENGTH} characters or fewer")
         if self.date_of_birth and self.date_of_birth > date.today():
             raise ValidationError("Date of birth cannot be in the future")
         if self.start_date and self.end_date and self.end_date < self.start_date:
@@ -170,13 +214,18 @@ class Student:
         return {
             "student_id": self.student_id.strip(),
             "first_name": self.first_name.strip(),
+            "middle_name": self.middle_name.strip(),
             "last_name": self.last_name.strip(),
+            "preferred_name": self.preferred_name.strip(),
             "date_of_birth": self.date_of_birth.isoformat() if self.date_of_birth else None,
+            "gender": self.gender.strip(),
             "uln": self.uln.strip(),
             "email": self.email.strip(),
             "phone": self.phone.strip(),
             "address": self.address.strip(),
-            "postcode": self.postcode.strip().upper(),
+            "address_line2": self.address_line2.strip(),
+            "town": self.town.strip(),
+            "postcode": normalise_postcode(self.postcode),
             "learner_type": self.learner_type,
             "mode_of_study": self.mode_of_study,
             "status": self.status,
@@ -186,8 +235,11 @@ class Student:
             "end_date": self.end_date.isoformat() if self.end_date else None,
             "prior_attainment": self.prior_attainment.strip(),
             "has_ehcp": 1 if self.has_ehcp else 0,
+            "has_lldd": 1 if self.has_lldd else 0,
             "learning_support": self.learning_support.strip(),
+            "medical_notes": self.medical_notes.strip(),
             "emergency_contact_name": self.emergency_contact_name.strip(),
+            "emergency_contact_relationship": self.emergency_contact_relationship.strip(),
             "emergency_contact_phone": self.emergency_contact_phone.strip(),
             "notes": self.notes.strip(),
         }
@@ -199,12 +251,17 @@ class Student:
         return cls(
             student_id=d.get("student_id") or "",
             first_name=d.get("first_name") or "",
+            middle_name=d.get("middle_name") or "",
             last_name=d.get("last_name") or "",
+            preferred_name=d.get("preferred_name") or "",
             date_of_birth=parse_date(d.get("date_of_birth")),
+            gender=d.get("gender") or "",
             uln=d.get("uln") or "",
             email=d.get("email") or "",
             phone=d.get("phone") or "",
             address=d.get("address") or "",
+            address_line2=d.get("address_line2") or "",
+            town=d.get("town") or "",
             postcode=d.get("postcode") or "",
             learner_type=d.get("learner_type") or LEARNER_TYPES[0],
             mode_of_study=d.get("mode_of_study") or MODES_OF_STUDY[0],
@@ -215,8 +272,11 @@ class Student:
             end_date=parse_date(d.get("end_date")),
             prior_attainment=d.get("prior_attainment") or "",
             has_ehcp=bool(d.get("has_ehcp")),
+            has_lldd=bool(d.get("has_lldd")),
             learning_support=d.get("learning_support") or "",
+            medical_notes=d.get("medical_notes") or "",
             emergency_contact_name=d.get("emergency_contact_name") or "",
+            emergency_contact_relationship=d.get("emergency_contact_relationship") or "",
             emergency_contact_phone=d.get("emergency_contact_phone") or "",
             notes=d.get("notes") or "",
             created_at=d.get("created_at") or "",

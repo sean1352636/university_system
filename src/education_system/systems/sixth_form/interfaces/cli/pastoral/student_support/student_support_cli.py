@@ -559,7 +559,15 @@ _MENU: list[tuple[str, Callable[[], None]]] = [
     ("Delete",            delete_flow),
     ("─" * 6,             lambda: None),
     ("Summary",           summary_flow),
+    ("Mental Health Referrals ▸", lambda: _mh_referrals()),
 ]
+
+
+def _mh_referrals() -> None:
+    from education_system.systems.sixth_form.interfaces.cli.pastoral.student_support import (
+        mh_referrals_cli,
+    )
+    mh_referrals_cli.run()
 
 
 def run() -> None:

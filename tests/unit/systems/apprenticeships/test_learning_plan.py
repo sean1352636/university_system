@@ -19,12 +19,12 @@ from education_system.systems.apprenticeships.domain.training.learning_plan impo
     LearningPlan,
 )
 from education_system.systems.apprenticeships.domain.training.sessions import TrainingPlanItem
-from education_system.systems.apprenticeships.services import (
-    apprentice_service,
+from education_system.systems.apprenticeships.application.apprentices import apprentice_service
+from education_system.systems.apprenticeships.application.learning import (
     learning_plan_service,
     training_service,
 )
-from education_system.systems.apprenticeships.services.access import PermissionDenied
+from education_system.systems.apprenticeships.application.security.access import PermissionDenied
 
 TODAY = date(2026, 9, 10)
 

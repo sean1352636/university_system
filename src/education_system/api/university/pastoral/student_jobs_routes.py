@@ -7,7 +7,14 @@ from datetime import datetime
 
 from flask import Blueprint, g, jsonify, request
 
-from education_system.platform.delivery.api.university.auth import token_required
+from education_system.platform.delivery.api.university.auth import (
+    authorize_object,
+    current_subject_id,
+    is_staff,
+    require_staff,
+    staff_required,
+    token_required,
+)
 from education_system.platform.delivery.api.university.pagination import get_pagination_params, paginated_response
 from education_system.systems.university.infrastructure.exceptions import ValidationError
 from education_system.systems.university.infrastructure.sql_safety import escape_like
@@ -23,6 +30,23 @@ def _row_to_dict(row) -> dict:
     if row is None:
         return {}
     return {k: row[k] for k in row.keys()}
+
+
+#: Job postings are a public board. Applications and employment records are
+#: one student's (``student_id`` is TEXT, the JWT ``sub``); staff working
+#: them - and anyone posting a job or recording employment - need
+#: ``manage_job_board`` (admin, instructor, staff).
+JOBS_MANAGE = "manage_job_board"
+
+
+def _pinned_student_id(requested):
+    """``(student_id, denial)`` for a list: a learner is pinned to themselves."""
+    if is_staff():
+        return requested, require_staff(permission=JOBS_MANAGE)
+    me = current_subject_id()
+    if me is None:
+        return None, (jsonify({"error": "Forbidden", "status": 403}), 403)
+    return me, None
 
 
 # ---- postings ----
@@ -91,6 +115,7 @@ def get_posting(job_id: int):
 
 @student_jobs_bp.route("/postings", methods=["POST"])
 @token_required
+@staff_required(permission=JOBS_MANAGE)
 def create_posting():
     data = request.get_json(silent=True) or {}
     for field in ["employer_name", "job_title", "job_description"]:
@@ -121,8 +146,10 @@ def create_posting():
 @token_required
 def list_applications():
     job_id = request.args.get("job_id")
-    student_id = request.args.get("student_id")
     status = request.args.get("status")
+    student_id, denial = _pinned_student_id(request.args.get("student_id"))
+    if denial is not None:
+        return denial
 
     with get_connection() as conn:
         conditions = []
@@ -166,6 +193,9 @@ def get_application(application_id: int):
         ).fetchone()
     if not row:
         raise ValidationError(f"applications {application_id} not found")
+    denial = authorize_object(row["student_id"], permission=JOBS_MANAGE)
+    if denial is not None:
+        return denial
     log_activity("view", "campus_job_applications", user=g.current_user.get("sub"))
     return jsonify(_row_to_dict(row))
 
@@ -173,9 +203,15 @@ def get_application(application_id: int):
 @token_required
 def create_application():
     data = request.get_json(silent=True) or {}
+    if not is_staff():
+        # A learner applies as themselves, never under a named id.
+        data["student_id"] = current_subject_id()
     for field in ["job_id", "student_id"]:
-        if field not in data:
+        if not data.get(field):
             raise ValidationError(f"Missing required field: {field}")
+    denial = authorize_object(data["student_id"], permission=JOBS_MANAGE)
+    if denial is not None:
+        return denial
 
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     with transaction() as conn:
@@ -200,8 +236,10 @@ def create_application():
 @student_jobs_bp.route("/employment", methods=["GET"])
 @token_required
 def list_employment():
-    student_id = request.args.get("student_id")
     employment_status = request.args.get("employment_status")
+    student_id, denial = _pinned_student_id(request.args.get("student_id"))
+    if denial is not None:
+        return denial
 
     with get_connection() as conn:
         conditions = []
@@ -242,11 +280,15 @@ def get_employment(employment_id: int):
         ).fetchone()
     if not row:
         raise ValidationError(f"employment {employment_id} not found")
+    denial = authorize_object(row["student_id"], permission=JOBS_MANAGE)
+    if denial is not None:
+        return denial
     log_activity("view", "student_employment", user=g.current_user.get("sub"))
     return jsonify(_row_to_dict(row))
 
 @student_jobs_bp.route("/employment", methods=["POST"])
 @token_required
+@staff_required(permission=JOBS_MANAGE)
 def create_employment():
     data = request.get_json(silent=True) or {}
     for field in ["student_id", "job_id", "start_date"]:

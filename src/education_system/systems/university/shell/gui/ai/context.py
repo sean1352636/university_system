@@ -174,10 +174,12 @@ class ContextMixin:
                 # Get pending notifications/tasks
                 try:
                     cursor.execute('''
-                        SELECT message, created_at
-                        FROM notifications
-                        WHERE user_id = ? AND is_read = 0
-                        ORDER BY created_at DESC
+                        SELECT COALESCE(m.message, m.content), m.sent_at
+                        FROM messages m
+                        JOIN users u ON u.id = m.recipient_id
+                        WHERE u.username = ? AND m.is_read = 0
+                          AND COALESCE(m.is_deleted_by_recipient, 0) = 0
+                        ORDER BY m.sent_at DESC
                         LIMIT 5
                     ''', (username,))
                     notifications = cursor.fetchall()

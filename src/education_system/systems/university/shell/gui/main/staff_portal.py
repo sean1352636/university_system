@@ -188,6 +188,8 @@ class StaffPortalGUI(SidebarNavMixin):
         self._add_button("Email Manager", self._launch('show_email_manager'))
         self._add_button("Complaints Portal",
                          self._launch('show_new_feature_complaints_portal'))
+        self._add_button("Academic Appeals",
+                         self._launch('show_new_feature_academic_appeals'))
 
         # Analytics & Reports
         self._add_heading("Analytics & Reports")
@@ -204,6 +206,7 @@ class StaffPortalGUI(SidebarNavMixin):
 
         # Student Life
         self._add_heading("Student Life")
+        self._add_button("Student Handbook", self._launch('show_student_handbook'))
         self._add_button("Student Union", self._open_student_union_portal)
         self._add_button("Campus Events", self._open_campus_events_portal)
         self._add_button("Clubs & Societies", self._open_clubs_portal)
@@ -239,7 +242,7 @@ class StaffPortalGUI(SidebarNavMixin):
 
     def _open_grade_tracking_portal(self):
         try:
-            from education_system.systems.university.domains.academics.interfaces.gui.grade_tracking.grade_tracking_app import (
+            from education_system.systems.university.domains.assessment.interfaces.gui.grade_tracking.grade_tracking_app import (
                 GradeTrackingApp,
             )
             GradeTrackingApp(tk.Toplevel(self.root), self.auth)
@@ -249,7 +252,7 @@ class StaffPortalGUI(SidebarNavMixin):
 
     def _open_assignments_portal(self):
         try:
-            from education_system.systems.university.domains.academics.interfaces.gui.assignment_system.assignment_gui import (
+            from education_system.systems.university.domains.assessment.interfaces.gui.assignment_system.assignment_gui import (
                 display_assignment_menu_gui,
             )
             display_assignment_menu_gui(self.auth)
@@ -259,7 +262,7 @@ class StaffPortalGUI(SidebarNavMixin):
 
     def _open_auto_grading_portal(self):
         try:
-            from education_system.systems.university.domains.academics.interfaces.gui.assignment_system.auto_grading_portal import (
+            from education_system.systems.university.domains.assessment.interfaces.gui.assignment_system.auto_grading_portal import (
                 AutoGradingStaffPortal,
             )
             AutoGradingStaffPortal(self.root, self.auth)
@@ -269,7 +272,7 @@ class StaffPortalGUI(SidebarNavMixin):
 
     def _open_course_management_portal(self):
         try:
-            from education_system.systems.university.domains.academics.interfaces.gui.course_management_gui.core.main_gui import (
+            from education_system.systems.university.domains.curriculum.interfaces.gui.course_management_gui.core.main_gui import (
                 CourseManagementGUI,
             )
             CourseManagementGUI(tk.Toplevel(self.root), auth_system=self.auth)
@@ -280,7 +283,7 @@ class StaffPortalGUI(SidebarNavMixin):
 
     def _open_course_catalog(self):
         try:
-            from education_system.systems.university.domains.academics.interfaces.gui.course_catalog.course_catalog_gui import (
+            from education_system.systems.university.domains.curriculum.interfaces.gui.course_catalog.course_catalog_gui import (
                 CourseCatalogGUI,
             )
             CourseCatalogGUI(self.root, auth=self.auth)
@@ -290,10 +293,10 @@ class StaffPortalGUI(SidebarNavMixin):
 
     def _open_ta_management(self):
         try:
-            from education_system.systems.university.domains.academics.domain.services.assignments.assignment_submission import (
+            from education_system.systems.university.domains.assessment.domain.assignments.assignment_submission import (
                 AssignmentSubmission,
             )
-            from education_system.systems.university.domains.academics.interfaces.gui.assignment_system.assignment_gui import (
+            from education_system.systems.university.domains.assessment.interfaces.gui.assignment_system.assignment_gui import (
                 AssignmentGUI,
             )
             gui = AssignmentGUI(AssignmentSubmission(), self.auth,
@@ -305,7 +308,7 @@ class StaffPortalGUI(SidebarNavMixin):
 
     def _open_library_portal(self):
         try:
-            from education_system.systems.university.domains.academics.interfaces.gui.library.base import (
+            from education_system.systems.university.domains.library.interfaces.gui.library.base import (
                 LibraryGUI,
             )
             LibraryGUI(tk.Toplevel(self.root), self.auth)
@@ -315,7 +318,7 @@ class StaffPortalGUI(SidebarNavMixin):
 
     def _open_calendar_portal(self):
         try:
-            from education_system.systems.university.domains.academics.interfaces.gui.academic_calendar.main_gui import (
+            from education_system.systems.university.domains.teaching.interfaces.gui.academic_calendar.main_gui import (
                 CalendarGUI,
             )
             CalendarGUI(auth_manager=self.auth, parent_window=tk.Toplevel(self.root))
@@ -325,7 +328,7 @@ class StaffPortalGUI(SidebarNavMixin):
 
     def _open_health_portal(self):
         try:
-            from education_system.systems.university.domains.pastoral.interfaces.gui.health.health_portal.main import (
+            from education_system.systems.university.domains.health.interfaces.gui.health.health_portal.main import (
                 HealthPortalGUI,
             )
             HealthPortalGUI(tk.Toplevel(self.root), auth_system=self.auth)
@@ -335,7 +338,7 @@ class StaffPortalGUI(SidebarNavMixin):
 
     def _open_student_union_portal(self):
         try:
-            from education_system.systems.university.domains.pastoral.interfaces.gui.student_union_gui import (
+            from education_system.systems.university.domains.student_life.interfaces.gui.student_union_gui import (
                 StudentUnionGUI,
             )
             StudentUnionGUI(parent=tk.Toplevel(self.root), auth=self.auth)
@@ -354,7 +357,7 @@ class StaffPortalGUI(SidebarNavMixin):
 
     def _open_clubs_portal(self):
         try:
-            from education_system.systems.university.domains.pastoral.interfaces.gui.student_union_gui import (
+            from education_system.systems.university.domains.student_life.interfaces.gui.student_union_gui import (
                 StudentUnionGUI,
             )
             StudentUnionGUI(parent=tk.Toplevel(self.root), auth=self.auth)
@@ -364,7 +367,7 @@ class StaffPortalGUI(SidebarNavMixin):
 
     def _open_student_jobs_portal(self):
         try:
-            from education_system.systems.university.domains.pastoral.interfaces.gui.student_jobs.jobs_gui import (
+            from education_system.systems.university.domains.student_life.interfaces.gui.student_jobs.jobs_gui import (
                 StudentJobsGUI,
             )
             StudentJobsGUI(parent=self.root, auth=self.auth)

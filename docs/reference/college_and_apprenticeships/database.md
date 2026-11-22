@@ -1,6 +1,6 @@
 # Database
 
-Apprenticeships only — `fe_college` has no database.
+Apprenticeships only. FE College has its own database, built by `systems/fe_college/infrastructure/persistence/schema.py`.
 
 One physical SQLite file holds every table:
 

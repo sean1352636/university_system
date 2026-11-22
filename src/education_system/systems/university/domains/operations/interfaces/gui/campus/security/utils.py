@@ -60,7 +60,8 @@ def get_officer_email(officer_badge):
         from education_system.systems.university.infrastructure.database.db import get_connection
         with get_connection() as conn:
             cursor = conn.execute(
-                "SELECT email FROM users WHERE badge_number = ? OR username = ?",
+                "SELECT email FROM police_officers WHERE badge = ? AND COALESCE(email, '') != '' "
+                "UNION ALL SELECT email FROM users WHERE username = ?",
                 (officer_badge, officer_badge)
             )
             row = cursor.fetchone()

@@ -10,9 +10,7 @@ from __future__ import annotations
 SLICE = "governance"
 
 _UNI = "education_system.systems.university"
-_PAS = f"{_UNI}.domains.pastoral"
 _FIN = f"{_UNI}.domains.finance"
-_ACAD = f"{_UNI}.domains.academics"
 
 #: Direct SQL driver use in the domain layer. These modules predate the
 #: repository / unit-of-work pattern the modernised core uses.
@@ -48,14 +46,9 @@ KNOWN_VIOLATIONS: set[tuple[str, str]] = (
         # Legal work posts charges and refunds straight into Finance's ledger.
         # Fines, settlements and refunds arising from disciplinary or legal
         # outcomes should be raised as events for Finance to post.
+        # Payments and refunds post from PaymentManager (the domain service
+        # the CLI and GUI share), so the Tk screens no longer post themselves.
         ("domain/legal/services/legal_services_core.py", f"{_FIN}.domain.ledger"),
-        ("interfaces/api/legal_routes.py", f"{_FIN}.domain.ledger"),
-        ("interfaces/gui/legal/billing.py", f"{_FIN}.domain.ledger"),
-        ("interfaces/gui/legal/refunds.py", f"{_FIN}.domain.ledger"),
-        (
-            "interfaces/gui/legal/refunds.py",
-            f"{_FIN}.infrastructure.finance_integration",
-        ),
         (
             "interfaces/gui/legal/_imports.py",
             f"{_FIN}.domain.core.finance_db_operations",
@@ -64,19 +57,19 @@ KNOWN_VIOLATIONS: set[tuple[str, str]] = (
         # documentation window directly.
         (
             "interfaces/gui/compliance/international_compliance/visa_compliance_gui.py",
-            f"{_PAS}.interfaces.gui.student_app.documentation.documentation_gui",
+            f"{_UNI}.domains.student_life.interfaces.gui.student_app.documentation.documentation_gui",
         ),
         # Visa compliance reads Academics attendance directly — attendance is
         # evidence for a visa decision, so this wants a query port.
         (
             "domain/compliance/international_compliance/services/visa_service.py",
-            f"{_ACAD}.domain.services.attendance.absence_tracking"
+            f"{_UNI}.domains.teaching.domain.attendance.absence_tracking"
             ".absence_enhancements",
         ),
         # HESA export reads the Academics curriculum specification directly.
         (
             "interfaces/gui/compliance/hesa_export/hesa_export_gui.py",
-            f"{_ACAD}.domain.curriculum_specification.services"
+            f"{_UNI}.domains.curriculum.domain.curriculum_specification.services"
             ".curriculum_specification_service",
         ),
     }

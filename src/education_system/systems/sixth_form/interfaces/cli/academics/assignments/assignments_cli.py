@@ -7,12 +7,16 @@ from datetime import date as _date
 from pathlib import Path
 from typing import Any, Callable
 from education_system.systems.sixth_form.domain.academics.assignments import (
-    assignments as data,
+    crud as assignments_crud,
+    integrity as assignments_integrity,
+    models as assignments_models,
+    store as assignments_store,
+    submissions as assignments_submissions,
 )
 from education_system.systems.sixth_form.domain.learners.students import (
     students as student_data,
 )
-from education_system.systems.sixth_form.domain.academics.assignments.assignments import (
+from education_system.systems.sixth_form.domain.academics.assignments.models import (
     ASSIGNMENT_ATTACHMENT_KINDS,
     ASSIGNMENT_STATUSES,
     ASSIGNMENT_TYPES,
@@ -121,7 +125,7 @@ def _pick_subject() -> str:
 
 
 def _pick_assignment() -> Assignment:
-    rows = data.list_assignments()
+    rows = assignments_store.list_assignments()
     if not rows:
         print("    No assignments yet.")
         raise _UserAbort
@@ -200,7 +204,7 @@ def _print_attachments(rows: list[Attachment], *,
 
 def _pick_attachment(*, assignment_id: int | None = None,
                       submission_id: int | None = None) -> Attachment:
-    rows = data.list_attachments(assignment_id=assignment_id,
+    rows = assignments_submissions.list_attachments(assignment_id=assignment_id,
                                   submission_id=submission_id)
     if not rows:
         print("    No attachments here.")
@@ -217,7 +221,7 @@ def _pick_attachment(*, assignment_id: int | None = None,
 
 
 def _pick_submission(assignment_id: int) -> Submission:
-    subs = data.list_submissions(assignment_id=assignment_id)
+    subs = assignments_store.list_submissions(assignment_id=assignment_id)
     if not subs:
         print("    No submissions on this assignment.")
         raise _UserAbort
@@ -266,7 +270,7 @@ def _print_assignments(rows: list[Assignment]) -> None:
 
 
 def _print_assignment_full(a: Assignment) -> None:
-    detail = data.get_assignment_detail(a.assignment_id)
+    detail = assignments_store.get_assignment_detail(a.assignment_id)
     print()
     print(f"    #{a.assignment_id}  {a.title}")
     print(f"    Subject       : {a.subject_name}")
@@ -289,7 +293,7 @@ def _print_assignment_full(a: Assignment) -> None:
           f"{a.effective_similarity_threshold:.0f}%"
           + ("" if a.similarity_threshold is not None
               else "  (default)"))
-    attachments = data.list_attachments(assignment_id=a.assignment_id)
+    attachments = assignments_submissions.list_attachments(assignment_id=a.assignment_id)
     print(f"\n    Attachments ({len(attachments)}):")
     _print_attachments(attachments, indent="      ")
     for label, val in (
@@ -334,19 +338,19 @@ def _print_assignment_full(a: Assignment) -> None:
 
 def list_all() -> None:
     print("\n═══ All Assignments ═══")
-    _print_assignments(data.list_assignments())
+    _print_assignments(assignments_store.list_assignments())
     _pause()
 
 
 def list_open() -> None:
     print("\n═══ Open Assignments ═══")
-    _print_assignments(data.list_assignments(open_only=True))
+    _print_assignments(assignments_store.list_assignments(open_only=True))
     _pause()
 
 
 def list_overdue() -> None:
     print("\n═══ Overdue Assignments ═══")
-    _print_assignments(data.list_assignments(overdue_only=True))
+    _print_assignments(assignments_store.list_assignments(overdue_only=True))
     _pause()
 
 
@@ -363,7 +367,7 @@ def filter_flow() -> None:
         print("\n  Cancelled.")
         return
     try:
-        rows = data.list_assignments(
+        rows = assignments_store.list_assignments(
             subject_name=subj, teacher_like=teacher,
             status=status, assignment_type=atype,
             year_group=year, title_like=title,
@@ -443,7 +447,7 @@ def _collect_form(existing: Assignment | None) -> dict[str, Any]:
     ).lower() in ("y", "yes", "true", "1")
     payload["similarity_threshold"] = _input(
         "Similarity flag threshold % (blank for default "
-        f"{data.DEFAULT_SIMILARITY_THRESHOLD:.0f})",
+        f"{assignments_models.DEFAULT_SIMILARITY_THRESHOLD:.0f})",
         default=(str(existing.similarity_threshold)
                   if existing and existing.similarity_threshold is not None
                   else ""))
@@ -477,7 +481,7 @@ def new_assignment() -> None:
         print("\n  Cancelled.")
         return
     try:
-        a = data.create_assignment(payload)
+        a = assignments_store.create_assignment(payload)
     except ValidationError as e:
         print(f"\n  ✗ {e}")
         _pause()
@@ -495,7 +499,7 @@ def edit_assignment() -> None:
         print("\n  Cancelled.")
         return
     try:
-        data.update_assignment(a.assignment_id, payload)
+        assignments_store.update_assignment(a.assignment_id, payload)
     except ValidationError as e:
         print(f"\n  ✗ {e}")
         _pause()
@@ -515,7 +519,7 @@ def set_status_flow() -> None:
         print("\n  Cancelled.")
         return
     try:
-        data.set_assignment_status(a.assignment_id, new_status)
+        assignments_store.set_assignment_status(a.assignment_id, new_status)
     except ValidationError as e:
         print(f"\n  ✗ {e}")
         _pause()
@@ -536,7 +540,7 @@ def delete_assignment_flow() -> None:
               default="no").lower() != "yes":
         print("\n  Cancelled.")
         return
-    if data.delete_assignment(a.assignment_id):
+    if assignments_store.delete_assignment(a.assignment_id):
         print(f"\n  ✓ Deleted #{a.assignment_id}")
     _pause()
 
@@ -552,7 +556,7 @@ def add_students_flow() -> None:
         print("\n  Cancelled.")
         return
     try:
-        sub = data.add_student(a.assignment_id, sid)
+        sub = assignments_crud.add_student(a.assignment_id, sid)
     except ValidationError as e:
         print(f"\n  ✗ {e}")
         _pause()
@@ -571,7 +575,7 @@ def add_class_group_flow() -> None:
         print("\n  Cancelled / bad input.")
         return
     try:
-        n = data.add_class_group(a.assignment_id, gid)
+        n = assignments_crud.add_class_group(a.assignment_id, gid)
     except ValidationError as e:
         print(f"\n  ✗ {e}")
         _pause()
@@ -585,7 +589,7 @@ def submit_flow() -> None:
     try:
         a = _pick_assignment()
         sub = _pick_submission(a.assignment_id)
-        due = data.effective_due_date(sub, a)
+        due = assignments_submissions.effective_due_date(sub, a)
         if due:
             print(f"\n  Deadline for this student: {due}"
                   + ("  (extended)" if sub.extended_due_date else ""))
@@ -613,7 +617,7 @@ def submit_flow() -> None:
             _pause()
             return
     try:
-        version = data.submit_work(
+        version = assignments_submissions.submit_work(
             sub.submission_id, files=files, word_count=word_count,
             is_draft=is_draft, submitted_on=when, note=note or None)
     except ValidationError as e:
@@ -626,7 +630,7 @@ def submit_flow() -> None:
           f"(hash {version.receipt_hash})")
     if files:
         print(f"    {len(files)} file(s) stored.")
-    check = data.check_word_limit(a, word_count)
+    check = assignments_submissions.check_word_limit(a, word_count)
     if check.applicable:
         flag = "  ⚠" if check.breached else ""
         print(f"    Word count: {check.message}{flag}")
@@ -644,7 +648,7 @@ def versions_flow() -> None:
     except _UserAbort:
         print("\n  Cancelled.")
         return
-    versions = data.list_versions(sub.submission_id)
+    versions = assignments_submissions.list_versions(sub.submission_id)
     if not versions:
         print("\n  (no attempts recorded yet)")
         _pause()
@@ -659,7 +663,7 @@ def versions_flow() -> None:
         if v.note:
             print(f"    Note      : {v.note}")
         _print_attachments(
-            data.list_attachments(version_id=v.version_id),
+            assignments_submissions.list_attachments(version_id=v.version_id),
             indent="    ")
     _pause()
 
@@ -672,7 +676,7 @@ def receipt_flow() -> None:
     except _UserAbort:
         print("\n  Cancelled.")
         return
-    versions = data.list_versions(sub.submission_id)
+    versions = assignments_submissions.list_versions(sub.submission_id)
     if not versions:
         print("\n  No attempts recorded — nothing to receipt.")
         _pause()
@@ -688,9 +692,9 @@ def receipt_flow() -> None:
         return
     try:
         if resend:
-            data.issue_submission_receipt(chosen.version_id, email=True)
+            assignments_submissions.issue_submission_receipt(chosen.version_id, email=True)
         print()
-        print(data.build_receipt_text(chosen.version_id))
+        print(assignments_submissions.build_receipt_text(chosen.version_id))
     except ValidationError as e:
         print(f"\n  ✗ {e}")
     _pause()
@@ -703,7 +707,7 @@ def attach_to_assignment_flow() -> None:
     try:
         a = _pick_assignment()
         kind = _pick_from("Kind", list(ASSIGNMENT_ATTACHMENT_KINDS),
-                           default=data.DEFAULT_ASSIGNMENT_ATTACHMENT_KIND)
+                           default=assignments_models.DEFAULT_ASSIGNMENT_ATTACHMENT_KIND)
         files = _collect_paths("Files to attach")
         by = _input("Uploaded by", default=a.teacher or "")
     except _UserAbort:
@@ -716,7 +720,7 @@ def attach_to_assignment_flow() -> None:
     ok = 0
     for path in files:
         try:
-            att = data.attach_file(source_path=path,
+            att = assignments_submissions.attach_file(source_path=path,
                                     assignment_id=a.assignment_id,
                                     kind=kind, uploaded_by=by or None)
             print(f"  ✓ {att.filename} ({att.size_label})")
@@ -734,18 +738,18 @@ def attach_to_submission_flow() -> None:
         a = _pick_assignment()
         sub = _pick_submission(a.assignment_id)
         kind = _pick_from("Kind", list(SUBMISSION_ATTACHMENT_KINDS),
-                           default=data.DEFAULT_SUBMISSION_ATTACHMENT_KIND)
+                           default=assignments_models.DEFAULT_SUBMISSION_ATTACHMENT_KIND)
         files = _collect_paths("Files to attach")
         by = _input("Uploaded by")
     except _UserAbort:
         print("\n  Cancelled.")
         return
-    latest = data.latest_version(sub.submission_id)
+    latest = assignments_submissions.latest_version(sub.submission_id)
     version_id = latest.version_id if latest else None
     ok = 0
     for path in files:
         try:
-            att = data.attach_file(source_path=path,
+            att = assignments_submissions.attach_file(source_path=path,
                                     submission_id=sub.submission_id,
                                     version_id=version_id, kind=kind,
                                     uploaded_by=by or None)
@@ -766,11 +770,11 @@ def list_attachments_flow() -> None:
         print("\n  Cancelled.")
         return
     print(f"\n  Assignment material (#{a.assignment_id}):")
-    _print_attachments(data.list_attachments(assignment_id=a.assignment_id))
+    _print_attachments(assignments_submissions.list_attachments(assignment_id=a.assignment_id))
     names = {s.student_id: s.full_name
               for s in student_data.list_students()}
-    for sub in data.list_submissions(assignment_id=a.assignment_id):
-        rows = data.list_attachments(submission_id=sub.submission_id)
+    for sub in assignments_store.list_submissions(assignment_id=a.assignment_id):
+        rows = assignments_submissions.list_attachments(submission_id=sub.submission_id)
         if not rows:
             continue
         print(f"\n  {sub.student_id} "
@@ -799,7 +803,7 @@ def delete_attachment_flow() -> None:
               default="no").lower() != "yes":
         print("\n  Cancelled.")
         return
-    if data.delete_attachment(att.attachment_id):
+    if assignments_submissions.delete_attachment(att.attachment_id):
         print(f"\n  ✓ Deleted attachment #{att.attachment_id}")
     _pause()
 
@@ -812,7 +816,7 @@ def grant_extension_flow() -> None:
         a = _pick_assignment()
         sub = _pick_submission(a.assignment_id)
         print(f"\n  Current deadline: "
-              f"{data.effective_due_date(sub, a) or '—'}")
+              f"{assignments_submissions.effective_due_date(sub, a) or '—'}")
         new_date = _input("New due date (YYYY-MM-DD)",
                            allow_empty=False)
         reason = _input("Reason", allow_empty=False)
@@ -821,7 +825,7 @@ def grant_extension_flow() -> None:
         print("\n  Cancelled.")
         return
     try:
-        out = data.grant_extension(sub.submission_id, new_date,
+        out = assignments_submissions.grant_extension(sub.submission_id, new_date,
                                     reason=reason,
                                     authorised_by=by or None)
     except ValidationError as e:
@@ -849,14 +853,14 @@ def revoke_extension_flow() -> None:
               "Type 'yes'", default="no").lower() != "yes":
         print("\n  Cancelled.")
         return
-    data.revoke_extension(sub.submission_id)
+    assignments_submissions.revoke_extension(sub.submission_id)
     print(f"\n  ✓ Extension revoked on #{sub.submission_id}")
     _pause()
 
 
 def list_extensions_flow() -> None:
     print("\n═══ Active Extensions ═══")
-    rows = data.list_extensions()
+    rows = assignments_submissions.list_extensions()
     if not rows:
         print("\n  (no extensions granted)")
         _pause()
@@ -891,7 +895,7 @@ def record_similarity_flow() -> None:
         print("\n  Cancelled.")
         return
     try:
-        out = data.record_similarity(
+        out = assignments_integrity.record_similarity(
             sub.submission_id, score=float(score_raw),
             provider=provider or None, report_ref=report or None)
     except ValueError as e:
@@ -915,7 +919,7 @@ def run_similarity_flow() -> None:
     except _UserAbort:
         print("\n  Cancelled.")
         return
-    result = data.run_similarity_check(sub.submission_id)
+    result = assignments_integrity.run_similarity_check(sub.submission_id)
     if result is None:
         print("\n  No similarity provider is configured on this "
               "installation.")
@@ -930,7 +934,7 @@ def run_similarity_flow() -> None:
 
 def flagged_flow() -> None:
     print("\n═══ Flagged for Similarity Review ═══")
-    rows = data.list_flagged_submissions()
+    rows = assignments_integrity.list_flagged_submissions()
     if not rows:
         print("\n  (nothing at or above threshold)")
         _pause()
@@ -956,7 +960,7 @@ def flagged_flow() -> None:
 
 def overdue_submissions_flow() -> None:
     print("\n═══ Overdue Submissions ═══")
-    rows = data.list_overdue_submissions()
+    rows = assignments_integrity.list_overdue_submissions()
     if not rows:
         print("\n  (nothing overdue)")
         _pause()
@@ -968,7 +972,7 @@ def overdue_submissions_flow() -> None:
           f"{'Name':<20}  {'Due':<12}  Status")
     print("  " + "-" * 90)
     for s in rows:
-        due = data.effective_due_date(s)
+        due = assignments_submissions.effective_due_date(s)
         print(f"  {s.submission_id:>5}  {s.assignment_id:>6}  "
               f"{s.student_id:<10}  "
               f"{names.get(s.student_id, '?')[:20]:<20}  "
@@ -982,7 +986,7 @@ def late_sweep_flow() -> None:
     print("  Marks work that is past its deadline and never arrived as")
     print("  Missing. Extensions are honoured; already-submitted work")
     print("  is left alone.")
-    preview = data.sweep_late_submissions(dry_run=True)
+    preview = assignments_integrity.sweep_late_submissions(dry_run=True)
     print(f"\n  {preview['overdue']} submission(s) would be marked "
           f"Missing.")
     if not preview["overdue"]:
@@ -996,7 +1000,7 @@ def late_sweep_flow() -> None:
     except _UserAbort:
         print("\n  Cancelled.")
         return
-    result = data.sweep_late_submissions()
+    result = assignments_integrity.sweep_late_submissions()
     print(f"\n  ✓ Marked {result['marked_missing']} submission(s) "
           f"Missing.")
     _pause()
@@ -1023,7 +1027,7 @@ def mark_flow() -> None:
         _pause()
         return
     try:
-        data.mark_submission(sub.submission_id,
+        assignments_crud.mark_submission(sub.submission_id,
                                 marks=marks, grade=grade,
                                 feedback=feedback or None,
                                 marked_by=marked_by or None)
@@ -1047,7 +1051,7 @@ def set_sub_status_flow() -> None:
         print("\n  Cancelled.")
         return
     try:
-        data.set_submission_status(sub.submission_id, new_status)
+        assignments_crud.set_submission_status(sub.submission_id, new_status)
     except ValidationError as e:
         print(f"\n  ✗ {e}")
         _pause()
@@ -1068,7 +1072,7 @@ def delete_submission_flow() -> None:
               default="no").lower() != "yes":
         print("\n  Cancelled.")
         return
-    if data.delete_submission(sub.submission_id):
+    if assignments_crud.delete_submission(sub.submission_id):
         print(f"\n  ✓ Deleted #{sub.submission_id}")
     _pause()
 
@@ -1080,7 +1084,7 @@ def summary_flow() -> None:
     except (ValueError, _UserAbort):
         print("\n  Cancelled / bad input.")
         return
-    summ = data.summary(upcoming_window_days=win)
+    summ = assignments_integrity.summary(upcoming_window_days=win)
     print(f"\n  Total assignments : {summ.total_assignments}")
     print(f"  Open              : {summ.open_count}")
     print(f"  Overdue           : {summ.overdue}")
@@ -1159,7 +1163,7 @@ _MENU: list[tuple[str, Callable[[], None]]] = [
 
 def _insight_submenu() -> None:
     """Hand off to the analytics/administration menu."""
-    from education_system.systems.sixth_form.domain.academics.assignments import (
+    from education_system.systems.sixth_form.interfaces.cli.academics.assignments import (
         assignments_insight_cli,
     )
     assignments_insight_cli.run()
@@ -1167,7 +1171,7 @@ def _insight_submenu() -> None:
 
 def _planning_submenu() -> None:
     """Hand off to the catalogue/scheduling menu."""
-    from education_system.systems.sixth_form.domain.academics.assignments import (
+    from education_system.systems.sixth_form.interfaces.cli.academics.assignments import (
         assignments_planning_cli,
     )
     assignments_planning_cli.run()
@@ -1175,7 +1179,7 @@ def _planning_submenu() -> None:
 
 def _workflow_submenu() -> None:
     """Hand off to the release/appeals/assessment menu."""
-    from education_system.systems.sixth_form.domain.academics.assignments import (
+    from education_system.systems.sixth_form.interfaces.cli.academics.assignments import (
         assignments_workflow_cli,
     )
     assignments_workflow_cli.run()
@@ -1184,7 +1188,7 @@ def _workflow_submenu() -> None:
 def _marking_submenu() -> None:
     """Hand off to the marking module's own menu (imported late to keep
     the two CLI modules from importing each other at module load)."""
-    from education_system.systems.sixth_form.domain.academics.assignments import (
+    from education_system.systems.sixth_form.interfaces.cli.academics.assignments import (
         assignments_marking_cli,
     )
     assignments_marking_cli.run()

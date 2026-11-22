@@ -380,5 +380,5 @@ The Scholarship Finder helps students discover, apply for, and track scholarship
 ---
 
 **Last Updated**: February 2026
-**Module**: `university_system/modules/domain/finance/scholarships/scholarship_programs.py`
+**Module**: `src/education_system/systems/university/domains/finance/domain/scholarships/scholarship_programs.py`
 **Support**: scholarships@university.edu | (555) 123-SCHL

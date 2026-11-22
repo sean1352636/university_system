@@ -87,21 +87,36 @@ DEFAULT_BREACH_STATUS: str = "Reported"
 #: identical — see :func:`_check_consent` in ``handover_eligibility``.
 UNIVERSITY_HANDOVER_PURPOSE: str = "university_handover"
 
+#: The purpose that releases contextual admissions flags (care experienced,
+#: free school meals, vulnerable bursary, young carer, first generation in
+#: HE) to the university with the handover. Separate from the handover's
+#: own consent on purpose: agreeing that a university may receive your
+#: application is not agreeing that it may know you were in care.
+#: ``university_handover`` matches on this exact string.
+CONTEXTUAL_ADMISSIONS_PURPOSE: str = "Contextual admissions data"
+
+#: Consent a parent/carer gives for a learner under 18 at enrolment
+#: (admissions onboarding records it under this purpose).
+PARENTAL_CONSENT_PURPOSE: str = "Parental Consent (under 18)"
+
 CONSENT_PURPOSES: tuple[str, ...] = (
     "Photography / Video", "Marketing", "Trips & Visits",
     "Medical", "Third-Party Sharing",
     "External Coursework Submission", "Newsletter",
-    "Alumni Network",
+    "Alumni Network", PARENTAL_CONSENT_PURPOSE,
     # Without this the consent a university handover requires could not be
     # recorded at all: the data layer accepts any purpose, but the GUI's
     # purpose box is a readonly dropdown over this tuple, so a purpose
     # missing from here is a purpose nobody can grant.
     UNIVERSITY_HANDOVER_PURPOSE,
+    CONTEXTUAL_ADMISSIONS_PURPOSE,
     "Other",
 )
 DEFAULT_CONSENT_PURPOSE: str = "Photography / Video"
 
 # UK GDPR default response window for DSAR is one calendar month.
+# Kept for callers that still read it; due dates are now worked out as a
+# true calendar month (see _validate_request / sar.sar_deadline).
 DEFAULT_SAR_DUE_DAYS: int = 30
 
 _DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
@@ -457,14 +472,15 @@ def _validate_request(d: dict[str, Any]) -> dict[str, Any]:
     out["received_date"] = received
     due = d.get("due_date")
     if due in (None, "") or (isinstance(due, str) and not due.strip()):
-        # Compute statutory default — one calendar month from
-        # received, capped at +30 days for safety.
+        # Statutory default — one calendar month from receipt
+        # (31 Jan -> 28/29 Feb; 15 Mar -> 15 Apr).
+        from education_system.systems.sixth_form.domains.finance.domain import (
+            finance_calendar as _fc,
+        )
         try:
-            base = _dt.date.fromisoformat(received)
+            out["due_date"] = _fc.add_months(received, 1)
         except ValueError:
-            base = _dt.date.today()
-        out["due_date"] = (base + _dt.timedelta(
-            days=DEFAULT_SAR_DUE_DAYS)).isoformat()
+            out["due_date"] = _fc.add_months(_dt.date.today(), 1)
     else:
         out["due_date"] = _validate_date(due, "Due date", required=True)
     out["identity_verified"] = bool(d.get("identity_verified"))

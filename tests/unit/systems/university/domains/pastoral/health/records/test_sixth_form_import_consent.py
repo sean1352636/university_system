@@ -18,7 +18,7 @@ import datetime as _dt
 
 import pytest
 
-from education_system.systems.university.domains.pastoral.domain.health.records import (
+from education_system.systems.university.domains.health.domain.health.records import (
     sixth_form_import as sfi,
 )
 

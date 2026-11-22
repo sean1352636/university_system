@@ -373,9 +373,12 @@ def list_for_pupil(pupil_id: str) -> list[KS2Result]:
 
 
 def cohort_combined_summary(academic_year: str) -> dict[str, Any]:
-    """How many pupils met expected standard in *all four* statutory
-    measures (Reading, Maths, EGPS) for a given year. A common DfE
-    headline figure.
+    """How many pupils met the expected standard in all three tested
+    subjects (Reading, Maths, EGPS) for a given year.
+
+    The ``exs_in_RWM`` keys keep their old name for callers, but this is not
+    the DfE RWM measure: Writing is teacher-assessed and is not recorded in
+    this module, so screens label the figure "Reading, Maths & EGPS".
     """
     init_db()
     ay = (academic_year or "").strip()

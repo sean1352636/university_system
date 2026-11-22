@@ -6,7 +6,9 @@ from education_system.systems.sixth_form.interfaces.gui._ui import grab_when_vie
 import datetime as _dt
 import logging
 import tkinter as tk
-from tkinter import messagebox, ttk
+from tkinter import ttk
+from education_system.systems.sixth_form.interfaces.gui._sidebar import SidebarBook
+from education_system.platform.delivery.gui.parented_dialogs import messagebox
 from education_system.platform import branding
 from education_system.systems.sixth_form.domain.pastoral.student_support import (
     student_support as data,
@@ -50,7 +52,7 @@ def open_student_support_window(parent=None) -> None:
     win.geometry(WIN_GEOMETRY)
     win.minsize(*WIN_MINSIZE)
 
-    nb = ttk.Notebook(win)
+    nb = SidebarBook(win)
     nb.pack(fill="both", expand=True, padx=10, pady=10)
 
     ReferralsTab(nb, scope="open",    label="Open")
@@ -59,6 +61,10 @@ def open_student_support_window(parent=None) -> None:
     ReferralsTab(nb, scope="all",     label="All")
     PerStudentTab(nb)
     SummaryTab(nb)
+    from education_system.systems.sixth_form.interfaces.gui.pastoral.student_support.mh_referrals_tabs import (
+        add_mh_referral_tabs,
+    )
+    add_mh_referral_tabs(nb)
 
 
 def _student_options() -> list[tuple[str, str]]:

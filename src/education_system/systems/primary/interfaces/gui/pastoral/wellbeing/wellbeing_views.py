@@ -6,7 +6,10 @@ import functools
 import logging
 import tkinter as tk
 from tkinter import messagebox, simpledialog, ttk
+from types import SimpleNamespace
 from typing import Any, Callable
+
+from education_system.systems.primary.interfaces.gui import kit
 
 from education_system.systems.primary.domain.pastoral.wellbeing import (
     wellbeing as data,
@@ -19,6 +22,43 @@ from education_system.systems.primary.domain.learners.pupils.pupils import (
 )
 
 logger = logging.getLogger(__name__)
+
+
+def _ctx(host, parent):
+    """What the helpers below need from *host*, with dialogs parented to
+    the window the page is drawn in (the main window or a pop-out)."""
+    status = getattr(host, "status_var", None)
+    return SimpleNamespace(root=parent.winfo_toplevel(),
+                           status_var=status if status is not None else tk.StringVar())
+
+
+def _ask_pupil(owner, title: str, initial: str = "") -> str | None:
+    """A small modal pupil picker; the chosen pupil id, or None."""
+    dlg = tk.Toplevel(owner)
+    dlg.title(title)
+    dlg.transient(owner)
+    frm = ttk.Frame(dlg, padding=12)
+    frm.pack(fill="both", expand=True)
+    ttk.Label(frm, text="Pupil:").pack(anchor="w")
+    var = tk.StringVar(value=initial or "")
+    kit.PupilPicker(frm, var, include_off_roll=True).pack(anchor="w", pady=(2, 8))
+    result: dict[str, str | None] = {"value": None}
+
+    def _ok() -> None:
+        result["value"] = var.get().strip() or None
+        dlg.destroy()
+
+    btns = ttk.Frame(frm)
+    btns.pack(fill="x")
+    ttk.Button(btns, text="Cancel", command=dlg.destroy).pack(side="right", padx=4)
+    ttk.Button(btns, text="OK", command=_ok).pack(side="right")
+    try:
+        dlg.wait_visibility()
+        dlg.grab_set()
+    except tk.TclError:
+        pass
+    dlg.wait_window()
+    return result["value"]
 
 
 def _safe_view(func: Callable[..., None]) -> Callable[..., None]:
@@ -61,8 +101,7 @@ def _checkin_dialog(host, title: str,
         logger.debug("grab_set skipped — dialog not viewable", exc_info=True)
 
     initial = initial or {}
-    frm = ttk.Frame(dlg, padding=12)
-    frm.pack(fill="both", expand=True)
+    frm, footer = kit.scrolled_form(dlg)
 
     pupil_var  = tk.StringVar(value=str(initial.get("pupil_id") or ""))
     date_var   = tk.StringVar(value=str(initial.get("checkin_date")
@@ -88,10 +127,8 @@ def _checkin_dialog(host, title: str,
                                            or ""))
 
     rows: list[tuple[str, tk.Widget]] = [
-        ("Pupil ID:",    ttk.Entry(frm, textvariable=pupil_var,
-                                      width=14)),
-        ("Date:",        ttk.Entry(frm, textvariable=date_var,
-                                      width=14)),
+        ("Pupil:",       kit.PupilPicker(frm, pupil_var)),
+        ("Date:",        kit.DateField(frm, date_var)),
         ("Source:",      ttk.Combobox(frm, textvariable=src_var,
                                         values=list(CHECKIN_SOURCES),
                                         state="readonly", width=22)),
@@ -105,20 +142,17 @@ def _checkin_dialog(host, title: str,
          ttk.Spinbox(frm, from_=MIN_RATING, to=MAX_RATING,
                       textvariable=conn_var, width=4)),
         ("Action needed:", ttk.Checkbutton(frm, variable=action_var)),
-        ("Recorded by:",   ttk.Entry(frm, textvariable=recorder_var,
-                                        width=24)),
+        ("Recorded by:",   kit.StaffPicker(frm, recorder_var, by="name")),
         ("Status:",        ttk.Combobox(frm, textvariable=status_var,
                                          values=list(CHECKIN_STATUSES),
                                          state="readonly", width=14)),
-        ("Follow-up date:", ttk.Entry(frm, textvariable=fudate_var,
-                                        width=14)),
-        ("Follow-up with:", ttk.Entry(frm, textvariable=fuwith_var,
-                                        width=24)),
+        ("Follow-up date:", kit.DateField(frm, fudate_var)),
+        ("Follow-up with:", kit.StaffPicker(frm, fuwith_var, by="name")),
     ]
     for i, (label, widget) in enumerate(rows):
         ttk.Label(frm, text=label).grid(row=i, column=0, sticky="w",
                                          pady=2)
-        widget.grid(row=i, column=1, sticky="ew", pady=2)
+        widget.grid(row=i, column=1, sticky="w", pady=2)
     frm.columnconfigure(1, weight=1)
 
     text_fields = [("Stressors:", "stressors", 3),
@@ -156,12 +190,9 @@ def _checkin_dialog(host, title: str,
             result[k] = w.get("1.0", "end").strip()
         dlg.destroy()
 
-    btns = ttk.Frame(frm)
-    btns.grid(row=len(rows) + len(text_fields), column=0,
-              columnspan=2, sticky="e", pady=(12, 0))
-    ttk.Button(btns, text="Cancel",
+    ttk.Button(footer, text="Cancel",
                command=dlg.destroy).pack(side="right", padx=4)
-    ttk.Button(btns, text="Save", command=_save).pack(side="right")
+    ttk.Button(footer, text="Save", command=_save).pack(side="right")
     dlg.wait_window()
     return result
 
@@ -169,10 +200,12 @@ def _checkin_dialog(host, title: str,
 @_safe_view
 def open_wellbeing(host) -> None:
     logger.debug("GUI: open_wellbeing")
-    host._clear_content()
-    root = host.content_frame
-    ttk.Label(root, text="Wellbeing",
-              font=("", 16, "bold")).pack(anchor="w", pady=(0, 8))
+    kit.show_page(host, "Wellbeing", lambda parent: _draw_wellbeing(parent, host))
+
+
+def _draw_wellbeing(root, host) -> None:
+    host = _ctx(host, root)
+    kit.page_heading(root, "Wellbeing")
 
     summary_var = tk.StringVar()
     ttk.Label(root, textvariable=summary_var, foreground="#666").pack(
@@ -187,7 +220,8 @@ def open_wellbeing(host) -> None:
                  width=5).pack(side="left", padx=(0, 6))
     ttk.Label(bar, text="Pupil:").pack(side="left", padx=(0, 4))
     pupil_var = tk.StringVar(value="")
-    ttk.Entry(bar, textvariable=pupil_var, width=12).pack(
+    kit.PupilPicker(bar, pupil_var, include_off_roll=True, width=32,
+                    on_change=lambda _v: _refresh()).pack(
         side="left", padx=(0, 6))
     ttk.Label(bar, text="Status:").pack(side="left", padx=(0, 4))
     status_var = tk.StringVar(value="")
@@ -213,7 +247,7 @@ def open_wellbeing(host) -> None:
     ttk.Button(bar, text="Low ratings",
                command=lambda: _low(host)).pack(side="left", padx=2)
     ttk.Button(bar, text="Pupil summary",
-               command=lambda: _pupil_summary(host)
+               command=lambda: _pupil_summary(host, initial=pupil_var.get())
                ).pack(side="left", padx=2)
     ttk.Button(bar, text="Delete",
                command=lambda: _delete(host, tree, on_done=_refresh)
@@ -418,9 +452,8 @@ def _delete(host, tree: ttk.Treeview, *, on_done=None) -> None:
 
 
 @_safe_view
-def _pupil_summary(host) -> None:
-    pid = simpledialog.askstring("Pupil summary", "Pupil ID:",
-                                  parent=host.root)
+def _pupil_summary(host, initial: str = "") -> None:
+    pid = _ask_pupil(host.root, "Pupil summary", initial)
     if not pid:
         return
     s = data.pupil_summary(pid.strip())

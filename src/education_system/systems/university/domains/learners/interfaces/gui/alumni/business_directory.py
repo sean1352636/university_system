@@ -31,17 +31,25 @@ except ImportError:
 
 # Alumni service functions
 from education_system.systems.university.domains.learners.interfaces.gui.alumni._service_imports import (
-    init_alumni_db, register_alumni, view_alumni, update_alumni,
-    view_events, create_enhanced_event, event_check_in_system,
-    record_donation, view_donations, setup_mentorship, view_mentorships,
-    search_alumni_directory, view_connection_requests, manage_business_directory,
-    create_newsletter, manage_alumni_forum, post_job_opportunity, view_job_board,
-    schedule_career_counseling, view_fundraising_campaigns, create_fundraising_campaign,
-    view_engagement_leaderboard, view_my_badges, manage_photo_gallery,
-    manage_class_reunions, manage_regional_chapters, setup_alumni_directory,
-    generate_alumni_report, set_auth, setup_alumni_permissions,
-    smart_mentorship_matching, generate_engagement_recommendations,
-    create_alumni_story, view_alumni_stories, get_connection,
+    init_alumni_db,
+    view_events,
+    create_enhanced_event,
+    event_check_in_system,
+    view_connection_requests,
+    manage_business_directory,
+    manage_alumni_forum,
+    post_job_opportunity,
+    view_job_board,
+    schedule_career_counseling,
+    view_engagement_leaderboard,
+    view_my_badges,
+    manage_photo_gallery,
+    manage_class_reunions,
+    generate_alumni_report,
+    set_auth,
+    setup_alumni_permissions,
+    generate_engagement_recommendations,
+    get_connection,
 )
 
 
@@ -66,7 +74,7 @@ class BusinessDirectoryMixin:
                 try:
                     with db_get_connection() as conn:
                         cursor = conn.cursor()
-                        cursor.execute("DELETE FROM business_directory WHERE listing_id = ?", (listing_id,))
+                        cursor.execute("DELETE FROM business_directory WHERE business_id = ?", (listing_id,))
                         conn.commit()
 
                     messagebox.showinfo(_t('gui.learners.alumni.business_directory.dialogs.success', default="Success"), _t('gui.learners.alumni.business_directory.dialogs.business_listing_deleted_successfully', default="Business listing deleted successfully!"))
@@ -121,10 +129,11 @@ class BusinessDirectoryMixin:
                 with db_get_connection() as conn:
                     cursor = conn.cursor()
                     cursor.execute("""
-                        SELECT business_name, industry, website, email, phone,
-                               location, description, services
+                        SELECT business_name, industry, website, COALESCE(contact_email, email), phone,
+                               location, COALESCE(business_description, description),
+                               COALESCE(services_offered, services)
                         FROM business_directory
-                        WHERE listing_id = ?
+                        WHERE business_id = ?
                     """, (listing_id,))
                     business = cursor.fetchone()
 
@@ -163,8 +172,11 @@ class BusinessDirectoryMixin:
 
                     # Build query
                     query = """
-                        SELECT business_name, industry, location, owner_name, email
-                        FROM business_directory
+                        SELECT b.business_name, b.industry, b.location,
+                               TRIM(COALESCE(a.first_name, '') || ' ' || COALESCE(a.last_name, '')) AS owner_name,
+                               COALESCE(b.contact_email, b.email)
+                        FROM business_directory b
+                        LEFT JOIN alumni a ON b.alumni_id = a.alumni_id
                         WHERE 1=1
                     """
                     params = []
@@ -172,22 +184,23 @@ class BusinessDirectoryMixin:
                     # Add keyword filter
                     keyword = self.biz_search_keyword.get().strip()
                     if keyword:
-                        query += " AND (business_name LIKE ? OR description LIKE ? OR services LIKE ?)"
+                        query += (" AND (b.business_name LIKE ? OR COALESCE(b.business_description, b.description) LIKE ?"
+                                  " OR COALESCE(b.services_offered, b.services) LIKE ?)")
                         params.extend([f"%{escape_like(keyword)}%", f"%{escape_like(keyword)}%", f"%{escape_like(keyword)}%"])
 
                     # Add industry filter
                     industry = self.biz_search_industry.get()
                     if industry != "All":
-                        query += " AND industry = ?"
+                        query += " AND b.industry = ?"
                         params.append(industry)
 
                     # Add location filter
                     location = self.biz_search_location.get().strip()
                     if location:
-                        query += " AND location LIKE ?"
+                        query += " AND b.location LIKE ?"
                         params.append(f"%{escape_like(location)}%")
 
-                    query += " ORDER BY business_name"
+                    query += " ORDER BY b.business_name"
 
                     cursor.execute(query, params)
                     results = cursor.fetchall()
@@ -225,17 +238,21 @@ class BusinessDirectoryMixin:
                     cursor.execute("""
                         UPDATE business_directory
                         SET business_name = ?, industry = ?, website = ?,
-                            email = ?, phone = ?, location = ?,
-                            description = ?, services = ?
-                        WHERE listing_id = ?
+                            email = ?, contact_email = ?, phone = ?, location = ?,
+                            description = ?, business_description = ?,
+                            services = ?, services_offered = ?
+                        WHERE business_id = ?
                     """, (
                         self.edit_business_vars['name'].get(),
                         self.edit_business_vars['industry'].get(),
                         self.edit_business_vars['website'].get(),
                         self.edit_business_vars['email'].get(),
+                        self.edit_business_vars['email'].get(),
                         self.edit_business_vars['phone'].get(),
                         self.edit_business_vars['location'].get(),
                         self.edit_business_description.get(1.0, tk.END).strip(),
+                        self.edit_business_description.get(1.0, tk.END).strip(),
+                        self.edit_business_services.get(1.0, tk.END).strip(),
                         self.edit_business_services.get(1.0, tk.END).strip(),
                         listing_id
                     ))
@@ -743,14 +760,14 @@ class BusinessDirectoryMixin:
             try:
                 with db_get_connection() as conn:
                     cursor = conn.cursor()
-                    user_id = self._current_user_id()
+                    alumni_id = self._resolve_business_alumni_id()
 
                     cursor.execute("""
-                        SELECT listing_id, business_name, industry
+                        SELECT business_id, business_name, industry
                         FROM business_directory
-                        WHERE owner_id = ?
+                        WHERE alumni_id = ?
                         ORDER BY business_name
-                    """, (user_id,))
+                    """, (alumni_id,))
                     businesses = cursor.fetchall()
                     business_options = [f"{b[1]} - {b[2]} (ID: {b[0]})" for b in businesses]
             except sqlite3.Error:

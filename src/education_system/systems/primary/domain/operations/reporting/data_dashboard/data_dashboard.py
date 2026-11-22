@@ -1,7 +1,7 @@
 """Data Dashboard for the Primary School System.
 
 Tabular breakdown layer. Owns no schema. For each "panel" (Students,
-Attendance, Behaviour, Finance, UCAS, Apprenticeships, Exam Entries),
+Pupils, Attendance, Behaviour, Dinner money, Pupil Premium, SEND),
 it returns a list of ``(label, count[, extra])`` rows suitable for a
 simple two- or three-column table.
 
@@ -51,29 +51,25 @@ def _date_window(days: int) -> tuple[str, str]:
 
 # ── Panel collectors ───────────────────────────────────────────────
 
-def panel_students_by_subject() -> Panel:
-    panel = Panel("Students by subject", ("Subject", "Students", ""))
+def panel_pupils_by_year_group() -> Panel:
+    panel = Panel("Pupils by year group", ("Year group", "Pupils", "SEND"))
 
-    def _go():
-        from education_system.systems.primary.domain import _pupils_bridge as students
-        rows = students.list_students()
-        counts: Counter[str] = Counter()
-        for s in rows:
-            for subj in s.subjects:
-                counts[subj] += 1
-        return rows, counts
+    from education_system.systems.primary.domain.learners.pupils import pupils
 
-    res = _safe(_go)
-    if not res:
-        panel.note = "No student records available."
+    rows = _safe(pupils.list_pupils)
+    if rows is None:
+        panel.note = "Pupil records unavailable."
         return panel
-    rows, counts = res
+    if not rows:
+        panel.note = "No pupils on roll."
+        return panel
+    counts: Counter[str] = Counter(p.year_group for p in rows)
+    sen: Counter[str] = Counter(p.year_group for p in rows if p.send_status == "yes")
     panel.total = len(rows)
-    if not counts:
-        panel.note = "No subjects recorded on student records."
-        return panel
-    for subject, n in sorted(counts.items(), key=lambda kv: (-kv[1], kv[0])):
-        panel.rows.append(Row(subject, n))
+    order = {y: i for i, y in enumerate(pupils.YEAR_GROUPS)}
+    for yg in sorted(counts, key=lambda y: (order.get(y, 99), y)):
+        label = "Reception" if yg == "R" else f"Year {yg}"
+        panel.rows.append(Row(label, counts[yg], str(sen.get(yg, 0))))
     return panel
 
 
@@ -93,37 +89,41 @@ def panel_attendance_status(window_days: int) -> Panel:
     if not rows:
         panel.note = "No attendance marks in window."
         return panel
-    counts = Counter(r.status for r in rows)
+    labels = {"present": "Present", "late": "Late",
+              "auth_absent": "Authorised absence",
+              "unauth_absent": "Unauthorised absence", "excluded": "Excluded"}
+    counts = Counter(labels.get(r.category, "Other") for r in rows if r.is_possible)
     total = sum(counts.values())
     panel.total = total
-    for status in ("Present", "Late", "Absent", "Authorised"):
+    for status in (*labels.values(), "Other"):
         n = counts.get(status, 0)
+        if not n and status == "Other":
+            continue
         share = f"{(100 * n / total):.0f}%" if total else "—"
         panel.rows.append(Row(status, n, share))
     return panel
 
 
 def panel_behaviour_by_category(window_days: int) -> Panel:
-    panel = Panel(f"Behaviour by category — last {window_days}d",
-                  ("Category", "Entries", "Points"))
+    panel = Panel(f"Behaviour by type — last {window_days}d",
+                  ("Type", "Incidents", "Points"))
 
     def _go():
         from education_system.systems.primary.domain.pastoral.behaviour import behaviour
         df, dt_ = _date_window(window_days)
-        entries = behaviour.list_entries()
-        return [e for e in entries if df <= (e.entry_date or "") <= dt_]
+        return behaviour.list_incidents(date_from=df, date_to=dt_)
 
     entries = _safe(_go)
     if entries is None:
         panel.note = "Behaviour data unavailable."
         return panel
     if not entries:
-        panel.note = "No behaviour entries in window."
+        panel.note = "No behaviour incidents in window."
         return panel
     by_cat: Counter[str] = Counter()
     points: dict[str, int] = {}
     for e in entries:
-        cat = e.category or "(uncategorised)"
+        cat = e.incident_type or "(untyped)"
         by_cat[cat] += 1
         points[cat] = points.get(cat, 0) + (e.points or 0)
     panel.total = sum(by_cat.values())
@@ -132,121 +132,67 @@ def panel_behaviour_by_category(window_days: int) -> Panel:
     return panel
 
 
-def panel_fees_status() -> Panel:
-    panel = Panel("Fees status", ("Status", "Items", "Total balance"))
+def panel_dinner_money() -> Panel:
+    panel = Panel("Dinner money balances", ("Balance", "Pupils", "Total"))
 
     def _go():
-        from education_system.systems.primary.domain.fees import fees
-        return fees.list_views()
+        from education_system.systems.primary.domain.finance.dinner_money import dinner_money
+        return dinner_money.balances()
 
-    views = _safe(_go)
-    if views is None:
-        panel.note = "Fee data unavailable."
+    rows = _safe(_go)
+    if rows is None:
+        panel.note = "Dinner money data unavailable."
         return panel
-    if not views:
-        panel.note = "No fee items on record."
+    if not rows:
+        panel.note = "No dinner money accounts."
         return panel
-    counts: Counter[str] = Counter()
-    balance: dict[str, float] = {}
-    for v in views:
-        status = getattr(v, "status", None) or getattr(v, "stored_status", None) \
-                 or "Unknown"
-        counts[status] += 1
-        balance[status] = balance.get(status, 0.0) + (getattr(v, "balance", 0.0) or 0.0)
-    panel.total = sum(counts.values())
-    for status, n in sorted(counts.items(), key=lambda kv: (-kv[1], kv[0])):
-        bal = balance.get(status, 0.0)
-        panel.rows.append(Row(status, n, f"£{bal:,.2f}"))
+    groups = {"In debt": [], "Zero": [], "In credit": []}
+    for _p, bal in rows:
+        groups["In debt" if bal < 0 else "Zero" if bal == 0 else "In credit"].append(bal)
+    panel.total = len(rows)
+    for label, bals in groups.items():
+        if bals:
+            panel.rows.append(Row(label, len(bals), f"{'-' if sum(bals) < 0 else ''}£{abs(sum(bals)) / 100:,.2f}"))
     return panel
 
 
-def panel_bursaries_status() -> Panel:
-    panel = Panel("Bursary applications", ("Status", "Applications", ""))
+def panel_pupil_premium() -> Panel:
+    panel = Panel("Pupil Premium by category", ("Category", "Pupils", ""))
 
     def _go():
-        from education_system.systems.primary.domain.bursaries import bursaries
-        return bursaries.list_applications()
+        from education_system.systems.primary.domain.finance.pupil_premium import pupil_premium
+        return pupil_premium.cohort_summary()
 
-    apps = _safe(_go)
-    if apps is None:
-        panel.note = "Bursary data unavailable."
+    s = _safe(_go)
+    if s is None:
+        panel.note = "Pupil Premium data unavailable."
         return panel
-    if not apps:
-        panel.note = "No bursary applications."
+    if not s["total"]:
+        panel.note = "No Pupil Premium records."
         return panel
-    counts = Counter(a.status for a in apps)
-    panel.total = sum(counts.values())
-    for status, n in sorted(counts.items(), key=lambda kv: (-kv[1], kv[0])):
-        panel.rows.append(Row(status, n))
+    panel.total = s["total"]
+    for cat, n in sorted(s["by_category"].items(), key=lambda kv: (-kv[1], kv[0])):
+        panel.rows.append(Row(cat or "—", n))
     return panel
 
 
-def panel_ucas_status() -> Panel:
-    panel = Panel("UCAS applications", ("Status", "Applications", ""))
+def panel_send_by_stage() -> Panel:
+    panel = Panel("SEND register by stage", ("Provision stage", "Pupils", ""))
 
     def _go():
-        from education_system.systems.primary.domain.ucas import ucas
-        return ucas.list_applications()
+        from education_system.systems.primary.domain.pastoral.send import send
+        return send.cohort_summary()
 
-    apps = _safe(_go)
-    if apps is None:
-        panel.note = "UCAS data unavailable."
+    s = _safe(_go)
+    if s is None:
+        panel.note = "SEND data unavailable."
         return panel
-    if not apps:
-        panel.note = "No UCAS applications."
+    if not s["total"]:
+        panel.note = "No pupils on the SEND register."
         return panel
-    counts = Counter(a.status for a in apps)
-    panel.total = sum(counts.values())
-    for status, n in sorted(counts.items(), key=lambda kv: (-kv[1], kv[0])):
-        panel.rows.append(Row(status, n))
-    return panel
-
-
-def panel_apprenticeships_status() -> Panel:
-    panel = Panel("Apprenticeship applications", ("Status", "Applications", ""))
-
-    def _go():
-        from education_system.systems.primary.domain.apprenticeships import apprenticeships
-        return apprenticeships.list_applications()
-
-    apps = _safe(_go)
-    if apps is None:
-        panel.note = "Apprenticeship data unavailable."
-        return panel
-    if not apps:
-        panel.note = "No apprenticeship applications."
-        return panel
-    counts = Counter(a.status for a in apps)
-    panel.total = sum(counts.values())
-    for status, n in sorted(counts.items(), key=lambda kv: (-kv[1], kv[0])):
-        panel.rows.append(Row(status, n))
-    return panel
-
-
-def panel_exam_entries_by_season() -> Panel:
-    panel = Panel("Exam entries by season", ("Season / year", "Entries", "Active"))
-
-    def _go():
-        from education_system.systems.primary.domain.exam_entries import exam_entries
-        return exam_entries.list_entries()
-
-    entries = _safe(_go)
-    if entries is None:
-        panel.note = "Exam entries unavailable."
-        return panel
-    if not entries:
-        panel.note = "No exam entries."
-        return panel
-    by_series: Counter[str] = Counter()
-    active: Counter[str] = Counter()
-    for e in entries:
-        key = f"{e.season} {e.year}"
-        by_series[key] += 1
-        if e.status == "Entered":
-            active[key] += 1
-    panel.total = sum(by_series.values())
-    for key, n in sorted(by_series.items(), key=lambda kv: kv[0]):
-        panel.rows.append(Row(key, n, str(active.get(key, 0))))
+    panel.total = s["total"]
+    for stage, n in sorted(s["by_stage"].items(), key=lambda kv: (-kv[1], kv[0])):
+        panel.rows.append(Row(stage or "—", n))
     return panel
 
 
@@ -269,9 +215,11 @@ def panel_attendance_daily(window_days: int) -> Panel:
         return panel
     by_date: dict[str, list[int]] = {}
     for r in rows:
+        if not r.is_possible:
+            continue
         stats = by_date.setdefault(r.date, [0, 0])
         stats[1] += 1
-        if r.status in ("Present", "Late"):
+        if r.is_attending:
             stats[0] += 1
     panel.total = sum(s[1] for s in by_date.values())
     for d in sorted(by_date.keys(), reverse=True):
@@ -295,15 +243,13 @@ class DataSnapshot:
 
 def build_panels(*, window_days: int = DEFAULT_WINDOW_DAYS) -> DataSnapshot:
     panels = [
-        panel_students_by_subject(),
+        panel_pupils_by_year_group(),
         panel_attendance_status(window_days),
         panel_attendance_daily(window_days),
         panel_behaviour_by_category(window_days),
-        panel_fees_status(),
-        panel_bursaries_status(),
-        panel_ucas_status(),
-        panel_apprenticeships_status(),
-        panel_exam_entries_by_season(),
+        panel_dinner_money(),
+        panel_pupil_premium(),
+        panel_send_by_stage(),
     ]
     return DataSnapshot(
         generated_at=_dt.datetime.now().strftime("%Y-%m-%d %H:%M"),

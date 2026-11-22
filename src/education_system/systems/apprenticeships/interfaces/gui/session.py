@@ -17,8 +17,8 @@ import logging
 from typing import Any
 
 from education_system.systems.apprenticeships import config
-from education_system.systems.apprenticeships.services import reporting_service
-from education_system.systems.apprenticeships.services.access import Actor, resolve
+from education_system.systems.apprenticeships.application.workspace import reporting_service
+from education_system.systems.apprenticeships.application.security.access import Actor, resolve
 
 logger = logging.getLogger(__name__)
 

@@ -54,14 +54,14 @@ def set_auth(auth_instance):
     except Exception:
         logger.exception("FtP schema bootstrap failed at login")
     try:
-        from education_system.systems.university.domains.academics.domain.collaborative_provision._db_init import (  # noqa: E501
+        from education_system.systems.university.domains.curriculum.domain.collaborative_provision._db_init import (  # noqa: E501
             ensure_collaborative_provision_schema,
         )
         ensure_collaborative_provision_schema()
     except Exception:
         logger.exception("partner provision schema bootstrap failed at login")
     try:
-        from education_system.systems.university.domains.academics.domain.student_mobility._db_init import (  # noqa: E501
+        from education_system.systems.university.domains.curriculum.domain.student_mobility._db_init import (  # noqa: E501
             ensure_student_mobility_schema,
         )
         ensure_student_mobility_schema()
@@ -82,6 +82,13 @@ def init_gui(session_user=None):
         UnifiedManagementGUI instance
     """
     global auth
+
+    # Every report and chart window gets Save and Email to admin.
+    try:
+        from education_system.systems.university.infrastructure.ui import report_share
+        report_share.install()
+    except Exception:  # noqa: BLE001 — never blocks start-up
+        logging.getLogger(__name__).exception("Report Save/Email buttons not installed")
 
     # Initialize auth manager if needed
     if auth is None:
@@ -532,7 +539,6 @@ from education_system.systems.university.shell.gui.main.features.student_affairs
     open_student_support_portal_gui,
     open_health_portal_gui,
     open_helpdesk_gui,
-    show_mental_health_gui,
     show_early_warning_gui,
     show_career_services_gui,
     open_internship_portal_gui,
@@ -611,6 +617,7 @@ from education_system.systems.university.shell.gui.main.features.student_affairs
     show_security_desk_gui,
     show_church_management_gui,
     show_equality_diversity_gui,
+    show_student_handbook,
 )
 from education_system.systems.university.shell.gui.main.features.student_success_gui import (
     show_ai_features_gui,
@@ -621,20 +628,16 @@ from education_system.systems.university.shell.gui.main.features.student_success
     _show_feature_gui,
     show_todo_app_gui,
     show_student_app_gui,
-    show_enrolment_letters_gui,
     show_achievement_badge_gui,
-    show_study_recommendations_gui,
 )
 from education_system.systems.university.shell.gui.main.features.finance_gui import (
     show_bank_app_gui,
 )
 from education_system.systems.university.shell.gui.main.features.student_success_gui import (
     show_academic_progress_gui,
-    show_ai_study_gui,
     show_study_hub_gui,
     show_budget_tracker_gui,
     show_student_jobs_gui,
-    show_study_matching_gui,
     show_course_planning_gui,
     show_roommate_finder_gui,
     show_campus_navigation_gui,
@@ -642,6 +645,7 @@ from education_system.systems.university.shell.gui.main.features.student_success
     show_marketplace_gui,
     show_wellness_hub_gui,
     show_accessibility_portal_gui,
+    show_wellbeing_casework_gui,
     show_events_discovery_gui,
     show_social_matching_gui,
     show_portfolio_system_gui,
@@ -865,7 +869,6 @@ UnifiedManagementGUI.open_alumni_portal_gui = open_alumni_portal_gui
 UnifiedManagementGUI.open_student_support_portal_gui = open_student_support_portal_gui
 UnifiedManagementGUI.open_health_portal_gui = open_health_portal_gui
 UnifiedManagementGUI.open_helpdesk_gui = open_helpdesk_gui
-UnifiedManagementGUI.show_mental_health_gui = show_mental_health_gui
 UnifiedManagementGUI.show_early_warning_gui = show_early_warning_gui
 UnifiedManagementGUI.show_career_services_gui = show_career_services_gui
 UnifiedManagementGUI.open_internship_portal_gui = open_internship_portal_gui
@@ -932,6 +935,7 @@ UnifiedManagementGUI.show_security_desk_gui = show_security_desk_gui
 UnifiedManagementGUI.show_todo_app_gui = show_todo_app_gui
 UnifiedManagementGUI.show_church_management_gui = show_church_management_gui
 UnifiedManagementGUI.show_equality_diversity_gui = show_equality_diversity_gui
+UnifiedManagementGUI.show_student_handbook = show_student_handbook
 UnifiedManagementGUI.show_bank_app_gui = show_bank_app_gui
 UnifiedManagementGUI.show_exam_scheduler_gui = show_exam_scheduler_gui
 UnifiedManagementGUI.show_exam_portal = show_exam_portal
@@ -957,11 +961,9 @@ UnifiedManagementGUI.show_chatbot = show_chatbot
 UnifiedManagementGUI.log_activity = log_activity
 UnifiedManagementGUI.launch_analytics_gui_standalone = launch_analytics_gui_standalone
 UnifiedManagementGUI.show_academic_progress_gui = show_academic_progress_gui
-UnifiedManagementGUI.show_ai_study_gui = show_ai_study_gui
 UnifiedManagementGUI.show_study_hub_gui = show_study_hub_gui
 UnifiedManagementGUI.show_budget_tracker_gui = show_budget_tracker_gui
 UnifiedManagementGUI.show_student_jobs_gui = show_student_jobs_gui
-UnifiedManagementGUI.show_study_matching_gui = show_study_matching_gui
 UnifiedManagementGUI.show_course_planning_gui = show_course_planning_gui
 UnifiedManagementGUI.show_roommate_finder_gui = show_roommate_finder_gui
 UnifiedManagementGUI.show_campus_navigation_gui = show_campus_navigation_gui
@@ -969,6 +971,7 @@ UnifiedManagementGUI.show_lost_found_gui = show_lost_found_gui
 UnifiedManagementGUI.show_marketplace_gui = show_marketplace_gui
 UnifiedManagementGUI.show_wellness_hub_gui = show_wellness_hub_gui
 UnifiedManagementGUI.show_accessibility_portal_gui = show_accessibility_portal_gui
+UnifiedManagementGUI.show_wellbeing_casework_gui = show_wellbeing_casework_gui
 UnifiedManagementGUI.show_events_discovery_gui = show_events_discovery_gui
 UnifiedManagementGUI.show_social_matching_gui = show_social_matching_gui
 UnifiedManagementGUI.show_portfolio_system_gui = show_portfolio_system_gui
@@ -991,14 +994,14 @@ def show_analytics_dashboard_gui(self):
     from education_system.platform.features.analytics.analytics_gui import AnalyticsDashboardFrame
     win = self.create_themed_toplevel(title="Analytics Dashboard", geometry="900x600")
     try:
-        from education_system.systems.university.domains.academics.interfaces.gui.research.external_quality_assurance.qa_widgets import EQAStatusStrip
+        from education_system.systems.university.domains.research.interfaces.gui.research.external_quality_assurance.qa_widgets import EQAStatusStrip
         EQAStatusStrip(win).pack(fill='x', padx=8, pady=(6, 0))
     except Exception:
         logger.debug("Suppressed exception", exc_info=True)
     frame = AnalyticsDashboardFrame(win, db_path=None, auth=self.auth)
     frame.pack(fill='both', expand=True)
     try:
-        from education_system.systems.university.domains.academics.interfaces.gui.research.external_quality_assurance.qa_receivers import consume_eqa_context
+        from education_system.systems.university.domains.research.interfaces.gui.research.external_quality_assurance.qa_receivers import consume_eqa_context
         consume_eqa_context(self, "Analytics Dashboard", target=frame)
     except Exception:
         logger.debug("Suppressed exception", exc_info=True)
@@ -1181,9 +1184,7 @@ UnifiedManagementGUI.__init__ = _patched_unified_init
 # New features (modules 21-30)
 UnifiedManagementGUI.show_hesa_export_gui = show_hesa_export_gui
 UnifiedManagementGUI.show_student_app_gui = show_student_app_gui
-UnifiedManagementGUI.show_enrolment_letters_gui = show_enrolment_letters_gui
 UnifiedManagementGUI.show_achievement_badge_gui = show_achievement_badge_gui
-UnifiedManagementGUI.show_study_recommendations_gui = show_study_recommendations_gui
 UnifiedManagementGUI.show_clearing_adjustment_gui = show_clearing_adjustment_gui
 UnifiedManagementGUI.show_prior_learning_gui = show_prior_learning_gui
 UnifiedManagementGUI.show_mitigating_circumstances_gui = show_mitigating_circumstances_gui
@@ -1210,11 +1211,11 @@ _NEW_FEATURE_MODULES = [
     ("complaints_portal", "Complaints Portal",
      "education_system.systems.university.domains.operations.domain.communications.feedback.complaints_portal"),
     ("course_evaluation_system", "Course Evaluation",
-     "education_system.systems.university.domains.academics.interfaces.gui.course_management_gui.course_evaluation_system"),
+     "education_system.systems.university.domains.curriculum.interfaces.gui.course_management_gui.course_evaluation_system"),
     ("lecturer_evaluation", "Lecturer Evaluation",
-     "education_system.systems.university.domains.academics.interfaces.gui.course_management_gui.lecturer_evaluation"),
+     "education_system.systems.university.domains.curriculum.interfaces.gui.course_management_gui.lecturer_evaluation"),
     ("module_evaluation_portal", "Module Evaluation",
-     "education_system.systems.university.domains.academics.interfaces.gui.course_management_gui.module_evaluation_portal"),
+     "education_system.systems.university.domains.curriculum.interfaces.gui.course_management_gui.module_evaluation_portal"),
     ("disciplinary_portal", "Disciplinary Portal",
      "education_system.systems.university.domains.governance.domain.legal.disciplinary.disciplinary_portal"),
     ("fitness_to_practise", "Fitness to Practise",
@@ -1224,28 +1225,24 @@ _NEW_FEATURE_MODULES = [
     ("information_rights", "SAR / FOI Requests",
      "education_system.systems.university.domains.governance.interfaces.gui.legal.information_rights.information_rights_gui"),
     ("first_aid_portal", "First Aid Portal",
-     "education_system.systems.university.domains.pastoral.domain.health.first_aid.first_aid_portal"),
+     "education_system.systems.university.domains.health.domain.health.first_aid.first_aid_portal"),
     ("health_safety_portal", "Health & Safety",
      "education_system.systems.university.domains.governance.domain.health_safety.health_safety_portal"),
-    ("intervention_support", "Intervention Support",
-     "education_system.systems.university.domains.pastoral.domain.wellbeing.student_wellbeing.intervention_support"),
     ("safeguarding_system", "Safeguarding",
      "education_system.systems.university.domains.safeguarding.safeguarding_system"),
     ("background_checker", "Background Checker",
      "education_system.systems.university.domains.staff.domain.staff_hr.background_checks.university_bg_checker"),
     ("university_research", "Research Portal",
-     "education_system.systems.university.domains.academics.domain.research.services.university_research"),
+     "education_system.systems.university.domains.research.interfaces.gui.research.research_portal.app"),
     # Cross-system ports added 2026-04 — services with their own Tk launchers.
     ("employer_portal", "Employer Portal",
      "education_system.systems.university.domains.progression.domain.employer_portal.employer_portal_app"),
-    ("intervention_outcomes", "Intervention Outcomes",
-     "education_system.systems.university.domains.pastoral.domain.services.early_warning.outcomes.intervention_outcomes_app"),
     ("kpi_dashboard", "KPI Dashboard",
      "education_system.systems.university.domains.operations.domain.reporting.kpi_dashboard.kpi_dashboard_app"),
     ("bursary", "Bursary Management",
      "education_system.systems.university.domains.finance.domain.bursary.bursary_app"),
     ("mentoring_matching", "Peer Mentoring Matching",
-     "education_system.systems.university.domains.pastoral.domain.student_life.student_union.services.mentoring_matching.mentoring_matching_app"),
+     "education_system.systems.university.domains.student_life.domain.student_life.student_union.services.mentoring_matching.mentoring_matching_app"),
     ("room_booking", "Room Booking",
      "education_system.systems.university.domains.operations.interfaces.gui.campus.facilities.room_booking_app"),
     ("building_management", "Building Management",
@@ -1261,20 +1258,25 @@ _NEW_FEATURE_MODULES = [
     # timetabling, identity control (admin) and SSO providers (admin).
     ("case_management", "Case Management",
      "education_system.systems.university.domains.governance.interfaces.gui.case_management.case_management_app"),
+    # Academic appeals (students: their own; appeals staff: the procedure).
+    ("academic_appeals", "Academic Appeals",
+     "education_system.systems.university.domains.governance.interfaces.gui.case_management.appeals_app"),
     ("timetabling", "Timetabling",
-     "education_system.systems.university.domains.academics.interfaces.gui.timetabling.timetabling_app"),
+     "education_system.systems.university.domains.teaching.interfaces.gui.timetabling.timetabling_app"),
     ("identity_management", "Identity Management",
      "education_system.systems.university.domains.learners.interfaces.gui.identity_management.identity_management_app"),
     ("sso_providers", "SSO Providers",
      "education_system.systems.university.shell.gui.main.admin.sso_providers_gui"),
+    ("connectors", "Connectors & Event Queue",
+     "education_system.systems.university.shell.gui.main.admin.connectors_gui"),
     # Governance / research / boards windows added 2026-10. Opened in-process
     # below (they take the session auth); these entries are the subprocess
     # fallback that ``_launch_new_feature_module`` runs if that fails.
     ("programme_governance", "Programme Governance",
-     "education_system.systems.university.domains.academics.interfaces.gui."
-     "programme_governance.programme_governance_gui"),
+     "education_system.systems.university.domains.curriculum.interfaces."
+     "gui.programme_governance.programme_governance_gui"),
     ("pgr_admin", "PGR Administration",
-     "education_system.systems.university.domains.academics.interfaces.gui."
+     "education_system.systems.university.domains.research.interfaces.gui."
      "research.pgr.pgr_admin_gui"),
     ("assessment_boards", "Assessment Boards",
      "education_system.systems.university.domains.assessment.interfaces.gui."
@@ -1398,11 +1400,11 @@ del _btn_name, _label, _module, _attr
 def show_new_feature_university_research(self):
     title = "Research Portal"
     try:
-        from education_system.systems.university.domains.academics.domain.research.services.university_research import UniversityApp
+        from education_system.systems.university.domains.research.interfaces.gui.research.research_portal.app import ResearchPortal
     except Exception:
         logger.exception("Research Portal import failed; falling back to subprocess launch")
         self._launch_new_feature_module(
-            "education_system.systems.university.domains.academics.domain.research.services.university_research",
+            "education_system.systems.university.domains.research.interfaces.gui.research.research_portal.app",
             title)
         return
 
@@ -1411,17 +1413,11 @@ def show_new_feature_university_research(self):
         window.title(title)
         window.transient(self.root)
         _maximise(window)
-        app = UniversityApp(host=window)
-        app.run()
-        # The portal's own dismiss button destroys the window; make sure
-        # the database handle goes with it however it is closed.
-        window.protocol("WM_DELETE_WINDOW",
-                        lambda w=window, a=app: (a.db.close(), w.destroy()))
-        return app
+        return ResearchPortal(host=window, auth=getattr(self, "auth", None))
     except Exception:
         logger.exception("In-process Research Portal failed; falling back to subprocess launch")
         self._launch_new_feature_module(
-            "education_system.systems.university.domains.academics.domain.research.services.university_research",
+            "education_system.systems.university.domains.research.interfaces.gui.research.research_portal.app",
             title)
 
 
@@ -1465,11 +1461,11 @@ UnifiedManagementGUI.show_new_feature_university_research = show_new_feature_uni
 _SESSION_WINDOWS = {
     "programme_governance": (
         "Programme Governance",
-        "education_system.systems.university.domains.academics.interfaces.gui."
-        "programme_governance.programme_governance_gui"),
+        "education_system.systems.university.domains.curriculum.interfaces."
+        "gui.programme_governance.programme_governance_gui"),
     "pgr_admin": (
         "PGR Administration",
-        "education_system.systems.university.domains.academics.interfaces.gui."
+        "education_system.systems.university.domains.research.interfaces.gui."
         "research.pgr.pgr_admin_gui"),
     "assessment_boards": (
         "Assessment Boards",
@@ -1555,12 +1551,12 @@ UnifiedManagementGUI._embed_or_subprocess = _embed_or_subprocess
 def show_new_feature_module_evaluation_portal(self):
     title = "Module Evaluation"
     module_dotted = (
-        "education_system.systems.university.domains.academics.domain."
-        "course_evaluation.module_evaluation_portal"
+        "education_system.systems.university.domains.curriculum.interfaces.gui."
+        "course_management_gui.module_evaluation_portal"
     )
 
     def _build(host):
-        from education_system.systems.university.domains.academics.interfaces.gui.course_management_gui.module_evaluation_portal import ModuleEvaluationPortal
+        from education_system.systems.university.domains.curriculum.interfaces.gui.course_management_gui.module_evaluation_portal import ModuleEvaluationPortal
         return ModuleEvaluationPortal(host)
     self._embed_or_subprocess(title, module_dotted, _build)
 
@@ -1568,12 +1564,12 @@ def show_new_feature_module_evaluation_portal(self):
 def show_new_feature_lecturer_evaluation(self):
     title = "Lecturer Evaluation"
     module_dotted = (
-        "education_system.systems.university.domains.academics.domain."
-        "course_evaluation.lecturer_evaluation"
+        "education_system.systems.university.domains.curriculum.interfaces.gui."
+        "course_management_gui.lecturer_evaluation"
     )
 
     def _build(host):
-        from education_system.systems.university.domains.academics.interfaces.gui.course_management_gui.lecturer_evaluation import App
+        from education_system.systems.university.domains.curriculum.interfaces.gui.course_management_gui.lecturer_evaluation import App
         app = App(host=host)
         app.run()
         return app
@@ -1588,7 +1584,7 @@ def show_new_feature_course_evaluation_system(self):
     """Open Course Evaluation in a standalone Toplevel (1400x900,
     minsize 1200x800) — matches the Finance/Library convention."""
     import tkinter as tk
-    from education_system.systems.university.domains.academics.interfaces.gui.course_management_gui.course_evaluation_system import (
+    from education_system.systems.university.domains.curriculum.interfaces.gui.course_management_gui.course_evaluation_system import (
         CourseEvaluationApp,
     )
     top = tk.Toplevel(self.root if hasattr(self, "root") else None)
@@ -1619,22 +1615,65 @@ def show_new_feature_complaints_portal(self):
 UnifiedManagementGUI.show_new_feature_complaints_portal = show_new_feature_complaints_portal
 
 
-def show_new_feature_intervention_outcomes(self):
-    title = "Intervention Outcomes"
+def show_new_feature_intervention_hub(self, start_tab=None):
+    """Early Warning & Interventions — the Early Warning System, Intervention
+    Support and Intervention Outcomes in one window. ``start_tab`` raises
+    one of its tabs (``early_warning``, ``support``, ``outcomes``,
+    ``overview``).
+
+    Opens in its own maximised window, like the main window and the
+    Research Portal, rather than a workspace tab: eight tabs of tables and
+    forms need the whole screen. A second click raises the open window
+    instead of opening another. Still in-process, so it shares the
+    session; the subprocess launch stays as the fallback.
+    """
+    title = "Early Warning & Interventions"
     module_dotted = (
-        "education_system.systems.university.domains.pastoral.domain."
-        "services.early_warning.outcomes.intervention_outcomes_app"
+        "education_system.systems.university.domains.student_support."
+        "interfaces.gui.wellbeing.intervention_hub.intervention_hub_gui"
     )
 
-    def _build(host):
-        from education_system.systems.university.domains.pastoral.domain.services.early_warning.outcomes.intervention_outcomes_app import (
-            _Frame as _InterventionFrame,
-            _get_current_user,
+    hub = getattr(self, "_intervention_hub", None)
+    try:
+        if hub is not None and hub.window.winfo_exists():
+            top = hub.window.winfo_toplevel()
+            top.deiconify()
+            top.lift()
+            top.focus_force()
+            hub.select(start_tab)
+            return hub
+    except Exception:
+        logger.debug("Stale Early Warning & Interventions window", exc_info=True)
+
+    try:
+        from education_system.systems.university.domains.student_support.interfaces.gui.wellbeing.intervention_hub import (
+            InterventionHubGUI,
         )
-        frame = _InterventionFrame(host, user=_get_current_user())
-        frame.pack(fill="both", expand=True)
-        return frame
-    self._embed_or_subprocess(title, module_dotted, _build)
+    except Exception:
+        logger.exception("Early Warning & Interventions import failed; falling back to subprocess launch")
+        self._launch_new_feature_module(module_dotted, title)
+        return None
+
+    try:
+        window = tk.Toplevel(self.root)
+        window.title(title)
+        window.transient(self.root)
+        _maximise(window)
+        # The hub fills a frame here; its Return to Homescreen closes
+        # this window (portal_dismiss walks up from that frame).
+        host = tk.Frame(window)
+        host.pack(fill="both", expand=True)
+        self._intervention_hub = InterventionHubGUI(
+            host, auth=getattr(self, "auth", None), start_tab=start_tab)
+        return self._intervention_hub
+    except Exception:
+        logger.exception("In-process Early Warning & Interventions failed; falling back to subprocess launch")
+        try:
+            window.destroy()
+        except Exception:
+            logger.debug("Suppressed exception", exc_info=True)
+        self._launch_new_feature_module(module_dotted, title)
+        return None
 
 
 def show_new_feature_safeguarding_system(self):
@@ -1676,12 +1715,12 @@ def show_new_feature_safeguarding_system(self):
 def show_new_feature_mentoring_matching(self):
     title = "Peer Mentoring Matching"
     module_dotted = (
-        "education_system.systems.university.domains.pastoral.domain."
+        "education_system.systems.university.domains.student_life.domain.student_life."
         "student_union.services.mentoring_matching.mentoring_matching_app"
     )
 
     def _build(host):
-        from education_system.systems.university.domains.pastoral.domain.student_life.student_union.services.mentoring_matching.mentoring_matching_app import (
+        from education_system.systems.university.domains.student_life.domain.student_life.student_union.services.mentoring_matching.mentoring_matching_app import (
             _Frame as _MentoringFrame,
             _get_current_user,
         )
@@ -1691,7 +1730,7 @@ def show_new_feature_mentoring_matching(self):
     self._embed_or_subprocess(title, module_dotted, _build)
 
 
-UnifiedManagementGUI.show_new_feature_intervention_outcomes = show_new_feature_intervention_outcomes
+UnifiedManagementGUI.show_new_feature_intervention_hub = show_new_feature_intervention_hub
 UnifiedManagementGUI.show_new_feature_safeguarding_system = show_new_feature_safeguarding_system
 UnifiedManagementGUI.show_new_feature_mentoring_matching = show_new_feature_mentoring_matching
 
@@ -1703,7 +1742,7 @@ UnifiedManagementGUI.show_new_feature_mentoring_matching = show_new_feature_ment
 def show_new_feature_employer_portal(self):
     title = "Employer Portal"
     module_dotted = (
-        "education_system.systems.university.domains.pastoral.domain."
+        "education_system.systems.university.domains.progression.domain."
         "employer_portal.employer_portal_app"
     )
 
@@ -1757,7 +1796,7 @@ def show_new_feature_institutional_analytics(self):
 def show_new_feature_apprenticeship_system(self):
     title = "Apprenticeships"
     module_dotted = (
-        "education_system.systems.university.domains.academics.domain."
+        "education_system.systems.university.domains.progression.domain."
         "apprenticeships.apprenticeship_system"
     )
 
@@ -1778,7 +1817,7 @@ def show_new_feature_first_aid_portal(self):
     main GUI (1400x900, minsize 1200x800) rather than embedding it in the
     main content frame — matches the Safeguarding/Finance convention."""
     try:
-        from education_system.systems.university.domains.pastoral.domain.health.first_aid.first_aid_portal import (
+        from education_system.systems.university.domains.health.domain.health.first_aid.first_aid_portal import (
             FirstAidPortal,
         )
     except Exception as e:
@@ -1815,8 +1854,8 @@ def show_new_feature_first_aid_portal(self):
 def show_new_feature_room_booking(self):
     title = "Room Booking"
     module_dotted = (
-        "education_system.systems.university.domains.operations.domain.campus."
-        "facilities.gui.room_booking_app"
+        "education_system.systems.university.domains.operations.interfaces.gui.campus."
+        "facilities.room_booking_app"
     )
 
     def _build(host):

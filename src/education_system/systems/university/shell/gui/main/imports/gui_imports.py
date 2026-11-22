@@ -40,12 +40,6 @@ except ImportError:
     MFA_AVAILABLE = False
 
 try:
-    from education_system.systems.university.infrastructure.auth.mfa_integration import integrate_mfa_with_auth
-    MFA_INTEGRATION_AVAILABLE = True
-except ImportError:
-    MFA_INTEGRATION_AVAILABLE = False
-
-try:
     from education_system.systems.university.infrastructure.auth.email_otp_service import EmailOTPService
     EMAIL_OTP_AVAILABLE = True
 except ImportError:
@@ -269,9 +263,9 @@ def _lazy_func(module_path, attr, bind_as=None):
 _GUI_IMPORT_MAP = {
     "FinanceManagementGUI": ("education_system.systems.university.domains.finance.interfaces.gui.finance_management_gui", "FinanceManagementGUI"),
     "FinancialAidGUI": ("education_system.systems.university.domains.finance.interfaces.gui.financial_aid", "FinancialAidGUI"),
-    "StudentUnionManagementGUI": ("education_system.systems.university.domains.pastoral.interfaces.gui.student_union_management_gui", "StudentUnionManagementGUI"),
-    "HealthPortalManagementGUI": ("education_system.systems.university.domains.pastoral.interfaces.gui.health.health_portal_management_gui", "HealthPortalManagementGUI"),
-    "GradeTrackingManagementGUI": ("education_system.systems.university.domains.academics.interfaces.gui.grade_tracking_management_gui", "GradeTrackingManagementGUI"),
+    "StudentUnionManagementGUI": ("education_system.systems.university.domains.student_life.interfaces.gui.student_union_management_gui", "StudentUnionManagementGUI"),
+    "HealthPortalManagementGUI": ("education_system.systems.university.domains.health.interfaces.gui.health.health_portal_management_gui", "HealthPortalManagementGUI"),
+    "GradeTrackingManagementGUI": ("education_system.systems.university.domains.assessment.interfaces.gui.grade_tracking_management_gui", "GradeTrackingManagementGUI"),
     "RestaurantManagementGUI": ("education_system.systems.university.plugins.campus_commerce.interfaces.gui.restaurant_management_gui", "RestaurantManagementGUI"),
     "CafeSystemGUI": ("education_system.systems.university.plugins.campus_commerce.interfaces.gui.cafe_system_gui", "CafeSystemGUI"),
     "TakeawayGUI": ("education_system.systems.university.plugins.campus_commerce.interfaces.gui.takeaway_gui", "TakeawayGUI"),
@@ -310,7 +304,7 @@ for _name, (_mod, _attr) in _GUI_IMPORT_MAP.items():
     globals()[_name] = _lazy_class(_mod, _attr)
 BAR_GUI_AVAILABLE = True
 
-from education_system.systems.university.domains.academics.domain.services.modules import (compulsory_module_1, compulsory_module_2,
+from education_system.systems.university.domains.curriculum.domain.modules import (compulsory_module_1, compulsory_module_2,
                                                                optional_module_1, optional_module_2,
                                                                optional_module_3, optional_module_4,
                                                                CS_optional_module_1, CS_optional_module_2,
@@ -327,7 +321,7 @@ from education_system.systems.university.domains.academics.domain.services.modul
 # NOTE: this block also rebinds ``SessionManager``, shadowing the security
 # SessionManager imported near the top of this module. That shadowing predates
 # the lazy conversion and is preserved deliberately.
-_VC = "education_system.systems.university.domains.academics.domain.services.virtual_classroom"
+_VC = "education_system.systems.university.domains.teaching.domain.virtual_classroom"
 VirtualClassroomManager = _lazy_class(_VC, "VirtualClassroomManager")
 SessionManager = _lazy_class(_VC, "SessionManager")
 ParticipantManager = _lazy_class(_VC, "ParticipantManager")
@@ -342,7 +336,7 @@ FINANCIAL_AID_AVAILABLE = True
 
 # Feature 3: Unified Communication Hub
 CommunicationManager = _lazy_class(
-    "education_system.systems.university.services.communication", "CommunicationManager")
+    "education_system.systems.university.infrastructure.communication", "CommunicationManager")
 COMMUNICATION_HUB_AVAILABLE = True
 
 # Features 4-8: Database schemas are available in remaining_features_schema.py
@@ -376,43 +370,42 @@ COMMUNICATION_HUB_AVAILABLE = True
 # (as None) because features/student_affairs_gui.py imports them by name.
 _OPTIONAL_GUI = {
     # name: (module path, attribute in that module)
-    "AdvancedSearchGUI": ("education_system.systems.university.shell.gui.advanced_search", "AdvancedSearchGUI"),
-    "ModuleSchedulingGUI": ("education_system.systems.university.domains.academics.interfaces.gui.module_scheduling", "ModuleSchedulingGUI"),
-    "CourseManagementGUI": ("education_system.systems.university.domains.academics.interfaces.gui.course_management_gui", "CourseManagementGUI"),
-    "AssignmentGUI": ("education_system.systems.university.domains.academics.interfaces.gui.assignment_system", "AssignmentGUI"),
+    "AdvancedSearchGUI": ("education_system.systems.university.domains.learners.interfaces.gui.students.advanced_search", "AdvancedSearchGUI"),
+    "ModuleSchedulingGUI": ("education_system.systems.university.domains.teaching.interfaces.gui.module_scheduling", "ModuleSchedulingGUI"),
+    "CourseManagementGUI": ("education_system.systems.university.domains.curriculum.interfaces.gui.course_management_gui", "CourseManagementGUI"),
+    "AssignmentGUI": ("education_system.systems.university.domains.assessment.interfaces.gui.assignment_system", "AssignmentGUI"),
     "DocumentManagerGUI": ("education_system.systems.university.shell.gui.document_manager.main_gui", "DocumentManagerGUI"),
-    "ReportingSystemGUI": ("education_system.systems.university.shell.gui.enhanced_reporting", "ReportingSystemGUI"),
+    "ReportingSystemGUI": ("education_system.systems.university.shell.gui.analytics.enhanced_reporting", "ReportingSystemGUI"),
     "PDFExportGUI": ("education_system.systems.university.shell.gui.pdf_export_gui", "PDFExportGUI"),
     "HousingAccommodationGUI": ("education_system.systems.university.domains.operations.interfaces.gui.campus.housing.housing_accommodation_gui.main_gui", "HousingGUI"),
-    "LibraryGUI": ("education_system.systems.university.domains.academics.interfaces.gui.library", "LibraryGUI"),
-    "ParentPortalGUI": ("education_system.systems.university.domains.academics.interfaces.gui.parent_portal", "ParentPortalGUI"),
-    "GUIStudentAnalytics": ("education_system.systems.university.shell.gui.student_analytics", "GUIStudentAnalytics"),
-    "StudentGradesPortal": ("education_system.systems.university.domains.academics.interfaces.gui.student_grades", "StudentGradesPortal"),
-    "StudentOutcomesGUI": ("education_system.systems.university.domains.academics.interfaces.gui.student_outcomes_gui", "StudentOutcomesGUI"),
-    "StudentTimetableGUI": ("education_system.systems.university.domains.academics.interfaces.gui.student_timetable_gui", "StudentTimetableGUI"),
-    "StudentRegistrationPortal": ("education_system.systems.university.domains.academics.interfaces.gui.student_registration", "StudentRegistrationPortal"),
-    "StudentSupportGUI": ("education_system.systems.university.domains.pastoral.interfaces.gui.student_support", "StudentSupportGUI"),
+    "LibraryGUI": ("education_system.systems.university.domains.library.interfaces.gui.library", "LibraryGUI"),
+    "ParentPortalGUI": ("education_system.systems.university.domains.learners.interfaces.gui.parent_portal", "ParentPortalGUI"),
+    "GUIStudentAnalytics": ("education_system.systems.university.shell.gui.analytics.student_analytics", "GUIStudentAnalytics"),
+    "StudentGradesPortal": ("education_system.systems.university.domains.assessment.interfaces.gui.student_grades", "StudentGradesPortal"),
+    "StudentOutcomesGUI": ("education_system.systems.university.domains.curriculum.interfaces.gui.student_outcomes_gui", "StudentOutcomesGUI"),
+    "StudentTimetableGUI": ("education_system.systems.university.domains.teaching.interfaces.gui.student_timetable_gui", "StudentTimetableGUI"),
+    "StudentRegistrationPortal": ("education_system.systems.university.domains.curriculum.interfaces.gui.student_registration", "StudentRegistrationPortal"),
+    "StudentSupportGUI": ("education_system.systems.university.domains.student_support.interfaces.gui.student_support", "StudentSupportGUI"),
     "TripManagementGUI": ("education_system.systems.university.domains.operations.interfaces.gui.campus.mobility.trip_management_gui", "TripManagementGUI"),
     "AlumniGUIApp": ("education_system.systems.university.domains.learners.interfaces.gui.alumni", "AlumniGUIApp"),
-    "GradeTrackingApp": ("education_system.systems.university.domains.academics.interfaces.gui.grade_tracking", "GradeTrackingApp"),
+    "GradeTrackingApp": ("education_system.systems.university.domains.assessment.interfaces.gui.grade_tracking", "GradeTrackingApp"),
     "BackupGUI": ("education_system.systems.university.shell.gui.database.backup_gui", "BackupGUI"),
-    "CalendarGUI": ("education_system.systems.university.domains.academics.interfaces.gui.academic_calendar", "CalendarGUI"),
-    "AccommodationGUI": ("education_system.systems.university.domains.pastoral.interfaces.gui.health.medical_accommodation", "AccommodationGUI"),
-    "AIDetectorGUI": ("education_system.systems.university.domains.academics.interfaces.gui.ai_detector", "AIDetectorGUI"),
+    "CalendarGUI": ("education_system.systems.university.domains.teaching.interfaces.gui.academic_calendar", "CalendarGUI"),
+    "AccommodationGUI": ("education_system.systems.university.domains.health.interfaces.gui.health.medical_accommodation", "AccommodationGUI"),
+    "AIDetectorGUI": ("education_system.systems.university.domains.integrity.interfaces.gui.ai_detector", "AIDetectorGUI"),
     "BatchOperationsGUI": ("education_system.systems.university.shell.gui.batch_operations", "BatchOperationsGUI"),
     "EmailManagerGUI": ("education_system.systems.university.shell.gui.email.email_gui", "EmailManagerGUI"),
     "FinancialManagementGUI": ("education_system.systems.university.domains.finance.interfaces.gui.finance_reporting", "FinancialManagementGUI"),
     "ParkingManagementGUI": ("education_system.systems.university.domains.operations.interfaces.gui.campus.mobility.parking_management_gui", "ParkingManagementGUI"),
-    "PlagiarismCheckerGUI": ("education_system.systems.university.domains.academics.interfaces.gui.plagiarism_main_gui", "PlagiarismCheckerGUI"),
     "RestaurantManagementGUI": ("education_system.systems.university.plugins.campus_commerce.interfaces.gui.restaurant_management_gui", "RestaurantManagementGUI"),
     "ShopManagementGUI": ("education_system.systems.university.plugins.campus_commerce.interfaces.gui.shop_management_gui.main_gui", "UniversityShopGUI"),
     "CharityShopApp": ("education_system.systems.university.plugins.campus_commerce.interfaces.gui.charity_shop_gui", "CharityShopApp"),
     "ActivityLoggerGUI": ("education_system.systems.university.shell.gui.activity_logger", "EnhancedActivityLoggerGUI"),
     "UniversityChatbotGUI": ("education_system.systems.university.shell.gui.ai.chatbot_gui", "ChatbotGUI"),
     "LogManagementGUI": ("education_system.systems.university.shell.gui.logging.log_management_gui", "LogManagementGUI"),
-    "InternshipManagementGUI": ("education_system.systems.university.domains.pastoral.interfaces.gui.internship_management", "InternshipGUI"),
-    "AttendanceGUI": ("education_system.systems.university.domains.academics.interfaces.gui.attendance_tracker", "AttendanceGUI"),
-    "HelpdeskGUI": ("education_system.systems.university.domains.pastoral.interfaces.gui.helpdesk", "HelpdeskGUI"),
+    "InternshipManagementGUI": ("education_system.systems.university.domains.student_life.interfaces.gui.internship_management", "InternshipGUI"),
+    "AttendanceGUI": ("education_system.systems.university.domains.teaching.interfaces.gui.attendance_tracker", "AttendanceGUI"),
+    "HelpdeskGUI": ("education_system.systems.university.domains.student_support.interfaces.gui.helpdesk", "HelpdeskGUI"),
 }
 
 for _name, (_mod, _attr) in _OPTIONAL_GUI.items():
@@ -420,7 +413,7 @@ for _name, (_mod, _attr) in _OPTIONAL_GUI.items():
 
 # Module-level functions that came from the same blocks.
 launch_module_scheduling_gui = _lazy_func(
-    "education_system.systems.university.domains.academics.interfaces.gui.module_scheduling",
+    "education_system.systems.university.domains.teaching.interfaces.gui.module_scheduling",
     "launch_module_scheduling_gui")
 start_document_manager_gui = _lazy_func(
     "education_system.systems.university.shell.gui.document_manager.console",
@@ -429,12 +422,12 @@ display_document_management_menu = _lazy_func(
     "education_system.systems.university.shell.gui.document_manager.console",
     "display_document_management_menu")
 start_enhanced_reporting_gui = _lazy_func(
-    "education_system.systems.university.shell.gui.enhanced_reporting",
+    "education_system.systems.university.shell.gui.analytics.enhanced_reporting",
     "start_enhanced_reporting_gui")
 show_pdf_export_gui = _lazy_func(
     "education_system.systems.university.shell.gui.pdf_export_gui", "show_pdf_export_gui")
 display_helpdesk_menu = _lazy_func(
-    "education_system.systems.university.domains.pastoral.domain.services.helpdesk",
+    "education_system.systems.university.domains.student_support.domain.helpdesk",
     "display_helpdesk_menu")
 
 # Alias kept for callers that reference the class through this name.
@@ -482,21 +475,19 @@ HELP_DESK_GUI_AVAILABLE = False  # Would use helpdesk_gui.py
 # Advanced feature GUI launchers — lazy-loaded on first call to avoid heavy
 # imports (pandas, matplotlib, reportlab, etc.) at startup.
 _LAUNCHER_MAP = {
-    "launch_advanced_attendance_gui": "education_system.systems.university.domains.academics.domain.services.attendance.attendance_tracker",
-    "launch_mental_health_gui": "education_system.systems.university.domains.pastoral.domain.services.mental_health.mental_health_core",
-    "launch_early_warning_gui": "education_system.systems.university.domains.pastoral.domain.services.early_warning.early_warning_core",
-    "launch_career_services_gui": "education_system.systems.university.domains.pastoral.domain.services.career_services.career_services_core",
+    "launch_advanced_attendance_gui": "education_system.systems.university.domains.teaching.domain.attendance.attendance_tracker",
+    "launch_career_services_gui": "education_system.systems.university.domains.student_life.domain.career_services.career_services_core",
     "launch_extras_gui": "education_system.platform.features.extras.launcher",
     "launch_admissions_crm_gui": "education_system.systems.university.domains.admissions.domain.services.admissions_crm_core",
-    "launch_predictive_analytics_gui": "education_system.systems.university.services.analytics.predictive_analytics_gui",
-    "launch_timetable_optimizer_gui": "education_system.systems.university.domains.academics.domain.services.module_scheduling",
+    "launch_predictive_analytics_gui": "education_system.systems.university.shell.gui.analytics.predictive_analytics_gui",
+    "launch_timetable_optimizer_gui": "education_system.systems.university.domains.teaching.domain.module_scheduling",
     "launch_campus_events_gui": "education_system.systems.university.domains.operations.domain.campus.services.campus_events_gui",
-    "launch_alumni_relations_gui": "education_system.systems.university.domains.learners.domain.alumni",
+    "launch_alumni_relations_gui": "education_system.systems.university.domains.learners.interfaces.gui.alumni",
     "launch_facilities_management_gui": "education_system.systems.university.domains.operations.domain.campus.facilities.services.facilities_management_core",
-    "launch_business_intelligence_gui": "education_system.systems.university.services.business_intelligence.business_intelligence_gui",
-    "launch_ai_features_gui": "education_system.systems.university.services.ai_features.ai_features_core",
+    "launch_business_intelligence_gui": "education_system.systems.university.shell.gui.analytics.business_intelligence_gui",
+    "launch_ai_features_gui": "education_system.systems.university.shell.gui.ai.ai_features_gui",
     "launch_mobile_app_pwa_gui": "education_system.systems.university.domains.operations.interfaces.gui.campus.mobility.mobile_app_pwa_gui",
-    "launch_blockchain_credentials_gui": "education_system.systems.university.domains.academics.interfaces.gui.blockchain_credentials_gui",
+    "launch_blockchain_credentials_gui": "education_system.systems.university.domains.progression.interfaces.gui.blockchain_credentials_gui",
     "launch_integration_marketplace_gui": "education_system.systems.university.shell.gui.services.integration_marketplace_gui",
 }
 
@@ -556,8 +547,8 @@ _LAZY_GUI = {
     "launch_mail_post_gui": ("education_system.systems.university.domains.operations.interfaces.gui.communications.mail.mail_post_gui", "launch_mail_post_gui"),
     "GymGUI": ("education_system.systems.university.plugins.campus_commerce.interfaces.gui.gym.gym_gui", "GymGUI"),
     "launch_gym_gui": ("education_system.systems.university.plugins.campus_commerce.interfaces.gui.gym.gym_gui", "launch_gym_gui"),
-    "DentistGUI": ("education_system.systems.university.domains.pastoral.interfaces.gui.health.health_portal.dentist_gui", "DentistGUI"),
-    "launch_dentist_gui": ("education_system.systems.university.domains.pastoral.interfaces.gui.health.health_portal.dentist_gui", "launch_dentist_gui"),
+    "DentistGUI": ("education_system.systems.university.domains.health.interfaces.gui.health.health_portal.dentist_gui", "DentistGUI"),
+    "launch_dentist_gui": ("education_system.systems.university.domains.health.interfaces.gui.health.health_portal.dentist_gui", "launch_dentist_gui"),
     "ButcherGUI": ("education_system.systems.university.plugins.campus_commerce.interfaces.gui.butcher.butcher_gui", "ButcherGUI"),
     "launch_butcher_gui": ("education_system.systems.university.plugins.campus_commerce.interfaces.gui.butcher.butcher_gui", "launch_butcher_gui"),
     "BarberGUI": ("education_system.systems.university.plugins.campus_commerce.interfaces.gui.barber.barber_gui", "BarberGUI"),
@@ -574,9 +565,9 @@ _LAZY_GUI = {
     "launch_musicshop_gui": ("education_system.systems.university.plugins.campus_commerce.interfaces.gui.musicshop.musicshop_gui", "launch_musicshop_gui"),
     "StaffHRGUI": ("education_system.systems.university.domains.staff.interfaces.gui.staff_hr.staff_hr_gui", "StaffHRGUI"),
     "launch_staff_hr_gui": ("education_system.systems.university.domains.staff.interfaces.gui.staff_hr.staff_hr_gui", "launch_staff_hr_gui"),
-    "OfficeHoursGUI": ("education_system.systems.university.domains.academics.interfaces.gui.office_hours.office_hours_gui", "OfficeHoursGUI"),
-    "DegreeAuditGUI": ("education_system.systems.university.domains.academics.interfaces.gui.course_management_gui.degree_audit_gui", "DegreeAuditGUI"),
-    "GraduationCeremonyGUI": ("education_system.systems.university.domains.academics.interfaces.gui.course_management_gui.graduation_ceremony_gui", "GraduationCeremonyGUI"),
+    "OfficeHoursGUI": ("education_system.systems.university.domains.teaching.interfaces.gui.office_hours.office_hours_gui", "OfficeHoursGUI"),
+    "DegreeAuditGUI": ("education_system.systems.university.domains.curriculum.interfaces.gui.course_management_gui.degree_audit_gui", "DegreeAuditGUI"),
+    "GraduationCeremonyGUI": ("education_system.systems.university.domains.curriculum.interfaces.gui.course_management_gui.graduation_ceremony_gui", "GraduationCeremonyGUI"),
     "TaxiBookingApp": ("education_system.systems.university.domains.operations.interfaces.gui.campus.mobility.taxi_booking_gui", "TaxiBookingApp"),
     "TrainStationApp": ("education_system.systems.university.domains.operations.interfaces.gui.campus.mobility.train_station_gui", "TrainStationApp"),
     "CinemaApp": ("education_system.systems.university.plugins.campus_commerce.interfaces.gui.cinema.cinema_gui.core.main_gui", "CinemaApp"),

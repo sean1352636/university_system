@@ -84,7 +84,7 @@ class WorkflowDatabase:
             conn.execute('''
                 CREATE TABLE IF NOT EXISTS approval_requests (
                     request_id TEXT PRIMARY KEY,
-                    instance_id TEXT NOT NULL,
+                    instance_id INTEGER NOT NULL,
                     workflow_name TEXT NOT NULL,
                     step_id TEXT NOT NULL,
                     step_name TEXT NOT NULL,
@@ -104,7 +104,7 @@ class WorkflowDatabase:
             conn.execute('''
                 CREATE TABLE IF NOT EXISTS workflow_audit_log (
                     log_id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    instance_id TEXT NOT NULL,
+                    instance_id INTEGER NOT NULL,
                     step_id TEXT,
                     action TEXT NOT NULL,
                     actor TEXT,

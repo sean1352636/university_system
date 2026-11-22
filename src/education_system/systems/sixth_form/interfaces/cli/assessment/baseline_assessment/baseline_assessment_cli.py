@@ -239,6 +239,9 @@ def per_student_flow() -> None:
           f"{summ.average_percentage if summ.average_percentage is not None else '—'}")
     print(f"    Avg A-Level pts : "
           f"{summ.avg_a_level_points if summ.avg_a_level_points is not None else '—'}")
+    for scale, avg in summ.average_points_by_scale.items():
+        if scale != "A Level":
+            print(f"    Avg {scale} pts : {avg}")
     _pause()
 
 
@@ -311,9 +314,12 @@ def _collect_form(existing: BaselineRecord | None
         default=(str(existing.standardised_score)
                   if is_edit and existing.standardised_score is not None
                   else ""))
+    # The subject's own scale (BTEC, T Level…) first, then GCSE 9-1.
     payload["baseline_grade"] = _pick_from(
         "Baseline grade",
-        [""] + list(A_LEVEL_GRADES) + list(GCSE_GRADES),
+        [""] + list(data.grades_for(
+            existing.student_id if is_edit else payload["student_id"],
+            payload["subject_name"] or None)),
         default=(existing.baseline_grade if is_edit else ""),
         allow_custom=True)
     payload["confidence"] = _pick_from(

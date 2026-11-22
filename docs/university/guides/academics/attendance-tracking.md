@@ -23,9 +23,9 @@ This guide covers attendance management, multiple check-in methods, reporting, n
 The Attendance Tracking module provides enterprise-grade attendance management with multiple check-in methods (manual, QR code, face recognition, geofencing), automated notifications, predictive analytics, and comprehensive reporting.
 
 **Key files:**
-- Service: `modules/domain/academics/services/attendance/attendance_tracker.py`
-- Notifications: `modules/domain/academics/services/attendance/attendance_notifications.py`
-- GUI: `modules/domain/academics/gui/attendance_tracker/`
+- Service: `src/education_system/systems/university/domains/teaching/domain/attendance/attendance_tracker.py`
+- Notifications: `src/education_system/systems/university/domains/teaching/domain/attendance/attendance_notifications.py`
+- GUI: `src/education_system/systems/university/domains/teaching/interfaces/gui/attendance_tracker/`
 
 ## Getting Started
 

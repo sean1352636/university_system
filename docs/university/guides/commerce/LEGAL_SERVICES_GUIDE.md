@@ -344,5 +344,5 @@ Administrators can:
 ---
 
 **Last Updated**: February 2026
-**Module**: `university_system/modules/domain/legal/`
+**Module**: `src/education_system/systems/university/domains/governance/domain/legal/`
 **Support**: legal@university.edu | (555) 123-LEGAL

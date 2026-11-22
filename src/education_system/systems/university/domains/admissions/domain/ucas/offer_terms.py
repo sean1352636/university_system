@@ -29,9 +29,10 @@ from __future__ import annotations
 
 import logging
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any
 
+from education_system.platform.cross_system import offer_conditions as _oc
 from education_system.systems.university.infrastructure.database.db import (
     get_connection,
 )
@@ -39,11 +40,15 @@ from education_system.systems.university.infrastructure.database.db import (
 logger = logging.getLogger(__name__)
 
 __all__ = [
+    "CONDITION_KINDS",
     "OfferTerms",
     "OfferTermsError",
     "TERM_FIELDS",
+    "conditions_for",
     "delete_terms",
+    "effective_conditions",
     "get_terms",
+    "set_conditions",
     "save_terms",
     "terms_for_choices",
     "validate_terms",
@@ -74,11 +79,40 @@ CREATE TABLE IF NOT EXISTS ucas_offer_terms (
     updated_at               TEXT DEFAULT (datetime('now'))
 );
 
-CREATE INDEX IF NOT EXISTS idx_ucas_terms_choice
-    ON ucas_offer_terms(sf_choice_id);
 CREATE INDEX IF NOT EXISTS idx_ucas_terms_deadline
     ON ucas_offer_terms(reply_deadline);
+
+-- The conditions behind grade_requirement, one row each, so results day
+-- can check "ABB including B in Mathematics" in full rather than asking a
+-- person about the "including". Shape and rules are the platform's
+-- (platform/cross_system/offer_conditions.py), shared with the sixth form.
+CREATE TABLE IF NOT EXISTS ucas_offer_conditions (
+    condition_id       INTEGER PRIMARY KEY AUTOINCREMENT,
+    terms_id           INTEGER NOT NULL
+                       REFERENCES ucas_offer_terms(terms_id) ON DELETE CASCADE,
+    position           INTEGER NOT NULL DEFAULT 0,
+    kind               TEXT NOT NULL CHECK (kind IN (
+                           'grade_profile', 'subject_grade', 'tariff_points',
+                           'qualification_grade', 'gcse_requirement',
+                           'other_text')),
+    qualification_type TEXT,
+    subject            TEXT,
+    min_grade          TEXT,
+    min_points         INTEGER,
+    count              INTEGER,
+    text               TEXT,
+    created_by         TEXT,
+    created_at         TEXT DEFAULT (datetime('now'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_ucas_offer_conditions_terms
+    ON ucas_offer_conditions(terms_id, position);
 """
+
+#: Structured condition kinds (re-exported for the GUI and CLI).
+CONDITION_KINDS: tuple[str, ...] = _oc.CONDITION_KINDS
+_COND_FIELDS = ("kind", "qualification_type", "subject", "min_grade",
+                "min_points", "count", "text")
 
 
 @dataclass
@@ -95,6 +129,8 @@ class OfferTerms:
     issued_by: str | None
     issued_at: str
     updated_at: str
+    #: Structured conditions (dicts in the platform shape), in order.
+    conditions: list[dict[str, Any]] = field(default_factory=list)
 
     def as_dict(self) -> dict[str, Any]:
         """The issued fields alone, for a consumer that only wants terms."""
@@ -124,7 +160,23 @@ def init_db() -> None:
     _DB_READY = True
 
 
-def _row(r) -> OfferTerms:
+def _load_conditions(conn, terms_ids) -> dict[int, list[dict[str, Any]]]:
+    ids = sorted({int(i) for i in terms_ids})
+    out: dict[int, list[dict[str, Any]]] = {i: [] for i in ids}
+    for start in range(0, len(ids), 500):
+        chunk = ids[start:start + 500]
+        marks = ",".join("?" * len(chunk))
+        # db-audit: ignore[DBW001] - join of placeholders
+        rows = conn.execute(
+            f"SELECT * FROM ucas_offer_conditions "  # nosec B608
+            f"WHERE terms_id IN ({marks}) ORDER BY terms_id, position, "
+            f"condition_id", chunk).fetchall()
+        for r in rows:
+            out[r["terms_id"]].append({f: r[f] for f in _COND_FIELDS})
+    return out
+
+
+def _row(r, conditions: list[dict[str, Any]] | None = None) -> OfferTerms:
     return OfferTerms(
         terms_id=r["terms_id"],
         sf_choice_id=r["sf_choice_id"],
@@ -138,6 +190,7 @@ def _row(r) -> OfferTerms:
         issued_by=r["issued_by"],
         issued_at=r["issued_at"],
         updated_at=r["updated_at"],
+        conditions=list(conditions or []),
     )
 
 
@@ -176,6 +229,15 @@ def _validate(data: dict[str, Any]) -> dict[str, Any]:
         accom = accom.strip().lower() in ("1", "true", "yes", "y", "on")
     out["accommodation_guaranteed"] = 1 if bool(accom) else 0
 
+    # Structured conditions are optional and only replaced when given: a
+    # caller that knows nothing about them (an old form) leaves them alone.
+    out["conditions"] = None
+    if data.get("conditions") is not None:
+        try:
+            out["conditions"] = _oc.validate_conditions(data.get("conditions"))
+        except ValueError as e:
+            raise OfferTermsError(str(e)) from e
+
     deadline, expiry = out["reply_deadline"], out["expiry_date"]
     if deadline and expiry and expiry < deadline:
         raise OfferTermsError(
@@ -194,7 +256,9 @@ def get_terms(sf_choice_id: int) -> OfferTerms | None:
             "SELECT * FROM ucas_offer_terms WHERE sf_choice_id = ?",
             (sf_choice_id,),
         ).fetchone()
-        return _row(r) if r else None
+        if not r:
+            return None
+        return _row(r, _load_conditions(conn, [r["terms_id"]])[r["terms_id"]])
     finally:
         conn.close()
 
@@ -222,8 +286,9 @@ def terms_for_choices(sf_choice_ids) -> dict[int, OfferTerms]:
                 f"WHERE sf_choice_id IN ({marks})",
                 chunk,
             ).fetchall()
+            conds = _load_conditions(conn, [r["terms_id"] for r in rows])
             for r in rows:
-                out[r["sf_choice_id"]] = _row(r)
+                out[r["sf_choice_id"]] = _row(r, conds.get(r["terms_id"]))
     finally:
         conn.close()
     return out
@@ -267,6 +332,9 @@ def save_terms(sf_choice_id: int, data: dict[str, Any],
              p["accommodation_guaranteed"], p["notes"],
              (issued_by or "").strip() or None),
         )
+        if p["conditions"] is not None:
+            _replace_conditions(conn, sf_choice_id, p["conditions"],
+                                issued_by)
         conn.commit()
     finally:
         conn.close()
@@ -295,3 +363,80 @@ def delete_terms(sf_choice_id: int) -> bool:
         return False
     finally:
         conn.close()
+
+
+# ── Structured conditions ──────────────────────────────────────────
+
+def _replace_conditions(conn, sf_choice_id: int,
+                        rows: list[dict[str, Any]],
+                        issued_by: str | None) -> None:
+    """Swap the choice's conditions for *rows* (already validated)."""
+    t = conn.execute(
+        "SELECT terms_id FROM ucas_offer_terms WHERE sf_choice_id = ?",
+        (sf_choice_id,)).fetchone()
+    if t is None:
+        raise OfferTermsError(
+            f"No offer terms for choice #{sf_choice_id} to attach "
+            "conditions to.")
+    conn.execute("DELETE FROM ucas_offer_conditions WHERE terms_id = ?",
+                 (t["terms_id"],))
+    for pos, c in enumerate(rows):
+        conn.execute(
+            """INSERT INTO ucas_offer_conditions
+                   (terms_id, position, kind, qualification_type, subject,
+                    min_grade, min_points, count, text, created_by)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+            (t["terms_id"], pos, c["kind"], c.get("qualification_type"),
+             c.get("subject"), c.get("min_grade"), c.get("min_points"),
+             c.get("count"), c.get("text"),
+             (issued_by or "").strip() or None))
+
+
+def conditions_for(sf_choice_id: int) -> list[dict[str, Any]]:
+    """The structured conditions on a choice's offer, in order."""
+    terms = get_terms(sf_choice_id)
+    return list(terms.conditions) if terms else []
+
+
+def set_conditions(sf_choice_id: int, rows, *,
+                   issued_by: str | None = None) -> OfferTerms:
+    """Replace the structured conditions on an offer already issued.
+
+    Creates an otherwise-empty terms row if the offer has none yet, so a
+    condition can be added to an offer recorded before this existed.
+    """
+    try:
+        clean = _oc.validate_conditions(rows)
+    except ValueError as e:
+        raise OfferTermsError(str(e)) from e
+    init_db()
+    conn = get_connection()
+    try:
+        conn.execute(
+            "INSERT OR IGNORE INTO ucas_offer_terms (sf_choice_id, issued_by)"
+            " VALUES (?, ?)", (sf_choice_id, (issued_by or "").strip() or None))
+        _replace_conditions(conn, sf_choice_id, clean, issued_by)
+        conn.execute(
+            "UPDATE ucas_offer_terms SET updated_at = datetime('now') "
+            "WHERE sf_choice_id = ?", (sf_choice_id,))
+        conn.commit()
+    finally:
+        conn.close()
+    logger.info("Set %d structured condition(s) on sf choice #%d (by %s)",
+                len(clean), sf_choice_id, issued_by or "—")
+    out = get_terms(sf_choice_id)
+    assert out is not None
+    return out
+
+
+def effective_conditions(terms: OfferTerms | None,
+                         fallback_text: str | None = None
+                         ) -> list[dict[str, Any]]:
+    """What results day checks: the structured rows when there are any,
+    otherwise the free-text requirement read as conditions (whatever
+    cannot be read becomes an ``other_text`` row a person checks)."""
+    if terms is not None and terms.conditions:
+        return list(terms.conditions)
+    text = ((terms.grade_requirement if terms else None) or fallback_text
+            or "").strip()
+    return _oc.conditions_from_text(text) if text else []

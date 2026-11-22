@@ -148,8 +148,11 @@ _STUDENTS_SCHEMA = """
 CREATE TABLE IF NOT EXISTS students (
     student_id              TEXT PRIMARY KEY,
     first_name              TEXT NOT NULL,
+    middle_name             TEXT,
     last_name               TEXT NOT NULL,
+    preferred_name          TEXT,
     date_of_birth           TEXT,
+    gender                  TEXT,
     uln                     TEXT,
     -- The platform's canonical cross-system identity, stamped when the
     -- learner arrived from (or was matched to) another system. Also what
@@ -158,7 +161,9 @@ CREATE TABLE IF NOT EXISTS students (
     journey_id              TEXT,
     email                   TEXT,
     phone                   TEXT,
-    address                 TEXT,
+    address                 TEXT,             -- address line 1
+    address_line2           TEXT,
+    town                    TEXT,
     postcode                TEXT,
     learner_type            TEXT NOT NULL DEFAULT '16-18 Study Programme',
     mode_of_study           TEXT NOT NULL DEFAULT 'Full-time',
@@ -169,8 +174,11 @@ CREATE TABLE IF NOT EXISTS students (
     end_date                TEXT,
     prior_attainment        TEXT,
     has_ehcp                INTEGER NOT NULL DEFAULT 0,
+    has_lldd                INTEGER NOT NULL DEFAULT 0,  -- learning difficulty / disability
     learning_support        TEXT,
+    medical_notes           TEXT,
     emergency_contact_name  TEXT,
+    emergency_contact_relationship TEXT,
     emergency_contact_phone TEXT,
     notes                   TEXT,
     created_at              TEXT DEFAULT (datetime('now')),
@@ -748,6 +756,18 @@ _ALL_SCHEMAS = (
 )
 
 
+_STUDENT_DETAIL_COLUMNS: tuple[tuple[str, str], ...] = (
+    ("middle_name", "TEXT"),
+    ("preferred_name", "TEXT"),
+    ("gender", "TEXT"),
+    ("address_line2", "TEXT"),
+    ("town", "TEXT"),
+    ("has_lldd", "INTEGER NOT NULL DEFAULT 0"),
+    ("medical_notes", "TEXT"),
+    ("emergency_contact_relationship", "TEXT"),
+)
+
+
 def _migrate(conn: sqlite3.Connection) -> None:
     """Bring an existing database up to the current schema.
 
@@ -762,6 +782,11 @@ def _migrate(conn: sqlite3.Connection) -> None:
     if "journey_id" not in cols:
         conn.execute("ALTER TABLE students ADD COLUMN journey_id TEXT")
         logger.info("Added students.journey_id (cross-system identity link)")
+    # Personal, address, emergency-contact and needs details (2026-11-06).
+    for column, ddl in _STUDENT_DETAIL_COLUMNS:
+        if column not in cols:
+            conn.execute(f"ALTER TABLE students ADD COLUMN {column} {ddl}")
+            logger.info("Added students.%s", column)
     # Deferred until the column is known to exist.
     conn.execute(
         "CREATE INDEX IF NOT EXISTS idx_fe_students_journey "

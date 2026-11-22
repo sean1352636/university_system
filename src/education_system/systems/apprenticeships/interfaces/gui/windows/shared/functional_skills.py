@@ -21,7 +21,8 @@ from education_system.systems.apprenticeships.domain.learner_support.skills_asse
     SkillsProfile,
 )
 from education_system.systems.apprenticeships.interfaces.gui import widgets
-from education_system.systems.apprenticeships.services import apprentice_service, skills_service
+from education_system.systems.apprenticeships.application.apprentices import apprentice_service
+from education_system.systems.apprenticeships.application.assessments import skills_service
 
 logger = logging.getLogger(__name__)
 

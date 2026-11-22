@@ -10,8 +10,10 @@ from education_system.systems.sixth_form.interfaces.gui._ui import grab_when_vie
 import logging
 import tkinter as tk
 from datetime import date as _date
-from tkinter import messagebox, ttk
+from tkinter import ttk
+from education_system.platform.delivery.gui.parented_dialogs import messagebox
 from typing import Callable
+from education_system.systems.sixth_form.domain.governance.user_management import access
 from education_system.systems.sixth_form.domain.staff import staff as data
 from education_system.platform import branding
 from education_system.systems.sixth_form.domain.staff.staff import (
@@ -228,10 +230,24 @@ class StaffDirectory:
                 lines.append(f"  {r.staff_id}  {r.full_name}  ({r.role})")
         messagebox.showinfo(f"Staff — {s.staff_id}", "\n".join(lines))
 
+    def _may_edit(self, action: str) -> bool:
+        # Job role, DSL flag and login link decide what someone can open,
+        # so only HR and administrators may change staff records.
+        if access.current().can(access.HR):
+            return True
+        messagebox.showwarning(
+            action, "Only HR and administrators can change staff records.",
+            parent=self.root)
+        return False
+
     def _new(self) -> None:
+        if not self._may_edit("New"):
+            return
         StaffDialog(self.root, existing=None, on_save=self.refresh)
 
     def _edit_selected(self) -> None:
+        if not self._may_edit("Edit"):
+            return
         sid = self._selected_id()
         if sid is None:
             messagebox.showinfo("Edit", "Select a staff member first.")
@@ -242,6 +258,8 @@ class StaffDirectory:
         StaffDialog(self.root, existing=existing, on_save=self.refresh)
 
     def _mark_left(self) -> None:
+        if not self._may_edit("Mark Left"):
+            return
         sid = self._selected_id()
         if sid is None:
             messagebox.showinfo("Mark Left", "Select a staff member first.")
@@ -262,6 +280,8 @@ class StaffDirectory:
         self.refresh()
 
     def _delete_selected(self) -> None:
+        if not self._may_edit("Delete"):
+            return
         sid = self._selected_id()
         if sid is None:
             messagebox.showinfo("Delete", "Select a staff member first.")
@@ -269,10 +289,43 @@ class StaffDirectory:
         s = data.get_staff(sid)
         if s is None:
             return
+        try:
+            linked = data.linked_record_counts(s.staff_id)
+        except Exception as e:
+            messagebox.showerror("Delete failed", str(e))
+            return
+        if linked:
+            # Their appraisals, absences, DBS/SCR and HR records must be
+            # kept: offer "Left" rather than a delete that destroys them.
+            from education_system.systems.sixth_form.infrastructure.record_links import (
+                describe,
+            )
+            if s.employment_status == "Left":
+                messagebox.showinfo(
+                    "Delete",
+                    f"{s.staff_id} ({s.full_name}) cannot be deleted — they "
+                    f"have linked records ({describe(linked)}). They are "
+                    "already marked as Left.")
+                return
+            if not messagebox.askyesno(
+                    "Delete",
+                    f"{s.staff_id} ({s.full_name}) cannot be deleted — that "
+                    f"would delete or orphan:\n\n{describe(linked)}\n\n"
+                    f"Mark them as Left on {_date.today().isoformat()} "
+                    "instead? Their records are kept."):
+                return
+            try:
+                data.mark_left(s.staff_id)
+            except Exception as e:
+                messagebox.showerror("Mark Left failed", str(e))
+                return
+            self.refresh()
+            return
         if not messagebox.askyesno(
                 "Delete",
                 f"Permanently delete {s.staff_id} ({s.full_name})?\n\n"
-                f"This will clear line-manager links pointing to them."):
+                f"No records are linked to them. This will clear "
+                f"line-manager links pointing to them."):
             return
         try:
             data.delete_staff(s.staff_id)
@@ -424,6 +477,14 @@ class StaffDialog:
                           variable=self.exam_var).pack(side="left")
         r += 1
 
+        label("Sign-in username:")
+        self.login_e = entry(24)
+        if self.existing:
+            self.login_e.insert(0, data.login_username(self.existing.staff_id) or "")
+        ttk.Label(form, text="the shared login that belongs to this person",
+                  foreground="#666").grid(row=r, column=2, sticky="w")
+        r += 1
+
         label("Qualifications:")
         self.quals_text = tk.Text(form, width=50, height=3, wrap="word")
         if self.existing and self.existing.qualifications:
@@ -470,9 +531,10 @@ class StaffDialog:
                 self.existing.email if self.existing else "")
         try:
             if self.existing:
-                data.update_staff(self.existing.staff_id, payload)
+                saved = data.update_staff(self.existing.staff_id, payload)
             else:
-                data.create_staff(payload)
+                saved = data.create_staff(payload)
+            access.link_staff_login(saved.staff_id, self.login_e.get())
         except ValidationError as e:
             messagebox.showerror("Validation", str(e))
             return

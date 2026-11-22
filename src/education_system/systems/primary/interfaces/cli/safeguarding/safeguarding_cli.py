@@ -187,6 +187,11 @@ def _new() -> None:
           f"({c.severity}, {c.status})")
 
 
+def raise_concern() -> None:
+    """Raise a concern without opening the records, for staff who can't read them."""
+    _new()
+
+
 @_safe
 def _list() -> None:
     pid = _prompt("  Pupil ID (blank): ") or None

@@ -9,7 +9,9 @@ from education_system.systems.sixth_form.interfaces.gui._ui import grab_when_vie
 import datetime as _dt
 import logging
 import tkinter as tk
-from tkinter import messagebox, ttk
+from tkinter import ttk
+from education_system.systems.sixth_form.interfaces.gui._sidebar import SidebarBook
+from education_system.platform.delivery.gui.parented_dialogs import messagebox
 from typing import Callable
 from education_system.platform import branding
 from education_system.systems.sixth_form.domain.assessment.ilp import (
@@ -50,7 +52,7 @@ def open_ilp_window(parent=None) -> None:
     win.geometry(WIN_GEOMETRY)
     win.minsize(*WIN_MINSIZE)
 
-    nb = ttk.Notebook(win)
+    nb = SidebarBook(win)
     nb.pack(fill="both", expand=True, padx=10, pady=10)
 
     PlansTab(nb)
@@ -221,6 +223,27 @@ class PlansTab:
         self.rv_tree.pack(side="left", fill="both", expand=True)
         rvs.pack(side="right", fill="y")
 
+        # Read-only: the student's academic targets from Target Setting,
+        # shown beside the plan's personal goals.
+        acad_frame = ttk.Frame(inner)
+        inner.add(acad_frame, text="Academic Targets")
+        a_cols = ("kind", "subject", "detail", "due", "status")
+        self.acad_tree = ttk.Treeview(acad_frame, columns=a_cols,
+                                      show="headings")
+        a_widths = {"kind": 110, "subject": 150, "detail": 320,
+                    "due": 100, "status": 110}
+        a_headings = {"kind": "Kind", "subject": "Subject",
+                      "detail": "Target / action", "due": "Due",
+                      "status": "Status"}
+        for c in a_cols:
+            self.acad_tree.heading(c, text=a_headings[c])
+            self.acad_tree.column(c, width=a_widths[c], anchor="w")
+        acs = ttk.Scrollbar(acad_frame, orient="vertical",
+                            command=self.acad_tree.yview)
+        self.acad_tree.configure(yscrollcommand=acs.set)
+        self.acad_tree.pack(side="left", fill="both", expand=True)
+        acs.pack(side="right", fill="y")
+
         actions = ttk.Frame(self.frame)
         actions.pack(fill="x", padx=8, pady=(4, 8))
         ttk.Button(actions, text="Edit plan",
@@ -318,6 +341,7 @@ class PlansTab:
             self.goals_tree.delete(i)
         for i in self.rv_tree.get_children():
             self.rv_tree.delete(i)
+        self.acad_tree.delete(*self.acad_tree.get_children())
         self.detail_var.set("Select a plan on the left.")
         self.subdetail_var.set("")
 
@@ -362,6 +386,22 @@ class PlansTab:
                 r.reviewer or "—",
                 (r.comments or "")[:80],
             ))
+        self.acad_tree.delete(*self.acad_tree.get_children())
+        acad = detail.academic_targets
+        if acad is not None:
+            for t in acad.grade_targets:
+                self.acad_tree.insert("", "end", values=(
+                    "Grade target", t.subject_name,
+                    f"Minimum {t.mte_grade}"
+                    + (f", aspirational {t.aspirational_grade}"
+                       if t.aspirational_grade else "")
+                    + (f", now {t.current_grade}"
+                       if t.current_grade else ""),
+                    t.next_review_due or "—", t.status))
+            for a in acad.actions:
+                self.acad_tree.insert("", "end", values=(
+                    "Action", a.subject_name or "—", a.description,
+                    a.due_date or "—", a.status))
 
     def _selected(self) -> Plan | None:
         if self._selected_id is None:

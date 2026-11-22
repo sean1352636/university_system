@@ -8,11 +8,9 @@ from tkinter import ttk
 from education_system.systems.apprenticeships import config
 from education_system.systems.apprenticeships.domain.training import sessions as session_rules
 from education_system.systems.apprenticeships.interfaces.gui import widgets
-from education_system.systems.apprenticeships.services import (
-    apprentice_service,
-    programme_service,
-    training_service,
-)
+from education_system.systems.apprenticeships.application.apprentices import apprentice_service
+from education_system.systems.apprenticeships.application.learning import training_service
+from education_system.systems.apprenticeships.application.programmes import programme_service
 
 logger = logging.getLogger(__name__)
 
@@ -52,7 +50,8 @@ def render(gui) -> None:
         subtitle="Scheduled delivery. Marking a register is also how attendance "
                  "becomes off-the-job hours.",
     )
-    if gui.actor.staff_id is None:
+    # Only a tutor needs a staff record; an admin works across the cohort.
+    if gui.actor.role == config.STAFF and gui.actor.staff_id is None:
         widgets.empty_state(frame, UNLINKED)
 
     can_manage = gui.actor.can("training.manage")
@@ -98,7 +97,9 @@ def render(gui) -> None:
         (
             ("status", "Status", "combo", session_rules.SESSION_STATUSES),
             ("upcoming_only", "Upcoming only", "check"),
-            ("mine_only", "Mine only", "check"),
+            # "Mine" means sessions this person delivers, so it needs a
+            # staff record behind the login.
+            *((("mine_only", "Mine only", "check"),) if gui.actor.staff_id is not None else ()),
         ),
         reload,
     )

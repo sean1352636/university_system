@@ -1,0 +1,27 @@
+{
+  "name": "safeguarding_urgent_alert",
+  "description": "Tells the safeguarding team that an urgent concern has been reported. It never carries the details of the concern - they stay in the Safeguarding record.",
+  "subject": "URGENT safeguarding concern #{concern_id} - please act now",
+  "body": [
+    "Dear {recipient_name},",
+    "",
+    "An urgent safeguarding concern (#{concern_id}) about a Year {year_group} pupil was reported by {reporter} at {reported_at}. The member of staff said the child may be in immediate danger.",
+    "",
+    "Please open Safeguarding in the school system now and speak to {reporter} in person.",
+    "",
+    "For the child's privacy this e-mail does not include the details of the concern. Please do not reply with any details.",
+    "",
+    "{school_name}"
+  ],
+  "placeholders": {
+    "recipient_name": "The safeguarding team member's name",
+    "concern_id": "The concern number",
+    "year_group": "The pupil's year group (no name)",
+    "reporter": "The member of staff who reported it",
+    "reported_at": "When it was reported",
+    "school_name": "The school's name"
+  },
+  "defaults": {
+    "school_name": "Secondary School"
+  }
+}

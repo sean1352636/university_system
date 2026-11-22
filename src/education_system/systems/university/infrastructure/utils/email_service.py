@@ -49,7 +49,7 @@ class EmailTemplate(Enum):
     BATCH_EMAIL_FORM = "batch_email_form"
     TICKET_NOTIFICATION = "ticket_notification"
     REPLY_NOTIFICATION = "reply_notification"
-    APPOINTMENT_CONFIRMATION = "appointment_confirmation"
+    APPOINTMENT_CONFIRMATION = "campus_services/health/appointment_confirmation"
     HEALTH_NOTIFICATION = "health_notification"
     INTERNSHIP_NOTIFICATION = "internship_notification"
     APPLICATION_CONFIRMATION = "application_confirmation"

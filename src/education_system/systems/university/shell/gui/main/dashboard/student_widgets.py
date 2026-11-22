@@ -15,7 +15,7 @@ def create_grades_summary_widget(parent, student_id):
     frame.pack(fill=tk.X, padx=15, pady=5)
 
     try:
-        from education_system.systems.university.services.dashboard.student_services import (
+        from education_system.systems.university.shared.analytics.dashboard.student_services import (
             StudentDashboardService,
         )
 
@@ -72,7 +72,7 @@ def create_degree_progress_widget(parent, student_id):
     frame.pack(fill=tk.X, padx=15, pady=5)
 
     try:
-        from education_system.systems.university.services.dashboard.student_services import (
+        from education_system.systems.university.shared.analytics.dashboard.student_services import (
             StudentDashboardService,
         )
 
@@ -152,7 +152,7 @@ def create_payment_alerts_widget(parent, student_id):
     frame.pack(fill=tk.X, padx=15, pady=5)
 
     try:
-        from education_system.systems.university.services.dashboard.student_services import (
+        from education_system.systems.university.shared.analytics.dashboard.student_services import (
             StudentDashboardService,
         )
 

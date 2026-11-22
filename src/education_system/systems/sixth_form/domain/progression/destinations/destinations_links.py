@@ -136,6 +136,35 @@ def _record_checkpoint(journey_id: str, record, *, recorded_by: int | None,
                          "the platform", getattr(record, "student_id", "?"))
 
 
+def already_arrived(journey_id: str, destination_system: str, *,
+                    db_path: str | None = None) -> dict | None:
+    """Has the learner already moved on to ``destination_system``?
+
+    True when the journey holds an open enrolment there, or a completed
+    transition from the sixth form to it. ``route_support.start`` only reuses
+    an *open* transition, so without this a destination recorded after the
+    move (the leaving survey, a +6 correction) re-activated the sixth-form
+    enrolment and opened a second "expected" transition to a university the
+    student was already at — how a duplicate university record was made in
+    2026. Returns ``{"transition_id", "reason"}`` or ``None``.
+    """
+    from education_system.platform.cross_system import enrolments, transitions
+    done = next((t for t in reversed(transitions.list_transitions(journey_id, db_path=db_path))
+                 if t.get("source_system") == _SOURCE_SYSTEM
+                 and t.get("destination_system") == destination_system
+                 and t.get("status") == "completed"), None)
+    if done is not None:
+        return {"transition_id": done["transition_id"],
+                "reason": f"the move to {destination_system} is already complete"}
+    open_there = enrolments.list_enrolments(journey_id, system=destination_system,
+                                            include_closed=False, db_path=db_path)
+    if open_there:
+        return {"transition_id": None,
+                "reason": f"already enrolled at {destination_system} "
+                          f"({open_there[-1].get('local_student_id') or 'record'})"}
+    return None
+
+
 def record_journey_transition(record, *, actor_user_id: int | None = None,
                               db_path: str | None = None) -> str | None:
     """Note a confirmed destination on the learner's platform journey.
@@ -209,6 +238,21 @@ def record_journey_transition(record, *, actor_user_id: int | None = None,
             _record_checkpoint(journey_id, record, recorded_by=actor_user_id,
                                db_path=db_path)
             return done["transition_id"]
+
+    if not non_phase:
+        # A destination recorded after the learner has already arrived is
+        # history, not a new move: keep the checkpoint (recorded above), open
+        # nothing, and leave the sixth-form enrolment closed.
+        try:
+            arrived = already_arrived(journey_id, target, db_path=db_path)
+        except Exception:
+            logger.exception("Could not check whether %s has already moved on",
+                             getattr(record, "student_id", "?"))
+            return None
+        if arrived is not None:
+            logger.info("Destination for %s recorded without a new transition: %s",
+                        record.student_id, arrived["reason"])
+            return arrived["transition_id"]
 
     try:
         # Reuses an open transition on this boundary, so re-saving the
@@ -360,6 +404,21 @@ def perform_handover(record, *, actor_user_id: int | None = None,
         student = None
     if student is None:
         return HandoverOutcome(False, f"No sixth-form learner {record.student_id}.")
+
+    # Handing over a learner who has already arrived would create a second
+    # applicant (and so a duplicate student) in the receiving system.
+    # Read-only lookup: a preview (dry_run) must not create a journey.
+    try:
+        from education_system.platform.cross_system import person
+        found = person.get_by_student(_SOURCE_SYSTEM, student.student_id, db_path=db_path)
+        journey_id = getattr(found, "journey_id", None) if found else None
+        arrived = already_arrived(journey_id, step.kind, db_path=db_path) if journey_id else None
+    except Exception:
+        logger.debug("Arrival check failed for %s", record.student_id, exc_info=True)
+        arrived = None
+    if arrived is not None:
+        return HandoverOutcome(False, f"{record.student_id} has already moved on: "
+                                      f"{arrived['reason']}. Nothing was sent.")
 
     if step.kind == "university":
         try:

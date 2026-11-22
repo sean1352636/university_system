@@ -25,14 +25,16 @@ from education_system.systems.apprenticeships.domain.training.learning_plan impo
     LearningObjective,
 )
 from education_system.systems.apprenticeships.domain.training.sessions import TrainingPlanItem
-from education_system.systems.apprenticeships.services import (
-    compliance_service,
-    document_service,
+from education_system.systems.apprenticeships.application.compliance import compliance_service
+from education_system.systems.apprenticeships.application.learning import (
     learning_plan_service,
-    signature_service,
     training_service,
 )
-from education_system.systems.apprenticeships.services.access import PermissionDenied
+from education_system.systems.apprenticeships.application.records import (
+    document_service,
+    signature_service,
+)
+from education_system.systems.apprenticeships.application.security.access import PermissionDenied
 
 
 @pytest.fixture(autouse=True)

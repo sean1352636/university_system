@@ -6,7 +6,9 @@ from education_system.systems.sixth_form.interfaces.gui._ui import grab_when_vie
 import datetime as _dt
 import logging
 import tkinter as tk
-from tkinter import messagebox, ttk
+from tkinter import ttk
+from education_system.systems.sixth_form.interfaces.gui._sidebar import SidebarBook
+from education_system.platform.delivery.gui.parented_dialogs import messagebox, simpledialog
 from education_system.platform import branding
 from education_system.systems.sixth_form.domain.pastoral.health.first_aid import (
     first_aid as data,
@@ -47,7 +49,7 @@ def open_first_aid_window(parent=None) -> None:
     win.geometry(WIN_GEOMETRY)
     win.minsize(*WIN_MINSIZE)
 
-    nb = ttk.Notebook(win)
+    nb = SidebarBook(win)
     nb.pack(fill="both", expand=True, padx=10, pady=10)
 
     FATab(nb, scope="open",            label="Open")
@@ -111,6 +113,11 @@ class FATab:
                                                   padx=(8, 4))
         ttk.Button(bar, text="Clear",
                     command=self._clear).pack(side="left")
+        self.f_archived = tk.BooleanVar(value=False)
+        ttk.Checkbutton(bar, text="Include archived",
+                        variable=self.f_archived,
+                        command=self.refresh).pack(side="left",
+                                                   padx=(8, 0))
         ttk.Button(bar, text="New",
                     command=self._new).pack(side="left", padx=(16, 0))
 
@@ -143,6 +150,7 @@ class FATab:
                                   foreground="#8c0d0d")
         self.tree.tag_configure("critical", background="#ffb0b0",
                                   foreground="#6c0000")
+        self.tree.tag_configure("archived", foreground="#888888")
         self.tree.bind("<Double-Button-1>", lambda _e: self._edit())
 
         actions = ttk.Frame(self.frame)
@@ -154,6 +162,7 @@ class FATab:
                 ("Close",            self._close),
                 ("Change status",    self._set_status),
                 ("Delete",           self._delete),
+                ("Restore",          self._restore),
                 ("Refresh",          self.refresh),
         ):
             ttk.Button(actions, text=label,
@@ -192,6 +201,8 @@ class FATab:
             f["follow_up_overdue"] = True
         elif self.scope == "ambulance":
             f["ambulance_only"] = True
+        if self.f_archived.get():
+            f["include_archived"] = True
         return f
 
     def refresh(self) -> None:
@@ -229,7 +240,7 @@ class FATab:
                          f"{i.severity} {severity_label(i.severity)[:3]}",
                          i.first_aider, i.status,
                          ",".join(flags)),
-                tags=(tag,))
+                tags=(tag,) + (("archived",) if i.archived_at else ()))
         self.count.config(text=f"{len(rows)} incident(s)")
 
     def _selected(self) -> Incident | None:
@@ -320,10 +331,29 @@ class FATab:
             return
         if not messagebox.askyesno(
                 "First Aid",
-                f"Delete incident #{i.incident_id}?",
+                f"Archive incident #{i.incident_id}?\n\n"
+                "It is archived, not deleted (UK retention): it leaves "
+                "the lists, who/when/why are recorded, and ticking "
+                "'Include archived' shows it again.",
                 parent=self.frame):
             return
-        data.delete_incident(i.incident_id)
+        reason = simpledialog.askstring(
+            "First Aid", "Reason for archiving (optional):",
+            parent=self.frame)
+        if reason is None:
+            return
+        data.delete_incident(i.incident_id, reason=reason)
+        self.refresh()
+
+    def _restore(self) -> None:
+        r = self._selected()
+        if not r:
+            return
+        if not r.archived_at:
+            messagebox.showinfo("First Aid", "That record is not archived.",
+                                parent=self.frame)
+            return
+        data.restore_incident(r.incident_id)
         self.refresh()
 
 

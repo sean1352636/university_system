@@ -1,0 +1,15 @@
+{
+    "subject": "How was your appointment on $date?",
+    "body": "Dear $patient_name,\n\nThank you for attending your $appointment_type appointment with $practitioner on $date.\n\nWe would value a quick rating (1-5) of your visit. Sign in to the Health Portal and choose Appointments > Give feedback. It takes less than a minute and helps us improve the service.\n\nBest regards,\nUniversity Health Centre\n\n$signature",
+    "variables": {
+        "practitioner": {
+            "default": "the health team"
+        },
+        "appointment_type": {
+            "default": "health"
+        },
+        "signature": {
+            "default": ""
+        }
+    }
+}

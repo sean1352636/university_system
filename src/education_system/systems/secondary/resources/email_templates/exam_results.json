@@ -1,0 +1,31 @@
+{
+  "name": "exam_results",
+  "description": "A candidate's exam results for a series, sent to the pupil and their contacts once the results are released.",
+  "subject": "Exam results: {pupil_name} - {series_name}",
+  "body": [
+    "Dear {recipient_name},",
+    "",
+    "Here are {pupil_first_name}'s results for the {series_name} exams at {school_name}.",
+    "",
+    "{results}",
+    "",
+    "If you would like a review of marking or a clerical re-check, please contact {officer_name} as soon as possible - the boards' deadlines are short, and a review can lower a grade as well as raise it, so we need the candidate's written consent.",
+    "",
+    "Congratulations on all the hard work.",
+    "",
+    "Best wishes,",
+    "{school_name}"
+  ],
+  "placeholders": {
+    "recipient_name": "The pupil's or contact's name",
+    "pupil_name": "The pupil's preferred first name and surname",
+    "pupil_first_name": "The pupil's preferred or first name",
+    "series_name": "The exam series, e.g. June 2027",
+    "results": "The candidate number and each subject's grade",
+    "officer_name": "The exams officer's name",
+    "school_name": "The school's name"
+  },
+  "defaults": {
+    "school_name": "Secondary School"
+  }
+}

@@ -7,6 +7,7 @@
 from education_system.api.university.admissions.admission_routes import admission_bp
 from education_system.api.university.admissions.admissions_crm_routes import admissions_crm_bp
 from education_system.api.university.admissions.clearing_adjustment_routes import clearing_adjustment_bp
+from education_system.api.university.admissions.reference_routes import admission_reference_bp
 from education_system.api.university.admissions.ucas_routes import ucas_bp
 
 DOMAIN_BLUEPRINTS = [
@@ -14,6 +15,7 @@ DOMAIN_BLUEPRINTS = [
     admissions_crm_bp,
     clearing_adjustment_bp,
     ucas_bp,
+    admission_reference_bp,
 ]
 
-__all__ = ["DOMAIN_BLUEPRINTS", "admission_bp", "admissions_crm_bp", "clearing_adjustment_bp", "ucas_bp"]
+__all__ = ["DOMAIN_BLUEPRINTS", "admission_bp", "admission_reference_bp", "admissions_crm_bp", "clearing_adjustment_bp", "ucas_bp"]

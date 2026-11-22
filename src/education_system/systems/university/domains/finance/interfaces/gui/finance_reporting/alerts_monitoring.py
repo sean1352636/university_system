@@ -9,6 +9,7 @@ from tkinter.scrolledtext import ScrolledText
 from tkinter import ttk, messagebox, filedialog, scrolledtext
 from tkinter.font import Font
 import threading
+from education_system.platform.delivery.gui.tk_threads import start_thread, ui
 from datetime import datetime, timedelta
 import json
 import webbrowser
@@ -128,17 +129,15 @@ def run_alert_check(self):
             alert_system.check_daily_payments()
             alert_system.check_large_payments()
 
-            self.root.after(0, lambda: [
+            ui(self.root, lambda: [
                 self.log_activity("Alert system checks completed"),
                 self.update_status("Alert checks completed")
             ])
 
         except Exception as e:
-            self.root.after(0, lambda err=e: self.log_activity(f"Alert check error: {err}"))
+            ui(self.root, lambda err=e: self.log_activity(f"Alert check error: {err}"))
 
-    thread = threading.Thread(target=check_in_background)
-    thread.daemon = True
-    thread.start()
+    start_thread(self.root, check_in_background)
 
 def show_system_health(self):
     """Show system health in new window"""
@@ -205,14 +204,12 @@ def run_background_health_check(self):
             else:
                 status_msg = "Attention required"
 
-            self.root.after(0, lambda: self.log_activity(f"Health check: {status_msg}"))
+            ui(self.root, lambda: self.log_activity(f"Health check: {status_msg}"))
 
         except Exception as e:
-            self.root.after(0, lambda err=e: self.log_activity(f"Health check error: {err}"))
+            ui(self.root, lambda err=e: self.log_activity(f"Health check error: {err}"))
 
-    thread = threading.Thread(target=health_check)
-    thread.daemon = True
-    thread.start()
+    start_thread(self.root, health_check)
 
 def show_alert_system_dialog(self):
     """Show smart alert system configuration dialog"""

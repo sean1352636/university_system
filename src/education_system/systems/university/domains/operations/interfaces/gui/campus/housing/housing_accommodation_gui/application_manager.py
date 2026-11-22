@@ -33,7 +33,7 @@ try:
     from education_system.systems.university.infrastructure.security.immutable_audit_log import (
         AuditAction, log_security_event
     )
-    from education_system.systems.university.infrastructure.utils.gui_context import get_gui_context
+    from education_system.systems.university.infrastructure.security.audit_helpers import get_gui_context
     IMMUTABLE_AUDIT_AVAILABLE = True
 
     def safe_log_security_event(*args, **kwargs):

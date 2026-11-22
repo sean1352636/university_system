@@ -4,9 +4,9 @@ import base64
 import hashlib
 import os
 
-from cryptography.fernet import Fernet, InvalidToken
-from cryptography.hazmat.primitives import hashes
-from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
+# cryptography is imported inside the functions that use it: this module
+# is loaded by every screen that takes a pre-operation backup, and most of
+# them never encrypt one.
 
 from education_system.systems.university.infrastructure.logging.log_config import configure_logging
 from education_system.systems.university.infrastructure.database.data_backup.config import config
@@ -16,6 +16,8 @@ logger = configure_logging(name=__name__)
 
 def generate_encryption_key(password: str) -> bytes:
     """Generate encryption key from password"""
+    from cryptography.hazmat.primitives import hashes
+    from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
     password_bytes = password.encode()
     salt = b'backup_salt_12345'  # In production, use random salt
     kdf = PBKDF2HMAC(
@@ -30,6 +32,7 @@ def generate_encryption_key(password: str) -> bytes:
 
 def encrypt_file(file_path: str, password: str) -> str:
     """Encrypt a file and return the encrypted file path"""
+    from cryptography.fernet import Fernet
     try:
         key = generate_encryption_key(password)
         fernet = Fernet(key)
@@ -61,6 +64,7 @@ def encrypt_file(file_path: str, password: str) -> str:
 
 def decrypt_file(encrypted_path: str, password: str, output_path: str = None) -> str:
     """Decrypt a file and return the decrypted file path"""
+    from cryptography.fernet import Fernet, InvalidToken
     try:
         key = generate_encryption_key(password)
         fernet = Fernet(key)

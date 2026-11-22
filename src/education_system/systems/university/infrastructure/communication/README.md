@@ -29,7 +29,7 @@ export VAPID_SUBJECT="mailto:admin@university.edu"
 
 **Usage:**
 ```python
-from university_system.infrastructure.communication import get_push_notification_service
+from education_system.systems.university.infrastructure.communication import get_push_notification_service
 
 push_service = get_push_notification_service()
 
@@ -57,7 +57,7 @@ Event-driven webhooks for integrating with external systems.
 
 **Setup:**
 ```python
-from university_system.infrastructure.communication import get_webhook_dispatcher
+from education_system.systems.university.infrastructure.communication import get_webhook_dispatcher
 
 webhook_service = get_webhook_dispatcher()
 
@@ -119,7 +119,7 @@ Persistent notification center with read/unread tracking.
 
 **Usage:**
 ```python
-from university_system.infrastructure.communication import get_in_app_notification_service
+from education_system.systems.university.infrastructure.communication import get_in_app_notification_service
 
 notification_service = get_in_app_notification_service()
 
@@ -157,7 +157,7 @@ export SLACK_ADMIN_CHANNEL="#admin-alerts"
 
 **Usage:**
 ```python
-from university_system.infrastructure.communication import get_slack_notifier
+from education_system.systems.university.infrastructure.communication import get_slack_notifier
 
 slack = get_slack_notifier()
 
@@ -200,7 +200,7 @@ export TEAMS_WEBHOOK_URL="https://outlook.office.com/webhook/..."
 
 **Usage:**
 ```python
-from university_system.infrastructure.communication import get_teams_notifier
+from education_system.systems.university.infrastructure.communication import get_teams_notifier
 
 teams = get_teams_notifier()
 
@@ -231,7 +231,7 @@ Coordinate all channels based on user preferences.
 
 **Usage:**
 ```python
-from university_system.infrastructure.communication import get_notification_manager
+from education_system.systems.university.infrastructure.communication import get_notification_manager
 
 manager = get_notification_manager()
 
@@ -303,34 +303,7 @@ notification_service.set_user_preferences(
 
 ## API Endpoints
 
-### Push Notifications
-- `POST /api/v1/notifications/push/subscribe` - Subscribe to push
-- `DELETE /api/v1/notifications/push/unsubscribe/{user_id}` - Unsubscribe
-- `GET /api/v1/notifications/push/vapid-public-key` - Get VAPID public key
-
-### Webhooks
-- `POST /api/v1/notifications/webhooks` - Create webhook
-- `GET /api/v1/notifications/webhooks` - List webhooks
-- `GET /api/v1/notifications/webhooks/{id}` - Get webhook
-- `PUT /api/v1/notifications/webhooks/{id}` - Update webhook
-- `DELETE /api/v1/notifications/webhooks/{id}` - Delete webhook
-- `GET /api/v1/notifications/webhooks/events/available` - List events
-
-### In-App Notifications
-- `GET /api/v1/notifications/unread/{user_id}` - Get unread
-- `GET /api/v1/notifications/count/{user_id}` - Get count
-- `POST /api/v1/notifications/{id}/read` - Mark as read
-- `POST /api/v1/notifications/read-all/{user_id}` - Mark all as read
-- `DELETE /api/v1/notifications/{id}` - Delete notification
-
-### Preferences
-- `GET /api/v1/notifications/preferences/{user_id}` - Get preferences
-- `PUT /api/v1/notifications/preferences/{user_id}` - Update preferences
-
-### Unified Delivery
-- `POST /api/v1/notifications/send` - Send notification
-- `POST /api/v1/notifications/send/bulk` - Send bulk
-- `POST /api/v1/notifications/send/admin-alert` - Send admin alert
+This package has no HTTP routes of its own. The earlier `/api/v1/notifications/*` routes were not carried over when the university API was rebuilt. The current routes for this area are `/api/v1/notifications/preferences` (`platform/delivery/api/routes/notification_routes.py`) and the university `student-app` and `parents` notification routes.
 
 ## Webhook Events
 
@@ -494,10 +467,6 @@ services = {
 for service, available in services.items():
     print(f"{service}: {'✓' if available else '✗'}")
 ```
-
-## Examples
-
-See `examples/communication_demo.py` for complete usage examples.
 
 ## License
 

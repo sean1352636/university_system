@@ -117,6 +117,29 @@ class ValidationError(ValueError):
     """Raised for any invalid tutor-group input."""
 
 
+#: Who may set tutor groups up / move learners between them. Admissions
+#: is accepted for membership because creating, reinstating and rolling
+#: over an enrolment syncs the learner's tutor group.
+GROUP_WRITE_CAPABILITIES = ("students.manage", "pastoral")
+MEMBERSHIP_WRITE_CAPABILITIES = ("students.manage", "pastoral", "admissions")
+
+
+def _require_writer(action: str, *, membership: bool = False) -> None:
+    """Writes need one of the capabilities above; reads are open.
+    Nobody signed in and no ``_guard.system_actor`` is refused."""
+    from education_system.systems.sixth_form.domain.admissions import _guard
+    _guard.require_any(MEMBERSHIP_WRITE_CAPABILITIES if membership
+                       else GROUP_WRITE_CAPABILITIES, action)
+
+
+def can_write(*, membership: bool = False) -> bool:
+    """Whether the signed-in user may change tutor groups (for screens)."""
+    from education_system.systems.sixth_form.domain.admissions import _guard
+    caps = (MEMBERSHIP_WRITE_CAPABILITIES if membership
+            else GROUP_WRITE_CAPABILITIES)
+    return any(_guard.can(c) for c in caps)
+
+
 def _require(value, label: str):
     if value in (None, "") or (isinstance(value, str) and not value.strip()):
         raise ValidationError(f"{label} is required")
@@ -149,6 +172,7 @@ def _validate_group_payload(data: dict[str, Any]) -> dict[str, Any]:
 # ── Group CRUD ────────────────────────────────────────────────────
 
 def create_group(data: dict[str, Any]) -> TutorGroup:
+    _require_writer("creating tutor groups")
     init_db()
     try:
         p = _validate_group_payload(data)
@@ -229,6 +253,7 @@ def list_groups(
 
 
 def update_group(tutor_group_id: int, data: dict[str, Any]) -> TutorGroup:
+    _require_writer("changing tutor groups")
     init_db()
     existing = get_group(tutor_group_id)
     if existing is None:
@@ -266,6 +291,7 @@ def update_group(tutor_group_id: int, data: dict[str, Any]) -> TutorGroup:
 
 
 def delete_group(tutor_group_id: int) -> bool:
+    _require_writer("deleting tutor groups")
     init_db()
     with _connect() as conn:
         cur = conn.execute(
@@ -285,6 +311,7 @@ def delete_group(tutor_group_id: int) -> bool:
 def assign_student(student_id: str, tutor_group_id: int) -> Membership:
     """Move-aware: places the student into ``tutor_group_id``,
     replacing any existing membership."""
+    _require_writer("moving learners between tutor groups", membership=True)
     init_db()
     sid = student_id.strip()
     from education_system.systems.sixth_form.domain.learners.students import students as _students
@@ -322,6 +349,7 @@ def assign_student(student_id: str, tutor_group_id: int) -> Membership:
 
 def unassign_student(student_id: str) -> bool:
     """Remove the student from whatever tutor group they're in."""
+    _require_writer("taking learners out of tutor groups", membership=True)
     init_db()
     with _connect() as conn:
         cur = conn.execute(

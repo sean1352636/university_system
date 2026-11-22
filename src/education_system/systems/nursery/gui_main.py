@@ -21,7 +21,9 @@ from tkinter import messagebox, ttk
 from typing import Callable
 
 from education_system.platform.delivery.gui import window_sizing
+from education_system.platform.delivery.gui.idle_timeout import install_idle_logout
 from education_system.systems.nursery import SYSTEM_NAME, SYSTEM_SLUG
+from education_system.systems.nursery.domain import access
 from education_system.systems.nursery.menu import NAV_CATEGORIES
 
 logger = logging.getLogger(__name__)
@@ -31,8 +33,9 @@ FOOTER_LABEL = "Nursery"
 
 
 class NurseryMainGUI:
-    def __init__(self, auth):
+    def __init__(self, auth, principal: access.Principal | None = None):
         self.auth = auth
+        self.principal = principal or access.current_for(auth)
         self.root = tk.Tk()
         self.root.title(SYSTEM_NAME)
         window_sizing.fit(self.root, "1400x900", (1200, 800))
@@ -54,6 +57,7 @@ class NurseryMainGUI:
         self._show_welcome()
 
         self.root.protocol("WM_DELETE_WINDOW", self._on_close)
+        self._cancel_idle_timeout = install_idle_logout(self.root, self._logout)
 
     def _setup_layout(self) -> None:
         main = ttk.Frame(self.root, padding=10)
@@ -174,13 +178,14 @@ class NurseryMainGUI:
 
         categories_holder = ttk.Frame(inner)
         categories_holder.pack(fill="x")
-        for group_label, items in NAV_CATEGORIES:
+        visible_nav = self.principal.filter_menu(NAV_CATEGORIES)
+        for group_label, items in visible_nav:
             self._make_category(categories_holder, group_label, items, canvas)
 
         results_holder = ttk.Frame(inner)
 
         all_actions: list[str] = [
-            label for _grp, items in NAV_CATEGORIES for label in items
+            label for _grp, items in visible_nav for label in items
         ]
 
         def _on_search_change(*_a) -> None:
@@ -315,6 +320,14 @@ class NurseryMainGUI:
     def _show_welcome(self) -> None:
         self._clear_content()
         assert self.content_frame is not None
+        if not self.principal.has_staff_screens:
+            ttk.Label(self.content_frame,
+                      text=f"Welcome, {self.current_user_var.get()}",
+                      font=("", 20, "bold")).pack(anchor="w", pady=(0, 12))
+            ttk.Label(self.content_frame, text=self.principal.notice(),
+                      wraplength=720, justify="left").pack(anchor="w")
+            self.status_var.set("Ready")
+            return
         root = self.content_frame
         root.columnconfigure(0, weight=1)
 
@@ -474,6 +487,17 @@ class NurseryMainGUI:
         return panel
 
     def _show_stub(self, label: str) -> None:
+        # Every menu entry, quick action and search result opens through here.
+        if not self.principal.can_open(label):
+            logger.warning("Refused %s to user=%s role=%s", label,
+                           self.principal.username, self.principal.role)
+            self._clear_content()
+            assert self.content_frame is not None
+            ttk.Label(self.content_frame,
+                      text=self.principal.denied_message(label),
+                      font=("", 12, "bold")).pack(anchor="w")
+            self.status_var.set("Not available for this account")
+            return
         # Route implemented features to their views; fall back to a placeholder.
         if self._dispatch_feature(label):
             return
@@ -504,7 +528,7 @@ class NurseryMainGUI:
             self._open_student_journey()
             return True
         try:
-            from education_system.systems.nursery.domain.learners.children import (
+            from education_system.systems.nursery.interfaces.gui.learners.children import (
                 children_views,
             )
             child_views = {
@@ -543,71 +567,71 @@ class NurseryMainGUI:
     # renders into this GUI host's (``self``) content pane.
     _LOCAL_VIEWS: dict[str, tuple[str, str]] = {
         "Admissions & Waiting List": ("admissions.admissions_views", "open_manager"),
-        "Registration & Enrolment":  ("enrolment.enrolment_views", "open_manager"),
-        "Rooms & Age Groups":        ("rooms.rooms_views", "open_manager"),
-        "Key Person Assignment":     ("key_persons.key_persons_views", "open_manager"),
+        "Registration & Enrolment":  ("admissions.enrolment.enrolment_views", "open_manager"),
+        "Rooms & Age Groups":        ("operations.rooms.rooms_views", "open_manager"),
+        "Key Person Assignment":     ("staff.key_persons.key_persons_views", "open_manager"),
         "Funded Hours (15/30 & 2-Year-Old)": (
-            "funded_hours.funded_hours_views", "open_manager"),
-        "Sessions & Bookings":       ("sessions.sessions_views", "open_manager"),
-        "Settling-In":               ("settling_in.settling_in_views", "open_manager"),
-        "Transition to School":      ("transitions.transitions_views", "open_manager"),
-        "Leavers":                   ("leavers.leavers_views", "open_manager"),
-        "Staff : Child Ratios":      ("ratios.ratios_views", "open_manager"),
-        "Live Ratio Alerts":         ("ratio_alerts.ratio_alerts_views", "open_manager"),
-        "Staff Rota":                ("rota.rota_views", "open_manager"),
-        "Qualifications & Training":  ("qualifications.qualifications_views", "open_manager"),
-        "Paediatric First Aid":      ("first_aid.first_aid_views", "open_manager"),
-        "Invoices & Fees":           ("invoices.invoices_views", "open_manager"),
-        "Funded Hours Claims":       ("funding_claims.funding_claims_views", "open_manager"),
-        "Payments":                  ("payments.payments_views", "open_manager"),
+            "finance.funded_hours.funded_hours_views", "open_manager"),
+        "Sessions & Bookings":       ("operations.sessions.sessions_views", "open_manager"),
+        "Settling-In":               ("admissions.settling_in.settling_in_views", "open_manager"),
+        "Transition to School":      ("progression.transitions.transitions_views", "open_manager"),
+        "Leavers":                   ("learners.leavers.leavers_views", "open_manager"),
+        "Staff : Child Ratios":      ("operations.ratios.ratios_views", "open_manager"),
+        "Live Ratio Alerts":         ("operations.ratio_alerts.ratio_alerts_views", "open_manager"),
+        "Staff Rota":                ("staff.rota.rota_views", "open_manager"),
+        "Qualifications & Training":  ("staff.qualifications.qualifications_views", "open_manager"),
+        "Paediatric First Aid":      ("pastoral.health.first_aid.first_aid_views", "open_manager"),
+        "Invoices & Fees":           ("finance.invoices.invoices_views", "open_manager"),
+        "Funded Hours Claims":       ("finance.funding_claims.funding_claims_views", "open_manager"),
+        "Payments":                  ("finance.payments.payments_views", "open_manager"),
         "Tax-Free Childcare / Vouchers": (
-            "childcare_vouchers.childcare_vouchers_views", "open_manager"),
-        "Sibling Discounts":         ("discounts.discounts_views", "open_manager"),
-        "Occupancy & Income":        ("occupancy.occupancy_views", "open_manager"),
-        "Parent Contacts":           ("parent_contacts.parent_contacts_views", "open_manager"),
-        "Emergency Contacts":        ("emergency_contacts.emergency_contacts_views", "open_manager"),
-        "Permissions & Consents":    ("consents.consents_views", "open_manager"),
-        "Email / Messaging":         ("email_centre.email_centre_views", "open_manager"),
-        "Parent Messaging":          ("messaging.messaging_views", "open_manager"),
-        "Daily Updates":             ("daily_updates.daily_updates_views", "open_manager"),
-        "Newsletters":               ("newsletters.newsletters_views", "open_manager"),
-        "Parent Meetings":           ("parent_meetings.parent_meetings_views", "open_manager"),
+            "finance.childcare_vouchers.childcare_vouchers_views", "open_manager"),
+        "Sibling Discounts":         ("finance.discounts.discounts_views", "open_manager"),
+        "Occupancy & Income":        ("operations.occupancy.occupancy_views", "open_manager"),
+        "Parent Contacts":           ("operations.communications.parent_contacts.parent_contacts_views", "open_manager"),
+        "Emergency Contacts":        ("learners.emergency_contacts.emergency_contacts_views", "open_manager"),
+        "Permissions & Consents":    ("governance.consents.consents_views", "open_manager"),
+        "Email / Messaging":         ("operations.communications.email_centre.email_centre_views", "open_manager"),
+        "Parent Messaging":          ("operations.communications.messaging.messaging_views", "open_manager"),
+        "Daily Updates":             ("operations.communications.daily_updates.daily_updates_views", "open_manager"),
+        "Newsletters":               ("operations.communications.newsletters.newsletters_views", "open_manager"),
+        "Parent Meetings":           ("operations.communications.parent_meetings.parent_meetings_views", "open_manager"),
         "Safeguarding / Child Protection": ("safeguarding.safeguarding_views", "open_manager"),
-        "Designated Safeguarding Lead": ("dsl.dsl_views", "open_manager"),
-        "Welfare Requirements":      ("welfare.welfare_views", "open_manager"),
-        "SEND & Additional Needs":   ("send.send_views", "open_manager"),
-        "EHC Plans":                 ("ehc_plans.ehc_plans_views", "open_manager"),
-        "Looked-After Children":     ("looked_after.looked_after_views", "open_manager"),
-        "Risk Assessments":          ("risk_assessments.risk_assessments_views", "open_manager"),
-        "Prevent Duty":              ("prevent_duty.prevent_duty_views", "open_manager"),
-        "Concerns & Referrals":      ("concerns.concerns_views", "open_manager"),
-        "Wellbeing":                 ("wellbeing.wellbeing_views", "open_manager"),
-        "EYFS Profile":              ("eyfs_profile.eyfs_profile_views", "open_manager"),
+        "Designated Safeguarding Lead": ("safeguarding.dsl.dsl_views", "open_manager"),
+        "Welfare Requirements":      ("pastoral.welfare.welfare_views", "open_manager"),
+        "SEND & Additional Needs":   ("pastoral.send.send_views", "open_manager"),
+        "EHC Plans":                 ("pastoral.send.ehc_plans.ehc_plans_views", "open_manager"),
+        "Looked-After Children":     ("safeguarding.looked_after.looked_after_views", "open_manager"),
+        "Risk Assessments":          ("governance.risk_assessments.risk_assessments_views", "open_manager"),
+        "Prevent Duty":              ("safeguarding.prevent_duty.prevent_duty_views", "open_manager"),
+        "Concerns & Referrals":      ("safeguarding.concerns.concerns_views", "open_manager"),
+        "Wellbeing":                 ("pastoral.wellbeing.wellbeing_views", "open_manager"),
+        "EYFS Profile":              ("assessment.eyfs_profile.eyfs_profile_views", "open_manager"),
         "Development Tracking (Prime & Specific Areas)": (
-            "development_tracking.development_tracking_views", "open_manager"),
-        "Observations":              ("observations.observations_views", "open_manager"),
-        "Learning Journeys":         ("learning_journeys.learning_journeys_views", "open_manager"),
-        "Next Steps Planning":       ("next_steps.next_steps_views", "open_manager"),
-        "2-Year-Old Progress Check": ("progress_check_2yr.progress_check_2yr_views", "open_manager"),
+            "assessment.development_tracking.development_tracking_views", "open_manager"),
+        "Observations":              ("assessment.observations.observations_views", "open_manager"),
+        "Learning Journeys":         ("academics.learning_journeys.learning_journeys_views", "open_manager"),
+        "Next Steps Planning":       ("academics.next_steps.next_steps_views", "open_manager"),
+        "2-Year-Old Progress Check": ("assessment.progress_check_2yr.progress_check_2yr_views", "open_manager"),
         "Characteristics of Effective Learning": (
-            "effective_learning.effective_learning_views", "open_manager"),
+            "academics.effective_learning.effective_learning_views", "open_manager"),
         "Activity & Curriculum Planning": (
-            "curriculum_planning.curriculum_planning_views", "open_manager"),
-        "Cohort Tracking":           ("cohort_tracking.cohort_tracking_views", "open_manager"),
-        "Photos & Evidence":         ("evidence.evidence_views", "open_manager"),
+            "academics.curriculum_planning.curriculum_planning_views", "open_manager"),
+        "Cohort Tracking":           ("assessment.cohort_tracking.cohort_tracking_views", "open_manager"),
+        "Photos & Evidence":         ("assessment.evidence.evidence_views", "open_manager"),
         # Daily Care & Routines
-        "Daily Register":            ("daily_register.daily_register_views", "open_manager"),
-        "Sign In / Sign Out":        ("sign_in_out.sign_in_out_views", "open_manager"),
-        "Collections & Late Pickup": ("collections.collections_views", "open_manager"),
-        "Daily Diary":               ("daily_diary.daily_diary_views", "open_manager"),
-        "Sleep Log":                 ("sleep_log.sleep_log_views", "open_manager"),
-        "Nappy / Toileting Log":     ("toileting_log.toileting_log_views", "open_manager"),
-        "Meals & Menus":             ("meals.meals_views", "open_manager"),
-        "Bottle Feeds":              ("bottle_feeds.bottle_feeds_views", "open_manager"),
-        "Allergies & Dietary Requirements": ("allergies.allergies_views", "open_manager"),
-        "Accident & Incident Log":   ("accident_log.accident_log_views", "open_manager"),
-        "Existing Injuries Log":     ("existing_injuries.existing_injuries_views", "open_manager"),
-        "Medication Log":            ("medication_log.medication_log_views", "open_manager"),
+        "Daily Register":            ("academics.attendance.daily_register.daily_register_views", "open_manager"),
+        "Sign In / Sign Out":        ("academics.attendance.sign_in_out.sign_in_out_views", "open_manager"),
+        "Collections & Late Pickup": ("operations.daily_care.collections.collections_views", "open_manager"),
+        "Daily Diary":               ("operations.daily_care.daily_diary.daily_diary_views", "open_manager"),
+        "Sleep Log":                 ("operations.daily_care.sleep_log.sleep_log_views", "open_manager"),
+        "Nappy / Toileting Log":     ("operations.daily_care.toileting_log.toileting_log_views", "open_manager"),
+        "Meals & Menus":             ("operations.daily_care.meals.meals_views", "open_manager"),
+        "Bottle Feeds":              ("operations.daily_care.bottle_feeds.bottle_feeds_views", "open_manager"),
+        "Allergies & Dietary Requirements": ("pastoral.health.allergies.allergies_views", "open_manager"),
+        "Accident & Incident Log":   ("pastoral.health.accident_log.accident_log_views", "open_manager"),
+        "Existing Injuries Log":     ("pastoral.health.existing_injuries.existing_injuries_views", "open_manager"),
+        "Medication Log":            ("pastoral.health.medication_log.medication_log_views", "open_manager"),
     }
 
     def _dispatch_local_view(self, label: str) -> bool:
@@ -618,7 +642,7 @@ class NurseryMainGUI:
         module_path, func_name = entry
         import importlib
         mod = importlib.import_module(
-            f"education_system.systems.nursery.domain.{module_path}")
+            f"education_system.systems.nursery.interfaces.gui.{module_path}")
         logger.debug("Nursery GUI dispatch (local): %s -> %s", label, module_path)
         getattr(mod, func_name)(self)
         return True
@@ -632,8 +656,8 @@ class NurseryMainGUI:
         """
         try:
             if label == "Change Password":
-                from education_system.systems.nursery.interfaces.gui import (
-                    change_password_views,
+                from education_system.platform.delivery.gui import (
+                    change_password_gui as change_password_views,
                 )
                 change_password_views.open_change_password_dialog(
                     self.root, auth=self.auth)
@@ -654,15 +678,14 @@ class NurseryMainGUI:
                 )
                 about_views.open_about_window(self.root, auth=self.auth)
             elif label == "Multi-Factor Authentication":
-                from education_system.systems.nursery.domain.governance.mfa import (
-                    mfa_views,
-                )
-                mfa_views.open_mfa(self)
+                from education_system.platform.delivery.gui import mfa_setup_gui
+                mfa_setup_gui.open_mfa(self, auth=self.auth)
             elif label == "User Management":
-                from education_system.systems.nursery.domain.governance.user_management import (
-                    user_management_views,
-                )
-                user_management_views.open_user_management_window(self)
+                from education_system.systems.nursery.interfaces import user_management
+                user_management.open_gui(self)
+            elif label == "Multi-Language":
+                from education_system.systems.nursery.interfaces import multi_language
+                multi_language.open_selector(self.root)
             else:
                 return False
         except Exception:
@@ -680,26 +703,26 @@ class NurseryMainGUI:
     # modules ported from the Primary School System. Each view renders into /
     # opens a window from this GUI host (``self``).
     _PORTED_VIEWS: dict[str, tuple[str, str]] = {
-        "Policies & Procedures":     ("policies.policies_views", "open_policies_window"),
-        "GDPR":                      ("gdpr.gdpr_views", "open_gdpr_window"),
-        "Recruitment":               ("recruitment.recruitment_views", "open_recruitment_window"),
-        "Complaints":                ("complaints.complaints_views", "open_complaints_window"),
-        "Feedback & Surveys":        ("feedback.feedback_views", "open_feedback_window"),
-        "Expense Claims":            ("expense_claims.expense_claims_views", "open_expense_claims_window"),
-        "Audit Reports":             ("audit_reports.audit_reports_views", "open_audit_reports_window"),
-        "Staff Absence":             ("staff_absence.staff_absence_views", "open_staff_absence_window"),
+        "Policies & Procedures":     ("governance.policies.policies_views", "open_policies_window"),
+        "GDPR":                      ("governance.gdpr.gdpr_views", "open_gdpr_window"),
+        "Recruitment":               ("staff.recruitment.recruitment_views", "open_recruitment_window"),
+        "Complaints":                ("pastoral.complaints.complaints_views", "open_complaints_window"),
+        "Feedback & Surveys":        ("pastoral.feedback.feedback_views", "open_feedback_window"),
+        "Expense Claims":            ("finance.expense_claims.expense_claims_views", "open_expense_claims_window"),
+        "Audit Reports":             ("governance.audit.audit_reports.audit_reports_views", "open_audit_reports_window"),
+        "Staff Absence":             ("staff.staff_absence.staff_absence_views", "open_staff_absence_window"),
         "Staff Directory":           ("staff.staff_views", "open_directory"),
-        "Visitors":                  ("visitors.visitors_views", "open_visitors_window"),
-        "DBS Checks":                ("dbs_checks.dbs_checks_views", "open_dbs_checks_window"),
-        "Supervisions & Appraisals": ("appraisals.appraisals_views", "open_appraisals_window"),
+        "Visitors":                  ("operations.visitors.visitors_views", "open_visitors_window"),
+        "DBS Checks":                ("staff.dbs_checks.dbs_checks_views", "open_dbs_checks_window"),
+        "Supervisions & Appraisals": ("staff.appraisals.appraisals_views", "open_appraisals_window"),
         # Compliance & Reports
-        "Ofsted Readiness":          ("ofsted.ofsted_views", "open_ofsted_window"),
-        "EYFS Compliance":           ("eyfs_compliance.eyfs_compliance_views", "open_eyfs_compliance_window"),
-        "Attendance Report":         ("attendance_report.attendance_report_views", "open_attendance_report_window"),
-        "Occupancy Report":          ("occupancy_report.occupancy_report_views", "open_occupancy_report_window"),
-        "Funding Report":            ("funding_report.funding_report_views", "open_funding_report_window"),
-        "Accident / Incident Report": ("accident_report.accident_report_views", "open_accident_report_window"),
-        "Data Export":               ("data_export.data_export_views", "open_data_export_window"),
+        "Ofsted Readiness":          ("governance.compliance.ofsted.ofsted_views", "open_ofsted_window"),
+        "EYFS Compliance":           ("governance.compliance.eyfs_compliance.eyfs_compliance_views", "open_eyfs_compliance_window"),
+        "Attendance Report":         ("operations.reporting.attendance_report.attendance_report_views", "open_attendance_report_window"),
+        "Occupancy Report":          ("operations.reporting.occupancy_report.occupancy_report_views", "open_occupancy_report_window"),
+        "Funding Report":            ("operations.reporting.funding_report.funding_report_views", "open_funding_report_window"),
+        "Accident / Incident Report": ("pastoral.health.accident_report.accident_report_views", "open_accident_report_window"),
+        "Data Export":               ("operations.reporting.data_export.data_export_views", "open_data_export_window"),
     }
 
     def _dispatch_ported_view(self, label: str) -> bool:
@@ -710,7 +733,7 @@ class NurseryMainGUI:
         module_path, func_name = entry
         import importlib
         mod = importlib.import_module(
-            f"education_system.systems.nursery.domain.{module_path}")
+            f"education_system.systems.nursery.interfaces.gui.{module_path}")
         logger.debug("Nursery GUI dispatch (ported): %s -> %s", label, module_path)
         getattr(mod, func_name)(self)
         return True
@@ -773,7 +796,9 @@ def run(user_info=None, role=None, shared_auth=None) -> int:
                 cu.get("username"), role)
     from education_system.systems.nursery.infrastructure.database import init_db
     init_db()
-    app = NurseryMainGUI(shared_auth)
+    principal = access.from_auth(shared_auth, role)
+    access.set_current(principal)
+    app = NurseryMainGUI(shared_auth, principal)
     app.root.mainloop()
     logger.info("Nursery GUI exited for user=%s", cu.get("username"))
     return 0

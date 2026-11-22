@@ -16,8 +16,8 @@ from education_system.systems.apprenticeships import config
 from education_system.systems.apprenticeships.domain.apprentices.models import ValidationError
 from education_system.systems.apprenticeships.domain.quality import complaints as rules
 from education_system.systems.apprenticeships.domain.quality.complaints import Complaint
-from education_system.systems.apprenticeships.services import complaint_service
-from education_system.systems.apprenticeships.services.access import PermissionDenied
+from education_system.systems.apprenticeships.application.quality import complaint_service
+from education_system.systems.apprenticeships.application.security.access import PermissionDenied
 
 TODAY = date(2026, 9, 10)
 

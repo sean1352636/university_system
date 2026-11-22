@@ -240,6 +240,17 @@ class ConversationStore:
                 (username, f'-{max(1, int(retention_days))} days'),
             )
 
+    def purge_older_than(self, retention_days: int) -> int:
+        """Every user's conversations untouched for longer than the
+        university's retention period."""
+        with self._connect() as connection:
+            cursor = connection.execute(
+                "DELETE FROM gui_conversations "
+                "WHERE datetime(updated_at) < datetime('now', ?)",
+                (f'-{max(1, int(retention_days))} days',),
+            )
+            return cursor.rowcount
+
     def add_attachment(self, conversation_id: str, filename: str, path: str,
                        size: int, sha256: str, scan_status: str):
         with self._connect() as connection:

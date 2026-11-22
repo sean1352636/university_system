@@ -213,10 +213,47 @@ def init_db() -> None:
     core.init_db()
     with _connect() as conn:
         conn.executescript(_SCHEMA)
+        _dedupe_college_rows(conn)
+        # UNIQUE(key, scope, scope_value) never matches a NULL
+        # scope_value, so college-wide rows need their own index —
+        # without it every start re-seeded the shipped figures and the
+        # upsert in set_threshold added a row instead of updating one.
+        conn.execute(
+            "CREATE UNIQUE INDEX IF NOT EXISTS uq_att_thresh_college "
+            "ON attendance_thresholds(key, scope) WHERE scope_value IS NULL")
         conn.commit()
     _DB_READY = True
     seed_defaults()
     logger.debug("Attendance threshold schema ready at %s", DB_PATH)
+
+
+def _dedupe_college_rows(conn: sqlite3.Connection) -> int:
+    """Collapse duplicate college-wide rows left by the NULL-key bug.
+
+    Keeps the newest row that differs from the shipped figure (the
+    college's edit), else the oldest; the rest are deleted.
+    """
+    shipped = {key: value for key, _d, value, _u, _desc in SHIPPED}
+    dupes = conn.execute(
+        "SELECT key, scope FROM attendance_thresholds "
+        "WHERE scope_value IS NULL GROUP BY key, scope "
+        "HAVING COUNT(*) > 1").fetchall()
+    removed = 0
+    for d in dupes:
+        rows = conn.execute(
+            "SELECT threshold_id, value FROM attendance_thresholds "
+            "WHERE key = ? AND scope = ? AND scope_value IS NULL "
+            "ORDER BY threshold_id", (d["key"], d["scope"])).fetchall()
+        edited = [r for r in rows if r["value"] != shipped.get(d["key"])]
+        keep = (edited[-1] if edited else rows[0])["threshold_id"]
+        removed += conn.execute(
+            "DELETE FROM attendance_thresholds WHERE key = ? AND scope = ? "
+            "AND scope_value IS NULL AND threshold_id <> ?",
+            (d["key"], d["scope"], keep)).rowcount
+    if removed:
+        logger.warning("Removed %d duplicate college-wide threshold row(s)",
+                       removed)
+    return removed
 
 
 def seed_defaults() -> int:
@@ -428,12 +465,14 @@ def set_threshold(
                    else (inherited.description if inherited else None))
 
     with _connect() as conn:
+        target = ("(key, scope) WHERE scope_value IS NULL"
+                  if scope_value is None else "(key, scope, scope_value)")
         conn.execute(
             """INSERT INTO attendance_thresholds
                    (key, scope, scope_value, value, direction, unit,
                     description, updated_by)
                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-               ON CONFLICT(key, scope, scope_value) DO UPDATE SET
+               ON CONFLICT{target} DO UPDATE SET
                    value = excluded.value,
                    direction = excluded.direction,
                    unit = excluded.unit,
@@ -441,7 +480,7 @@ def set_threshold(
                                           attendance_thresholds.description),
                    active = 1,
                    updated_at = datetime('now'),
-                   updated_by = excluded.updated_by""",
+                   updated_by = excluded.updated_by""".format(target=target),
             (key, scope, scope_value, value, direction, unit, description,
              (actor or "").strip() or None))
         conn.commit()

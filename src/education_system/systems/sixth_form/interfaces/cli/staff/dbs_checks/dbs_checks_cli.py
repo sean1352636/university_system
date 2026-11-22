@@ -645,13 +645,56 @@ def delete_flow() -> None:
     except _UserAbort:
         print("\n  Cancelled.")
         return
-    if _input(f"Delete check #{c.check_id}? Type 'yes'",
-              default="no").lower() != "yes":
+    print("  The check leaves the register but is kept for the single")
+    print("  central record, with who archived it and why.")
+    try:
+        reason = _pick_from("Reason", list(data.ARCHIVE_REASONS),
+                            default=data.ARCHIVE_REASONS[0])
+        detail = _input("Detail (required for Other)")
+        if _input(f"Archive check #{c.check_id}? Type 'yes'",
+                  default="no").lower() != "yes":
+            print("\n  Cancelled.")
+            return
+        if data.delete_check(c.check_id, reason=reason, detail=detail,
+                             by=_who()):
+            print(f"\n  ✓ Archived #{c.check_id}")
+    except ValidationError as e:
+        print(f"\n  ✗ {e}")
+    except _UserAbort:
         print("\n  Cancelled.")
-        return
-    if data.delete_check(c.check_id):
-        print(f"\n  ✓ Deleted #{c.check_id}")
     _pause()
+
+
+def archived_flow() -> None:
+    print("\n═══ Archived DBS Checks ═══")
+    rows = data.list_archived()
+    if not rows:
+        print("\n  None archived.")
+        _pause()
+        return
+    for r in rows:
+        print(f"  #{r.check_id:<5}{r.staff_id:<10}{(r.dbs_number or '—'):<14}"
+              f"{(r.archived_on or '')[:10]:<12}{(r.archived_by or ''):<12}"
+              f"{r.archive_reason or ''}")
+    try:
+        raw = _input("Restore which # (blank to go back)")
+        if raw.isdigit():
+            if data.restore_check(int(raw), by=_who()):
+                print(f"\n  ✓ Restored #{raw}")
+            else:
+                print("\n  Not an archived check.")
+    except ValidationError as e:
+        print(f"\n  ✗ {e}")
+    except _UserAbort:
+        print("\n  Cancelled.")
+    _pause()
+
+
+def _who() -> str:
+    from education_system.systems.sixth_form.domain.governance.user_management import (
+        access,
+    )
+    return access.current().username or ""
 
 
 def summary_flow() -> None:
@@ -711,6 +754,7 @@ _MENU: list[tuple[str, Callable[[], None]]] = [
     ("Start renewal",           start_renewal_flow),
     ("Change status",           set_status_flow),
     ("Delete",                  delete_flow),
+    ("Archived checks",         archived_flow),
     ("─" * 6,                   lambda: None),
     ("Summary",                 summary_flow),
 ]

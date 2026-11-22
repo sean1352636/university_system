@@ -11,7 +11,10 @@ Two tables:
 
 Clash detection: ``create_booking`` and ``update_booking`` refuse to
 double-book a non-Cancelled resource within an overlapping
-(date, start_time, end_time) window. Use ``find_clashes`` to preview
+(date, start_time, end_time) window, and refuse a room the timetable
+has a lesson in or the exams office has a paper seated in at that time
+(``lesson_clashes`` / ``exam_clashes``; ``ignore_clashes=True``
+overrides). Use ``find_clashes`` / ``external_clashes`` to preview
 clashes for a proposed booking before saving.
 
 Cascade: deleting a resource is blocked while bookings reference it
@@ -330,6 +333,194 @@ def find_clashes(
                 for r in conn.execute(sql, args).fetchall()]
 
 
+# ── Clashes with lessons and exams ───────────────────────────────
+#
+# A room is not free just because nobody booked it here: the timetable
+# puts lessons in it every week and the exams office seats papers in it.
+# Both are read-only checks — timetable_slots (timetable domain, room on
+# the slot or the class group) and attendance_exam_sittings (exam
+# registers) are read with plain SELECTs on this module's connection,
+# guarded for the tables not existing yet.
+
+#: Assumed length of an exam sitting recorded without an end time.
+DEFAULT_EXAM_MINUTES: int = 120
+
+
+@dataclass
+class ExternalClash:
+    kind: str        # "Lesson" | "Exam"
+    label: str
+    start_time: str
+    end_time: str
+
+    def __str__(self) -> str:
+        return f"{self.kind}: {self.label} {self.start_time}–{self.end_time}"
+
+
+def _has_table(conn: sqlite3.Connection, name: str) -> bool:
+    return conn.execute("SELECT 1 FROM sqlite_master WHERE type='table' "
+                        "AND name = ?", (name,)).fetchone() is not None
+
+
+def _hhmm_plus(hhmm: str, minutes: int) -> str:
+    h, m = (int(x) for x in hhmm.split(":")[:2])
+    total = min(h * 60 + m + minutes, 23 * 60 + 59)
+    return f"{total // 60:02d}:{total % 60:02d}"
+
+
+def _room_names(resource: Resource) -> set[str]:
+    names = {resource.name.strip().lower()}
+    if resource.location:
+        names.add(resource.location.strip().lower())
+    return {n for n in names if n}
+
+
+def lesson_clashes(*, resource_id: int, booking_date: str,
+                   start_time: str, end_time: str) -> list[ExternalClash]:
+    """Timetabled lessons in this room overlapping the window."""
+    init_db()
+    resource = get_resource(resource_id)
+    if resource is None:
+        return []
+    day = _dt.date.fromisoformat(booking_date).weekday() + 1
+    if day > 5:
+        return []
+    from education_system.systems.sixth_form.domain.academics.timetable.timetable import (
+        DEFAULT_PERIOD_TIMES,
+    )
+    names = _room_names(resource)
+    out: list[ExternalClash] = []
+    with _connect() as conn:
+        if not _has_table(conn, "timetable_slots"):
+            return []
+        has_groups = _has_table(conn, "class_groups")
+        sql = ("SELECT ts.*, cg.group_name AS group_name, "
+               "cg.room AS group_room FROM timetable_slots ts "
+               "LEFT JOIN class_groups cg ON cg.group_id = ts.group_id "
+               "WHERE ts.day = ?") if has_groups else \
+              ("SELECT ts.*, NULL AS group_name, NULL AS group_room "
+               "FROM timetable_slots ts WHERE ts.day = ?")
+        # Archived (ended) slots no longer occupy a room.
+        if "archived_at" in {c[1] for c in conn.execute(
+                "PRAGMA table_info(timetable_slots)").fetchall()}:
+            sql += " AND ts.archived_at IS NULL"
+        rows = conn.execute(sql, (day,)).fetchall()
+        # A lesson the cover desk has cancelled or split that day does
+        # not occupy its room.
+        cancelled: set[int] = set()
+        if _has_table(conn, "cover_requests") and "slot_id" in {
+                c[1] for c in conn.execute(
+                    "PRAGMA table_info(cover_requests)").fetchall()}:
+            cancelled = {r[0] for r in conn.execute(
+                "SELECT slot_id FROM cover_requests WHERE absent_date = ? "
+                "AND slot_id IS NOT NULL AND status != 'Cancelled' "
+                "AND (cover_type IN ('Cancelled', 'Class Split') "
+                "     OR status = 'Class Split')",
+                (booking_date,)).fetchall()}
+    for r in rows:
+        room = (r["room"] or r["group_room"] or "").strip().lower()
+        if not room or room not in names or r["slot_id"] in cancelled:
+            continue
+        default = DEFAULT_PERIOD_TIMES.get(r["period"], ("", ""))
+        s = r["start_time"] or default[0]
+        e = r["end_time"] or default[1]
+        if not s or not e:
+            continue
+        if s < end_time and e > start_time:
+            out.append(ExternalClash(
+                kind="Lesson",
+                label=f"P{r['period']} {r['group_name'] or 'group #' + str(r['group_id'])}",
+                start_time=s, end_time=e))
+    return out
+
+
+def exam_clashes(*, resource_id: int, booking_date: str,
+                 start_time: str, end_time: str) -> list[ExternalClash]:
+    """Exam sittings seated in this room overlapping the window."""
+    init_db()
+    resource = get_resource(resource_id)
+    if resource is None:
+        return []
+    names = _room_names(resource)
+    with _connect() as conn:
+        if not _has_table(conn, "attendance_exam_sittings"):
+            return []
+        rows = conn.execute(
+            "SELECT * FROM attendance_exam_sittings WHERE date = ?",
+            (booking_date,)).fetchall()
+    out: list[ExternalClash] = []
+    for r in rows:
+        if (r["room"] or "").strip().lower() not in names:
+            continue
+        s = r["start_time"]
+        e = r["end_time"] or _hhmm_plus(s, DEFAULT_EXAM_MINUTES)
+        if s < end_time and e > start_time:
+            out.append(ExternalClash(
+                kind="Exam",
+                label=f"{r['paper_code']} {r['paper_title'] or ''}".strip(),
+                start_time=s, end_time=e))
+    return out
+
+
+def external_clashes(*, resource_id: int, booking_date: str,
+                     start_time: str, end_time: str) -> list[ExternalClash]:
+    kw = dict(resource_id=resource_id, booking_date=booking_date,
+              start_time=start_time, end_time=end_time)
+    return lesson_clashes(**kw) + exam_clashes(**kw)
+
+
+def _raise_if_clashes(p: dict[str, Any], *,
+                      exclude_booking_id: int | None = None) -> None:
+    clashes = find_clashes(
+        resource_id=p["resource_id"], booking_date=p["booking_date"],
+        start_time=p["start_time"], end_time=p["end_time"],
+        exclude_booking_id=exclude_booking_id)
+    other = external_clashes(
+        resource_id=p["resource_id"], booking_date=p["booking_date"],
+        start_time=p["start_time"], end_time=p["end_time"])
+    if not clashes and not other:
+        return
+    resource = get_resource(p["resource_id"])
+    rname = resource.name if resource else f"#{p['resource_id']}"
+    parts: list[str] = []
+    if clashes:
+        parts.append("already booked: " + ", ".join(
+            f"#{b.booking_id} {b.start_time}–{b.end_time}"
+            for b in clashes))
+    if other:
+        parts.append("in use: " + ", ".join(str(c) for c in other))
+    raise ClashError(
+        f"{rname} is not free on {p['booking_date']} during that "
+        f"window — " + "; ".join(parts))
+
+
+@dataclass
+class DayEntry:
+    start_time: str
+    end_time: str
+    kind: str          # "Booking" | "Lesson" | "Exam"
+    label: str
+
+
+def room_day(resource_id: int, booking_date: str) -> list[DayEntry]:
+    """Everything occupying a room on one date — bookings, timetabled
+    lessons and exam sittings — in time order."""
+    init_db()
+    d = _validate_date(booking_date, "Date")
+    out: list[DayEntry] = []
+    for b in list_bookings(resource_id=resource_id, date_from=d, date_to=d):
+        if b.status == "Cancelled":
+            continue
+        out.append(DayEntry(b.start_time, b.end_time, "Booking",
+                            f"#{b.booking_id} {b.purpose} ({b.booked_by},"
+                            f" {b.status})"))
+    for c in external_clashes(resource_id=resource_id, booking_date=d,
+                              start_time="00:00", end_time="23:59"):
+        out.append(DayEntry(c.start_time, c.end_time, c.kind, c.label))
+    out.sort(key=lambda e: (e.start_time, e.end_time))
+    return out
+
+
 # ── Resource CRUD ────────────────────────────────────────────────
 
 def create_resource(data: dict[str, Any]) -> Resource:
@@ -467,21 +658,7 @@ def create_booking(data: dict[str, Any],
     init_db()
     p = _validate_booking_payload(data)
     if not ignore_clashes and p["status"] != "Cancelled":
-        clashes = find_clashes(
-            resource_id=p["resource_id"],
-            booking_date=p["booking_date"],
-            start_time=p["start_time"],
-            end_time=p["end_time"],
-        )
-        if clashes:
-            resource = get_resource(p["resource_id"])
-            rname = resource.name if resource else f"#{p['resource_id']}"
-            ids = ", ".join(f"#{b.booking_id} "
-                              f"{b.start_time}–{b.end_time}"
-                              for b in clashes)
-            raise ClashError(
-                f"{rname} is already booked on {p['booking_date']} "
-                f"during that window: {ids}")
+        _raise_if_clashes(p)
     with _connect() as conn:
         cur = conn.execute(
             """INSERT INTO rb_bookings
@@ -589,22 +766,7 @@ def update_booking(booking_id: int, data: dict[str, Any],
         "notes":           data.get("notes", existing.notes),
     })
     if not ignore_clashes and p["status"] != "Cancelled":
-        clashes = find_clashes(
-            resource_id=p["resource_id"],
-            booking_date=p["booking_date"],
-            start_time=p["start_time"],
-            end_time=p["end_time"],
-            exclude_booking_id=booking_id,
-        )
-        if clashes:
-            resource = get_resource(p["resource_id"])
-            rname = resource.name if resource else f"#{p['resource_id']}"
-            ids = ", ".join(f"#{b.booking_id} "
-                              f"{b.start_time}–{b.end_time}"
-                              for b in clashes)
-            raise ClashError(
-                f"{rname} is already booked on {p['booking_date']} "
-                f"during that window: {ids}")
+        _raise_if_clashes(p, exclude_booking_id=booking_id)
     with _connect() as conn:
         conn.execute(
             """UPDATE rb_bookings SET

@@ -288,22 +288,9 @@ class DocumentDatabaseManager:
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ''', default_types)
 
-        # Insert sample students if none exist
-        cursor.execute('SELECT COUNT(*) FROM students')
-        if cursor.fetchone()[0] == 0:
-            sample_students = [
-                ('STU001', 'John', 'Doe', 'john.doe@email.com', 'Computer Science', 2, '2023-09-01', 'active'),
-                ('STU002', 'Jane', 'Smith', 'jane.smith@email.com', 'Business Administration', 1, '2024-01-15', 'active'),
-                ('STU003', 'Mike', 'Johnson', 'mike.johnson@email.com', 'Engineering', 3, '2022-09-01', 'active'),
-                ('STU004', 'Sarah', 'Wilson', 'sarah.wilson@email.com', 'Psychology', 2, '2023-01-10', 'active'),
-                ('STU005', 'David', 'Brown', 'david.brown@email.com', 'Mathematics', 4, '2021-09-01', 'active')
-            ]
-
-            # ``email`` is not a column here — the table has email_address.
-            cursor.executemany('''
-            INSERT INTO students (student_id, first_name, last_name, email_address, course, year, enrollment_date, status)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-            ''', sample_students)
+        # Students are never seeded here: ``students`` is the real
+        # university register, owned by Student Records. An empty
+        # register stays empty and the document views show that honestly.
 
     def migrate_tables(self):
         """

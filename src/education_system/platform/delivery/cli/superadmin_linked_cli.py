@@ -253,8 +253,32 @@ def event_monitor(user_info):
     print(f"\n  Failed / dead-letter deliveries: {len(dead)}")
     _table(dead, [("event_name", "Event", 28), ("consumer_system", "Consumer", 12),
                   ("consumer_handler", "Handler", 34), ("attempts", "Tries", 5)])
-    if not dead or not superadmin:
+    from education_system.platform.cross_system import sync_failures
+    try:
+        failed_syncs = sync_failures.list_failures(limit=100)
+    except Exception as exc:
+        logger.exception("Could not list cross-system sync failures")
+        print(f"\n  Could not read failed syncs: {exc}")
+        failed_syncs = []
+    for row in failed_syncs:
+        row["error_short"] = (row.get("error_message") or "")[:40]
+    print(f"\n  Failed linked-record syncs (before the bus): {len(failed_syncs)}")
+    _table(failed_syncs, [("created_at", "When", 19), ("operation", "Operation", 24),
+                          ("system", "System", 12), ("local_id", "Local id", 12),
+                          ("attempts", "Tries", 5), ("error_short", "Error", 40)])
+    if not superadmin or not (dead or failed_syncs):
         _pause()
+        return
+    which = "d"
+    if dead and failed_syncs:
+        which = input("\n  d) Act on a delivery  s) Act on a sync failure  "
+                      "(blank to go back): ").strip().lower()
+    elif failed_syncs:
+        which = "s"
+    if which == "s":
+        _act_on_sync_failure(failed_syncs, user_info)
+        return
+    if which != "d":
         return
     picked = _pick(dead, "Retry/abandon # (blank to go back): ")
     if picked is None:
@@ -269,6 +293,28 @@ def event_monitor(user_info):
         if reason:
             print("  Abandoned." if bus.abandon_failed_delivery(*key, reason=reason)
                   else "  Already changed.")
+    _pause()
+
+
+def _act_on_sync_failure(rows, user_info):
+    from education_system.platform.cross_system import sync_failures
+    picked = _pick(rows, "Retry/abandon # (blank to go back): ")
+    if picked is None:
+        return
+    actor = _actor(user_info)[1] or "superadmin"
+    choice = input("  r) Retry now  a) Abandon: ").strip().lower()
+    if choice == "r":
+        try:
+            sync_failures.retry(picked["failure_id"], actor=actor)
+            print("  Retried successfully.")
+        except Exception as exc:
+            print(f"  Retry failed again: {exc}")
+    elif choice == "a":
+        reason = input("  Reason: ").strip()
+        if reason:
+            print("  Abandoned." if sync_failures.abandon(
+                picked["failure_id"], reason=reason, actor=actor)
+                else "  Already changed.")
     _pause()
 
 

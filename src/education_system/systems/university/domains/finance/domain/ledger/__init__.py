@@ -12,6 +12,8 @@ Public surface:
     close_period(period_id, closed_by)
     lock_period(period_id, locked_by)
     reopen_period(period_id)  — reverses 'closed' only; 'locked' cannot be reopened
+    open_fiscal_year(fy, opened_by) — open a year's 12 periods (the current and next
+                                year also open on their own when something posts)
 """
 
 from education_system.systems.university.domains.finance.domain.ledger.schema import init_ledger
@@ -20,7 +22,7 @@ from education_system.systems.university.domains.finance.domain.ledger.posting i
     backfill, JournalUnbalancedError, PeriodClosedError, AccountNotFoundError,
 )
 from education_system.systems.university.domains.finance.domain.ledger.periods import (
-    close_period, lock_period, reopen_period, list_periods,
+    close_period, lock_period, reopen_period, list_periods, open_fiscal_year,
 )
 from education_system.systems.university.domains.finance.domain.ledger.reports import trial_balance
 from education_system.systems.university.domains.finance.domain.ledger.hooks import (
@@ -30,7 +32,7 @@ from education_system.systems.university.domains.finance.domain.ledger.hooks imp
 __all__ = [
     'init_ledger',
     'post_payment', 'post_refund', 'post_fee_assignment', 'post_payroll_run', 'backfill',
-    'close_period', 'lock_period', 'reopen_period', 'list_periods',
+    'close_period', 'lock_period', 'reopen_period', 'list_periods', 'open_fiscal_year',
     'trial_balance',
     'notify_ledger', 'LEDGER_HOOK_FAILURES',
     'JournalUnbalancedError', 'PeriodClosedError', 'AccountNotFoundError',

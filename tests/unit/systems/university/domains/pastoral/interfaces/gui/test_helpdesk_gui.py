@@ -12,7 +12,7 @@ import tkinter as tk
 from unittest.mock import Mock, patch, MagicMock, call
 from datetime import datetime
 
-from education_system.systems.university.domains.pastoral.interfaces.gui.helpdesk import HelpdeskGUI
+from education_system.systems.university.domains.student_support.interfaces.gui.helpdesk import HelpdeskGUI
 
 
 @pytest.fixture
@@ -54,9 +54,9 @@ def mock_db_connection():
 class TestHelpdeskGUI:
     """Test cases for HelpdeskGUI class"""
 
-    @patch('education_system.systems.university.domains.pastoral.interfaces.gui.helpdesk.base.init_helpdesk_db')
-    @patch('education_system.systems.university.domains.pastoral.interfaces.gui.helpdesk.base.setup_enhanced_helpdesk_permissions')
-    @patch('education_system.systems.university.domains.pastoral.interfaces.gui.helpdesk.base.get_auth')
+    @patch('education_system.systems.university.domains.student_support.interfaces.gui.helpdesk.base.init_helpdesk_db')
+    @patch('education_system.systems.university.domains.student_support.interfaces.gui.helpdesk.base.setup_enhanced_helpdesk_permissions')
+    @patch('education_system.systems.university.domains.student_support.interfaces.gui.helpdesk.base.get_auth')
     def test_initialization_with_auth(self, mock_get_auth, mock_permissions, mock_init_db,
                                      mock_root, mock_auth):
         """Test GUI initialization with authentication"""
@@ -77,11 +77,11 @@ class TestHelpdeskGUI:
             # Should set auth
             assert gui.auth == mock_auth
 
-    @patch('education_system.systems.university.domains.pastoral.interfaces.gui.helpdesk.base.init_helpdesk_db')
-    @patch('education_system.systems.university.domains.pastoral.interfaces.gui.helpdesk.base.setup_enhanced_helpdesk_permissions')
-    @patch('education_system.systems.university.domains.pastoral.interfaces.gui.helpdesk.base.get_auth')
-    @patch('education_system.systems.university.domains.pastoral.interfaces.gui.helpdesk.base.get_global_auth')
-    @patch('education_system.systems.university.domains.pastoral.interfaces.gui.helpdesk.base.messagebox')
+    @patch('education_system.systems.university.domains.student_support.interfaces.gui.helpdesk.base.init_helpdesk_db')
+    @patch('education_system.systems.university.domains.student_support.interfaces.gui.helpdesk.base.setup_enhanced_helpdesk_permissions')
+    @patch('education_system.systems.university.domains.student_support.interfaces.gui.helpdesk.base.get_auth')
+    @patch('education_system.systems.university.domains.student_support.interfaces.gui.helpdesk.base.get_global_auth')
+    @patch('education_system.systems.university.domains.student_support.interfaces.gui.helpdesk.base.messagebox')
     def test_initialization_without_auth(self, mock_messagebox, mock_get_global_auth, mock_get_auth,
                                         mock_permissions, mock_init_db, mock_root):
         """Test GUI initialization without authentication"""
@@ -95,8 +95,8 @@ class TestHelpdeskGUI:
         mock_messagebox.showerror.assert_called()
         mock_root.destroy.assert_called_once()
 
-    @patch('education_system.systems.university.domains.pastoral.interfaces.gui.helpdesk.base.init_helpdesk_db')
-    @patch('education_system.systems.university.domains.pastoral.interfaces.gui.helpdesk.base.setup_enhanced_helpdesk_permissions')
+    @patch('education_system.systems.university.domains.student_support.interfaces.gui.helpdesk.base.init_helpdesk_db')
+    @patch('education_system.systems.university.domains.student_support.interfaces.gui.helpdesk.base.setup_enhanced_helpdesk_permissions')
     def test_ensure_subject_column(self, mock_permissions, mock_init_db, mock_root, mock_auth):
         """Test database migration for subject column"""
         with patch('education_system.systems.university.infrastructure.database.db.get_connection') as mock_conn:
@@ -123,8 +123,8 @@ class TestHelpdeskGUI:
             calls = [str(call) for call in mock_cursor.execute.call_args_list]
             assert any('ALTER TABLE' in str(call) for call in calls)
 
-    @patch('education_system.systems.university.domains.pastoral.interfaces.gui.helpdesk.base.init_helpdesk_db')
-    @patch('education_system.systems.university.domains.pastoral.interfaces.gui.helpdesk.base.setup_enhanced_helpdesk_permissions')
+    @patch('education_system.systems.university.domains.student_support.interfaces.gui.helpdesk.base.init_helpdesk_db')
+    @patch('education_system.systems.university.domains.student_support.interfaces.gui.helpdesk.base.setup_enhanced_helpdesk_permissions')
     def test_setup_current_user(self, mock_permissions, mock_init_db, mock_root, mock_auth):
         """Test current user setup"""
         with patch.object(HelpdeskGUI, 'ensure_subject_column'), \
@@ -140,8 +140,8 @@ class TestHelpdeskGUI:
             assert gui.current_user['username'] == 'testuser'
             assert gui.current_user['role'] == 'admin'
 
-    @patch('education_system.systems.university.domains.pastoral.interfaces.gui.helpdesk.base.init_helpdesk_db')
-    @patch('education_system.systems.university.domains.pastoral.interfaces.gui.helpdesk.base.setup_enhanced_helpdesk_permissions')
+    @patch('education_system.systems.university.domains.student_support.interfaces.gui.helpdesk.base.init_helpdesk_db')
+    @patch('education_system.systems.university.domains.student_support.interfaces.gui.helpdesk.base.setup_enhanced_helpdesk_permissions')
     def test_setup_styles(self, mock_permissions, mock_init_db, mock_root, mock_auth):
         """Test style configuration"""
         with patch.object(HelpdeskGUI, 'ensure_subject_column'), \
@@ -150,15 +150,15 @@ class TestHelpdeskGUI:
              patch.object(HelpdeskGUI, 'create_menu_bar'), \
              patch.object(HelpdeskGUI, 'show_main_dashboard'):
 
-            with patch('education_system.systems.university.domains.pastoral.interfaces.gui.helpdesk.base.ttk.Style') as mock_style:
+            with patch('education_system.systems.university.domains.student_support.interfaces.gui.helpdesk.base.ttk.Style') as mock_style:
                 gui = HelpdeskGUI(mock_root, mock_auth)
 
                 # Should configure custom styles
                 assert hasattr(gui, 'style')
 
-    @patch('education_system.systems.university.domains.pastoral.interfaces.gui.helpdesk.base.init_helpdesk_db')
-    @patch('education_system.systems.university.domains.pastoral.interfaces.gui.helpdesk.base.setup_enhanced_helpdesk_permissions')
-    @patch('education_system.systems.university.domains.pastoral.interfaces.gui.helpdesk.base._t', side_effect=lambda key, **kw: kw.get('default', key))
+    @patch('education_system.systems.university.domains.student_support.interfaces.gui.helpdesk.base.init_helpdesk_db')
+    @patch('education_system.systems.university.domains.student_support.interfaces.gui.helpdesk.base.setup_enhanced_helpdesk_permissions')
+    @patch('education_system.systems.university.domains.student_support.interfaces.gui.helpdesk.base._t', side_effect=lambda key, **kw: kw.get('default', key))
     def test_setup_main_window(self, mock_t, mock_permissions, mock_init_db, mock_root, mock_auth):
         """Test main window setup"""
         with patch.object(HelpdeskGUI, 'ensure_subject_column'), \
@@ -167,7 +167,7 @@ class TestHelpdeskGUI:
              patch.object(HelpdeskGUI, 'create_menu_bar'), \
              patch.object(HelpdeskGUI, 'show_main_dashboard'), \
              patch.object(HelpdeskGUI, 'center_window'), \
-             patch('education_system.systems.university.domains.pastoral.interfaces.gui.helpdesk.base.ttk.Frame'):
+             patch('education_system.systems.university.domains.student_support.interfaces.gui.helpdesk.base.ttk.Frame'):
 
             gui = HelpdeskGUI(mock_root, mock_auth)
 
@@ -176,8 +176,8 @@ class TestHelpdeskGUI:
             mock_root.geometry.assert_called_with("1400x900")
             mock_root.minsize.assert_called_with(1200, 800)
 
-    @patch('education_system.systems.university.domains.pastoral.interfaces.gui.helpdesk.base.init_helpdesk_db')
-    @patch('education_system.systems.university.domains.pastoral.interfaces.gui.helpdesk.base.setup_enhanced_helpdesk_permissions')
+    @patch('education_system.systems.university.domains.student_support.interfaces.gui.helpdesk.base.init_helpdesk_db')
+    @patch('education_system.systems.university.domains.student_support.interfaces.gui.helpdesk.base.setup_enhanced_helpdesk_permissions')
     def test_center_window(self, mock_permissions, mock_init_db, mock_root, mock_auth):
         """Test window centering"""
         with patch.object(HelpdeskGUI, 'ensure_subject_column'), \
@@ -193,8 +193,8 @@ class TestHelpdeskGUI:
             # Should call update_idletasks
             mock_root.update_idletasks.assert_called()
 
-    @patch('education_system.systems.university.domains.pastoral.interfaces.gui.helpdesk.base.init_helpdesk_db')
-    @patch('education_system.systems.university.domains.pastoral.interfaces.gui.helpdesk.base.setup_enhanced_helpdesk_permissions')
+    @patch('education_system.systems.university.domains.student_support.interfaces.gui.helpdesk.base.init_helpdesk_db')
+    @patch('education_system.systems.university.domains.student_support.interfaces.gui.helpdesk.base.setup_enhanced_helpdesk_permissions')
     def test_ticket_management_features_exist(self, mock_permissions, mock_init_db, mock_root, mock_auth):
         """Test that ticket management features exist"""
         with patch.object(HelpdeskGUI, 'ensure_subject_column'), \
@@ -209,8 +209,8 @@ class TestHelpdeskGUI:
             # Core features should exist
             assert hasattr(gui, 'show_main_dashboard') or hasattr(gui, 'current_user')
 
-    @patch('education_system.systems.university.domains.pastoral.interfaces.gui.helpdesk.base.init_helpdesk_db')
-    @patch('education_system.systems.university.domains.pastoral.interfaces.gui.helpdesk.base.setup_enhanced_helpdesk_permissions')
+    @patch('education_system.systems.university.domains.student_support.interfaces.gui.helpdesk.base.init_helpdesk_db')
+    @patch('education_system.systems.university.domains.student_support.interfaces.gui.helpdesk.base.setup_enhanced_helpdesk_permissions')
     @patch('education_system.systems.university.infrastructure.database.db.get_connection')
     def test_database_operations_use_context_manager(self, mock_conn, mock_permissions,
                                                      mock_init_db, mock_root, mock_auth):
@@ -232,9 +232,9 @@ class TestHelpdeskGUI:
             # Database connection should be established during init
             assert mock_conn.called or mock_init_db.called
 
-    @patch('education_system.systems.university.domains.pastoral.interfaces.gui.helpdesk.base.init_helpdesk_db')
-    @patch('education_system.systems.university.domains.pastoral.interfaces.gui.helpdesk.base.setup_enhanced_helpdesk_permissions')
-    @patch('education_system.systems.university.domains.pastoral.interfaces.gui.helpdesk.base.messagebox')
+    @patch('education_system.systems.university.domains.student_support.interfaces.gui.helpdesk.base.init_helpdesk_db')
+    @patch('education_system.systems.university.domains.student_support.interfaces.gui.helpdesk.base.setup_enhanced_helpdesk_permissions')
+    @patch('education_system.systems.university.domains.student_support.interfaces.gui.helpdesk.base.messagebox')
     def test_error_handling_database_failure(self, mock_messagebox, mock_permissions,
                                             mock_init_db, mock_root, mock_auth):
         """Test error handling when database initialization fails"""
@@ -252,8 +252,8 @@ class TestHelpdeskGUI:
             # Should still create GUI even if some initialization fails
             assert gui is not None
 
-    @patch('education_system.systems.university.domains.pastoral.interfaces.gui.helpdesk.base.init_helpdesk_db')
-    @patch('education_system.systems.university.domains.pastoral.interfaces.gui.helpdesk.base.setup_enhanced_helpdesk_permissions')
+    @patch('education_system.systems.university.domains.student_support.interfaces.gui.helpdesk.base.init_helpdesk_db')
+    @patch('education_system.systems.university.domains.student_support.interfaces.gui.helpdesk.base.setup_enhanced_helpdesk_permissions')
     def test_authentication_integration(self, mock_permissions, mock_init_db, mock_root, mock_auth):
         """Test authentication system integration"""
         with patch.object(HelpdeskGUI, 'ensure_subject_column'), \
@@ -268,8 +268,8 @@ class TestHelpdeskGUI:
             assert gui.auth is not None
             assert gui.current_user is not None
 
-    @patch('education_system.systems.university.domains.pastoral.interfaces.gui.helpdesk.base.init_helpdesk_db')
-    @patch('education_system.systems.university.domains.pastoral.interfaces.gui.helpdesk.base.setup_enhanced_helpdesk_permissions')
+    @patch('education_system.systems.university.domains.student_support.interfaces.gui.helpdesk.base.init_helpdesk_db')
+    @patch('education_system.systems.university.domains.student_support.interfaces.gui.helpdesk.base.setup_enhanced_helpdesk_permissions')
     def test_role_based_access(self, mock_permissions, mock_init_db, mock_root, mock_auth):
         """Test role-based access control"""
         with patch.object(HelpdeskGUI, 'ensure_subject_column'), \
@@ -283,8 +283,8 @@ class TestHelpdeskGUI:
             # Admin role should have access
             assert gui.current_user['role'] == 'admin'
 
-    @patch('education_system.systems.university.domains.pastoral.interfaces.gui.helpdesk.base.init_helpdesk_db')
-    @patch('education_system.systems.university.domains.pastoral.interfaces.gui.helpdesk.base.setup_enhanced_helpdesk_permissions')
+    @patch('education_system.systems.university.domains.student_support.interfaces.gui.helpdesk.base.init_helpdesk_db')
+    @patch('education_system.systems.university.domains.student_support.interfaces.gui.helpdesk.base.setup_enhanced_helpdesk_permissions')
     def test_main_container_created(self, mock_permissions, mock_init_db, mock_root, mock_auth):
         """Test main container creation"""
         with patch.object(HelpdeskGUI, 'ensure_subject_column'), \
@@ -299,8 +299,8 @@ class TestHelpdeskGUI:
             # Should have main container
             assert hasattr(gui, 'main_container')
 
-    @patch('education_system.systems.university.domains.pastoral.interfaces.gui.helpdesk.base.init_helpdesk_db')
-    @patch('education_system.systems.university.domains.pastoral.interfaces.gui.helpdesk.base.setup_enhanced_helpdesk_permissions')
+    @patch('education_system.systems.university.domains.student_support.interfaces.gui.helpdesk.base.init_helpdesk_db')
+    @patch('education_system.systems.university.domains.student_support.interfaces.gui.helpdesk.base.setup_enhanced_helpdesk_permissions')
     def test_user_object_structure(self, mock_permissions, mock_init_db, mock_root, mock_auth):
         """Test current_user object structure"""
         with patch.object(HelpdeskGUI, 'ensure_subject_column'), \
@@ -319,11 +319,11 @@ class TestHelpdeskGUI:
                 assert 'username' in gui.current_user
                 assert 'role' in gui.current_user
 
-    @patch('education_system.systems.university.domains.pastoral.interfaces.gui.helpdesk.base.init_helpdesk_db')
-    @patch('education_system.systems.university.domains.pastoral.interfaces.gui.helpdesk.base.setup_enhanced_helpdesk_permissions')
+    @patch('education_system.systems.university.domains.student_support.interfaces.gui.helpdesk.base.init_helpdesk_db')
+    @patch('education_system.systems.university.domains.student_support.interfaces.gui.helpdesk.base.setup_enhanced_helpdesk_permissions')
     def test_activity_logging_integration(self, mock_permissions, mock_init_db, mock_root, mock_auth):
         """Test activity logging integration"""
-        with patch('education_system.systems.university.domains.pastoral.interfaces.gui.helpdesk.base.log_activity') as mock_log:
+        with patch('education_system.systems.university.domains.student_support.interfaces.gui.helpdesk.base.log_activity') as mock_log:
             with patch.object(HelpdeskGUI, 'ensure_subject_column'), \
                  patch.object(HelpdeskGUI, 'setup_current_user'), \
                  patch.object(HelpdeskGUI, 'setup_styles'), \

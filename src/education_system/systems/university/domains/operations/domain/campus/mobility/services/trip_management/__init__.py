@@ -64,168 +64,24 @@ from education_system.systems.university.domains.operations.domain.campus.mobili
 )
 
 
-def get_db_connection(timeout: float = 30.0, max_retries: int = 3):
-    """Compatibility wrapper that uses this module's get_connection (patch-friendly)."""
-    from education_system.systems.university.domains.operations.domain.campus.mobility.services.trip_management import _common
-
-    retry_delay = 0.1
-    for attempt in range(max_retries):
-        try:
-            conn = get_connection(db_path=_common.DEFAULT_DB_PATH, timeout=timeout)
-            return conn
-        except _common.sqlite3.OperationalError as e:
-            if "database is locked" in str(e).lower() and attempt < max_retries - 1:
-                _common.time.sleep(retry_delay * (2 ** attempt))
-                continue
-            return None
-        except _common.sqlite3.Error:
-            return None
-
-
-def safe_db_operation(operation_func, *args, max_retries: int = 3, **kwargs):
-    """Compatibility wrapper for safe_db_operation using local get_db_connection."""
-    from education_system.systems.university.domains.operations.domain.campus.mobility.services.trip_management import _common
-
-    retry_delay = 0.1
-    last_error = None
-    for attempt in range(max_retries):
-        conn = None
-        try:
-            conn = get_db_connection(timeout=30.0)
-            if not conn:
-                last_error = "Failed to establish database connection"
-                if attempt < max_retries - 1:
-                    _common.time.sleep(retry_delay * (2 ** attempt))
-                    continue
-                return False
-            try:
-                result = operation_func(conn, *args, **kwargs)
-            except TypeError:
-                # Support legacy callables that don't accept a connection argument.
-                result = operation_func(*args, **kwargs)
-            try:
-                conn.commit()
-            except Exception:
-                logger.warning("trip_management: commit failed for %s",
-                               getattr(operation_func, "__name__", operation_func),
-                               exc_info=True)
-            return result
-        except Exception as e:  # pragma: no cover - defensive
-            last_error = e
-            # Log it: swallowing this silently is what hid a rolled-back
-            # trip insert behind a "created successfully" message.
-            logger.error("trip_management: %s failed, rolling back: %s: %s",
-                         getattr(operation_func, "__name__", operation_func),
-                         type(e).__name__, e, exc_info=True)
-            try:
-                if conn:
-                    conn.rollback()
-            except Exception:
-                logger.debug("Suppressed exception", exc_info=True)
-            return False
-        finally:
-            try:
-                if conn:
-                    conn.close()
-            except Exception:
-                logger.debug("Suppressed exception", exc_info=True)
-    return False
+# One implementation of the connection helpers lives in ``database``; the
+# package re-exports it so ``trip_management.safe_db_operation`` /
+# ``trip_management.get_db_connection`` keep working. ``get_db_connection``
+# stays the patch point: ``database.safe_db_operation`` resolves it through
+# this package at call time.
+get_db_connection = _database.get_db_connection
+safe_db_operation = _database.safe_db_operation
+write_transaction = _database.write_transaction
+read_connection = _database.read_connection
 
 
 def init_trip_db():
-    """Initialize trip management database tables (transaction-based wrapper)."""
-    def _create_tables(conn):
-        cursor = conn.cursor()
-        cursor.execute('''
-        CREATE TABLE IF NOT EXISTS trips (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            trip_name TEXT NOT NULL,
-            description TEXT,
-            destination TEXT NOT NULL,
-            start_date TEXT NOT NULL,
-            end_date TEXT NOT NULL,
-            max_participants INTEGER DEFAULT 50,
-            cost REAL DEFAULT 0.0,
-            status TEXT DEFAULT 'planning',
-            created_by INTEGER,
-            created_at TEXT NOT NULL,
-            updated_at TEXT NOT NULL,
-            FOREIGN KEY (created_by) REFERENCES users (id),
-            CHECK (status IN ('planning', 'open', 'full', 'cancelled', 'completed'))
-        )
-        ''')
+    """Initialize trip management database tables (transaction-based wrapper).
 
-        cursor.execute('''
-        CREATE TABLE IF NOT EXISTS trip_participants (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            trip_id INTEGER NOT NULL,
-            student_id TEXT,
-            user_id INTEGER,
-            registration_date TEXT NOT NULL,
-            payment_status TEXT DEFAULT 'pending',
-            emergency_contact TEXT,
-            medical_info TEXT,
-            dietary_requirements TEXT,
-            status TEXT DEFAULT 'registered',
-            payment_method TEXT,
-            payment_reference TEXT,
-            FOREIGN KEY (trip_id) REFERENCES trips (id) ON DELETE CASCADE,
-            FOREIGN KEY (student_id) REFERENCES students (student_id),
-            FOREIGN KEY (user_id) REFERENCES users (id),
-            UNIQUE (trip_id, student_id),
-            CHECK (payment_status IN ('pending', 'partial', 'paid', 'refunded')),
-            CHECK (status IN ('registered', 'waitlist', 'cancelled', 'attended'))
-        )
-        ''')
-
-        cursor.execute('''
-        CREATE TABLE IF NOT EXISTS trip_staff (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            trip_id INTEGER NOT NULL,
-            staff_user_id INTEGER NOT NULL,
-            role TEXT DEFAULT 'supervisor',
-            assigned_date TEXT NOT NULL,
-            FOREIGN KEY (trip_id) REFERENCES trips (id) ON DELETE CASCADE,
-            FOREIGN KEY (staff_user_id) REFERENCES users (id),
-            UNIQUE (trip_id, staff_user_id),
-            CHECK (role IN ('supervisor', 'coordinator', 'medical', 'transport'))
-        )
-        ''')
-
-        cursor.execute('''
-        CREATE TABLE IF NOT EXISTS trip_expenses (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            trip_id INTEGER NOT NULL,
-            category TEXT NOT NULL,
-            description TEXT NOT NULL,
-            amount REAL NOT NULL,
-            date TEXT NOT NULL,
-            recorded_by INTEGER,
-            FOREIGN KEY (trip_id) REFERENCES trips (id) ON DELETE CASCADE,
-            FOREIGN KEY (recorded_by) REFERENCES users (id)
-        )
-        ''')
-
-        cursor.execute('''
-        CREATE TABLE IF NOT EXISTS trip_itinerary (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            trip_id INTEGER NOT NULL,
-            day_number INTEGER NOT NULL,
-            activity TEXT NOT NULL,
-            location TEXT,
-            start_time TEXT,
-            end_time TEXT,
-            notes TEXT,
-            FOREIGN KEY (trip_id) REFERENCES trips (id) ON DELETE CASCADE,
-            UNIQUE (trip_id, day_number, start_time)
-        )
-        ''')
-
-        _database.ensure_participant_payment_columns(conn)
-        return True
-
-    with transaction() as conn:
-        return _create_tables(conn)
+    The DDL is ``database.apply`` — this only supplies the transaction.
+    """
+    with transaction(db_path=_database._target_path()) as conn:
+        return _database.create_trip_tables(conn)
 
 if __name__ == "__main__":
     test_report_generation()

@@ -8,6 +8,8 @@ from tkinter import messagebox, simpledialog, ttk
 from typing import Callable
 from education_system.systems.primary.interfaces import user_accounts as data
 from education_system.platform import branding
+from education_system.systems.primary.interfaces.gui import kit
+from education_system.systems.registry import SYSTEM_KEYS
 from education_system.systems.primary.interfaces.user_accounts import (
     DEFAULT_ROLE,
     ROLES,
@@ -28,15 +30,86 @@ def open_user_accounts_window(parent=None, *, auth) -> None:
             "User Accounts",
             "No active session — please sign in again.")
         return
+    if parent is not None and _has_pages(parent):
+        # The main window: a page in the content area, with "Open in new window".
+        def draw(frame: ttk.Frame) -> None:
+            kit.page_heading(frame, "User Accounts",
+                             "Sign-in accounts and their access to each system.")
+            _draw_tabs(frame, auth)
+        kit.show_page(parent, "User Accounts", draw)
+        return
     master = getattr(parent, "root", parent)
     win = tk.Toplevel(master) if master is not None else tk.Tk()
     win.title(f"User Accounts — {branding.SYSTEM_NAME}")
     win.geometry(WIN_GEOMETRY)
     win.minsize(*WIN_MINSIZE)
-    nb = ttk.Notebook(win)
-    nb.pack(fill="both", expand=True, padx=10, pady=10)
+    _draw_tabs(win, auth, padding=10)
+
+
+def _has_pages(host) -> bool:
+    try:
+        return callable(getattr(host, "show_page", None))
+    except (AttributeError, RecursionError, tk.TclError):
+        return False
+
+
+def _draw_tabs(parent: tk.Misc, auth, *, padding: int = 0) -> None:
+    nb = ttk.Notebook(parent)
+    nb.pack(fill="both", expand=True, padx=padding, pady=padding)
     UsersTab(nb, auth)
     SummaryTab(nb, auth)
+
+
+#: Quick choices for how long to lock an account, in minutes.
+_LOCK_PRESETS = (("15 minutes", 15), ("1 hour", 60), ("1 day", 1440),
+                 ("1 week", 10080), ("30 days", 43200))
+
+
+def _ask_lock_minutes(parent: tk.Misc, username: str) -> int | None:
+    """Ask how many minutes to lock *username* for: a spinbox (1 minute to a
+    year) with one-click presets. Modal; returns None when cancelled."""
+    dlg = tk.Toplevel(parent)
+    dlg.title("Lock user")
+    dlg.transient(parent)
+    frm = ttk.Frame(dlg, padding=12)
+    frm.pack(fill="both", expand=True)
+    ttk.Label(frm, text=f"Lock {username} for how many minutes?").pack(anchor="w")
+    var = tk.StringVar(value="60")
+    row = ttk.Frame(frm)
+    row.pack(fill="x", pady=(6, 4))
+    kit.NumberField(row, var, from_=1, to=525600, width=10).pack(side="left")
+    ttk.Label(row, text="minutes").pack(side="left", padx=(4, 0))
+    presets = ttk.Frame(frm)
+    presets.pack(fill="x", pady=(0, 8))
+    for label, mins in _LOCK_PRESETS:
+        ttk.Button(presets, text=label,
+                   command=lambda m=mins: var.set(str(m))).pack(side="left", padx=(0, 4))
+    result: list[int | None] = [None]
+
+    def ok() -> None:
+        try:
+            mins = int(float(var.get().strip()))
+        except ValueError:
+            messagebox.showerror("Lock user", "Enter a whole number of minutes.", parent=dlg)
+            return
+        if not 1 <= mins <= 525600:
+            messagebox.showerror("Lock user", "Choose between 1 minute and a year.",
+                                 parent=dlg)
+            return
+        result[0] = mins
+        dlg.destroy()
+
+    bar = ttk.Frame(frm)
+    bar.pack(fill="x")
+    ttk.Button(bar, text="Cancel", command=dlg.destroy).pack(side="right", padx=(6, 0))
+    ttk.Button(bar, text="Lock", command=ok).pack(side="right")
+    try:
+        dlg.wait_visibility()
+        dlg.grab_set()
+    except tk.TclError:
+        pass
+    dlg.wait_window()
+    return result[0]
 
 
 def _systems_str(u: UserRow) -> str:
@@ -69,7 +142,7 @@ class UsersTab:
         self.f_role.current(0)
         self.f_role.pack(side="left", padx=(2, 10))
         self.f_sixth = tk.BooleanVar(value=True)
-        ttk.Checkbutton(bar, text="Secondary-school only",
+        ttk.Checkbutton(bar, text="Primary-school only",
                           variable=self.f_sixth,
                           command=self.refresh).pack(side="left")
         self.f_active = tk.BooleanVar(value=False)
@@ -250,11 +323,7 @@ class UsersTab:
         if u is None:
             messagebox.showinfo("Lock", "Select a user first.")
             return
-        mins = simpledialog.askinteger(
-            "Lock user",
-            f"Lock {u.username} for how many minutes?",
-            parent=self.frame.winfo_toplevel(),
-            initialvalue=60, minvalue=1, maxvalue=525600)
+        mins = _ask_lock_minutes(self.frame.winfo_toplevel(), u.username)
         if mins is None:
             return
         try:
@@ -361,7 +430,7 @@ class NewUserDialog:
         self.email_e.grid(row=r, column=1, sticky="w", padx=6)
         r += 1
 
-        label("Secondary-school role:")
+        label("Primary-school role:")
         self.role_cb = ttk.Combobox(form, values=ROLES,
                                        state="readonly", width=22)
         self.role_cb.set(DEFAULT_ROLE)
@@ -591,8 +660,11 @@ class RolesDialog:
         grant.pack(fill="x", pady=6)
         ttk.Label(grant, text="System:").grid(row=0, column=0,
                                                   padx=4, pady=4)
-        self.sys_e = ttk.Entry(grant, width=22)
-        self.sys_e.insert(0, SYSTEM_KEY)
+        # Every system's key; editable so an access row for a key not in
+        # the list (an older system name) can still be updated.
+        self.sys_var = tk.StringVar(value=SYSTEM_KEY)
+        self.sys_e = kit.ChoiceField(grant, self.sys_var, choices=SYSTEM_KEYS,
+                                     editable=True, width=20)
         self.sys_e.grid(row=0, column=1, padx=4, pady=4)
         ttk.Label(grant, text="Role:").grid(row=0, column=2,
                                                 padx=4, pady=4)
@@ -624,7 +696,7 @@ class RolesDialog:
                                 values=(s["system_key"], s["role"]))
 
     def _grant(self) -> None:
-        sk = self.sys_e.get().strip()
+        sk = self.sys_var.get().strip()
         if not sk:
             messagebox.showerror("Grant", "System key is required.")
             return
@@ -688,13 +760,13 @@ class SummaryTab:
         L.append(f"  Active               : {s.active}")
         L.append(f"  Inactive             : {s.inactive}")
         L.append(f"  Locked right now     : {s.locked}")
-        L.append(f"  In secondary-school        : {s.sixth_form_users}")
+        L.append(f"  In primary-school        : {s.primary_users}")
         L.append(f"  Logins in last 7 days: {s.recent_logins_7d}")
         L.append("")
-        L.append("Secondary-school roles")
+        L.append("Primary-school roles")
         L.append("----------------")
         for r in ROLES:
-            n = s.by_role_in_sixthform.get(r, 0)
+            n = s.by_role_in_primary.get(r, 0)
             if n:
                 L.append(f"  {r:<22} : {n}")
         self.text.configure(state="normal")

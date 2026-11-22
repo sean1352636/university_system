@@ -12,6 +12,8 @@ Provides functionality for:
 from datetime import datetime, date, timedelta
 from typing import Any, Dict, List, Optional
 
+from education_system.systems.university.domains.staff.domain.staff_hr import access
+from education_system.systems.university.domains.staff.domain.staff_hr.services.managers import _people as people
 from education_system.systems.university.infrastructure.database.db import get_connection, transaction
 from education_system.systems.university.infrastructure.activity_logger import log_activity
 from education_system.systems.university.infrastructure.sql_safety import validate_identifier  # nosec B608
@@ -180,7 +182,7 @@ class SabbaticalManager:
                     'years_of_service': record.get('years_of_service', 0),
                     'last_sabbatical_end': record.get('last_sabbatical_end'),
                     'next_eligible_date': record.get('next_eligible_date'),
-                    'reason': record.get('reason', ''),
+                    'reason': record.get('notes') or '',
                 }
 
             # Calculate from staff_contracts
@@ -258,7 +260,7 @@ class SabbaticalManager:
             conn.execute('''
                 INSERT OR REPLACE INTO sabbatical_eligibility (
                     user_id, is_eligible, years_of_service,
-                    last_sabbatical_end, next_eligible_date, reason, updated_at
+                    last_sabbatical_end, next_eligible_date, notes, updated_at
                 ) VALUES (?, ?, ?, ?, ?, ?, ?)
             ''', (
                 user_id,
@@ -277,13 +279,17 @@ class SabbaticalManager:
 
     @staticmethod
     def approve_application(approval_id: int, approver_id: str,
-                            comments: str = None) -> None:
+                            comments: str = None, actor: Any = None) -> None:
         """Approve at one level.
 
         Updates the approval record, checks if all three levels are approved,
-        and if so updates the application status to 'approved'.
+        and if so updates the application status to 'approved'. The level
+        must still be pending, and the decider — ``actor``, else the person
+        ``approver_id`` names — must be the applicant's line manager or HR,
+        never the applicant (PermissionError otherwise).
         """
         with transaction() as conn:
+            approver_id = _decide(conn, approval_id, approver_id, actor, 'approve')
             conn.execute('''
                 UPDATE sabbatical_approvals
                 SET status = 'approved', approver_id = ?, comments = ?,
@@ -322,12 +328,14 @@ class SabbaticalManager:
 
     @staticmethod
     def reject_application(approval_id: int, approver_id: str,
-                           comments: str = None) -> None:
+                           comments: str = None, actor: Any = None) -> None:
         """Reject application.
 
-        Updates the approval record and sets the application status to 'rejected'.
+        Updates the approval record and sets the application status to
+        'rejected'; who may decide as for :meth:`approve_application`.
         """
         with transaction() as conn:
+            approver_id = _decide(conn, approval_id, approver_id, actor, 'reject')
             conn.execute('''
                 UPDATE sabbatical_approvals
                 SET status = 'rejected', approver_id = ?, comments = ?,
@@ -533,10 +541,13 @@ class SabbaticalManager:
             # Update sabbatical eligibility
             conn.execute('''
                 INSERT OR REPLACE INTO sabbatical_eligibility (
-                    user_id, is_eligible, last_sabbatical_end,
-                    next_eligible_date, reason, updated_at
-                ) VALUES (?, 0, ?, ?, ?, ?)
+                    user_id, is_eligible, years_of_service, last_sabbatical_end,
+                    next_eligible_date, notes, updated_at
+                ) VALUES (?, 0, COALESCE((SELECT years_of_service
+                                          FROM sabbatical_eligibility WHERE user_id = ?), 0),
+                          ?, ?, ?, ?)
             ''', (
+                user_id,
                 user_id,
                 today.isoformat(),
                 next_eligible,
@@ -549,3 +560,24 @@ class SabbaticalManager:
                 'action': 'return_completed',
                 'user_id': user_id
             })
+
+
+def _decide(conn, approval_id: int, approver_id: Any, actor: Any, verb: str) -> str:
+    """The decider's username for a pending sabbatical approval (ValueError
+    when the level is not pending, PermissionError when they may not approve
+    for the applicant)."""
+    row = conn.execute('''
+        SELECT sa.status, app.user_id
+        FROM sabbatical_approvals sa
+        JOIN sabbatical_applications app ON sa.application_id = app.application_id
+        WHERE sa.approval_id = ?
+    ''', (approval_id,)).fetchone()
+    if not row:
+        raise ValueError(f"Sabbatical approval {approval_id} not found")
+    if row['status'] != 'pending':
+        raise ValueError("This approval has already been decided")
+    who = people.require_approver(actor, approver_id, row['user_id'], conn,
+                                  f"{verb} this sabbatical application")
+    access.audit(conn, who, f'sabbatical_{verb}', row['user_id'], 'sabbatical_approvals',
+                 approval_id)
+    return who['username']

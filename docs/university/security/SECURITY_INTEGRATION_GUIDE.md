@@ -5,7 +5,7 @@ This guide shows how to use the new integrated security features in your univers
 ## Quick Start
 
 ```python
-from university_system.infrastructure.security import get_security_manager
+from education_system.systems.university.infrastructure.security import get_security_manager
 
 # Initialize security manager (one-time setup)
 security = get_security_manager()
@@ -21,7 +21,7 @@ print(status)
 ### Basic Login with Remember Me
 
 ```python
-from university_system.infrastructure.security import login_with_security
+from education_system.systems.university.infrastructure.security import login_with_security
 
 # Login with remember me enabled
 result = login_with_security(
@@ -51,7 +51,7 @@ else:
 ### Verify Remember Me Token (Auto-Login)
 
 ```python
-from university_system.infrastructure.security import remember_me_manager
+from education_system.systems.university.infrastructure.security import remember_me_manager
 
 # When user returns with remember me token
 user_id = remember_me_manager.verify_and_rotate_token(
@@ -80,7 +80,7 @@ security.revoke_all_sessions(user_id=123)
 ### Validate Document Upload
 
 ```python
-from university_system.infrastructure.security import validate_upload_secure
+from education_system.systems.university.infrastructure.security import validate_upload_secure
 
 # Validate uploaded document
 result = validate_upload_secure(
@@ -103,7 +103,7 @@ else:
 ### Validate Image Upload
 
 ```python
-from university_system.infrastructure.security import (
+from education_system.systems.university.infrastructure.security import (
     FileUploadValidator,
     image_validator
 )
@@ -125,7 +125,7 @@ else:
 ### Custom File Validator
 
 ```python
-from university_system.infrastructure.security import FileUploadValidator
+from education_system.systems.university.infrastructure.security import FileUploadValidator
 
 # Create custom validator for specific requirements
 custom_validator = FileUploadValidator(
@@ -143,7 +143,7 @@ result = custom_validator.validate_file('/tmp/upload.pdf')
 ### Check Rate Limits
 
 ```python
-from university_system.infrastructure.security import check_rate_limit_secure
+from education_system.systems.university.infrastructure.security import check_rate_limit_secure
 
 # Check login rate limit
 username = 'john.doe'
@@ -163,7 +163,7 @@ if check_rate_limit_secure(api_key, limiter_type='api'):
 ### Manual Rate Limit Control
 
 ```python
-from university_system.infrastructure.security import login_limiter
+from education_system.systems.university.infrastructure.security import login_limiter
 
 # Get remaining attempts
 remaining = login_limiter.get_remaining_attempts('user@example.com')
@@ -178,7 +178,7 @@ login_limiter.reset('user@example.com')
 ### Validate User Input
 
 ```python
-from university_system.infrastructure.security import validate_input_secure
+from education_system.systems.university.infrastructure.security import validate_input_secure
 
 # Validate email
 result = validate_input_secure(
@@ -204,7 +204,7 @@ result = validate_input_secure(
 ### Validate Multiple Fields
 
 ```python
-from university_system.infrastructure.security import InputValidator
+from education_system.systems.university.infrastructure.utils.input_validation import InputValidator
 
 # Validate form data
 form_data = {
@@ -258,7 +258,7 @@ for session in sessions:
 ### Revoke Specific Session
 
 ```python
-from university_system.infrastructure.security import remember_me_manager
+from education_system.systems.university.infrastructure.security import remember_me_manager
 
 # Revoke a specific remember me token
 remember_me_manager.revoke_token(token)
@@ -287,12 +287,12 @@ make security-reports
 
 ```bash
 # Run individual security tools
-bandit -r university_system/ -ll
+bandit -r src/ -ll
 safety check
 pip-audit
 
 # Run custom security script
-./scripts/security_scan.sh --detailed
+./tools/university/security_scan.sh --detailed
 ```
 
 ## 7. Complete Integration Example
@@ -300,7 +300,7 @@ pip-audit
 Here's a complete example integrating all security features:
 
 ```python
-from university_system.infrastructure.security import (
+from education_system.systems.university.infrastructure.security import (
     get_security_manager,
     login_with_security,
     validate_upload_secure,
@@ -410,7 +410,7 @@ def secure_file_upload_handler(file, user_id, category):
 # Never store plaintext passwords
 # Use the built-in authentication system which uses PBKDF2 with 1M iterations
 
-from university_system.infrastructure.auth import EnhancedAuth
+from education_system.systems.university.infrastructure.auth.enhanced_auth import EnhancedAuth
 
 auth = EnhancedAuth()
 auth.create_user(username='newuser', password='SecurePass123!', role='student')
@@ -436,7 +436,7 @@ auth.create_user(username='newuser', password='SecurePass123!', role='student')
 # Enable virus scanning in production
 # Store files outside web root
 
-from university_system.infrastructure.security import strict_validator
+from education_system.systems.university.infrastructure.security import strict_validator
 
 # Strict validator includes:
 # - File type validation
@@ -453,7 +453,7 @@ from university_system.infrastructure.security import strict_validator
 # Escape before display
 # Use parameterized queries
 
-from university_system.infrastructure.security import InputValidator
+from education_system.systems.university.infrastructure.utils.input_validation import InputValidator
 
 # Input validator protects against:
 # - XSS attacks (30+ patterns)
@@ -493,13 +493,13 @@ If you're using the old authentication system, here's how to migrate:
 
 ```python
 # OLD WAY
-from university_system.infrastructure.auth import UserAuth
+from education_system.systems.university.infrastructure.auth import UserAuth
 
 auth = UserAuth()
 result = auth.login(username, password)
 
 # NEW WAY - with remember me
-from university_system.infrastructure.auth import EnhancedAuth
+from education_system.systems.university.infrastructure.auth.enhanced_auth import EnhancedAuth
 
 auth = EnhancedAuth()
 result = auth.login_with_remember_me(
@@ -511,7 +511,7 @@ result = auth.login_with_remember_me(
 )
 
 # Or use the convenience function
-from university_system.infrastructure.security import login_with_security
+from education_system.systems.university.infrastructure.security import login_with_security
 
 result = login_with_security(username, password, remember_me=True)
 ```
@@ -520,7 +520,7 @@ result = login_with_security(username, password, remember_me=True)
 
 For issues or questions:
 1. Check the CHANGELOG.md for version-specific information
-2. Review security logs in `logs/` directory
+2. Review security logs in `var/logs/university/` directory
 3. Run security scan: `make security-scan-local`
 4. Check security reports in `security-reports/` directory
 
@@ -549,7 +549,7 @@ When you launch the GUI application:
 When you use the CLI:
 
 ```bash
-python -m education_system --cli
+python -m education_system --university --cli
 ```
 
 **First Login**:

@@ -4,7 +4,7 @@ Get the Sixth Form College Management System running in 5 minutes.
 
 ## Prerequisites
 
-- **Python 3.8+** (tested on 3.10 and 3.11)
+- **Python 3.11+**
 - **pip** (comes with Python)
 - A virtual environment is strongly recommended
 - **tkinter** (for the GUI; included with most Python distributions)
@@ -16,7 +16,7 @@ Get the Sixth Form College Management System running in 5 minutes.
 ```bash
 # Clone the repository (if not already done)
 git clone <repository-url>
-cd education_system
+cd education-system
 
 # Create and activate a virtual environment
 python -m venv venv
@@ -28,6 +28,7 @@ source venv/bin/activate    # Linux / macOS
 
 ```bash
 pip install -r requirements.lock
+pip install -e .
 ```
 
 Key dependencies include Flask, Flask-CORS, and the standard library modules (tkinter, sqlite3, logging).
@@ -36,8 +37,8 @@ Key dependencies include Flask, Flask-CORS, and the standard library modules (tk
 
 ```bash
 # Check the package is importable
-python -c "from education_system.college_system import __version__; print(__version__)"
-# Expected output: 1.0.0
+python -c "from education_system.systems.sixth_form import SYSTEM_NAME; print(SYSTEM_NAME)"
+# Expected output: Sixth Form System
 ```
 
 ## Starting the System
@@ -45,7 +46,7 @@ python -c "from education_system.college_system import __version__; print(__vers
 ### Option A: Launch the GUI
 
 ```bash
-python -m education_system.college_system.run
+python -m education_system --college --gui
 ```
 
 This opens the tkinter-based desktop application with a sidebar listing all available modules.
@@ -53,27 +54,26 @@ This opens the tkinter-based desktop application with a sidebar listing all avai
 ### Option B: Start the API Server
 
 ```bash
-python -m education_system.college_system.api.api_server
+python -m education_system --college --api
 ```
 
-The Flask API server starts on `http://127.0.0.1:5000` by default. Configuration is controlled by environment variables or the defaults in `core/defaults.py`:
+This starts the unified API server for all seven systems on `http://127.0.0.1:5000` by default, with the sixth form at `/api/v1/sixthform`. Configuration is controlled by environment variables:
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `COLLEGE_API_HOST` | `127.0.0.1` | API bind address |
-| `COLLEGE_API_PORT` | `5000` | API port |
-| `COLLEGE_API_DEBUG` | `false` | Flask debug mode |
-| `COLLEGE_JWT_SECRET` | `change-me-in-production` | JWT signing secret |
-| `COLLEGE_JWT_EXPIRY` | `24` | JWT token lifetime in hours |
-| `COLLEGE_SESSION_TIMEOUT` | `30` | Session timeout in minutes |
+| `API_PORT` | `5000` | API port |
+| `API_CORS_ORIGINS` | None | Allowed origins; required in production |
+| `JWT_SECRET_KEY` | None | JWT signing secret; required in production |
+| `JWT_EXPIRY_HOURS` | `24` | JWT token lifetime in hours |
+| `EDU_SESSION_TIMEOUT` | `30` | Session timeout in minutes |
 
 ## First Login
 
-The system uses shared authentication with pre-seeded default accounts:
+The system uses shared authentication. These development accounts are seeded only when `EDU_DEV_SEED=true`:
 
 | Role | Username | Password | Notes |
 |------|----------|----------|-------|
-| Super Admin | `superadmin` | `SuperAdmin@123` | Access to all 4 systems |
+| Super Admin | `superadmin` | `SuperAdmin@123` | Access to all seven systems |
 | Administrator | `admin1` | `admin1234` | College admin |
 | Staff | `staff1` | `staff1234` | College teacher/staff |
 | Student | `student1` | `student1234` | Student-facing features |
@@ -87,7 +87,7 @@ The system contains over 110 domain modules organized into functional areas:
 
 ### Academics and Teaching
 
-- **Students** -- Student records, profiles, and ID management (IDs prefixed `SFC`, e.g., SFC0001)
+- **Students** -- Student records, profiles, and ID management (IDs prefixed `C`, e.g., C1470977)
 - **Courses** -- Course creation, prerequisites, and capacity management
 - **Enrollment** -- Enrollment processing and withdrawal workflows
 - **Grades / Markbook** -- Grade entry, mark schemes, and grade reports
@@ -188,10 +188,10 @@ The system contains over 110 domain modules organized into functional areas:
 
 ### Add a New Student
 
-1. Log in as `admin` or a user with student management permissions.
+1. Log in as `admin1` or a user with student management permissions.
 2. Navigate to the **Students** module in the sidebar.
 3. Click **Add Student** and fill in the required fields (name, date of birth, contact details).
-4. The system generates a student ID automatically (format: `SFC0001`, `SFC0002`, ...).
+4. The system generates a student ID automatically (format: `C` plus 7 digits, e.g., `C1470977`).
 5. Save the record.
 
 ### Create a Course
@@ -220,30 +220,28 @@ The system contains over 110 domain modules organized into functional areas:
 The system uses SQLite. The database file is located at:
 
 ```
-college_system/data/db_files/sixthform.db
+var/data/sixth_form/sixthform.db
 ```
 
-On first run, the schema is created automatically and default data (including the default user accounts above) is seeded.
+On first use, each module creates its own tables automatically. User accounts are in the central `var/data/platform/db_files/auth.db`.
 
 ## Log Files
 
-Application logs are written to:
+Application logs go to the console, with timestamps. The console shows warnings and above by default; pass `--verbose` or set `EDU_VERBOSE=1` to see info-level messages:
 
+```bash
+python -m education_system --college --gui --verbose
 ```
-college_system/logs/app.log
-```
-
-Log output includes timestamps, module names, and severity levels. Console output shows warnings and above; the file captures info-level and above.
 
 ## Next Steps
 
 - **[README.md](README.md)** -- Full documentation index
 - **[TROUBLESHOOTING.md](TROUBLESHOOTING.md)** -- Solutions to common problems
 - **Security setup** -- See `docs/sixth_form/security/` for authentication and MFA configuration
-- **API reference** -- See `docs/sixth_form/infrastructure/` for REST API documentation
+- **API reference** -- See `docs/sixth_form/development/API.md` for REST API documentation
 - **Developer guide** -- See `docs/sixth_form/development/` for contributing and module development
 
 ---
 
-**Last Updated**: March 2026
+**Last Updated**: October 2026
 **Version**: 1.0.0

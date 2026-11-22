@@ -2,12 +2,11 @@
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext, filedialog
-import os
 import json
 import logging
 from datetime import datetime
 
-from education_system.systems.university.infrastructure.ai.university_chatbot import LIBRARIES_AVAILABLE
+from education_system.systems.university.shared.ai.chatbot import LIBRARIES_AVAILABLE
 
 # Import internationalization (i18n) for multi-language support
 try:
@@ -57,10 +56,10 @@ class AdminPanelMixin:
         admin_notebook.add(analytics_tab, text=_t("chatbot.admin_tab_analytics", default="Analytics"))
         self.create_analytics_tab(analytics_tab)
 
-        # Logs Tab
-        logs_tab = ttk.Frame(admin_notebook)
-        admin_notebook.add(logs_tab, text=_t("chatbot.admin_tab_system_logs", default="System Logs"))
-        self.create_logs_tab(logs_tab)
+        # Chatbot staff desk: cases, answers, unanswered questions, settings,
+        # roles and stats (the conversation log is in the database now).
+        from education_system.systems.university.shell.gui.ai.screens import staff_care
+        staff_care.add_tabs(admin_notebook, self)
 
         # Back button
         back_button = ttk.Button(self.admin_frame,
@@ -602,115 +601,6 @@ RECOMMENDATIONS:
                     _t("chatbot.clear_cache_failed", default="Failed to clear cache: {error}").format(error=str(e))
                 )
 
-    def create_logs_tab(self, parent):
-        """Create system logs viewing tab"""
-        # Logs frame
-        logs_frame = ttk.LabelFrame(parent, text=_t('gui.shell.ai.screens.admin.labels.system_logs', default="System Logs"), padding=10)
-        logs_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
-
-        # Log filter frame
-        filter_frame = ttk.Frame(logs_frame)
-        filter_frame.pack(fill=tk.X, pady=(0, 10))
-
-        ttk.Label(filter_frame, text=_t('gui.shell.ai.screens.admin.labels.log_level', default="Log Level:")).pack(side=tk.LEFT, padx=(0, 5))
-        self.log_level_var = tk.StringVar(value=_t('gui.shell.ai.screens.admin.values.all', default="All"))
-        log_level_combo = ttk.Combobox(filter_frame,
-                                      textvariable=self.log_level_var,
-                                      values=["All", "Error", "Warning", "Info"],
-                                      state="readonly", width=10)
-        log_level_combo.pack(side=tk.LEFT, padx=(0, 10))
-
-        ttk.Button(filter_frame, text=_t('gui.shell.ai.screens.admin.buttons.refresh_logs', default="Refresh Logs"),
-                   command=self.refresh_logs).pack(side=tk.LEFT, padx=(0, 5))
-        ttk.Button(filter_frame, text=_t('gui.shell.ai.screens.admin.buttons.clear_logs', default="Clear Logs"),
-                   command=self.clear_logs).pack(side=tk.LEFT)
-
-        # Logs display
-        self.logs_text = scrolledtext.ScrolledText(logs_frame, height=15, width=80)
-        self.logs_text.pack(fill=tk.BOTH, expand=True)
-
-        # Auto-refresh logs
-        self.refresh_logs()
-
-    def refresh_logs(self):
-        """Refresh system logs display"""
-        try:
-            log_content = "SYSTEM LOGS\n" + "="*50 + "\n\n"
-
-            # Check for log files
-            log_dir = getattr(self.chatbot, 'log_dir', 'logs')
-            if os.path.exists(log_dir):
-                log_files = [f for f in os.listdir(log_dir)
-                             if f.endswith('.json') and f != 'log_config.json']
-                log_files.sort(reverse=True)  # Most recent first
-
-                for log_file in log_files[:3]:  # Show last 3 log files
-                    log_path = os.path.join(log_dir, log_file)
-                    log_content += f"\n--- {log_file} ---\n"
-
-                    try:
-                        with open(log_path, 'r') as f:
-                            logs = json.load(f)
-
-                            # Skip non-list JSON files (e.g. config files)
-                            if not isinstance(logs, list):
-                                continue
-
-                            # Filter by log level
-                            level_filter = self.log_level_var.get()
-
-                            for log_entry in logs[-10:]:  # Last 10 entries per file
-                                if level_filter == "All" or level_filter in log_entry.get('message', ''):
-                                    timestamp = log_entry.get('timestamp', 'Unknown')
-                                    user_id = log_entry.get('user_id', 'System')
-                                    message = log_entry.get('user_message', log_entry.get('message', 'No message'))[:60]
-
-                                    log_content += f"[{timestamp}] {user_id}: {message}...\n"
-
-                    except Exception as e:
-                        log_content += f"Error reading {log_file}: {e}\n"
-            else:
-                log_content += "No log directory found.\n"
-
-            # Add current session info
-            log_content += "\n--- Current Session ---\n"
-            log_content += f"User: {self.current_user.get('username', 'Unknown') if self.current_user else 'Not authenticated'}\n"
-            log_content += f"Session Start: {getattr(self, 'session_start_time', 'Unknown')}\n"
-            log_content += f"Messages Sent: {getattr(self, 'message_count', 0)}\n"
-
-            self.logs_text.delete(1.0, tk.END)
-            self.logs_text.insert(1.0, log_content)
-
-        except Exception as e:
-            error_msg = f"Error loading logs: {e}"
-            self.logs_text.delete(1.0, tk.END)
-            self.logs_text.insert(1.0, error_msg)
-
-    def clear_logs(self):
-        """Clear system logs"""
-        if messagebox.askyesno(
-            _t("chatbot.clear_logs", default="Clear Logs"),
-            _t("chatbot.clear_logs_confirm", default="Are you sure you want to clear all system logs?")
-        ):
-            try:
-                log_dir = getattr(self.chatbot, 'log_dir', 'logs')
-                if os.path.exists(log_dir):
-                    for log_file in os.listdir(log_dir):
-                        if log_file.endswith('.json'):
-                            os.remove(os.path.join(log_dir, log_file))
-
-                messagebox.showinfo(
-                    _t("chatbot.logs_cleared", default="Logs Cleared"),
-                    _t("chatbot.logs_cleared_msg", default="All system logs have been cleared.")
-                )
-                self.refresh_logs()
-
-            except Exception as e:
-                messagebox.showerror(
-                    _t("common.error", default="Error"),
-                    _t("chatbot.clear_logs_failed", default="Failed to clear logs: {error}").format(error=str(e))
-                )
-
     def show_admin_panel(self):
         """Show admin panel (add to existing interface)"""
         if not self.current_user or self.current_user.get('role') not in ['admin', 'staff']:
@@ -720,6 +610,10 @@ RECOMMENDATIONS:
             )
             return
 
+        if self.current_user.get('role') != 'admin':
+            # Staff get the chatbot desk screens they hold a role for.
+            self.open_staff_desk()
+            return
         self.hide_all_screens()
         if not hasattr(self, 'admin_frame'):
             self.create_admin_panel()

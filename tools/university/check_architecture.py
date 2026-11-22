@@ -18,8 +18,8 @@ MODERNISED = (
     PACKAGE / "domains/admissions/domain/services/admissions_lifecycle.py",
     PACKAGE / "domains/learners/domain/student_lifecycle.py",
     PACKAGE / "domains/assessment/domain/boards",
-    PACKAGE / "domains/academics/domain/programme_governance",
-    PACKAGE / "domains/academics/domain/research/pgr",
+    PACKAGE / "domains/curriculum/domain/programme_governance",
+    PACKAGE / "domains/research/domain/research/pgr",
     PACKAGE / "services/events",
     PACKAGE / "services/operations.py",
     PACKAGE / "application/ports.py",
@@ -28,7 +28,7 @@ MODERNISED = (
     PACKAGE / "application/lifecycle_consumers.py",
     PACKAGE / "application/case_management.py",
     PACKAGE / "domains/learners/application/identity_management.py",
-    PACKAGE / "domains/academics/application/timetabling.py",
+    PACKAGE / "domains/teaching/application/timetabling.py",
     PACKAGE / "application/connectors.py",
     PACKAGE / "domains/learners/application/alumni_transition.py",
     PACKAGE / "infrastructure/events.py",
@@ -43,7 +43,7 @@ APPLICATION_LAYERS = ("application", "domains/*/application")
 #: check until its entry is deleted, so the list can only shrink.
 APPLICATION_EXCEPTIONS = {
     # imports a chat-rooms module from the student CRUD GUI
-    "application/student_lifecycle_service.py",
+    "application/students/lifecycle.py",
     # tkinter file dialogs for evidence uploads
     "domains/safeguarding/application/services/media.py",
     # save_submission complexity above MAX_COMPLEXITY

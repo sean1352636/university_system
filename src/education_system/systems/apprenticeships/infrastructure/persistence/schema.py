@@ -229,10 +229,20 @@ CREATE TABLE IF NOT EXISTS apprentices (
     -- finds this row instead of creating a duplicate apprentice.
     journey_id        TEXT,
     given_name        TEXT    NOT NULL,
+    middle_name       TEXT,
     family_name       TEXT    NOT NULL,
+    preferred_name    TEXT,
     date_of_birth     TEXT,
+    gender            TEXT,                     -- config.GENDERS
     email             TEXT,
     phone             TEXT,
+    address_line1     TEXT,
+    address_line2     TEXT,
+    town              TEXT,
+    postcode          TEXT,
+    emergency_contact_name          TEXT,
+    emergency_contact_relationship  TEXT,
+    emergency_contact_phone         TEXT,
     -- Login handle, so an apprentice user can be matched to their record.
     username          TEXT,
     programme_id      INTEGER,
@@ -248,6 +258,11 @@ CREATE TABLE IF NOT EXISTS apprentices (
     funding_model     TEXT,                     -- config.FUNDING_MODELS
     prior_learning    TEXT,
     support_needs     TEXT,
+    -- Learning difficulty or disability, and an Education, Health and
+    -- Care plan: the needs flags the other systems record on add.
+    has_lldd          INTEGER NOT NULL DEFAULT 0,
+    has_ehcp          INTEGER NOT NULL DEFAULT 0,
+    medical_notes     TEXT,
     notes             TEXT,
     created_at        TEXT    NOT NULL DEFAULT (datetime('now')),
     updated_at        TEXT    NOT NULL DEFAULT (datetime('now')),
@@ -1363,6 +1378,23 @@ def connect() -> Iterator[sqlite3.Connection]:
         conn.close()
 
 
+_APPRENTICE_DETAIL_COLUMNS: tuple[tuple[str, str], ...] = (
+    ("middle_name", "TEXT"),
+    ("preferred_name", "TEXT"),
+    ("gender", "TEXT"),
+    ("address_line1", "TEXT"),
+    ("address_line2", "TEXT"),
+    ("town", "TEXT"),
+    ("postcode", "TEXT"),
+    ("emergency_contact_name", "TEXT"),
+    ("emergency_contact_relationship", "TEXT"),
+    ("emergency_contact_phone", "TEXT"),
+    ("has_lldd", "INTEGER NOT NULL DEFAULT 0"),
+    ("has_ehcp", "INTEGER NOT NULL DEFAULT 0"),
+    ("medical_notes", "TEXT"),
+)
+
+
 def _migrate(conn: sqlite3.Connection) -> None:
     """Bring an existing database up to the current schema.
 
@@ -1378,6 +1410,11 @@ def _migrate(conn: sqlite3.Connection) -> None:
     if "journey_id" not in cols:
         conn.execute("ALTER TABLE apprentices ADD COLUMN journey_id TEXT")
         logger.info("Added apprentices.journey_id (cross-system identity link)")
+    # Personal, address, emergency-contact and needs details (2026-11-06).
+    for column, ddl in _APPRENTICE_DETAIL_COLUMNS:
+        if column not in cols:
+            conn.execute(f"ALTER TABLE apprentices ADD COLUMN {column} {ddl}")
+            logger.info("Added apprentices.%s", column)
     # Deferred from SCHEMA so it is only attempted once the column exists.
     conn.execute(
         "CREATE INDEX IF NOT EXISTS ix_appr_journey ON apprentices(journey_id) "

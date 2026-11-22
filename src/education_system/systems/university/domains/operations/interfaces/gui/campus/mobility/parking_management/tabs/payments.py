@@ -13,6 +13,7 @@ import csv
 from education_system.systems.university.domains.operations.interfaces.gui.campus.mobility.parking_management import get_connection, _t, TEMPLATE_AVAILABLE, render_template
 from education_system.systems.university.domains.operations.interfaces.gui.campus.mobility.parking_management.dialogs.payment_dialog import PaymentDialog
 from education_system.systems.university.domains.operations.interfaces.gui.campus.mobility.parking_management.dialogs.refund_dialog import RefundDialog
+from education_system.systems.university.domains.operations.domain.campus.mobility.services.parking_management import payments as parking_payments
 
 
 class PaymentsMixin:
@@ -233,72 +234,18 @@ Notes: {payment[8] or 'None'}
             return
 
         try:
-            from education_system.systems.university.infrastructure.database.db import transaction
-
-            payment_ref = f"PARKING-PAY-{datetime.now().strftime('%Y%m%d%H%M%S')}"
             processed_by = self.current_user.get('username') if self.current_user else 'system'
 
-            with transaction() as conn:
-                cursor = conn.cursor()
-
-                # Record payment
-                cursor.execute("""
-                    INSERT INTO payments
-                    (source_type, reference_id, reference_type, amount, payment_method, payment_reference, student_id, processed_by, notes)
-                    VALUES ('parking', ?, 'violation', ?, ?, ?, ?, ?, ?)
-                """, (dialog.result['violation_id'], dialog.result['amount'], dialog.result['payment_method'],
-                      payment_ref, dialog.result['student_id'], processed_by, 'Parking fine payment'))
-                payment_row_id = cursor.lastrowid
-
-                # Update violation status
-                cursor.execute("""
-                    UPDATE parking_violations
-                    SET payment_status = 'Paid'
-                    WHERE violation_id = ?
-                """, (dialog.result['violation_id'],))
-
-                # If student account, deduct amount
-                if dialog.result['payment_method'] == 'student_account' and dialog.result['student_id']:
-                    cursor.execute("""
-                        UPDATE student_finance_accounts
-                        SET balance = balance - ?
-                        WHERE student_id = ?
-                    """, (dialog.result['amount'], dialog.result['student_id']))
-
-                    # Log in student finance transactions
-                    cursor.execute("SELECT account_id, balance FROM student_finance_accounts WHERE student_id = ?",
-                                 (dialog.result['student_id'],))
-                    account_result = cursor.fetchone()
-                    if account_result:
-                        account_id, new_balance = account_result
-                        cursor.execute("""
-                            INSERT INTO transactions
-                            (source_type, account_id, student_id, transaction_type, amount, balance_after, description,
-                             reference_id, processed_by, created_at)
-                            VALUES ('student_finance', ?, ?, 'debit', ?, ?, ?, ?, ?, ?)
-                        """, (account_id, dialog.result['student_id'], dialog.result['amount'], new_balance,
-                              f"Parking fine payment - {payment_ref}", payment_ref, processed_by,
-                              datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
-
-                # Add to finance system for central tracking
-                try:
-                    cursor.execute("""
-                        INSERT INTO payments
-                        (source_type, payment_reference, department, transaction_id, amount, payment_method, processed_by, notes)
-                        VALUES ('finance', ?, ?, ?, ?, ?, ?, ?)
-                    """, (payment_ref, 'Parking Services', dialog.result['violation_id'], dialog.result['amount'],
-                          dialog.result['payment_method'], processed_by, 'Parking fine payment'))
-                except Exception as e:
-                    logging.warning(f"Could not log to payments (finance): {e}")
-
-            # Auto-post the parking payment to GL (never raises). The second
-            # INSERT above with source_type='finance' is a redundant log entry
-            # and is intentionally NOT hooked to avoid double-posting.
-            try:
-                from education_system.systems.university.domains.finance.domain.ledger import notify_ledger
-                notify_ledger('payment', payment_row_id, posted_by=processed_by)
-            except Exception as _e:
-                logging.warning("ledger hook failed: %s", _e)
+            # The domain service records the payment, settles a student-account
+            # payment and posts to Finance — nothing is written here.
+            outcome = parking_payments.record_fine_payment(
+                violation_id=dialog.result['violation_id'],
+                amount=dialog.result['amount'],
+                payment_method=dialog.result['payment_method'],
+                student_id=dialog.result['student_id'],
+                processed_by=processed_by,
+            )
+            payment_ref = outcome['payment_ref']
 
             # Send confirmation email
             self.send_payment_confirmation_email(dialog.result['violation_id'], dialog.result['amount'],
@@ -405,72 +352,19 @@ University Parking Management
             return
 
         try:
-            from education_system.systems.university.infrastructure.database.db import transaction
-
-            refund_ref = f"PARKING-REFUND-{datetime.now().strftime('%Y%m%d%H%M%S')}"
             processed_by = self.current_user.get('username') if self.current_user else 'system'
 
-            with transaction() as conn:
-                cursor = conn.cursor()
-
-                # Record refund in unified_refunds
-                cursor.execute("""
-                    INSERT INTO unified_refunds
-                    (source_type, reference_id, reference_type, amount, refund_method, refund_reference,
-                     student_id, processed_by, reason, refund_date, status)
-                    VALUES ('parking', ?, 'payment', ?, ?, ?, ?, ?, ?, ?, 'processed')
-                """, (str(dialog.result['payment_id']), dialog.result['amount'],
-                      dialog.result['refund_method'], refund_ref, dialog.result['student_id'], processed_by,
-                      f"Parking fine refund (violation: {dialog.result['violation_id']})",
-                      datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
-                refund_row_id = cursor.lastrowid
-
-                # Update violation status
-                cursor.execute("""
-                    UPDATE parking_violations
-                    SET payment_status = 'Refunded'
-                    WHERE violation_id = ?
-                """, (dialog.result['violation_id'],))
-
-                # Update payment notes
-                try:
-                    cursor.execute("""
-                        UPDATE payments
-                        SET notes = notes || ' [REFUNDED: ' || ? || ']'
-                        WHERE payment_id = ? AND source_type = 'parking'
-                    """, (refund_ref, dialog.result['payment_id']))
-                except Exception:
-                    logger.debug("Suppressed exception", exc_info=True)
-
-                # If student account, add refund amount
-                if dialog.result['refund_method'] == 'student_account' and dialog.result['student_id']:
-                    cursor.execute("""
-                        UPDATE student_finance_accounts
-                        SET balance = balance + ?
-                        WHERE student_id = ?
-                    """, (dialog.result['amount'], dialog.result['student_id']))
-
-                    # Log in student finance transactions
-                    cursor.execute("SELECT account_id, balance FROM student_finance_accounts WHERE student_id = ?",
-                                 (dialog.result['student_id'],))
-                    account_result = cursor.fetchone()
-                    if account_result:
-                        account_id, new_balance = account_result
-                        cursor.execute("""
-                            INSERT INTO transactions
-                            (source_type, account_id, student_id, transaction_type, amount, balance_after, description,
-                             reference_id, processed_by, created_at)
-                            VALUES ('student_finance', ?, ?, 'credit', ?, ?, ?, ?, ?, ?)
-                        """, (account_id, dialog.result['student_id'], dialog.result['amount'], new_balance,
-                              f"Parking fine refund - {refund_ref}", refund_ref, processed_by,
-                              datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
-
-            # Auto-post refund to GL (cash has moved). Never raises.
-            try:
-                from education_system.systems.university.domains.finance.domain.ledger import notify_ledger
-                notify_ledger('refund', refund_row_id, posted_by=processed_by)
-            except Exception as _e:
-                logging.warning("ledger hook failed: %s", _e)
+            # The domain service records the refund, credits a student account
+            # and posts to Finance — nothing is written here.
+            outcome = parking_payments.record_fine_refund(
+                payment_id=dialog.result['payment_id'],
+                violation_id=dialog.result['violation_id'],
+                amount=dialog.result['amount'],
+                refund_method=dialog.result['refund_method'],
+                student_id=dialog.result['student_id'],
+                processed_by=processed_by,
+            )
+            refund_ref = outcome['refund_ref']
 
             # Send confirmation email
             self.send_refund_confirmation_email(dialog.result['violation_id'], dialog.result['amount'],

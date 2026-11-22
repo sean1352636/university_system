@@ -1,0 +1,1 @@
+"""The GUI page registry."""

@@ -451,6 +451,41 @@ def summary_flow() -> None:
     _pause()
 
 
+def pull_evidence_flow() -> None:
+    """Insert today's data into a section's evidence (manual text kept)."""
+    s = _pick_section()
+    year = _input("Academic year for the data (blank = current)")
+    print("\n  Pulling evidence (calculating measures)…")
+    try:
+        updated = data.pull_evidence(s.section_id, academic_year=year or None)
+    except (ValidationError, ValueError, PermissionError) as e:
+        print(f"\n  ✗ {e}")
+        _pause()
+        return
+    print("\n  ✓ Evidence block inserted; your own text is unchanged.\n")
+    print(updated.evidence or "")
+    _pause()
+
+
+def pull_evidence_cycle_flow() -> None:
+    """Pull evidence into every open section of a cycle."""
+    from education_system.systems.sixth_form.domain.assessment.sef_builder import (
+        sef_evidence,
+    )
+    cycle = _input("Cycle", allow_empty=False)
+    print("\n  Pulling evidence (calculating measures)…")
+    try:
+        done, skipped = sef_evidence.pull_evidence_for_cycle(cycle)
+    except (ValidationError, ValueError, PermissionError) as e:
+        print(f"\n  ✗ {e}")
+        _pause()
+        return
+    print(f"\n  ✓ Evidence pulled into {done} open section(s).")
+    if skipped:
+        print("    Skipped (not open): " + ", ".join(skipped))
+    _pause()
+
+
 _MENU: list[tuple[str, Callable[[], None]]] = [
     ("List all",             list_all),
     ("List open",            list_open),
@@ -468,6 +503,9 @@ _MENU: list[tuple[str, Callable[[], None]]] = [
     ("Delete",               delete_flow),
     ("─" * 6,                lambda: None),
     ("Summary",              summary_flow),
+    ("─" * 6,                lambda: None),
+    ("Pull evidence (data)", pull_evidence_flow),
+    ("Pull evidence (cycle)", pull_evidence_cycle_flow),
 ]
 
 

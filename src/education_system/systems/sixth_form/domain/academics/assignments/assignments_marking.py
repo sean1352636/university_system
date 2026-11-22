@@ -45,7 +45,9 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from education_system.systems.sixth_form.domain.academics.assignments import (
-    assignments as core,
+    models as assignments_models,
+    store as assignments_store,
+    submissions as assignments_submissions,
 )
 from education_system import paths
 
@@ -53,7 +55,7 @@ logger = logging.getLogger(__name__)
 
 DB_PATH = paths.SIXTH_FORM_ASSIGNMENTS_DB
 
-ValidationError = core.ValidationError
+ValidationError = assignments_models.ValidationError
 
 
 # ── Vocabularies ──────────────────────────────────────────────────
@@ -431,7 +433,7 @@ class Moderation:
 class GridRow:
     """One student's line in the bulk-marking grid."""
 
-    submission: core.Submission
+    submission: assignments_models.Submission
     student_name: str
     criterion_marks: dict[int, float | None] = field(default_factory=dict)
     penalty: LatePenalty = field(default_factory=LatePenalty)
@@ -477,7 +479,7 @@ def init_db() -> None:
         return
     # The core tables are the FK targets for everything here, so they
     # must exist first.
-    core.init_db()
+    assignments_store.init_db()
     with _connect() as conn:
         conn.executescript(_SCHEMA)
         conn.commit()
@@ -550,15 +552,15 @@ def _today() -> str:
     return _dt.date.today().isoformat()
 
 
-def _require_submission(submission_id: int) -> core.Submission:
-    sub = core.get_submission(submission_id)
+def _require_submission(submission_id: int) -> assignments_models.Submission:
+    sub = assignments_store.get_submission(submission_id)
     if sub is None:
         raise ValidationError(f"No submission #{submission_id}")
     return sub
 
 
-def _require_assignment(assignment_id: int) -> core.Assignment:
-    a = core.get_assignment(assignment_id)
+def _require_assignment(assignment_id: int) -> assignments_models.Assignment:
+    a = assignments_store.get_assignment(assignment_id)
     if a is None:
         raise ValidationError(f"No assignment #{assignment_id}")
     return a
@@ -579,14 +581,14 @@ def add_criterion(assignment_id: int, payload: dict[str, Any]) -> Criterion:
     """Add one row to an assignment's mark scheme."""
     init_db()
     _require_assignment(assignment_id)
-    title = core._require(payload.get("title"), "Criterion title").strip()
-    max_marks = core._validate_number(payload.get("max_marks"),
+    title = assignments_store._require(payload.get("title"), "Criterion title").strip()
+    max_marks = assignments_store._validate_number(payload.get("max_marks"),
                                        "Criterion max marks", min_val=0)
     if max_marks is None:
         raise ValidationError("Criterion max marks is required")
-    weight = core._validate_number(payload.get("weight_percent"),
+    weight = assignments_store._validate_number(payload.get("weight_percent"),
                                     "Weight %", min_val=0, max_val=100)
-    position = core._validate_number(payload.get("position"),
+    position = assignments_store._validate_number(payload.get("position"),
                                       "Position", min_val=0)
     if position is None:
         with _connect() as conn:
@@ -643,17 +645,17 @@ def update_criterion(criterion_id: int,
     existing = get_criterion(criterion_id)
     if existing is None:
         raise ValidationError(f"No criterion #{criterion_id}")
-    title = core._require(
+    title = assignments_store._require(
         payload.get("title", existing.title), "Criterion title").strip()
-    max_marks = core._validate_number(
+    max_marks = assignments_store._validate_number(
         payload.get("max_marks", existing.max_marks),
         "Criterion max marks", min_val=0)
     if max_marks is None:
         raise ValidationError("Criterion max marks is required")
-    weight = core._validate_number(
+    weight = assignments_store._validate_number(
         payload.get("weight_percent", existing.weight_percent),
         "Weight %", min_val=0, max_val=100)
-    position = core._validate_number(
+    position = assignments_store._validate_number(
         payload.get("position", existing.position), "Position", min_val=0)
 
     def _text(key: str) -> str | None:
@@ -742,7 +744,7 @@ def set_criterion_mark(submission_id: int, criterion_id: int, *,
         raise ValidationError(
             f"Criterion #{criterion_id} belongs to assignment "
             f"#{criterion.assignment_id}, not #{sub.assignment_id}")
-    value = core._validate_number(marks, "Criterion marks", min_val=0,
+    value = assignments_store._validate_number(marks, "Criterion marks", min_val=0,
                                    max_val=criterion.max_marks)
     role_value = _validate_role(role)
 
@@ -814,7 +816,7 @@ def apply_criterion_total(submission_id: int, *,
                            role: str = DEFAULT_MARKER_ROLE,
                            marked_by: str | None = None,
                            feedback: str | None = None,
-                           require_complete: bool = True) -> core.Submission:
+                           require_complete: bool = True) -> assignments_models.Submission:
     """Sum the criterion scores and push them through the pipeline.
 
     With ``require_complete`` (the default) a partly-marked rubric is
@@ -858,7 +860,7 @@ def set_grade_boundaries(assignment_id: int,
     a = _require_assignment(assignment_id)
 
     def _coerce(value: Any, label: str) -> float | None:
-        parsed = core._validate_number(value, f"{label} boundary",
+        parsed = assignments_store._validate_number(value, f"{label} boundary",
                                         min_val=0)
         if parsed is None:
             return None
@@ -941,7 +943,7 @@ def pct_to_letter(pct: float | None) -> str | None:
     return "U"
 
 
-def resolve_grade(assignment: core.Assignment,
+def resolve_grade(assignment: assignments_models.Assignment,
                    marks: float | None
                    ) -> tuple[float | None, str | None]:
     """(percentage, letter) for a mark on this assignment.
@@ -965,10 +967,10 @@ def resolve_grade(assignment: core.Assignment,
 
 # ── Late penalties (item 10) ──────────────────────────────────────
 
-def _days_late(assignment: core.Assignment,
-                submission: core.Submission) -> int:
+def _days_late(assignment: assignments_models.Assignment,
+                submission: assignments_models.Submission) -> int:
     """Whole days between the effective deadline and the hand-in."""
-    due = core.effective_due_date(submission, assignment)
+    due = assignments_submissions.effective_due_date(submission, assignment)
     if not due or not submission.submitted_on:
         return 0
     try:
@@ -979,8 +981,8 @@ def _days_late(assignment: core.Assignment,
     return max(0, delta)
 
 
-def compute_late_penalty(assignment: core.Assignment,
-                          submission: core.Submission) -> LatePenalty:
+def compute_late_penalty(assignment: assignments_models.Assignment,
+                          submission: assignments_models.Submission) -> LatePenalty:
     """What the assignment's policy costs this submission.
 
     Days are counted from the student's *effective* deadline, so an
@@ -1007,11 +1009,11 @@ def compute_late_penalty(assignment: core.Assignment,
 
 
 def waive_penalty(submission_id: int, *, reason: str,
-                   waived_by: str | None = None) -> core.Submission:
+                   waived_by: str | None = None) -> assignments_models.Submission:
     """Set aside the late penalty for one student, and re-apply marks."""
     init_db()
     sub = _require_submission(submission_id)
-    reason_text = core._require(reason, "Waiver reason").strip()
+    reason_text = assignments_store._require(reason, "Waiver reason").strip()
     with _connect() as conn:
         conn.execute(
             "UPDATE coursework_submissions SET penalty_waived = 1, "
@@ -1028,7 +1030,7 @@ def waive_penalty(submission_id: int, *, reason: str,
 
 
 def restore_penalty(submission_id: int, *,
-                     restored_by: str | None = None) -> core.Submission:
+                     restored_by: str | None = None) -> assignments_models.Submission:
     """Undo a waiver and re-apply the policy."""
     init_db()
     _require_submission(submission_id)
@@ -1049,7 +1051,7 @@ def restore_penalty(submission_id: int, *,
 
 def _recompute_marks(submission_id: int, *,
                       changed_by: str | None,
-                      reason: str) -> core.Submission:
+                      reason: str) -> assignments_models.Submission:
     """Re-run the pipeline over the stored raw mark, if there is one."""
     sub = _require_submission(submission_id)
     if sub.raw_marks is None:
@@ -1069,7 +1071,7 @@ def apply_marks(submission_id: int, *,
                  status: str | None = "Returned",
                  source: str = "manual",
                  reason: str | None = None,
-                 changed_by: str | None = None) -> core.Submission:
+                 changed_by: str | None = None) -> assignments_models.Submission:
     """Write a mark, applying penalty, boundaries and audit in order.
 
     This is the only function that writes ``marks``/``grade``/
@@ -1084,7 +1086,7 @@ def apply_marks(submission_id: int, *,
     sub = _require_submission(submission_id)
     a = _require_assignment(sub.assignment_id)
 
-    value = core._validate_number(raw_marks, "Marks", min_val=0)
+    value = assignments_store._validate_number(raw_marks, "Marks", min_val=0)
     if value is not None and a.max_marks is not None \
             and value > a.max_marks:
         raise ValidationError(
@@ -1161,7 +1163,7 @@ def record_mark(submission_id: int, *,
     sub = _require_submission(submission_id)
     a = _require_assignment(sub.assignment_id)
     role_value = _validate_role(role)
-    value = core._validate_number(marks, "Marks", min_val=0)
+    value = assignments_store._validate_number(marks, "Marks", min_val=0)
     if value is not None and a.max_marks is not None \
             and value > a.max_marks:
         raise ValidationError(
@@ -1248,7 +1250,7 @@ def list_for_moderation(*, assignment_id: int | None = None
 def resolve_moderation(submission_id: int, *,
                         marks: float,
                         resolved_by: str | None = None,
-                        note: str | None = None) -> core.Submission:
+                        note: str | None = None) -> assignments_models.Submission:
     """Settle a first/second disagreement and set the final mark."""
     init_db()
     state = moderation_state(submission_id)
@@ -1268,7 +1270,7 @@ def resolve_moderation(submission_id: int, *,
 
 def flag_sample(submission_id: int, *, band: str,
                  note: str | None = None,
-                 flagged_by: str | None = None) -> core.Submission:
+                 flagged_by: str | None = None) -> assignments_models.Submission:
     """Mark one submission as part of the standardisation sample."""
     init_db()
     _require_submission(submission_id)
@@ -1288,7 +1290,7 @@ def flag_sample(submission_id: int, *, band: str,
     return _require_submission(submission_id)
 
 
-def unflag_sample(submission_id: int) -> core.Submission:
+def unflag_sample(submission_id: int) -> assignments_models.Submission:
     init_db()
     _require_submission(submission_id)
     with _connect() as conn:
@@ -1302,7 +1304,7 @@ def unflag_sample(submission_id: int) -> core.Submission:
 
 
 def list_samples(*, assignment_id: int | None = None
-                  ) -> list[core.Submission]:
+                  ) -> list[assignments_models.Submission]:
     init_db()
     clauses = ["sample_band IS NOT NULL"]
     args: list[Any] = []
@@ -1310,7 +1312,7 @@ def list_samples(*, assignment_id: int | None = None
         clauses.append("assignment_id = ?")
         args.append(int(assignment_id))
     with _connect() as conn:
-        return [core._row_submission(r) for r in conn.execute(
+        return [assignments_store._row_submission(r) for r in conn.execute(
             "SELECT * FROM coursework_submissions WHERE "
             + " AND ".join(clauses)
             + " ORDER BY assignment_id ASC, marks DESC",
@@ -1320,7 +1322,7 @@ def list_samples(*, assignment_id: int | None = None
 def auto_select_sample(assignment_id: int, *,
                         per_band: int = 2,
                         flagged_by: str | None = None,
-                        replace: bool = True) -> list[core.Submission]:
+                        replace: bool = True) -> list[assignments_models.Submission]:
     """Pick a top / middle / bottom spread from the marked cohort.
 
     Boards want the range evidenced, not the department's favourites,
@@ -1330,7 +1332,7 @@ def auto_select_sample(assignment_id: int, *,
     _require_assignment(assignment_id)
     if per_band < 1:
         raise ValidationError("per_band must be at least 1")
-    marked = [s for s in core.list_submissions(assignment_id=assignment_id)
+    marked = [s for s in assignments_store.list_submissions(assignment_id=assignment_id)
               if s.marks is not None]
     if not marked:
         raise ValidationError(
@@ -1351,7 +1353,7 @@ def auto_select_sample(assignment_id: int, *,
     for s in ranked[middle_start:middle_start + take]:
         chosen.setdefault(s.submission_id, "Middle")
 
-    out: list[core.Submission] = []
+    out: list[assignments_models.Submission] = []
     for submission_id, band in chosen.items():
         out.append(flag_sample(submission_id, band=band,
                                 note="Auto-selected standardisation sample",
@@ -1423,7 +1425,7 @@ def list_mark_audit(*, submission_id: int | None = None,
 
 def add_comment(payload: dict[str, Any]) -> BankComment:
     init_db()
-    body = core._require(payload.get("body"), "Comment body").strip()
+    body = assignments_store._require(payload.get("body"), "Comment body").strip()
     category = (payload.get("category")
                  or DEFAULT_COMMENT_CATEGORY).strip()
     if category not in COMMENT_CATEGORIES:
@@ -1494,7 +1496,7 @@ def update_comment(comment_id: int,
     existing = get_comment(comment_id)
     if existing is None:
         raise ValidationError(f"No comment #{comment_id}")
-    body = core._require(payload.get("body", existing.body),
+    body = assignments_store._require(payload.get("body", existing.body),
                           "Comment body").strip()
     category = str(payload.get("category", existing.category)).strip()
     if category not in COMMENT_CATEGORIES:
@@ -1558,7 +1560,7 @@ def expand_comment(body: str, submission_id: int) -> str:
     with a stray brace should still reach the student.
     """
     sub = _require_submission(submission_id)
-    a = core.get_assignment(sub.assignment_id)
+    a = assignments_store.get_assignment(sub.assignment_id)
     values: dict[str, str] = {
         "student_id": sub.student_id,
         "first_name": sub.student_id,
@@ -1620,7 +1622,7 @@ def extra_time_percent(student_id: str) -> float | None:
     return max(found) if found else None
 
 
-def access_extension_days(assignment: core.Assignment,
+def access_extension_days(assignment: assignments_models.Assignment,
                            student_id: str) -> int:
     """Extra days a student's extra-time entitlement is worth.
 
@@ -1666,7 +1668,7 @@ def apply_access_arrangements(assignment_id: int, *,
         return {"eligible": 0, "granted": 0, "skipped": 0}
 
     eligible = granted = skipped = 0
-    for sub in core.list_submissions(assignment_id=assignment_id):
+    for sub in assignments_store.list_submissions(assignment_id=assignment_id):
         outcome = apply_access_arrangements_to(
             sub.submission_id, applied_by=applied_by,
             overwrite=overwrite, assignment=a)
@@ -1686,7 +1688,7 @@ def apply_access_arrangements(assignment_id: int, *,
 def apply_access_arrangements_to(submission_id: int, *,
                                   applied_by: str | None = None,
                                   overwrite: bool = False,
-                                  assignment: core.Assignment | None = None
+                                  assignment: assignments_models.Assignment | None = None
                                   ) -> str:
     """Snapshot one student's arrangements and grant their uplift.
 
@@ -1715,7 +1717,7 @@ def apply_access_arrangements_to(submission_id: int, *,
     except ValueError:
         return "no-deadline"
     percent = extra_time_percent(sub.student_id)
-    core.grant_extension(
+    assignments_submissions.grant_extension(
         submission_id, new_due,
         reason=(f"Access arrangement: {percent:g}% extra time "
                 f"(+{days} day(s))"),
@@ -1737,7 +1739,7 @@ def _store_arrangements(submission_id: int, names: list[str]) -> None:
         conn.commit()
 
 
-def refresh_arrangements(submission_id: int) -> core.Submission:
+def refresh_arrangements(submission_id: int) -> assignments_models.Submission:
     """Re-read a student's arrangements onto their submission."""
     init_db()
     sub = _require_submission(submission_id)
@@ -1765,7 +1767,7 @@ def marking_grid(assignment_id: int, *,
                       exc_info=True)
     a = _require_assignment(assignment_id)
     out: list[GridRow] = []
-    for sub in core.list_submissions(assignment_id=assignment_id):
+    for sub in assignments_store.list_submissions(assignment_id=assignment_id):
         crit = {m.criterion_id: m.marks
                 for m in list_criterion_marks(sub.submission_id,
                                                role=role)}
@@ -1796,10 +1798,10 @@ def bulk_mark(assignment_id: int, rows: list[dict[str, Any]], *,
     init_db()
     _require_assignment(assignment_id)
     by_student = {s.student_id: s for s in
-                  core.list_submissions(assignment_id=assignment_id)}
+                  assignments_store.list_submissions(assignment_id=assignment_id)}
     by_id = {s.submission_id: s for s in by_student.values()}
 
-    prepared: list[tuple[core.Submission, dict[str, Any]]] = []
+    prepared: list[tuple[assignments_models.Submission, dict[str, Any]]] = []
     outcomes: list[BulkOutcome] = []
 
     for raw in rows:
@@ -1819,7 +1821,7 @@ def bulk_mark(assignment_id: int, rows: list[dict[str, Any]], *,
                                    outcomes=outcomes)
             continue
         try:
-            marks = core._validate_number(raw.get("marks"), "Marks",
+            marks = assignments_store._validate_number(raw.get("marks"), "Marks",
                                            min_val=0)
             a = _require_assignment(assignment_id)
             if (marks is not None and a.max_marks is not None

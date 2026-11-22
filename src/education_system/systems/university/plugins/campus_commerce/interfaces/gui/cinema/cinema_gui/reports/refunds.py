@@ -9,6 +9,13 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+
+def post_booking_refund_to_finance(*args, **kwargs):
+    """Finance posting shared with the CLIs (imported lazily: cinema_service
+    imports this package's constants, so a top-level import is circular)."""
+    from education_system.systems.university.plugins.campus_commerce.domain.cinema.services import cinema_service
+    return cinema_service.post_booking_refund_to_finance(*args, **kwargs)
+
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog, simpledialog
 from education_system.systems.university.infrastructure.database.db import sqlite3
@@ -295,7 +302,7 @@ def show_cinema_refund_method_dialog(self, booking_id, booking_ref, amount, cust
 
             # Try to get student_id from email if provided
             if customer_email:
-                cursor.execute("SELECT student_id FROM students WHERE email = ? AND email IS NOT NULL AND email != ''",
+                cursor.execute("SELECT student_id FROM students WHERE email_address = ? AND email_address IS NOT NULL AND email_address != ''",
                              (customer_email,))
                 result = cursor.fetchone()
                 if result:
@@ -399,9 +406,6 @@ def show_cinema_refund_method_dialog(self, booking_id, booking_ref, amount, cust
 def _complete_cinema_refund(self, booking_id, booking_ref, amount, refund_method, customer_email, student_id):
     """Complete the refund process (for cash/card)"""
     try:
-        # Generate refund reference
-        refund_ref = f"CINEMA-REFUND-{datetime.now().strftime('%Y%m%d%H%M%S')}"
-
         conn = sqlite3.connect(DB_FILE)
         try:
             cursor = conn.cursor()
@@ -412,38 +416,19 @@ def _complete_cinema_refund(self, booking_id, booking_ref, amount, refund_method
                 SET status = 'refunded'
                 WHERE id = ?
             """, (booking_id,))
-
-            # Get processed_by
-            processed_by = None
-            if AUTH_AVAILABLE:
-                try:
-                    auth = get_auth()
-                    if auth and hasattr(auth, 'current_user') and auth.current_user:
-                        user = auth.current_user
-                        processed_by = user.get('username') or user.get('id', '')
-                except Exception:
-                    logger.debug("Suppressed exception", exc_info=True)
-
-            # Record refund in unified_refunds table
-            cursor.execute("""
-                INSERT INTO unified_refunds
-                (source_type, reference_id, reference_type, customer_email, amount,
-                 refund_method, refund_reference, refund_date, processed_by, status)
-                VALUES ('cinema', ?, 'booking', ?, ?, ?, ?, CURRENT_TIMESTAMP, ?, 'processed')
-            """, (booking_ref, customer_email, amount, refund_method, refund_ref, processed_by))
-            refund_row_id = cursor.lastrowid
-
             conn.commit()
         finally:
             conn.close()
 
-        # Auto-post to GL (cash has moved). Never raises.
-        try:
-            from education_system.systems.university.domains.finance.domain.ledger import notify_ledger
-            notify_ledger('refund', refund_row_id, posted_by=processed_by or 'cinema')
-        except Exception as _e:
-            import logging
-            logging.getLogger(__name__).warning("ledger hook failed: %s", _e)
+        # Post the refund to Finance (unified_refunds + GL) via the cinema service
+        result = post_booking_refund_to_finance(
+            booking_ref, amount, refund_method,
+            student_id=student_id, customer_email=customer_email,
+            processed_by=_refund_processed_by(),
+        )
+        refund_ref = result['refund_ref']
+        if not result['success']:
+            logger.warning("Cinema refund %s not posted to finance: %s", booking_ref, result['message'])
 
         # Send receipt
         self.send_cinema_refund_receipt(customer_email, amount, refund_method, refund_ref, booking_ref)
@@ -461,86 +446,45 @@ def _complete_cinema_refund(self, booking_id, booking_ref, amount, refund_method
         print(f"Error completing cinema refund: {e}")
         messagebox.showerror(_t("cinema.common.error"), f"Failed to complete refund: {str(e)}")
 
+def _refund_processed_by():
+    """Username of the staff member processing the refund, if logged in."""
+    if AUTH_AVAILABLE:
+        try:
+            auth = get_auth()
+            if auth and hasattr(auth, 'current_user') and auth.current_user:
+                user = auth.current_user
+                return user.get('username') or user.get('id', '')
+        except Exception:
+            logger.debug("Suppressed exception", exc_info=True)
+    return None
+
 def add_cinema_refund_to_student_account(self, booking_id, booking_ref, amount, customer_email, student_id):
-    """Add refund amount to student finance account"""
+    """Refund a booking into the student's finance account"""
     if not FINANCE_AVAILABLE:
         messagebox.showerror(_t("cinema.common.error"), _t('gui.operations.commerce.cinema.cinema_gui.reports.refunds.dialogs.finance_system_not_available', default="Finance system not available."))
         return
 
     try:
-        from education_system.systems.university.domains.finance.infrastructure.finance_integration import ensure_student_finance_account_exists
-        from education_system.systems.university.infrastructure.database.db import get_db_connection, transaction
-
-        # Ensure student account exists
-        ensure_student_finance_account_exists(student_id)
-
-        # Generate refund reference
-        refund_ref = f"CINEMA-REFUND-{datetime.now().strftime('%Y%m%d%H%M%S')}"
-
         # Update cinema booking
         conn = sqlite3.connect(DB_FILE)
         try:
             cursor = conn.cursor()
             cursor.execute("UPDATE bookings SET status = 'refunded' WHERE id = ?", (booking_id,))
-
-            # Get processed_by
-            processed_by = None
-            if AUTH_AVAILABLE:
-                try:
-                    auth = get_auth()
-                    if auth and hasattr(auth, 'current_user') and auth.current_user:
-                        user = auth.current_user
-                        processed_by = user.get('username') or user.get('id', '')
-                except Exception:
-                    logger.debug("Suppressed exception", exc_info=True)
-
-            # Record refund in unified_refunds table
-            cursor.execute("""
-                INSERT INTO unified_refunds
-                (source_type, reference_id, reference_type, customer_email, amount,
-                 refund_method, refund_reference, refund_date, processed_by, status)
-                VALUES ('cinema', ?, 'booking', ?, ?, 'student_account', ?, CURRENT_TIMESTAMP, ?, 'processed')
-            """, (booking_ref, customer_email, amount, refund_ref, processed_by))
-            refund_row_id = cursor.lastrowid
-
             conn.commit()
         finally:
             conn.close()
 
-        # Auto-post to GL (cash has moved to student account). Never raises.
-        try:
-            from education_system.systems.university.domains.finance.domain.ledger import notify_ledger
-            notify_ledger('refund', refund_row_id, posted_by=processed_by or 'cinema')
-        except Exception as _e:
-            import logging
-            logging.getLogger(__name__).warning("ledger hook failed: %s", _e)
-
-        # Add to student finance account
-        with transaction() as conn:
-            cursor = conn.cursor()
-
-            cursor.execute("""
-                UPDATE student_finance_accounts
-                SET balance = balance + ?
-                WHERE student_id = ?
-            """, (amount, student_id))
-
-            # Get new balance and account_id after update
-            cursor.execute("SELECT account_id, balance FROM student_finance_accounts WHERE student_id = ?", (student_id,))
-            result = cursor.fetchone()
-            if result:
-                account_id, new_balance = result
-            else:
-                account_id, new_balance = None, amount
-
-            # Log transaction in transactions table
-            cursor.execute("""
-                INSERT INTO transactions
-                (source_type, account_id, student_id, transaction_type, amount, balance_after, description,
-                 reference_id, processed_by, created_at)
-                VALUES ('student_finance', ?, ?, 'credit', ?, ?, ?, ?, ?, ?)
-            """, (account_id, student_id, amount, new_balance, f'Cinema refund - {refund_ref}',
-                  refund_ref, 'System', datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
+        # Post the refund and credit the student account via the cinema service
+        result = post_booking_refund_to_finance(
+            booking_ref, amount, 'student_account',
+            student_id=student_id, customer_email=customer_email,
+            processed_by=_refund_processed_by(),
+        )
+        refund_ref = result['refund_ref']
+        if not result['success']:
+            messagebox.showerror(_t("cinema.common.error"), f"Failed to add refund to account: {result['message']}")
+            return
+        new_balance = float(result['new_balance'] or 0)
 
         # Send receipt
         self.send_cinema_refund_receipt(customer_email, amount, 'student_account', refund_ref, booking_ref, new_balance)
@@ -589,7 +533,7 @@ def send_cinema_refund_receipt(self, customer_email, amount, refund_method, refu
             balance_text = f"Your new student account balance is: \u00a3{new_balance:.2f}"
 
         # Render email from template
-        subject, body = render_template('commerce/cinema/refund_receipt', {
+        subject, body = render_template('finance_commerce/commerce/cinema/refund_receipt', {
             'customer_name': customer_name,
             'booking_ref': booking_ref,
             'refund_amount': f"\u00a3{amount:.2f}",

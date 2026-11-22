@@ -926,15 +926,57 @@ def set_book_status(book_id: int, status: str) -> Book:
     return update_book(book_id, {"status": status})
 
 
+class BookHasLoanHistory(ValidationError):
+    """Deleting the book would destroy loan history — withdraw it."""
+
+
+def withdraw_book(book_id: int) -> Book:
+    """Take a book out of circulation without losing anything: its
+    status becomes 'Withdrawn' (no new loans can be issued) and every
+    loan, fine and copy record is kept. Reverse it by setting the
+    status back to 'Available'."""
+    return set_book_status(book_id, "Withdrawn")
+
+
 def delete_book(book_id: int) -> bool:
+    """Hard-delete a book that has never been lent.
+
+    Refused (ValidationError) while any loan of it is active or a copy
+    is on loan, and refused (BookHasLoanHistory) when it has any loan
+    history — deleting would cascade those loans away, so use
+    :func:`withdraw_book` instead."""
     init_db()
     with _connect() as conn:
+        active = conn.execute(
+            "SELECT COUNT(*) FROM library_loans "
+            "WHERE book_id = ? AND status IN ("
+            + ", ".join("?" for _ in ACTIVE_LOAN_STATUSES) + ")",
+            (book_id, *ACTIVE_LOAN_STATUSES)).fetchone()[0]
+        on_loan_copies = conn.execute(
+            "SELECT COUNT(*) FROM library_copies "
+            "WHERE book_id = ? AND status = 'On Loan'",
+            (book_id,)).fetchone()[0]
+        if active or on_loan_copies:
+            raise ValidationError(
+                f"Book #{book_id} is out on loan "
+                f"({max(active, on_loan_copies)} cop"
+                f"{'y' if max(active, on_loan_copies) == 1 else 'ies'}) "
+                "— return it before deleting.")
+        history = conn.execute(
+            "SELECT COUNT(*) FROM library_loans WHERE book_id = ?",
+            (book_id,)).fetchone()[0]
+        if history:
+            raise BookHasLoanHistory(
+                f"Book #{book_id} has {history} past loan record(s); "
+                "deleting it would erase that history. Withdraw it "
+                "instead (status 'Withdrawn') to take it out of "
+                "circulation and keep the records.")
         cur = conn.execute(
             "DELETE FROM library_books WHERE book_id = ?",
             (book_id,))
         conn.commit()
         if cur.rowcount:
-            logger.info("Deleted book #%d (cascade: loans)", book_id)
+            logger.info("Deleted book #%d (no loan history)", book_id)
             return True
         return False
 

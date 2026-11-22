@@ -85,7 +85,7 @@ class BursaryService:
 
                 CREATE TABLE IF NOT EXISTS bursary_applications (
                     application_id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    student_id INTEGER NOT NULL,
+                    student_id TEXT NOT NULL,
                     fund_id INTEGER NOT NULL,
                     requested_amount REAL NOT NULL DEFAULT 0,
                     household_income REAL,

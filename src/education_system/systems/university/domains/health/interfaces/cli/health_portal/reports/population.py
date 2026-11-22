@@ -1,0 +1,122 @@
+"""Health portal CLI workflow extracted from the legacy module."""
+
+from __future__ import annotations
+
+import csv
+import json
+import logging
+import os
+import shutil
+import sys
+from datetime import datetime, timedelta
+from pathlib import Path
+
+from education_system.systems.university.infrastructure.database.db import (
+    DEFAULT_DB_PATH,
+    get_connection,
+)
+from education_system import paths
+
+logger = logging.getLogger(__name__)
+
+def population_health_statistics(auth):
+    """Generate population health statistics."""
+    print("\n--- Population Health Statistics ---")
+
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
+
+        print("\n" + "="*70)
+        print("POPULATION HEALTH STATISTICS REPORT")
+        print(f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+        print("="*70)
+
+        # Students the health service holds anything for: a visit record or a
+        # health profile (medical_info, application/health/profile — the
+        # profile facts below were read from health_records columns nothing
+        # ever filled).
+        cursor.execute("""
+            SELECT COUNT(*) as count FROM (
+                SELECT student_id FROM health_records WHERE COALESCE(archived, 0) = 0
+                UNION SELECT student_id FROM medical_info)
+        """)
+        total_students = cursor.fetchone()['count']
+        print(f"\nTotal Students with Health Records: {total_students}")
+
+        from education_system.systems.university.domains.health.application.health import profile as _profile
+        blood_types = _profile.blood_type_counts(conn)
+
+        if blood_types:
+            print("\nBlood Type Distribution:")
+            print(f"{'Blood Type':<15} {'Count':<10} {'Percentage':<10}")
+            print("-"*35)
+            for blood_type, count in blood_types:
+                percentage = (count / total_students * 100) if total_students > 0 else 0
+                print(f"{blood_type:<15} {count:<10} {percentage:.1f}%")
+
+        def _students(sql):
+            cursor.execute(f"SELECT COUNT(*) as count FROM ({sql})")  # nosec B608 - literals below
+            return cursor.fetchone()['count']
+
+        # Students with allergies (allergy list or profile summary)
+        with_allergies = _students(
+            "SELECT student_id FROM allergies UNION SELECT student_id FROM medical_info "
+            "WHERE allergies IS NOT NULL AND allergies != ''")
+        allergy_percentage = (with_allergies / total_students * 100) if total_students > 0 else 0
+        print(f"\nStudents with Documented Allergies: {with_allergies} ({allergy_percentage:.1f}%)")
+
+        # Students with chronic conditions
+        with_conditions = _students(
+            "SELECT student_id FROM medical_conditions WHERE LOWER(COALESCE(status, 'active')) "
+            "= 'active' UNION SELECT student_id FROM medical_info "
+            "WHERE conditions IS NOT NULL AND conditions != ''")
+        condition_percentage = (with_conditions / total_students * 100) if total_students > 0 else 0
+        print(f"Students with Chronic Conditions: {with_conditions} ({condition_percentage:.1f}%)")
+
+        # Students on medications
+        on_medications = _students(
+            "SELECT student_id FROM prescriptions WHERE LOWER(COALESCE(status, 'active')) "
+            "= 'active' UNION SELECT student_id FROM medical_info "
+            "WHERE medications IS NOT NULL AND medications != ''")
+        medication_percentage = (on_medications / total_students * 100) if total_students > 0 else 0
+        print(f"Students on Current Medications: {on_medications} ({medication_percentage:.1f}%)")
+
+        # Insurance coverage
+        with_insurance = _students(
+            "SELECT student_id FROM insurance_information WHERE insurance_provider IS NOT NULL "
+            "AND insurance_provider != '' UNION SELECT student_id FROM medical_info "
+            "WHERE insurance_provider IS NOT NULL AND insurance_provider != ''")
+        insurance_percentage = (with_insurance / total_students * 100) if total_students > 0 else 0
+        print(f"\nStudents with Health Insurance: {with_insurance} ({insurance_percentage:.1f}%)")
+
+        # Emergency contacts
+        cursor.execute("SELECT COUNT(DISTINCT student_id) as count FROM emergency_contacts")
+        with_contacts = cursor.fetchone()['count']
+        contact_percentage = (with_contacts / total_students * 100) if total_students > 0 else 0
+        print(f"Students with Emergency Contacts: {with_contacts} ({contact_percentage:.1f}%)")
+
+        # Recent medical activity (last 30 days)
+        cutoff = (datetime.now() - timedelta(days=30)).strftime('%Y-%m-%d')
+        cursor.execute("""
+            SELECT COUNT(*) as count FROM health_appointments
+            WHERE date(appointment_date) >= ?
+        """, (cutoff,))
+        recent_appointments = cursor.fetchone()['count']
+        print("\nHealth Center Activity (Last 30 Days):")
+        print(f"  Appointments Scheduled: {recent_appointments}")
+
+        from education_system.systems.university.domains.health.application.health import medical_history as _medical_history
+        recent_visits = _medical_history.count_since(conn, cutoff)
+        print(f"  Medical Visits Recorded: {recent_visits}")
+
+        print("\n" + "="*70)
+        print("End of Population Health Statistics")
+        print("="*70)
+
+        conn.close()
+        logger.info(f"Population health statistics generated by {auth.get_username()}")
+
+    except Exception as e:
+        logger.error(f"Error generating population health statistics: {e}")
+        print(f"\nError generating statistics: {e}")

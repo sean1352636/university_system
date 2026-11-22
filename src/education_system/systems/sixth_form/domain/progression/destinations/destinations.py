@@ -63,6 +63,9 @@ STUDY_LEVELS: tuple[str, ...] = (
 CONFIRMED_VIA: tuple[str, ...] = (
     "UCAS Track", "Email", "Phone", "Parent", "Survey",
     "In Person", "Other",
+    # Set by the university feedback consumer (university_confirmations)
+    # when the university itself reports the learner enrolled.
+    "University (confirmed by institution)",
 )
 
 SALARY_BANDS: tuple[str, ...] = (

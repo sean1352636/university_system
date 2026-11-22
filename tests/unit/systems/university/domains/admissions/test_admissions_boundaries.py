@@ -44,7 +44,7 @@ KNOWN_VIOLATIONS: set[tuple[str, str]] = {
     # target design is unchanged.
     (
         "domain/services/admissions_lifecycle.py",
-        "education_system.systems.university.domains.pastoral.domain.health.records",
+        "education_system.systems.university.domains.health.domain.health.records",
     ),
 }
 

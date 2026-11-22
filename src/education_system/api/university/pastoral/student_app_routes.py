@@ -7,7 +7,14 @@ from datetime import datetime
 
 from flask import Blueprint, g, jsonify, request
 
-from education_system.platform.delivery.api.university.auth import scoped_to, token_required
+from education_system.platform.delivery.api.university.auth import (
+    current_subject_id,
+    deny_unless_owner_or_staff,
+    is_staff,
+    scoped_to,
+    staff_required,
+    token_required,
+)
 from education_system.platform.delivery.api.university.pagination import get_pagination_params, paginated_response
 from education_system.systems.university.infrastructure.exceptions import ValidationError
 from education_system.systems.university.infrastructure.database.db import get_connection, transaction
@@ -16,6 +23,11 @@ from education_system.systems.university.infrastructure.activity_logger import l
 logger = logging.getLogger(__name__)
 
 student_app_bp = Blueprint("student_app", __name__, url_prefix="/api/student-app")
+
+#: Notifications and quick links are one student's (``student_id`` is TEXT,
+#: the JWT ``sub``). Sending a notification to a student needs
+#: ``send_notifications`` (admin, instructor).
+NOTIFY_SEND = "send_notifications"
 
 
 def _row_to_dict(row) -> dict:
@@ -94,6 +106,11 @@ def update_preferences(student_id: str):
 @token_required
 def list_notifications():
     student_id = request.args.get("student_id")
+    if not is_staff():
+        # A learner's inbox is their own, whatever id the query names.
+        student_id = current_subject_id()
+        if student_id is None:
+            return jsonify({"error": "Forbidden", "status": 403}), 403
     unread_only = request.args.get("unread_only", "false").lower() == "true"
     notification_type = request.args.get("type")
 
@@ -138,12 +155,16 @@ def get_notification(notification_id: int):
         ).fetchone()
     if not row:
         raise ValidationError(f"Notification {notification_id} not found")
+    denial = deny_unless_owner_or_staff(row["student_id"])
+    if denial is not None:
+        return denial
     log_activity("view", "student_app_notification", user=g.current_user.get("sub"))
     return jsonify(_row_to_dict(row))
 
 
 @student_app_bp.route("/notifications", methods=["POST"])
 @token_required
+@staff_required(permission=NOTIFY_SEND)
 def create_notification():
     data = request.get_json(silent=True) or {}
     for field in ["student_id", "title"]:
@@ -172,6 +193,16 @@ def create_notification():
 @student_app_bp.route("/notifications/<int:notification_id>/read", methods=["POST"])
 @token_required
 def mark_notification_read(notification_id: int):
+    with get_connection() as conn:
+        row = conn.execute(
+            "SELECT student_id FROM student_app_notifications WHERE id = ?",
+            (notification_id,),
+        ).fetchone()
+    if not row:
+        raise ValidationError(f"Notification {notification_id} not found")
+    denial = deny_unless_owner_or_staff(row["student_id"])
+    if denial is not None:
+        return denial
     with transaction() as conn:
         conn.execute(
             "UPDATE student_app_notifications SET is_read = 1 WHERE id = ?",
@@ -216,9 +247,14 @@ def get_quick_links(student_id: str):
 @token_required
 def add_quick_link():
     data = request.get_json(silent=True) or {}
+    if not is_staff():
+        data["student_id"] = current_subject_id()
     for field in ["student_id", "link_title", "link_url"]:
-        if field not in data:
+        if not data.get(field):
             raise ValidationError(f"Missing required field: {field}")
+    denial = deny_unless_owner_or_staff(data["student_id"])
+    if denial is not None:
+        return denial
 
     with transaction() as conn:
         conn.execute(
@@ -248,6 +284,9 @@ def remove_quick_link(link_id: int):
         ).fetchone()
     if not row:
         raise ValidationError(f"Quick link {link_id} not found")
+    denial = deny_unless_owner_or_staff(row["student_id"])
+    if denial is not None:
+        return denial
 
     with transaction() as conn:
         conn.execute(

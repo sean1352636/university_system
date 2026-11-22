@@ -11,6 +11,13 @@ Two-table model:
                           a review. Status: Open / On Track /
                           At Risk / Met / Missed.
 
+Academic targets have one home: Target Setting. An ``Academic``-area
+target added here is written through to ``target_actions`` in
+:mod:`target_setting` (keyed by this row's id) and read back from it, so
+an edit made in either screen shows in both. The ``progress_targets``
+row is kept so review ids, reports and exports keep working. Each
+review also shows the student's per-subject grade targets.
+
 Lifecycle of a review:
     Draft → Published → Shared (with parents/student) → Archived
 A Draft can be edited freely; a Published review is what's used in
@@ -193,6 +200,8 @@ class ReviewView:
     targets: list[Target]
     open_targets: int
     met_targets: int
+    # The student's per-subject grade targets from Target Setting.
+    academic_targets: list[Any] = field(default_factory=list)
 
 
 # ── DB plumbing ────────────────────────────────────────────────────
@@ -499,7 +508,17 @@ def view_review(review_id: int) -> ReviewView | None:
         reviewer_name=reviewer_name, targets=targets,
         open_targets=sum(1 for t in targets if t.is_open),
         met_targets=sum(1 for t in targets if t.status == "Met"),
+        academic_targets=grade_targets_for_student(r.student_id),
     )
+
+
+def grade_targets_for_student(student_id: str) -> list[Any]:
+    """The student's per-subject grade targets (Target Setting)."""
+    try:
+        return _ts().list_targets(student_id=student_id)
+    except Exception:
+        logger.exception("Could not read grade targets for %s", student_id)
+        return []
 
 
 def update_review(review_id: int, d: dict[str, Any]) -> Review:
@@ -612,6 +631,17 @@ def delete_review(review_id: int) -> bool:
         raise ValidationError(
             f"Only Draft reviews can be deleted "
             f"(this one is {existing.status}). Archive it instead.")
+    # The review's academic targets live in Target Setting too; the
+    # cascade only reaches progress_targets, so clear those copies here.
+    for t in list_targets(review_id=review_id):
+        if t.area == "Academic":
+            try:
+                linked = _ts().action_for_progress_target(t.target_id)
+                if linked is not None:
+                    _ts().delete_action(linked.action_id)
+            except Exception:
+                logger.exception("Could not remove the Target Setting copy "
+                                 "of progress target #%d", t.target_id)
     with _connect() as conn:
         cur = conn.execute(
             "DELETE FROM progress_reviews WHERE review_id = ?",
@@ -648,10 +678,92 @@ def add_target(review_id: int, d: dict[str, Any]) -> Target:
         )
         conn.commit()
         new_id = cur.lastrowid
+    _sync_academic(new_id)
     out = get_target(new_id)
     assert out is not None
     logger.info("Added target #%d to review #%d (%s)",
                 new_id, review_id, p["area"])
+    return out
+
+
+# ── Write-through to Target Setting ─────────────────────────────
+
+def _ts():
+    from education_system.systems.sixth_form.domain.assessment.target_setting import (
+        target_setting as _target_setting,
+    )
+    return _target_setting
+
+
+def _raw_target(target_id: int) -> sqlite3.Row | None:
+    with _connect() as conn:
+        return conn.execute(
+            """SELECT pt.*, pr.student_id AS student_id
+                 FROM progress_targets pt
+                 JOIN progress_reviews pr ON pr.review_id = pt.review_id
+                WHERE pt.target_id = ?""", (target_id,)).fetchone()
+
+
+def _sync_academic(target_id: int) -> None:
+    """Make Target Setting hold this row if it is an Academic target.
+
+    Creates the linked ``target_actions`` row the first time, updates it
+    afterwards, and removes it if the target moved out of Academic.
+    A failure is logged, not raised — the review row is saved either
+    way and :func:`target_setting.migrate_progress_targets` picks up
+    anything missed.
+    """
+    try:
+        ts = _ts()
+        r = _raw_target(target_id)
+        existing = ts.action_for_progress_target(target_id)
+        if r is None or r["area"] != "Academic":
+            if existing is not None:
+                ts.delete_action(existing.action_id)
+            return
+        fields = {
+            "description": r["description"], "measure": r["measure"],
+            "due_date": r["due_date"], "status": r["status"],
+            "progress_note": r["progress_note"],
+            "closed_on": r["closed_on"],
+        }
+        if existing is None:
+            ts.create_action({
+                **fields, "student_id": r["student_id"],
+                "source": "Progress Review",
+                "progress_review_id": r["review_id"],
+                "legacy_progress_target_id": target_id,
+            })
+        else:
+            ts.update_action(existing.action_id, fields)
+    except Exception:
+        logger.exception("Could not write progress target #%d through to "
+                         "Target Setting", target_id)
+
+
+def _overlay(targets: list[Target]) -> list[Target]:
+    """Read Academic targets back from Target Setting (the store of
+    record), so a status changed there shows here too."""
+    if not any(t.area == "Academic" for t in targets):
+        return targets
+    try:
+        actions = {a.legacy_progress_target_id: a
+                   for a in _ts().list_actions(source="Progress Review")}
+    except Exception:
+        logger.exception("Could not read academic actions")
+        return targets
+    out: list[Target] = []
+    for t in targets:
+        a = actions.get(t.target_id) if t.area == "Academic" else None
+        if a is not None:
+            t = Target(
+                target_id=t.target_id, review_id=t.review_id,
+                area=t.area, description=a.description,
+                measure=a.measure, due_date=a.due_date,
+                status=a.status, progress_note=a.progress_note,
+                closed_on=a.closed_on, created_at=t.created_at,
+                updated_at=a.updated_at)
+        out.append(t)
     return out
 
 
@@ -661,7 +773,7 @@ def get_target(target_id: int) -> Target | None:
         r = conn.execute(
             "SELECT * FROM progress_targets WHERE target_id = ?",
             (target_id,)).fetchone()
-        return _row_target(r) if r else None
+    return _overlay([_row_target(r)])[0] if r else None
 
 
 def list_targets(
@@ -707,8 +819,14 @@ def list_targets(
     sql = (f"SELECT * FROM progress_targets {where} "
            "ORDER BY COALESCE(due_date, created_at), target_id")
     with _connect() as conn:
-        return [_row_target(r)
-                 for r in conn.execute(sql, args).fetchall()]
+        rows = [_row_target(r) for r in conn.execute(sql, args).fetchall()]
+    rows = _overlay(rows)
+    # Re-apply the status filters in case Target Setting moved one on.
+    if status:
+        rows = [t for t in rows if t.status == status]
+    if open_only:
+        rows = [t for t in rows if t.is_open]
+    return rows
 
 
 def update_target(target_id: int, d: dict[str, Any]) -> Target:
@@ -739,6 +857,7 @@ def update_target(target_id: int, d: dict[str, Any]) -> Target:
              target_id),
         )
         conn.commit()
+    _sync_academic(target_id)
     out = get_target(target_id)
     assert out is not None
     logger.info("Updated target #%d (status=%s)",
@@ -755,6 +874,13 @@ def set_target_status(target_id: int, status: str) -> Target:
 
 def delete_target(target_id: int) -> bool:
     init_db()
+    try:
+        linked = _ts().action_for_progress_target(target_id)
+        if linked is not None:
+            _ts().delete_action(linked.action_id)
+    except Exception:
+        logger.exception("Could not remove the Target Setting copy of "
+                         "progress target #%d", target_id)
     with _connect() as conn:
         cur = conn.execute(
             "DELETE FROM progress_targets WHERE target_id = ?",

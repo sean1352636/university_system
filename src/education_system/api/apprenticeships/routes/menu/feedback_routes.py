@@ -32,3 +32,19 @@ def feedback_give_feedback():
     """Give Feedback"""
     return feature_pending("Give Feedback", _SYSTEM, category=_CATEGORY)
 
+
+@feedback_menu_bp.route("/shared-complaints", methods=["GET"])
+@token_required
+@staff_required
+def feedback_shared_complaints():
+    """shared.complaints"""
+    return feature_pending("shared.complaints", _SYSTEM, category=_CATEGORY)
+
+
+@feedback_menu_bp.route("/shared-surveys", methods=["GET"])
+@token_required
+@staff_required
+def feedback_shared_surveys():
+    """shared.surveys"""
+    return feature_pending("shared.surveys", _SYSTEM, category=_CATEGORY)
+

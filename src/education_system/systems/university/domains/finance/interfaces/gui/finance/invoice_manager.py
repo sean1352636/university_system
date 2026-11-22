@@ -487,7 +487,7 @@ class InvoiceManager:
             # Try to get phone_number if it exists, otherwise use NULL
             try:
                 cursor.execute('''
-                SELECT first_name, last_name, email_address, phone_number, course, enrollment_date, status
+                SELECT first_name, last_name, email_address, phone AS phone_number, course, enrollment_date, status
                 FROM students
                 WHERE student_id = ?
                 ''', (student_id,))

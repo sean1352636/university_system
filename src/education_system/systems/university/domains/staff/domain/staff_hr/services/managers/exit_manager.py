@@ -442,10 +442,15 @@ class ExitManager:
             return transfer_id
 
     @staticmethod
-    def get_knowledge_transfers(user_id: str, as_departing: bool = True) -> List[Dict[str, Any]]:
-        """Get knowledge transfer records for a user."""
+    def get_knowledge_transfers(user_id: str = None, as_departing: bool = True) -> List[Dict[str, Any]]:
+        """Get knowledge transfer records for a user (every one when no user)."""
         with get_connection() as conn:
-            if as_departing:
+            if not user_id:
+                rows = conn.execute('''
+                    SELECT * FROM knowledge_transfer
+                    ORDER BY priority DESC, scheduled_date
+                ''').fetchall()
+            elif as_departing:
                 rows = conn.execute('''
                     SELECT * FROM knowledge_transfer
                     WHERE departing_user_id = ?
@@ -741,13 +746,14 @@ class ExitManager:
             ''', (user_id, last_working_day, reason, exit_type, department, manager_id))
             interview_id = cursor.lastrowid
 
-            # Create default checklist from default template
-            ExitManager.create_user_checklist(user_id, last_working_day)
-
             log_activity('create', 'exit_process', details={
                 'interview_id': interview_id, 'user_id': user_id, 'exit_type': exit_type
             })
-            return interview_id
+
+        # Default checklist, in its own transaction once the exit row is
+        # committed (opening it inside the one above locked the database).
+        ExitManager.create_user_checklist(user_id, last_working_day)
+        return interview_id
 
     @staticmethod
     def apply_template(user_id: str, template_id: int) -> int:
@@ -759,6 +765,33 @@ class ExitManager:
         # Create checklist items from template
         checklist_ids = ExitManager.create_user_checklist(user_id, last_working_day, template_id)
         return len(checklist_ids)
+
+    @staticmethod
+    def get_all_interviews(status: str = None) -> List[Dict[str, Any]]:
+        """Every exit interview (the Exit screen's list): ``completed`` is True
+        once the interview is done, ``interview_date`` falls back to the
+        scheduled date."""
+        out = []
+        for row in ExitManager.get_all_exit_interviews(status=status):
+            row['completed'] = row.get('status') == 'completed'
+            row['interview_date'] = row.get('interview_date') or row.get('scheduled_date')
+            out.append(row)
+        return out
+
+    @staticmethod
+    def complete_exit(user_id: str, completed_by: str = None) -> bool:
+        """Close a leaver's exit process. A completed interview keeps its
+        ``completed`` status; any other open record becomes ``closed``."""
+        with transaction() as conn:
+            cur = conn.execute('''
+                UPDATE exit_interviews SET status = 'closed', updated_at = ?
+                WHERE user_id = ? AND COALESCE(status, '') NOT IN ('completed', 'closed')
+            ''', (datetime.now().isoformat(), user_id))
+            log_activity('update', 'exit_process', details={
+                'user_id': user_id, 'action': 'completed', 'completed_by': completed_by
+            })
+            return bool(cur.rowcount) or bool(conn.execute(
+                'SELECT 1 FROM exit_interviews WHERE user_id = ?', (user_id,)).fetchone())
 
     @staticmethod
     def get_exit_record(user_id: str) -> Optional[Dict[str, Any]]:

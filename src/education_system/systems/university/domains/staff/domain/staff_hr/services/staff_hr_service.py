@@ -418,9 +418,7 @@ class StaffHRService:
             dashboard['team_members'] = EmployeeManager.get_staff_by_manager(manager_id)
 
             # Recruitment
-            dashboard['open_job_postings'] = RecruitmentManager.get_job_postings(
-                status='open', limit=10
-            )
+            dashboard['open_job_postings'] = RecruitmentManager.get_active_postings(limit=10)
 
         except Exception as e:
             logger.error(f"Error building manager dashboard for {manager_id}: {e}")

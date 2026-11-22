@@ -72,7 +72,11 @@ class BarberGUI(
             AUTH_AVAILABLE, get_auth,
         )
         if self.auth is None and AUTH_AVAILABLE and get_auth:
-            self.auth = get_auth()
+            try:
+                self.auth = get_auth()
+            except RuntimeError:
+                # Not initialised: _check_authentication shows the login message.
+                self.auth = None
 
         # Check authentication
         if not self._check_authentication():

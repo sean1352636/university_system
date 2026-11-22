@@ -163,7 +163,7 @@ def _load_chatbot_class() -> Optional[type]:
     _chatbot_load_attempted = True
 
     try:
-        from education_system.systems.university.infrastructure.ai.university_chatbot import UniversityChatbot
+        from education_system.systems.university.shared.ai.chatbot import UniversityChatbot
         _chatbot_class = UniversityChatbot
         logger.info("Chatbot module loaded successfully")
         return _chatbot_class
@@ -293,7 +293,7 @@ def _load_voice_class() -> Optional[type]:
 
     try:
         # Try to import the voice interface module
-        from education_system.systems.university.infrastructure.ai.voice_interface import VoiceInterface as VoiceImpl
+        from education_system.systems.university.shared.ai.voice_interface import VoiceInterface as VoiceImpl
         _voice_class = VoiceImpl
         logger.info("Voice interface module loaded successfully")
         return _voice_class

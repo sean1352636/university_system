@@ -187,19 +187,19 @@ def _safe_launch(title, fn):
 
 def _launch_profile(parent, auth):
     """Launch Student Profile Center."""
-    from education_system.systems.university.domains.pastoral.interfaces.gui.student_profile.profile_gui import StudentProfileGUI
+    from education_system.systems.university.domains.student_life.interfaces.gui.student_profile.profile_gui import StudentProfileGUI
     StudentProfileGUI(parent, auth=auth)
 
 
 def _launch_security(parent, auth):
     """Launch Account Security Dashboard."""
-    from education_system.systems.university.domains.pastoral.interfaces.gui.account_security.security_gui import AccountSecurityGUI
+    from education_system.systems.university.domains.student_life.interfaces.gui.account_security.security_gui import AccountSecurityGUI
     AccountSecurityGUI(parent, auth=auth)
 
 
 def _launch_notifications(parent, auth):
     """Launch Notification Preferences."""
-    from education_system.systems.university.domains.pastoral.interfaces.gui.notification_prefs.notification_prefs_gui import NotificationPrefsGUI
+    from education_system.systems.university.domains.student_life.interfaces.gui.notification_prefs.notification_prefs_gui import NotificationPrefsGUI
     NotificationPrefsGUI(parent, auth=auth)
 
 
@@ -217,7 +217,7 @@ def _launch_degree_progress(parent, auth):
 
 def _launch_course_catalog(parent, auth):
     """Launch Course Catalog & Registration."""
-    from education_system.systems.university.domains.academics.interfaces.gui.course_catalog.course_catalog_gui import CourseCatalogGUI
+    from education_system.systems.university.domains.curriculum.interfaces.gui.course_catalog.course_catalog_gui import CourseCatalogGUI
     CourseCatalogGUI(parent, auth=auth)
 
 
@@ -235,7 +235,7 @@ def _launch_messaging(parent, auth):
 
 def _launch_forums(parent, auth):
     """Launch Course Discussion Forums."""
-    from education_system.systems.university.domains.academics.interfaces.gui.course_forums.course_forums_gui import CourseForumsGUI
+    from education_system.systems.university.domains.teaching.interfaces.gui.course_forums.course_forums_gui import CourseForumsGUI
     CourseForumsGUI(parent, auth=auth)
 
 
@@ -260,19 +260,19 @@ def _launch_roommate_finder(parent, auth):
 
 def _launch_help_center(parent, auth):
     """Launch Student Support (formerly Help Center)."""
-    from education_system.systems.university.domains.pastoral.interfaces.gui.student_support import StudentSupportGUI
+    from education_system.systems.university.domains.student_support.interfaces.gui.student_support import StudentSupportGUI
     StudentSupportGUI(tk.Toplevel(parent), auth_system=auth)
 
 
 def _launch_documents(parent, auth):
     """Launch Personal Document Center."""
-    from education_system.systems.university.domains.pastoral.interfaces.gui.document_center.document_center_gui import DocumentCenterGUI
+    from education_system.systems.university.domains.student_life.interfaces.gui.document_center.document_center_gui import DocumentCenterGUI
     DocumentCenterGUI(parent, auth=auth)
 
 
 def _launch_graduation(parent, auth):
     """Launch the Graduation Ceremony GUI (opens the student self-service tab)."""
-    from education_system.systems.university.domains.academics.interfaces.gui.course_management_gui.graduation_ceremony_gui import GraduationCeremonyGUI
+    from education_system.systems.university.domains.curriculum.interfaces.gui.course_management_gui.graduation_ceremony_gui import GraduationCeremonyGUI
     GraduationCeremonyGUI(parent, auth=auth)
 
 
@@ -312,7 +312,7 @@ def _launch_feature(root, auth, feature_name):
         ),
         'social_matching': (
             'Social Matching',
-            'education_system.systems.university.domains.pastoral.interfaces.gui.social_matching.social_matching_gui',
+            'education_system.systems.university.domains.student_life.interfaces.gui.social_matching.social_matching_gui',
             'SocialMatchingGUI', 'none', True,
         ),
         'mail_post': (
@@ -337,12 +337,12 @@ def _launch_feature(root, auth, feature_name):
         ),
         'achievement_badges': (
             'Achievement Badges',
-            'education_system.systems.university.domains.pastoral.interfaces.gui.achievement_badges.achievement_badge_gui',
+            'education_system.systems.university.domains.student_life.interfaces.gui.achievement_badges.achievement_badge_gui',
             'AchievementBadgeGUI', 'kwarg', True,
         ),
         'wellness_hub': (
             'Wellness Hub',
-            'education_system.systems.university.domains.pastoral.interfaces.gui.wellbeing.wellness.wellness_gui',
+            'education_system.systems.university.domains.student_support.interfaces.gui.wellbeing.wellness.wellness_gui',
             'WellnessGUI', 'kwarg', True,
         ),
         'todo_app': (
@@ -354,11 +354,6 @@ def _launch_feature(root, auth, feature_name):
             'My Visa Status',
             'education_system.systems.university.domains.governance.interfaces.gui.compliance.international_compliance.my_visa_status_gui',
             'MyVisaStatusGUI', 'none', True,
-        ),
-        'enrolment_letters': (
-            'Status Letters',
-            'education_system.systems.university.domains.pastoral.interfaces.gui.student_app.documentation.documentation_gui',
-            'DocumentationGUI', 'kwarg', True,
         ),
     }
 
@@ -483,7 +478,7 @@ def _fetch_upcoming_exam_count(conn, student_id):
             "SELECT COUNT(*) FROM exams e "
             "JOIN student_modules sm ON e.module_code = sm.module_code "
             "WHERE sm.student_id = ? AND LOWER(sm.status) = 'enrolled' "
-            "AND e.date >= date('now')",
+            "AND e.date >= date('now') AND COALESCE(e.status, 'published') = 'published'",
             (student_id,),
         ).fetchone()
         return str(row[0] if row else 0)
@@ -877,7 +872,6 @@ def create_student_dashboard(parent_frame, auth, service, main_gui=None):
             ("Wellness Hub", lambda: _launch_feature(root, auth, 'wellness_hub')),
             ("Todo App", lambda: _launch_feature(root, auth, 'todo_app')),
             ("My Visa Status", lambda: _launch_feature(root, auth, 'my_visa_status')),
-            ("Status Letters", lambda: _launch_feature(root, auth, 'enrolment_letters')),
         ])
         from education_system.systems.university.shell.gui.main.dashboard.evaluation_launchers import (
             EVALUATION_MODULES, launch_evaluation_module,

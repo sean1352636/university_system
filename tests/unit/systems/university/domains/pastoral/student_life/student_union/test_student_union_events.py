@@ -7,7 +7,7 @@ import pytest
 from education_system.systems.university.infrastructure.database.db import sqlite3
 from unittest.mock import Mock, patch
 
-from education_system.systems.university.domains.pastoral.domain.student_life.student_union.services import events
+from education_system.systems.university.domains.student_life.domain.student_life.student_union.services import events
 
 @pytest.fixture
 def mock_cursor():

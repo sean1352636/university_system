@@ -10,7 +10,7 @@ from education_system.systems.university.shell.cli.imports import (
     logging, sqlite3, datetime, DB_PATH, logger, _t,
     log_activity, log_create, log_update, log_delete, get_auth
 )
-from education_system.systems.university.domains.academics.domain.services.modules import (
+from education_system.systems.university.domains.curriculum.domain.modules import (
     compulsory_module_1, compulsory_module_2,
     optional_module_1, optional_module_2, optional_module_3, optional_module_4,
     CS_optional_module_1, CS_optional_module_2, CS_optional_module_3, CS_optional_module_4,
@@ -248,12 +248,21 @@ def edit_module():
                 else:
                     print("Invalid choice. Please select 1-4.")
 
-        # Update the module
-        cursor.execute('''
-        UPDATE modules
-        SET module_name = ?, module_type = ?
-        WHERE module_code = ?
-        ''', (new_name, new_type, module_code))
+        # Update the module through the shared rule, so the change history
+        # records it the same as an edit from the GUI.
+        from education_system.systems.university.application.modules import (
+            specification as module_specification,
+        )
+        try:
+            module_specification.apply_changes(
+                conn, module_code, {"module_name": new_name, "module_type": new_type},
+                auth.current_user.get("username") if isinstance(auth.current_user, dict)
+                else getattr(auth.current_user, "username", None))
+        except ValueError as exc:
+            print(f"Refused: {exc}")
+            conn.close()
+            input("\nPress Enter to continue...")
+            return False
 
         # Update module name in student_modules table
         if new_name != module[1]:
@@ -1015,10 +1024,10 @@ def email_module_students():
 
         # Get students with emails
         cursor.execute("""
-        SELECT s.student_id, s.first_name, s.last_name, s.email
+        SELECT s.student_id, s.first_name, s.last_name, s.email_address
         FROM students s
         JOIN student_modules sm ON s.student_id = sm.student_id
-        WHERE sm.module_code = ? AND s.email IS NOT NULL AND s.email != ''
+        WHERE sm.module_code = ? AND s.email_address IS NOT NULL AND s.email_address != ''
         """, (module_code,))
         students = cursor.fetchall()
 
@@ -1549,41 +1558,7 @@ def manage_module_enrollments():
                 student_id = input("Student ID to enrol (or 'cancel'): ").strip()
                 if not student_id or student_id.lower() == 'cancel':
                     continue
-                cursor.execute("SELECT first_name, last_name FROM students WHERE student_id = ?",
-                               (student_id,))
-                student = cursor.fetchone()
-                if not student:
-                    print(f"No student found with ID '{student_id}'.")
-                    continue
-                try:
-                    cursor.execute('''
-                        INSERT INTO student_modules
-                            (student_id, module_code, module_name, status, enrollment_date)
-                        VALUES (?, ?, ?, 'Enrolled', ?)
-                    ''', (student_id, module_code, module_name,
-                          datetime.now().strftime('%Y-%m-%d')))
-                    conn.commit()
-                    print(f"Enrolled {student[0]} {student[1]} on {module_code}.")
-                    log_activity('enrol_student',
-                                 'module_management', f"{student_id} -> {module_code}")
-                except sqlite3.IntegrityError:
-                    # UNIQUE(student_id, module_code): already has a row, which
-                    # may be a withdrawn one — offer to reinstate it instead.
-                    cursor.execute('''SELECT status FROM student_modules
-                                      WHERE student_id = ? AND module_code = ?''',
-                                   (student_id, module_code))
-                    existing = cursor.fetchone()
-                    current = existing[0] if existing else 'unknown'
-                    if current == 'Enrolled':
-                        print("That student is already enrolled on this module.")
-                    else:
-                        answer = input(f"Student has status '{current}'. Re-enrol? (y/n): ").strip().lower()
-                        if answer == 'y':
-                            cursor.execute('''UPDATE student_modules SET status = 'Enrolled'
-                                              WHERE student_id = ? AND module_code = ?''',
-                                           (student_id, module_code))
-                            conn.commit()
-                            print(f"{student_id} re-enrolled on {module_code}.")
+                _enrol_through_gate(conn, module_code, student_id)
 
             elif choice == '3' and can_manage:
                 student_id = input("Student ID to withdraw (or 'cancel'): ").strip()
@@ -1601,12 +1576,17 @@ def manage_module_enrollments():
                     print("Cancelled.")
                     continue
                 # Status change rather than a delete: the enrolment history and
-                # any recorded grade stay intact.
-                cursor.execute('''UPDATE student_modules SET status = 'Withdrawn'
-                                  WHERE student_id = ? AND module_code = ?''',
-                               (student_id, module_code))
+                # any recorded grade stay intact. A freed place goes to the
+                # first eligible student on the waitlist.
+                from education_system.systems.university.application.modules import (
+                    enrolment as module_enrolment,
+                )
+                result = module_enrolment.bulk_withdraw(conn, module_code, [student_id],
+                                                        "module_management_cli")
                 conn.commit()
                 print(f"{student_id} withdrawn from {module_code}.")
+                if result["promoted"]:
+                    print("Enrolled from the waitlist: " + ", ".join(result["promoted"]))
                 log_activity('withdraw_student',
                              'module_management', f"{student_id} from {module_code}")
 
@@ -1619,6 +1599,39 @@ def manage_module_enrollments():
     finally:
         if conn:
             conn.close()
+
+
+def _enrol_through_gate(conn, module_code, student_id):
+    """Enrol via the shared eligibility gate: a full module offers the
+    waitlist, any other unmet rule needs an explicit staff override."""
+    from education_system.systems.university.application.modules import (
+        enrolment as module_enrolment,
+    )
+    check = module_enrolment.eligibility(conn, module_code, student_id)
+    if check.blocks:
+        print("Enrolment rules not met:\n  " + check.reason().replace("\n", "\n  "))
+        if check.only_capacity and input("Put the student on the waitlist? (y/n): ").strip().lower() == 'y':
+            try:
+                position = module_enrolment.join_waitlist(conn, module_code, student_id)
+                conn.commit()
+                print(f"{student_id} is number {position} on the waitlist.")
+            except ValueError as exc:
+                print(f"Refused: {exc}")
+            return
+        if input("Enrol anyway as a staff override? (y/n): ").strip().lower() != 'y':
+            print("Not enrolled.")
+            return
+    try:
+        result = module_enrolment.enrol(conn, module_code, student_id)
+    except ValueError as exc:
+        print(f"Refused: {exc}")
+        return
+    conn.commit()
+    print({"already": f"{student_id} is already enrolled on {module_code}.",
+           "reinstated": f"{student_id} re-enrolled on {module_code}."}.get(
+        result, f"Enrolled {student_id} on {module_code}."))
+    log_activity('enrol_student', 'module_management',
+                 f"{student_id} -> {module_code}" + (" (override)" if check.blocks else ""))
 
 
 def assign_module_instructor():
@@ -1747,8 +1760,20 @@ def display_module_management_menu():
             item("Import modules from CSV", 'import_csv')
             item("Export modules to CSV", 'export_csv')
 
+            print("\n🧾 CATALOGUE (specification, rules, delivery):")
+            item("Specification, outcomes & assessment plan", 'spec')
+            item("Change requests & history", 'changes')
+            item("Programme designations", 'designations')
+            item("Exclusions", 'exclusions')
+            item("Waitlist", 'waitlist')
+            item("Enrol a cohort", 'cohort')
+            item("Teaching team & external examiners", 'team')
+            item("Deliveries & weekly timetable", 'delivery')
+            item("Student evaluation results", 'feedback')
+
             print("\n🔧 MAINTENANCE:")
             item("Validate module data", 'validate')
+            item("Fill missing credits & levels", 'fill')
             item("Backup module data", 'backup')
         else:
             # Read-only branch: instructors holding only view_assigned_modules.
@@ -1767,6 +1792,11 @@ def display_module_management_menu():
 
             print("\n📊 REPORTS:")
             item("Generate module report", 'report')
+
+            print("\n🧾 MY MODULES (as module leader):")
+            item("Specification, outcomes & assessment plan", 'spec')
+            item("Propose a change / my requests", 'changes')
+            item("Student evaluation results", 'feedback')
 
         max_option = n
         print("\n  0. Return to Main Menu")
@@ -1810,6 +1840,8 @@ def _dispatch_option(option):
         'validate': validate_module_data,
         'backup': backup_module_data,
     }
+    from education_system.systems.university.shell.cli import module_catalogue_cli as catalogue
+    handlers.update(catalogue.HANDLERS)
     handler = handlers.get(option)
     if handler:
         handler()

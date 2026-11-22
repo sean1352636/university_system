@@ -33,7 +33,7 @@ def _system_name() -> str:
 
 def _send(template: str, context: dict, *, to_name=None,
           to_address=None, student_id=None):
-    from education_system.systems.sixth_form.domain.operations.communications.messages import (
+    from education_system.systems.sixth_form.domains.communications.domain.messages import (
         email_templates,
     )
     context.setdefault("system_name", _system_name())

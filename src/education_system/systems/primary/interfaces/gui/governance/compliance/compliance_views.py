@@ -24,23 +24,27 @@ from education_system.systems.primary.domain.governance.compliance.compliance im
     ValidationError,
 )
 
+from education_system.systems.primary.interfaces.gui import kit
+
 logger = logging.getLogger(__name__)
 
 
-def _clear(gui) -> ttk.Frame:
-    for w in gui.content_frame.winfo_children():
-        w.destroy()
-    return gui.content_frame
-
-
-def _heading(parent, text: str) -> None:
-    ttk.Label(parent, text=text, font=("", 16, "bold")).pack(
-        anchor="w", pady=(0, 8))
-
-
 def open_compliance_window(gui) -> None:
-    frame = _clear(gui)
-    _heading(frame, "Compliance")
+    kit.show_page(gui, "Compliance", lambda parent: _draw_compliance(parent, gui))
+
+
+def _owner_choices() -> list[str]:
+    """Owners already on the register, for the Owner filter."""
+    try:
+        return sorted({v.item.owner for v in data.list_views() if v.item.owner})
+    except Exception:  # noqa: BLE001 - an empty filter beats a broken page
+        logger.exception("compliance owners for filter failed")
+        return []
+
+
+def _draw_compliance(frame, gui) -> None:
+    kit.page_heading(frame, "Compliance",
+                     "Statutory compliance register with review dates and a summary.")
 
     nb = ttk.Notebook(frame)
     nb.pack(fill="both", expand=True)
@@ -87,8 +91,9 @@ def _build_register_tab(gui, parent: ttk.Frame,
                   values=["", *STATUSES], state="readonly", width=14
                   ).pack(side="left", padx=(4, 12))
     ttk.Label(filt, text="Owner:").pack(side="left")
-    ttk.Entry(filt, textvariable=owner_var, width=14
-              ).pack(side="left", padx=(4, 12))
+    owner_box = kit.ChoiceField(filt, owner_var, choices=_owner_choices(), blank=True,
+                                width=18)
+    owner_box.pack(side="left", padx=(4, 12))
     ttk.Label(filt, text="Search:").pack(side="left")
     ttk.Entry(filt, textvariable=query_var, width=18
               ).pack(side="left", padx=(4, 8))
@@ -107,6 +112,7 @@ def _build_register_tab(gui, parent: ttk.Frame,
             w.destroy()
         for w in actions.winfo_children():
             w.destroy()
+        owner_box.set_choices(_owner_choices())
         try:
             views = data.list_views(
                 category=cat_var.get() or None,
@@ -172,15 +178,15 @@ def _build_register_tab(gui, parent: ttk.Frame,
             rid = _selected()
             if rid is None:
                 messagebox.showinfo("No selection", "Pick an item first.",
-                                     parent=gui.root)
+                                     parent=parent.winfo_toplevel())
                 return
-            _edit_dialog(gui, rid, refresh_all)
+            _edit_dialog(parent, rid, refresh_all)
 
         def _delete() -> None:
             rid = _selected()
             if rid is None:
                 messagebox.showinfo("No selection", "Pick an item first.",
-                                     parent=gui.root)
+                                     parent=parent.winfo_toplevel())
                 return
             existing = data.get_item(rid)
             if existing is None:
@@ -189,14 +195,14 @@ def _build_register_tab(gui, parent: ttk.Frame,
             if not messagebox.askyesno(
                     "Delete item",
                     f"Delete '#{rid} — {existing.title}'?",
-                    parent=gui.root):
+                    parent=parent.winfo_toplevel()):
                 return
             try:
                 data.delete_item(rid)
             except Exception as e:
                 logger.exception("delete_item failed")
                 messagebox.showerror("Error", f"Could not delete: {e}",
-                                     parent=gui.root)
+                                     parent=parent.winfo_toplevel())
                 return
             refresh_all()
 
@@ -204,9 +210,9 @@ def _build_register_tab(gui, parent: ttk.Frame,
             rid = _selected()
             if rid is None:
                 messagebox.showinfo("No selection", "Pick an item first.",
-                                     parent=gui.root)
+                                     parent=parent.winfo_toplevel())
                 return
-            _review_dialog(gui, rid, refresh_all)
+            _review_dialog(parent, rid, refresh_all)
 
         ttk.Button(actions, text="Edit", command=_edit
                     ).pack(side="left", padx=(0, 6))
@@ -231,26 +237,33 @@ def _build_register_tab(gui, parent: ttk.Frame,
 
 # ── Edit dialog ────────────────────────────────────────────────────
 
-def _edit_dialog(gui, item_id: int, refresh_all) -> None:
+def _edit_dialog(owner_w, item_id: int, refresh_all) -> None:
+    top = owner_w.winfo_toplevel()
     existing = data.get_item(item_id)
     if existing is None:
         messagebox.showerror("Not found", f"No item #{item_id}",
-                              parent=gui.root)
+                              parent=top)
         return
-    win = tk.Toplevel(gui.root)
+    win = tk.Toplevel(top)
     win.title(f"Edit compliance item #{item_id}")
-    win.transient(gui.root)
+    win.transient(top)
     win.after_idle(win.grab_set)
 
     frm = ttk.Frame(win, padding=12)
     frm.grid()
 
     def _entry_row(row: int, label: str, var: tk.StringVar,
-                    width: int = 36, values: list[str] | None = None
-                    ) -> None:
+                    width: int = 36, values: list[str] | None = None,
+                    kind: str = "entry") -> None:
         ttk.Label(frm, text=label).grid(row=row, column=0, sticky="e",
                                           padx=(0, 6), pady=2)
-        if values is not None:
+        if kind == "date":
+            kit.DateField(frm, var, years=kit.recent_years(ahead=5, back=15)
+                          ).grid(row=row, column=1, sticky="w", pady=2)
+        elif kind == "staff":
+            kit.StaffPicker(frm, var, by="name"
+                            ).grid(row=row, column=1, sticky="w", pady=2)
+        elif values is not None:
             ttk.Combobox(frm, textvariable=var, values=values,
                           state="readonly", width=max(18, width - 4)
                           ).grid(row=row, column=1, sticky="w", pady=2)
@@ -270,12 +283,12 @@ def _edit_dialog(gui, item_id: int, refresh_all) -> None:
 
     _entry_row(0, "Category:", cat_var, values=list(CATEGORIES))
     _entry_row(1, "Title:", title_var)
-    _entry_row(2, "Owner:", owner_var)
+    _entry_row(2, "Owner:", owner_var, kind="staff")
     _entry_row(3, "Status:", status_var, values=list(STATUSES))
     _entry_row(4, "Frequency:", freq_var, values=list(FREQUENCIES))
-    _entry_row(5, "Due date:", due_var, width=18)
-    _entry_row(6, "Last review:", last_var, width=18)
-    _entry_row(7, "Next review:", next_var, width=18)
+    _entry_row(5, "Due date:", due_var, kind="date")
+    _entry_row(6, "Last review:", last_var, kind="date")
+    _entry_row(7, "Next review:", next_var, kind="date")
     _entry_row(8, "Notes:", notes_var, width=42)
 
     def save() -> None:
@@ -309,13 +322,14 @@ def _edit_dialog(gui, item_id: int, refresh_all) -> None:
 
 # ── Mark-reviewed dialog ───────────────────────────────────────────
 
-def _review_dialog(gui, item_id: int, refresh_all) -> None:
+def _review_dialog(owner_w, item_id: int, refresh_all) -> None:
+    top = owner_w.winfo_toplevel()
     existing = data.get_item(item_id)
     if existing is None:
         return
-    win = tk.Toplevel(gui.root)
+    win = tk.Toplevel(top)
     win.title(f"Mark reviewed — #{item_id}")
-    win.transient(gui.root)
+    win.transient(top)
     win.after_idle(win.grab_set)
     frm = ttk.Frame(win, padding=12)
     frm.grid()
@@ -326,8 +340,7 @@ def _review_dialog(gui, item_id: int, refresh_all) -> None:
               ).grid(row=0, column=0, columnspan=2, sticky="w", pady=(0, 8))
     ttk.Label(frm, text="Reviewed on:").grid(row=1, column=0, sticky="e",
                                               padx=(0, 6), pady=2)
-    ttk.Entry(frm, textvariable=when_var, width=18
-              ).grid(row=1, column=1, sticky="w", pady=2)
+    kit.DateField(frm, when_var).grid(row=1, column=1, sticky="w", pady=2)
     ttk.Label(frm, text="Notes:").grid(row=2, column=0, sticky="e",
                                          padx=(0, 6), pady=2)
     ttk.Entry(frm, textvariable=notes_var, width=42
@@ -349,7 +362,7 @@ def _review_dialog(gui, item_id: int, refresh_all) -> None:
         nxt = item.next_review or "—"
         messagebox.showinfo("Reviewed",
                               f"#{item.item_id} reviewed. Next: {nxt}",
-                              parent=gui.root)
+                              parent=top)
         refresh_all()
 
     bar = ttk.Frame(frm)
@@ -380,7 +393,7 @@ def _build_new_tab(gui, parent: ttk.Frame, refresh_all) -> None:
     rows = [
         ("Category:",     cat_var,    "combo", list(CATEGORIES)),
         ("Title:",        title_var,  "entry", None),
-        ("Owner:",        owner_var,  "entry", None),
+        ("Owner:",        owner_var,  "staff", None),
         ("Status:",       status_var, "combo", list(STATUSES)),
         ("Frequency:",    freq_var,   "combo", list(FREQUENCIES)),
         ("Due date:",     due_var,    "date",  None),
@@ -396,8 +409,11 @@ def _build_new_tab(gui, parent: ttk.Frame, refresh_all) -> None:
                           state="readonly", width=24
                           ).grid(row=i, column=1, sticky="w", pady=2)
         elif kind == "date":
-            ttk.Entry(form, textvariable=var, width=18
-                      ).grid(row=i, column=1, sticky="w", pady=2)
+            kit.DateField(form, var, years=kit.recent_years(ahead=5, back=15)
+                          ).grid(row=i, column=1, sticky="w", pady=2)
+        elif kind == "staff":
+            kit.StaffPicker(form, var, by="name"
+                            ).grid(row=i, column=1, sticky="w", pady=2)
         else:
             ttk.Entry(form, textvariable=var, width=42
                       ).grid(row=i, column=1, sticky="w", pady=2)
@@ -419,11 +435,11 @@ def _build_new_tab(gui, parent: ttk.Frame, refresh_all) -> None:
                 "notes": notes_var.get() or None,
             })
         except ValidationError as e:
-            messagebox.showerror("Cannot save", str(e), parent=gui.root)
+            messagebox.showerror("Cannot save", str(e), parent=parent.winfo_toplevel())
             return
         except Exception as e:
             logger.exception("create_item crashed")
-            messagebox.showerror("Error", f"Unexpected: {e}", parent=gui.root)
+            messagebox.showerror("Error", f"Unexpected: {e}", parent=parent.winfo_toplevel())
             return
         for v in (title_var, owner_var, due_var, last_var, next_var, notes_var):
             v.set("")

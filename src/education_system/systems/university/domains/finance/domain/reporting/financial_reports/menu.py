@@ -851,14 +851,9 @@ def display_enhanced_finance_menu():
                     cursor.execute('SELECT COUNT(*) FROM payments WHERE payment_date < ?', (archive_date,))
                     archivable_payments = cursor.fetchone()[0]
 
-                    # Try to count archivable fees - handle case where graduation_date column may not exist
-                    try:
-                        cursor.execute('SELECT COUNT(*) FROM student_fees sf JOIN students s ON sf.student_id = s.student_id WHERE s.graduation_date < ?', (archive_date,))
-                        archivable_fees = cursor.fetchone()[0]
-                    except Exception:
-                        # Fallback: count old fees by due_date instead
-                        cursor.execute('SELECT COUNT(*) FROM student_fees WHERE due_date < ?', (archive_date,))
-                        archivable_fees = cursor.fetchone()[0] or 0
+                    # students has no graduation date; a fee's age is its due date
+                    cursor.execute('SELECT COUNT(*) FROM student_fees WHERE due_date < ?', (archive_date,))
+                    archivable_fees = cursor.fetchone()[0] or 0
 
                     print("\nArchivable Data (older than 2 years):")
                     print(f"  Payments: {archivable_payments:,}")

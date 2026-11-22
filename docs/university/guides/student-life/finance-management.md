@@ -24,11 +24,11 @@ This guide covers fee structures, payment processing, payment plans, scholarship
 The Finance Management module handles all financial operations for the university, including student billing, payment processing, scholarships, budgeting, and compliance reporting. It supports multiple payment methods, multi-currency transactions, and machine learning-based fraud detection.
 
 **Key files:**
-- Core: `modules/domain/finance/core/`
-- Billing: `modules/domain/finance/billing/`
-- Reporting: `modules/domain/finance/reporting/`
-- Scholarships: `modules/domain/finance/scholarships/`
-- GUI: `modules/domain/finance/gui/`
+- Core: `src/education_system/systems/university/domains/finance/domain/core/`
+- Billing: `src/education_system/systems/university/domains/finance/domain/billing/`
+- Reporting: `src/education_system/systems/university/domains/finance/domain/reporting/`
+- Scholarships: `src/education_system/systems/university/domains/finance/domain/scholarships/`
+- GUI: `src/education_system/systems/university/domains/finance/interfaces/gui/`
 
 ## Getting Started
 

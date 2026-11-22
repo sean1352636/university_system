@@ -362,7 +362,7 @@ def _contact_for(student_id: str) -> tuple[str | None, str | None]:
     reliably going to answer it.
     """
     try:
-        from education_system.systems.sixth_form.domain.operations.communications.parent_contacts import (  # noqa: E501
+        from education_system.systems.sixth_form.domains.communications.domain.parent_contacts import (  # noqa: E501
             parent_contacts as _contacts,
         )
         rows = _contacts.contacts_for_student(student_id)

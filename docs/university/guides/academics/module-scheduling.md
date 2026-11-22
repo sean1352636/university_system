@@ -23,8 +23,8 @@ This guide covers class scheduling, timetable generation, room and instructor ma
 The Module Scheduling system manages class timetables across the institution. It handles room allocation, instructor assignment, conflict detection, and timetable generation with support for multiple export formats.
 
 **Key files:**
-- Service: `modules/domain/academics/services/module_scheduling.py`
-- GUI: `modules/domain/academics/gui/module_scheduling/`
+- Service: `src/education_system/systems/university/domains/teaching/domain/module_scheduling/`
+- GUI: `src/education_system/systems/university/domains/teaching/interfaces/gui/module_scheduling/`
 - Core class: `ModuleScheduler`
 
 ### Scheduling Constants

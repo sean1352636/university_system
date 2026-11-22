@@ -713,7 +713,7 @@ class WebAuthnService:
             # Audit log the failed authentication
             if IMMUTABLE_AUDIT_AVAILABLE:
                 safe_log_security_event(
-                    action=AuditAction.LOGIN_FAILED,
+                    action=AuditAction.LOGIN_FAILURE,
                     user_id=challenge_record.get('user_id', 'unknown') if challenge_record else 'unknown',
                     resource_type='webauthn_authentication',
                     details={'error': str(e)},

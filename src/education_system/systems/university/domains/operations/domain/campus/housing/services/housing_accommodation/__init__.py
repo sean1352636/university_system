@@ -10,6 +10,7 @@ from education_system.systems.university.domains.operations.domain.campus.housin
 from education_system.systems.university.domains.operations.domain.campus.housing.services.housing_accommodation.buildings import (
     create_building, create_rooms_for_building, view_building,
     update_building, delete_building, delete_room,
+    update_room, import_rooms_from_csv,
 )
 from education_system.systems.university.domains.operations.domain.campus.housing.services.housing_accommodation.applications import (
     create_application, select_student, process_application, view_application,

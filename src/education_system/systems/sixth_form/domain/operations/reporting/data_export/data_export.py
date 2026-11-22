@@ -24,7 +24,7 @@ from __future__ import annotations
 
 import json
 import logging
-import shutil
+import os
 import sqlite3
 import zipfile
 from dataclasses import dataclass, field
@@ -135,6 +135,12 @@ class ExportJob:
     run_by: str | None
     notes: str | None
     files: list[DatasetResult] = field(default_factory=list)
+    # Exact paths this run wrote (dataset files + manifest); the
+    # archive is ``archive_path``. Empty for jobs recorded before
+    # this was tracked — see ``owned_paths``.
+    written_paths: list[str] = field(default_factory=list)
+    # True when the run created ``output_dir``; None = unknown.
+    created_dir: bool | None = None
 
 
 # ── DB plumbing ───────────────────────────────────────────────────
@@ -167,7 +173,9 @@ CREATE TABLE IF NOT EXISTS data_export_jobs (
     archive_path  TEXT,
     run_by        TEXT,
     notes         TEXT,
-    files_json    TEXT NOT NULL DEFAULT '[]'
+    files_json    TEXT NOT NULL DEFAULT '[]',
+    written_paths_json TEXT NOT NULL DEFAULT '[]',
+    created_dir   INTEGER
 );
 
 CREATE INDEX IF NOT EXISTS idx_de_jobs_started ON data_export_jobs(started_at DESC);
@@ -193,6 +201,19 @@ def init_db() -> None:
         return
     with _connect() as conn:
         conn.executescript(_SCHEMA)
+        # Backfill columns on databases created before the job
+        # recorded exactly which files it wrote (D1).
+        have = {r[1] for r in conn.execute(
+            "PRAGMA table_info(data_export_jobs)")}
+        if "written_paths_json" not in have:
+            conn.execute(
+                "ALTER TABLE data_export_jobs ADD COLUMN "
+                "written_paths_json TEXT NOT NULL DEFAULT '[]'")
+        if "created_dir" not in have:
+            # NULL = unknown (legacy job): the folder is never removed.
+            conn.execute(
+                "ALTER TABLE data_export_jobs ADD COLUMN created_dir INTEGER")
+        conn.commit()
     logger.debug("Data-export schema ready at %s", DB_PATH)
 
     _DB_READY = True
@@ -417,6 +438,7 @@ def run_export(
             f"Preset {preset.key!r} has no datasets")
     fmt = _validate_fmt(fmt)
     out_dir = Path(output_dir).expanduser()
+    created_dir = not out_dir.exists()
     out_dir.mkdir(parents=True, exist_ok=True)
 
     started = _now_iso()
@@ -425,15 +447,19 @@ def run_export(
             """INSERT INTO data_export_jobs
                    (preset_key, preset_name, output_dir, fmt,
                     status, started_at, zipped, run_by, notes,
-                    files_json)
-               VALUES (?, ?, ?, ?, 'running', ?, ?, ?, ?, '[]')""",
+                    files_json, created_dir)
+               VALUES (?, ?, ?, ?, 'running', ?, ?, ?, ?, '[]', ?)""",
             (preset.key, preset.name, str(out_dir), fmt, started,
              int(bool(zip_output)),
              (run_by or "").strip() or None,
-             (notes or "").strip() or None),
+             (notes or "").strip() or None,
+             int(created_dir)),
         )
         conn.commit()
         job_id = cur.lastrowid
+    # Every file this run writes, so deleting the job can remove
+    # exactly these and nothing else in the folder.
+    written: list[str] = []
 
     results: list[DatasetResult] = []
     rows_total = 0
@@ -454,6 +480,7 @@ def run_export(
         fpath = out_dir / fname
         try:
             res = _ce.export(spec, fpath, fmt=fmt)
+            written.append(str(fpath))
             results.append(DatasetResult(
                 dataset_key=spec.key, label=spec.label,
                 file_path=str(fpath), fmt=fmt,
@@ -506,6 +533,7 @@ def run_export(
         (out_dir / "_manifest.json").write_text(
             json.dumps(manifest, indent=2, ensure_ascii=False) + "\n",
             encoding="utf-8")
+        written.append(str(out_dir / "_manifest.json"))
     except Exception:
         logger.exception("manifest write failed")
 
@@ -523,12 +551,14 @@ def run_export(
             """UPDATE data_export_jobs
                   SET status=?, finished_at=?, files_total=?,
                       rows_total=?, bytes_total=?,
-                      archive_path=?, files_json=?
+                      archive_path=?, files_json=?,
+                      written_paths_json=?
                 WHERE job_id=?""",
             (status, finished, len(results), rows_total,
              bytes_total, archive_path,
              json.dumps([_dataset_result_to_dict(r) for r in results],
                          default=str),
+             json.dumps(written),
              job_id),
         )
         conn.commit()
@@ -587,6 +617,13 @@ def _row_job(r: sqlite3.Row) -> ExportJob:
         files = json.loads(r["files_json"] or "[]")
     except (TypeError, ValueError):
         files = []
+    keys = r.keys()
+    try:
+        written = json.loads(r["written_paths_json"] or "[]") \
+            if "written_paths_json" in keys else []
+    except (TypeError, ValueError):
+        written = []
+    created = r["created_dir"] if "created_dir" in keys else None
     return ExportJob(
         job_id=r["job_id"], preset_key=r["preset_key"],
         preset_name=r["preset_name"],
@@ -601,6 +638,8 @@ def _row_job(r: sqlite3.Row) -> ExportJob:
         run_by=r["run_by"], notes=r["notes"],
         files=[_dict_to_dataset_result(d)
                 for d in files if isinstance(d, dict)],
+        written_paths=[str(p) for p in written if p],
+        created_dir=None if created is None else bool(created),
     )
 
 
@@ -637,25 +676,100 @@ def list_jobs(*, preset_key: str | None = None,
     return [_row_job(r) for r in rows]
 
 
+def owned_paths(job: ExportJob) -> list[Path]:
+    """The files ``job`` itself wrote and that still exist on disk.
+
+    Only paths recorded for this job are returned — never anything
+    else in its output folder. Jobs recorded before written paths
+    were tracked fall back to their per-dataset ``file_path`` values
+    plus the ``_manifest.json`` in their folder. Paths that another
+    job also claims (a later run into the same folder overwrote the
+    same file name) are left alone, as is anything outside the job's
+    output folder other than its own archive.
+    """
+    out_dir = Path(job.output_dir).expanduser() if job.output_dir else None
+    if job.written_paths:
+        candidates = list(job.written_paths)
+    else:
+        candidates = [f.file_path for f in job.files
+                      if f.file_path and not f.error]
+        if out_dir is not None and candidates:
+            candidates.append(str(out_dir / "_manifest.json"))
+    claimed_elsewhere: set[str] = set()
+    for other in list_jobs(limit=100000):
+        if other.job_id == job.job_id:
+            continue
+        claimed_elsewhere.update(other.written_paths)
+        claimed_elsewhere.update(
+            f.file_path for f in other.files if f.file_path)
+        if not other.written_paths and other.files and other.output_dir:
+            claimed_elsewhere.add(
+                str(Path(other.output_dir).expanduser() / "_manifest.json"))
+        if other.archive_path:
+            claimed_elsewhere.add(other.archive_path)
+    out: list[Path] = []
+    seen: set[str] = set()
+    for c in candidates:
+        p = Path(c).expanduser()
+        key = str(p)
+        if key in seen or key in claimed_elsewhere:
+            continue
+        seen.add(key)
+        if out_dir is None or p.parent != out_dir:
+            continue
+        if p.is_file() and not p.is_symlink():
+            out.append(p)
+    if job.archive_path and job.archive_path not in claimed_elsewhere:
+        a = Path(job.archive_path)
+        if a.is_file() and not a.is_symlink():
+            out.append(a)
+    return out
+
+
+def removal_preview(job_id: int) -> dict[str, Any]:
+    """What ``delete_job(job_id, remove_files=True)`` would remove:
+    ``{"files": [paths], "folder": path-or-None}``. The folder is
+    listed only when this export created it and nothing else would
+    be left in it."""
+    init_db()
+    j = get_job(job_id)
+    if j is None:
+        return {"files": [], "folder": None}
+    files = owned_paths(j)
+    folder = None
+    if j.created_dir and j.output_dir:
+        d = Path(j.output_dir).expanduser()
+        if d.is_dir():
+            remaining = {p for p in d.iterdir()} - set(files)
+            if not remaining:
+                folder = str(d)
+    return {"files": [str(p) for p in files], "folder": folder}
+
+
 def delete_job(job_id: int, *,
                remove_files: bool = False) -> bool:
-    """Remove a job row. If ``remove_files`` is set, also wipe the
-    on-disk output_dir and archive — use carefully."""
+    """Remove a job row. If ``remove_files`` is set, also remove the
+    files this job wrote (its data files, manifest and archive) —
+    never anything else. The output folder is removed only when the
+    export created it and it is empty afterwards; a folder the user
+    picked that already existed is never removed."""
     init_db()
     j = get_job(job_id)
     if j is None:
         return False
     if remove_files:
-        try:
-            if j.output_dir and Path(j.output_dir).exists():
-                shutil.rmtree(j.output_dir)
-        except Exception:
-            logger.exception("failed to remove %s", j.output_dir)
-        if j.archive_path:
+        for p in owned_paths(j):
             try:
-                Path(j.archive_path).unlink(missing_ok=True)
+                p.unlink(missing_ok=True)
             except Exception:
-                logger.exception("failed to remove %s", j.archive_path)
+                logger.exception("failed to remove %s", p)
+        if j.created_dir and j.output_dir:
+            d = Path(j.output_dir).expanduser()
+            try:
+                if d.is_dir() and not any(d.iterdir()):
+                    os.rmdir(d)
+            except Exception:
+                logger.exception("failed to remove folder %s", d)
     with _connect() as conn:
         cur = conn.execute(
             "DELETE FROM data_export_jobs WHERE job_id = ?",

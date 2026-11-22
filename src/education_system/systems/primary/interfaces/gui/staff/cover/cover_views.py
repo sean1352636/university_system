@@ -6,7 +6,7 @@ import datetime as _dt
 import functools
 import logging
 import tkinter as tk
-from tkinter import messagebox, simpledialog, ttk
+from tkinter import messagebox, ttk
 from typing import Any, Callable
 
 from education_system.systems.primary.domain.staff.cover import (
@@ -15,12 +15,10 @@ from education_system.systems.primary.domain.staff.cover import (
 from education_system.systems.primary.domain.staff.cover.cover import (
     STATUSES, MIN_PERIOD, MAX_PERIOD,
 )
-from education_system.systems.primary.domain.academics.subjects import (
-    subjects as subjects_data,
-)
 from education_system.systems.primary.domain.learners.pupils.pupils import (
-    ValidationError, YEAR_GROUPS,
+    ValidationError,
 )
+from education_system.systems.primary.interfaces.gui import kit
 
 logger = logging.getLogger(__name__)
 
@@ -54,12 +52,25 @@ def _today() -> str:
     return _dt.date.today().isoformat()
 
 
+class _Owner:
+    """The host as the cover helpers see it, but with ``root`` = the
+    window the page is drawn in (the main window, or its pop-out), so
+    dialogs and messages open over the right window."""
+
+    def __init__(self, host, parent: tk.Misc) -> None:
+        self._host = host
+        self.root = parent.winfo_toplevel()
+
+    def __getattr__(self, name: str) -> Any:
+        return getattr(self._host, name)
+
+
 def _form_dialog(host, title: str, initial: dict[str, Any] | None = None
                  ) -> dict[str, Any] | None:
     dlg = tk.Toplevel(host.root)
     dlg.title(title)
     dlg.transient(host.root)
-    dlg.geometry("500x520")
+    dlg.geometry("600x560")
     dlg.update_idletasks()
     try:
         dlg.wait_visibility()
@@ -68,8 +79,7 @@ def _form_dialog(host, title: str, initial: dict[str, Any] | None = None
         logger.debug("grab_set skipped — dialog not viewable", exc_info=True)
 
     initial = initial or {}
-    frm = ttk.Frame(dlg, padding=12)
-    frm.pack(fill="both", expand=True)
+    frm, footer = kit.scrolled_form(dlg)
 
     date_var    = tk.StringVar(value=str(initial.get("date") or _today()))
     period_var  = tk.StringVar(value=str(initial.get("period") or
@@ -82,42 +92,25 @@ def _form_dialog(host, title: str, initial: dict[str, Any] | None = None
     status_var  = tk.StringVar(value=str(initial.get("status") or "Pending"))
     reason_var  = tk.StringVar(value=str(initial.get("reason") or ""))
 
-    try:
-        subjects = subjects_data.list_all(active_only=True)
-    except Exception:
-        subjects = []
-    subject_labels = [""] + [f"#{s.subject_id} {s.code} — {s.name}"
-                              for s in subjects]
-    subject_var = tk.StringVar(value="")
     initial_sid = initial.get("subject_id")
-    if initial_sid is not None:
-        for s in subjects:
-            if s.subject_id == int(initial_sid):
-                subject_var.set(f"#{s.subject_id} {s.code} — {s.name}")
-                break
+    subject_var = tk.StringVar(value="" if initial_sid is None else str(initial_sid))
 
     rows: list[tuple[str, tk.Widget]] = [
-        ("Date:",    ttk.Entry(frm, textvariable=date_var, width=14)),
-        ("Period:",  ttk.Spinbox(frm, from_=MIN_PERIOD, to=MAX_PERIOD,
-                                  textvariable=period_var, width=6)),
-        ("Absent teacher:", ttk.Entry(frm, textvariable=absent_var, width=28)),
-        ("Cover teacher:",  ttk.Entry(frm, textvariable=cover_var, width=28)),
-        ("Year:",   ttk.Combobox(frm, textvariable=year_var,
-                                  values=["", *YEAR_GROUPS],
-                                  state="readonly", width=8)),
-        ("Form:",   ttk.Entry(frm, textvariable=form_var, width=12)),
-        ("Subject:", ttk.Combobox(frm, textvariable=subject_var,
-                                   values=subject_labels,
-                                   state="readonly", width=36)),
+        ("Date:",    kit.DateField(frm, date_var)),
+        ("Period:",  kit.NumberField(frm, period_var, from_=MIN_PERIOD, to=MAX_PERIOD,
+                                     width=6)),
+        ("Absent teacher:", kit.StaffPicker(frm, absent_var, by="name")),
+        ("Cover teacher:",  kit.StaffPicker(frm, cover_var, by="name")),
+        ("Year:",   kit.YearGroupPicker(frm, year_var, blank=True)),
+        ("Form:",   kit.ClassPicker(frm, form_var)),
+        ("Subject:", kit.SubjectPicker(frm, subject_var, by="id", width=36)),
         ("Room:",   ttk.Entry(frm, textvariable=room_var, width=12)),
-        ("Status:", ttk.Combobox(frm, textvariable=status_var,
-                                  values=list(STATUSES),
-                                  state="readonly", width=14)),
+        ("Status:", kit.ChoiceField(frm, status_var, choices=STATUSES, width=14)),
         ("Reason:", ttk.Entry(frm, textvariable=reason_var, width=36)),
     ]
     for i, (label, widget) in enumerate(rows):
         ttk.Label(frm, text=label).grid(row=i, column=0, sticky="w", pady=2)
-        widget.grid(row=i, column=1, sticky="ew", pady=2)
+        widget.grid(row=i, column=1, sticky="w", pady=2)
     frm.columnconfigure(1, weight=1)
 
     ttk.Label(frm, text="Notes:").grid(row=len(rows), column=0, sticky="nw",
@@ -128,12 +121,6 @@ def _form_dialog(host, title: str, initial: dict[str, Any] | None = None
 
     result: dict[str, Any] | None = None
 
-    def _parse_subject(label: str) -> str:
-        label = (label or "").strip()
-        if not label.startswith("#"):
-            return ""
-        return label.split()[0][1:]
-
     def _save() -> None:
         nonlocal result
         result = {
@@ -143,7 +130,7 @@ def _form_dialog(host, title: str, initial: dict[str, Any] | None = None
             "cover_teacher":  cover_var.get().strip(),
             "year_group":     year_var.get().strip(),
             "form_group":     form_var.get().strip(),
-            "subject_id":     _parse_subject(subject_var.get()),
+            "subject_id":     subject_var.get().strip(),
             "room":           room_var.get().strip(),
             "status":         status_var.get().strip(),
             "reason":         reason_var.get().strip(),
@@ -151,12 +138,9 @@ def _form_dialog(host, title: str, initial: dict[str, Any] | None = None
         }
         dlg.destroy()
 
-    btns = ttk.Frame(frm)
-    btns.grid(row=len(rows) + 1, column=0, columnspan=2, sticky="e",
-              pady=(12, 0))
-    ttk.Button(btns, text="Cancel",
+    ttk.Button(footer, text="Cancel",
                command=dlg.destroy).pack(side="right", padx=4)
-    ttk.Button(btns, text="Save", command=_save).pack(side="right")
+    ttk.Button(footer, text="Save", command=_save).pack(side="right")
 
     dlg.wait_window()
     return result
@@ -165,10 +149,15 @@ def _form_dialog(host, title: str, initial: dict[str, Any] | None = None
 @_safe_view
 def open_cover(host) -> None:
     logger.debug("GUI: open_cover")
-    host._clear_content()
-    root = host.content_frame
-    ttk.Label(root, text="Cover",
-              font=("", 16, "bold")).pack(anchor="w", pady=(0, 8))
+    kit.show_page(host, "Cover", lambda parent: _draw_cover(parent, host))
+
+
+def _draw_cover(parent, main_host) -> None:
+    host = _Owner(main_host, parent)
+    root = parent
+    kit.page_heading(root, "Cover",
+                     "Cover for absent teachers: who is covering which class and "
+                     "period, and the day's cover load.")
 
     summary_var = tk.StringVar()
     ttk.Label(root, textvariable=summary_var, foreground="#666").pack(
@@ -178,17 +167,15 @@ def open_cover(host) -> None:
     bar.pack(fill="x", pady=(0, 6))
     ttk.Label(bar, text="Date:").pack(side="left", padx=(0, 4))
     date_var = tk.StringVar(value=_today())
-    ttk.Entry(bar, textvariable=date_var, width=12).pack(side="left",
-                                                         padx=(0, 6))
+    kit.DateField(bar, date_var).pack(side="left", padx=(0, 6))
     ttk.Label(bar, text="Status:").pack(side="left", padx=(0, 4))
     status_var = tk.StringVar(value="")
-    ttk.Combobox(bar, textvariable=status_var,
-                 values=["", *STATUSES], state="readonly", width=10).pack(
-        side="left", padx=(0, 6))
+    kit.ChoiceField(bar, status_var, choices=STATUSES, blank=True,
+                    width=10).pack(side="left", padx=(0, 6))
     ttk.Label(bar, text="Absent:").pack(side="left", padx=(0, 4))
     absent_var = tk.StringVar(value="")
-    ttk.Entry(bar, textvariable=absent_var, width=14).pack(side="left",
-                                                           padx=(0, 8))
+    kit.StaffPicker(bar, absent_var, by="name", active_only=False,
+                    width=24).pack(side="left", padx=(0, 8))
     ttk.Button(bar, text="Filter",
                command=lambda: _refresh()).pack(side="left", padx=2)
     ttk.Button(bar, text="New",
@@ -265,7 +252,9 @@ def open_cover(host) -> None:
         except Exception:
             logger.exception("status_counts failed")
             summary_var.set("(counts unavailable)")
-        host.status_var.set(f"Cover: {len(rows)} record(s)")
+        status_bar = getattr(main_host, "status_var", None)
+        if status_bar is not None:
+            status_bar.set(f"Cover: {len(rows)} record(s)")
 
     tree.bind("<Double-1>", lambda _e: _edit_selected(host, tree,
                                                        on_done=_refresh))
@@ -335,13 +324,7 @@ def _assign_selected(host, tree: ttk.Treeview, *, on_done=None) -> None:
     existing = data.get(cid)
     if existing is None:
         return
-    teacher = simpledialog.askstring(
-        "Assign cover",
-        f"Cover teacher for {existing.date} P{existing.period} "
-        f"(absent: {existing.absent_teacher}):",
-        initialvalue=existing.cover_teacher or "",
-        parent=host.root,
-    )
+    teacher = _pick_cover_teacher(host, existing)
     if teacher is None:
         return
     teacher = teacher.strip()
@@ -350,6 +333,34 @@ def _assign_selected(host, tree: ttk.Treeview, *, on_done=None) -> None:
     data.assign(cid, teacher)
     if on_done:
         on_done()
+
+
+def _pick_cover_teacher(host, existing) -> str | None:
+    """Modal: choose the cover teacher from the staff list (was a typed
+    name). Returns the full name, or None if cancelled."""
+    dlg, frm = kit.dialog(host.root, "Assign cover")
+    dlg.transient(host.root)
+    ttk.Label(frm, text=f"Cover teacher for {existing.date} P{existing.period} "
+                        f"(absent: {existing.absent_teacher}):").pack(anchor="w")
+    var = tk.StringVar(value=existing.cover_teacher or "")
+    kit.StaffPicker(frm, var, by="name").pack(fill="x", pady=(6, 0))
+    result: list[str | None] = [None]
+
+    def _ok() -> None:
+        result[0] = var.get()
+        dlg.destroy()
+
+    btns = ttk.Frame(frm)
+    btns.pack(fill="x", pady=(10, 0))
+    ttk.Button(btns, text="Cancel", command=dlg.destroy).pack(side="right", padx=4)
+    ttk.Button(btns, text="OK", command=_ok).pack(side="right")
+    try:
+        dlg.wait_visibility()
+        dlg.grab_set()
+    except tk.TclError:
+        pass
+    dlg.wait_window()
+    return result[0]
 
 
 @_safe_view
@@ -378,8 +389,7 @@ def _status_selected(host, tree: ttk.Treeview, *, on_done=None) -> None:
     ttk.Label(frm, text=f"Current status: {existing.status}",
               foreground="#666").pack(anchor="w", pady=(0, 8))
     new_var = tk.StringVar(value=existing.status)
-    ttk.Combobox(frm, textvariable=new_var, values=list(STATUSES),
-                 state="readonly").pack(fill="x")
+    kit.ChoiceField(frm, new_var, choices=STATUSES).pack(fill="x")
 
     def _save() -> None:
         try:

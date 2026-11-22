@@ -69,6 +69,17 @@ def display_chatbot_integration_menu(auth):
         else:
             all_conversations_option = None
 
+        from education_system.systems.university.shell.cli.ai import chatbot_care_menu as care_menu
+        menu_options.append(f"{option_num}. Support & privacy (speak to a person, my questions, "
+                            "download / delete my conversations)")
+        support_option = option_num
+        option_num += 1
+        staff_option = None
+        if care_menu.has_staff_role(auth):
+            menu_options.append(f"{option_num}. Chatbot staff tools")
+            staff_option = option_num
+            option_num += 1
+
         menu_options.append(f"{option_num}. Test Chatbot Integration")
         test_option = option_num
         option_num += 1
@@ -164,60 +175,38 @@ def display_chatbot_integration_menu(auth):
                 print(f"Error generating analytics: {e}")
 
         elif choice_num == all_conversations_option and all_conversations_option:
-            # View all conversations - FIXED VERSION
-            print("\nAll User Conversations:")
+            # Counts per person only; nobody reads another person's messages here.
+            print("\nChatbot use by person:")
             print("=" * 50)
             try:
-                with auth.db_manager.get_connection() as conn:
-                    cursor = conn.cursor()
-
-                    # Try to get from activity_log table (more likely to exist)
-                    cursor.execute('''
-                        SELECT username, COUNT(*) as count, MAX(timestamp) as last_chat
-                        FROM activity_log
-                        WHERE action = 'Chatbot interaction'
-                        GROUP BY username
-                        ORDER BY last_chat DESC
-                        LIMIT 20
-                    ''')
-
-                    all_conversations = cursor.fetchall()
-                    if all_conversations:
-                        print(f"{'Username':<15} {'Interactions':<12} {'Last Activity':<20}")
-                        print("-" * 50)
-                        for username, count, last_chat in all_conversations:
-                            print(f"{username:<15} {count:<12} {last_chat:<20}")
-                    else:
-                        print("No conversations found in activity log.")
-
-                        # Try alternative table if it exists
-                        try:
-                            cursor.execute('''
-                                SELECT name FROM sqlite_master
-                                WHERE type='table' AND name='chatbot_conversations'
-                            ''')
-                            if cursor.fetchone():
-                                cursor.execute('''
-                                    SELECT username, COUNT(*) as count, MAX(timestamp) as last_chat
-                                    FROM chatbot_conversations
-                                    GROUP BY username
-                                    ORDER BY last_chat DESC
-                                    LIMIT 20
-                                ''')
-                                alt_conversations = cursor.fetchall()
-                                if alt_conversations:
-                                    print("Found conversations in chatbot_conversations table:")
-                                    for username, count, last_chat in alt_conversations:
-                                        print(f"{username}: {count} conversations (Last: {last_chat})")
-                                else:
-                                    print("No conversations found in chatbot_conversations table either.")
-                            else:
-                                print("No chatbot-specific conversation tables found.")
-                        except Exception as alt_e:
-                            print(f"Error checking alternative tables: {alt_e}")
-
-            except Exception as e:
+                from education_system.systems.university.infrastructure.database.db import (
+                    get_connection,
+                )
+                conn = get_connection(row_factory=False)
+                try:
+                    rows = conn.execute(
+                        "SELECT username, COUNT(*), MAX(timestamp) FROM chatbot_conversations "
+                        "GROUP BY username ORDER BY MAX(timestamp) DESC LIMIT 20").fetchall()
+                finally:
+                    conn.close()
+                if rows:
+                    print(f"{'Username':<15} {'Turns':<12} {'Last Activity':<20}")
+                    print("-" * 50)
+                    for username, count, last_chat in rows:
+                        print(f"{username or 'anonymous':<15} {count:<12} {last_chat or '':<20}")
+                else:
+                    print("No conversations found.")
+            except sqlite3.Error as e:
                 print(f"Error retrieving conversations: {e}")
+
+        elif choice_num == support_option:
+            from education_system.systems.university.shell.cli.ai.chatbot_integration import (
+                get_chatbot_instance,
+            )
+            care_menu.self_service_menu(get_chatbot_instance(), auth)
+
+        elif staff_option and choice_num == staff_option:
+            care_menu.staff_menu(auth)
 
         elif choice_num == test_option:
             # Test integration

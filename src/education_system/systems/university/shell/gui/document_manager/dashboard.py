@@ -454,43 +454,10 @@ class DashboardManager:
             ttk.Label(parent_frame, text=_t('gui.shell.document_manager.dashboard.labels.system_performance_metrics', default="System Performance Metrics"),
                      font=("Arial", 12, "bold")).pack(pady=5)
 
-            with get_connection() as conn:
-                cursor = conn.cursor()
-
-                # Documents per day (last 30 days)
-                cursor.execute("""
-                    SELECT DATE(upload_date) as day, COUNT(*) as count
-                    FROM documents
-                    WHERE upload_date >= DATE('now', '-30 days')
-                    GROUP BY DATE(upload_date)
-                    ORDER BY day DESC
-                """)
-                daily_uploads = cursor.fetchall()
-
-                # Average processing time (simulated)
-                cursor.execute("""
-                    SELECT AVG(
-                        JULIANDAY(COALESCE(
-                            (SELECT MAX(timestamp) FROM activity_log
-                             WHERE entity_type = 'document'
-                             AND entity_id = documents.id
-                             AND action = 'approve'),
-                            DATE('now')
-                        )) - JULIANDAY(upload_date)
-                    ) as avg_days
-                    FROM documents
-                    WHERE status = 'Approved'
-                """)
-                avg_processing = cursor.fetchone()[0] or 0
-
-                # Documents by type
-                cursor.execute("""
-                    SELECT document_type, COUNT(*) as count
-                    FROM documents
-                    GROUP BY document_type
-                    ORDER BY count DESC
-                """)
-                type_distribution = cursor.fetchall()
+            metrics = self._performance_data()
+            daily_uploads = metrics['daily_uploads']
+            avg_processing = metrics['avg_processing_days']
+            type_distribution = metrics['type_distribution']
 
             # Create metrics display
             metrics_frame = ttk.Frame(parent_frame)
@@ -500,7 +467,13 @@ class DashboardManager:
             left_frame = ttk.LabelFrame(metrics_frame, text=_t('gui.shell.document_manager.dashboard.labels.key_metrics', default="Key Metrics"), padding=10)
             left_frame.pack(side='left', fill='both', expand=True, padx=(0, 5))
 
-            ttk.Label(left_frame, text=f"Average Processing Time: {avg_processing:.1f} days",
+            if avg_processing is None:
+                processing_text = _t('gui.shell.document_manager.dashboard.labels.avg_processing_none',
+                                     default="Average Processing Time: no reviewed documents yet")
+            else:
+                processing_text = (f"Average Processing Time: {avg_processing:.1f} days "
+                                   f"({metrics['reviewed_count']} reviewed)")
+            ttk.Label(left_frame, text=processing_text,
                      font=("Arial", 10)).pack(anchor='w', pady=5)
             ttk.Label(left_frame, text=f"Total Upload Days: {len(daily_uploads)}",
                      font=("Arial", 10)).pack(anchor='w', pady=5)
@@ -554,9 +527,92 @@ class DashboardManager:
         except Exception as e:
             ttk.Label(parent_frame, text=f"Error loading performance metrics: {e}").pack()
 
+    def _performance_data(self):
+        """Real performance figures from the documents table.
+
+        Processing time is upload -> review decision: workflows.py and
+        documents.py stamp ``verification_date`` when a document is
+        verified or rejected, so that is the end of processing.
+        """
+        with get_connection() as conn:
+            cursor = conn.cursor()
+
+            # Documents per day (last 30 days)
+            cursor.execute("""
+                SELECT DATE(upload_date) as day, COUNT(*) as count
+                FROM documents
+                WHERE upload_date >= DATE('now', '-30 days')
+                GROUP BY DATE(upload_date)
+                ORDER BY day DESC
+            """)
+            daily_uploads = [tuple(r) for r in cursor.fetchall()]
+
+            cursor.execute("""
+                SELECT AVG(JULIANDAY(verification_date) - JULIANDAY(upload_date)),
+                       COUNT(*)
+                FROM documents
+                WHERE verification_date IS NOT NULL AND verification_date != ''
+                  AND upload_date IS NOT NULL AND upload_date != ''
+                  AND JULIANDAY(verification_date) >= JULIANDAY(upload_date)
+            """)
+            avg_days, reviewed = cursor.fetchone()
+
+            cursor.execute("""
+                SELECT COALESCE(dt.type_name, d.document_type, 'Unknown') AS type_label,
+                       COUNT(*) as count
+                FROM documents d
+                LEFT JOIN document_types dt
+                       ON dt.type_id = COALESCE(d.document_type_id, d.type_id,
+                                                CAST(d.document_type AS INTEGER))
+                GROUP BY type_label
+                ORDER BY count DESC
+            """)
+            type_distribution = [tuple(r) for r in cursor.fetchall()]
+
+        return {
+            'daily_uploads': daily_uploads,
+            'avg_processing_days': avg_days,
+            'reviewed_count': reviewed or 0,
+            'type_distribution': type_distribution,
+        }
+
     def export_performance_report(self):
-        """Export performance metrics report"""
-        messagebox.showinfo(_t('gui.shell.document_manager.dashboard.dialogs.export_performance_report', default="Export Performance Report"),
-                          _t('gui.shell.document_manager.dashboard.dialogs.performance_report_will_be_generated_and_exported_to_csv_pdf', default="Performance report will be generated and exported to CSV/PDF"))
+        """Export performance metrics report to CSV"""
+        try:
+            metrics = self._performance_data()
+        except Exception as e:
+            messagebox.showerror(_t('gui.shell.document_manager.dashboard.dialogs.error', default="Error"),
+                                 f"Could not load performance metrics: {e}", parent=self.root)
+            return
+        filename = filedialog.asksaveasfilename(
+            parent=self.root,
+            title=_t('gui.shell.document_manager.dashboard.dialogs.export_performance_report', default="Export Performance Report"),
+            defaultextension='.csv',
+            initialfile=f"document_performance_{datetime.now():%Y%m%d}.csv",
+            filetypes=[("CSV files", "*.csv"), ("All files", "*.*")])
+        if not filename:
+            return
+        try:
+            with open(filename, 'w', newline='', encoding='utf-8') as fh:
+                writer = csv.writer(fh)
+                writer.writerow(['Document performance report', datetime.now().isoformat(timespec='seconds')])
+                writer.writerow([])
+                writer.writerow(['Metric', 'Value'])
+                avg = metrics['avg_processing_days']
+                writer.writerow(['Average processing time (days)', '' if avg is None else f"{avg:.2f}"])
+                writer.writerow(['Documents reviewed', metrics['reviewed_count']])
+                writer.writerow(['Upload days (last 30)', len(metrics['daily_uploads'])])
+                writer.writerow([])
+                writer.writerow(['Date', 'Documents uploaded'])
+                writer.writerows(metrics['daily_uploads'])
+                writer.writerow([])
+                writer.writerow(['Document type', 'Count'])
+                writer.writerows(metrics['type_distribution'])
+        except OSError as e:
+            messagebox.showerror(_t('gui.shell.document_manager.dashboard.dialogs.error', default="Error"),
+                                 f"Could not write report: {e}", parent=self.root)
+            return
         self.gui.log_event('export', 'performance_report',
-                      details='Exported system performance report')
+                      details=f'Exported system performance report to {filename}')
+        messagebox.showinfo(_t('gui.shell.document_manager.dashboard.dialogs.export_performance_report', default="Export Performance Report"),
+                            f"Performance report saved to:\n{filename}", parent=self.root)

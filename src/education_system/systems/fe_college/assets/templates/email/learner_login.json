@@ -1,0 +1,8 @@
+{
+  "subject": "Your {{college_name}} login, {{first_name}}",
+  "body": "Hi {{first_name}},\n\nAn account has been set up for you on the {{college_name}} system. You can use it to see your timetable, attendance and courses, and to hand in work.\n\n  Username: {{username}}\n  Temporary password: {{password}}\n\nPlease sign in and change your password straight away. Nobody from the college will ever ask you for it.\n\nIf you weren't expecting this email, reply and let us know.\n\n{{college_name}}",
+  "from_name": "{{college_name}}",
+  "from_address": "admissions@fecollege.ac.uk",
+  "category": "General",
+  "priority": "Normal"
+}

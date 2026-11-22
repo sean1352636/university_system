@@ -6,23 +6,33 @@ This guide walks through every step required to add a new domain module to the U
 
 ## Module Structure
 
-Every domain module lives under `education_system/university_system/modules/domain/` and follows this directory layout:
+Every domain module lives in one of the 18 slices under `src/education_system/systems/university/domains/` (for example `domains/library/`), and follows this directory layout:
 
 ```
-modules/domain/my_module/
+domains/<slice>/
     __init__.py
-    services/
+    domain/
         __init__.py
-        my_module_service.py
-    gui/
+        my_module/
+            __init__.py
+            my_module_service.py
+    interfaces/
         __init__.py
-        my_module_gui.py
-    cli/
-        __init__.py
-        my_module_cli.py
+        gui/
+            __init__.py
+            my_module/
+                __init__.py
+                my_module_gui.py
+        cli/
+            __init__.py
+            my_module/
+                __init__.py
+                my_module_cli.py
 ```
 
-Not every module needs all three interfaces (services, gui, cli), but the **services layer is mandatory** -- it is the single source of business logic that the API, GUI, and CLI all depend on.
+HTTP routes do not live in the slice. They go in `src/education_system/api/university/<area>/`.
+
+Not every module needs every interface (gui, cli, API), but the **service in `domain/` is mandatory** -- it is the single source of business logic that the API, GUI, and CLI all depend on.
 
 ---
 
@@ -34,8 +44,8 @@ The service layer handles all business logic and database operations. Follow the
 """My Module service."""
 
 import logging
-from education_system.university_system.infrastructure.database.db import get_connection
-from education_system.university_system.core.i18n import get_text
+from education_system.systems.university.infrastructure.database.db import get_connection
+from education_system.systems.university.infrastructure.i18n import get_text
 
 logger = logging.getLogger(__name__)
 
@@ -102,30 +112,39 @@ class MyModuleService:
 
 ## Step 2: Add the Database Table
 
-Add your table to the schema. The university system uses migration files in `infrastructure/database/migrations/`:
+Add your table with an Alembic migration in `src/education_system/migrations/versions/`. There is a single chain with exactly one head, so `down_revision` must point at the current head:
 
 ```python
-"""Migration: add my_module tables."""
+"""Add my_module tables."""
+from alembic import op
 
-def upgrade(conn):
-    conn.executescript("""
+revision = "<new revision id>"
+down_revision = "<current head>"
+
+
+def upgrade() -> None:
+    op.execute("""
         CREATE TABLE IF NOT EXISTS my_items (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             name TEXT NOT NULL,
             status TEXT DEFAULT 'active',
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        );
+        )
     """)
+
+
+def downgrade() -> None:
+    op.execute("DROP TABLE IF EXISTS my_items")
 ```
 
-Or add the table directly to the appropriate schema file in `infrastructure/database/schemas/`.
+The launcher applies pending migrations at startup. Schema helpers shared by the code are in `src/education_system/systems/university/infrastructure/database/schemas/`.
 
 ---
 
 ## Step 3: Create the GUI (Optional)
 
-GUI modules inherit from tkinter Frame and are registered in the main application:
+GUI modules inherit from tkinter Frame, live in `domains/<slice>/interfaces/gui/`, and are registered in the main application:
 
 ```python
 """My Module GUI."""
@@ -133,7 +152,7 @@ GUI modules inherit from tkinter Frame and are registered in the main applicatio
 import tkinter as tk
 from tkinter import ttk, messagebox
 
-from education_system.university_system.core.i18n import get_text
+from education_system.systems.university.infrastructure.i18n import get_text
 
 
 class MyModuleFrame(tk.Frame):
@@ -169,12 +188,12 @@ class MyModuleFrame(tk.Frame):
 
 ## Step 4: Create the CLI (Optional)
 
-CLI modules provide text-based menus:
+CLI modules provide text-based menus and live in `domains/<slice>/interfaces/cli/`:
 
 ```python
 """My Module CLI commands."""
 
-from education_system.university_system.modules.domain.my_module.services.my_module_service import MyModuleService
+from education_system.systems.university.domains.<slice>.domain.my_module.my_module_service import MyModuleService
 
 
 def my_module_menu(auth):
@@ -205,7 +224,7 @@ def my_module_menu(auth):
 
 ## Step 5: Add i18n Translations
 
-Add translation keys to `data/locales/en/system/my_module.json` (and other languages):
+Add translation keys to `var/data/university/locales/en/system/my_module.json` (and other languages):
 
 ```json
 {
@@ -221,19 +240,21 @@ Add translation keys to `data/locales/en/system/my_module.json` (and other langu
 
 ## Step 6: Register the Module
 
-1. **GUI**: Add the frame class to the main application's frame map
-2. **CLI**: Add a menu entry in `infrastructure/auth/cli/cli_menus.py`
-3. **API**: Create a blueprint in `shared/api/university/routes/` and register it in the API server
+1. **GUI**: Add the window to the main application in `src/education_system/systems/university/shell/gui/main/main_gui.py`
+2. **CLI**: Add a menu entry in `src/education_system/systems/university/shell/cli/menus/main.py`
+3. **API**: Create a blueprint in `src/education_system/api/university/<area>/` and add it to that package's `DOMAIN_BLUEPRINTS`; `src/education_system/platform/delivery/api/registry.py` mounts it under `/api/v1/university/`
+
+The shell composes the domains, so these imports run from `shell/` to the slice. A domain must never import the shell.
 
 ---
 
 ## Checklist
 
 - [ ] Service class with `_conn()` pattern and try/except/finally
-- [ ] Database table(s) in schema or migration
+- [ ] Database table(s) in an Alembic migration
 - [ ] GUI frame with `refresh()` method (if GUI needed)
 - [ ] CLI menu function (if CLI needed)
 - [ ] API routes with JWT auth (if API needed)
 - [ ] i18n translation keys
-- [ ] Tests in `tests/`
+- [ ] Tests in `tests/unit/systems/university/domains/<slice>/`
 - [ ] Registered in main application (GUI frame map, CLI menu, API server)

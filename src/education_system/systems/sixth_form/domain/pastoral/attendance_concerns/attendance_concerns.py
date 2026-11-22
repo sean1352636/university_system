@@ -10,7 +10,17 @@ This module sits on top of it and lets staff:
   action_taken, status, follow-up date, and assigned-to.
 
 The watchlist is computed on-the-fly from attendance data and isn't
-stored. Concerns are stored in `attendance_concerns`.
+stored.
+
+**Storage.** Concerns are attendance *cases*: they live in
+``attendance_cases`` (see :mod:`attendance_escalation`), the same rows
+the escalation ladder, contracts and meetings hang off, so a concern
+logged here is the case the attendance team escalates. This module keeps
+its vocabulary (reason / level / status / follow-up) and maps it onto
+the case columns; ``concern_id`` is the case id. The original
+``attendance_concerns`` table is still created and left in place; its
+rows were copied across once (``legacy_concern_id``) and it is only
+touched again to delete a concern that has been deleted here.
 """
 
 from __future__ import annotations
@@ -139,6 +149,24 @@ class WatchlistThresholds:
     max_unauth: int = DEFAULT_MAX_UNAUTH
 
 
+def _cases():
+    from education_system.systems.sixth_form.domain.academics.attendance import (  # noqa: E501
+        attendance_escalation as _esc,
+    )
+    return _esc
+
+
+# Ladder rung → the level a case shows in the concern log when it was
+# opened on the ladder rather than here.
+_STAGE_LEVEL: dict[str, str] = {
+    "Tutor conversation": "Low",
+    "Tutor meeting": "Medium",
+    "Head of year meeting": "High",
+    "Formal review": "Critical",
+    "External referral": "Critical",
+}
+
+
 # ── DB plumbing ────────────────────────────────────────────────────
 
 def _connect() -> sqlite3.Connection:
@@ -159,10 +187,61 @@ def init_db() -> None:
     from education_system.systems.sixth_form.domain.learners.students import students as _students
     _students.init_db()
     with _connect() as conn:
+        # Kept so pre-unification rows stay readable; the case store
+        # copies them across on its first use.
         conn.executescript(_SCHEMA)
+    _cases().init_db()
     logger.debug("Attendance-concerns schema ready at %s", DB_PATH)
 
     _DB_READY = True
+
+
+def _from_case(c: Any) -> Concern:
+    """A case in the concern log's shape."""
+    esc = _cases()
+    status = c.concern_status if c.concern_status in STATUSES else None
+    if not c.is_open:
+        if status not in ("Resolved", "Closed"):
+            status = "Closed"
+    elif status is None or status in ("Resolved", "Closed"):
+        # Opened (or re-opened) on the ladder: say where it has got to.
+        status = ("Escalated" if c.stage_number >= 3
+                  else "Action Plan" if c.state == esc.MONITORING
+                  else "Open")
+    created = c.created_at or c.opened_on
+    return Concern(
+        concern_id=c.case_id,
+        student_id=c.student_id,
+        raised_date=c.opened_on,
+        reason=c.reason if c.reason in REASONS else "Other",
+        level=c.level if c.level in CONCERN_LEVELS else
+        _STAGE_LEVEL.get(c.stage, DEFAULT_LEVEL),
+        status=status,
+        threshold_pct=c.threshold_pct,
+        observed_pct=(c.observed_pct if c.observed_pct is not None
+                      else c.baseline_pct),
+        window_days=c.window_days,
+        description=c.summary,
+        action_taken=c.action_taken,
+        follow_up_date=c.review_on,
+        assigned_to=c.owner,
+        raised_by=c.opened_by,
+        notes=c.notes,
+        created_at=created,
+        updated_at=c.updated_at or created,
+    )
+
+
+def _case_fields(p: dict[str, Any]) -> dict[str, Any]:
+    """This module's validated payload as case columns."""
+    return {
+        "reason": p["reason"], "level": p["level"],
+        "concern_status": p["status"], "threshold_pct": p["threshold_pct"],
+        "observed_pct": p["observed_pct"], "window_days": p["window_days"],
+        "summary": p["description"], "action_taken": p["action_taken"],
+        "review_on": p["follow_up_date"], "owner": p["assigned_to"],
+        "opened_by": p["raised_by"], "notes": p["notes"],
+    }
 
 
 def _row_concern(r: sqlite3.Row) -> Concern:
@@ -284,24 +363,19 @@ def create_concern(data: dict[str, Any]) -> Concern:
     except ValidationError as e:
         logger.warning("create_concern validation failed: %s", e)
         raise
-    with _connect() as conn:
-        cur = conn.execute(
-            """INSERT INTO attendance_concerns
-                   (student_id, raised_date, reason, level, status,
-                    threshold_pct, observed_pct, window_days,
-                    description, action_taken, follow_up_date,
-                    assigned_to, raised_by, notes,
-                    created_at, updated_at)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
-                       datetime('now'), datetime('now'))""",
-            (p["student_id"], p["raised_date"], p["reason"], p["level"],
-             p["status"], p["threshold_pct"], p["observed_pct"],
-             p["window_days"], p["description"], p["action_taken"],
-             p["follow_up_date"], p["assigned_to"], p["raised_by"],
-             p["notes"]),
-        )
-        conn.commit()
-        new_id = cur.lastrowid
+    esc = _cases()
+    fields = _case_fields(p)
+    closed = p["status"] in esc.CONCERN_CLOSED_STATUSES
+    try:
+        new_id = esc.concern_insert(
+            p["student_id"], p["raised_date"],
+            baseline_pct=p["observed_pct"],
+            state=esc.CLOSED if closed else esc.OPEN,
+            closed_on=p["raised_date"] if closed else None,
+            outcome=(p["action_taken"] or p["status"]) if closed else None,
+            **fields)
+    except esc.ValidationError as e:
+        raise ValidationError(str(e)) from None
     out = get_concern(new_id)
     assert out is not None
     logger.info(
@@ -315,12 +389,15 @@ def create_concern(data: dict[str, Any]) -> Concern:
 
 def get_concern(concern_id: int) -> Concern | None:
     init_db()
-    with _connect() as conn:
-        r = conn.execute(
-            "SELECT * FROM attendance_concerns WHERE concern_id = ?",
-            (concern_id,),
-        ).fetchone()
-        return _row_concern(r) if r else None
+    case = _cases().get_case(concern_id)
+    return _from_case(case) if case is not None else None
+
+
+def get_legacy_concern(old_concern_id: int) -> Concern | None:
+    """A concern by its id in the pre-unification table."""
+    init_db()
+    case = _cases().case_by_legacy_concern(old_concern_id)
+    return _from_case(case) if case is not None else None
 
 
 def list_concerns(
@@ -335,52 +412,45 @@ def list_concerns(
     date_to: str | None = None,
 ) -> list[Concern]:
     init_db()
-    clauses: list[str] = []
-    args: list[Any] = []
-    if student_id:
-        clauses.append("student_id = ?")
-        args.append(student_id.strip())
-    if status:
-        if status not in STATUSES:
-            raise ValidationError(
-                f"Status must be one of: {', '.join(STATUSES)}")
-        clauses.append("status = ?")
-        args.append(status)
-    if level:
-        if level not in CONCERN_LEVELS:
-            raise ValidationError(
-                f"Level must be one of: {', '.join(CONCERN_LEVELS)}")
-        clauses.append("level = ?")
-        args.append(level)
-    if reason:
-        if reason not in REASONS:
-            raise ValidationError(
-                f"Reason must be one of: {', '.join(REASONS)}")
-        clauses.append("reason = ?")
-        args.append(reason)
-    if open_only:
-        ph = ",".join("?" * len(OPEN_STATUSES))
-        clauses.append(f"status IN ({ph})")
-        args.extend(OPEN_STATUSES)
-    if assigned_to:
-        clauses.append("assigned_to LIKE ?")
-        args.append(f"%{assigned_to.strip()}%")
-    if date_from:
-        clauses.append("raised_date >= ?")
-        args.append(_validate_date(date_from, "date_from"))
-    if date_to:
-        clauses.append("raised_date <= ?")
-        args.append(_validate_date(date_to, "date_to"))
-    where = ("WHERE " + " AND ".join(clauses)) if clauses else ""
+    if status and status not in STATUSES:
+        raise ValidationError(
+            f"Status must be one of: {', '.join(STATUSES)}")
+    if level and level not in CONCERN_LEVELS:
+        raise ValidationError(
+            f"Level must be one of: {', '.join(CONCERN_LEVELS)}")
+    if reason and reason not in REASONS:
+        raise ValidationError(
+            f"Reason must be one of: {', '.join(REASONS)}")
+    date_from = _validate_date(date_from, "date_from")
+    date_to = _validate_date(date_to, "date_to")
+    who = (assigned_to or "").strip().lower()
+    # Every case is a concern: the ladder's cases appear here too, so the
+    # pastoral team and the attendance team work from one list.
+    out: list[Concern] = []
+    for case in _cases().list_cases(
+            student_id=(student_id or "").strip() or None, limit=100000):
+        c = _from_case(case)
+        if status and c.status != status:
+            continue
+        if level and c.level != level:
+            continue
+        if reason and c.reason != reason:
+            continue
+        if open_only and c.status not in OPEN_STATUSES:
+            continue
+        if who and who not in (c.assigned_to or "").lower():
+            continue
+        if date_from and c.raised_date < date_from:
+            continue
+        if date_to and c.raised_date > date_to:
+            continue
+        out.append(c)
     # High/Critical first, then most recent.
-    sql = (f"SELECT * FROM attendance_concerns {where} "
-           "ORDER BY CASE level WHEN 'Critical' THEN 0 "
-           "                    WHEN 'High'     THEN 1 "
-           "                    WHEN 'Medium'   THEN 2 "
-           "                    ELSE 3 END, "
-           "raised_date DESC, concern_id DESC")
-    with _connect() as conn:
-        return [_row_concern(r) for r in conn.execute(sql, args).fetchall()]
+    rank = {"Critical": 0, "High": 1, "Medium": 2}
+    out.sort(key=lambda c: -c.concern_id)
+    out.sort(key=lambda c: c.raised_date, reverse=True)
+    out.sort(key=lambda c: rank.get(c.level, 3))
+    return out
 
 
 def list_concerns_with_detail(**kwargs) -> list[ConcernRow]:
@@ -417,21 +487,26 @@ def update_concern(concern_id: int, data: dict[str, Any]) -> Concern:
         "notes":          data.get("notes", existing.notes),
     }
     p = _validate_payload(merged)
-    with _connect() as conn:
-        conn.execute(
-            """UPDATE attendance_concerns SET
-                   raised_date = ?, reason = ?, level = ?, status = ?,
-                   threshold_pct = ?, observed_pct = ?, window_days = ?,
-                   description = ?, action_taken = ?, follow_up_date = ?,
-                   assigned_to = ?, raised_by = ?, notes = ?,
-                   updated_at = datetime('now')
-               WHERE concern_id = ?""",
-            (p["raised_date"], p["reason"], p["level"], p["status"],
-             p["threshold_pct"], p["observed_pct"], p["window_days"],
-             p["description"], p["action_taken"], p["follow_up_date"],
-             p["assigned_to"], p["raised_by"], p["notes"], concern_id),
-        )
-        conn.commit()
+    esc = _cases()
+    case = esc.get_case(concern_id)
+    fields = _case_fields(p)
+    fields["opened_on"] = p["raised_date"]
+    closing = p["status"] in esc.CONCERN_CLOSED_STATUSES
+    if case is not None and closing and case.is_open:
+        import datetime as _dt
+        fields.update(state=esc.CLOSED,
+                      closed_on=_dt.date.today().isoformat(),
+                      closed_by=p["assigned_to"],
+                      outcome=p["action_taken"] or p["status"])
+    elif case is not None and not closing and not case.is_open \
+            and p["status"] != existing.status:
+        # Moved back to an open status by a person: re-open the case.
+        fields.update(state=esc.OPEN, closed_on=None, closed_by=None,
+                      outcome=None)
+    try:
+        esc.concern_update(concern_id, **fields)
+    except esc.ValidationError as e:
+        raise ValidationError(str(e)) from None
     out = get_concern(concern_id)
     assert out is not None
     logger.info("Updated attendance concern #%d (status=%s, level=%s)",
@@ -448,16 +523,10 @@ def set_status(concern_id: int, status: str) -> Concern:
 
 def delete_concern(concern_id: int) -> bool:
     init_db()
-    with _connect() as conn:
-        cur = conn.execute(
-            "DELETE FROM attendance_concerns WHERE concern_id = ?",
-            (concern_id,),
-        )
-        conn.commit()
-        if cur.rowcount:
-            logger.info("Deleted attendance concern #%d", concern_id)
-            return True
-        return False
+    if _cases().delete_case(concern_id):
+        logger.info("Deleted attendance concern #%d", concern_id)
+        return True
+    return False
 
 
 def concerns_for_student(student_id: str) -> list[Concern]:
@@ -487,9 +556,10 @@ def watchlist(
         df, dt = _date_window(t.window_days)
         date_from = date_from or df
         date_to   = date_to or dt
-        from education_system.systems.sixth_form.domain.academics.attendance import attendance
-        from education_system.systems.sixth_form.domain.academics.attendance import attendance as _att
-        from education_system.systems.sixth_form.domain.learners.students import students as _students
+    # Imported unconditionally — they used to sit inside the branch
+    # above, so an explicit date range raised NameError.
+    from education_system.systems.sixth_form.domain.academics.attendance import attendance as _att
+    from education_system.systems.sixth_form.domain.learners.students import students as _students
     _att.init_db()
 
     open_by_student: dict[str, bool] = {}

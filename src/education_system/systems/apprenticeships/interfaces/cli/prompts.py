@@ -17,7 +17,7 @@ from collections.abc import Callable, Sequence
 from typing import Any
 
 from education_system.systems.apprenticeships import config
-from education_system.systems.apprenticeships.services import preferences
+from education_system.systems.apprenticeships.application.workspace import preferences
 
 logger = logging.getLogger(__name__)
 
@@ -292,7 +292,7 @@ def run_action(handler: Callable[[], None]) -> None:
     from education_system.systems.apprenticeships.domain.apprentices.models import (
         ValidationError,
     )
-    from education_system.systems.apprenticeships.services.access import PermissionDenied
+    from education_system.systems.apprenticeships.application.security.access import PermissionDenied
 
     try:
         handler()

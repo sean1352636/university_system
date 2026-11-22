@@ -17,6 +17,7 @@ Three comprehensive GUI modules have been fully integrated into the Restaurant M
 1. **Purchase Orders** → Inventory Tab → "Purchase Orders" button
 2. **Shifts & Payroll** → Staff Tab → "Manage Schedules" button
 3. **Waste Tracking** → Inventory Tab → "Waste Tracking" button
+4. **User Access** → "User Access" in the sidebar (command line: Settings → User Management)
 
 ---
 
@@ -250,6 +251,28 @@ Three comprehensive GUI modules have been fully integrated into the Restaurant M
 
 ---
 
+## 🔑 User Access
+
+Controls who can use the restaurant and what they can do. Employment details stay in the Staff section. Only administrators and restaurant Managers can open User Access.
+
+| Role | Sections it opens |
+|------|-------------------|
+| Manager | All sections, including Staff and User Access |
+| Supervisor | Menu Items, Place Order, Orders, Customers, Tables, Inventory |
+| Server | Place Order, Orders, Customers, Tables |
+| Kitchen | Place Order, Orders, Inventory |
+| Finance | Refunds, Reports |
+
+- **Grant access:** link an active university staff login to an active staff member and choose a role. Add the person in the Staff section first. Each staff member links to one login.
+- **Remove access:** the person loses all restaurant access, and their staff record is kept. Terminating a staff member in the command-line Staff Management also removes their access.
+- **Staff status:** access only works while the staff record is Active, so On Leave and Inactive staff are blocked until they return.
+- **No role yet:** a login with no access row keeps what its login role allows. For a staff login, that's Customers and Tables. Administrators can open every section.
+- **Limits:** a Manager can't change their own access or give, change or remove the Manager role. Only an administrator can.
+- **Scope:** restaurant roles only apply inside the restaurant. A restaurant Finance role gives no access to university finance screens.
+- **History:** every change is recorded in the restaurant Audit Logs, and in Access history on the User Access screen.
+
+---
+
 ## 🔗 Integration with Reports
 
 These three new modules enable accurate data for all Financial Reports:
@@ -454,13 +477,13 @@ All tables use proper foreign keys, constraints, and indexes for data integrity 
 - **Shifts/Payroll**: Contact HR or shift managers
 - **Waste Tracking**: Contact kitchen managers
 - **Database Issues**: Contact IT support
-- **Financial Reports**: See `REPORTS_USER_GUIDE.md`
+- **Financial Reports**: See [Restaurant Reports](RESTAURANT_REPORTS_GUIDE.md)
 
 ### Documentation References:
 
-- Reports Guide: `REPORTS_USER_GUIDE.md`
-- Email Integration: `EMAIL_RECEIPTS_QUICK_GUIDE.md`
-- Changelog: `/CHANGELOG.md` (version 5.0.78)
+- Reports Guide: [RESTAURANT_REPORTS_GUIDE.md](RESTAURANT_REPORTS_GUIDE.md)
+- Email Integration: [EMAIL_RECEIPTS_GUIDE.md](../administration/EMAIL_RECEIPTS_GUIDE.md)
+- Changelog: `docs/changelogs/CHANGELOG-v5.md`
 
 ---
 
@@ -602,18 +625,14 @@ Tracks renewal requests.
 ## File Structure
 
 ```
-accessibility/
-├── __init__.py                          # Package initialization
-├── README.md                            # This file
-├── services/
-│   ├── __init__.py
+src/education_system/systems/university/domains/student_support/
+├── domain/disability/
 │   └── accessibility_service.py         # Service layer (business logic)
-├── cli/
-│   ├── __init__.py
-│   └── accessibility_cli.py             # Command-line interface
-└── gui/
-    ├── __init__.py
-    └── accessibility_gui.py             # Graphical user interface
+└── interfaces/
+    ├── cli/disability/
+    │   └── accessibility_cli.py         # Command-line interface
+    └── gui/disability/
+        └── accessibility_gui.py         # Graphical user interface
 ```
 
 ## Usage
@@ -621,7 +640,7 @@ accessibility/
 ### Service Layer
 
 ```python
-from university_system.modules.domain.accessibility.services import AccessibilityService
+from education_system.systems.university.domains.student_support.domain.disability.accessibility_service import AccessibilityService
 
 # Initialize service
 service = AccessibilityService()
@@ -669,7 +688,7 @@ renewal_id = service.request_renewal(
 ### CLI Interface
 
 ```python
-from university_system.modules.domain.accessibility.cli import AccessibilityCLI
+from education_system.systems.university.domains.student_support.interfaces.cli.disability.accessibility_cli import AccessibilityCLI
 
 # Run CLI
 cli = AccessibilityCLI()
@@ -678,7 +697,7 @@ cli.run()
 
 Or run directly:
 ```bash
-python -m university_system.modules.domain.accessibility.cli.accessibility_cli
+python -m education_system.systems.university.domains.student_support.interfaces.cli.disability.accessibility_cli
 ```
 
 **CLI Features:**
@@ -694,7 +713,7 @@ python -m university_system.modules.domain.accessibility.cli.accessibility_cli
 ### GUI Interface
 
 ```python
-from university_system.modules.domain.accessibility.gui import AccessibilityGUI
+from education_system.systems.university.domains.student_support.interfaces.gui.disability.accessibility_gui import AccessibilityGUI
 
 # Run GUI (standalone)
 app = AccessibilityGUI()
@@ -706,7 +725,7 @@ app = AccessibilityGUI(parent=main_window)
 
 Or run directly:
 ```bash
-python -m university_system.modules.domain.accessibility.gui.accessibility_gui
+python -m education_system.systems.university.domains.student_support.interfaces.gui.disability.accessibility_gui
 ```
 
 **GUI Features:**
@@ -741,7 +760,7 @@ The Accessibility Services Portal is designed with FERPA compliance in mind:
 ### Authentication
 Uses the centralized authentication system:
 ```python
-from university_system.infrastructure.shared_context import get_auth
+from education_system.systems.university.infrastructure.shared_context import get_auth
 
 auth = get_auth()
 if auth.is_logged_in():
@@ -751,7 +770,7 @@ if auth.is_logged_in():
 ### Database
 Uses the centralized database connection pool:
 ```python
-from university_system.infrastructure.database.db import get_connection, transaction
+from education_system.systems.university.infrastructure.database.db import get_connection, transaction
 
 with transaction() as conn:
     # Database operations
@@ -761,7 +780,7 @@ with transaction() as conn:
 ### Activity Logging
 All operations are logged:
 ```python
-from university_system.modules.shared.utils.activity_logger import log_activity
+from education_system.systems.university.infrastructure.activity_logger import log_activity
 
 log_activity('create', 'accommodation_request', request_id=request_id)
 ```
@@ -769,9 +788,9 @@ log_activity('create', 'accommodation_request', request_id=request_id)
 ### File Storage
 Uses centralized path management:
 ```python
-from university_system.modules.shared.constants import paths
+from education_system import paths
 
-upload_dir = paths.UPLOAD_DIR
+upload_dir = paths.UNIVERSITY_UPLOAD_DIR
 ```
 
 ## Staff Functions
@@ -825,7 +844,7 @@ The module can be tested using the following approaches:
 ### Unit Testing
 ```python
 import unittest
-from university_system.modules.domain.accessibility.services import AccessibilityService
+from education_system.systems.university.domains.student_support.domain.disability.accessibility_service import AccessibilityService
 
 class TestAccessibilityService(unittest.TestCase):
     def setUp(self):
@@ -843,8 +862,8 @@ class TestAccessibilityService(unittest.TestCase):
 ```
 
 ### Manual Testing
-1. Run the GUI: `python -m university_system.modules.domain.accessibility.gui.accessibility_gui`
-2. Run the CLI: `python -m university_system.modules.domain.accessibility.cli.accessibility_cli`
+1. Run the GUI: `python -m education_system.systems.university.domains.student_support.interfaces.gui.disability.accessibility_gui`
+2. Run the CLI: `python -m education_system.systems.university.domains.student_support.interfaces.cli.disability.accessibility_cli`
 3. Test each feature systematically
 
 ## Error Handling
@@ -902,7 +921,7 @@ This module is part of the University Management System and is subject to the sa
 
 ### 1. Create Your Portfolio (First Time)
 ```python
-from university_system.modules.domain.portfolio import PortfolioService
+from education_system.systems.university.domains.progression.domain.portfolio import PortfolioService
 
 service = PortfolioService()
 service.create_portfolio(
@@ -975,7 +994,7 @@ service.generate_resume(
 
 ```bash
 # Launch portfolio system
-python -m university_system.modules.domain.portfolio.cli.portfolio_cli
+python -m education_system.systems.university.domains.progression.interfaces.cli.portfolio.portfolio_cli
 
 # Navigation:
 # 1 - Manage portfolio (create/edit)
@@ -990,7 +1009,7 @@ python -m university_system.modules.domain.portfolio.cli.portfolio_cli
 ## GUI Quick Launch
 
 ```python
-from university_system.modules.domain.portfolio import PortfolioGUI
+from education_system.systems.university.domains.progression.interfaces.gui.portfolio.portfolio_gui import PortfolioGUI
 
 app = PortfolioGUI()
 app.run()
@@ -1118,7 +1137,6 @@ Choose what to show:
 
 - Full Documentation: See README.md
 - API Reference: Check docstrings in portfolio_service.py
-- Examples: Run test_portfolio_system.py
 - Support: Contact system administrator
 
 ---
@@ -1551,7 +1569,7 @@ This comprehensive feature set makes the Portfolio System suitable for:
 ### 1. Import the Service
 
 ```python
-from university_system.modules.domain.social_matching import SocialMatchingService
+from education_system.systems.university.domains.student_life.domain.social_matching import SocialMatchingService
 
 service = SocialMatchingService()
 ```
@@ -1609,14 +1627,14 @@ team_id = service.create_team(
 ### CLI Interface
 
 ```bash
-python -m university_system.modules.domain.social_matching.cli.social_matching_cli
+python -m education_system.systems.university.domains.student_life.interfaces.cli.social_matching.social_matching_cli
 ```
 
 ### GUI Interface
 
 ```python
 import tkinter as tk
-from university_system.modules.domain.social_matching.gui import SocialMatchingGUI
+from education_system.systems.university.domains.student_life.interfaces.gui.social_matching import SocialMatchingGUI
 
 root = tk.Tk()
 app = SocialMatchingGUI(root)
@@ -1707,7 +1725,7 @@ service.set_privacy_settings(
 
 ### Interest Categories
 ```python
-from university_system.modules.domain.social_matching import INTEREST_CATEGORIES
+from education_system.systems.university.domains.student_life.domain.social_matching import INTEREST_CATEGORIES
 
 # Available categories:
 # Sports, Music, Arts, Gaming, Outdoor, Technology,
@@ -1749,7 +1767,7 @@ Score is based on:
 ### Complete Student Journey
 
 ```python
-from university_system.modules.domain.social_matching import SocialMatchingService
+from education_system.systems.university.domains.student_life.domain.social_matching import SocialMatchingService
 
 service = SocialMatchingService()
 
@@ -1893,14 +1911,13 @@ print(f"Profile complete! {stats['total_interests']} interests, "
 ## Next Steps
 
 1. Read the full [README.md](../../README.md) for detailed documentation
-2. Review [SUMMARY.md](../../../../src/education_system/systems/university/shell/cli/SUMMARY.md) for implementation details
-3. Run the test script to verify installation
-4. Integrate into your application
+2. Run `tests/unit/systems/university/domains/pastoral/social_matching/test_social_matching.py` to verify installation
+3. Integrate into your application
 
 ## Support
 
 - **Documentation**: See README.md
-- **Examples**: Check test_social_matching.py
+- **Examples**: Check `tests/unit/systems/university/domains/pastoral/social_matching/test_social_matching.py`
 - **Issues**: Review troubleshooting section
 - **Code**: Inspect service layer for advanced usage
 

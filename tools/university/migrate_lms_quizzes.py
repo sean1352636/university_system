@@ -200,7 +200,7 @@ def main(argv=None):
     try:
         # exam_portal_exams.assignment_id is added on demand by the service;
         # this runs before any GUI has, so add it here too.
-        from education_system.systems.university.domains.academics.domain.services.assignments.quiz_service import (
+        from education_system.systems.university.domains.assessment.domain.assignments.quiz_service import (
             ensure_link_column,
         )
         ensure_link_column(conn)

@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import logging
 from typing import Any, Callable
+from education_system.systems.sixth_form.infrastructure.record_links import describe
 from education_system.systems.sixth_form.domain.academics.class_groups import class_groups
 from education_system.systems.sixth_form.domain.learners.students import students
 from education_system.systems.sixth_form.domain.academics.class_groups import class_groups as cg_data
@@ -394,6 +395,33 @@ def delete_slot_flow(slot_id: int | None = None) -> None:
     existing = data.get_slot(sid)
     if existing is None:
         print(f"  ✗ No slot #{sid}")
+        _pause()
+        return
+    try:
+        history = data.history_counts(sid)
+    except Exception as exc:
+        logger.exception("CLI history_counts(%d) failed", sid)
+        print(f"  ✗ Error: {exc}")
+        _pause()
+        return
+    if history:
+        print(f"\n  Slot #{sid} has recorded history that deleting it would "
+              f"destroy:\n    {describe(history)}")
+        if getattr(existing, "archived_at", None):
+            print("  It is already archived (hidden from lists, history kept).")
+            _pause()
+            return
+        confirm = _input(
+            "Archiving takes the slot off the timetable. Type 'yes' to archive instead", default="no")
+        if confirm.lower() != "yes":
+            print("\n  Cancelled.")
+            return
+        try:
+            if data.archive_slot(sid):
+                print(f"\n  ✓ Archived slot #{sid} — history kept.")
+        except Exception as e:
+            logger.exception("CLI archive_slot(%d) failed", sid)
+            print(f"\n  ✗ Unexpected error: {e}")
         _pause()
         return
     confirm = _input(

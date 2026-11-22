@@ -25,14 +25,14 @@ def show_finance_management(self):
         self.finance_gui.show_finance_management()
     else:
         try:
-            from education_system.systems.university.shell.cli.cli_main import display_finance_menu
+            from education_system.systems.university.domains.finance.interfaces.cli.menu import display_finance_menu
             from education_system.systems.university.domains.finance.domain.core.financial_core import set_finance_auth
             if self.auth:
                 try:
                     set_finance_auth(self.auth)
                 except Exception as e:
                     logger.warning(f"Failed to set finance auth: {e}")
-            display_finance_menu()
+            display_finance_menu(self.auth)
         except ImportError:
             messagebox.showerror(_t("finance_gui.errors.title"), _t("finance_gui.errors.gui_and_cli_unavailable"))
 def show_finance_reporting_dashboard(self):
@@ -56,272 +56,21 @@ def show_finance_reporting_dashboard(self):
         messagebox.showerror(_t("finance_gui.errors.title"), _t("finance_gui.errors.failed_to_open_reporting", error=str(e)))
         print(f"❌ Finance Reporting error: {e}")
 def show_student_finance_account(self):
-    """Launch the Enhanced Student Finance Account GUI for students to view their balance and transactions."""
+    """Open My Finance Account (balance, top-ups, send money, transactions,
+    spending summary) for the signed-in user's own account."""
     if not self.auth or not self.auth.current_user:
         messagebox.showerror(_t("common.error"), _t("finance_gui.errors.login_required"))
         return
-
-    try:
-        from education_system.systems.university.domains.finance.infrastructure.finance_integration import (
-            ensure_student_finance_account_exists,
-            top_up_student_finance_account
-        )
-        from education_system.systems.university.domains.finance.domain.student_account import (
-            export_account_transactions_csv,
-            get_account_overview,
-            list_account_transactions,
-            resolve_account_owner,
-            signed_amount,
-        )
-
-        # Get current user's student ID
-        current_user = self.auth.current_user
-        student_id = resolve_account_owner(current_user)
-        first_name = current_user.get('first_name', '')
-        last_name = current_user.get('last_name', '')
-        student_name = f"{first_name} {last_name}".strip() or student_id
-
-        # Ensure account exists
-        ensure_student_finance_account_exists(student_id)
-
-        # Create window
-        account_window = tk.Toplevel(self.root)
-        _install_clean_close(account_window)
-        account_window.title(_t("finance_gui.account.title"))
-        account_window.geometry("1000x800")
-        account_window.minsize(900, 700)
-
-        # Create main scrollable container
-        main_canvas = tk.Canvas(account_window, bg='white', highlightthickness=0)
-        scrollbar = ttk.Scrollbar(account_window, orient="vertical", command=main_canvas.yview)
-        scrollable_frame = ttk.Frame(main_canvas)
-
-        scrollable_frame.bind(
-            "<Configure>",
-            lambda e: main_canvas.configure(scrollregion=main_canvas.bbox("all"))
-        )
-
-        main_canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
-        main_canvas.configure(yscrollcommand=scrollbar.set)
-
-        main_canvas.pack(side="left", fill="both", expand=True)
-        scrollbar.pack(side="right", fill="y")
-
-        # Mouse wheel scrolling
-        def on_mousewheel(event):
-            main_canvas.yview_scroll(int(-1*(event.delta/120)), "units")
-        main_canvas.bind_all("<MouseWheel>", on_mousewheel)
-
-        # Variables for dynamic updates
-        balance_var = tk.StringVar(value=_t('gui.shell.main.features.finance.values.loading', default="Loading..."))
-        total_deposited_var = tk.StringVar(value="£0.00")
-        total_spent_var = tk.StringVar(value="£0.00")
-        transaction_count_var = tk.StringVar(value="0")
-
-        def refresh_all_data():
-            """Refresh balance and statistics"""
-            try:
-                overview = get_account_overview(student_id)
-                balance_var.set(f"£{overview['balance']:,.2f}")
-                transaction_count_var.set(str(overview['transaction_count']))
-                total_deposited_var.set(f"£{overview['total_deposited']:,.2f}")
-                total_spent_var.set(f"£{overview['total_spent']:,.2f}")
-
-                # Refresh transaction list
-                load_transactions()
-            except Exception as e:
-                balance_var.set(f"Error: {e}")
-
-        # ==== HEADER SECTION ====
-        header_frame = tk.Frame(scrollable_frame, bg='#2c3e50')
-        header_frame.pack(fill='x', pady=(0, 20))
-
-        tk.Label(header_frame, text=_t("finance_gui.account.header", name=student_name),
-                font=('Arial', 16, 'bold'), bg='#2c3e50', fg='white', pady=15).pack()
-
-        # ==== BALANCE CARD ====
-        balance_card = tk.Frame(scrollable_frame, bg='#27ae60', relief='raised', bd=2)
-        balance_card.pack(fill='x', padx=20, pady=10)
-
-        tk.Label(balance_card, text=_t("finance_gui.account.current_balance"),
-                font=('Arial', 12, 'bold'), bg='#27ae60', fg='white').pack(pady=(15, 5))
-        tk.Label(balance_card, textvariable=balance_var,
-                font=('Arial', 32, 'bold'), bg='#27ae60', fg='white').pack(pady=5)
-
-        refresh_btn = tk.Button(balance_card, text=_t('gui.shell.main.features.finance.buttons.refresh', default="🔄 Refresh"), command=refresh_all_data,
-                               bg='#229954', fg='white', font=('Arial', 10, 'bold'),
-                               relief='flat', padx=20, pady=5, cursor='hand2')
-        refresh_btn.pack(pady=(5, 15))
-
-        # ==== STATISTICS CARDS ====
-        stats_container = tk.Frame(scrollable_frame, bg='white')
-        stats_container.pack(fill='x', padx=20, pady=10)
-
-        # Total Deposited Card
-        deposit_card = tk.Frame(stats_container, bg='#3498db', relief='raised', bd=2)
-        deposit_card.pack(side='left', expand=True, fill='both', padx=5)
-        tk.Label(deposit_card, text=_t("finance_gui.account.total_deposited"), font=('Arial', 10, 'bold'),
-                bg='#3498db', fg='white').pack(pady=(10, 5))
-        tk.Label(deposit_card, textvariable=total_deposited_var, font=('Arial', 18, 'bold'),
-                bg='#3498db', fg='white').pack(pady=(0, 10))
-
-        # Total Spent Card
-        spent_card = tk.Frame(stats_container, bg='#e74c3c', relief='raised', bd=2)
-        spent_card.pack(side='left', expand=True, fill='both', padx=5)
-        tk.Label(spent_card, text=_t("finance_gui.account.total_spent"), font=('Arial', 10, 'bold'),
-                bg='#e74c3c', fg='white').pack(pady=(10, 5))
-        tk.Label(spent_card, textvariable=total_spent_var, font=('Arial', 18, 'bold'),
-                bg='#e74c3c', fg='white').pack(pady=(0, 10))
-
-        # Transactions Count Card
-        count_card = tk.Frame(stats_container, bg='#f39c12', relief='raised', bd=2)
-        count_card.pack(side='left', expand=True, fill='both', padx=5)
-        tk.Label(count_card, text=_t("finance_gui.account.transactions"), font=('Arial', 10, 'bold'),
-                bg='#f39c12', fg='white').pack(pady=(10, 5))
-        tk.Label(count_card, textvariable=transaction_count_var, font=('Arial', 18, 'bold'),
-                bg='#f39c12', fg='white').pack(pady=(0, 10))
-
-        # ==== QUICK ACTIONS ====
-        actions_frame = ttk.LabelFrame(scrollable_frame, text=_t("finance_gui.account.quick_actions"), padding=15)
-        actions_frame.pack(fill='x', padx=20, pady=15)
-
-        # Quick amount buttons
-        tk.Label(actions_frame, text=_t("finance_gui.account.quick_top_up_amounts"), font=('Arial', 9, 'bold')).pack(anchor='w', pady=(0, 5))
-        quick_amounts = tk.Frame(actions_frame, bg='white')
-        quick_amounts.pack(fill='x')
-
-        def quick_top_up(amount):
-            """Quick top-up with preset amount"""
-            try:
-                processed_by = self.auth.current_user.get('username', 'Unknown') if self.auth.current_user else 'Unknown'
-
-                result = top_up_student_finance_account(
-                    student_id=student_id,
-                    amount=amount,
-                    payment_method='quick_topup',
-                    processed_by=processed_by
-                )
-
-                if result['success']:
-                    messagebox.showinfo(_t("common.success"), _t("finance_gui.account.top_up_success", amount=amount, balance=result['new_balance']))
-                    refresh_all_data()
-                else:
-                    messagebox.showerror(_t("common.error"), result['message'])
-            except Exception as e:
-                messagebox.showerror(_t("common.error"), _t("finance_gui.account.top_up_failed", error=str(e)))
-
-        for amount in [10, 20, 50, 100]:
-            tk.Button(quick_amounts, text=f"£{amount}", command=lambda amt=amount: quick_top_up(amt),
-                     bg='#ecf0f1', fg='#2c3e50', font=('Arial', 10, 'bold'),
-                     relief='flat', padx=15, pady=5, cursor='hand2').pack(side='left', padx=3)
-
-        # ==== RECENT TRANSACTIONS ====
-        trans_frame = ttk.LabelFrame(scrollable_frame, text=_t('gui.shell.main.features.finance.labels.recent_transactions_last_20', default="📜 Recent Transactions (Last 20)"), padding=10)
-        trans_frame.pack(fill='both', expand=True, padx=20, pady=15)
-
-        # Filter buttons
-        filter_frame = tk.Frame(trans_frame)
-        filter_frame.pack(fill='x', pady=(0, 10))
-
-        filter_var = tk.StringVar(value=_t('gui.shell.main.features.finance.values.all', default='all'))
-
-        def apply_filter():
-            load_transactions(filter_var.get())
-
-        tk.Radiobutton(filter_frame, text=_t('gui.shell.main.features.finance.buttons.all', default="All"), variable=filter_var, value='all',
-                      command=apply_filter).pack(side='left', padx=5)
-        tk.Radiobutton(filter_frame, text=_t('gui.shell.main.features.finance.buttons.deposits', default="Deposits ⬆️"), variable=filter_var, value='deposit',
-                      command=apply_filter).pack(side='left', padx=5)
-        tk.Radiobutton(filter_frame, text=_t('gui.shell.main.features.finance.buttons.spending', default="Spending ⬇️"), variable=filter_var, value='spend',
-                      command=apply_filter).pack(side='left', padx=5)
-
-        # Export button
-        def export_transactions():
-            try:
-                import csv
-                from tkinter import filedialog
-
-                filename = filedialog.asksaveasfilename(
-                    defaultextension=".csv",
-                    filetypes=[("CSV files", "*.csv"), ("All files", "*.*")],
-                    initialfile=f"finance_account_{student_id}.csv"
-                )
-
-                if not filename:
-                    return
-
-                export_account_transactions_csv(student_id, filename)
-                messagebox.showinfo(_t("common.success"), _t("finance_gui.account.export_success", filename=filename))
-            except Exception as e:
-                messagebox.showerror(_t("common.error"), _t("finance_gui.account.export_failed", error=str(e)))
-
-        tk.Button(filter_frame, text=_t('gui.shell.main.features.finance.buttons.export_csv', default="📥 Export CSV"), command=export_transactions,
-                 bg='#34495e', fg='white', font=('Arial', 9, 'bold'),
-                 relief='flat', padx=10, pady=3, cursor='hand2').pack(side='right', padx=5)
-
-        # Transaction table
-        trans_table_frame = tk.Frame(trans_frame)
-        trans_table_frame.pack(fill='both', expand=True)
-
-        columns = ('Date', 'Type', 'Amount', 'Balance', 'Description')
-        trans_tree = ttk.Treeview(trans_table_frame, columns=columns, show='headings', height=10)
-
-        trans_tree.heading('Date', text=_t('gui.shell.main.features.finance.headings.date_time', default='Date/Time'))
-        trans_tree.heading('Type', text=_t('gui.shell.main.features.finance.headings.type', default='Type'))
-        trans_tree.heading('Amount', text=_t('gui.shell.main.features.finance.headings.amount', default='Amount'))
-        trans_tree.heading('Balance', text=_t('gui.shell.main.features.finance.headings.balance_after', default='Balance After'))
-        trans_tree.heading('Description', text=_t('gui.shell.main.features.finance.headings.description', default='Description'))
-
-        trans_tree.column('Date', width=150, anchor='center')
-        trans_tree.column('Type', width=100, anchor='center')
-        trans_tree.column('Amount', width=100, anchor='e')
-        trans_tree.column('Balance', width=100, anchor='e')
-        trans_tree.column('Description', width=250, anchor='w')
-
-        trans_scrollbar = ttk.Scrollbar(trans_table_frame, orient='vertical', command=trans_tree.yview)
-        trans_tree.configure(yscrollcommand=trans_scrollbar.set)
-
-        trans_tree.pack(side='left', fill='both', expand=True)
-        trans_scrollbar.pack(side='right', fill='y')
-
-        def load_transactions(filter_type='all'):
-            """Load and display transactions"""
-            for item in trans_tree.get_children():
-                trans_tree.delete(item)
-
-            try:
-                for txn in list_account_transactions(student_id, filter_type, limit=20):
-                    trans_type = txn['type'].replace('_', ' ').title()
-                    signed = signed_amount(txn['type'], txn['amount'])
-
-                    # Format amount with +/- indicator
-                    if signed < 0:
-                        amount_str = f"-£{txn['amount']:.2f}"
-                        tag = 'negative'
-                    else:
-                        amount_str = f"+£{txn['amount']:.2f}"
-                        tag = 'positive'
-
-                    trans_tree.insert('', 'end', values=(
-                        txn['timestamp'], trans_type, amount_str, f"£{txn['balance_after']:.2f}", txn['description']
-                    ), tags=(tag,))
-
-                # Configure tag colors
-                trans_tree.tag_configure('positive', foreground='#27ae60')
-                trans_tree.tag_configure('negative', foreground='#e74c3c')
-            except Exception as e:
-                print(f"Error loading transactions: {e}")
-
-        # Initial data load
-        refresh_all_data()
-
-        print("✅ Enhanced Student Finance Account GUI opened successfully")
-
-    except Exception as e:
-        messagebox.showerror(_t("common.error"), _t("finance_gui.account.failed_to_open", error=str(e)))
-        print(f"❌ Student Finance Account error: {e}")
-        import traceback
-        traceback.print_exc()
+    from education_system.systems.university.domains.finance.interfaces.gui.finance_account import (
+        build_finance_account,
+    )
+    account_window = tk.Toplevel(self.root)
+    _install_clean_close(account_window)
+    account_window.title(_t("finance_gui.account.title"))
+    account_window.geometry("1000x800")
+    account_window.minsize(900, 700)
+    if build_finance_account(account_window, self.auth) is None:
+        account_window.destroy()
 def show_financial_aid(self):
     """Launch the Financial Aid & Scholarships GUI in a child window."""
     if not self.auth.current_user:
@@ -484,21 +233,6 @@ def _create_payment_history_tab_finance(self, parent):
         ttk.Label(parent, text=_t("finance_gui.errors.loading_history", error=str(e), default="Loading History {error}")).pack()
 
 def show_bank_app_gui(self):
-    """Launch the Bank Application GUI with Student Finance integration"""
-    try:
-        from education_system.systems.university.domains.finance.interfaces.gui.bank_app import BankApp
-        window = tk.Toplevel(self.root)
-        _install_clean_close(window)
-        window.title(_t("extras_gui.titles.university_bank"))
-        window.geometry("900x700")
-        window.minsize(800, 600)
-        try:
-            window.transient(self.root)
-        except Exception:
-            logger.debug("Suppressed exception", exc_info=True)
-        # Pass auth for student finance integration
-        BankApp(window, auth=self.auth)
-        print(_t("extras_gui.messages.bank_app_opened"))
-    except Exception as e:
-        messagebox.showerror(_t("extras_gui.errors.error"), _t("extras_gui.errors.bank_app_failed").format(error=str(e)))
-        print(_t("extras_gui.messages.bank_app_error").format(error=e))
+    """Student Bank was merged into My Finance Account (2026-10-18); anything
+    still calling this opens that screen."""
+    self.show_student_finance_account()

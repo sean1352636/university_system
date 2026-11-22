@@ -18,6 +18,7 @@ from education_system.systems.primary.domain.operations.reporting.attendance_rep
 from education_system.systems.primary.domain.learners.pupils.pupils import (
     ValidationError, YEAR_GROUPS,
 )
+from education_system.systems.primary.interfaces.gui import kit
 
 logger = logging.getLogger(__name__)
 
@@ -50,44 +51,45 @@ def _safe_view(func: Callable[..., None]) -> Callable[..., None]:
 @_safe_view
 def open_attendance_report(host) -> None:
     logger.debug("GUI: open_attendance_report")
+    kit.show_page(host, "Attendance Report",
+                  lambda parent: _draw_attendance_report(parent, host))
 
-    win = tk.Toplevel(host.root)
-    win.title("Attendance Report")
-    win.transient(host.root)
-    win.geometry("1180x680")
 
-    top = ttk.Frame(win, padding=10)
+def _draw_attendance_report(parent: ttk.Frame, host) -> None:
+    win = parent.winfo_toplevel()
+    kit.page_heading(parent, "Attendance Report")
+
+    top = ttk.Frame(parent)
     top.pack(fill="x")
-    ttk.Label(top, text="Attendance Report",
-              font=("Segoe UI", 13, "bold")).pack(side="left")
     ttk.Label(top,
               text=f"Persistent-absentee threshold: "
                    f"<{PERSISTENT_ABSENCE_THRESHOLD_PCT:g}%",
               foreground="#666").pack(side="right")
 
-    filt = ttk.Frame(win, padding=(10, 0, 10, 6))
+    filt = ttk.Frame(parent, padding=(0, 0, 0, 6))
     filt.pack(fill="x")
     fr_default, to_default = data.default_term_range()
     ttk.Label(filt, text="From:").pack(side="left")
     from_var = tk.StringVar(value=fr_default)
-    ttk.Entry(filt, textvariable=from_var, width=12).pack(
+    kit.DateField(filt, from_var).pack(
         side="left", padx=(4, 10))
     ttk.Label(filt, text="To:").pack(side="left")
     to_var = tk.StringVar(value=to_default)
-    ttk.Entry(filt, textvariable=to_var, width=12).pack(
+    kit.DateField(filt, to_var).pack(
         side="left", padx=(4, 10))
     ttk.Label(filt, text="Year:").pack(side="left")
     year_var = tk.StringVar(value="All")
-    ttk.Combobox(filt, textvariable=year_var,
-                 values=["All"] + list(YEAR_GROUPS),
-                 state="readonly", width=6).pack(side="left", padx=(4, 10))
+    kit.ChoiceField(filt, year_var,
+                    choices=[("All", "All")] + [
+                        (y, kit.YEAR_GROUP_LABELS.get(y, y)) for y in YEAR_GROUPS],
+                    width=10).pack(side="left", padx=(4, 10))
     ttk.Label(filt, text="PA threshold %:").pack(side="left")
     thr_var = tk.StringVar(value=f"{PERSISTENT_ABSENCE_THRESHOLD_PCT:g}")
-    ttk.Entry(filt, textvariable=thr_var, width=6).pack(
+    kit.NumberField(filt, thr_var, from_=0, to=100, increment=0.5, width=6).pack(
         side="left", padx=(4, 10))
 
-    nb = ttk.Notebook(win)
-    nb.pack(fill="both", expand=True, padx=10, pady=(0, 6))
+    nb = ttk.Notebook(parent)
+    nb.pack(fill="both", expand=True, pady=(0, 6))
 
     cohort_tab = ttk.Frame(nb, padding=10)
     pupils_tab = ttk.Frame(nb, padding=10)
@@ -328,10 +330,11 @@ def open_attendance_report(host) -> None:
     ttk.Button(p_btns, text="Refresh",
                command=_refresh).pack(side="left", padx=(8, 0))
 
-    bottom = ttk.Frame(win, padding=10)
+    bottom = ttk.Frame(parent, padding=(0, 6))
     bottom.pack(fill="x")
     ttk.Button(bottom, text="Refresh", command=_refresh).pack(side="left")
-    ttk.Button(bottom, text="Close", command=win.destroy).pack(side="right")
+    ttk.Button(bottom, text="Close",
+               command=lambda: kit.close_page(host, parent)).pack(side="right")
 
     for v in (from_var, to_var, year_var, thr_var):
         v.trace_add("write", lambda *_: _refresh())

@@ -314,5 +314,5 @@ When ordering, you can specify special cut instructions for each item:
 ---
 
 **Last Updated**: February 2026
-**Module**: `university_system/modules/domain/butcher/`
+**Module**: `src/education_system/systems/university/plugins/campus_commerce/domain/butcher/`
 **Support**: butcher@university.edu | (555) 123-MEAT

@@ -686,7 +686,15 @@ _MENU: list[tuple[str, Callable[[], None]]] = [
     ("Flagged students",          list_flagged),
     ("EpiPen holders",            list_epipens),
     ("Summary report",            show_summary),
+    ("Healthcare plans & medication log ▸", lambda: _care_plans()),
 ]
+
+
+def _care_plans() -> None:
+    from education_system.systems.sixth_form.interfaces.cli.pastoral.health.medical_records import (
+        care_plans_cli,
+    )
+    care_plans_cli.run()
 
 
 def run() -> None:

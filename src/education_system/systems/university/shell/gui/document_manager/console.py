@@ -367,6 +367,8 @@ class DocumentManager:
             button_frame = ttk.Frame(main_frame)
             button_frame.pack(fill='x', pady=10)
 
+            found_docs = []  # (document_id, file_path) per listbox row
+
             def find_documents():
                 try:
                     conn = get_connection()
@@ -376,7 +378,7 @@ class DocumentManager:
                     if file_type == "All":
                         cursor.execute('''
                         SELECT sd.document_id, s.student_id, s.first_name, s.last_name,
-                               dt.type_name, sd.file_name
+                               dt.type_name, COALESCE(sd.file_name, sd.original_filename), sd.file_path
                         FROM documents sd
                         JOIN students s ON sd.owner_id = s.student_id
                         JOIN document_types dt ON dt.type_id = CAST(sd.document_type AS INTEGER)
@@ -387,13 +389,13 @@ class DocumentManager:
                     else:
                         cursor.execute('''
                         SELECT sd.document_id, s.student_id, s.first_name, s.last_name,
-                               dt.type_name, sd.file_name
+                               dt.type_name, COALESCE(sd.file_name, sd.original_filename), sd.file_path
                         FROM documents sd
                         JOIN students s ON sd.owner_id = s.student_id
                         JOIN document_types dt ON dt.type_id = CAST(sd.document_type AS INTEGER)
                         WHERE sd.source_type = 'student' AND sd.is_current_version = 1
                         AND sd.document_id NOT IN (SELECT document_id FROM ocr_results)
-                        AND UPPER(sd.file_name) LIKE ?
+                        AND UPPER(COALESCE(sd.file_name, sd.original_filename, sd.file_path)) LIKE ?
                         ORDER BY s.last_name, s.first_name
                         ''', (f'%.{file_type.upper()}',))
 
@@ -402,6 +404,7 @@ class DocumentManager:
 
                     # Clear and populate listbox
                     listbox.delete(0, tk.END)
+                    found_docs[:] = [(doc[0], doc[6]) for doc in documents]
                     for doc in documents:
                         display_text = f"{doc[1]} - {doc[2]} {doc[3]} - {doc[4]} - {doc[5]}"
                         listbox.insert(tk.END, display_text)
@@ -416,6 +419,7 @@ class DocumentManager:
                     return
 
                 selected_docs = [listbox.get(i) for i in selected_indices]
+                selected_files = [found_docs[i] for i in selected_indices]
 
                 # Confirm processing
                 if not messagebox.askyesno(_t('gui.shell.document_manager.console.dialogs.confirm_ocr_processing', default="Confirm OCR Processing"),
@@ -459,15 +463,31 @@ class DocumentManager:
                             progress_var.set((i / len(selected_docs)) * 100)
                             progress_dialog.update()
 
-                            # Simulate OCR processing
-                            import time
-                            time.sleep(0.5)  # Simulate processing time
-
-                            # In real implementation, would use pytesseract or similar
-                            # For now, just mark as processed
+                            doc_id, file_path = selected_files[i]
                             try:
-                                # Mock OCR result
-                                results_text.insert('end', "  ✓ Successfully processed\n")
+                                from education_system.systems.university.infrastructure.utils.document_manager.ocr import (
+                                    run_and_record_ocr,
+                                )
+                                user = getattr(self, 'current_user', None)
+                                username = user.get('username') if isinstance(user, dict) else getattr(user, 'username', None)
+                                result = run_and_record_ocr(file_path, document_id=doc_id, source='batch',
+                                                            processed_by=username)
+                                if not result.success:
+                                    raise RuntimeError(result.error)
+                                # Store the text so the document counts as processed
+                                # (Find Documents lists only those without OCR text).
+                                with get_connection() as conn:
+                                    from education_system.systems.university.infrastructure.utils.document_manager.ocr import (
+                                        ensure_ocr_results,
+                                    )
+                                    ensure_ocr_results(conn)
+                                    conn.execute(
+                                        "INSERT INTO ocr_results (document_id, extracted_text, confidence_score, "
+                                        "processing_date) VALUES (?, ?, ?, ?)",
+                                        (doc_id, result.text, result.confidence,
+                                         datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
+                                    conn.commit()
+                                results_text.insert('end', f"  ✓ Extracted {len(result.text.strip())} characters\n")
                                 processed_count += 1
                             except Exception as e:
                                 results_text.insert('end', f"  ✗ Error: {e}\n")

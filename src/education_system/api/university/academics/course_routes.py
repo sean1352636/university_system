@@ -26,7 +26,7 @@ from education_system.platform.delivery.api.university.auth import (
     authorize_object,
     token_required,
 )
-from education_system.systems.university.application.course_lifecycle_service import (
+from education_system.systems.university.application.programmes.lifecycle import (
     CourseCommand,
     CourseImpactError,
     CourseLifecycleService,

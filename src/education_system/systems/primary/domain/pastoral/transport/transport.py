@@ -18,6 +18,7 @@ from contextlib import contextmanager
 from dataclasses import dataclass, field
 from typing import Any, Iterator
 from education_system import paths as _paths
+from education_system.systems.primary.infrastructure.schema_repair import repair_links
 
 logger = logging.getLogger(__name__)
 
@@ -68,7 +69,7 @@ FEE_STATUSES: tuple[str, ...] = (
     "Paid",
     "Partial",
     "Unpaid",
-    "Bursary Funded",
+    "LA Funded",
     "Free",
     "Not Applicable",
 )
@@ -184,6 +185,9 @@ def _connect() -> Iterator[sqlite3.Connection]:
 
 
 def init_db() -> None:
+    from education_system.systems.primary.domain import _pupils_bridge as _students
+    _students.init_db()  # the pupils table the links point at
+    repair_links(_paths.PRIMARY_TRANSPORT_DB)
     with _connect() as conn:
         conn.execute("""
             CREATE TABLE IF NOT EXISTS transport_routes (
@@ -229,7 +233,7 @@ def init_db() -> None:
                 status TEXT NOT NULL,
                 created_on TEXT NOT NULL,
                 updated_on TEXT NOT NULL,
-                FOREIGN KEY(student_id) REFERENCES students(student_id)
+                FOREIGN KEY(student_id) REFERENCES pupils(pupil_id)
                   ON DELETE CASCADE,
                 FOREIGN KEY(route_id)
                   REFERENCES transport_routes(route_id)
@@ -260,7 +264,7 @@ def _student_exists(student_id: str) -> bool:
     with _connect() as conn:
         try:
             row = conn.execute(
-                "SELECT 1 FROM students WHERE student_id=?",
+                "SELECT 1 FROM pupils WHERE pupil_id=?",
                 (student_id,)).fetchone()
         except sqlite3.OperationalError:
             return False
@@ -823,7 +827,9 @@ def cancel(arrangement_id: int) -> Arrangement:
     data = _to_arrangement_dict(a)
     data["status"] = "Cancelled"
     if not data["end_date"]:
-        data["end_date"] = _dt.date.today().isoformat()
+        # Ends today - or, for one that has not started yet, on its start
+        # date (an end before the start is refused).
+        data["end_date"] = max(_dt.date.today().isoformat(), data["start_date"])
     return update_arrangement(arrangement_id, data)
 
 

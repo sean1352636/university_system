@@ -61,68 +61,171 @@ def _print_table(rows: list[data.Child]) -> None:
 
 
 def _print_profile(c: data.Child) -> None:
+    sen = f"{c.sen_status} – {c.sen_label}" if c.sen_status else "Not recorded"
+    address = ", ".join(x for x in (c.address_line1, c.address_line2, c.town,
+                                    c.postcode) if x)
     print(f"\n  ── Child {c.pupil_id} ──")
+    print("  Identity")
     print(f"  Name:           {c.full_name}")
+    print(f"  Legal name:     {c.legal_name}")
+    print(f"  Preferred name: {c.preferred_name or '-'}")
     print(f"  Date of birth:  {c.date_of_birth or '-'}")
+    print(f"  Gender:         {c.gender or '-'}")
+    print(f"  UPN:            {c.upn or 'Not recorded'}")
+    print("  Admission")
+    print(f"  Start date:     {c.start_date or '-'}")
+    print(f"  Roll status:    {c.roll_status_label}")
+    print(f"  Status:         {c.status}")
+    if c.status == "left":
+        print(f"  Leaving date:   {c.left_date or '-'}")
+        print(f"  Leaving reason: {c.exit_reason or '-'}")
+    print("  Address")
+    print(f"  Address:        {address or '-'}")
+    print("  Needs")
+    print(f"  SEN:            {sen}")
+    print(f"  Free meals:     {'Eligible' if c.fsm_eligible else 'Not eligible'}")
+    print(f"  EAL:            {'Yes' if c.eal else 'No'}")
+    print(f"  Notes:          {c.notes or '-'}")
+    print("  Parent / carer")
+    print(f"  Parent:         {c.parent_name or '-'}")
+    print(f"  Relationship:   {c.parent_relationship or '-'}")
+    print(f"  Parent phone:   {c.parent_phone or '-'}")
+    print(f"  Parent email:   {c.parent_email or '-'}")
+    print("  Medical")
+    print(f"  Medical notes:  {c.medical_notes or '-'}")
+    print("  Nursery")
     print(f"  Room:           {c.room or '-'}")
     print(f"  Key person:     {c.key_person_name or c.key_person or '-'}")
     print(f"  Funded hours:   {c.funded_hours or '-'}")
-    print(f"  Start date:     {c.start_date or '-'}")
-    print(f"  Status:         {c.status}")
-    print(f"  Parent:         {c.parent_name or '-'}")
-    print(f"  Parent phone:   {c.parent_phone or '-'}")
-    print(f"  Parent email:   {c.parent_email or '-'}")
     print(f"  Allergies:      {c.allergies or '-'}")
-    print(f"  Medical notes:  {c.medical_notes or '-'}")
 
 
-def _show_key_people() -> None:
+def _choose(label: str, options: list[tuple[str, str]],
+            current: str | None = None, *, default: str = "") -> str:
+    """A numbered choice from a fixed list. Enter keeps *current* (or takes
+    *default*); '-' clears it. Returns the stored value."""
+    shown = dict(options).get(current or "", current or "")
+    print(f"  {label}:" + "".join(f"  {i}) {lbl}" for i, (_v, lbl) in
+                                   enumerate(options, 1)))
+    for _attempt in range(3):
+        suffix = f" [{shown}]" if current else ""
+        raw = _prompt(f"  Choose 1-{len(options)}{suffix}: ")
+        if raw == "":
+            return current or default
+        if raw == "-":
+            return ""
+        if raw.isdigit() and 1 <= int(raw) <= len(options):
+            return options[int(raw) - 1][0]
+        for value, lbl in options:
+            if raw.lower() in (value.lower(), lbl.lower()):
+                return value
+        print("  Pick a number from the list.")
+    return current or default
+
+
+def _yn(value: bool | None) -> str | None:
+    if value is None:
+        return None
+    return "y" if value else "n"
+
+
+def _room_options() -> list[tuple[str, str]]:
     try:
-        choices = data.list_key_person_choices()
+        from education_system.systems.nursery.domain.operations.rooms import rooms
+        names = rooms.list_room_choices(open_only=True)
+    except Exception:
+        logger.exception("Could not load room choices")
+        names = []
+    return [(r, r) for r in dict.fromkeys([*names, *ROOMS])]
+
+
+def _key_person_options() -> list[tuple[str, str]]:
+    try:
+        return data.list_key_person_choices()
     except Exception:
         logger.exception("Could not load key-person choices")
-        return
-    if choices:
-        print("  Key people (staff): "
-              + ", ".join(label for _id, label in choices))
+        return []
 
 
 def _collect_fields(existing: data.Child | None = None) -> dict[str, str]:
+    """The same questions as the GUI form (and the primary and secondary
+    schools' Add Pupil): identity, admission, address, needs, parent/carer,
+    medical — plus the nursery's room, key person, funded hours and
+    allergies."""
+    def cur(name: str) -> str | None:
+        if existing is None:
+            return None
+        v = getattr(existing, name, None)
+        if isinstance(v, bool):
+            return _yn(v)
+        return None if v is None else str(v)
+
     def ask(label: str, current: str | None = None) -> str:
         suffix = f" [{current}]" if current else ""
         v = _prompt(f"  {label}{suffix}: ")
+        if v == "-":
+            return ""
         return v if v else (current or "")
 
+    req = "" if existing else " *"
     fields: dict[str, str] = {}
-    fields["first_name"]    = ask("First name",
-                                   existing.first_name if existing else None)
-    fields["last_name"]     = ask("Last name",
-                                   existing.last_name if existing else None)
-    fields["date_of_birth"] = ask("Date of birth (YYYY-MM-DD)",
-                                   existing.date_of_birth if existing else None)
-    fields["room"]          = ask(f"Room ({'/'.join(ROOMS)})",
-                                   existing.room if existing else None)
-    _show_key_people()
-    fields["key_person"]    = ask("Key person (staff ID)",
-                                   existing.key_person if existing else None)
-    funded = [o for o in FUNDED_HOURS_OPTIONS if o]
-    fields["funded_hours"]  = ask(f"Funded hours ({'/'.join(funded)})",
-                                   existing.funded_hours if existing else None)
-    fields["start_date"]    = ask("Start date (YYYY-MM-DD)",
-                                   existing.start_date if existing else None)
-    fields["parent_name"]   = ask("Parent / carer name",
-                                   existing.parent_name if existing else None)
-    fields["parent_phone"]  = ask("Parent phone",
-                                   existing.parent_phone if existing else None)
-    fields["parent_email"]  = ask("Parent email",
-                                   existing.parent_email if existing else None)
-    fields["allergies"]     = ask("Allergies",
-                                   existing.allergies if existing else None)
-    fields["medical_notes"] = ask("Medical notes",
-                                   existing.medical_notes if existing else None)
-    if existing is not None:
-        fields["status"] = ask(f"Status ({'/'.join(data.STATUSES)})",
-                               existing.status)
+    print("  Identity")
+    fields["first_name"]     = ask(f"Legal first name{req}", cur("first_name"))
+    fields["middle_names"]   = ask("Middle names", cur("middle_names"))
+    fields["last_name"]      = ask(f"Legal last name{req}", cur("last_name"))
+    fields["preferred_name"] = ask("Preferred name", cur("preferred_name"))
+    fields["date_of_birth"]  = ask(f"Date of birth (YYYY-MM-DD){req}",
+                                   cur("date_of_birth"))
+    fields["gender"]         = _choose(f"Gender{req}",
+                                       [(g, g) for g in data.GENDERS], cur("gender"))
+    fields["upn"]            = ask("UPN (13 characters, if the child has one)",
+                                   cur("upn"))
+    print("  Admission")
+    fields["start_date"]     = ask(
+        "Start (admission) date (YYYY-MM-DD"
+        + (", Enter = today)" if existing is None else ")"),
+        cur("start_date"))
+    fields["roll_status"]    = _choose(
+        "Roll status", [(k, data.ROLL_STATUS_LABELS[k]) for k in data.ROLL_STATUSES],
+        cur("roll_status"), default=data.ON_ROLL)
+    if fields["roll_status"] == "left":
+        fields["left_date"]   = ask("Leaving date (YYYY-MM-DD)", cur("left_date"))
+        fields["exit_reason"] = _choose(
+            "Leaving reason", [(r, r) for r in data.LEAVING_REASONS], cur("exit_reason"))
+    print("  Address")
+    fields["address_line1"]  = ask("Address line 1", cur("address_line1"))
+    fields["address_line2"]  = ask("Address line 2", cur("address_line2"))
+    fields["town"]           = ask("Town", cur("town"))
+    fields["postcode"]       = ask("Postcode", cur("postcode"))
+    print("  Needs")
+    fields["sen_status"]     = _choose(
+        "SEN", [(k, f"{k} – {v}") for k, v in data.SEN_STATUSES.items()],
+        cur("sen_status"), default="N" if existing is None else "")
+    fields["fsm_eligible"]   = ask("Free school meals eligible (y/n)",
+                                   cur("fsm_eligible")) or "n"
+    fields["eal"]            = ask("English as an additional language (y/n)",
+                                   cur("eal")) or "n"
+    fields["notes"]          = ask("Notes", cur("notes"))
+    print("  Parent / carer")
+    fields["parent_name"]    = ask("Parent / carer name", cur("parent_name"))
+    fields["parent_relationship"] = _choose(
+        "Relationship", [(r, r) for r in data.PARENT_RELATIONSHIPS],
+        cur("parent_relationship"))
+    fields["parent_phone"]   = ask("Parent phone", cur("parent_phone"))
+    fields["parent_email"]   = ask("Parent e-mail", cur("parent_email"))
+    print("  Medical")
+    fields["medical_notes"]  = ask("Medical / care notes", cur("medical_notes"))
+    print("  Nursery")
+    fields["room"]           = _choose("Room", _room_options(), cur("room"))
+    people = _key_person_options()
+    if people:
+        fields["key_person"] = _choose("Key person", people, cur("key_person"))
+    else:
+        fields["key_person"] = ask("Key person (staff ID)", cur("key_person"))
+    fields["funded_hours"]   = _choose(
+        "Funded hours", [(o, o) for o in FUNDED_HOURS_OPTIONS if o],
+        cur("funded_hours"))
+    fields["allergies"]      = ask("Allergies", cur("allergies"))
     return fields
 
 
@@ -169,8 +272,16 @@ def open_directory() -> None:
 def open_add_child() -> None:
     logger.debug("CLI: open_add_child")
     print("\n  ── Add Child ──")
+    print("  (* required; '-' leaves a field blank)")
     fields = _collect_fields()
-    c = data.create_child(fields)
+    try:
+        c = data.create_child(fields, complete=True, check_duplicate=True)
+    except data.DuplicateChild as dup:
+        answer = _prompt(f"  {dup}\n  Add this as a different child anyway? (y/N): ")
+        if answer.lower() != "y":
+            print("  Not saved.")
+            return
+        c = data.create_child(fields, complete=True)
     print(f"\n  Created child {c.pupil_id} ({c.full_name}, room {c.room or '-'}).")
 
 
@@ -186,7 +297,7 @@ def open_edit_child() -> None:
     if existing is None:
         print("  No child with that ID.")
         return
-    print("  Press Enter to keep the existing value.")
+    print("  Press Enter to keep the existing value, '-' to clear it.")
     fields = _collect_fields(existing)
     c = data.update_child(cid, fields)
     print(f"\n  Updated child {c.pupil_id} ({c.full_name}).")
@@ -205,7 +316,7 @@ def open_delete_child() -> None:
         print("  No child with that ID.")
         return
     print("  Tip: to keep the record but take the child off roll, edit and set "
-          "status to 'left' instead.")
+          "the roll status to Left instead.")
     confirm = _prompt(
         f"  Permanently delete {existing.full_name} ({cid})? (y/N): ").lower()
     if confirm != "y":

@@ -462,10 +462,12 @@ def get_required_input(prompt: str, field_name: str = "Field") -> str:
 
 
 def get_currency_input(prompt: str, field_name: str = "Amount",
-                      allow_empty: bool = False) -> Optional[float]:
+                      allow_empty: bool = False,
+                      min_value: float = 0) -> Optional[float]:
     """Get validated currency input."""
     return get_validated_input(prompt, validate_currency,
-                               field_name=field_name, allow_empty=allow_empty)
+                               field_name=field_name, allow_empty=allow_empty,
+                               min_value=min_value)
 
 
 def get_rating_input(prompt: str, field_name: str = "Rating",

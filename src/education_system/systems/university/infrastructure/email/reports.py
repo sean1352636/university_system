@@ -18,22 +18,11 @@ except ImportError:
 
 
 def _ensure_metrics_table(cursor):
-    """Create the email_metrics table if the database does not have it yet."""
-    cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='email_metrics'")
-    if cursor.fetchone():
-        return
-
-    cursor.execute('''
-    CREATE TABLE IF NOT EXISTS email_metrics (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        date TEXT NOT NULL,
-        sent_count INTEGER DEFAULT 0,
-        failed_count INTEGER DEFAULT 0,
-        opened_count INTEGER DEFAULT 0,
-        clicked_count INTEGER DEFAULT 0
+    """Make sure the e-mail tables, including email_metrics, exist."""
+    from education_system.systems.university.infrastructure.database.schemas import (
+        email_legacy_schema,
     )
-    ''')
-    cursor.execute('CREATE INDEX IF NOT EXISTS idx_email_metrics_date ON email_metrics(date)')
+    email_legacy_schema.apply_to_connection(cursor.connection)
 
 
 @handle_exception

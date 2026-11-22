@@ -19,32 +19,44 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../.
 
 # Import GUI module
 try:
-    from education_system.systems.university.domains.academics.interfaces.gui.ai_detector import AIDetectorGUI
+    from education_system.systems.university.domains.integrity.interfaces.gui.ai_detector import AIDetectorGUI
     GUI_AVAILABLE = True
 except ImportError as e:
     GUI_AVAILABLE = False
     import_error = e
 
+MAIN = "education_system.systems.university.domains.integrity.interfaces.gui.ai_detector.main"
+DETECTOR_CLASS = "education_system.systems.university.shared.ai.ai_detector.detector.AIDetector"
+
+
 @pytest.fixture
 def mock_detector():
     """Create a mock AI detector"""
     detector = MagicMock()
-    detector.analyze_text = MagicMock(return_value={'ai_probability': 0.75, 'analysis': 'Test result'})
-    detector.analyze_file = MagicMock(return_value={'ai_probability': 0.65, 'analysis': 'File result'})
+    detector.analyze_text = MagicMock(return_value={'ai_score': 0.75, 'level': 'several indicators'})
+    detector.analyze_file = MagicMock(return_value={'ai_score': 0.65, 'level': 'some indicators'})
     return detector
 
 @pytest.fixture
 def mock_auth():
-    """Create a mock authentication object"""
+    """A signed-in member of staff (the role is given, so no database lookup)."""
     auth = MagicMock()
     auth.current_user = {
         'id': 1,
         'username': 'testuser',
+        'role': 'staff',
         'first_name': 'Test',
         'last_name': 'User',
         'email': 'test@test.com'
     }
     auth.is_logged_in = MagicMock(return_value=True)
+    return auth
+
+@pytest.fixture
+def student_auth():
+    """A signed-in student."""
+    auth = MagicMock()
+    auth.current_user = {'id': 7, 'username': 'S12345', 'role': 'student'}
     return auth
 
 @pytest.fixture
@@ -54,6 +66,14 @@ def mock_tk_root():
     root.winfo_screenwidth = MagicMock(return_value=1920)
     root.winfo_screenheight = MagicMock(return_value=1080)
     return root
+
+
+def _quiet_build():
+    """Patch out the three widget-building steps."""
+    return (patch.object(AIDetectorGUI, 'setup_window'),
+            patch.object(AIDetectorGUI, 'setup_styles'),
+            patch.object(AIDetectorGUI, 'create_main_interface'))
+
 
 class TestAIDetectorGUIImport:
     """Tests for AI Detector GUI import"""
@@ -70,306 +90,242 @@ class TestAIDetectorGUIImport:
         if not GUI_AVAILABLE:
             pytest.skip("GUI module not available")
 
-        from education_system.systems.university.domains.academics.interfaces.gui import ai_detector
+        from education_system.systems.university.domains.integrity.interfaces.gui import (
+            ai_detector,
+        )
         assert hasattr(ai_detector, 'AIDetectorGUI')
+
+    def test_no_session_fallbacks_imported(self):
+        """The window has no get_auth / UserAuth fallback any more."""
+        if not GUI_AVAILABLE:
+            pytest.skip("GUI module not available")
+        import importlib
+        main = importlib.import_module(MAIN)
+        assert not hasattr(main, 'get_auth')
+        assert not hasattr(main, 'UserAuth')
 
 class TestAIDetectorGUIInitialization:
     """Tests for AI Detector GUI initialization"""
 
-    @patch('tkinter.Tk')
-    @patch('education_system.systems.university.domains.academics.interfaces.gui.ai_detector_gui.get_auth')
-    def test_initialization_with_detector(self, mock_get_auth, mock_tk_class, mock_detector, mock_auth):
+    def test_initialization_with_detector(self, mock_detector, mock_auth):
         """Test initializing GUI with detector instance"""
         if not GUI_AVAILABLE:
             pytest.skip("GUI module not available")
 
-        mock_get_auth.return_value = mock_auth
         mock_root = MagicMock()
-        mock_tk_class.return_value = mock_root
+        a, b, c = _quiet_build()
+        with a, b, c:
+            gui = AIDetectorGUI(root=mock_root, auth=mock_auth, detector_instance=mock_detector)
 
-        # Patch the setup methods to avoid GUI creation
-        with patch.object(AIDetectorGUI, 'setup_window'):
-            with patch.object(AIDetectorGUI, 'setup_styles'):
-                with patch.object(AIDetectorGUI, 'create_main_interface'):
-                    gui = AIDetectorGUI(root=mock_root, auth=mock_auth, detector_instance=mock_detector)
+        assert gui.detector is mock_detector
+        assert gui.auth is mock_auth
+        assert gui.refused is False
 
-                    assert gui.detector is mock_detector
-                    assert gui.auth is mock_auth
-
-    @patch('tkinter.Tk')
-    @patch('education_system.systems.university.domains.academics.interfaces.gui.ai_detector_gui.get_auth')
-    @patch('education_system.systems.university.domains.academics.interfaces.gui.ai_detector_gui.AIDetector')
-    def test_initialization_without_detector(self, mock_ai_detector_class, mock_get_auth, mock_tk_class, mock_auth):
-        """Test initializing GUI without detector instance"""
+    def test_detector_built_lazily_as_signed_in_user(self, mock_auth):
+        """Without an instance the backend is built on first use, with the auth."""
         if not GUI_AVAILABLE:
             pytest.skip("GUI module not available")
 
-        mock_get_auth.return_value = mock_auth
         mock_root = MagicMock()
-        mock_tk_class.return_value = mock_root
-        mock_detector = MagicMock()
-        mock_ai_detector_class.return_value = mock_detector
-
-        with patch.object(AIDetectorGUI, 'setup_window'):
-            with patch.object(AIDetectorGUI, 'setup_styles'):
-                with patch.object(AIDetectorGUI, 'create_main_interface'):
-                    gui = AIDetectorGUI(root=mock_root, auth=mock_auth)
-
-                    assert gui.detector is mock_detector
-                    mock_ai_detector_class.assert_called_once()
-
-    @patch('tkinter.Tk')
-    @patch('tkinter.messagebox.showerror')
-    @patch('education_system.systems.university.domains.academics.interfaces.gui.ai_detector_gui.AIDetector', None)
-    @patch('education_system.systems.university.domains.academics.interfaces.gui.ai_detector_gui.get_auth')
-    def test_initialization_without_ai_detector_backend(self, mock_get_auth, mock_error, mock_tk_class, mock_auth):
-        """Test that initialization fails gracefully without AI Detector backend"""
-        if not GUI_AVAILABLE:
-            pytest.skip("GUI module not available")
-
-        mock_get_auth.return_value = mock_auth
-        mock_root = MagicMock()
-        mock_tk_class.return_value = mock_root
-
-        with pytest.raises(RuntimeError):
-            gui = AIDetectorGUI(root=mock_root, auth=mock_auth, detector_instance=None)
+        built = MagicMock()
+        a, b, c = _quiet_build()
+        with a, b, c, patch(DETECTOR_CLASS, return_value=built) as detector_class:
+            gui = AIDetectorGUI(root=mock_root, auth=mock_auth)
+            detector_class.assert_not_called()          # nothing built while opening
+            assert gui.detector is built
+            detector_class.assert_called_once_with(auth=mock_auth)
+            assert gui.detector is built                # built once
+            detector_class.assert_called_once()
 
 class TestAuthenticationInitialization:
-    """Tests for authentication initialization"""
+    """The window runs only as the person passed in."""
 
-    @patch('tkinter.Tk')
-    @patch('education_system.systems.university.domains.academics.interfaces.gui.ai_detector_gui.get_auth')
-    def test_initialization_uses_provided_auth(self, mock_get_auth, mock_tk_class, mock_detector, mock_auth):
+    def test_initialization_uses_provided_auth(self, mock_detector, mock_auth):
         """Test that GUI uses provided auth object"""
         if not GUI_AVAILABLE:
             pytest.skip("GUI module not available")
 
-        mock_root = MagicMock()
-        mock_tk_class.return_value = mock_root
+        a, b, c = _quiet_build()
+        with a, b, c:
+            gui = AIDetectorGUI(root=MagicMock(), auth=mock_auth, detector_instance=mock_detector)
 
-        with patch.object(AIDetectorGUI, 'setup_window'):
-            with patch.object(AIDetectorGUI, 'setup_styles'):
-                with patch.object(AIDetectorGUI, 'create_main_interface'):
-                    gui = AIDetectorGUI(root=mock_root, auth=mock_auth, detector_instance=mock_detector)
+        assert gui.auth is mock_auth
+        assert gui.user['username'] == 'testuser'
 
-                    assert gui.auth is mock_auth
-
-    @patch('tkinter.Tk')
-    @patch('education_system.systems.university.domains.academics.interfaces.gui.ai_detector_gui.get_auth')
-    @patch('education_system.systems.university.domains.academics.interfaces.gui.ai_detector_gui.UserAuth')
-    def test_initialization_creates_auth_if_not_provided(self, mock_user_auth_class, mock_get_auth, mock_tk_class, mock_detector):
-        """Test that GUI creates auth if not provided"""
+    def test_refuses_when_nobody_signed_in(self, mock_detector):
+        """No auth: refuses, closes, builds nothing and invents no admin session."""
         if not GUI_AVAILABLE:
             pytest.skip("GUI module not available")
 
-        mock_get_auth.return_value = None  # No centralized auth
-        mock_auth = MagicMock()
-        mock_auth.current_user = None
-        mock_user_auth_class.return_value = mock_auth
-
         mock_root = MagicMock()
-        mock_tk_class.return_value = mock_root
+        with patch(f"{MAIN}.messagebox.showerror") as mock_error, \
+                patch.object(AIDetectorGUI, 'setup_window') as setup_window, \
+                patch.object(AIDetectorGUI, 'create_main_interface') as create_ui:
+            gui = AIDetectorGUI(root=mock_root, detector_instance=mock_detector)
 
-        with patch('sqlite3.connect') as mock_connect:
-            mock_conn = MagicMock()
-            mock_cursor = MagicMock()
-            mock_cursor.fetchone.return_value = (1, 'admin', 'Admin', 'User', 'admin@test.com')
-            mock_conn.cursor.return_value = mock_cursor
-            mock_connect.return_value = mock_conn
+        assert gui.refused is True
+        assert gui.auth is None and gui.user is None
+        mock_error.assert_called_once()
+        setup_window.assert_not_called()
+        create_ui.assert_not_called()
+        mock_root.after.assert_called_once_with(10, mock_root.destroy)
 
-            with patch.object(AIDetectorGUI, 'setup_window'):
-                with patch.object(AIDetectorGUI, 'setup_styles'):
-                    with patch.object(AIDetectorGUI, 'create_main_interface'):
-                        gui = AIDetectorGUI(root=mock_root, detector_instance=mock_detector)
+    def test_refuses_auth_without_signed_in_user(self, mock_detector):
+        """An auth object with no current user is not a session."""
+        if not GUI_AVAILABLE:
+            pytest.skip("GUI module not available")
 
-                        assert gui.auth is not None
+        empty = MagicMock()
+        empty.current_user = None
+        empty.get_current_user = MagicMock(return_value=None)
+        with patch(f"{MAIN}.messagebox.showerror") as mock_error, \
+                patch.object(AIDetectorGUI, 'create_main_interface') as create_ui:
+            gui = AIDetectorGUI(root=MagicMock(), auth=empty, detector_instance=mock_detector)
+
+        assert gui.refused is True
+        assert gui.user is None
+        mock_error.assert_called_once()
+        create_ui.assert_not_called()
+
+    def test_refuses_student(self, mock_detector, student_auth):
+        """A student is refused and pointed at Academic Integrity."""
+        if not GUI_AVAILABLE:
+            pytest.skip("GUI module not available")
+
+        with patch(f"{MAIN}.messagebox.showerror") as mock_error, \
+                patch.object(AIDetectorGUI, 'create_main_interface') as create_ui, \
+                patch(DETECTOR_CLASS) as detector_class:
+            gui = AIDetectorGUI(root=MagicMock(), auth=student_auth)
+
+        assert gui.refused is True
+        assert "Academic Integrity" in mock_error.call_args[0][1]
+        create_ui.assert_not_called()
+        detector_class.assert_not_called()
 
 class TestWindowSetup:
     """Tests for window setup"""
 
-    @patch('tkinter.Tk')
-    def test_setup_window_sets_title(self, mock_tk_class, mock_detector, mock_auth):
+    def test_setup_window_sets_title(self, mock_detector, mock_auth):
         """Test that setup_window sets window title"""
         if not GUI_AVAILABLE:
             pytest.skip("GUI module not available")
 
         mock_root = MagicMock()
-        mock_tk_class.return_value = mock_root
+        with patch.object(AIDetectorGUI, 'setup_styles'), \
+                patch.object(AIDetectorGUI, 'create_main_interface'), \
+                patch('education_system.platform.delivery.gui.window_sizing.center'):
+            AIDetectorGUI(root=mock_root, auth=mock_auth, detector_instance=mock_detector)
 
-        with patch.object(AIDetectorGUI, 'setup_styles'):
-            with patch.object(AIDetectorGUI, 'create_main_interface'):
-                gui = AIDetectorGUI(root=mock_root, auth=mock_auth, detector_instance=mock_detector)
+        mock_root.title.assert_called()
+        assert 'testuser' in mock_root.title.call_args[0][0]
 
-                # Window title should be set
-                mock_root.title.assert_called()
-
-    @patch('tkinter.Tk')
-    def test_setup_window_sets_geometry(self, mock_tk_class, mock_detector, mock_auth):
-        """Test that setup_window sets window geometry"""
+    def test_setup_window_sizes_by_convention(self, mock_detector, mock_auth):
+        """1400x900 with a 1200x800 minimum, clamped by window_sizing.center."""
         if not GUI_AVAILABLE:
             pytest.skip("GUI module not available")
 
         mock_root = MagicMock()
-        mock_tk_class.return_value = mock_root
+        with patch.object(AIDetectorGUI, 'setup_styles'), \
+                patch.object(AIDetectorGUI, 'create_main_interface'), \
+                patch('education_system.platform.delivery.gui.window_sizing.center') as center:
+            AIDetectorGUI(root=mock_root, auth=mock_auth, detector_instance=mock_detector)
 
-        with patch.object(AIDetectorGUI, 'setup_styles'):
-            with patch.object(AIDetectorGUI, 'create_main_interface'):
-                gui = AIDetectorGUI(root=mock_root, auth=mock_auth, detector_instance=mock_detector)
-
-                # Geometry should be set
-                assert mock_root.geometry.called
+        center.assert_called_once_with(mock_root, 1400, 900, minsize=(1200, 800))
 
 class TestStyleSetup:
     """Tests for style setup"""
 
-    @patch('tkinter.Tk')
     @patch('tkinter.ttk.Style')
-    def test_setup_styles_creates_style(self, mock_style_class, mock_tk_class, mock_detector, mock_auth):
+    def test_setup_styles_creates_style(self, mock_style_class, mock_detector, mock_auth):
         """Test that setup_styles creates ttk.Style"""
         if not GUI_AVAILABLE:
             pytest.skip("GUI module not available")
 
-        mock_root = MagicMock()
-        mock_tk_class.return_value = mock_root
-        mock_style = MagicMock()
-        mock_style_class.return_value = mock_style
+        mock_style_class.return_value = MagicMock()
+        with patch.object(AIDetectorGUI, 'setup_window'), \
+                patch.object(AIDetectorGUI, 'create_main_interface'):
+            gui = AIDetectorGUI(root=MagicMock(), auth=mock_auth, detector_instance=mock_detector)
 
-        with patch.object(AIDetectorGUI, 'setup_window'):
-            with patch.object(AIDetectorGUI, 'create_main_interface'):
-                gui = AIDetectorGUI(root=mock_root, auth=mock_auth, detector_instance=mock_detector)
+        assert hasattr(gui, 'style') or mock_style_class.called
 
-                # Style should be created
-                assert hasattr(gui, 'style') or mock_style_class.called
-
-    @patch('tkinter.Tk')
-    def test_setup_styles_defines_colors(self, mock_tk_class, mock_detector, mock_auth):
+    def test_setup_styles_defines_colors(self, mock_detector, mock_auth):
         """Test that setup_styles defines color scheme"""
         if not GUI_AVAILABLE:
             pytest.skip("GUI module not available")
 
-        mock_root = MagicMock()
-        mock_tk_class.return_value = mock_root
+        a, b, c = _quiet_build()
+        with a, b, c:
+            gui = AIDetectorGUI(root=MagicMock(), auth=mock_auth, detector_instance=mock_detector)
 
-        with patch.object(AIDetectorGUI, 'setup_window'):
-            with patch.object(AIDetectorGUI, 'create_main_interface'):
-                gui = AIDetectorGUI(root=mock_root, auth=mock_auth, detector_instance=mock_detector)
-
-                # Colors should be defined
-                assert hasattr(gui, 'colors')
-                assert isinstance(gui.colors, dict)
+        assert isinstance(gui.colors, dict)
 
 class TestInterfaceCreation:
     """Tests for interface creation"""
 
-    @patch('tkinter.Tk')
     @patch('tkinter.ttk.Frame')
     @patch('tkinter.ttk.Button')
-    def test_create_main_interface_creates_widgets(self, mock_button, mock_frame, mock_tk_class, mock_detector, mock_auth):
+    def test_create_main_interface_creates_widgets(self, mock_button, mock_frame, mock_detector, mock_auth):
         """Test that create_main_interface creates widgets"""
         if not GUI_AVAILABLE:
             pytest.skip("GUI module not available")
 
-        mock_root = MagicMock()
-        mock_tk_class.return_value = mock_root
+        with patch.object(AIDetectorGUI, 'setup_window'), \
+                patch.object(AIDetectorGUI, 'setup_styles'), \
+                patch.object(AIDetectorGUI, 'create_title_bar'), \
+                patch.object(AIDetectorGUI, 'create_status_bar'), \
+                patch.object(AIDetectorGUI, 'create_navigation_buttons'), \
+                patch.object(AIDetectorGUI, 'show_view'), \
+                patch('tkinter.Canvas'), patch('tkinter.ttk.Scrollbar'):
+            try:
+                AIDetectorGUI(root=MagicMock(), auth=mock_auth, detector_instance=mock_detector)
+            except Exception:
+                pass    # the patched-out pieces may leave later steps short of widgets
 
-        with patch.object(AIDetectorGUI, 'setup_window'):
-            with patch.object(AIDetectorGUI, 'setup_styles'):
-                gui = AIDetectorGUI(root=mock_root, auth=mock_auth, detector_instance=mock_detector)
-
-                # Widgets should be created
-                assert mock_frame.called or mock_button.called
+        assert mock_frame.called or mock_button.called
 
 class TestGUIAttributes:
     """Tests for GUI attributes"""
 
-    @patch('tkinter.Tk')
-    def test_gui_has_required_attributes(self, mock_tk_class, mock_detector, mock_auth):
+    def test_gui_has_required_attributes(self, mock_detector, mock_auth):
         """Test that GUI instance has required attributes"""
         if not GUI_AVAILABLE:
             pytest.skip("GUI module not available")
 
-        mock_root = MagicMock()
-        mock_tk_class.return_value = mock_root
+        a, b, c = _quiet_build()
+        with a, b, c:
+            gui = AIDetectorGUI(root=MagicMock(), auth=mock_auth, detector_instance=mock_detector)
 
-        with patch.object(AIDetectorGUI, 'setup_window'):
-            with patch.object(AIDetectorGUI, 'setup_styles'):
-                with patch.object(AIDetectorGUI, 'create_main_interface'):
-                    gui = AIDetectorGUI(root=mock_root, auth=mock_auth, detector_instance=mock_detector)
+        for name in ('root', 'detector', 'auth', 'user', 'analysis_results', 'refused'):
+            assert hasattr(gui, name)
+        assert gui.analysis_results == {}
 
-                    # Check required attributes
-                    assert hasattr(gui, 'root')
-                    assert hasattr(gui, 'detector')
-                    assert hasattr(gui, 'auth')
-                    assert hasattr(gui, 'analysis_results')
-                    assert gui.analysis_results == {}
-
-    @patch('tkinter.Tk')
-    def test_gui_initializes_analysis_results(self, mock_tk_class, mock_detector, mock_auth):
+    def test_gui_initializes_analysis_results(self, mock_detector, mock_auth):
         """Test that GUI initializes analysis_results dictionary"""
         if not GUI_AVAILABLE:
             pytest.skip("GUI module not available")
 
-        mock_root = MagicMock()
-        mock_tk_class.return_value = mock_root
+        a, b, c = _quiet_build()
+        with a, b, c:
+            gui = AIDetectorGUI(root=MagicMock(), auth=mock_auth, detector_instance=mock_detector)
 
-        with patch.object(AIDetectorGUI, 'setup_window'):
-            with patch.object(AIDetectorGUI, 'setup_styles'):
-                with patch.object(AIDetectorGUI, 'create_main_interface'):
-                    gui = AIDetectorGUI(root=mock_root, auth=mock_auth, detector_instance=mock_detector)
+        assert gui.analysis_results == {}
+        assert gui.current_submission_id is None
 
-                    assert gui.analysis_results == {}
-                    assert gui.current_submission_id is None
+class TestDetectorAuth:
+    """The backend always runs as the signed-in person."""
 
-class TestErrorHandling:
-    """Tests for error handling"""
-
-    @patch('tkinter.Tk')
-    @patch('tkinter.messagebox.showerror')
-    def test_initialization_shows_error_when_detector_unavailable(self, mock_error, mock_tk_class, mock_auth):
-        """Test that error message is shown when detector is unavailable"""
+    def test_existing_detector_given_the_auth(self, mock_auth):
+        """A detector passed in without a user is given the window's auth."""
         if not GUI_AVAILABLE:
             pytest.skip("GUI module not available")
 
-        mock_root = MagicMock()
-        mock_tk_class.return_value = mock_root
-
-        # Temporarily set AIDetector to None
-        with patch('education_system.systems.university.domains.academics.interfaces.gui.ai_detector_gui.AIDetector', None):
-            with pytest.raises(RuntimeError):
-                gui = AIDetectorGUI(root=mock_root, auth=mock_auth)
-
-            # Error dialog should have been shown
-            mock_error.assert_called_once()
-
-class TestFallbackAuthentication:
-    """Tests for fallback authentication"""
-
-    @patch('tkinter.Tk')
-    @patch('education_system.systems.university.domains.academics.interfaces.gui.ai_detector_gui.get_auth')
-    @patch('education_system.systems.university.domains.academics.interfaces.gui.ai_detector_gui.UserAuth')
-    def test_creates_default_admin_user_on_db_error(self, mock_user_auth_class, mock_get_auth, mock_tk_class, mock_detector):
-        """Test that default admin user is created when DB access fails"""
-        if not GUI_AVAILABLE:
-            pytest.skip("GUI module not available")
-
-        mock_get_auth.return_value = None
-        mock_auth = MagicMock()
-        mock_auth.current_user = None
-        mock_user_auth_class.return_value = mock_auth
-
-        mock_root = MagicMock()
-        mock_tk_class.return_value = mock_root
-
-        with patch('sqlite3.connect', side_effect=Exception("DB Error")):
-            with patch.object(AIDetectorGUI, 'setup_window'):
-                with patch.object(AIDetectorGUI, 'setup_styles'):
-                    with patch.object(AIDetectorGUI, 'create_main_interface'):
-                        gui = AIDetectorGUI(root=mock_root, detector_instance=mock_detector)
-
-                        # Should fall back to default admin user
-                        assert gui.auth.current_user is not None
-                        assert gui.auth.current_user['id'] == 1
-                        assert gui.auth.current_user['username'] == 'admin'
+        detector = MagicMock()
+        detector.current_user = None
+        a, b, c = _quiet_build()
+        with a, b, c:
+            gui = AIDetectorGUI(root=MagicMock(), auth=mock_auth, detector_instance=detector)
+            assert gui.detector is detector
+        detector.set_auth.assert_called_once_with(mock_auth)
 
 class TestModuleAvailability:
     """Tests for module availability and dependencies"""

@@ -32,10 +32,10 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
-    from education_system.systems.university.domains.academics.domain.collaborative_provision import (
+    from education_system.systems.university.domains.curriculum.domain.collaborative_provision import (
         _db_init as collaborative,
     )
-    from education_system.systems.university.domains.academics.domain.student_mobility import (
+    from education_system.systems.university.domains.curriculum.domain.student_mobility import (
         _db_init as mobility,
     )
 

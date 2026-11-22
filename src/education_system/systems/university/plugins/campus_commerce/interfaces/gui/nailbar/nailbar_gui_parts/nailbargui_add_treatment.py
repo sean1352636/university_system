@@ -163,7 +163,7 @@ class NailBarGUI:
 
             if admin and admin['email']:
                 # Use JSON template for email
-                subject, body = render_template('commerce/nailbar/admin_report', {
+                subject, body = render_template('finance_commerce/commerce/nailbar/admin_report', {
                     'report_date': datetime.now().strftime('%Y-%m-%d'),
                     'report_content': report_content
                 })

@@ -85,17 +85,17 @@ def _on_adjustment_approved(**payload: Any) -> None:
     if not (student_id and from_course and to_course):
         return
 
-    # Course Management: swap the entry in plan_courses if the table exists.
+    # Course Management: swap the entry in the student's semester plans.
     try:
         with transaction() as conn:
             tbl = conn.execute(
-                "SELECT name FROM sqlite_master WHERE type='table' AND name='plan_courses'"
+                "SELECT name FROM sqlite_master WHERE type='table' AND name='planned_courses'"
             ).fetchone()
             if tbl:
                 conn.execute(
-                    "UPDATE plan_courses SET course_code = ? "
-                    "WHERE plan_id IN (SELECT plan_id FROM student_plans WHERE student_id = ?) "
-                    "AND course_code = ?",
+                    "UPDATE OR IGNORE planned_courses SET course_id = ? "
+                    "WHERE plan_id IN (SELECT plan_id FROM semester_plans WHERE student_id = ?) "
+                    "AND course_id = ?",
                     (to_course, str(student_id), from_course),
                 )
                 conn.commit()

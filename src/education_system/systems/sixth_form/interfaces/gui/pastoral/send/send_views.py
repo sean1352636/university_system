@@ -6,7 +6,9 @@ from education_system.systems.sixth_form.interfaces.gui._ui import grab_when_vie
 import datetime as _dt
 import logging
 import tkinter as tk
-from tkinter import messagebox, ttk
+from tkinter import ttk
+from education_system.systems.sixth_form.interfaces.gui._sidebar import SidebarBook
+from education_system.platform.delivery.gui.parented_dialogs import messagebox, simpledialog
 from education_system.platform import branding
 from education_system.systems.sixth_form.domain.pastoral.send import (
     send as data,
@@ -49,7 +51,7 @@ def open_send_window(parent=None) -> None:
     win.geometry(WIN_GEOMETRY)
     win.minsize(*WIN_MINSIZE)
 
-    nb = ttk.Notebook(win)
+    nb = SidebarBook(win)
     nb.pack(fill="both", expand=True, padx=10, pady=10)
 
     SENDTab(nb, scope="open",    label="Open")
@@ -57,6 +59,10 @@ def open_send_window(parent=None) -> None:
     SENDTab(nb, scope="all",     label="All")
     PerStudentTab(nb)
     SummaryTab(nb)
+    from education_system.systems.sixth_form.interfaces.gui.pastoral.send.ehcp_tabs import (
+        add_ehcp_tabs,
+    )
+    add_ehcp_tabs(nb)
 
 
 def _student_options() -> list[tuple[str, str]]:
@@ -110,6 +116,11 @@ class SENDTab:
                                                   padx=(8, 4))
         ttk.Button(bar, text="Clear",
                     command=self._clear).pack(side="left")
+        self.f_archived = tk.BooleanVar(value=False)
+        ttk.Checkbutton(bar, text="Include archived",
+                        variable=self.f_archived,
+                        command=self.refresh).pack(side="left",
+                                                   padx=(8, 0))
         ttk.Button(bar, text="New",
                     command=self._new).pack(side="left", padx=(16, 0))
 
@@ -139,6 +150,7 @@ class SENDTab:
                                        foreground=fg)
         self.tree.tag_configure("overdue", background="#ffd1d1",
                                   foreground="#8c0d0d")
+        self.tree.tag_configure("archived", foreground="#888888")
         self.tree.bind("<Double-Button-1>", lambda _e: self._edit())
 
         actions = ttk.Frame(self.frame)
@@ -150,6 +162,7 @@ class SENDTab:
                 ("Exit register",    self._exit),
                 ("Change status",    self._set_status),
                 ("Delete",           self._delete),
+                ("Restore",          self._restore),
                 ("Refresh",          self.refresh),
         ):
             ttk.Button(actions, text=label,
@@ -179,6 +192,8 @@ class SENDTab:
             f["open_only"] = True
         elif self.scope == "overdue":
             f["overdue_only"] = True
+        if self.f_archived.get():
+            f["include_archived"] = True
         return f
 
     def refresh(self) -> None:
@@ -202,7 +217,7 @@ class SENDTab:
                                        e.primary_need,
                                        e.secondary_need or "—",
                                        cyc, e.status, nr),
-                              tags=(tag,))
+                              tags=(tag,) + (("archived",) if e.archived_at else ()))
         self.count.config(text=f"{len(rows)} entry(ies)")
 
     def _selected(self) -> SENDEntry | None:
@@ -271,10 +286,30 @@ class SENDTab:
         if not e:
             return
         if not messagebox.askyesno(
-                "SEND", f"Delete entry #{e.entry_id}?",
+                "SEND",
+                f"Archive entry #{e.entry_id}?\n\n"
+                "It is archived, not deleted (UK retention): it leaves "
+                "the lists, who/when/why are recorded, and ticking "
+                "'Include archived' shows it again.",
                 parent=self.frame):
             return
-        data.delete_entry(e.entry_id)
+        reason = simpledialog.askstring(
+            "SEND", "Reason for archiving (optional):",
+            parent=self.frame)
+        if reason is None:
+            return
+        data.delete_entry(e.entry_id, reason=reason)
+        self.refresh()
+
+    def _restore(self) -> None:
+        r = self._selected()
+        if not r:
+            return
+        if not r.archived_at:
+            messagebox.showinfo("SEND", "That record is not archived.",
+                                parent=self.frame)
+            return
+        data.restore_entry(r.entry_id)
         self.refresh()
 
 

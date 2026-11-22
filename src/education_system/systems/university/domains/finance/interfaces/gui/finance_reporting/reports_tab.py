@@ -9,6 +9,7 @@ from tkinter.scrolledtext import ScrolledText
 from tkinter import ttk, messagebox, filedialog, scrolledtext
 from tkinter.font import Font
 import threading
+from education_system.platform.delivery.gui.tk_threads import start_thread, ui
 from datetime import datetime, timedelta
 import json
 import webbrowser
@@ -248,17 +249,15 @@ def generate_quick_report(self):
             with open(filename, 'w') as f:
                 f.write(report_content)
 
-            self.root.after(0, lambda: [
+            ui(self.root, lambda: [
                 self.log_activity(f"Quick report generated: {filename}"),
                 messagebox.showinfo(_t('gui.finance.finance_reporting.reports_tab.dialogs.report_generated', default="Report Generated"), f"Quick report saved as {filename}")
             ])
 
         except Exception as e:
-            self.root.after(0, lambda _e=e: messagebox.showerror(_t('gui.finance.finance_reporting.reports_tab.dialogs.error', default="Error"), f"Failed to generate report: {_e}"))
+            ui(self.root, lambda _e=e: messagebox.showerror(_t('gui.finance.finance_reporting.reports_tab.dialogs.error', default="Error"), f"Failed to generate report: {_e}"))
 
-    thread = threading.Thread(target=generate_in_background)
-    thread.daemon = True
-    thread.start()
+    start_thread(self.root, generate_in_background)
 
 def generate_selected_report(self):
     """Generate the selected report type"""
@@ -271,7 +270,7 @@ def generate_selected_report(self):
         try:
             if report_type == "comprehensive":
                 generate_advanced_financial_forecasting()
-                generate_comprehensive_budget_variance_report()
+                ui(self.root, generate_comprehensive_budget_variance_report)
 
             elif report_type == "executive_summary":
                 # Generate executive summary
@@ -316,10 +315,10 @@ def generate_selected_report(self):
 
             elif report_type == "custom":
                 # Show custom report builder
-                self.root.after(0, self.show_custom_report_builder)
+                ui(self.root, self.show_custom_report_builder)
                 return
 
-            self.root.after(0, lambda rt=report_type: [
+            ui(self.root, lambda rt=report_type: [
                 self.log_activity(f"{rt} report generated"),
                 self.update_status("Ready"),
                 messagebox.showinfo(_t('gui.finance.finance_reporting.reports_tab.dialogs.report_generated', default="Report Generated"), f"{rt} report generated successfully")
@@ -327,15 +326,13 @@ def generate_selected_report(self):
 
         except Exception as e:
             error_msg = str(e)
-            self.root.after(0, lambda err=error_msg: [
+            ui(self.root, lambda err=error_msg: [
                 self.log_activity(f"Report generation error: {err}"),
                 self.update_status("Error"),
                 messagebox.showerror(_t('gui.finance.finance_reporting.reports_tab.dialogs.error', default="Error"), f"Report generation failed: {err}")
             ])
 
-    thread = threading.Thread(target=generate_in_background)
-    thread.daemon = True
-    thread.start()
+    start_thread(self.root, generate_in_background)
 
 def show_custom_report_builder(self):
     """Show custom report builder window"""

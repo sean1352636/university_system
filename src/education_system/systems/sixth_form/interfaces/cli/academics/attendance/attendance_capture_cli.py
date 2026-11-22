@@ -17,22 +17,25 @@ from datetime import date as _date, timedelta as _timedelta
 from pathlib import Path
 from typing import Callable
 
-from education_system.systems.sixth_form.domain.academics.attendance import (
-    attendance_cover as cover,
-    attendance_import as importer,
-    attendance_kiosk as kiosk,
-    attendance_offline as offline,
-)
 from education_system.systems.sixth_form.domain.academics.attendance.attendance import (
     ValidationError,
 )
 from education_system.systems.sixth_form.interfaces.cli.academics.attendance.attendance_cli import (
+    lazy_domain,
     _input,
     _pause,
     _pick_from,
     _pick_slot,
     _UserAbort,
 )
+
+# Domain modules load on first use (see attendance_cli.lazy_domain).
+cover = lazy_domain("attendance_cover")
+importer = lazy_domain("attendance_import")
+kiosk = lazy_domain("attendance_kiosk")
+offline = lazy_domain("attendance_offline")
+signout = lazy_domain("attendance_signout")
+signout_requests = lazy_domain("attendance_signout_requests")
 from education_system.systems.sixth_form.domain.academics.timetable.timetable import (
     day_name,
 )
@@ -596,8 +599,202 @@ def _run_menu(title: str, menu: list[tuple[str, Callable[[], None]]]) -> None:
             _pause()
 
 
+# ═══ Signing in and out of site ═════════════════════════════════════
+
+def signout_out() -> None:
+    print("\n═══ Sign Out of Site ═══")
+    try:
+        student_id = _input("Student ID", allow_empty=False)
+        reason = _pick_from("Reason", list(signout.REASONS),
+                            default=signout.FREE_PERIOD)
+        detail = None
+        if reason in signout.DETAIL_REQUIRED:
+            detail = _input("Detail (who / why)", allow_empty=False)
+        expected = None
+        if reason not in signout.NO_RETURN:
+            expected = _input("Expected back (HH:MM, blank if unknown)") or None
+        permission = _yes("Parent permission given? (y/N)")
+        permission_from = (_input("Permission from (name)") or None
+                           if permission else None)
+        authorised = None
+        if reason == signout.EARLY_LEAVE and not permission:
+            authorised = _input("Authorised by (staff)", allow_empty=False)
+        trip = signout.sign_out(
+            student_id, reason, detail=detail, expected_back=expected,
+            parent_permission=permission, permission_from=permission_from,
+            authorised_by=authorised, via="Desk",
+            recorded_by=_input("Recorded by") or None)
+        print(f"\n  ✓ {trip.label}")
+    except ValidationError as e:
+        print(f"\n  ✗ {e}")
+    except _UserAbort:
+        print("\n  Cancelled.")
+    _pause()
+
+
+def signout_in() -> None:
+    print("\n═══ Sign Back In ═══")
+    try:
+        trip = signout.sign_in(_input("Student ID", allow_empty=False),
+                               via="Desk")
+        print(f"\n  ✓ Back at {trip.in_time} (out since {trip.out_time}).")
+    except ValidationError as e:
+        print(f"\n  ✗ {e}")
+    except _UserAbort:
+        print("\n  Cancelled.")
+    _pause()
+
+
+def signout_off_site() -> None:
+    print("\n═══ Currently Off Site ═══")
+    print("\n  The list a fire marshal needs: signed out and not back.")
+    rows = signout.currently_off_site()
+    if not rows:
+        print("\n  ✓ Nobody is signed out.")
+    else:
+        for trip in rows:
+            flag = ""
+            if trip.minutes_overdue():
+                flag = f"  ⚠ {trip.minutes_overdue()} min overdue"
+            perm = "parent ✓" if trip.parent_permission else "no parent permission"
+            print(f"    {trip.label}  [{perm}]{flag}")
+    _pause()
+
+
+def signout_late() -> None:
+    print("\n═══ Late Returns ═══")
+    rows = signout.late_returns()
+    if not rows:
+        print("\n  ✓ Nobody is overdue.")
+        _pause()
+        return
+    for trip in rows:
+        chased = " (alert raised)" if trip.late_alert_at else ""
+        print(f"    {trip.label} — {trip.minutes_overdue()} min overdue"
+              f"{chased}")
+    try:
+        if _yes("\n  Raise alerts for the new ones? (y/N)"):
+            result = signout.raise_late_alerts(
+                raised_by=_input("Raised by") or None,
+                notify_guardian=_yes("  Queue a message home too? (y/N)"))
+            print(f"\n  ✓ {result.summary}")
+    except ValidationError as e:
+        print(f"\n  ✗ {e}")
+    except _UserAbort:
+        print("\n  Cancelled.")
+    _pause()
+
+
+def signout_log() -> None:
+    print("\n═══ Sign-out Log ═══")
+    try:
+        date = _input("Date (YYYY-MM-DD)", default=_today())
+        rows = signout.list_signouts(date=date)
+    except ValidationError as e:
+        print(f"\n  ✗ {e}")
+        _pause()
+        return
+    except _UserAbort:
+        return
+    if not rows:
+        print("\n  No sign-outs that day.")
+    for trip in rows:
+        back = trip.in_time or ("—" if trip.returning else "left")
+        print(f"    #{trip.signout_id:<5}{trip.out_time} → {back:<6} "
+              f"{(trip.student_name or trip.student_id)[:22]:<23}"
+              f"{trip.reason:<22}{trip.state}")
+    summary = signout.day_summary(date=date)
+    if summary:
+        print("\n  " + ", ".join(f"{k}: {v}" for k, v in summary.items()))
+    _pause()
+
+
+def signout_requests_review() -> None:
+    print("\n═══ Sign-out Requests ═══")
+    print("\n  Learners ask ahead from the student portal. Approving does not")
+    print("  sign them out — use \"Sign out an approved request\" when they leave.")
+    rows = signout_requests.pending()
+    if not rows:
+        print("\n  ✓ Nothing waiting for a decision.")
+        _pause()
+        return
+    for i, r in enumerate(rows, 1):
+        aware = "parent aware" if r.parent_aware else "parent not told"
+        print(f"  {i:>2}. #{r.request_id:<5}{(r.student_name or r.student_id)[:22]:<23}"
+              f"{r.describe()}  [{aware}]")
+    try:
+        pick = _input("Decide which (number, blank to go back)")
+        if not pick:
+            return
+        if not (pick.isdigit() and 1 <= int(pick) <= len(rows)):
+            print("  ✗ Pick a number from the list.")
+            _pause()
+            return
+        req = rows[int(pick) - 1]
+        by = _input("Your name", allow_empty=False)
+        if _yes("  Approve? (y = approve, N = decline)"):
+            out = signout_requests.approve(req.request_id, by=by,
+                                           note=_input("Note (optional)") or None)
+        else:
+            out = signout_requests.decline(
+                req.request_id, by=by,
+                note=_input("Why (the learner sees this)", allow_empty=False))
+        print(f"\n  ✓ Request #{out.request_id} {out.state.lower()}.")
+    except ValidationError as e:
+        print(f"\n  ✗ {e}")
+    except _UserAbort:
+        print("\n  Cancelled.")
+    _pause()
+
+
+def signout_use_request() -> None:
+    print("\n═══ Sign Out an Approved Request ═══")
+    rows = signout_requests.approved_for_today()
+    if not rows:
+        print("\n  No approved requests for today.")
+        _pause()
+        return
+    for i, r in enumerate(rows, 1):
+        print(f"  {i:>2}. {(r.student_name or r.student_id)[:22]:<23}{r.describe()}"
+              f" (approved by {r.decided_by})")
+    try:
+        pick = _input("Sign out which (number)", allow_empty=False)
+        if not (pick.isdigit() and 1 <= int(pick) <= len(rows)):
+            print("  ✗ Pick a number from the list.")
+            _pause()
+            return
+        permission = _yes("Parent permission given? (y/N)")
+        trip = signout_requests.use_request(
+            rows[int(pick) - 1].request_id,
+            recorded_by=_input("Recorded by", allow_empty=False),
+            parent_permission=permission,
+            permission_from=(_input("Permission from (name)") or None
+                             if permission else None))
+        print(f"\n  ✓ {trip.label}")
+    except ValidationError as e:
+        print(f"\n  ✗ {e}")
+    except _UserAbort:
+        print("\n  Cancelled.")
+    _pause()
+
+
+_SIGNOUT_MENU: list[tuple[str, Callable[[], None]]] = [
+    ("Sign out",          signout_out),
+    ("Sign back in",      signout_in),
+    ("Currently off site", signout_off_site),
+    ("Late returns & alerts", signout_late),
+    ("Day's log",         signout_log),
+    ("Sign-out requests (approve / decline)", signout_requests_review),
+    ("Sign out an approved request", signout_use_request),
+]
+
+
 def kiosk_menu() -> None:
     _run_menu("Kiosk & Check-in", _KIOSK_MENU)
+
+
+def signout_menu() -> None:
+    _run_menu("Signing In & Out of Site", _SIGNOUT_MENU)
 
 
 def offline_menu() -> None:
@@ -617,6 +814,7 @@ _MENU: list[tuple[str, Callable[[], None]]] = [
     ("Offline Registers",  offline_menu),
     ("Cover",              cover_menu),
     ("Bulk Import",        import_menu),
+    ("Signing In & Out of Site", signout_menu),
 ]
 
 

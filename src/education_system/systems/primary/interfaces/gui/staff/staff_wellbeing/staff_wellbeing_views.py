@@ -22,9 +22,7 @@ from education_system.systems.primary.domain.staff.staff_wellbeing.staff_wellbei
     WellbeingEntry,
     likert_label,
 )
-from education_system.systems.primary.domain.staff import (
-    staff as staff_data,
-)
+from education_system.systems.primary.interfaces.gui import kit
 
 logger = logging.getLogger(__name__)
 
@@ -43,14 +41,26 @@ _STATUS_TAGS = {
 
 def open_staff_wellbeing_window(parent=None) -> None:
     data.init_db()
-    master = getattr(parent, "root", parent)
-    win = tk.Toplevel(master) if master is not None else tk.Tk()
-    win.title(f"Staff Wellbeing — {branding.SYSTEM_NAME}")
-    win.geometry(WIN_GEOMETRY)
-    win.minsize(*WIN_MINSIZE)
+    if parent is None:
+        # Run on its own (no main window): a root window of its own.
+        win = tk.Tk()
+        win.title(f"Staff Wellbeing — {branding.SYSTEM_NAME}")
+        win.geometry(WIN_GEOMETRY)
+        win.minsize(*WIN_MINSIZE)
+        frame = ttk.Frame(win, padding=10)
+        frame.pack(fill="both", expand=True)
+        _draw_staff_wellbeing(frame, None)
+        return
+    kit.show_page(parent, "Staff Wellbeing",
+                  lambda page: _draw_staff_wellbeing(page, parent))
 
-    nb = ttk.Notebook(win)
-    nb.pack(fill="both", expand=True, padx=10, pady=10)
+
+def _draw_staff_wellbeing(parent, host) -> None:
+    kit.page_heading(
+        parent, "Staff Wellbeing",
+        "Wellbeing check-ins and concerns, action plans and follow-ups.")
+    nb = ttk.Notebook(parent)
+    nb.pack(fill="both", expand=True)
 
     WellbeingTab(nb, scope="open",      label="Open")
     WellbeingTab(nb, scope="at_risk",   label="At Risk")
@@ -59,14 +69,9 @@ def open_staff_wellbeing_window(parent=None) -> None:
     SummaryTab(nb)
 
 
-def _staff_options() -> list[tuple[str, str]]:
-    rows = sorted(staff_data.list_staff(),
-                   key=lambda s: s.staff_id)
-    return [(s.staff_id,
-             f"{s.staff_id} — "
-             f"{getattr(s, 'first_name', '')} "
-             f"{getattr(s, 'last_name', '')}".strip())
-            for s in rows]
+def _date_years(*, ahead: int = 2, back: int = 10) -> list[str]:
+    y = _dt.date.today().year
+    return [str(v) for v in range(y + ahead, y - back - 1, -1)]
 
 
 class WellbeingTab:
@@ -81,36 +86,33 @@ class WellbeingTab:
     def _build(self) -> None:
         bar = ttk.Frame(self.frame)
         bar.pack(fill="x", padx=8, pady=(8, 4))
-        ttk.Label(bar, text="Staff id:").pack(side="left")
-        self.f_staff = ttk.Entry(bar, width=12)
+        ttk.Label(bar, text="Staff:").pack(side="left")
+        self.f_staff = kit.StaffPicker(bar, tk.StringVar(),
+                                        active_only=False, width=28)
         self.f_staff.pack(side="left", padx=(2, 8))
+        self.f_staff.bind_change(lambda _v: self.refresh())
         ttk.Label(bar, text="Type:").pack(side="left")
-        self.f_type = ttk.Combobox(bar,
-                                     values=("",) + ENTRY_TYPES,
-                                     state="readonly", width=26)
-        self.f_type.current(0)
+        self.f_type = kit.ChoiceField(bar, tk.StringVar(),
+                                       choices=ENTRY_TYPES,
+                                       blank=True, width=26)
         self.f_type.pack(side="left", padx=(2, 8))
         if self.scope == "all":
             ttk.Label(bar, text="Status:").pack(side="left")
-            self.f_status = ttk.Combobox(bar,
-                                           values=("",) + STATUSES,
-                                           state="readonly",
-                                           width=14)
-            self.f_status.current(0)
+            self.f_status = kit.ChoiceField(bar, tk.StringVar(),
+                                             choices=STATUSES,
+                                             blank=True, width=14)
             self.f_status.pack(side="left", padx=(2, 8))
         else:
             self.f_status = None
         ttk.Label(bar, text="Action:").pack(side="left")
-        self.f_action = ttk.Combobox(bar,
-                                       values=("",) + ACTION_TYPES,
-                                       state="readonly", width=22)
-        self.f_action.current(0)
+        self.f_action = kit.ChoiceField(bar, tk.StringVar(),
+                                         choices=ACTION_TYPES,
+                                         blank=True, width=22)
         self.f_action.pack(side="left", padx=(2, 8))
         ttk.Label(bar, text="Concern:").pack(side="left")
-        self.f_flag = ttk.Combobox(bar,
-                                     values=("",) + CONCERN_FLAGS,
-                                     state="readonly", width=18)
-        self.f_flag.current(0)
+        self.f_flag = kit.ChoiceField(bar, tk.StringVar(),
+                                       choices=CONCERN_FLAGS,
+                                       blank=True, width=18)
         self.f_flag.pack(side="left", padx=(2, 8))
         ttk.Button(bar, text="Apply",
                     command=self.refresh).pack(side="left", padx=4)
@@ -387,7 +389,7 @@ class WellbeingEditor:
         self.win = tk.Toplevel(parent)
         self.win.title(f"Edit entry #{entry.entry_id}"
                           if entry else "New wellbeing entry")
-        self.win.geometry("880x880")
+        self.win.geometry("900x720")
         self.win.transient(parent); self.win.after_idle(self.win.grab_set)
         self._build()
         if entry:
@@ -395,23 +397,17 @@ class WellbeingEditor:
         self.win.wait_window()
 
     def _build(self) -> None:
-        body = ttk.Frame(self.win)
-        body.pack(fill="both", expand=True, padx=12, pady=10)
-        body.grid_columnconfigure(1, weight=1)
-        body.grid_columnconfigure(3, weight=1)
+        body, bar = kit.scrolled_form(self.win)
         self.vars: dict[str, tk.Variable] = {}
         self.texts: dict[str, tk.Text] = {}
         self.bools: dict[str, tk.BooleanVar] = {}
 
         ttk.Label(body, text="Staff*").grid(
             row=0, column=0, sticky="w", padx=4, pady=2)
-        self.staff_combo = ttk.Combobox(body, state="readonly",
-                                            width=42)
-        opts = _staff_options()
-        self._staff_opts = opts
-        self.staff_combo["values"] = [lbl for _, lbl in opts]
-        self.staff_combo.grid(row=0, column=1, columnspan=3,
-                                  sticky="ew", padx=4, pady=2)
+        self.staff_var = tk.StringVar()
+        kit.StaffPicker(body, self.staff_var, active_only=False,
+                        width=44).grid(row=0, column=1, columnspan=3,
+                                       sticky="w", padx=4, pady=2)
 
         def entry(row, col, label, key, width=22):
             ttk.Label(body, text=label).grid(
@@ -426,13 +422,25 @@ class WellbeingEditor:
                 row=row, column=col, sticky="w", padx=4, pady=2)
             v = tk.StringVar()
             self.vars[key] = v
-            ttk.Combobox(body, textvariable=v, values=values,
-                          state="readonly", width=width).grid(
-                row=row, column=col + 1, sticky="ew", padx=4, pady=2)
+            kit.ChoiceField(body, v, choices=values, width=width).grid(
+                row=row, column=col + 1, sticky="w", padx=4, pady=2)
 
-        entry(1, 0, "Date*", "entry_date")
+        def date(row, col, label, key):
+            ttk.Label(body, text=label).grid(
+                row=row, column=col, sticky="w", padx=4, pady=2)
+            v = tk.StringVar()
+            self.vars[key] = v
+            kit.DateField(body, v, years=_date_years()).grid(
+                row=row, column=col + 1, sticky="w", padx=4, pady=2)
+
+        date(1, 0, "Date*", "entry_date")
         combo(1, 2, "Entry type*", "entry_type", ENTRY_TYPES)
-        entry(2, 0, "Recorded by", "recorded_by")
+        ttk.Label(body, text="Recorded by").grid(
+            row=2, column=0, sticky="w", padx=4, pady=2)
+        self.vars["recorded_by"] = tk.StringVar()
+        kit.StaffPicker(body, self.vars["recorded_by"], by="name",
+                        active_only=False, width=30).grid(
+            row=2, column=1, sticky="w", padx=4, pady=2)
         combo(2, 2, "Status*", "status", STATUSES)
 
         flags = ttk.LabelFrame(body, text="Flags")
@@ -454,7 +462,7 @@ class WellbeingEditor:
             body, text="Ratings (1=Very Low .. 5=Very High)")
         ratings.grid(row=4, column=0, columnspan=4,
                        sticky="ew", padx=4, pady=(8, 4))
-        rvals = ("", "1", "2", "3", "4", "5")
+        rvals = [(str(n), f"{n} — {likert_label(n)}") for n in LIKERTS]
         for i, (key, label) in enumerate((
                 ("mood",              "Mood"),
                 ("stress",            "Stress"),
@@ -467,9 +475,8 @@ class WellbeingEditor:
                 row=r, column=c * 2, sticky="w", padx=4, pady=2)
             v = tk.StringVar()
             self.vars[key] = v
-            ttk.Combobox(ratings, textvariable=v,
-                          values=rvals, state="readonly",
-                          width=6).grid(
+            kit.ChoiceField(ratings, v, choices=rvals, blank=True,
+                            width=16).grid(
                 row=r, column=c * 2 + 1, sticky="w",
                 padx=4, pady=2)
 
@@ -489,9 +496,9 @@ class WellbeingEditor:
         combo(6, 0, "Action type", "action_type",
                  ("",) + ACTION_TYPES)
         entry(6, 2, "Referred to", "referred_to")
-        entry(7, 0, "Follow-up due", "follow_up_due")
-        entry(7, 2, "Follow-up done on", "follow_up_done_on")
-        entry(8, 0, "Closed on", "closed_on")
+        date(7, 0, "Follow-up due", "follow_up_due")
+        date(7, 2, "Follow-up done on", "follow_up_done_on")
+        date(8, 0, "Closed on", "closed_on")
 
         row = 9
         for key, label in (
@@ -509,8 +516,6 @@ class WellbeingEditor:
             self.texts[key] = t
             row += 1
 
-        bar = ttk.Frame(self.win)
-        bar.pack(fill="x", padx=12, pady=(0, 10))
         ttk.Button(bar, text="Save",
                     command=self._save).pack(side="right", padx=4)
         ttk.Button(bar, text="Cancel",
@@ -524,10 +529,7 @@ class WellbeingEditor:
     def _load(self) -> None:
         e = self.entry
         assert e is not None
-        for i, (sid, _) in enumerate(self._staff_opts):
-            if sid == e.staff_id:
-                self.staff_combo.current(i)
-                break
+        self.staff_var.set(e.staff_id)
         for key in ("entry_date", "entry_type", "status",
                      "recorded_by", "action_type", "referred_to",
                      "follow_up_due", "follow_up_done_on",
@@ -547,8 +549,8 @@ class WellbeingEditor:
             self.texts[k].insert("1.0", getattr(e, k) or "")
 
     def _save(self) -> None:
-        idx = self.staff_combo.current()
-        if idx < 0:
+        staff_id = self.staff_var.get().strip()
+        if not staff_id:
             messagebox.showerror("Staff Wellbeing",
                                     "Pick a staff member.",
                                     parent=self.win)
@@ -556,7 +558,7 @@ class WellbeingEditor:
         flags = [c for c, v in self.concern_vars.items()
                    if v.get()]
         payload: dict = {
-            "staff_id": self._staff_opts[idx][0],
+            "staff_id": staff_id,
             "concern_flags": flags,
         }
         for k, v in self.vars.items():
@@ -594,9 +596,8 @@ class ActionPlanDialog:
             row=0, column=0, sticky="w", padx=4, pady=4)
         self.action = tk.StringVar(
             value=entry.action_type or ACTION_TYPES[0])
-        ttk.Combobox(body, textvariable=self.action,
-                      values=ACTION_TYPES,
-                      state="readonly").grid(
+        kit.ChoiceField(body, self.action,
+                        choices=ACTION_TYPES).grid(
             row=0, column=1, sticky="ew", padx=4, pady=4)
         ttk.Label(body, text="Referred to").grid(
             row=1, column=0, sticky="w", padx=4, pady=4)
@@ -607,8 +608,7 @@ class ActionPlanDialog:
             row=2, column=0, sticky="w", padx=4, pady=4)
         self.follow_up = tk.StringVar(
             value=entry.follow_up_due or "")
-        ttk.Entry(body, textvariable=self.follow_up,
-                    width=14).grid(
+        kit.DateField(body, self.follow_up, years=_date_years()).grid(
             row=2, column=1, sticky="w", padx=4, pady=4)
         ttk.Label(body, text="Actions taken*").grid(
             row=3, column=0, sticky="nw", padx=4, pady=4)
@@ -666,8 +666,7 @@ class FollowUpDialog:
             row=0, column=0, sticky="w", padx=4, pady=4)
         self.when = tk.StringVar(
             value=_dt.date.today().isoformat())
-        ttk.Entry(body, textvariable=self.when,
-                    width=14).grid(
+        kit.DateField(body, self.when, years=_date_years()).grid(
             row=0, column=1, sticky="w", padx=4, pady=4)
         ttk.Label(body, text="Follow-up notes").grid(
             row=1, column=0, sticky="nw", padx=4, pady=4)
@@ -704,8 +703,7 @@ def _prompt_choice(parent, title: str, options: list[str], *,
     win.transient(parent); win.after_idle(win.grab_set)
     ttk.Label(win, text=title).pack(anchor="w", padx=8, pady=8)
     var = tk.StringVar(value=default or (options[0] if options else ""))
-    ttk.Combobox(win, textvariable=var, values=options,
-                  state="readonly").pack(fill="x", padx=8)
+    kit.ChoiceField(win, var, choices=options).pack(fill="x", padx=8)
     result: dict = {"value": None}
 
     def ok() -> None:

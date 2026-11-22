@@ -25,6 +25,20 @@ class OCRManager:
         self.gui = gui
         self.root = gui.root
 
+    def _username(self):
+        user = getattr(self.gui, 'current_user', None)
+        if isinstance(user, dict):
+            return user.get('username')
+        return getattr(user, 'username', None) or (str(user) if user else None)
+
+    def _run_ocr(self, file_path, *, document_id=None, source='file', language=None):
+        """Run OCR and record the attempt in the OCR job log."""
+        from education_system.systems.university.infrastructure.utils.document_manager.ocr import (
+            run_and_record_ocr,
+        )
+        return run_and_record_ocr(file_path, document_id=document_id, source=source,
+                                  language=language, processed_by=self._username())
+
     def ocr_integration_menu(self):
         """OCR integration menu in GUI"""
         dialog = tk.Toplevel(self.root)
@@ -88,8 +102,7 @@ class OCRManager:
             progress_bar.start()
 
             def process_document():
-                from education_system.systems.university.infrastructure.utils.document_manager.ocr import run_ocr
-                result = run_ocr(file_path)
+                result = self._run_ocr(file_path, document_id=doc_id, source='document')
                 if not result.success:
                     progress_dialog.destroy()
                     messagebox.showerror(_t('gui.shell.document_manager.ocr.dialogs.ocr_error', default="OCR Error"), result.error)
@@ -97,6 +110,7 @@ class OCRManager:
                 self.show_ocr_results(
                     progress_dialog, doc_id, filename, doc_type,
                     first_name, last_name, result.text,
+                    confidence=result.confidence,
                 )
 
             self.root.after(100, process_document)
@@ -106,7 +120,8 @@ class OCRManager:
         except Exception as e:
             messagebox.showerror(_t('gui.shell.document_manager.ocr.dialogs.error', default="Error"), f"OCR processing failed: {str(e)}")
 
-    def show_ocr_results(self, progress_dialog, doc_id, filename, doc_type, first_name, last_name, extracted_text):
+    def show_ocr_results(self, progress_dialog, doc_id, filename, doc_type, first_name, last_name, extracted_text,
+                         confidence=None):
         """Show OCR results"""
         progress_dialog.destroy()
 
@@ -131,61 +146,15 @@ class OCRManager:
                 conn = get_connection()
                 cursor = conn.cursor()
 
-                cursor.execute('''
-                CREATE TABLE IF NOT EXISTS ocr_results (
-                    ocr_id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    document_id INTEGER,
-                    extracted_text TEXT,
-                    confidence_score REAL,
-                    processing_date TEXT,
-                    FOREIGN KEY (document_id) REFERENCES documents (document_id)
+                from education_system.systems.university.infrastructure.utils.document_manager.ocr import (
+                    ensure_ocr_results,
                 )
-                ''')
-
-                # Heal older deployments where ocr_results was created
-                # with `REFERENCES student_documents` — that target table
-                # never existed, so any INSERT under FK-enforcement raises
-                # "no such table: main.student_documents". Detect a wrong
-                # FK target and rebuild the table with the right one,
-                # carrying over any rows already saved.
-                fks = list(cursor.execute("PRAGMA foreign_key_list(ocr_results)"))
-                # row layout: (id, seq, table, from, to, on_update, on_delete, match)
-                if any(r[2] != 'documents' for r in fks):
-                    conn.commit()
-                    cursor.execute("PRAGMA foreign_keys = OFF")
-                    cursor.execute("BEGIN")
-                    try:
-                        cursor.execute("ALTER TABLE ocr_results RENAME TO _ocr_results_old")
-                        cursor.execute('''
-                            CREATE TABLE ocr_results (
-                                ocr_id INTEGER PRIMARY KEY AUTOINCREMENT,
-                                document_id INTEGER,
-                                extracted_text TEXT,
-                                confidence_score REAL,
-                                processing_date TEXT,
-                                FOREIGN KEY (document_id) REFERENCES documents (document_id)
-                            )
-                        ''')
-                        cursor.execute('''
-                            INSERT INTO ocr_results
-                                (ocr_id, document_id, extracted_text,
-                                 confidence_score, processing_date)
-                            SELECT ocr_id, document_id, extracted_text,
-                                   confidence_score, processing_date
-                            FROM _ocr_results_old
-                        ''')
-                        cursor.execute("DROP TABLE _ocr_results_old")
-                        cursor.execute("COMMIT")
-                    except Exception:
-                        cursor.execute("ROLLBACK")
-                        raise
-                    finally:
-                        cursor.execute("PRAGMA foreign_keys = ON")
+                ensure_ocr_results(conn)
 
                 cursor.execute('''
                 INSERT INTO ocr_results (document_id, extracted_text, confidence_score, processing_date)
                 VALUES (?, ?, ?, ?)
-                ''', (doc_id, extracted_text, None, datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
+                ''', (doc_id, extracted_text, confidence, datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
 
                 conn.commit()
                 conn.close()
@@ -251,8 +220,7 @@ class OCRManager:
                     if not row:
                         results_text.insert('end', f"✗ {doc_name}: document not found\n")
                     else:
-                        from education_system.systems.university.infrastructure.utils.document_manager.ocr import run_ocr
-                        result = run_ocr(row[0])
+                        result = self._run_ocr(row[0], document_id=doc_id, source='batch')
                         marker = "✓" if result.success else "✗"
                         detail = "processed" if result.success else result.error
                         results_text.insert('end', f"{marker} {doc_name}: {detail}\n")
@@ -355,8 +323,7 @@ class OCRManager:
                 dialog.update()
 
                 try:
-                    from education_system.systems.university.infrastructure.utils.document_manager.ocr import run_ocr
-                    result = run_ocr(file_path)
+                    result = self._run_ocr(file_path, source='file', language=language.get())
                     if not result.success:
                         raise RuntimeError(result.error)
                     extracted_text = result.text
@@ -621,8 +588,7 @@ class OCRManager:
                     dialog.update()
 
                     try:
-                        from education_system.systems.university.infrastructure.utils.document_manager.ocr import run_ocr
-                        result = run_ocr(file_path)
+                        result = self._run_ocr(file_path, source='batch')
                         if result.success:
                             results_text.insert(tk.END, f"✓ {os.path.basename(file_path)} - SUCCESS\n")
                             success_count += 1
@@ -682,11 +648,26 @@ class OCRManager:
             summary_frame = ttk.Frame(main_frame)
             summary_frame.pack(fill='x', pady=(0, 20))
 
-            # Mock stats
-            self.gui.create_stat_card(summary_frame, "Total Processed", 127, '#3498db', 0)
-            self.gui.create_stat_card(summary_frame, "Successful", 115, '#27ae60', 1)
-            self.gui.create_stat_card(summary_frame, "Failed", 12, '#e74c3c', 2)
-            self.gui.create_stat_card(summary_frame, "Avg. Confidence", "94.3%", '#9b59b6', 3)
+            # Real totals from the OCR job log (every recorded run)
+            from education_system.systems.university.infrastructure.utils.document_manager.ocr import (
+                clear_ocr_jobs, ocr_job_stats, ocr_jobs,
+            )
+            stat_vars = {}
+
+            def stat_card(key, title, color, column):
+                # Same look as the dashboard's stat cards, but keeps the value
+                # label so the totals refresh after Clear History.
+                card = ttk.LabelFrame(summary_frame, text=title, padding=15)
+                card.grid(row=0, column=column, padx=10, sticky='ew')
+                summary_frame.grid_columnconfigure(column, weight=1)
+                label = ttk.Label(card, text="", font=('Arial', 24, 'bold'), foreground=color)
+                label.pack()
+                stat_vars[key] = label
+
+            stat_card('total', "Total Processed", '#3498db', 0)
+            stat_card('success', "Successful", '#27ae60', 1)
+            stat_card('failed', "Failed", '#e74c3c', 2)
+            stat_card('avg_confidence', "Avg. Confidence", '#9b59b6', 3)
 
             # Results list
             results_frame = ttk.LabelFrame(main_frame, text=_t('gui.shell.document_manager.ocr.labels.ocr_processing_history', default="OCR Processing History"), padding=10)
@@ -709,16 +690,38 @@ class OCRManager:
             results_tree.pack(side='left', fill='both', expand=True)
             scrollbar.pack(side='right', fill='y')
 
-            # Load mock results
-            mock_results = [
-                ('document1.pdf', '2025-11-07 10:30', 'Success', '95.2%', 'English', '3', '1.2s'),
-                ('scan_image.jpg', '2025-11-07 10:25', 'Success', '98.1%', 'English', '1', '0.8s'),
-                ('form_2024.pdf', '2025-11-07 10:20', 'Failed', 'N/A', 'English', '1', '2.1s'),
-                ('contract.tiff', '2025-11-07 10:15', 'Success', '92.7%', 'English', '5', '3.4s'),
-            ]
+            def load_results():
+                results_tree.delete(*results_tree.get_children())
+                try:
+                    with get_connection() as conn:
+                        stats = ocr_job_stats(conn)
+                        jobs = ocr_jobs(conn)
+                except Exception as exc:
+                    messagebox.showerror(_t('gui.shell.document_manager.ocr.dialogs.error', default="Error"),
+                                         f"Could not read the OCR history: {exc}", parent=dialog)
+                    return
+                avg = stats['avg_confidence']
+                values = {'total': stats['total'], 'success': stats['success'], 'failed': stats['failed'],
+                          'avg_confidence': f"{avg:.1f}%" if avg is not None else "Not reported"}
+                for key, value in values.items():
+                    stat_vars[key].config(text=str(value))
+                for job in jobs:
+                    secs = job['duration_ms']
+                    results_tree.insert('', 'end', values=(
+                        job['file_name'],
+                        (job['processed_at'] or '')[:16],
+                        'Success' if job['status'] == 'success' else f"Failed: {job['error'] or ''}",
+                        f"{job['confidence']:.1f}%" if job['confidence'] is not None else 'N/A',
+                        job['language'] or '—',
+                        job['pages'] if job['pages'] is not None else '—',
+                        f"{secs / 1000:.1f}s" if secs is not None else '—',
+                    ))
+                if not jobs:
+                    results_tree.insert('', 'end', values=(
+                        _t('gui.shell.document_manager.ocr.text.no_ocr_runs_recorded',
+                           default="No OCR runs recorded yet"), '', '', '', '', '', ''))
 
-            for result in mock_results:
-                results_tree.insert('', 'end', values=result)
+            load_results()
 
             # Action buttons
             action_frame = ttk.Frame(main_frame)
@@ -744,7 +747,25 @@ class OCRManager:
                         messagebox.showerror(_t('gui.shell.document_manager.ocr.dialogs.error', default="Error"), f"Failed to export: {e}")
 
             ttk.Button(action_frame, text=_t('gui.shell.document_manager.ocr.buttons.export_results', default="Export Results"), command=export_results).pack(side='left', padx=5)
-            ttk.Button(action_frame, text=_t('gui.shell.document_manager.ocr.buttons.clear_history', default="Clear History"), command=lambda: results_tree.delete(*results_tree.get_children())).pack(side='left', padx=5)
+            def clear_history():
+                if not messagebox.askyesno(
+                        _t('gui.shell.document_manager.ocr.dialogs.clear_history', default="Clear History"),
+                        _t('gui.shell.document_manager.ocr.dialogs.clear_ocr_history_confirm',
+                           default="Delete the whole OCR run history?\n\nSaved OCR text on documents is kept."),
+                        parent=dialog):
+                    return
+                try:
+                    with get_connection() as conn:
+                        removed = clear_ocr_jobs(conn)
+                        conn.commit()
+                except Exception as exc:
+                    messagebox.showerror(_t('gui.shell.document_manager.ocr.dialogs.error', default="Error"),
+                                         f"Could not clear the OCR history: {exc}", parent=dialog)
+                    return
+                self.gui.log_event('delete', 'ocr_history', None, {'removed': removed})
+                load_results()
+
+            ttk.Button(action_frame, text=_t('gui.shell.document_manager.ocr.buttons.clear_history', default="Clear History"), command=clear_history).pack(side='left', padx=5)
             ttk.Button(action_frame, text=_t('gui.shell.document_manager.ocr.buttons.close', default="Close"), command=dialog.destroy).pack(side='right', padx=5)
 
         except Exception as e:

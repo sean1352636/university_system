@@ -1,6 +1,6 @@
 # University Management System
 
-A comprehensive higher-education management platform built with Python, tkinter (GUI), Flask (REST API), and SQLite. Provides CLI, GUI, API, and web portal interfaces with 51+ domain modules organised in a 4-layer Domain-Driven Design architecture.
+A comprehensive higher-education management platform built with Python, tkinter (GUI), Flask (REST API), and SQLite. Provides CLI, GUI, API, and web portal interfaces with 18 domain slices organised in a 4-layer Domain-Driven Design architecture.
 
 ---
 
@@ -26,18 +26,25 @@ The university system lives at `src/education_system/systems/university/`:
 
 ```
 university/
-    domain/            # Domain modules, grouped by area (academics, admissions,
-                       # assessment, finance, governance, learners, operations,
-                       # pastoral, progression, safeguarding, staff)
-    interfaces/        # Delivery layer — cli/ and gui/
+    domains/           # 18 vertical slices (admissions, assessment, curriculum,
+                       # finance, governance, health, integrity, learners, library,
+                       # operations, progression, quality, research, safeguarding,
+                       # staff, student_life, student_support, teaching); each owns
+                       # its domain/ rules and its interfaces/{cli,gui}/ screens
+    shell/             # System-wide CLI and GUI chrome that composes the domains
+    plugins/           # campus_commerce/, community_services/
+    application/       # Use-case orchestration
     infrastructure/    # Database, email, security, validation
-    services/          # Cross-cutting university services (bus, scheduling)
+    services/          # Cross-cutting university services (bus, integrations)
+    shared/            # AI and analytics engines used across domains
     assets/            # Web portal templates and static assets
 ```
 
-Cross-cutting infrastructure shared with the other four systems (auth, unified
+Cross-cutting infrastructure shared with the other six systems (auth, unified
 API, GDPR, audit, backups) lives under `src/education_system/platform/`.
-Tests live at `tests/unit/systems/university/`.
+HTTP routes live in `src/education_system/api/university/<area>/`.
+Migrations live in `src/education_system/migrations/versions/`.
+Unit tests live at `tests/unit/systems/university/`.
 
 API route names do not always match top-level domain folders. The current
 domain ownership and delivery boundaries are documented in the
@@ -86,14 +93,14 @@ docs/university/
 
 The repository-wide security policy — vulnerability reporting, security
 features, and the production hardening checklist — is a single document at
-[`SECURITY.md`](../../../SECURITY.md) in the repository root.
+[`SECURITY.md`](../../SECURITY.md) in the repository root.
 
 ## Quick Start
 
 New to the system? Start here:
 
 1. **[Quick Start Guide](QUICK_START.md)** — Get running in 5 minutes
-2. **[Security Policy](../../../SECURITY.md)** — Security features and hardening
+2. **[Security Policy](../../SECURITY.md)** — Security features and hardening
 3. **[MFA Setup](security/MFA_QUICK_START.md)** — Enable multi-factor authentication
 
 ## Modernisation
@@ -109,7 +116,7 @@ New to the system? Start here:
 
 | Document | Description |
 |----------|-------------|
-| [SECURITY.md](../../../SECURITY.md) | Security policy, features, and production checklist (repository root) |
+| [SECURITY.md](../../SECURITY.md) | Security policy, features, and production checklist (repository root) |
 | [AUTHENTICATION.md](security/AUTHENTICATION.md) | Authentication system implementation |
 | [AUTH_QUICK_REFERENCE.md](security/AUTH_QUICK_REFERENCE.md) | Quick reference for auth operations |
 | [MFA_SYSTEM_DOCUMENTATION.md](security/MFA_SYSTEM_DOCUMENTATION.md) | Complete MFA implementation guide |

@@ -1,4 +1,4 @@
-"""CLI flows for Sixth Form Complaints."""
+"""CLI flows for Primary School Complaints."""
 
 from __future__ import annotations
 

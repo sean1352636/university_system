@@ -97,65 +97,13 @@ def init_support_tables():
                 )
         ''')
 
-        # Create support_tickets table
-        cursor.execute('''
-        CREATE TABLE IF NOT EXISTS support_tickets (
-                    ticket_id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    user_id TEXT,
-                    assigned_to TEXT,
-                    subject TEXT NOT NULL,
-                    description TEXT NOT NULL,
-                    category TEXT NOT NULL,
-                    subcategory TEXT,
-                    status TEXT DEFAULT 'open',
-                    priority TEXT DEFAULT 'medium',
-                    impact TEXT DEFAULT 'low',
-                    urgency TEXT DEFAULT 'low',
-                    source TEXT DEFAULT 'web',
-                    resolution TEXT,
-                    satisfaction_rating INTEGER,
-                    satisfaction_feedback TEXT,
-                    estimated_hours REAL,
-                    actual_hours REAL,
-                    due_date TEXT,
-                    resolved_at TEXT,
-                    first_response_at TEXT,
-                    last_activity_at TEXT,
-                    escalation_level INTEGER DEFAULT 0,
-                    tags TEXT,
-                    department TEXT,
-                    organization_id INTEGER,
-                    parent_ticket_id INTEGER,
-                    knowledge_base_articles TEXT,
-                    created_at TEXT,
-                    updated_at TEXT,
-                    escalated_at TEXT,
-                    closed_at TEXT,
-                    estimated_resolution TEXT,
-                    sentiment TEXT DEFAULT 'neutral',
-                    FOREIGN KEY (parent_ticket_id) REFERENCES support_tickets (ticket_id)
-                )
-        ''')
-
-        # Create ticket_attachments table
-        cursor.execute('''
-        CREATE TABLE IF NOT EXISTS ticket_attachments (
-                    attachment_id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    ticket_id INTEGER NOT NULL,
-                    reply_id INTEGER,
-                    filename TEXT NOT NULL,
-                    original_filename TEXT NOT NULL,
-                    file_path TEXT NOT NULL,
-                    file_size INTEGER,
-                    file_type TEXT,
-                    mime_type TEXT,
-                    file_hash TEXT,
-                    uploaded_by TEXT,
-                    is_public BOOLEAN DEFAULT 0,
-                    created_at TEXT,
-                    FOREIGN KEY (ticket_id) REFERENCES support_tickets (ticket_id)
-                )
-        ''')
+        # support_tickets, ticket_responses and ticket_attachments: one
+        # definition, owned by the Student Support schema (shared with the
+        # Helpdesk).
+        from education_system.systems.university.domains.student_support.domain.student_support import (
+            schema as support_schema,
+        )
+        support_schema.apply(cursor.execute)
 
         # Create ticket_audit_log table
         cursor.execute('''
@@ -220,22 +168,6 @@ def init_support_tables():
                     edited_at TEXT,
                     FOREIGN KEY (ticket_id) REFERENCES support_tickets (ticket_id),
                     FOREIGN KEY (user_id) REFERENCES users (id)
-                )
-        ''')
-
-        # Create ticket_responses table
-        cursor.execute('''
-        CREATE TABLE IF NOT EXISTS ticket_responses (
-                    response_id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    ticket_id INTEGER NOT NULL,
-                    responder_id TEXT NOT NULL,
-                    responder_role TEXT NOT NULL,
-                    response_text TEXT NOT NULL,
-                    response_datetime TEXT NOT NULL,
-                    is_internal BOOLEAN DEFAULT 0,
-                    is_auto_generated BOOLEAN DEFAULT 0,
-                    template_used TEXT,
-                    FOREIGN KEY (ticket_id) REFERENCES support_tickets (ticket_id)
                 )
         ''')
 

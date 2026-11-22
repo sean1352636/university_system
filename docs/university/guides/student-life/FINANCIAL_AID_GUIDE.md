@@ -703,5 +703,5 @@ Remaining Need (Gap): $0
 ---
 
 **Last Updated**: January 2026
-**Module**: `university_system/modules/domain/finance/gui/financial_aid/`
+**Module**: `src/education_system/systems/university/domains/finance/interfaces/gui/financial_aid/`
 **Support**: financialaid@university.edu | (555) 123-4567

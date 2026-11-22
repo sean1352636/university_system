@@ -152,10 +152,11 @@ def loan_repayment_status_report():
     except Exception as e:
         print(f"Error generating loan repayment report: {e}")
 
-def export_forecast_report(historical_data, forecasts, total_forecast):
-    """Export forecast report to CSV file"""
+def export_forecast_report(historical_data, forecasts, total_forecast, filename=None):
+    """Export forecast report to CSV file (raises if a named file can't be written)"""
+    chosen_file = filename
     try:
-        filename = f"revenue_forecast_report_{datetime.now().strftime('%Y%m%d')}.csv"
+        filename = filename or f"revenue_forecast_report_{datetime.now().strftime('%Y%m%d')}.csv"
 
         with open(filename, 'w', newline='') as csvfile:
             writer = csv.writer(csvfile)
@@ -190,3 +191,5 @@ def export_forecast_report(historical_data, forecasts, total_forecast):
 
     except Exception as e:
         print(f"Error exporting forecast report: {e}")
+        if chosen_file:
+            raise

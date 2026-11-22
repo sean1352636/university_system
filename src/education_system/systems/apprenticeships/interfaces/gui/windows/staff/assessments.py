@@ -7,10 +7,8 @@ from tkinter import ttk
 
 from education_system.systems.apprenticeships import config
 from education_system.systems.apprenticeships.interfaces.gui import widgets
-from education_system.systems.apprenticeships.services import (
-    apprentice_service,
-    training_service,
-)
+from education_system.systems.apprenticeships.application.apprentices import apprentice_service
+from education_system.systems.apprenticeships.application.learning import training_service
 
 logger = logging.getLogger(__name__)
 
@@ -38,7 +36,8 @@ def render(gui) -> None:
         "Off-the-Job Approvals",
         subtitle="Only approved hours count towards the target a funding audit checks.",
     )
-    if gui.actor.staff_id is None:
+    # Only a tutor needs a staff record; an admin works across the cohort.
+    if gui.actor.role == config.STAFF and gui.actor.staff_id is None:
         widgets.empty_state(frame, UNLINKED)
         return
 

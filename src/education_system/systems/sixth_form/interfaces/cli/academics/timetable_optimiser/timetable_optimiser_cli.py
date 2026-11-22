@@ -107,15 +107,17 @@ def _commit() -> None:
     pid = _input("Plan ID to commit")
     if not pid.isdigit():
         return
-    if _input("This overwrites live timetable slots for the plan's groups. Continue? (y/N)").lower() != "y":
+    if _input("This rewrites live timetable slots for the plan's groups "
+              "(slots with attendance history are kept, not deleted). "
+              "Continue? (y/N)").lower() != "y":
         print("  Cancelled.")
         return _pause()
     try:
-        n = data.commit_plan(int(pid))
+        res = data.commit_plan_detailed(int(pid))
     except ValueError as e:
         print(f"  ✗ {e}")
         return _pause()
-    print(f"  ✓ Wrote {n} live timetable slots.")
+    print("  ✓ " + res.summary().replace("\n", "\n    "))
     _pause()
 
 

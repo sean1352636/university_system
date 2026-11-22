@@ -1221,3 +1221,87 @@ def view_application():
         print(get_text("housing.common.database_error", error=str(e)))
     except Exception as e:
         print(get_text("housing.application.error_viewing", error=str(e)))
+
+
+# Room types a student can ask for (the housing GUI's list).
+ROOM_TYPES = ("Single", "Double", "Triple", "Suite", "Studio", "Apartment")
+
+
+def list_halls():
+    """``[(building_id, building_name), ...]`` — the halls a student can ask
+    for, by name."""
+    conn = get_connection()
+    try:
+        return [(r[0], r[1]) for r in conn.execute(
+            "SELECT building_id, building_name FROM housing_buildings ORDER BY building_name")]
+    finally:
+        conn.close()
+
+
+def submit_new_application(student_id, *, room_type, move_in_date, duration_months,
+                           preferred_building_id=None, special_requirements=None,
+                           actor="housing"):
+    """File a Pending housing application without prompting — for screens
+    other than Housing's own (Create Student). It joins the Housing GUI's
+    Applications list for staff to process (approve, reject, waiting list),
+    and the student gets the same confirmation e-mail as from Housing.
+
+    Refuses (ValueError) a bad room type, date or duration, an unknown hall,
+    or a student who already has an open application. Returns
+    ``{'application_id', 'emailed'}``.
+    """
+    if room_type not in ROOM_TYPES:
+        raise ValueError(f"Choose a room type ({', '.join(ROOM_TYPES)}).")
+    try:
+        datetime.datetime.strptime(str(move_in_date), '%Y-%m-%d')
+    except ValueError:
+        raise ValueError(f"'{move_in_date}' is not a valid move-in date. Use YYYY-MM-DD.") from None
+    try:
+        duration_months = int(duration_months)
+    except (TypeError, ValueError):
+        duration_months = 0
+    if not 1 <= duration_months <= 60:
+        raise ValueError("The stay is between 1 and 60 months.")
+    building_name = "No Preference"
+    conn = get_connection()
+    try:
+        cursor = conn.cursor()
+        if preferred_building_id:
+            row = cursor.execute("SELECT building_name FROM housing_buildings WHERE building_id = ?",
+                                 (preferred_building_id,)).fetchone()
+            if not row:
+                raise ValueError("That hall no longer exists.")
+            building_name = row[0]
+        if find_open_applications(cursor, student_id):
+            raise ValueError(f"{student_id} already has an open housing application.")
+        application_id = generate_id('APP')
+        timestamp = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        cursor.execute('''
+        INSERT INTO housing_applications (
+            application_id, student_id, application_date, preferred_building_id, preferred_room_type,
+            requested_move_in_date, requested_duration_months, special_requirements, status,
+            created_at, updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ''', (application_id, student_id, timestamp, preferred_building_id or None, room_type,
+              move_in_date, duration_months, (special_requirements or "").strip() or None,
+              'Pending', timestamp, timestamp))
+        student_name, student_email = _student_contact(cursor, student_id)
+        conn.commit()
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
+
+    # E-mail after the commit, as Housing's own screens do.
+    emailed = _common.send_application_submitted_email({
+        'application_id': application_id, 'student_id': student_id,
+        'student_name': student_name, 'email_address': student_email,
+        'submission_date': timestamp, 'submitted_by': actor,
+        'preferred_building': building_name, 'room_type': room_type,
+        'move_in_date': move_in_date, 'duration_months': duration_months,
+        'special_requirements': special_requirements, 'status': 'Pending',
+    })
+    log_create('housing_application', application_id,
+               f"Housing application for {student_id} filed by {actor}")
+    return {'application_id': application_id, 'emailed': bool(emailed)}

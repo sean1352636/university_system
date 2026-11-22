@@ -15,9 +15,9 @@ import pytest
 from unittest.mock import Mock, patch, MagicMock
 from datetime import datetime
 from education_system.systems.university.infrastructure.database.db import sqlite3
-from education_system.systems.university.domains.pastoral.domain.student_life.student_union.events import event_management
+from education_system.systems.university.domains.student_life.domain.student_life.student_union.events import event_management
 
-GET_CONN = 'education_system.systems.university.domains.pastoral.domain.student_life.student_union.events.event_management.get_connection'
+GET_CONN = 'education_system.systems.university.domains.student_life.domain.student_life.student_union.events.event_management.get_connection'
 
 @pytest.fixture
 def mock_cursor():
@@ -90,7 +90,7 @@ class TestRegisterForEvent:
     """Test event registration functionality."""
 
     @patch('builtins.input', side_effect=['1'])
-    @patch('education_system.systems.university.domains.pastoral.domain.student_life.student_union.events.event_management.send_confirmation_email')
+    @patch('education_system.systems.university.domains.student_life.domain.student_life.student_union.events.event_management.send_confirmation_email')
     def test_register_success(self, mock_email, mock_input, mock_cursor, mock_conn, mock_auth):
         """Test successfully registering for an event."""
         event_management.auth = mock_auth
@@ -409,7 +409,7 @@ class TestEventMenu:
     """Test event menu display."""
 
     @patch('builtins.input', side_effect=[str(i) for i in range(1, 10)])
-    @patch('education_system.systems.university.domains.pastoral.domain.student_life.student_union.events.event_management.get_connection')
+    @patch('education_system.systems.university.domains.student_life.domain.student_life.student_union.events.event_management.get_connection')
     def test_display_event_menu(self, mock_get_conn, mock_input, mock_auth):
         """Test displaying event menu."""
         mock_conn = Mock()
@@ -466,7 +466,7 @@ class TestEdgeCases:
             assert any('no student' in str(call).lower() for call in mock_print.call_args_list)
 
     @patch('builtins.input', side_effect=['1'])
-    @patch('education_system.systems.university.domains.pastoral.domain.student_life.student_union.events.event_management.send_confirmation_email')
+    @patch('education_system.systems.university.domains.student_life.domain.student_life.student_union.events.event_management.send_confirmation_email')
     def test_event_registration_with_payment(self, mock_email, mock_input, mock_cursor, mock_conn, mock_auth):
         """Test event registration with payment required."""
         event_management.auth = mock_auth

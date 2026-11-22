@@ -1,0 +1,12 @@
+{
+    "subject": "An appointment is available: $date at $time",
+    "body": "Dear $patient_name,\n\nYou are on the waiting list for a $appointment_type appointment, and one has just become available:\n\nDate: $date\nTime: $time\nWith: $practitioner\n\nThe offer is held for you until $expires. To take it, sign in to the Health Portal (Appointments > Waiting list) or call the Health Centre.\n\nBest regards,\nUniversity Health Centre\n\n$signature",
+    "variables": {
+        "practitioner": {
+            "default": "the health team"
+        },
+        "signature": {
+            "default": ""
+        }
+    }
+}

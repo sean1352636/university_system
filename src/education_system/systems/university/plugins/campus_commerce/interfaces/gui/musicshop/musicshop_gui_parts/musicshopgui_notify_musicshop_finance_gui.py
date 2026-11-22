@@ -35,9 +35,9 @@ class MusicShopGUI:
             with get_db_connection() as conn:
                 # Get transaction details
                 cursor = conn.execute('''
-                    SELECT t.*, o.shipping_address, o.status as order_status
+                    SELECT t.*, o.shipping_address, o.order_status as order_status
                     FROM transactions t
-                    LEFT JOIN orders o ON t.reference_id = o.id AND t.reference_type = 'order' AND o.source_type = 'music_shop'
+                    LEFT JOIN orders o ON t.reference_id = o.order_id AND t.reference_type = 'order' AND o.source_type = 'music_shop'
                     WHERE t.source_type = 'music_shop' AND t.transaction_id = ?
                 ''', (transaction_id,))
 
@@ -51,7 +51,7 @@ class MusicShopGUI:
                 cursor = conn.execute('''
                     SELECT oi.product_id, p.name, p.artist, p.genre, oi.quantity, oi.unit_price, oi.subtotal
                     FROM order_items oi
-                    LEFT JOIN products p ON oi.product_id = p.id AND p.source_type = 'music_shop'
+                    LEFT JOIN products p ON oi.product_id = p.product_id AND p.source_type = 'music_shop'
                     WHERE oi.order_id = ?
                 ''', (order_id,))
 

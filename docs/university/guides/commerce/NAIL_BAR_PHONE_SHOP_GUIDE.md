@@ -406,5 +406,5 @@ Reports can be emailed to administrators.
 ---
 
 **Last Updated**: February 2026
-**Modules**: `university_system/modules/domain/nailbar/` | `university_system/modules/domain/phoneshop/`
+**Modules**: `src/education_system/systems/university/plugins/campus_commerce/domain/nailbar/` | `src/education_system/systems/university/plugins/campus_commerce/domain/phoneshop/`
 **Support**: nailbar@university.edu | phoneshop@university.edu

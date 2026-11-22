@@ -1,0 +1,37 @@
+{
+  "name": "attendance_notice_to_improve",
+  "description": "Notice to improve: the final warning before a penalty-notice referral to the local authority.",
+  "subject": "Notice to improve - {pupil_name}",
+  "body": [
+    "Dear {recipient_name},",
+    "",
+    "This is a formal notice to improve {first_name}'s attendance.",
+    "",
+    "{first_name}'s attendance from {period} is {attendance_pct}%. {first_name} has missed {sessions_missed} sessions (half-days), {unauthorised} of them unauthorised.",
+    "",
+    "Support has been offered to help improve attendance. Parents have a legal duty to make sure their child attends school regularly.",
+    "",
+    "{details}",
+    "",
+    "If {first_name}'s attendance does not improve during the improvement period, the school may refer the matter to the local authority, which can issue a penalty notice or take other legal action. Please contact us if you need help.",
+    "",
+    "Yours sincerely,",
+    "{sender_name}",
+    "{school_name}"
+  ],
+  "placeholders": {
+    "recipient_name": "The contact's name",
+    "pupil_name": "The pupil's preferred first name and surname",
+    "first_name": "The pupil's preferred first name",
+    "attendance_pct": "Attendance this school year (%)",
+    "sessions_missed": "Sessions missed this school year",
+    "unauthorised": "Unauthorised sessions this school year",
+    "period": "The dates the figures cover",
+    "details": "Meeting date, the agreed target and any extra note",
+    "sender_name": "The attendance lead / key worker",
+    "school_name": "The school's name"
+  },
+  "defaults": {
+    "school_name": "Secondary School"
+  }
+}

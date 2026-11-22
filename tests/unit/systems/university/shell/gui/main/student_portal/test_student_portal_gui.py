@@ -141,7 +141,7 @@ class TestStudentPortalGUIDashboard:
             'education_system.systems.university.shell.gui.main.dashboard.'
             'student_dashboard.create_student_dashboard'
         ) as mock_create_dash, patch(
-            'education_system.systems.university.services.dashboard.'
+            'education_system.systems.university.shared.analytics.dashboard.'
             'dashboard_service.DashboardService'
         ) as mock_dash_svc:
             portal._show_dashboard()

@@ -394,5 +394,5 @@ The Career Services Portal provides comprehensive career development support for
 ---
 
 **Last Updated**: February 2026
-**Module**: `university_system/modules/domain/career/gui/career_services_gui.py`
+**Module**: `src/education_system/systems/university/domains/student_life/interfaces/gui/career_services/career_services_gui.py`
 **Support**: careers@university.edu | (555) 123-CAREER

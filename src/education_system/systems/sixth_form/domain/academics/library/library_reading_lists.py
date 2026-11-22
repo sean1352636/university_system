@@ -140,6 +140,21 @@ def list_reading_lists(*, subject: str | None = None,
     return [_rl(r) for r in rows]
 
 
+def reading_lists_for_subjects(subjects) -> list[ReadingList]:
+    """Reading lists for any of ``subjects`` (case-insensitive) — e.g. a
+    learner's own subjects, for the student portal."""
+    wanted = sorted({(s or "").strip().lower() for s in subjects if (s or "").strip()})
+    if not wanted:
+        return []
+    _lib.init_db()
+    ph = ",".join("?" * len(wanted))
+    with _lib._connect() as conn:
+        rows = conn.execute(
+            f"SELECT * FROM library_reading_lists WHERE LOWER(TRIM(subject)) IN ({ph}) "
+            "ORDER BY subject, title", wanted).fetchall()
+    return [_rl(r) for r in rows]
+
+
 def delete_reading_list(list_id: int) -> bool:
     _lib.init_db()
     with _lib._connect() as conn:

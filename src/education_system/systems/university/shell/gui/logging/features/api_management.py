@@ -60,13 +60,14 @@ class ApiManagementMixin:
                 conn.execute("""
                     CREATE TABLE IF NOT EXISTS api_request_log (
                         id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        endpoint TEXT,
-                        method TEXT,
-                        status_code INTEGER,
-                        response_time_ms REAL,
+                        api_key_id INTEGER,
                         user_id INTEGER,
+                        endpoint TEXT NOT NULL,
+                        method TEXT NOT NULL,
                         ip_address TEXT,
-                        timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                        request_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        response_status INTEGER,
+                        response_time_ms INTEGER
                     )
                 """)
 
@@ -74,9 +75,9 @@ class ApiManagementMixin:
                 endpoint_stats = conn.execute("""
                     SELECT endpoint, COUNT(*) as count,
                            AVG(response_time_ms) as avg_time,
-                           SUM(CASE WHEN status_code >= 400 THEN 1 ELSE 0 END) as errors
+                           SUM(CASE WHEN response_status >= 400 THEN 1 ELSE 0 END) as errors
                     FROM api_request_log
-                    WHERE timestamp >= datetime('now', '-24 hours')
+                    WHERE request_time >= datetime('now', '-24 hours')
                     GROUP BY endpoint
                     ORDER BY count DESC
                     LIMIT 10
@@ -86,17 +87,17 @@ class ApiManagementMixin:
                 total_stats = conn.execute("""
                     SELECT COUNT(*) as total,
                            AVG(response_time_ms) as avg_time,
-                           SUM(CASE WHEN status_code >= 400 THEN 1 ELSE 0 END) as errors,
-                           SUM(CASE WHEN status_code >= 200 AND status_code < 300 THEN 1 ELSE 0 END) as success
+                           SUM(CASE WHEN response_status >= 400 THEN 1 ELSE 0 END) as errors,
+                           SUM(CASE WHEN response_status >= 200 AND response_status < 300 THEN 1 ELSE 0 END) as success
                     FROM api_request_log
-                    WHERE timestamp >= datetime('now', '-24 hours')
+                    WHERE request_time >= datetime('now', '-24 hours')
                 """).fetchone()
 
                 # Get hourly breakdown
                 hourly_stats = conn.execute("""
-                    SELECT strftime('%H:00', timestamp) as hour, COUNT(*) as count
+                    SELECT strftime('%H:00', request_time) as hour, COUNT(*) as count
                     FROM api_request_log
-                    WHERE timestamp >= datetime('now', '-24 hours')
+                    WHERE request_time >= datetime('now', '-24 hours')
                     GROUP BY hour
                     ORDER BY hour
                 """).fetchall()
@@ -105,7 +106,7 @@ class ApiManagementMixin:
                 user_stats = conn.execute("""
                     SELECT user_id, COUNT(*) as count
                     FROM api_request_log
-                    WHERE timestamp >= datetime('now', '-24 hours') AND user_id IS NOT NULL
+                    WHERE request_time >= datetime('now', '-24 hours') AND user_id IS NOT NULL
                     GROUP BY user_id
                     ORDER BY count DESC
                     LIMIT 5

@@ -379,5 +379,5 @@ Submitted → Under Review → Decision
 ---
 
 **Last Updated**: February 2026
-**Module**: `university_system/modules/domain/research/gui/research_grants_gui.py`
+**Module**: `src/education_system/systems/university/domains/research/interfaces/gui/research/research_grants_gui.py`
 **Support**: research@university.edu | (555) 123-RSRCH

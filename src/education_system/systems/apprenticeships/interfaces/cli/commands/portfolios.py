@@ -18,8 +18,9 @@ from functools import partial
 from education_system.systems.apprenticeships import config
 from education_system.systems.apprenticeships.interfaces.cli import prompts
 from education_system.systems.apprenticeships.interfaces.cli.commands import apprentices
-from education_system.systems.apprenticeships.services import portfolio_service, programme_service
-from education_system.systems.apprenticeships.services.access import Actor
+from education_system.systems.apprenticeships.application.assessments import portfolio_service
+from education_system.systems.apprenticeships.application.programmes import programme_service
+from education_system.systems.apprenticeships.application.security.access import Actor
 
 logger = logging.getLogger(__name__)
 
@@ -473,7 +474,7 @@ def _pick_own(actor: Actor, apprentice_id: int, heading: str, *, editable_only: 
 
 
 def _apprentice_of(actor: Actor, evidence):
-    from education_system.systems.apprenticeships.services import apprentice_service
+    from education_system.systems.apprenticeships.application.apprentices import apprentice_service
 
     try:
         return apprentice_service.get_apprentice(actor, evidence.apprentice_id)

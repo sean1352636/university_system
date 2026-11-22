@@ -324,6 +324,23 @@ def get_case(case_id):
         conn.close()
 
 
+def overdue_debt(student_id):
+    """What the student's overdue unpaid and part-paid fees still owe."""
+    conn = get_connection()
+    try:
+        row = conn.execute('''
+        SELECT COALESCE(SUM(sf.amount - COALESCE(
+                   (SELECT SUM(pa.amount) FROM payment_allocations pa
+                     WHERE pa.student_fee_id = sf.student_fee_id), 0)), 0)
+        FROM student_fees sf
+        WHERE sf.student_id = ? AND sf.status IN ('unpaid', 'partial')
+          AND date(sf.due_date) < date('now')
+        ''', (str(student_id).strip(),)).fetchone()
+        return float(row[0] or 0)
+    finally:
+        conn.close()
+
+
 def open_case(student_id, total_debt, notes='', created_by=None):
     """Open a collection case for a stated debt (the GUI's Create Case form).
 

@@ -139,6 +139,46 @@ def make_toplevel(master=None, **kwargs):
     return window
 
 
+class _ParentedNamespace:
+    """A tkinter dialog module (``simpledialog`` / ``filedialog``) whose
+    ``ask*`` functions take ``parent`` from :func:`active_window` when the
+    caller gave none — the same fix as the message boxes, for the
+    string/number prompts and the file pickers. Everything else (classes,
+    constants) passes through to the real module."""
+
+    def __init__(self, module_name: str):
+        self._module_name = module_name
+
+    def _module(self):
+        import importlib
+        return importlib.import_module(self._module_name)
+
+    def __getattr__(self, name):
+        original = getattr(self._module(), name)
+        if not (name.startswith("ask") and callable(original)):
+            return original
+
+        def dialog(*args, **kwargs):
+            if "parent" not in kwargs:
+                parent = active_window()
+                if parent is not None:
+                    kwargs["parent"] = parent
+            try:
+                return original(*args, **kwargs)
+            except tk.TclError:
+                kwargs.pop("parent", None)
+                return original(*args, **kwargs)
+
+        dialog.__name__ = name
+        return dialog
+
+
+#: ``tkinter.simpledialog`` with parented ``ask*`` prompts.
+simpledialog = _ParentedNamespace("tkinter.simpledialog")
+#: ``tkinter.filedialog`` with parented ``ask*`` pickers.
+filedialog = _ParentedNamespace("tkinter.filedialog")
+
+
 def __getattr__(name):
     # Anything else (constants like YES/NO/OK, showdialog, ...) passes through.
     return getattr(_messagebox, name)
@@ -152,4 +192,5 @@ import sys as _sys
 
 messagebox = _sys.modules[__name__]
 
-__all__ = list(_DIALOGS) + ["messagebox", "active_window", "make_toplevel"]
+__all__ = list(_DIALOGS) + ["messagebox", "simpledialog", "filedialog", "active_window",
+                            "make_toplevel"]

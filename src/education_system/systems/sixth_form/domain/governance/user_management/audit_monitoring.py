@@ -25,7 +25,7 @@ from education_system.systems.sixth_form.domain.governance.user_management impor
 from education_system.systems.sixth_form.domain.governance.user_management import (
     user_management as data,
 )
-from education_system.systems.sixth_form.interfaces import user_accounts as _ua
+from education_system.systems.sixth_form.domain.governance.user_management import user_accounts as _ua
 
 logger = logging.getLogger(__name__)
 
@@ -327,9 +327,11 @@ def build_daily_digest(auth: Any,
 def email_daily_digest(auth: Any, *, to: str,
                         hours: int = 24) -> bool:
     digest = build_daily_digest(auth, hours=hours)
+    # The platform's own mailer: the sixth form does not borrow the
+    # university's (systems reach each other only through the platform).
     try:
-        from education_system.systems.university.infrastructure.utils.email_service import (
-            send_email,
+        from education_system.platform.integrations.email.email_service import (
+            EmailService,
         )
     except Exception:
         logger.exception("digest: email_service import failed")
@@ -338,11 +340,14 @@ def email_daily_digest(auth: Any, *, to: str,
     subject = (f"Sixth-form user-management daily digest "
                 f"({digest['generated_at']})")
     try:
-        send_email(to, subject, body)
-        return True
+        result = EmailService().send_email(to=to, subject=subject, body=body)
     except Exception:
         logger.exception("digest: send failed")
         return False
+    if isinstance(result, dict) and not result.get("success", True):
+        logger.warning("digest: send failed: %s", result.get("error"))
+        return False
+    return True
 
 
 # ── 37. Anomalous-activity alerts ─────────────────────────────────────

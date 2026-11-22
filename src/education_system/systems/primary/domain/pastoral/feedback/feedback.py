@@ -204,8 +204,10 @@ def _validate_payload(p: dict[str, Any]) -> dict[str, Any]:
     if not out["received_on"]:
         out["received_on"] = _dt.date.today().isoformat()
     _check_date("Received on", out["received_on"])
-    _check_date("Response on", out.get("response_on"))
-    _check_date("Closed on",   out.get("closed_on"))
+    for key in ("response_on", "closed_on"):
+        out[key] = (out.get(key) or "").strip() or None
+    _check_date("Response on", out["response_on"])
+    _check_date("Closed on",   out["closed_on"])
 
     src = (out.get("source") or DEFAULT_SOURCE).strip()
     if src not in SOURCES:

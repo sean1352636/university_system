@@ -18,6 +18,7 @@ from education_system.systems.primary.domain.assessment.assessment import (
 from education_system.systems.primary.domain.learners.pupils.pupils import (
     ValidationError, YEAR_GROUPS,
 )
+from education_system.systems.primary.interfaces.gui import kit
 
 logger = logging.getLogger(__name__)
 
@@ -50,18 +51,15 @@ def _safe_view(func: Callable[..., None]) -> Callable[..., None]:
 @_safe_view
 def open_progress_report(host) -> None:
     logger.debug("GUI: open_progress_report")
+    kit.show_page(host, "Progress Report",
+                  lambda parent: _draw_progress_report(parent, host))
 
-    win = tk.Toplevel(host.root)
-    win.title("Progress Report")
-    win.transient(host.root)
-    win.geometry("1200x680")
 
-    top = ttk.Frame(win, padding=10)
-    top.pack(fill="x")
-    ttk.Label(top, text="Progress Report",
-              font=("Segoe UI", 13, "bold")).pack(side="left")
+def _draw_progress_report(parent: ttk.Frame, host) -> None:
+    win = parent.winfo_toplevel()
+    kit.page_heading(parent, "Progress Report")
 
-    filt = ttk.Frame(win, padding=(10, 0, 10, 6))
+    filt = ttk.Frame(parent, padding=(0, 0, 0, 6))
     filt.pack(fill="x")
     ttk.Label(filt, text="Academic year:").pack(side="left")
     year_var = tk.StringVar(value="All")
@@ -70,12 +68,13 @@ def open_progress_report(host) -> None:
     year_box.pack(side="left", padx=(4, 10))
     ttk.Label(filt, text="Year group:").pack(side="left")
     yg_var = tk.StringVar(value="All")
-    ttk.Combobox(filt, textvariable=yg_var,
-                 values=["All"] + list(YEAR_GROUPS),
-                 state="readonly", width=6).pack(side="left", padx=(4, 10))
+    kit.ChoiceField(filt, yg_var,
+                    choices=[("All", "All")] + [
+                        (y, kit.YEAR_GROUP_LABELS.get(y, y)) for y in YEAR_GROUPS],
+                    width=10).pack(side="left", padx=(4, 10))
 
-    nb = ttk.Notebook(win)
-    nb.pack(fill="both", expand=True, padx=10, pady=(0, 6))
+    nb = ttk.Notebook(parent)
+    nb.pack(fill="both", expand=True, pady=(0, 6))
 
     overview_tab = ttk.Frame(nb, padding=10)
     subjects_tab = ttk.Frame(nb, padding=10)
@@ -189,13 +188,15 @@ def open_progress_report(host) -> None:
             return
         _open_pupil_dialog(win, sel[0])
 
+    pick_var = tk.StringVar()
+
     def _open_pupil_by_id() -> None:
-        from tkinter import simpledialog
-        pid = simpledialog.askstring("Open pupil",
-                                     "Pupil ID:", parent=win)
+        pid = pick_var.get().strip()
         if not pid:
+            messagebox.showinfo("Open pupil",
+                                "Choose a pupil from the list first.", parent=win)
             return
-        _open_pupil_dialog(win, pid.strip())
+        _open_pupil_dialog(win, pid)
 
     def _export() -> None:
         path = filedialog.asksaveasfilename(
@@ -224,16 +225,19 @@ def open_progress_report(host) -> None:
 
     ttk.Button(p_btns, text="Open pupil progress...",
                command=_open_pupil).pack(side="left")
+    ttk.Label(p_btns, text="Any pupil:").pack(side="left", padx=(16, 4))
+    kit.PupilPicker(p_btns, pick_var, width=40).pack(side="left")
     ttk.Button(p_btns, text="Open by ID...",
-               command=_open_pupil_by_id).pack(side="left", padx=(8, 0))
+               command=_open_pupil_by_id).pack(side="left", padx=(4, 0))
     ttk.Button(p_btns, text="Export cohort CSV...",
                command=_export).pack(side="left", padx=(8, 0))
     ptree.bind("<Double-Button-1>", lambda _e: _open_pupil())
 
-    bottom = ttk.Frame(win, padding=10)
+    bottom = ttk.Frame(parent, padding=(0, 6))
     bottom.pack(fill="x")
     ttk.Button(bottom, text="Refresh", command=_refresh).pack(side="left")
-    ttk.Button(bottom, text="Close", command=win.destroy).pack(side="right")
+    ttk.Button(bottom, text="Close",
+               command=lambda: kit.close_page(host, parent)).pack(side="right")
 
     year_var.trace_add("write", lambda *_: _refresh())
     yg_var.trace_add("write", lambda *_: _refresh())
@@ -274,7 +278,7 @@ def _write_overview(text: tk.Text, s: dict) -> None:
         rwm = s.get("ks2_rwm", {})
         if rwm:
             text.insert("end",
-                f"  RWM combined: {rwm.get('exs_in_RWM', 0)} of "
+                f"  Reading, Maths & EGPS combined: {rwm.get('exs_in_RWM', 0)} of "
                 f"{rwm.get('pupils_recorded', 0)} "
                 f"({rwm.get('exs_in_RWM_pct', 0.0):.1f}%)\n")
     mtc = s.get("mtc", {})

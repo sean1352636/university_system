@@ -7,6 +7,11 @@ Provides interface for:
 - Probation tracking
 - Contract amendments (admin)
 - Renewal management (admin)
+- Pay terms: grade, spine point, FTE, pension scheme
+
+Manage and Reports are HR's or payroll's; Search is also open to line
+managers, who see their reports' contract terms without pay (the manager
+removes it). Every manager call passes the signed-in session as ``actor``.
 """
 
 from __future__ import annotations
@@ -19,7 +24,11 @@ from datetime import datetime, timedelta
 from typing import Optional
 
 from education_system.systems.university.infrastructure.auth import UserAuth
-from education_system.systems.university.domains.staff.domain.staff_hr.services.managers.contract_manager import ContractManager
+from education_system.systems.university.domains.staff.domain.staff_hr.services.managers.contract_manager import (
+    ContractManager,
+    can_manage_contracts,
+)
+from education_system.systems.university.domains.staff.interfaces.gui.staff_hr import _access
 from education_system.systems.university.domains.staff.interfaces.gui.staff_hr.validators import (
     FormValidator, ValidationError, validate_entry, validate_date_entry,
     validate_combobox, show_validation_error
@@ -46,8 +55,12 @@ class ContractGUI:
             self.create_main_window()
 
     def _get_user_id(self):
-        """Get user ID from current user dict."""
-        return self.current_user.get('id') or self.current_user.get('username')
+        """The signed-in person's username (the Staff HR key)."""
+        return _access.user_key(self)
+
+    @property
+    def actor(self):
+        return _access.actor(self)
 
     def create_as_tab(self, notebook: ttk.Notebook):
         """Create as a tab in parent notebook."""
@@ -59,8 +72,8 @@ class ContractGUI:
         """Create as standalone window."""
         self.window = tk.Toplevel(self.root)
         self.window.title(_t('gui.staff.staff_hr.contract.windows.contract_management', default="Contract Management"))
-        self.window.geometry("1200x700")
-        self.window.minsize(1000, 600)
+        self.window.geometry("1400x900")
+        self.window.minsize(1200, 800)
 
         bottom_frame = ttk.Frame(self.window)
         bottom_frame.pack(side=tk.BOTTOM, fill=tk.X, padx=10, pady=5)
@@ -84,8 +97,13 @@ class ContractGUI:
         self._create_history_tab()
         self._create_probation_tab()
 
-        if self.current_user.get('role') in ['admin', 'Admin', 'administrator', 'staff']:
+        try:
+            self.can_manage = can_manage_contracts(self.actor)
+        except Exception:
+            self.can_manage = False
+        if self.can_manage or _access.can(self, 'manager'):
             self._create_search_tab()
+        if self.can_manage:
             self._create_manage_tab()
             self._create_reports_tab()
 
@@ -117,6 +135,10 @@ class ContractGUI:
             ('working_hours', 'Working Hours:'),
             ('notice_period', 'Notice Period:'),
             ('probation_end', 'Probation End:'),
+            ('grade', 'Grade / Point:'),
+            ('fte', 'FTE:'),
+            ('salary', 'Salary (full-time):'),
+            ('pension', 'Pension Scheme:'),
         ]
 
         for i, (key, label) in enumerate(fields):
@@ -132,9 +154,18 @@ class ContractGUI:
     def _load_my_contract(self):
         """Load current user's contract."""
         user_id = self._get_user_id()
-        contract = ContractManager.get_active_contract(user_id)
+        contract = ContractManager.get_active_contract(user_id, actor=self.actor)
 
         if contract:
+            point = contract.get('spine_point')
+            self.contract_labels['grade'].config(
+                text=f"{contract.get('grade_code') or '-'} / {point if point is not None else '-'}")
+            self.contract_labels['fte'].config(text=str(contract.get('fte') or 1.0))
+            salary = contract.get('salary')
+            self.contract_labels['salary'].config(
+                text=f"£{salary:,.2f}" + (" (override)" if contract.get('salary_override') else "")
+                if salary else '-')
+            self.contract_labels['pension'].config(text=contract.get('pension_scheme') or '-')
             self.contract_labels['contract_id'].config(text=str(contract.get('contract_id', '-')))
             self.contract_labels['contract_type'].config(text=contract.get('contract_type', '-').title())
             self.contract_labels['status'].config(text=contract.get('status', '-').title())
@@ -192,7 +223,7 @@ class ContractGUI:
             self.history_tree.delete(item)
 
         user_id = self._get_user_id()
-        contracts = ContractManager.get_user_contracts(user_id, include_inactive=True)
+        contracts = ContractManager.get_user_contracts(user_id, include_inactive=True, actor=self.actor)
 
         for c in contracts:
             tag = 'active' if c.get('status') == 'active' else 'terminated' if c.get('status') == 'terminated' else ''
@@ -247,7 +278,7 @@ class ContractGUI:
     def _load_probation(self):
         """Load probation status."""
         user_id = self._get_user_id()
-        contract = ContractManager.get_active_contract(user_id)
+        contract = ContractManager.get_active_contract(user_id, actor=self.actor)
 
         if contract and contract.get('probation_end_date'):
             self.probation_labels['status'].config(text=_t('gui.staff.staff_hr.contract.text.on_probation', default="On Probation"), foreground='orange')
@@ -268,7 +299,7 @@ class ContractGUI:
         for item in self.reviews_tree.get_children():
             self.reviews_tree.delete(item)
 
-        reviews = ContractManager.get_probation_reviews(user_id)
+        reviews = ContractManager.get_probation_reviews(user_id, actor=self.actor)
         for r in reviews:
             self.reviews_tree.insert('', tk.END, values=(
                 r.get('review_date', ''),
@@ -333,7 +364,8 @@ class ContractGUI:
         dept = self.search_dept.get().strip() or None
         ctype = self.search_type.get().strip() or None
 
-        contracts = ContractManager.search_contracts(search_term=term, department=dept, contract_type=ctype)
+        contracts = ContractManager.search_contracts(search_term=term, department=dept,
+                                                     contract_type=ctype, actor=self.actor)
 
         for c in contracts:
             self.search_tree.insert('', tk.END, values=(
@@ -355,7 +387,11 @@ class ContractGUI:
 
         item = self.search_tree.item(selection[0])
         contract_id = item['values'][0]
-        contract = ContractManager.get_contract(contract_id)
+        try:
+            contract = ContractManager.get_contract(contract_id, actor=self.actor)
+        except PermissionError as e:
+            messagebox.showerror(_t('gui.staff.staff_hr.contract.dialogs.error', default="Error"), str(e))
+            return
 
         if not contract:
             return
@@ -363,7 +399,7 @@ class ContractGUI:
         # Create details dialog
         dialog = tk.Toplevel(self.root)
         dialog.title(f"Contract #{contract_id}")
-        dialog.geometry("500x400")
+        dialog.geometry("500x520")
         dialog.transient(self.root)
 
         frame = ttk.Frame(dialog, padding=20)
@@ -381,7 +417,16 @@ class ContractGUI:
             ('Working Hours', f"{contract.get('working_hours_per_week', '-')} hrs/week"),
             ('Notice Period', f"{contract.get('notice_period_days', '-')} days"),
             ('Probation End', contract.get('probation_end_date', 'N/A')),
+            ('Grade', contract.get('grade_code') or '-'),
+            ('FTE', contract.get('fte') or 1.0),
         ]
+        if 'salary' in contract:   # removed for a line manager
+            fields += [
+                ('Spine Point', contract.get('spine_point') if contract.get('spine_point') is not None else '-'),
+                ('Salary (full-time)', f"£{contract['salary']:,.2f}" if contract.get('salary') else '-'),
+                ('Override Reason', contract.get('salary_override_reason') or '-'),
+                ('Pension Scheme', contract.get('pension_scheme') or '-'),
+            ]
 
         for i, (label, value) in enumerate(fields):
             ttk.Label(frame, text=f"{label}:", font=('Arial', 10, 'bold')).grid(
@@ -427,6 +472,30 @@ class ContractGUI:
         self.new_title = ttk.Entry(fields_frame, width=20)
         self.new_title.grid(row=1, column=3, columnspan=2, padx=5, pady=5, sticky='w')
 
+        # Row 3: pay terms (grade defaults from the job title)
+        from education_system.systems.university.domains.staff.domain.staff_hr import (
+            pay_structure,
+            pensions,
+        )
+        ttk.Label(fields_frame, text=_t('gui.staff.staff_hr.contract.labels.grade', default="Grade:")).grid(row=2, column=0, padx=5, pady=5)
+        self.new_grade = ttk.Combobox(fields_frame, width=12, state='readonly',
+                                      values=[''] + [g['grade_code'] for g in pay_structure.list_grades()])
+        self.new_grade.grid(row=2, column=1, padx=5, pady=5)
+        ttk.Label(fields_frame, text=_t('gui.staff.staff_hr.contract.labels.spine_point', default="Spine Point:")).grid(row=2, column=2, padx=5, pady=5)
+        self.new_point = ttk.Entry(fields_frame, width=6)
+        self.new_point.grid(row=2, column=3, padx=5, pady=5, sticky='w')
+        ttk.Label(fields_frame, text=_t('gui.staff.staff_hr.contract.labels.fte', default="FTE:")).grid(row=2, column=4, padx=5, pady=5)
+        self.new_fte = ttk.Entry(fields_frame, width=6)
+        self.new_fte.insert(0, '1.0')
+        self.new_fte.grid(row=2, column=5, padx=5, pady=5, sticky='w')
+        ttk.Label(fields_frame, text=_t('gui.staff.staff_hr.contract.labels.pension', default="Pension:")).grid(row=3, column=0, padx=5, pady=5)
+        self.new_pension = ttk.Combobox(fields_frame, width=10, state='readonly',
+                                        values=[''] + [p['scheme_code'] for p in pensions.list_schemes()])
+        self.new_pension.grid(row=3, column=1, padx=5, pady=5)
+        ttk.Label(fields_frame, text=_t('gui.staff.staff_hr.contract.labels.salary_no_spine', default="Salary (no spine point):")).grid(row=3, column=2, padx=5, pady=5)
+        self.new_salary = ttk.Entry(fields_frame, width=12)
+        self.new_salary.grid(row=3, column=3, padx=5, pady=5, sticky='w')
+
         ttk.Button(fields_frame, text=_t('gui.staff.staff_hr.contract.buttons.create_contract', default="Create Contract"), command=self._create_contract).grid(
             row=1, column=5, padx=10, pady=5)
 
@@ -470,14 +539,28 @@ class ContractGUI:
             return
 
         values = validator.get_values()
+        try:
+            point = int(self.new_point.get()) if self.new_point.get().strip() else None
+            fte = float(self.new_fte.get()) if self.new_fte.get().strip() else None
+            salary = float(self.new_salary.get()) if self.new_salary.get().strip() else None
+        except ValueError:
+            messagebox.showerror(_t('gui.staff.staff_hr.contract.dialogs.error', default="Error"),
+                                 _t('gui.staff.staff_hr.contract.dialogs.pay_numbers', default="Spine point is a whole number; FTE and salary are numbers"))
+            return
 
         try:
             contract_id = ContractManager.create_contract(
                 values['user_id'],
+                actor=self.actor,
                 contract_type=values['contract_type'],
                 start_date=values['start_date'],
                 department=values['department'],
-                job_title=values['job_title']
+                job_title=values['job_title'],
+                grade_code=self.new_grade.get() or None,
+                spine_point=point,
+                fte=fte,
+                pension_scheme=self.new_pension.get() or None,
+                salary=salary,
             )
             messagebox.showinfo(_t('gui.staff.staff_hr.contract.dialogs.success', default="Success"), f"Contract created. ID: {contract_id}")
             self.new_user_id.delete(0, tk.END)
@@ -496,7 +579,7 @@ class ContractGUI:
         except (ValueError, TypeError):
             days = 90
 
-        contracts = ContractManager.get_expiring_contracts(days)
+        contracts = ContractManager.get_expiring_contracts(days, actor=self.actor)
         today = datetime.now().date()
 
         for c in contracts:
@@ -568,7 +651,7 @@ class ContractGUI:
 
     def _load_statistics(self):
         """Load contract statistics."""
-        stats = ContractManager.get_contract_statistics()
+        stats = ContractManager.get_contract_statistics(actor=self.actor)
 
         self.stats_labels['total_active'].config(text=str(stats.get('total_active', 0)))
         self.stats_labels['expiring_30_days'].config(text=str(stats.get('expiring_30_days', 0)))

@@ -23,10 +23,8 @@ from education_system.systems.apprenticeships.domain.employers.contacts import (
 )
 from education_system.systems.apprenticeships.domain.employers.models import EmployerManager
 from education_system.systems.apprenticeships.interfaces.gui import widgets
-from education_system.systems.apprenticeships.services import (
-    apprentice_service,
-    employer_contact_service,
-)
+from education_system.systems.apprenticeships.application.apprentices import apprentice_service
+from education_system.systems.apprenticeships.application.employers import employer_contact_service
 
 logger = logging.getLogger(__name__)
 

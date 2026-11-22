@@ -20,9 +20,7 @@ from education_system.systems.primary.domain.staff.dbs_checks.dbs_checks import 
     STATUSES,
     ValidationError,
 )
-from education_system.systems.primary.domain.staff import (
-    staff as staff_data,
-)
+from education_system.systems.primary.interfaces.gui import kit
 
 logger = logging.getLogger(__name__)
 
@@ -44,14 +42,27 @@ _STATUS_TAGS = {
 
 def open_dbs_checks_window(parent=None) -> None:
     data.init_db()
-    master = getattr(parent, "root", parent)
-    win = tk.Toplevel(master) if master is not None else tk.Tk()
-    win.title(f"DBS Checks — {branding.SYSTEM_NAME}")
-    win.geometry(WIN_GEOMETRY)
-    win.minsize(*WIN_MINSIZE)
+    if parent is None:
+        # Run on its own (no main window): a standalone window as before.
+        win = tk.Tk()
+        win.title(f"DBS Checks — {branding.SYSTEM_NAME}")
+        win.geometry(WIN_GEOMETRY)
+        win.minsize(*WIN_MINSIZE)
+        frame = ttk.Frame(win, padding=10)
+        frame.pack(fill="both", expand=True)
+        _draw_dbs_checks(frame, None)
+        return
+    kit.show_page(parent, "DBS Checks",
+                  lambda page: _draw_dbs_checks(page, parent))
 
-    nb = ttk.Notebook(win)
-    nb.pack(fill="both", expand=True, padx=10, pady=10)
+
+def _draw_dbs_checks(parent, host) -> None:
+    kit.page_heading(parent, "DBS Checks",
+                     "Disclosure and Barring Service checks for every member "
+                     "of staff: certificates, update service, risk "
+                     "assessments and sign-off.")
+    nb = ttk.Notebook(parent)
+    nb.pack(fill="both", expand=True)
 
     DBSTab(nb, scope="active",          label="Active")
     DBSTab(nb, scope="expired",         label="Expired")
@@ -61,16 +72,6 @@ def open_dbs_checks_window(parent=None) -> None:
     DBSTab(nb, scope="risk_pending",    label="Risk Pending")
     DBSTab(nb, scope="all",             label="All")
     SummaryTab(nb)
-
-
-def _staff_options() -> list[tuple[str, str]]:
-    rows = sorted(staff_data.list_staff(),
-                   key=lambda s: s.staff_id)
-    return [(s.staff_id,
-             f"{s.staff_id} — "
-             f"{getattr(s, 'first_name', '')} "
-             f"{getattr(s, 'last_name', '')}".strip())
-            for s in rows]
 
 
 class DBSTab:
@@ -85,30 +86,27 @@ class DBSTab:
     def _build(self) -> None:
         bar = ttk.Frame(self.frame)
         bar.pack(fill="x", padx=8, pady=(8, 4))
-        ttk.Label(bar, text="Staff id:").pack(side="left")
-        self.f_staff = ttk.Entry(bar, width=12)
+        ttk.Label(bar, text="Staff:").pack(side="left")
+        self.f_staff = kit.StaffPicker(bar, tk.StringVar(),
+                                       active_only=False, width=30)
+        self.f_staff.bind_change(lambda _v: self.refresh())
         self.f_staff.pack(side="left", padx=(2, 8))
         ttk.Label(bar, text="Level:").pack(side="left")
-        self.f_level = ttk.Combobox(bar,
-                                       values=("",) + LEVELS,
-                                       state="readonly", width=26)
-        self.f_level.current(0)
+        self.f_level = kit.ChoiceField(bar, tk.StringVar(), choices=LEVELS,
+                                       blank=True, width=26)
         self.f_level.pack(side="left", padx=(2, 8))
         if self.scope == "all":
             ttk.Label(bar, text="Status:").pack(side="left")
-            self.f_status = ttk.Combobox(bar,
-                                           values=("",) + STATUSES,
-                                           state="readonly",
-                                           width=22)
-            self.f_status.current(0)
+            self.f_status = kit.ChoiceField(bar, tk.StringVar(),
+                                            choices=STATUSES, blank=True,
+                                            width=22)
             self.f_status.pack(side="left", padx=(2, 8))
         else:
             self.f_status = None
         ttk.Label(bar, text="Cert:").pack(side="left")
-        self.f_cert = ttk.Combobox(
-            bar, values=("",) + CERTIFICATE_TYPES,
-            state="readonly", width=18)
-        self.f_cert.current(0)
+        self.f_cert = kit.ChoiceField(bar, tk.StringVar(),
+                                      choices=CERTIFICATE_TYPES, blank=True,
+                                      width=18)
         self.f_cert.pack(side="left", padx=(2, 8))
         ttk.Button(bar, text="Apply",
                     command=self.refresh).pack(side="left", padx=4)
@@ -259,9 +257,10 @@ class DBSTab:
         c = self._selected()
         if not c:
             return
-        when = _prompt_text(self.frame,
-                              "Certificate seen on (YYYY-MM-DD)",
-                              initial=_dt.date.today().isoformat())
+        when = _prompt_value(
+            self.frame, "Certificate seen on",
+            initial=_dt.date.today().isoformat(),
+            make=lambda m, v: kit.DateField(m, v))
         if not when:
             return
         try:
@@ -300,8 +299,10 @@ class DBSTab:
         c = self._selected()
         if not c:
             return
-        by = _prompt_text(self.frame, "Signed off by",
-                            initial=c.signed_off_by or "")
+        by = _prompt_value(
+            self.frame, "Signed off by",
+            initial=c.signed_off_by or "",
+            make=lambda m, v: kit.StaffPicker(m, v, by="name"))
         if not by:
             return
         try:
@@ -424,19 +425,18 @@ class DBSEditor:
                  check: DBSCheck | None = None) -> None:
         self.check = check
         self.result: DBSCheck | None = None
-        self.win = tk.Toplevel(parent)
+        self.win = tk.Toplevel(parent.winfo_toplevel())
         self.win.title(f"Edit DBS #{check.check_id}"
                           if check else "New DBS check")
-        self.win.geometry("880x820")
-        self.win.transient(parent); self.win.after_idle(self.win.grab_set)
+        self.win.geometry("880x700")
+        self.win.transient(parent.winfo_toplevel()); self.win.after_idle(self.win.grab_set)
         self._build()
         if check:
             self._load()
         self.win.wait_window()
 
     def _build(self) -> None:
-        body = ttk.Frame(self.win)
-        body.pack(fill="both", expand=True, padx=12, pady=10)
+        body, footer = kit.scrolled_form(self.win)
         body.grid_columnconfigure(1, weight=1)
         body.grid_columnconfigure(3, weight=1)
         self.vars: dict[str, tk.Variable] = {}
@@ -445,13 +445,10 @@ class DBSEditor:
 
         ttk.Label(body, text="Staff*").grid(
             row=0, column=0, sticky="w", padx=4, pady=2)
-        self.staff_combo = ttk.Combobox(body, state="readonly",
-                                            width=42)
-        opts = _staff_options()
-        self._staff_opts = opts
-        self.staff_combo["values"] = [lbl for _, lbl in opts]
-        self.staff_combo.grid(row=0, column=1, columnspan=3,
-                                  sticky="ew", padx=4, pady=2)
+        self.staff_var = tk.StringVar()
+        kit.StaffPicker(body, self.staff_var, active_only=False,
+                        width=42).grid(row=0, column=1, columnspan=3,
+                                       sticky="w", padx=4, pady=2)
 
         def entry(row, col, label, key, width=22):
             ttk.Label(body, text=label).grid(
@@ -461,34 +458,46 @@ class DBSEditor:
             ttk.Entry(body, textvariable=v, width=width).grid(
                 row=row, column=col + 1, sticky="ew", padx=4, pady=2)
 
+        def date(row, col, label, key):
+            ttk.Label(body, text=label).grid(
+                row=row, column=col, sticky="w", padx=4, pady=2)
+            v = tk.StringVar()
+            self.vars[key] = v
+            kit.DateField(body, v).grid(
+                row=row, column=col + 1, sticky="w", padx=4, pady=2)
+
         def combo(row, col, label, key, values, width=22):
             ttk.Label(body, text=label).grid(
                 row=row, column=col, sticky="w", padx=4, pady=2)
             v = tk.StringVar()
             self.vars[key] = v
-            ttk.Combobox(body, textvariable=v, values=values,
-                          state="readonly", width=width).grid(
-                row=row, column=col + 1, sticky="ew", padx=4, pady=2)
+            kit.ChoiceField(body, v, choices=values, width=width).grid(
+                row=row, column=col + 1, sticky="w", padx=4, pady=2)
 
         combo(1, 0, "Level*", "level", LEVELS, width=26)
         combo(1, 2, "Certificate type*", "certificate_type",
                  CERTIFICATE_TYPES)
         entry(2, 0, "DBS number", "dbs_number")
         combo(2, 2, "Status*", "status", STATUSES)
-        entry(3, 0, "Applied on", "applied_on")
-        entry(3, 2, "Issued on", "issued_on")
-        entry(4, 0, "Expires on", "expires_on")
-        entry(4, 2, "Certificate seen on",
+        date(3, 0, "Applied on", "applied_on")
+        date(3, 2, "Issued on", "issued_on")
+        date(4, 0, "Expires on", "expires_on")
+        date(4, 2, "Certificate seen on",
                  "certificate_seen_on")
         entry(5, 0, "Update service ID", "update_service_id")
-        entry(5, 2, "Last update check on",
+        date(5, 2, "Last update check on",
                  "last_update_check_on")
-        entry(6, 0, "Next update check due",
+        date(6, 0, "Next update check due",
                  "next_update_check_due")
-        entry(6, 2, "Risk assessment on",
+        date(6, 2, "Risk assessment on",
                  "risk_assessment_completed_on")
-        entry(7, 0, "Signed off by", "signed_off_by")
-        entry(7, 2, "Signed off on", "signed_off_on")
+        ttk.Label(body, text="Signed off by").grid(
+            row=7, column=0, sticky="w", padx=4, pady=2)
+        self.vars["signed_off_by"] = tk.StringVar()
+        kit.StaffPicker(body, self.vars["signed_off_by"], by="name",
+                        active_only=False, width=30).grid(
+            row=7, column=1, sticky="w", padx=4, pady=2)
+        date(7, 2, "Signed off on", "signed_off_on")
 
         flags = ttk.LabelFrame(body, text="Flags")
         flags.grid(row=8, column=0, columnspan=4,
@@ -520,8 +529,7 @@ class DBSEditor:
             self.texts[key] = t
             row += 1
 
-        bar = ttk.Frame(self.win)
-        bar.pack(fill="x", padx=12, pady=(0, 10))
+        bar = footer
         ttk.Button(bar, text="Save",
                     command=self._save).pack(side="right", padx=4)
         ttk.Button(bar, text="Cancel",
@@ -535,10 +543,7 @@ class DBSEditor:
     def _load(self) -> None:
         c = self.check
         assert c is not None
-        for i, (sid, _) in enumerate(self._staff_opts):
-            if sid == c.staff_id:
-                self.staff_combo.current(i)
-                break
+        self.staff_var.set(c.staff_id or "")
         for key in ("level", "certificate_type", "status",
                      "dbs_number", "applied_on", "issued_on",
                      "expires_on", "certificate_seen_on",
@@ -555,13 +560,13 @@ class DBSEditor:
             self.texts[k].insert("1.0", getattr(c, k) or "")
 
     def _save(self) -> None:
-        idx = self.staff_combo.current()
-        if idx < 0:
+        staff_id = self.staff_var.get().strip()
+        if not staff_id:
             messagebox.showerror("DBS Checks",
                                     "Pick a staff member.",
                                     parent=self.win)
             return
-        payload: dict = {"staff_id": self._staff_opts[idx][0]}
+        payload: dict = {"staff_id": staff_id}
         for k, v in self.vars.items():
             payload[k] = v.get().strip()
         for k, b in self.bools.items():
@@ -585,10 +590,10 @@ class IssueCertDialog:
     def __init__(self, parent, *, check: DBSCheck) -> None:
         self.check = check
         self.result: DBSCheck | None = None
-        self.win = tk.Toplevel(parent)
+        self.win = tk.Toplevel(parent.winfo_toplevel())
         self.win.title(f"Issue certificate — #{check.check_id}")
-        self.win.geometry("440x240")
-        self.win.transient(parent); self.win.after_idle(self.win.grab_set)
+        self.win.geometry("560x240")
+        self.win.transient(parent.winfo_toplevel()); self.win.after_idle(self.win.grab_set)
         body = ttk.Frame(self.win)
         body.pack(fill="both", expand=True, padx=12, pady=10)
         body.grid_columnconfigure(1, weight=1)
@@ -601,14 +606,12 @@ class IssueCertDialog:
             row=1, column=0, sticky="w", padx=4, pady=4)
         self.issued = tk.StringVar(
             value=_dt.date.today().isoformat())
-        ttk.Entry(body, textvariable=self.issued,
-                    width=14).grid(
+        kit.DateField(body, self.issued).grid(
             row=1, column=1, sticky="w", padx=4, pady=4)
         ttk.Label(body, text="Expires on").grid(
             row=2, column=0, sticky="w", padx=4, pady=4)
         self.expires = tk.StringVar(value=check.expires_on or "")
-        ttk.Entry(body, textvariable=self.expires,
-                    width=14).grid(
+        kit.DateField(body, self.expires).grid(
             row=2, column=1, sticky="w", padx=4, pady=4)
         bar = ttk.Frame(self.win)
         bar.pack(fill="x", padx=12, pady=(0, 10))
@@ -638,11 +641,11 @@ class SubscribeDialog:
     def __init__(self, parent, *, check: DBSCheck) -> None:
         self.check = check
         self.result: DBSCheck | None = None
-        self.win = tk.Toplevel(parent)
+        self.win = tk.Toplevel(parent.winfo_toplevel())
         self.win.title(
             f"Subscribe — #{check.check_id}")
-        self.win.geometry("440x200")
-        self.win.transient(parent); self.win.after_idle(self.win.grab_set)
+        self.win.geometry("560x200")
+        self.win.transient(parent.winfo_toplevel()); self.win.after_idle(self.win.grab_set)
         body = ttk.Frame(self.win)
         body.pack(fill="both", expand=True, padx=12, pady=10)
         body.grid_columnconfigure(1, weight=1)
@@ -656,8 +659,7 @@ class SubscribeDialog:
             row=1, column=0, sticky="w", padx=4, pady=4)
         self.next_due = tk.StringVar(
             value=check.next_update_check_due or "")
-        ttk.Entry(body, textvariable=self.next_due,
-                    width=14).grid(
+        kit.DateField(body, self.next_due).grid(
             row=1, column=1, sticky="w", padx=4, pady=4)
         bar = ttk.Frame(self.win)
         bar.pack(fill="x", padx=12, pady=(0, 10))
@@ -685,11 +687,11 @@ class UpdateCheckDialog:
     def __init__(self, parent, *, check: DBSCheck) -> None:
         self.check = check
         self.result: DBSCheck | None = None
-        self.win = tk.Toplevel(parent)
+        self.win = tk.Toplevel(parent.winfo_toplevel())
         self.win.title(
             f"Record update check — #{check.check_id}")
-        self.win.geometry("440x200")
-        self.win.transient(parent); self.win.after_idle(self.win.grab_set)
+        self.win.geometry("560x200")
+        self.win.transient(parent.winfo_toplevel()); self.win.after_idle(self.win.grab_set)
         body = ttk.Frame(self.win)
         body.pack(fill="both", expand=True, padx=12, pady=10)
         body.grid_columnconfigure(1, weight=1)
@@ -697,15 +699,13 @@ class UpdateCheckDialog:
             row=0, column=0, sticky="w", padx=4, pady=4)
         self.when = tk.StringVar(
             value=_dt.date.today().isoformat())
-        ttk.Entry(body, textvariable=self.when,
-                    width=14).grid(
+        kit.DateField(body, self.when).grid(
             row=0, column=1, sticky="w", padx=4, pady=4)
         ttk.Label(body, text="Next check due "
                               "(blank=+12mo)").grid(
             row=1, column=0, sticky="w", padx=4, pady=4)
         self.next_due = tk.StringVar()
-        ttk.Entry(body, textvariable=self.next_due,
-                    width=14).grid(
+        kit.DateField(body, self.next_due).grid(
             row=1, column=1, sticky="w", padx=4, pady=4)
         bar = ttk.Frame(self.win)
         bar.pack(fill="x", padx=12, pady=(0, 10))
@@ -733,11 +733,11 @@ class RiskAssessDialog:
     def __init__(self, parent, *, check: DBSCheck) -> None:
         self.check = check
         self.result: DBSCheck | None = None
-        self.win = tk.Toplevel(parent)
+        self.win = tk.Toplevel(parent.winfo_toplevel())
         self.win.title(
             f"Risk assessment — #{check.check_id}")
-        self.win.geometry("520x340")
-        self.win.transient(parent); self.win.after_idle(self.win.grab_set)
+        self.win.geometry("600x340")
+        self.win.transient(parent.winfo_toplevel()); self.win.after_idle(self.win.grab_set)
         body = ttk.Frame(self.win)
         body.pack(fill="both", expand=True, padx=12, pady=10)
         body.grid_columnconfigure(1, weight=1)
@@ -745,8 +745,7 @@ class RiskAssessDialog:
             row=0, column=0, sticky="w", padx=4, pady=4)
         self.when = tk.StringVar(
             value=_dt.date.today().isoformat())
-        ttk.Entry(body, textvariable=self.when,
-                    width=14).grid(
+        kit.DateField(body, self.when).grid(
             row=0, column=1, sticky="w", padx=4, pady=4)
         ttk.Label(body, text="Outcome*").grid(
             row=1, column=0, sticky="nw", padx=4, pady=4)
@@ -779,14 +778,17 @@ class RiskAssessDialog:
         self.win.destroy()
 
 
-def _prompt_text(parent, title: str, *,
-                  initial: str = "") -> str | None:
-    win = tk.Toplevel(parent)
-    win.title(title); win.geometry("360x140")
-    win.transient(parent); win.after_idle(win.grab_set)
+def _prompt_value(parent, title: str, *, initial: str = "",
+                  make) -> str | None:
+    """A small modal asking for one value; *make(master, var)* builds the
+    picker bound to *var*. Returns the value, or None on Cancel."""
+    owner = parent.winfo_toplevel()
+    win = tk.Toplevel(owner)
+    win.title(title); win.geometry("460x150")
+    win.transient(owner); win.after_idle(win.grab_set)
     ttk.Label(win, text=title).pack(anchor="w", padx=8, pady=8)
     var = tk.StringVar(value=initial)
-    ttk.Entry(win, textvariable=var).pack(fill="x", padx=8)
+    make(win, var).pack(anchor="w", padx=8)
     result: dict = {"value": None}
 
     def ok() -> None:
@@ -804,13 +806,12 @@ def _prompt_text(parent, title: str, *,
 
 def _prompt_choice(parent, title: str, options: list[str], *,
                     default: str | None = None) -> str | None:
-    win = tk.Toplevel(parent)
+    win = tk.Toplevel(parent.winfo_toplevel())
     win.title(title); win.geometry("320x140")
-    win.transient(parent); win.after_idle(win.grab_set)
+    win.transient(parent.winfo_toplevel()); win.after_idle(win.grab_set)
     ttk.Label(win, text=title).pack(anchor="w", padx=8, pady=8)
     var = tk.StringVar(value=default or (options[0] if options else ""))
-    ttk.Combobox(win, textvariable=var, values=options,
-                  state="readonly").pack(fill="x", padx=8)
+    kit.ChoiceField(win, var, choices=options).pack(fill="x", padx=8)
     result: dict = {"value": None}
 
     def ok() -> None:

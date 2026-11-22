@@ -131,12 +131,10 @@ class AlertManager:
             self._send_email_alert(alert)
 
     def _send_email_alert(self, alert: Dict):
-        """Send alert via email"""
+        """Send alert via email through the university e-mail outbox"""
         try:
-            from education_system.systems.university.infrastructure.email.email_service import EmailService
+            from education_system.systems.university.infrastructure.email import outbox_delivery
             from education_system.systems.university.infrastructure.email.template_utils import render_template
-
-            email_service = EmailService()
 
             subject, body = render_template("system/monitoring_alert", {
                 "level": alert["level"].upper(),
@@ -146,11 +144,13 @@ class AlertManager:
                 "details": alert["details"],
             })
 
-            # Try to send email (don't fail if email not configured)
-            email_service.send_email(
-                to_email='admin@university.edu',  # Should be configurable
-                subject=subject,
-                body=body
+            # Through the university outbox (retries; delivered per the
+            # e-mail delivery mode). Don't fail if e-mail isn't configured.
+            outbox_delivery.enqueue(
+                'admin@university.edu',  # Should be configurable
+                subject, body,
+                category="monitoring_alert",
+                created_by="monitoring",
             )
 
         except Exception as e:

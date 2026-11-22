@@ -1,0 +1,28 @@
+{
+  "name": "parents_evening_schedule",
+  "description": "A family's parents' evening appointments (siblings together), one per contact address.",
+  "subject": "Your appointments: {event_name} on {event_date}",
+  "body": [
+    "Dear {recipient_name},",
+    "",
+    "Here are your appointments for {event_name} on {event_date} ({venue}).",
+    "Each appointment lasts {slot_minutes} minutes - please arrive a few minutes early.",
+    "",
+    "{appointments}",
+    "",
+    "If you can no longer attend, please let the school office know.",
+    "",
+    "Yours sincerely,",
+    "{school_name}"
+  ],
+  "placeholders": {
+    "recipient_name": "The contact's name",
+    "event_name": "The evening's name",
+    "event_date": "The date",
+    "venue": "Where (room, or online with the link)",
+    "slot_minutes": "Appointment length",
+    "appointments": "One line per appointment: time, teacher (room), child",
+    "school_name": "The school's name"
+  },
+  "defaults": {"school_name": "Secondary School"}
+}

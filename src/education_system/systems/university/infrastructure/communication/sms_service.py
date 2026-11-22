@@ -10,6 +10,7 @@ Supported Providers:
 """
 
 import logging
+import os
 from typing import Optional, Dict, Any, List
 from datetime import datetime
 from enum import Enum
@@ -42,38 +43,30 @@ class SMSService:
         self._ensure_sms_log_table()
 
     def _load_config(self) -> Dict[str, Any]:
-        """Load SMS configuration from database or environment"""
-        try:
-            with get_connection() as conn:
-                cursor = conn.cursor()
-                cursor.execute("""
-                    SELECT provider, config_json
-                    FROM sms_config
-                    WHERE is_active = 1
-                    ORDER BY updated_at DESC
-                    LIMIT 1
-                """)
-                result = cursor.fetchone()
-
-                if result:
-                    import json
-                    return json.loads(result[1])
-        except Exception as e:
-            logger.warning(f"Could not load SMS config from database: {e}")
-
-        # Default configuration
-        return {
+        """Load SMS configuration from sms_config.json, then the environment"""
+        config = {
             'twilio': {
-                'account_sid': '',
-                'auth_token': '',
-                'from_number': ''
+                'account_sid': os.getenv('TWILIO_ACCOUNT_SID', ''),
+                'auth_token': os.getenv('TWILIO_AUTH_TOKEN', ''),
+                'from_number': os.getenv('TWILIO_PHONE_NUMBER', '')
             },
             'aws_sns': {
-                'access_key': '',
-                'secret_key': '',
-                'region': 'us-east-1'
+                'access_key': os.getenv('AWS_ACCESS_KEY_ID', ''),
+                'secret_key': os.getenv('AWS_SECRET_ACCESS_KEY', ''),
+                'region': os.getenv('AWS_REGION', 'us-east-1')
             }
         }
+        try:
+            from education_system.systems.university.infrastructure.auth.sms_provider import (
+                load_sms_config,
+            )
+            file_config = load_sms_config()
+            for section in config:
+                if isinstance(file_config.get(section), dict):
+                    config[section].update(file_config[section])
+        except Exception as e:
+            logger.warning(f"Could not load SMS config: {e}")
+        return config
 
     def _ensure_sms_log_table(self):
         """Ensure SMS log table exists"""

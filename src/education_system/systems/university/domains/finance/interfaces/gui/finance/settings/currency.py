@@ -3,6 +3,7 @@
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 
 import threading
+from education_system.platform.delivery.gui.tk_threads import start_thread, ui
 import tkinter as tk
 from tkinter import ttk, messagebox
 
@@ -100,12 +101,12 @@ class CurrencyMixin:
                 rates = cursor.fetchall()
                 conn.close()
 
-                self.root.after(0, lambda: self.update_exchange_rates_table(rates))
+                ui(self.root, self.update_exchange_rates_table, rates)
 
             except Exception as e:
                 print(f"Error loading exchange rates: {e}")
 
-        threading.Thread(target=load_thread, daemon=True).start()
+        start_thread(self.root, load_thread)
 
 
     def update_exchange_rates_table(self, rates):
@@ -133,13 +134,11 @@ class CurrencyMixin:
                     # updated in place, otherwise inserted.
                     rates_updated = refresh_sample_rates()['updated']
 
-                    messagebox.showinfo(_("finance_gui.settings.success_title"), _("finance_gui.settings.rates_updated", count=rates_updated))
-                    self.refresh_exchange_rates()
-                    self.update_status(_("finance_gui.settings.exchange_rates_updated"))
+                    ui(self.root, messagebox.showinfo, _("finance_gui.settings.success_title"), _("finance_gui.settings.rates_updated", count=rates_updated))
+                    ui(self.root, self.refresh_exchange_rates)
+                    ui(self.root, self.update_status, _("finance_gui.settings.exchange_rates_updated"))
 
-                thread = threading.Thread(target=update_rates)
-                thread.daemon = True
-                thread.start()
+                start_thread(self.root, update_rates)
 
             except Exception as e:
                 messagebox.showerror(_("finance_gui.settings.error_title"), _("finance_gui.settings.failed_update_rates", error=str(e)))

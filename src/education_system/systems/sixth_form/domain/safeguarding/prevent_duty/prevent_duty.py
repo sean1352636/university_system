@@ -15,14 +15,23 @@ that satisfy a typical sixth-form audit:
   Awareness / Channel Awareness / Refresher) with completion and
   expiry dates so the DSL can audit who is in date.
 
-Cascade rules:
-* Deleting a concern cascades its referrals.
-* Deleting a student deletes their concerns (and via above, referrals).
-* Deleting a staff member deletes their training records.
+Retention (KCSIE): nothing here is deleted any more.
+* "Delete" on a concern or referral closes it as retained, with a
+  reason, who and when.
+* Deleting a student or staff member no longer cascades: the old
+  ``ON DELETE CASCADE`` clauses are removed by a one-off rebuild (backed
+  up first, see :mod:`.._retention`), and concerns keep a name snapshot.
+
+Access: concerns and referrals need ``access.SAFEGUARDING`` to read or
+change, and every call is written to the sensitive-access log.
+*Reporting* a Prevent concern (:func:`create_concern`) is open to any
+member of staff. Training records are not restricted.
 """
 
 from __future__ import annotations
 
+import contextvars
+import functools
 import logging
 import re
 import sqlite3
@@ -30,6 +39,10 @@ from dataclasses import dataclass
 from typing import Any
 
 from education_system import paths
+from education_system.systems.sixth_form.domain.governance.user_management import (
+    access,
+)
+from education_system.systems.sixth_form.domain.safeguarding import _retention
 
 logger = logging.getLogger(__name__)
 
@@ -72,8 +85,8 @@ DEFAULT_TRAINING_TYPE: str = "WRAP"
 
 _DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 
-_SCHEMA = """
-CREATE TABLE IF NOT EXISTS prevent_concerns (
+_CONCERNS_DDL = """
+CREATE TABLE IF NOT EXISTS {name} (
     concern_id   INTEGER PRIMARY KEY AUTOINCREMENT,
     student_id   TEXT NOT NULL,
     report_date  TEXT NOT NULL,
@@ -87,10 +100,15 @@ CREATE TABLE IF NOT EXISTS prevent_concerns (
     outcome      TEXT,
     created_at   TEXT DEFAULT (datetime('now')),
     updated_at   TEXT DEFAULT (datetime('now')),
-    FOREIGN KEY (student_id) REFERENCES students(student_id) ON DELETE CASCADE
-);
+    student_name    TEXT,
+    archived_reason TEXT,
+    archived_by     TEXT,
+    archived_at     TEXT
+)
+"""
 
-CREATE TABLE IF NOT EXISTS prevent_referrals (
+_REFERRALS_DDL = """
+CREATE TABLE IF NOT EXISTS {name} (
     referral_id     INTEGER PRIMARY KEY AUTOINCREMENT,
     concern_id      INTEGER NOT NULL,
     referral_date   TEXT NOT NULL,
@@ -102,11 +120,15 @@ CREATE TABLE IF NOT EXISTS prevent_referrals (
     notes           TEXT,
     created_at      TEXT DEFAULT (datetime('now')),
     updated_at      TEXT DEFAULT (datetime('now')),
+    archived_reason TEXT,
+    archived_by     TEXT,
+    archived_at     TEXT,
     FOREIGN KEY (concern_id) REFERENCES prevent_concerns(concern_id)
-        ON DELETE CASCADE
-);
+)
+"""
 
-CREATE TABLE IF NOT EXISTS prevent_training (
+_TRAINING_DDL = """
+CREATE TABLE IF NOT EXISTS {name} (
     training_id     INTEGER PRIMARY KEY AUTOINCREMENT,
     staff_id        TEXT NOT NULL,
     training_type   TEXT NOT NULL DEFAULT 'WRAP',
@@ -116,10 +138,25 @@ CREATE TABLE IF NOT EXISTS prevent_training (
     certificate_ref TEXT,
     notes           TEXT,
     created_at      TEXT DEFAULT (datetime('now')),
-    updated_at      TEXT DEFAULT (datetime('now')),
-    FOREIGN KEY (staff_id) REFERENCES staff(staff_id) ON DELETE CASCADE
-);
+    updated_at      TEXT DEFAULT (datetime('now'))
+)
+"""
 
+_NEW_COLUMNS: dict[str, dict[str, str]] = {
+    "prevent_concerns": {"student_name": "TEXT", "archived_reason": "TEXT",
+                         "archived_by": "TEXT", "archived_at": "TEXT"},
+    "prevent_referrals": {"archived_reason": "TEXT", "archived_by": "TEXT",
+                          "archived_at": "TEXT"},
+    # Training is staff compliance evidence: archived, never deleted.
+    "prevent_training": {"archived_reason": "TEXT", "archived_by": "TEXT",
+                         "archived_at": "TEXT"},
+}
+
+_NAME_SNAPSHOT_SQL = (
+    "(SELECT TRIM(s.first_name || ' ' || s.last_name) FROM students s "
+    "WHERE s.student_id = old.student_id)")
+
+_SCHEMA = """
 CREATE INDEX IF NOT EXISTS idx_pc_student ON prevent_concerns(student_id);
 CREATE INDEX IF NOT EXISTS idx_pc_status  ON prevent_concerns(status);
 CREATE INDEX IF NOT EXISTS idx_pc_date    ON prevent_concerns(report_date);
@@ -149,6 +186,10 @@ class Concern:
     outcome: str | None
     created_at: str
     updated_at: str
+    student_name: str | None = None
+    archived_reason: str | None = None
+    archived_by: str | None = None
+    archived_at: str | None = None
 
     @property
     def is_open(self) -> bool:
@@ -168,6 +209,9 @@ class Referral:
     notes: str | None
     created_at: str
     updated_at: str
+    archived_reason: str | None = None
+    archived_by: str | None = None
+    archived_at: str | None = None
 
     @property
     def is_open(self) -> bool:
@@ -186,6 +230,9 @@ class Training:
     notes: str | None
     created_at: str
     updated_at: str
+    archived_reason: str | None = None
+    archived_by: str | None = None
+    archived_at: str | None = None
 
     def is_expired(self, *, today: str | None = None) -> bool:
         if self.expiry_date is None:
@@ -255,7 +302,28 @@ def init_db() -> None:
     _students.init_db()
     _staff.init_db()
     with _connect() as conn:
+        conn.execute(_CONCERNS_DDL.format(name="prevent_concerns"))
+        conn.execute(_REFERRALS_DDL.format(name="prevent_referrals"))
+        conn.execute(_TRAINING_DDL.format(name="prevent_training"))
+    # One-off retention rebuilds: drop ON DELETE CASCADE (backs up first).
+    _retention.rebuild_table(
+        DB_PATH, "prevent_concerns", _CONCERNS_DDL,
+        label="safeguarding_retention",
+        extra_copy={"student_name": _NAME_SNAPSHOT_SQL})
+    _retention.rebuild_table(
+        DB_PATH, "prevent_referrals", _REFERRALS_DDL,
+        label="safeguarding_retention")
+    _retention.rebuild_table(
+        DB_PATH, "prevent_training", _TRAINING_DDL,
+        label="safeguarding_retention")
+    with _connect() as conn:
+        for table, cols in _NEW_COLUMNS.items():
+            _retention.add_missing_columns(conn, table, cols)
         conn.executescript(_SCHEMA)
+        conn.execute(
+            "UPDATE prevent_concerns AS old SET student_name = "
+            f"{_NAME_SNAPSHOT_SQL} WHERE student_name IS NULL")
+        conn.commit()
     logger.debug("Prevent Duty schema ready at %s", DB_PATH)
 
     _DB_READY = True
@@ -270,7 +338,15 @@ def _row_concern(r: sqlite3.Row) -> Concern:
         status=r["status"], closed_date=r["closed_date"],
         outcome=r["outcome"],
         created_at=r["created_at"], updated_at=r["updated_at"],
+        student_name=r["student_name"] if "student_name" in r.keys() else None,
+        archived_reason=_opt(r, "archived_reason"),
+        archived_by=_opt(r, "archived_by"),
+        archived_at=_opt(r, "archived_at"),
     )
+
+
+def _opt(r: sqlite3.Row, key: str) -> Any:
+    return r[key] if key in r.keys() else None
 
 
 def _row_referral(r: sqlite3.Row) -> Referral:
@@ -280,6 +356,9 @@ def _row_referral(r: sqlite3.Row) -> Referral:
         case_officer=r["case_officer"], panel_date=r["panel_date"],
         status=r["status"], outcome=r["outcome"], notes=r["notes"],
         created_at=r["created_at"], updated_at=r["updated_at"],
+        archived_reason=_opt(r, "archived_reason"),
+        archived_by=_opt(r, "archived_by"),
+        archived_at=_opt(r, "archived_at"),
     )
 
 
@@ -291,6 +370,9 @@ def _row_training(r: sqlite3.Row) -> Training:
         expiry_date=r["expiry_date"], provider=r["provider"],
         certificate_ref=r["certificate_ref"], notes=r["notes"],
         created_at=r["created_at"], updated_at=r["updated_at"],
+        archived_reason=_opt(r, "archived_reason"),
+        archived_by=_opt(r, "archived_by"),
+        archived_at=_opt(r, "archived_at"),
     )
 
 
@@ -387,8 +469,14 @@ def _validate_concern_payload(data: dict[str, Any]) -> dict[str, Any]:
     return out
 
 
-def create_concern(data: dict[str, Any]) -> Concern:
+def create_concern(data: dict[str, Any], *,
+                   principal: access.Principal | None = None) -> Concern:
+    """Report a Prevent concern. Open to any member of staff."""
     init_db()
+    data = dict(data)
+    if not (data.get("reported_by") or "").strip():
+        who = principal or access.current()
+        data["reported_by"] = who.staff_name or who.username or None
     try:
         p = _validate_concern_payload(data)
     except ValidationError as e:
@@ -407,10 +495,17 @@ def create_concern(data: dict[str, Any]) -> Concern:
              p["reported_by"], p["status"], p["closed_date"],
              p["outcome"]),
         )
+        conn.execute(
+            "UPDATE prevent_concerns AS old SET student_name = "
+            f"{_NAME_SNAPSHOT_SQL} WHERE concern_id = ?", (cur.lastrowid,))
         conn.commit()
         new_id = cur.lastrowid
-    out = get_concern(new_id)
+    out = _get_concern(new_id)
     assert out is not None
+    access.log_sensitive_access(principal or access.current(), AREA,
+                                "create-prevent",
+                                student_id=out.student_id,
+                                record_ref=f"prevent:{new_id}")
     logger.info(
         "Created Prevent concern #%d for %s (risk=%s, status=%s)",
         new_id, p["student_id"], p["risk_level"], p["status"])
@@ -556,18 +651,42 @@ def close_concern(concern_id: int, *,
     return update_concern(concern_id, upd)
 
 
-def delete_concern(concern_id: int) -> bool:
+def archive_concern(concern_id: int, *, reason: str,
+                    archived_by: str | None = None) -> Concern:
+    """Close a Prevent concern as retained (never deleted)."""
+    import datetime as _dt
     init_db()
+    existing = get_concern(concern_id)
+    if existing is None:
+        raise ValidationError(f"No concern with id {concern_id}")
+    reason = (reason or "").strip()
+    if not reason:
+        raise ValidationError("A reason is required to close a concern")
+    who = (archived_by or "").strip() or _actor()
+    today = _dt.date.today().isoformat()
     with _connect() as conn:
-        cur = conn.execute(
-            "DELETE FROM prevent_concerns WHERE concern_id = ?",
-            (concern_id,),
-        )
+        conn.execute(
+            "UPDATE prevent_concerns SET status = 'Closed', "
+            "closed_date = COALESCE(closed_date, ?), "
+            "outcome = COALESCE(outcome, ?), archived_reason = ?, "
+            "archived_by = ?, archived_at = datetime('now'), "
+            "updated_at = datetime('now') WHERE concern_id = ?",
+            (max(today, existing.report_date),
+             f"Closed — retained: {reason}", reason, who, concern_id))
         conn.commit()
-        if cur.rowcount:
-            logger.info("Deleted Prevent concern #%d", concern_id)
-            return True
+    logger.info("Archived Prevent concern #%d (%s)", concern_id, reason)
+    out = get_concern(concern_id)
+    assert out is not None
+    return out
+
+
+def delete_concern(concern_id: int, *, reason: str | None = None) -> bool:
+    """Retained for old callers: archives, never deletes."""
+    if _get_concern(concern_id) is None:
         return False
+    archive_concern(concern_id, reason=reason
+                    or "Closed from the delete action — record retained")
+    return True
 
 
 # ── Referrals ──────────────────────────────────────────────────────
@@ -740,18 +859,36 @@ def update_referral(referral_id: int, data: dict[str, Any]) -> Referral:
     return out
 
 
-def delete_referral(referral_id: int) -> bool:
+def archive_referral(referral_id: int, *, reason: str,
+                     archived_by: str | None = None) -> Referral:
+    """Close a Channel referral as retained (never deleted)."""
     init_db()
+    if get_referral(referral_id) is None:
+        raise ValidationError(f"No referral with id {referral_id}")
+    reason = (reason or "").strip()
+    if not reason:
+        raise ValidationError("A reason is required to close a referral")
+    who = (archived_by or "").strip() or _actor()
     with _connect() as conn:
-        cur = conn.execute(
-            "DELETE FROM prevent_referrals WHERE referral_id = ?",
-            (referral_id,),
-        )
+        conn.execute(
+            "UPDATE prevent_referrals SET status = 'Closed', "
+            "archived_reason = ?, archived_by = ?, "
+            "archived_at = datetime('now'), updated_at = datetime('now') "
+            "WHERE referral_id = ?", (reason, who, referral_id))
         conn.commit()
-        if cur.rowcount:
-            logger.info("Deleted Prevent referral #%d", referral_id)
-            return True
+    logger.info("Archived Prevent referral #%d (%s)", referral_id, reason)
+    out = get_referral(referral_id)
+    assert out is not None
+    return out
+
+
+def delete_referral(referral_id: int, *, reason: str | None = None) -> bool:
+    """Retained for old callers: archives, never deletes."""
+    if _get_referral(referral_id) is None:
         return False
+    archive_referral(referral_id, reason=reason
+                     or "Closed from the delete action — record retained")
+    return True
 
 
 # ── Training ──────────────────────────────────────────────────────
@@ -820,10 +957,16 @@ def list_training(
     training_type: str | None = None,
     expired_only: bool = False,
     expiring_within_days: int | None = None,
+    include_archived: bool = False,
+    archived_only: bool = False,
 ) -> list[Training]:
     init_db()
     clauses: list[str] = []
     args: list[Any] = []
+    if archived_only:
+        clauses.append("archived_at IS NOT NULL")
+    elif not include_archived:
+        clauses.append("archived_at IS NULL")
     if staff_id:
         clauses.append("staff_id = ?")
         args.append(staff_id.strip())
@@ -902,18 +1045,50 @@ def update_training(training_id: int, data: dict[str, Any]) -> Training:
     return out
 
 
-def delete_training(training_id: int) -> bool:
+def archive_training(training_id: int, *, reason: str,
+                     archived_by: str | None = None) -> Training:
+    """Take a training record off the register, keeping it as evidence."""
+    init_db()
+    existing = get_training(training_id)
+    if existing is None:
+        raise ValidationError(f"No training record with id {training_id}")
+    reason = (reason or "").strip()
+    if not reason:
+        raise ValidationError("A reason is required to archive training")
+    who = (archived_by or "").strip() or _actor()
+    with _connect() as conn:
+        conn.execute(
+            "UPDATE prevent_training SET archived_reason = ?, "
+            "archived_by = ?, archived_at = datetime('now'), "
+            "updated_at = datetime('now') WHERE training_id = ?",
+            (reason, who, training_id))
+        conn.commit()
+    logger.info("Archived Prevent training #%d (%s)", training_id, reason)
+    out = get_training(training_id)
+    assert out is not None
+    return out
+
+
+def restore_training(training_id: int) -> bool:
     init_db()
     with _connect() as conn:
         cur = conn.execute(
-            "DELETE FROM prevent_training WHERE training_id = ?",
-            (training_id,),
-        )
+            "UPDATE prevent_training SET archived_reason = NULL, "
+            "archived_by = NULL, archived_at = NULL, "
+            "updated_at = datetime('now') "
+            "WHERE training_id = ? AND archived_at IS NOT NULL",
+            (training_id,))
         conn.commit()
-        if cur.rowcount:
-            logger.info("Deleted Prevent training #%d", training_id)
-            return True
+    return cur.rowcount > 0
+
+
+def delete_training(training_id: int, *, reason: str | None = None) -> bool:
+    """Retained for old callers: archives, never deletes."""
+    if get_training(training_id) is None:
         return False
+    archive_training(training_id, reason=reason
+                     or "Removed from the delete action — record retained")
+    return True
 
 
 # ── Summaries ─────────────────────────────────────────────────────
@@ -1010,3 +1185,81 @@ def summary(*, expiring_within_days: int = 60) -> Summary:
         staff_with_training=staff_with_training,
         high_risk_open=high_risk_open,
     )
+
+
+# ── Access control (concerns and referrals) ───────────────────────
+
+AREA = "safeguarding"
+AccessDenied = access.AccessDenied
+
+# Set while a guarded call runs, so nested calls are not re-checked or
+# logged twice.
+_AUTHORISED: contextvars.ContextVar[bool] = contextvars.ContextVar(
+    "prevent_authorised", default=False)
+
+
+def _actor() -> str:
+    p = access.current()
+    return p.staff_name or p.username or "System"
+
+
+def _guard(fn, action: str):
+    @functools.wraps(fn)
+    def wrapper(*args, principal: access.Principal | None = None, **kwargs):
+        if _AUTHORISED.get():
+            return fn(*args, **kwargs)
+        p = principal if principal is not None else access.current()
+        if not p.can(access.SAFEGUARDING):
+            access.log_sensitive_access(p, AREA, f"prevent-{action}",
+                                        allowed=False)
+            raise access.AccessDenied(
+                f"{p.username or 'This account'} is not allowed to read or "
+                "change Prevent records. Use 'Report a concern' instead.")
+        access.log_sensitive_access(p, AREA, f"prevent-{action}")
+        token = _AUTHORISED.set(True)
+        try:
+            return fn(*args, **kwargs)
+        finally:
+            _AUTHORISED.reset(token)
+    wrapper.__wrapped_unguarded__ = fn  # type: ignore[attr-defined]
+    return wrapper
+
+
+# Unguarded originals for internal and system callers (create_concern,
+# the safeguarding read-through after its own DSL check).
+_get_concern = get_concern
+_get_referral = get_referral
+_list_concerns = list_concerns
+
+get_concern = _guard(get_concern, "view")
+list_concerns = _guard(list_concerns, "list")
+list_concerns_with_detail = _guard(list_concerns_with_detail, "list")
+update_concern = _guard(update_concern, "update")
+close_concern = _guard(close_concern, "close")
+archive_concern = _guard(archive_concern, "archive")
+delete_concern = _guard(delete_concern, "archive")
+create_referral = _guard(create_referral, "refer")
+get_referral = _guard(get_referral, "view-referral")
+list_referrals = _guard(list_referrals, "list-referrals")
+list_referrals_with_detail = _guard(list_referrals_with_detail,
+                                    "list-referrals")
+update_referral = _guard(update_referral, "update-referral")
+archive_referral = _guard(archive_referral, "archive-referral")
+delete_referral = _guard(delete_referral, "archive-referral")
+
+
+def linked_safeguarding_concern_ids(prevent_concern_id: int, *,
+                                    principal: access.Principal | None = None
+                                    ) -> list[int]:
+    """Safeguarding concerns this Prevent concern is linked to."""
+    def _ids() -> list[int]:
+        init_db()
+        with _connect() as conn:
+            try:
+                return [int(r[0]) for r in conn.execute(
+                    "SELECT concern_id FROM safeguarding_prevent_links "
+                    "WHERE prevent_concern_id = ? ORDER BY link_id",
+                    (prevent_concern_id,))]
+            except sqlite3.OperationalError:
+                return []
+    return _guard(_ids, "list-links")(principal=principal)

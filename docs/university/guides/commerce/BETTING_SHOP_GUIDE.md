@@ -295,5 +295,5 @@ Administrators can:
 ---
 
 **Last Updated**: February 2026
-**Module**: `university_system/modules/domain/betting/`
+**Module**: `src/education_system/systems/university/plugins/campus_commerce/domain/betting/`
 **Support**: betting@university.edu | (555) 123-BETS

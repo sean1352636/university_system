@@ -25,14 +25,6 @@ _SYSTEM = "secondary"
 _CATEGORY = "Finance"
 
 
-@finance_menu_bp.route("/school-fees", methods=["GET"])
-@token_required
-@staff_required
-def finance_school_fees():
-    """School Fees"""
-    return feature_pending("School Fees", _SYSTEM, category=_CATEGORY)
-
-
 @finance_menu_bp.route("/trips-payments", methods=["GET"])
 @token_required
 @staff_required
@@ -41,12 +33,12 @@ def finance_trips_payments():
     return feature_pending("Trips & Payments", _SYSTEM, category=_CATEGORY)
 
 
-@finance_menu_bp.route("/open-receipts", methods=["GET"])
+@finance_menu_bp.route("/dinner-money", methods=["GET"])
 @token_required
 @staff_required
-def finance_open_receipts():
-    """open_receipts"""
-    return feature_pending("open_receipts", _SYSTEM, category=_CATEGORY)
+def finance_dinner_money():
+    """Dinner Money"""
+    return feature_pending("Dinner Money", _SYSTEM, category=_CATEGORY)
 
 
 @finance_menu_bp.route("/expense-claims", methods=["GET"])
@@ -57,18 +49,10 @@ def finance_expense_claims():
     return feature_pending("Expense Claims", _SYSTEM, category=_CATEGORY)
 
 
-@finance_menu_bp.route("/open-funding", methods=["GET"])
+@finance_menu_bp.route("/budgets", methods=["GET"])
 @token_required
 @staff_required
-def finance_open_funding():
-    """open_funding"""
-    return feature_pending("open_funding", _SYSTEM, category=_CATEGORY)
-
-
-@finance_menu_bp.route("/school-census", methods=["GET"])
-@token_required
-@staff_required
-def finance_school_census():
-    """School Census"""
-    return feature_pending("School Census", _SYSTEM, category=_CATEGORY)
+def finance_budgets():
+    """Budgets"""
+    return feature_pending("Budgets", _SYSTEM, category=_CATEGORY)
 

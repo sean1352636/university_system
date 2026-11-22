@@ -1,0 +1,27 @@
+{
+  "name": "dinner_money_statement",
+  "description": "A school meal account statement e-mailed to a family.",
+  "subject": "School meals statement - {pupil_name} ({period})",
+  "body": [
+    "Dear {recipient_name},",
+    "",
+    "Here is {pupil_name}'s school meals statement for {period}.",
+    "",
+    "{statement}",
+    "",
+    "Yours sincerely,",
+    "{sender_name}",
+    "{school_name}"
+  ],
+  "placeholders": {
+    "recipient_name": "The contact's name",
+    "pupil_name": "The pupil's first name",
+    "period": "The statement's dates",
+    "statement": "Opening balance, each line with its running balance, closing balance",
+    "sender_name": "The member of staff sending it",
+    "school_name": "The school's name"
+  },
+  "defaults": {
+    "school_name": "Secondary School"
+  }
+}

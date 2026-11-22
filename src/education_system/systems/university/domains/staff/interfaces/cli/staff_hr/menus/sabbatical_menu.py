@@ -6,6 +6,7 @@ Wired to SabbaticalManager (the same manager the sabbatical GUI uses).
 
 from datetime import datetime
 
+from education_system.systems.university.domains.staff.interfaces.cli.staff_hr.menus import _access as _hr
 from education_system.systems.university.domains.staff.domain.staff_hr.services.managers.sabbatical_manager import (
     SabbaticalManager,
 )
@@ -208,7 +209,7 @@ def _submit_progress_report(user_id: str) -> None:
 
 def _pending_approvals() -> None:
     """List pending sabbatical approvals."""
-    approvals = SabbaticalManager.get_pending_approvals()
+    approvals = _hr.approvable(SabbaticalManager.get_pending_approvals())
     print("\n" + "-" * 60)
     print("PENDING SABBATICAL APPROVALS")
     print("-" * 60)
@@ -227,7 +228,7 @@ def _pending_approvals() -> None:
 
 def _decide_application(approver_id: str) -> None:
     """Approve or reject a pending sabbatical application."""
-    approvals = SabbaticalManager.get_pending_approvals()
+    approvals = _hr.approvable(SabbaticalManager.get_pending_approvals())
     if not approvals:
         print("\nNo pending approvals.")
         input("Press Enter to continue...")
@@ -244,7 +245,7 @@ def _decide_application(approver_id: str) -> None:
         action = input("Approve or Reject? (a/r): ").strip().lower()
         if action == 'a':
             comments = input("Approval comments (optional): ").strip()
-            SabbaticalManager.approve_application(approval['approval_id'], approver_id, comments)
+            SabbaticalManager.approve_application(approval['approval_id'], approver_id, comments, actor=_hr.actor())
             print("\nApplication approved at this level.")
         elif action == 'r':
             comments = input("Rejection reason: ").strip()
@@ -252,7 +253,7 @@ def _decide_application(approver_id: str) -> None:
                 print("\nRejection reason is required.")
                 input("Press Enter to continue...")
                 return
-            SabbaticalManager.reject_application(approval['approval_id'], approver_id, comments)
+            SabbaticalManager.reject_application(approval['approval_id'], approver_id, comments, actor=_hr.actor())
             print("\nApplication rejected.")
         else:
             print("\nNo action taken.")

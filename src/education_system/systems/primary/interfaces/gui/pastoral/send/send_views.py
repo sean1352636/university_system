@@ -6,7 +6,10 @@ import functools
 import logging
 import tkinter as tk
 from tkinter import messagebox, simpledialog, ttk
+from types import SimpleNamespace
 from typing import Any, Callable
+
+from education_system.systems.primary.interfaces.gui import kit
 
 from education_system.systems.primary.domain.pastoral.send import (
     send as data,
@@ -19,6 +22,29 @@ from education_system.systems.primary.domain.learners.pupils.pupils import (
 )
 
 logger = logging.getLogger(__name__)
+
+
+def _slash_years() -> list[str]:
+    """Academic years in the "2025/26" form this domain validates."""
+    return [y.replace("-", "/") for y in kit.academic_years()]
+
+
+def _academic_year_field(master, var: tk.StringVar) -> kit.ChoiceField:
+    """An academic-year drop-down holding "YYYY/YY" (editable for an older
+    year); a new record starts on the current year."""
+    if not var.get():
+        current = kit.academic_years(back=0, ahead=0)
+        if current:
+            var.set(current[0].replace("-", "/"))
+    return kit.ChoiceField(master, var, choices=_slash_years(), editable=True, width=10)
+
+
+def _ctx(host, parent):
+    """What the helpers below need from *host*, with dialogs parented to
+    the window the page is drawn in (the main window or a pop-out)."""
+    status = getattr(host, "status_var", None)
+    return SimpleNamespace(root=parent.winfo_toplevel(),
+                           status_var=status if status is not None else tk.StringVar())
 
 
 def _safe_view(func: Callable[..., None]) -> Callable[..., None]:
@@ -52,7 +78,7 @@ def _record_dialog(host, title: str,
     dlg = tk.Toplevel(host.root)
     dlg.title(title)
     dlg.transient(host.root)
-    dlg.geometry("560x680")
+    dlg.geometry("620x680")
     dlg.update_idletasks()
     try:
         dlg.wait_visibility()
@@ -61,8 +87,7 @@ def _record_dialog(host, title: str,
         logger.debug("grab_set skipped — dialog not viewable", exc_info=True)
 
     initial = initial or {}
-    frm = ttk.Frame(dlg, padding=12)
-    frm.pack(fill="both", expand=True)
+    frm, footer = kit.scrolled_form(dlg)
 
     pupil_var   = tk.StringVar(value=str(initial.get("pupil_id") or ""))
     ay_var      = tk.StringVar(value=str(initial.get("academic_year")
@@ -90,10 +115,8 @@ def _record_dialog(host, title: str,
                                             or ""))
 
     rows: list[tuple[str, tk.Widget]] = [
-        ("Pupil ID:",    ttk.Entry(frm, textvariable=pupil_var,
-                                      width=14)),
-        ("Academic year:", ttk.Entry(frm, textvariable=ay_var,
-                                       width=10)),
+        ("Pupil:",       kit.PupilPicker(frm, pupil_var)),
+        ("Academic year:", _academic_year_field(frm, ay_var)),
         ("Provision stage:", ttk.Combobox(frm, textvariable=stage_var,
                                             values=list(PROVISION_STAGES),
                                             state="readonly", width=36)),
@@ -107,25 +130,21 @@ def _record_dialog(host, title: str,
         ("Status:",      ttk.Combobox(frm, textvariable=status_var,
                                         values=list(SEND_STATUSES),
                                         state="readonly", width=14)),
-        ("SENCo:",       ttk.Entry(frm, textvariable=senco_var,
-                                      width=24)),
-        ("Keyworker:",   ttk.Entry(frm, textvariable=keyworker_var,
-                                      width=24)),
+        ("SENCo:",       kit.StaffPicker(frm, senco_var, by="name")),
+        ("Keyworker:",   kit.StaffPicker(frm, keyworker_var, by="name")),
         ("Parent contact:", ttk.Entry(frm, textvariable=parent_var,
                                         width=24)),
         ("Parent email:", ttk.Entry(frm, textvariable=email_var,
                                        width=30)),
         ("EHCP reference:", ttk.Entry(frm, textvariable=ehcp_var,
                                          width=18)),
-        ("Start date:",  ttk.Entry(frm, textvariable=start_var,
-                                      width=14)),
-        ("Next review:", ttk.Entry(frm, textvariable=nextrev_var,
-                                      width=14)),
+        ("Start date:",  kit.DateField(frm, start_var)),
+        ("Next review:", kit.DateField(frm, nextrev_var)),
     ]
     for i, (label, widget) in enumerate(rows):
         ttk.Label(frm, text=label).grid(row=i, column=0, sticky="w",
                                          pady=2)
-        widget.grid(row=i, column=1, sticky="ew", pady=2)
+        widget.grid(row=i, column=1, sticky="w", pady=2)
     frm.columnconfigure(1, weight=1)
 
     text_fields = [("Provision summary:", "provision_summary", 3),
@@ -164,12 +183,9 @@ def _record_dialog(host, title: str,
             result[k] = w.get("1.0", "end").strip()
         dlg.destroy()
 
-    btns = ttk.Frame(frm)
-    btns.grid(row=len(rows) + len(text_fields), column=0,
-              columnspan=2, sticky="e", pady=(12, 0))
-    ttk.Button(btns, text="Cancel",
+    ttk.Button(footer, text="Cancel",
                command=dlg.destroy).pack(side="right", padx=4)
-    ttk.Button(btns, text="Save", command=_save).pack(side="right")
+    ttk.Button(footer, text="Save", command=_save).pack(side="right")
     dlg.wait_window()
     return result
 
@@ -180,7 +196,7 @@ def _review_dialog(host, send_id: int,
     dlg = tk.Toplevel(host.root)
     dlg.title(f"Review — SEND record #{send_id}")
     dlg.transient(host.root)
-    dlg.geometry("520x520")
+    dlg.geometry("560x580")
     dlg.update_idletasks()
     try:
         dlg.wait_visibility()
@@ -189,8 +205,7 @@ def _review_dialog(host, send_id: int,
         pass
 
     initial = initial or {}
-    frm = ttk.Frame(dlg, padding=12)
-    frm.pack(fill="both", expand=True)
+    frm, footer = kit.scrolled_form(dlg)
 
     date_var = tk.StringVar(value=str(initial.get("review_date") or ""))
     reviewer_var = tk.StringVar(value=str(initial.get("reviewer")
@@ -201,20 +216,19 @@ def _review_dialog(host, send_id: int,
                                          or ""))
 
     rows: list[tuple[str, tk.Widget]] = [
-        ("Date:",    ttk.Entry(frm, textvariable=date_var, width=14)),
-        ("Reviewer:", ttk.Entry(frm, textvariable=reviewer_var,
-                                  width=24)),
+        ("Date:",    kit.DateField(frm, date_var)),
+        ("Reviewer:", kit.StaffPicker(frm, reviewer_var, by="name")),
         ("Outcome:", ttk.Combobox(frm, textvariable=outcome_var,
                                     values=list(REVIEW_OUTCOMES),
                                     state="readonly", width=14)),
-        ("Next review:", ttk.Entry(frm, textvariable=next_var,
-                                     width=14)),
+        ("Next review:", kit.DateField(frm, next_var)),
     ]
     for label, widget in rows:
         row = ttk.Frame(frm)
         row.pack(fill="x", pady=2)
         ttk.Label(row, text=label, width=14).pack(side="left")
         widget.pack(in_=row, side="left", padx=4)
+        widget.lift(row)
 
     text_fields = [("Progress:", "progress", 4),
                    ("Adjustments:", "adjustments", 3),
@@ -242,11 +256,9 @@ def _review_dialog(host, send_id: int,
             result[k] = w.get("1.0", "end").strip()
         dlg.destroy()
 
-    btns = ttk.Frame(frm)
-    btns.pack(fill="x", pady=(10, 0))
-    ttk.Button(btns, text="Cancel",
+    ttk.Button(footer, text="Cancel",
                command=dlg.destroy).pack(side="right", padx=4)
-    ttk.Button(btns, text="Save", command=_save).pack(side="right")
+    ttk.Button(footer, text="Save", command=_save).pack(side="right")
     dlg.wait_window()
     return result
 
@@ -254,10 +266,12 @@ def _review_dialog(host, send_id: int,
 @_safe_view
 def open_send(host) -> None:
     logger.debug("GUI: open_send")
-    host._clear_content()
-    root = host.content_frame
-    ttk.Label(root, text="SEND",
-              font=("", 16, "bold")).pack(anchor="w", pady=(0, 8))
+    kit.show_page(host, "SEND", lambda parent: _draw_send(parent, host))
+
+
+def _draw_send(root, host) -> None:
+    host = _ctx(host, root)
+    kit.page_heading(root, "SEND")
 
     summary_var = tk.StringVar()
     ttk.Label(root, textvariable=summary_var, foreground="#666").pack(

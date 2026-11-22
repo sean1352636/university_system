@@ -5,7 +5,7 @@ from __future__ import annotations
 import logging
 import tkinter as tk
 from datetime import date as _date
-from tkinter import messagebox, ttk
+from tkinter import ttk
 from typing import Any, Callable
 
 from education_system.systems.primary.domain.governance.gdpr import gdpr as data
@@ -28,6 +28,8 @@ from education_system.systems.primary.domain.governance.gdpr.gdpr import (
     SUBJECT_TYPES,
     ValidationError,
 )
+from education_system.platform.delivery.gui.parented_dialogs import messagebox
+from education_system.systems.primary.interfaces.gui import kit
 
 logger = logging.getLogger(__name__)
 
@@ -37,13 +39,24 @@ WIN_MINSIZE = (1200, 800)
 
 def open_gdpr_window(parent=None) -> None:
     data.init_db()
-    master = getattr(parent, "root", parent)
-    win = tk.Toplevel(master) if master is not None else tk.Tk()
-    win.title(f"GDPR — {branding.SYSTEM_NAME}")
-    win.geometry(WIN_GEOMETRY)
-    win.minsize(*WIN_MINSIZE)
-    nb = ttk.Notebook(win)
-    nb.pack(fill="both", expand=True, padx=10, pady=10)
+    if parent is None:
+        # Stand-alone (no main window): a window of its own, as before.
+        win = tk.Tk()
+        win.title(f"GDPR — {branding.SYSTEM_NAME}")
+        win.geometry(WIN_GEOMETRY)
+        win.minsize(*WIN_MINSIZE)
+        frame = ttk.Frame(win, padding=10)
+        frame.pack(fill="both", expand=True)
+        _draw_gdpr(frame)
+        return
+    kit.show_page(parent, "GDPR", _draw_gdpr)
+
+
+def _draw_gdpr(parent) -> None:
+    kit.page_heading(parent, "GDPR",
+                     "Rights requests, the processing register, breaches and consents.")
+    nb = ttk.Notebook(parent)
+    nb.pack(fill="both", expand=True)
     RequestsTab(nb)
     ProcessingTab(nb)
     BreachesTab(nb)
@@ -59,6 +72,75 @@ def _set_text(text: tk.Text, body: str) -> None:
 
 
 # ── Reusable form helpers ─────────────────────────────────────────
+
+def _date_field(master: tk.Misc) -> kit.DateField:
+    """Date drop-downs with ``get()`` / ``set()`` ("" when not set)."""
+    return kit.DateField(master, tk.StringVar())
+
+
+def _staff_name_field(master: tk.Misc) -> kit.StaffPicker:
+    """A staff member picked by name (holds the full name)."""
+    return kit.StaffPicker(master, tk.StringVar(), by="name")
+
+
+def _dialog_body(win: tk.Toplevel) -> tuple[ttk.Frame, ttk.Frame]:
+    """``(fields frame, buttons frame)``: the fields scroll on a small
+    screen while Save / Cancel stay visible."""
+    wrap, footer = kit.scrolled_form(win, padding=10)
+    wrap.columnconfigure(1, weight=1)
+    btns = ttk.Frame(footer)
+    btns.pack(side="right")
+    return wrap, btns
+
+
+class _SubjectLookup(ttk.Frame):
+    """Pick a pupil or a member of staff to fill in the subject name,
+    type and reference (the fields stay editable for anyone else)."""
+
+    def __init__(self, master: tk.Misc, *, name_e: ttk.Entry,
+                 type_cb: ttk.Combobox, ref_e: ttk.Entry) -> None:
+        super().__init__(master)
+        self._name_e, self._type_cb, self._ref_e = name_e, type_cb, ref_e
+        ttk.Label(self, text="Pupil:").pack(side="left")
+        pupil = kit.PupilPicker(self, tk.StringVar(), width=34)
+        pupil.pack(side="left", padx=(2, 10))
+        pupil.bind_change(self._pupil)
+        ttk.Label(self, text="Staff:").pack(side="left")
+        staff = kit.StaffPicker(self, tk.StringVar(), width=30)
+        staff.pack(side="left", padx=(2, 0))
+        staff.bind_change(self._staff)
+
+    def _fill(self, name: str, kind: str, ref: str) -> None:
+        self._name_e.delete(0, "end")
+        self._name_e.insert(0, name)
+        self._type_cb.set(kind)
+        self._ref_e.delete(0, "end")
+        self._ref_e.insert(0, ref)
+
+    def _pupil(self, pupil_id: str) -> None:
+        if not pupil_id:
+            return
+        try:
+            from education_system.systems.primary.domain.learners.pupils import pupils
+            p = pupils.get_pupil(pupil_id)
+        except Exception:  # noqa: BLE001 - the fields can still be typed
+            logger.exception("pupil lookup failed")
+            return
+        if p is not None:
+            self._fill(p.full_name, "Student", p.pupil_id)
+
+    def _staff(self, staff_id: str) -> None:
+        if not staff_id:
+            return
+        try:
+            from education_system.systems.primary.domain.staff import staff
+            st = staff.get_staff(staff_id)
+        except Exception:  # noqa: BLE001
+            logger.exception("staff lookup failed")
+            return
+        if st is not None:
+            self._fill(st.full_name, "Staff", st.staff_id)
+
 
 @staticmethod
 def _add_field(parent: tk.Misc, row: int, label: str,
@@ -209,7 +291,7 @@ class RequestDialog(tk.Toplevel):
                  *, on_save) -> None:
         super().__init__(master)
         self.title("DSAR / Rights Request")
-        self.geometry("720x720")
+        self.geometry("900x660")
         self.transient(master.winfo_toplevel())
         self.after_idle(self.grab_set)
         self._existing = existing
@@ -217,9 +299,7 @@ class RequestDialog(tk.Toplevel):
         self._build()
 
     def _build(self) -> None:
-        wrap = ttk.Frame(self, padding=10)
-        wrap.pack(fill="both", expand=True)
-        wrap.columnconfigure(1, weight=1)
+        wrap, btns = _dialog_body(self)
 
         self.subj_name_e = ttk.Entry(wrap)
         self.subj_type_cb = ttk.Combobox(
@@ -227,14 +307,14 @@ class RequestDialog(tk.Toplevel):
         self.subj_ref_e = ttk.Entry(wrap)
         self.req_type_cb = ttk.Combobox(
             wrap, values=REQUEST_TYPES, state="readonly")
-        self.received_e = ttk.Entry(wrap)
-        self.due_e = ttk.Entry(wrap)
+        self.received_e = _date_field(wrap)
+        self.due_e = _date_field(wrap)
         self.id_var = tk.BooleanVar()
         id_cb = ttk.Checkbutton(wrap, variable=self.id_var)
         self.status_cb = ttk.Combobox(
             wrap, values=REQUEST_STATUSES, state="readonly")
-        self.resp_date_e = ttk.Entry(wrap)
-        self.handler_e = ttk.Entry(wrap)
+        self.resp_date_e = _date_field(wrap)
+        self.handler_e = _staff_name_field(wrap)
         self.email_e = ttk.Entry(wrap)
         self.phone_e = ttk.Entry(wrap)
         self.desc_t = tk.Text(wrap, height=3, width=40)
@@ -242,7 +322,11 @@ class RequestDialog(tk.Toplevel):
         self.refusal_e = ttk.Entry(wrap)
         self.notes_t = tk.Text(wrap, height=3, width=40)
 
+        lookup = _SubjectLookup(wrap, name_e=self.subj_name_e,
+                                type_cb=self.subj_type_cb,
+                                ref_e=self.subj_ref_e)
         fields = [
+            ("Find subject:",   lookup),
             ("Subject name:",   self.subj_name_e),
             ("Subject type:",   self.subj_type_cb),
             ("Subject ref:",    self.subj_ref_e),
@@ -267,9 +351,6 @@ class RequestDialog(tk.Toplevel):
             w.grid(row=i, column=1, sticky="ew",
                    padx=6, pady=2)
 
-        btns = ttk.Frame(wrap)
-        btns.grid(row=len(fields), column=0, columnspan=2,
-                   sticky="e", pady=10)
         ttk.Button(btns, text="Save",
                     command=self._save).pack(side="left", padx=4)
         ttk.Button(btns, text="Cancel",
@@ -280,7 +361,7 @@ class RequestDialog(tk.Toplevel):
         if self._existing is None:
             self.subj_type_cb.set(DEFAULT_SUBJECT_TYPE)
             self.req_type_cb.set(DEFAULT_REQUEST_TYPE)
-            self.received_e.insert(0, today)
+            self.received_e.set(today)
             self.status_cb.set(DEFAULT_REQUEST_STATUS)
         else:
             e = self._existing
@@ -288,12 +369,12 @@ class RequestDialog(tk.Toplevel):
             self.subj_type_cb.set(e.subject_type)
             self.subj_ref_e.insert(0, e.subject_ref or "")
             self.req_type_cb.set(e.request_type)
-            self.received_e.insert(0, e.received_date)
-            self.due_e.insert(0, e.due_date)
+            self.received_e.set(e.received_date)
+            self.due_e.set(e.due_date)
             self.id_var.set(e.identity_verified)
             self.status_cb.set(e.status)
-            self.resp_date_e.insert(0, e.responded_date or "")
-            self.handler_e.insert(0, e.handler or "")
+            self.resp_date_e.set(e.responded_date or "")
+            self.handler_e.set(e.handler or "")
             self.email_e.insert(0, e.contact_email or "")
             self.phone_e.insert(0, e.contact_phone or "")
             self.desc_t.insert("1.0", e.description or "")
@@ -442,7 +523,7 @@ class ProcessingDialog(tk.Toplevel):
                  on_save) -> None:
         super().__init__(master)
         self.title("Processing Activity")
-        self.geometry("720x740")
+        self.geometry("760x660")
         self.transient(master.winfo_toplevel())
         self.after_idle(self.grab_set)
         self._existing = existing
@@ -450,9 +531,7 @@ class ProcessingDialog(tk.Toplevel):
         self._build()
 
     def _build(self) -> None:
-        wrap = ttk.Frame(self, padding=10)
-        wrap.pack(fill="both", expand=True)
-        wrap.columnconfigure(1, weight=1)
+        wrap, btns = _dialog_body(self)
         self.name_e = ttk.Entry(wrap)
         self.controller_e = ttk.Entry(wrap)
         self.purpose_t = tk.Text(wrap, height=2, width=40)
@@ -469,11 +548,11 @@ class ProcessingDialog(tk.Toplevel):
         dpia_req_cb = ttk.Checkbutton(wrap, variable=self.dpia_req_var)
         dpia_done_cb = ttk.Checkbutton(wrap,
                                           variable=self.dpia_done_var)
-        self.dpia_date_e = ttk.Entry(wrap)
+        self.dpia_date_e = _date_field(wrap)
         self.status_cb = ttk.Combobox(
             wrap, values=PROCESSING_STATUSES, state="readonly")
-        self.last_e = ttk.Entry(wrap)
-        self.next_e = ttk.Entry(wrap)
+        self.last_e = _date_field(wrap)
+        self.next_e = _date_field(wrap)
         self.notes_t = tk.Text(wrap, height=3, width=40)
 
         fields = [
@@ -501,9 +580,6 @@ class ProcessingDialog(tk.Toplevel):
                                               padx=6, pady=2)
             w.grid(row=i, column=1, sticky="ew",
                    padx=6, pady=2)
-        btns = ttk.Frame(wrap)
-        btns.grid(row=len(fields), column=0, columnspan=2,
-                   sticky="e", pady=10)
         ttk.Button(btns, text="Save",
                     command=self._save).pack(side="left", padx=4)
         ttk.Button(btns, text="Cancel",
@@ -526,10 +602,10 @@ class ProcessingDialog(tk.Toplevel):
             self.security_t.insert("1.0", e.security_measures or "")
             self.dpia_req_var.set(e.dpia_required)
             self.dpia_done_var.set(e.dpia_completed)
-            self.dpia_date_e.insert(0, e.dpia_date or "")
+            self.dpia_date_e.set(e.dpia_date or "")
             self.status_cb.set(e.status)
-            self.last_e.insert(0, e.last_reviewed or "")
-            self.next_e.insert(0, e.next_review or "")
+            self.last_e.set(e.last_reviewed or "")
+            self.next_e.set(e.next_review or "")
             self.notes_t.insert("1.0", e.notes or "")
 
     def _save(self) -> None:
@@ -677,7 +753,7 @@ class BreachDialog(tk.Toplevel):
                  *, on_save) -> None:
         super().__init__(master)
         self.title("Personal Data Breach")
-        self.geometry("760x820")
+        self.geometry("780x660")
         self.transient(master.winfo_toplevel())
         self.after_idle(self.grab_set)
         self._existing = existing
@@ -685,31 +761,29 @@ class BreachDialog(tk.Toplevel):
         self._build()
 
     def _build(self) -> None:
-        wrap = ttk.Frame(self, padding=10)
-        wrap.pack(fill="both", expand=True)
-        wrap.columnconfigure(1, weight=1)
+        wrap, btns = _dialog_body(self)
 
         self.title_e = ttk.Entry(wrap)
-        self.disc_e = ttk.Entry(wrap)
-        self.occ_e = ttk.Entry(wrap)
-        self.reporter_e = ttk.Entry(wrap)
+        self.disc_e = _date_field(wrap)
+        self.occ_e = _date_field(wrap)
+        self.reporter_e = _staff_name_field(wrap)
         self.severity_cb = ttk.Combobox(
             wrap, values=BREACH_SEVERITIES, state="readonly")
         self.status_cb = ttk.Combobox(
             wrap, values=BREACH_STATUSES, state="readonly")
-        self.affected_e = ttk.Entry(wrap)
+        self.affected_e = kit.NumberField(wrap, to=999999)
         self.cats_e = ttk.Entry(wrap)
         self.summary_t = tk.Text(wrap, height=3, width=40)
         self.cause_t = tk.Text(wrap, height=3, width=40)
         self.remed_t = tk.Text(wrap, height=3, width=40)
         self.ico_var = tk.BooleanVar()
         ico_cb = ttk.Checkbutton(wrap, variable=self.ico_var)
-        self.ico_date_e = ttk.Entry(wrap)
+        self.ico_date_e = _date_field(wrap)
         self.ico_ref_e = ttk.Entry(wrap)
         self.subj_var = tk.BooleanVar()
         subj_cb = ttk.Checkbutton(wrap, variable=self.subj_var)
-        self.subj_date_e = ttk.Entry(wrap)
-        self.closed_e = ttk.Entry(wrap)
+        self.subj_date_e = _date_field(wrap)
+        self.closed_e = _date_field(wrap)
         self.lessons_t = tk.Text(wrap, height=3, width=40)
         self.notes_t = tk.Text(wrap, height=3, width=40)
 
@@ -740,9 +814,6 @@ class BreachDialog(tk.Toplevel):
                                               padx=6, pady=2)
             w.grid(row=i, column=1, sticky="ew",
                    padx=6, pady=2)
-        btns = ttk.Frame(wrap)
-        btns.grid(row=len(fields), column=0, columnspan=2,
-                   sticky="e", pady=10)
         ttk.Button(btns, text="Save",
                     command=self._save).pack(side="left", padx=4)
         ttk.Button(btns, text="Cancel",
@@ -750,16 +821,16 @@ class BreachDialog(tk.Toplevel):
 
         today = _date.today().isoformat()
         if self._existing is None:
-            self.disc_e.insert(0, today)
+            self.disc_e.set(today)
             self.severity_cb.set(DEFAULT_BREACH_SEVERITY)
             self.status_cb.set(DEFAULT_BREACH_STATUS)
             self.affected_e.insert(0, "0")
         else:
             e = self._existing
             self.title_e.insert(0, e.title)
-            self.disc_e.insert(0, e.discovered_date)
-            self.occ_e.insert(0, e.occurred_date or "")
-            self.reporter_e.insert(0, e.reported_by or "")
+            self.disc_e.set(e.discovered_date)
+            self.occ_e.set(e.occurred_date or "")
+            self.reporter_e.set(e.reported_by or "")
             self.severity_cb.set(e.severity)
             self.status_cb.set(e.status)
             self.affected_e.insert(0, str(e.affected_count))
@@ -768,12 +839,11 @@ class BreachDialog(tk.Toplevel):
             self.cause_t.insert("1.0", e.root_cause or "")
             self.remed_t.insert("1.0", e.remediation or "")
             self.ico_var.set(e.ico_notifiable)
-            self.ico_date_e.insert(0, e.ico_notified_date or "")
+            self.ico_date_e.set(e.ico_notified_date or "")
             self.ico_ref_e.insert(0, e.ico_reference or "")
             self.subj_var.set(e.subjects_notified)
-            self.subj_date_e.insert(0,
-                                       e.subjects_notified_date or "")
-            self.closed_e.insert(0, e.closed_date or "")
+            self.subj_date_e.set(e.subjects_notified_date or "")
+            self.closed_e.set(e.closed_date or "")
             self.lessons_t.insert("1.0", e.lessons_learned or "")
             self.notes_t.insert("1.0", e.notes or "")
 
@@ -951,7 +1021,7 @@ class ConsentDialog(tk.Toplevel):
                  *, on_save) -> None:
         super().__init__(master)
         self.title("Consent")
-        self.geometry("640x520")
+        self.geometry("900x600")
         self.transient(master.winfo_toplevel())
         self.after_idle(self.grab_set)
         self._existing = existing
@@ -959,9 +1029,7 @@ class ConsentDialog(tk.Toplevel):
         self._build()
 
     def _build(self) -> None:
-        wrap = ttk.Frame(self, padding=10)
-        wrap.pack(fill="both", expand=True)
-        wrap.columnconfigure(1, weight=1)
+        wrap, btns = _dialog_body(self)
         self.subj_name_e = ttk.Entry(wrap)
         self.subj_type_cb = ttk.Combobox(
             wrap, values=SUBJECT_TYPES, state="readonly")
@@ -970,14 +1038,18 @@ class ConsentDialog(tk.Toplevel):
             wrap, values=CONSENT_PURPOSES, state="readonly")
         self.granted_var = tk.BooleanVar(value=True)
         granted_cb = ttk.Checkbutton(wrap, variable=self.granted_var)
-        self.granted_e = ttk.Entry(wrap)
-        self.expires_e = ttk.Entry(wrap)
-        self.withdrawn_e = ttk.Entry(wrap)
+        self.granted_e = _date_field(wrap)
+        self.expires_e = _date_field(wrap)
+        self.withdrawn_e = _date_field(wrap)
         self.source_e = ttk.Entry(wrap)
         self.detail_t = tk.Text(wrap, height=3, width=40)
         self.notes_t = tk.Text(wrap, height=3, width=40)
 
+        lookup = _SubjectLookup(wrap, name_e=self.subj_name_e,
+                                type_cb=self.subj_type_cb,
+                                ref_e=self.subj_ref_e)
         fields = [
+            ("Find subject:",  lookup),
             ("Subject name:",  self.subj_name_e),
             ("Subject type:",  self.subj_type_cb),
             ("Subject ref:",   self.subj_ref_e),
@@ -996,9 +1068,6 @@ class ConsentDialog(tk.Toplevel):
                                               padx=6, pady=2)
             w.grid(row=i, column=1, sticky="ew",
                    padx=6, pady=2)
-        btns = ttk.Frame(wrap)
-        btns.grid(row=len(fields), column=0, columnspan=2,
-                   sticky="e", pady=10)
         ttk.Button(btns, text="Save",
                     command=self._save).pack(side="left", padx=4)
         ttk.Button(btns, text="Cancel",
@@ -1008,7 +1077,7 @@ class ConsentDialog(tk.Toplevel):
         if self._existing is None:
             self.subj_type_cb.set(DEFAULT_SUBJECT_TYPE)
             self.purpose_cb.set(DEFAULT_CONSENT_PURPOSE)
-            self.granted_e.insert(0, today)
+            self.granted_e.set(today)
         else:
             e = self._existing
             self.subj_name_e.insert(0, e.subject_name)
@@ -1016,9 +1085,9 @@ class ConsentDialog(tk.Toplevel):
             self.subj_ref_e.insert(0, e.subject_ref or "")
             self.purpose_cb.set(e.purpose)
             self.granted_var.set(e.granted)
-            self.granted_e.insert(0, e.granted_date)
-            self.expires_e.insert(0, e.expires_date or "")
-            self.withdrawn_e.insert(0, e.withdrawn_date or "")
+            self.granted_e.set(e.granted_date)
+            self.expires_e.set(e.expires_date or "")
+            self.withdrawn_e.set(e.withdrawn_date or "")
             self.source_e.insert(0, e.source or "")
             self.detail_t.insert("1.0", e.detail or "")
             self.notes_t.insert("1.0", e.notes or "")

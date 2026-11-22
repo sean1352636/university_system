@@ -11,7 +11,27 @@
       "classification": "core"
     },
     {
-      "glob": "domains/academics/**",
+      "glob": "domains/curriculum/**",
+      "classification": "core"
+    },
+    {
+      "glob": "domains/teaching/**",
+      "classification": "core"
+    },
+    {
+      "glob": "domains/integrity/**",
+      "classification": "core"
+    },
+    {
+      "glob": "domains/research/**",
+      "classification": "core"
+    },
+    {
+      "glob": "domains/library/**",
+      "classification": "core"
+    },
+    {
+      "glob": "domains/quality/**",
       "classification": "core"
     },
     {
@@ -27,7 +47,7 @@
       "classification": "core"
     },
     {
-      "glob": "domains/pastoral/domain/health/**",
+      "glob": "domains/health/domain/health/**",
       "classification": "core"
     },
     {
@@ -39,11 +59,11 @@
       "classification": "optional"
     },
     {
-      "glob": "infrastructure/ai/**",
+      "glob": "shared/ai/**",
       "classification": "optional"
     },
     {
-      "glob": "infrastructure/analytics/**",
+      "glob": "shared/analytics/**",
       "classification": "optional"
     },
     {
@@ -61,6 +81,58 @@
     {
       "glob": "plugins/community_services/**",
       "classification": "optional"
+    },
+    {
+      "glob": "domains/progression/domain/degree_audit/**",
+      "classification": "core"
+    },
+    {
+      "glob": "domains/progression/interfaces/cli/graduation/**",
+      "classification": "core"
+    },
+    {
+      "glob": "domains/progression/interfaces/cli/graduation_ceremony_cli.py",
+      "classification": "core"
+    },
+    {
+      "glob": "domains/progression/interfaces/gui/blockchain_credentials_gui.py",
+      "classification": "core"
+    },
+    {
+      "glob": "domains/student_life/domain/ai_study/**",
+      "classification": "core"
+    },
+    {
+      "glob": "domains/student_life/domain/study_hub/**",
+      "classification": "core"
+    },
+    {
+      "glob": "domains/student_life/interfaces/cli/ai_study/**",
+      "classification": "core"
+    },
+    {
+      "glob": "domains/student_life/interfaces/cli/study_hub/**",
+      "classification": "core"
+    },
+    {
+      "glob": "domains/student_life/interfaces/gui/ai_study/**",
+      "classification": "core"
+    },
+    {
+      "glob": "domains/student_life/interfaces/gui/study_hub/**",
+      "classification": "core"
+    },
+    {
+      "glob": "infrastructure/ui/field_pickers.py",
+      "classification": "core"
+    },
+    {
+      "glob": "infrastructure/ui/module_dialog.py",
+      "classification": "core"
+    },
+    {
+      "glob": "infrastructure/ui/report_widgets.py",
+      "classification": "core"
     },
     {
       "glob": "**",

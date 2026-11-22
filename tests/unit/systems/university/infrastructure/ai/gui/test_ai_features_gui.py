@@ -56,7 +56,7 @@ def root_window():
 @pytest.fixture
 def ai_gui(root_window, mock_auth, setup_db):
     """Create AIFeaturesGUI instance for testing"""
-    from education_system.systems.university.shell.gui.ai_features.ai_features_gui import AIFeaturesGUI
+    from education_system.systems.university.shell.gui.ai.ai_features_gui import AIFeaturesGUI
 
     with patch('tkinter.messagebox.showerror'), \
          patch('tkinter.messagebox.showinfo'), \
@@ -79,7 +79,7 @@ class TestAIFeaturesGUIInitialization:
 
     def test_gui_creates_window(self, root_window, mock_auth, setup_db):
         """Test that GUI creates a Toplevel window"""
-        from education_system.systems.university.shell.gui.ai_features.ai_features_gui import AIFeaturesGUI
+        from education_system.systems.university.shell.gui.ai.ai_features_gui import AIFeaturesGUI
 
         with patch('tkinter.messagebox.showerror'):
             gui = AIFeaturesGUI(root_window, mock_auth)
@@ -88,7 +88,7 @@ class TestAIFeaturesGUIInitialization:
 
     def test_gui_requires_authentication(self, root_window):
         """Test that GUI requires authenticated user"""
-        from education_system.systems.university.shell.gui.ai_features.ai_features_gui import AIFeaturesGUI
+        from education_system.systems.university.shell.gui.ai.ai_features_gui import AIFeaturesGUI
 
         auth_no_user = Mock()
         auth_no_user.current_user = None
@@ -120,7 +120,7 @@ class TestChatbotTab:
         assert hasattr(ai_gui, 'notebook')
 
     @patch('education_system.systems.university.shell.gui.ai.chatbot_gui.ChatbotGUI', create=True)
-    @patch('education_system.systems.university.infrastructure.ai.university_chatbot.UniversityChatbot', create=True)
+    @patch('education_system.systems.university.shared.ai.chatbot.UniversityChatbot', create=True)
     def test_launch_full_chatbot_gui(self, mock_chatbot_cls, mock_gui_cls, ai_gui):
         """Test launching full chatbot GUI"""
         chatbot_instance = Mock()
@@ -132,7 +132,7 @@ class TestChatbotTab:
         mock_gui_cls.assert_called_once()
 
     @patch('tkinter.messagebox.showerror')
-    @patch('education_system.systems.university.infrastructure.ai.university_chatbot.UniversityChatbot', create=True)
+    @patch('education_system.systems.university.shared.ai.chatbot.UniversityChatbot', create=True)
     def test_launch_chatbot_handles_error(self, mock_chatbot_cls, mock_error, ai_gui):
         """Test error handling when launching chatbot fails"""
         mock_chatbot_cls.side_effect = Exception("Chatbot init failed")
@@ -298,9 +298,9 @@ class TestPlagiarismTab:
 
         assert hasattr(ai_gui, 'plagiarism_tree')
 
-    @patch('education_system.systems.university.domains.academics.interfaces.gui.plagiarism_main_gui.PlagiarismCheckerGUI', create=True)
+    @patch('education_system.systems.university.domains.integrity.interfaces.gui.plagiarism_main_gui.window.open_integrity_window')
     def test_launch_full_plagiarism_gui(self, mock_gui, ai_gui):
-        """Test launching full plagiarism GUI"""
+        """Launching opens Academic Integrity for the signed-in user"""
         ai_gui.launch_full_plagiarism_gui()
         mock_gui.assert_called_once()
 
@@ -308,11 +308,12 @@ class TestPlagiarismTab:
 class TestAIDetectorTab:
     """Test AI detector tab functionality"""
 
-    @patch('education_system.systems.university.domains.academics.interfaces.gui.ai_detector.AIDetectorGUI', create=True)
-    def test_launch_ai_detector_gui(self, mock_gui, ai_gui):
-        """Test launching AI detector GUI"""
+    @patch('education_system.systems.university.infrastructure.ui.windows.open_ai_detector')
+    def test_launch_ai_detector_gui(self, mock_open, ai_gui):
+        """The button opens the AI Content Detector as the signed-in user
+        (the helper refuses anyone who is not staff)."""
         ai_gui.launch_full_ai_detector_gui()
-        mock_gui.assert_called_once()
+        mock_open.assert_called_once_with(ai_gui.root, ai_gui.auth)
 
 
 class TestAnalyticsTab:
@@ -417,7 +418,7 @@ class TestLauncherFunction:
 
     def test_launch_ai_features_gui(self, root_window, mock_auth, setup_db):
         """Test launching GUI via function"""
-        from education_system.systems.university.shell.gui.ai_features.ai_features_gui import (
+        from education_system.systems.university.shell.gui.ai.ai_features_gui import (
             launch_ai_features_gui
         )
 
@@ -427,7 +428,7 @@ class TestLauncherFunction:
 
     def test_launch_handles_error(self, root_window):
         """Test launcher handles errors gracefully"""
-        from education_system.systems.university.shell.gui.ai_features.ai_features_gui import (
+        from education_system.systems.university.shell.gui.ai.ai_features_gui import (
             launch_ai_features_gui
         )
 
@@ -466,7 +467,7 @@ class TestEdgeCases:
 
     def test_double_initialization(self, root_window, mock_auth, setup_db):
         """Test creating multiple GUI instances"""
-        from education_system.systems.university.shell.gui.ai_features.ai_features_gui import AIFeaturesGUI
+        from education_system.systems.university.shell.gui.ai.ai_features_gui import AIFeaturesGUI
 
         with patch('tkinter.messagebox.showerror'):
             gui1 = AIFeaturesGUI(root_window, mock_auth)

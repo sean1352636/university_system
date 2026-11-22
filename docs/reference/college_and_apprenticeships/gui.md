@@ -1,6 +1,6 @@
 # GUI
 
-Apprenticeships only — `fe_college` has no GUI.
+Apprenticeships only. FE College has its own GUI at `systems/fe_college/gui_main.py`.
 
 ```bash
 python -m education_system --apprenticeships --gui
@@ -27,7 +27,7 @@ interfaces/gui/
 ```
 
 A nav entry names its module relative to `windows/`, so a shared screen
-is listed as `"shared.email"` under each role that opens it rather than
+is listed as `"education_system.platform.integrations.email"` under each role that opens it rather than
 re-exported into each role's package.
 
 One window, three regions: a header, a navigation sidebar and a content

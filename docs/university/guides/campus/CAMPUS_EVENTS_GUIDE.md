@@ -346,5 +346,5 @@ The Campus Events Hub is your central platform for discovering, creating, and ma
 ---
 
 **Last Updated**: February 2026
-**Module**: `university_system/modules/domain/campus/services/campus_events_gui.py`
+**Module**: `src/education_system/systems/university/domains/operations/domain/campus/services/campus_events_gui.py`
 **Support**: events@university.edu | (555) 123-EVNT

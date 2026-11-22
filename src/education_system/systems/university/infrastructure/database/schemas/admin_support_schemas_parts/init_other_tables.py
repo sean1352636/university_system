@@ -4,6 +4,11 @@ from .. import admin_support_schemas_shared as _shared
 globals().update({name: value for name, value in _shared.__dict__.items() if not name.startswith("__")})
 
 
+from education_system.systems.university.infrastructure.database.schemas.student_union_elections_schema import (
+    ensure_election_tables,
+)
+
+
 def init_other_tables():
     """Initialize other system database tables"""
     try:
@@ -610,18 +615,9 @@ def init_other_tables():
                         )
         ''')
 
-        # Create ranked_votes table
-        cursor.execute('''
-        CREATE TABLE IF NOT EXISTS ranked_votes (
-                    vote_id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    election_id INTEGER,
-                    voter_id TEXT,
-                    candidate_preferences TEXT,  -- JSON string of ranked preferences
-                    vote_time TEXT,
-                    FOREIGN KEY (election_id) REFERENCES union_elections (election_id),
-                    FOREIGN KEY (voter_id) REFERENCES students (student_id)
-                )
-        ''')
+        # ranked_votes keys to the canonical elections(id); created with its
+        # sibling election tables so a fresh database never points at union_elections.
+        ensure_election_tables(cursor)
 
         # Create recommended_interventions table
         cursor.execute('''

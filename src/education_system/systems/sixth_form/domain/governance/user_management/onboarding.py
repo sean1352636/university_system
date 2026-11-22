@@ -21,8 +21,8 @@ from typing import Any
 from education_system.systems.sixth_form.domain.governance.user_management import (
     lifecycle,
 )
-from education_system.systems.sixth_form.interfaces import user_accounts as _ua
-from education_system.systems.sixth_form.interfaces.user_accounts import (
+from education_system.systems.sixth_form.domain.governance.user_management import user_accounts as _ua
+from education_system.systems.sixth_form.domain.governance.user_management.user_accounts import (
     DEFAULT_ROLE, SYSTEM_KEY, UserAccountError, UserRow,
 )
 
@@ -208,9 +208,10 @@ def _issue_token(auth: Any, user_id: int, *,
 
 def _send_welcome(email: str, *, username: str, display_name: str,
                    token: str, template: RoleTemplate) -> bool:
+    # The platform's own mailer, not the university's.
     try:
-        from education_system.systems.university.infrastructure.utils.email_service import (
-            send_email,
+        from education_system.platform.integrations.email.email_service import (
+            EmailService,
         )
     except Exception:
         logger.exception("email_service import failed — skipping welcome")
@@ -231,11 +232,14 @@ def _send_welcome(email: str, *, username: str, display_name: str,
         f"will expire automatically.\n"
     )
     try:
-        send_email(email, subject, body)
-        return True
+        result = EmailService().send_email(to=email, subject=subject, body=body)
     except Exception:
         logger.exception("Welcome email send failed for %s", email)
         return False
+    if isinstance(result, dict) and not result.get("success", True):
+        logger.warning("Welcome email send failed for %s: %s", email, result.get("error"))
+        return False
+    return True
 
 
 # ── Onboard ───────────────────────────────────────────────────────────

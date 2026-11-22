@@ -5,7 +5,7 @@ import numpy as np
 import schedule
 import threading
 import time
-from education_system.systems.university.infrastructure.database.db import sqlite3
+from education_system.systems.university.infrastructure.database.db import sqlite3, transaction
 
 from education_system.systems.university.domains.finance.domain.core.finance_context import get_connection
 from education_system.systems.university.domains.finance.domain.core.security_automation import send_email_notification
@@ -747,6 +747,24 @@ def recovery_rate_analysis():
 
     except Exception as e:
         print(f"Error in recovery rate analysis: {e}")
+
+def set_line_item_actual(budget_id, category_id, actual_amount):
+    """Record the actual amount on one budget line and refresh its variance.
+
+    Raises ValueError when the plan has no line for that category.
+    """
+    now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    with transaction() as conn:
+        cursor = conn.execute(
+            """UPDATE budget_line_items
+               SET actual_amount = ?, variance = ? - COALESCE(budgeted_amount, 0),
+                   updated_at = ?
+               WHERE budget_id = ? AND category_id = ?""",
+            (actual_amount, actual_amount, now, budget_id, category_id))
+        if cursor.rowcount == 0:
+            raise ValueError(
+                f"Budget plan {budget_id} has no line for category {category_id}")
+
 
 def update_actual_amounts(budget_id):
     """Update actual amounts in budget"""

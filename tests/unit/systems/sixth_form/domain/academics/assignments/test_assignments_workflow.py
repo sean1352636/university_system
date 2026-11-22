@@ -13,10 +13,15 @@ import sqlite3
 import pytest
 
 from education_system.systems.sixth_form.domain.academics.assignments import (
-    assignments as cw,
     assignments_assessment as assess,
     assignments_feedback as fb,
     assignments_marking as mk,
+)
+from education_system.systems.sixth_form.domain.academics.assignments import (
+    crud as assignments_crud,
+    models as assignments_models,
+    store as assignments_store,
+    submissions as assignments_submissions,
 )
 from education_system.systems.sixth_form.domain.academics.subjects import (
     subjects as subjects_mod,
@@ -59,7 +64,7 @@ def _seed_students(db_path: str, *first_names: str) -> list[str]:
 def wf_db(tmp_path, monkeypatch):
     """Every coursework module on one temp DB with four students."""
     db_path = str(tmp_path / "sixthform.db")
-    for mod in (cw, mk, fb, assess, students_mod, subjects_mod):
+    for mod in (assignments_store, mk, fb, assess, students_mod, subjects_mod):
         monkeypatch.setattr(mod, "DB_PATH", db_path)
         monkeypatch.setattr(mod, "_DB_READY", False)
     monkeypatch.setattr(paths, "SIXTH_FORM_COURSEWORK_FILES_DIR",
@@ -81,16 +86,16 @@ def _assignment(**over):
                "set_date": _day(-20), "due_date": _day(-5),
                "max_marks": 50, "status": "Set"}
     payload.update(over)
-    return cw.create_assignment(payload)
+    return assignments_store.create_assignment(payload)
 
 
 def _marked(assignment, student_id, marks, *, submitted=-5):
     """Add a student, submit and mark in one step."""
-    sub = cw.add_student(assignment.assignment_id, student_id)
-    cw.submit_work(sub.submission_id, submitted_on=_day(submitted))
-    cw.mark_submission(sub.submission_id, marks=marks,
+    sub = assignments_crud.add_student(assignment.assignment_id, student_id)
+    assignments_submissions.submit_work(sub.submission_id, submitted_on=_day(submitted))
+    assignments_crud.mark_submission(sub.submission_id, marks=marks,
                         feedback="Solid work", marked_by="J Smith")
-    return cw.get_submission(sub.submission_id)
+    return assignments_store.get_submission(sub.submission_id)
 
 
 # ── Feedback release (item 22) ─────────────────────────────────────
@@ -121,13 +126,13 @@ def test_on_date_policy_waits_for_the_date(wf_db):
 
 
 def test_on_date_policy_needs_a_date(wf_db):
-    with pytest.raises(cw.ValidationError, match="release date"):
+    with pytest.raises(assignments_models.ValidationError, match="release date"):
         _assignment(release_policy="On date")
 
 
 def test_unmarked_work_is_never_visible(wf_db):
     a = _assignment(release_policy="Immediate")
-    sub = cw.add_student(a.assignment_id, wf_db.s1)
+    sub = assignments_crud.add_student(a.assignment_id, wf_db.s1)
 
     assert fb.is_visible_to_student(sub, a) is False
 
@@ -136,7 +141,7 @@ def test_releasing_a_class_publishes_together(wf_db):
     a = _assignment(release_policy="Manual")
     first = _marked(a, wf_db.s1, 40)
     second = _marked(a, wf_db.s2, 30)
-    unmarked = cw.add_student(a.assignment_id, wf_db.s3)
+    unmarked = assignments_crud.add_student(a.assignment_id, wf_db.s3)
 
     result = fb.release_assignment(a.assignment_id,
                                     released_by="HoD", notify=False)
@@ -144,11 +149,11 @@ def test_releasing_a_class_publishes_together(wf_db):
     assert result.released == 2
     assert result.skipped_unmarked == 1
     for sub in (first, second):
-        out = cw.get_submission(sub.submission_id)
+        out = assignments_store.get_submission(sub.submission_id)
         assert out.feedback_released is True
         assert out.feedback_released_on == _day(0)
         assert out.feedback_released_by == "HoD"
-    assert cw.get_submission(
+    assert assignments_store.get_submission(
         unmarked.submission_id).feedback_released is False
 
 
@@ -165,8 +170,8 @@ def test_release_is_idempotent(wf_db):
 
 def test_releasing_nothing_to_release_is_refused(wf_db):
     a = _assignment(release_policy="Manual")
-    sub = cw.add_student(a.assignment_id, wf_db.s1)
-    with pytest.raises(cw.ValidationError, match="nothing to release"):
+    sub = assignments_crud.add_student(a.assignment_id, wf_db.s1)
+    with pytest.raises(assignments_models.ValidationError, match="nothing to release"):
         fb.release_submission(sub.submission_id)
 
 
@@ -193,9 +198,9 @@ def test_scheduled_release_publishes_only_what_is_due(wf_db):
     result = fb.release_due()
 
     assert result.released == 1
-    assert cw.get_submission(
+    assert assignments_store.get_submission(
         due_sub.submission_id).feedback_released is True
-    assert cw.get_submission(
+    assert assignments_store.get_submission(
         later_sub.submission_id).feedback_released is False
 
 
@@ -216,7 +221,7 @@ def test_anonymity_lifts_on_release(wf_db):
     sub = _marked(a, wf_db.s1, 40)
     fb.release_submission(sub.submission_id, notify=False)
 
-    out = cw.get_submission(sub.submission_id)
+    out = assignments_store.get_submission(sub.submission_id)
 
     assert fb.is_anonymous(out, a) is False
     assert fb.display_name(out, a) == "Ada Test"
@@ -262,7 +267,7 @@ def test_unreleased_feedback_cannot_be_acknowledged(wf_db):
     a = _assignment(release_policy="Manual")
     sub = _marked(a, wf_db.s1, 40)
 
-    with pytest.raises(cw.ValidationError, match="not been released"):
+    with pytest.raises(assignments_models.ValidationError, match="not been released"):
         fb.acknowledge(sub.submission_id)
 
 
@@ -270,7 +275,7 @@ def test_unacknowledged_lists_only_visible_feedback(wf_db):
     a = _assignment(release_policy="Immediate")
     seen = _marked(a, wf_db.s1, 40)
     unseen = _marked(a, wf_db.s2, 30)
-    cw.add_student(a.assignment_id, wf_db.s3)      # unmarked
+    assignments_crud.add_student(a.assignment_id, wf_db.s3)      # unmarked
     fb.acknowledge(seen.submission_id)
 
     outstanding = fb.list_unacknowledged(assignment_id=a.assignment_id)
@@ -296,9 +301,9 @@ def test_acknowledgement_can_be_cleared(wf_db):
 
 def test_turnaround_measures_submission_to_marked(wf_db):
     a = _assignment(marking_sla_days=5)
-    sub = cw.add_student(a.assignment_id, wf_db.s1)
-    cw.submit_work(sub.submission_id, submitted_on=_day(-8))
-    cw.mark_submission(sub.submission_id, marks=40)
+    sub = assignments_crud.add_student(a.assignment_id, wf_db.s1)
+    assignments_submissions.submit_work(sub.submission_id, submitted_on=_day(-8))
+    assignments_crud.mark_submission(sub.submission_id, marks=40)
 
     report = fb.turnaround_report(assignment_id=a.assignment_id)
     row = report.rows[0]
@@ -310,8 +315,8 @@ def test_turnaround_measures_submission_to_marked(wf_db):
 
 def test_unmarked_work_past_target_is_overdue(wf_db):
     a = _assignment(marking_sla_days=3)
-    sub = cw.add_student(a.assignment_id, wf_db.s1)
-    cw.submit_work(sub.submission_id, submitted_on=_day(-10))
+    sub = assignments_crud.add_student(a.assignment_id, wf_db.s1)
+    assignments_submissions.submit_work(sub.submission_id, submitted_on=_day(-10))
 
     report = fb.turnaround_report(assignment_id=a.assignment_id)
     row = report.rows[0]
@@ -324,7 +329,7 @@ def test_unmarked_work_past_target_is_overdue(wf_db):
 
 def test_unsubmitted_work_is_not_a_marking_delay(wf_db):
     a = _assignment(marking_sla_days=3)
-    cw.add_student(a.assignment_id, wf_db.s1)
+    assignments_crud.add_student(a.assignment_id, wf_db.s1)
 
     report = fb.turnaround_report(assignment_id=a.assignment_id)
 
@@ -335,9 +340,9 @@ def test_unsubmitted_work_is_not_a_marking_delay(wf_db):
 def test_turnaround_aggregates(wf_db):
     a = _assignment(marking_sla_days=5)
     for student, submitted in ((wf_db.s1, -3), (wf_db.s2, -9)):
-        sub = cw.add_student(a.assignment_id, student)
-        cw.submit_work(sub.submission_id, submitted_on=_day(submitted))
-        cw.mark_submission(sub.submission_id, marks=40)
+        sub = assignments_crud.add_student(a.assignment_id, student)
+        assignments_submissions.submit_work(sub.submission_id, submitted_on=_day(submitted))
+        assignments_crud.mark_submission(sub.submission_id, marks=40)
 
     report = fb.turnaround_report(assignment_id=a.assignment_id)
 
@@ -357,8 +362,8 @@ def test_teacher_sla_summary_groups_by_marker(wf_db):
     two = _assignment(title="Two", teacher="B Teacher",
                        marking_sla_days=2)
     for a in (one, two):
-        sub = cw.add_student(a.assignment_id, wf_db.s1)
-        cw.submit_work(sub.submission_id, submitted_on=_day(-10))
+        sub = assignments_crud.add_student(a.assignment_id, wf_db.s1)
+        assignments_submissions.submit_work(sub.submission_id, submitted_on=_day(-10))
 
     summary = fb.teacher_sla_summary()
 
@@ -386,7 +391,7 @@ def test_an_unreleased_mark_cannot_be_appealed(wf_db):
     a = _assignment(release_policy="Manual")
     sub = _marked(a, wf_db.s1, 40)
 
-    with pytest.raises(cw.ValidationError, match="released"):
+    with pytest.raises(assignments_models.ValidationError, match="released"):
         fb.raise_appeal(sub.submission_id, grounds="Too harsh")
 
 
@@ -395,7 +400,7 @@ def test_only_one_appeal_may_be_open_at_a_time(wf_db):
     sub = _marked(a, wf_db.s1, 40)
     fb.raise_appeal(sub.submission_id, grounds="First")
 
-    with pytest.raises(cw.ValidationError, match="already an open"):
+    with pytest.raises(assignments_models.ValidationError, match="already an open"):
         fb.raise_appeal(sub.submission_id, grounds="Second")
 
 
@@ -404,7 +409,7 @@ def test_appeal_window_closes(wf_db):
     sub = _marked(a, wf_db.s1, 40)
 
     assert fb.appeal_deadline(sub, a) == _day(7)
-    with pytest.raises(cw.ValidationError, match="window closed"):
+    with pytest.raises(assignments_models.ValidationError, match="window closed"):
         fb.raise_appeal(sub.submission_id, grounds="Late",
                          raised_on=_day(30))
 
@@ -420,7 +425,7 @@ def test_appeal_window_runs_from_release_not_marking(wf_db):
     sub = _marked(a, wf_db.s1, 40)
     fb.release_submission(sub.submission_id, notify=False)
 
-    out = cw.get_submission(sub.submission_id)
+    out = assignments_store.get_submission(sub.submission_id)
 
     assert out.feedback_released_on == _day(0)
     assert fb.appeal_deadline(out, a) == _day(7)
@@ -440,7 +445,7 @@ def test_upheld_appeal_changes_the_mark(wf_db):
     assert out.marks_after == 45
     assert out.mark_changed == 5.0
     assert out.is_open is False
-    assert cw.get_submission(sub.submission_id).marks == 45
+    assert assignments_store.get_submission(sub.submission_id).marks == 45
 
 
 def test_a_rejected_appeal_cannot_change_the_mark(wf_db):
@@ -448,7 +453,7 @@ def test_a_rejected_appeal_cannot_change_the_mark(wf_db):
     sub = _marked(a, wf_db.s1, 40)
     appeal = fb.raise_appeal(sub.submission_id, grounds="Too harsh")
 
-    with pytest.raises(cw.ValidationError, match="cannot also change"):
+    with pytest.raises(assignments_models.ValidationError, match="cannot also change"):
         fb.resolve_appeal(appeal.appeal_id, status="Rejected",
                            outcome="Mark stands", new_marks=45)
 
@@ -476,7 +481,7 @@ def test_withdrawn_appeal_closes_without_a_change(wf_db):
 
     assert out.status == "Withdrawn"
     assert out.is_open is False
-    assert cw.get_submission(sub.submission_id).marks == 40
+    assert assignments_store.get_submission(sub.submission_id).marks == 40
 
 
 def test_appeal_summary_counts(wf_db):
@@ -508,7 +513,7 @@ def test_multiple_choice_auto_marks(wf_db):
         "question_type": "Multiple choice", "prompt": "Capital?",
         "options": "London|Paris|Rome", "answer_key": "Paris",
         "marks": 2})
-    sub = cw.add_student(a.assignment_id, wf_db.s1)
+    sub = assignments_crud.add_student(a.assignment_id, wf_db.s1)
 
     right = assess.record_answer(sub.submission_id, q.question_id,
                                   response="Paris")
@@ -526,7 +531,7 @@ def test_short_answer_ignores_case_space_and_punctuation(wf_db):
     q = assess.add_question(a.assignment_id, {
         "question_type": "Short answer", "prompt": "Process?",
         "answer_key": "photosynthesis", "marks": 3})
-    sub = cw.add_student(a.assignment_id, wf_db.s1)
+    sub = assignments_crud.add_student(a.assignment_id, wf_db.s1)
 
     for response in ("photosynthesis", "  Photosynthesis. ",
                       "PHOTOSYNTHESIS!"):
@@ -540,7 +545,7 @@ def test_short_answer_accepts_any_listed_key(wf_db):
     q = assess.add_question(a.assignment_id, {
         "question_type": "Short answer", "prompt": "Process?",
         "answer_key": "photosynthesis|carbon fixation", "marks": 3})
-    sub = cw.add_student(a.assignment_id, wf_db.s1)
+    sub = assignments_crud.add_student(a.assignment_id, wf_db.s1)
 
     for response in ("photosynthesis", "Carbon Fixation"):
         answer = assess.record_answer(sub.submission_id, q.question_id,
@@ -558,7 +563,7 @@ def test_short_answer_normalises_punctuation_but_not_spacing(wf_db):
     q = assess.add_question(a.assignment_id, {
         "question_type": "Short answer", "prompt": "Process?",
         "answer_key": "photo-synthesis", "marks": 3})
-    sub = cw.add_student(a.assignment_id, wf_db.s1)
+    sub = assignments_crud.add_student(a.assignment_id, wf_db.s1)
 
     assert assess.record_answer(
         sub.submission_id, q.question_id,
@@ -573,7 +578,7 @@ def test_numeric_answers_honour_tolerance(wf_db):
     q = assess.add_question(a.assignment_id, {
         "question_type": "Numeric", "prompt": "Pi to 2dp?",
         "answer_key": "3.14", "marks": 2, "tolerance": 0.01})
-    sub = cw.add_student(a.assignment_id, wf_db.s1)
+    sub = assignments_crud.add_student(a.assignment_id, wf_db.s1)
 
     assert assess.record_answer(sub.submission_id, q.question_id,
                                  response="3.145").is_correct is True
@@ -583,7 +588,7 @@ def test_numeric_answers_honour_tolerance(wf_db):
 
 def test_numeric_key_must_be_a_number(wf_db):
     a = _quiz()
-    with pytest.raises(cw.ValidationError, match="not a number"):
+    with pytest.raises(assignments_models.ValidationError, match="not a number"):
         assess.add_question(a.assignment_id, {
             "question_type": "Numeric", "prompt": "?",
             "answer_key": "about three"})
@@ -591,7 +596,7 @@ def test_numeric_key_must_be_a_number(wf_db):
 
 def test_multiple_choice_needs_options(wf_db):
     a = _quiz()
-    with pytest.raises(cw.ValidationError, match="options list"):
+    with pytest.raises(assignments_models.ValidationError, match="options list"):
         assess.add_question(a.assignment_id, {
             "question_type": "Multiple choice", "prompt": "?",
             "answer_key": "A"})
@@ -602,7 +607,7 @@ def test_multiple_response_ignores_order(wf_db):
     q = assess.add_question(a.assignment_id, {
         "question_type": "Multiple response", "prompt": "Which two?",
         "options": "A|B|C|D", "answer_key": "A|C", "marks": 2})
-    sub = cw.add_student(a.assignment_id, wf_db.s1)
+    sub = assignments_crud.add_student(a.assignment_id, wf_db.s1)
 
     assert assess.record_answer(sub.submission_id, q.question_id,
                                  response="C|A").is_correct is True
@@ -615,7 +620,7 @@ def test_a_blank_answer_scores_nothing(wf_db):
     q = assess.add_question(a.assignment_id, {
         "question_type": "Short answer", "prompt": "?",
         "answer_key": "x", "marks": 2})
-    sub = cw.add_student(a.assignment_id, wf_db.s1)
+    sub = assignments_crud.add_student(a.assignment_id, wf_db.s1)
 
     answer = assess.record_answer(sub.submission_id, q.question_id,
                                    response="   ")
@@ -629,7 +634,7 @@ def test_auto_mark_totals_onto_the_submission(wf_db):
         "prompt": "A?", "options": "X|Y", "answer_key": "X", "marks": 2})
     q2 = assess.add_question(a.assignment_id, {
         "prompt": "B?", "options": "X|Y", "answer_key": "Y", "marks": 3})
-    sub = cw.add_student(a.assignment_id, wf_db.s1)
+    sub = assignments_crud.add_student(a.assignment_id, wf_db.s1)
     assess.record_answer(sub.submission_id, q1.question_id, response="X")
     assess.record_answer(sub.submission_id, q2.question_id, response="X")
 
@@ -639,7 +644,7 @@ def test_auto_mark_totals_onto_the_submission(wf_db):
     assert result.marks_awarded == 2
     assert result.marks_available == 5
     assert result.percent == 40.0
-    assert cw.get_submission(sub.submission_id).objective_marks == 2
+    assert assignments_store.get_submission(sub.submission_id).objective_marks == 2
 
 
 def test_objective_marks_do_not_become_the_submission_mark(wf_db):
@@ -647,12 +652,12 @@ def test_objective_marks_do_not_become_the_submission_mark(wf_db):
     a = _quiz()
     q = assess.add_question(a.assignment_id, {
         "prompt": "A?", "options": "X|Y", "answer_key": "X", "marks": 2})
-    sub = cw.add_student(a.assignment_id, wf_db.s1)
+    sub = assignments_crud.add_student(a.assignment_id, wf_db.s1)
     assess.record_answer(sub.submission_id, q.question_id, response="X")
 
     assess.auto_mark(sub.submission_id)
 
-    out = cw.get_submission(sub.submission_id)
+    out = assignments_store.get_submission(sub.submission_id)
     assert out.objective_marks == 2
     assert out.marks is None
 
@@ -662,7 +667,7 @@ def test_an_override_survives_re_marking(wf_db):
     q = assess.add_question(a.assignment_id, {
         "question_type": "Short answer", "prompt": "?",
         "answer_key": "alpha", "marks": 2})
-    sub = cw.add_student(a.assignment_id, wf_db.s1)
+    sub = assignments_crud.add_student(a.assignment_id, wf_db.s1)
     assess.record_answer(sub.submission_id, q.question_id,
                           response="alpha particle")
 
@@ -680,7 +685,7 @@ def test_re_answering_clears_an_override(wf_db):
     q = assess.add_question(a.assignment_id, {
         "question_type": "Short answer", "prompt": "?",
         "answer_key": "alpha", "marks": 2})
-    sub = cw.add_student(a.assignment_id, wf_db.s1)
+    sub = assignments_crud.add_student(a.assignment_id, wf_db.s1)
     assess.record_answer(sub.submission_id, q.question_id, response="x")
     assess.override_answer(sub.submission_id, q.question_id, marks=2,
                             overridden_by="JS")
@@ -696,10 +701,10 @@ def test_override_cannot_exceed_the_question_marks(wf_db):
     a = _quiz()
     q = assess.add_question(a.assignment_id, {
         "prompt": "?", "options": "X|Y", "answer_key": "X", "marks": 2})
-    sub = cw.add_student(a.assignment_id, wf_db.s1)
+    sub = assignments_crud.add_student(a.assignment_id, wf_db.s1)
     assess.record_answer(sub.submission_id, q.question_id, response="Y")
 
-    with pytest.raises(cw.ValidationError):
+    with pytest.raises(assignments_models.ValidationError):
         assess.override_answer(sub.submission_id, q.question_id,
                                 marks=5, overridden_by="JS")
 
@@ -710,7 +715,7 @@ def test_question_analysis_reports_facility(wf_db):
         "prompt": "?", "options": "X|Y", "answer_key": "X", "marks": 1})
     for student, response in ((wf_db.s1, "X"), (wf_db.s2, "Y"),
                                (wf_db.s3, "Y")):
-        sub = cw.add_student(a.assignment_id, student)
+        sub = assignments_crud.add_student(a.assignment_id, student)
         assess.record_answer(sub.submission_id, q.question_id,
                               response=response)
 
@@ -726,9 +731,9 @@ def test_a_question_belongs_to_its_own_assignment(wf_db):
     a2 = _quiz()
     q = assess.add_question(a2.assignment_id, {
         "prompt": "?", "options": "X|Y", "answer_key": "X"})
-    sub = cw.add_student(a1.assignment_id, wf_db.s1)
+    sub = assignments_crud.add_student(a1.assignment_id, wf_db.s1)
 
-    with pytest.raises(cw.ValidationError, match="belongs to assignment"):
+    with pytest.raises(assignments_models.ValidationError, match="belongs to assignment"):
         assess.record_answer(sub.submission_id, q.question_id,
                               response="X")
 
@@ -738,7 +743,7 @@ def test_a_question_belongs_to_its_own_assignment(wf_db):
 def test_group_marks_apply_with_per_member_adjustment(wf_db):
     a = _assignment(due_date=_day(5), max_marks=40,
                      is_group_assignment=True)
-    members = [cw.add_student(a.assignment_id, s)
+    members = [assignments_crud.add_student(a.assignment_id, s)
                for s in (wf_db.s1, wf_db.s2, wf_db.s3)]
     group = assess.create_group(a.assignment_id, "Team A")
     assess.add_group_member(group.group_id, members[0].submission_id)
@@ -762,7 +767,7 @@ def test_group_marks_apply_with_per_member_adjustment(wf_db):
 def test_group_marks_are_capped_at_the_maximum(wf_db):
     a = _assignment(due_date=_day(5), max_marks=40,
                      is_group_assignment=True)
-    sub = cw.add_student(a.assignment_id, wf_db.s1)
+    sub = assignments_crud.add_student(a.assignment_id, wf_db.s1)
     group = assess.create_group(a.assignment_id, "Team A")
     assess.add_group_member(group.group_id, sub.submission_id,
                              adjustment=20)
@@ -776,7 +781,7 @@ def test_group_marks_are_capped_at_the_maximum(wf_db):
 def test_an_adjustment_cannot_push_a_mark_below_zero(wf_db):
     a = _assignment(due_date=_day(5), max_marks=40,
                      is_group_assignment=True)
-    sub = cw.add_student(a.assignment_id, wf_db.s1)
+    sub = assignments_crud.add_student(a.assignment_id, wf_db.s1)
     group = assess.create_group(a.assignment_id, "Team A")
     member = assess.add_group_member(group.group_id,
                                       sub.submission_id,
@@ -787,17 +792,17 @@ def test_an_adjustment_cannot_push_a_mark_below_zero(wf_db):
 
 def test_group_marks_must_be_set_before_applying(wf_db):
     a = _assignment(is_group_assignment=True)
-    sub = cw.add_student(a.assignment_id, wf_db.s1)
+    sub = assignments_crud.add_student(a.assignment_id, wf_db.s1)
     group = assess.create_group(a.assignment_id, "Team A")
     assess.add_group_member(group.group_id, sub.submission_id)
 
-    with pytest.raises(cw.ValidationError, match="Set the group's mark"):
+    with pytest.raises(assignments_models.ValidationError, match="Set the group's mark"):
         assess.apply_group_marks(group.group_id)
 
 
 def test_a_student_belongs_to_one_group(wf_db):
     a = _assignment(is_group_assignment=True)
-    sub = cw.add_student(a.assignment_id, wf_db.s1)
+    sub = assignments_crud.add_student(a.assignment_id, wf_db.s1)
     first = assess.create_group(a.assignment_id, "Team A")
     second = assess.create_group(a.assignment_id, "Team B")
     assess.add_group_member(first.group_id, sub.submission_id)
@@ -811,24 +816,24 @@ def test_a_student_belongs_to_one_group(wf_db):
 def test_group_names_are_unique_per_assignment(wf_db):
     a = _assignment(is_group_assignment=True)
     assess.create_group(a.assignment_id, "Team A")
-    with pytest.raises(cw.ValidationError, match="already has a group"):
+    with pytest.raises(assignments_models.ValidationError, match="already has a group"):
         assess.create_group(a.assignment_id, "Team A")
 
 
 def test_a_member_must_be_on_the_same_assignment(wf_db):
     a1 = _assignment(title="One", is_group_assignment=True)
     a2 = _assignment(title="Two")
-    other = cw.add_student(a2.assignment_id, wf_db.s1)
+    other = assignments_crud.add_student(a2.assignment_id, wf_db.s1)
     group = assess.create_group(a1.assignment_id, "Team A")
 
-    with pytest.raises(cw.ValidationError, match="is on assignment"):
+    with pytest.raises(assignments_models.ValidationError, match="is on assignment"):
         assess.add_group_member(group.group_id, other.submission_id)
 
 
 def test_ungrouped_submissions(wf_db):
     a = _assignment(is_group_assignment=True)
-    grouped = cw.add_student(a.assignment_id, wf_db.s1)
-    loose = cw.add_student(a.assignment_id, wf_db.s2)
+    grouped = assignments_crud.add_student(a.assignment_id, wf_db.s1)
+    loose = assignments_crud.add_student(a.assignment_id, wf_db.s2)
     group = assess.create_group(a.assignment_id, "Team A")
     assess.add_group_member(group.group_id, grouped.submission_id)
 
@@ -840,7 +845,7 @@ def test_ungrouped_submissions(wf_db):
 def test_disbanding_a_group_keeps_marks(wf_db):
     a = _assignment(due_date=_day(5), max_marks=40,
                      is_group_assignment=True)
-    sub = cw.add_student(a.assignment_id, wf_db.s1)
+    sub = assignments_crud.add_student(a.assignment_id, wf_db.s1)
     group = assess.create_group(a.assignment_id, "Team A")
     assess.add_group_member(group.group_id, sub.submission_id)
     assess.set_group_marks(group.group_id, 30)
@@ -848,7 +853,7 @@ def test_disbanding_a_group_keeps_marks(wf_db):
 
     assert assess.delete_group(group.group_id) is True
 
-    out = cw.get_submission(sub.submission_id)
+    out = assignments_store.get_submission(sub.submission_id)
     assert out.marks == 30.0
     assert out.group_id is None
 
@@ -857,7 +862,7 @@ def test_disbanding_a_group_keeps_marks(wf_db):
 
 def test_peer_scores_combine_by_mode(wf_db):
     a = _assignment(due_date=_day(5), max_marks=20)
-    sub = cw.add_student(a.assignment_id, wf_db.s1)
+    sub = assignments_crud.add_student(a.assignment_id, wf_db.s1)
     for reviewer, mark in ((wf_db.s2, 14), (wf_db.s3, 18),
                             (wf_db.s4, 10)):
         assess.record_peer_review(sub.submission_id,
@@ -879,15 +884,15 @@ def test_peer_scores_combine_by_mode(wf_db):
 
 def test_a_student_cannot_review_their_own_work(wf_db):
     a = _assignment()
-    sub = cw.add_student(a.assignment_id, wf_db.s1)
-    with pytest.raises(cw.ValidationError, match="own work"):
+    sub = assignments_crud.add_student(a.assignment_id, wf_db.s1)
+    with pytest.raises(assignments_models.ValidationError, match="own work"):
         assess.record_peer_review(sub.submission_id,
                                    reviewer_student=wf_db.s1, marks=10)
 
 
 def test_peer_reviews_upsert_per_reviewer(wf_db):
     a = _assignment(max_marks=20)
-    sub = cw.add_student(a.assignment_id, wf_db.s1)
+    sub = assignments_crud.add_student(a.assignment_id, wf_db.s1)
     assess.record_peer_review(sub.submission_id,
                                reviewer_student=wf_db.s2, marks=10)
     assess.record_peer_review(sub.submission_id,
@@ -903,9 +908,9 @@ def test_peer_marks_are_capped_by_the_criterion(wf_db):
     a = _assignment(max_marks=50)
     criterion = mk.add_criterion(a.assignment_id,
                                   {"title": "AO1", "max_marks": 10})
-    sub = cw.add_student(a.assignment_id, wf_db.s1)
+    sub = assignments_crud.add_student(a.assignment_id, wf_db.s1)
 
-    with pytest.raises(cw.ValidationError):
+    with pytest.raises(assignments_models.ValidationError):
         assess.record_peer_review(sub.submission_id,
                                    reviewer_student=wf_db.s2,
                                    criterion_id=criterion.criterion_id,
@@ -918,7 +923,7 @@ def test_one_reviewer_scoring_several_criteria_counts_once(wf_db):
                            {"title": "AO1", "max_marks": 10})
     c2 = mk.add_criterion(a.assignment_id,
                            {"title": "AO2", "max_marks": 10})
-    sub = cw.add_student(a.assignment_id, wf_db.s1)
+    sub = assignments_crud.add_student(a.assignment_id, wf_db.s1)
     assess.record_peer_review(sub.submission_id,
                                reviewer_student=wf_db.s2,
                                criterion_id=c1.criterion_id, marks=8)
@@ -935,7 +940,7 @@ def test_one_reviewer_scoring_several_criteria_counts_once(wf_db):
 def test_blending_uses_the_assignment_weight(wf_db):
     a = _assignment(due_date=_day(5), max_marks=20,
                      peer_assessment_weight=25)
-    sub = cw.add_student(a.assignment_id, wf_db.s1)
+    sub = assignments_crud.add_student(a.assignment_id, wf_db.s1)
     assess.record_peer_review(sub.submission_id,
                                reviewer_student=wf_db.s2, marks=12)
 
@@ -948,7 +953,7 @@ def test_blending_uses_the_assignment_weight(wf_db):
 def test_blending_without_a_weight_leaves_the_teacher_mark(wf_db):
     a = _assignment(due_date=_day(5), max_marks=20,
                      peer_assessment_weight=None)
-    sub = cw.add_student(a.assignment_id, wf_db.s1)
+    sub = assignments_crud.add_student(a.assignment_id, wf_db.s1)
     assess.record_peer_review(sub.submission_id,
                                reviewer_student=wf_db.s2, marks=5)
 
@@ -961,7 +966,7 @@ def test_blending_without_a_weight_leaves_the_teacher_mark(wf_db):
 def test_blending_without_reviews_leaves_the_teacher_mark(wf_db):
     a = _assignment(due_date=_day(5), max_marks=20,
                      peer_assessment_weight=25)
-    sub = cw.add_student(a.assignment_id, wf_db.s1)
+    sub = assignments_crud.add_student(a.assignment_id, wf_db.s1)
 
     assert assess.blended_marks(sub.submission_id,
                                  teacher_marks=16) is None
@@ -969,8 +974,8 @@ def test_blending_without_reviews_leaves_the_teacher_mark(wf_db):
 
 def test_peer_coverage(wf_db):
     a = _assignment(max_marks=20)
-    reviewed = cw.add_student(a.assignment_id, wf_db.s1)
-    cw.add_student(a.assignment_id, wf_db.s2)
+    reviewed = assignments_crud.add_student(a.assignment_id, wf_db.s1)
+    assignments_crud.add_student(a.assignment_id, wf_db.s2)
     assess.record_peer_review(reviewed.submission_id,
                                reviewer_student=wf_db.s2, marks=10)
 
@@ -985,11 +990,11 @@ def test_peer_coverage(wf_db):
 def test_self_assessment_compares_to_the_actual_mark(wf_db):
     a = _assignment(due_date=_day(5), max_marks=50,
                      release_policy="Manual")
-    sub = cw.add_student(a.assignment_id, wf_db.s1)
+    sub = assignments_crud.add_student(a.assignment_id, wf_db.s1)
     assess.record_self_assessment(sub.submission_id,
                                    predicted_marks=40,
                                    note="Felt strong")
-    cw.mark_submission(sub.submission_id, marks=32)
+    assignments_crud.mark_submission(sub.submission_id, marks=32)
 
     result = assess.get_self_assessment(sub.submission_id)
 
@@ -1003,15 +1008,15 @@ def test_a_prediction_after_release_is_refused(wf_db):
     a = _assignment(due_date=_day(5), release_policy="Immediate")
     sub = _marked(a, wf_db.s1, 40)
 
-    with pytest.raises(cw.ValidationError, match="already been released"):
+    with pytest.raises(assignments_models.ValidationError, match="already been released"):
         assess.record_self_assessment(sub.submission_id,
                                        predicted_marks=45)
 
 
 def test_a_prediction_cannot_exceed_the_maximum(wf_db):
     a = _assignment(max_marks=50, release_policy="Manual")
-    sub = cw.add_student(a.assignment_id, wf_db.s1)
-    with pytest.raises(cw.ValidationError):
+    sub = assignments_crud.add_student(a.assignment_id, wf_db.s1)
+    with pytest.raises(assignments_models.ValidationError):
         assess.record_self_assessment(sub.submission_id,
                                        predicted_marks=60)
 
@@ -1022,10 +1027,10 @@ def test_calibration_summary(wf_db):
     for student, predicted, actual in ((wf_db.s1, 40, 30),
                                         (wf_db.s2, 20, 30),
                                         (wf_db.s3, 25, 25)):
-        sub = cw.add_student(a.assignment_id, student)
+        sub = assignments_crud.add_student(a.assignment_id, student)
         assess.record_self_assessment(sub.submission_id,
                                        predicted_marks=predicted)
-        cw.mark_submission(sub.submission_id, marks=actual)
+        assignments_crud.mark_submission(sub.submission_id, marks=actual)
 
     summary = assess.calibration_summary(a.assignment_id)
 
@@ -1041,8 +1046,8 @@ def test_missing_self_assessments_only_when_required(wf_db):
     required = _assignment(title="Required", release_policy="Manual",
                             self_assessment_required=True)
     optional = _assignment(title="Optional", release_policy="Manual")
-    cw.add_student(required.assignment_id, wf_db.s1)
-    cw.add_student(optional.assignment_id, wf_db.s1)
+    assignments_crud.add_student(required.assignment_id, wf_db.s1)
+    assignments_crud.add_student(optional.assignment_id, wf_db.s1)
 
     assert len(assess.missing_self_assessments(
         required.assignment_id)) == 1
@@ -1053,7 +1058,7 @@ def test_missing_self_assessments_only_when_required(wf_db):
 # ── Multi-part assignments (item 29) ───────────────────────────────
 
 def _components(parent, *specs):
-    return [cw.create_assignment(
+    return [assignments_store.create_assignment(
         {"title": f"Part {i}", "subject_name": "History",
          "due_date": _day(5), "max_marks": max_marks,
          "parent_assignment_id": parent.assignment_id,
@@ -1064,13 +1069,13 @@ def _components(parent, *specs):
 def test_components_roll_up_by_weight(wf_db):
     parent = _assignment(title="NEA", due_date=_day(30), max_marks=100)
     first, second = _components(parent, (40, 25), (60, 75))
-    cw.add_student(parent.assignment_id, wf_db.s1)
-    a_sub = cw.add_student(first.assignment_id, wf_db.s1)
-    b_sub = cw.add_student(second.assignment_id, wf_db.s1)
-    cw.mark_submission(a_sub.submission_id, marks=32)       # 80%
-    cw.mark_submission(b_sub.submission_id, marks=39)       # 65%
+    assignments_crud.add_student(parent.assignment_id, wf_db.s1)
+    a_sub = assignments_crud.add_student(first.assignment_id, wf_db.s1)
+    b_sub = assignments_crud.add_student(second.assignment_id, wf_db.s1)
+    assignments_crud.mark_submission(a_sub.submission_id, marks=32)       # 80%
+    assignments_crud.mark_submission(b_sub.submission_id, marks=39)       # 65%
 
-    rollup = cw.component_rollup(parent.assignment_id, wf_db.s1)
+    rollup = assignments_crud.component_rollup(parent.assignment_id, wf_db.s1)
 
     assert rollup.complete is True
     assert rollup.weighted_percent == 68.75    # 80*.25 + 65*.75
@@ -1081,7 +1086,7 @@ def test_unweighted_components_split_evenly(wf_db):
     parent = _assignment(title="NEA", due_date=_day(30), max_marks=100)
     _components(parent, (10, None), (10, None), (10, None))
 
-    weights = cw.component_weights(parent.assignment_id)
+    weights = assignments_crud.component_weights(parent.assignment_id)
 
     assert len(weights) == 3
     for weight in weights.values():
@@ -1093,7 +1098,7 @@ def test_partly_weighted_components_share_the_remainder(wf_db):
     first, second, third = _components(parent, (10, 50), (10, None),
                                         (10, None))
 
-    weights = cw.component_weights(parent.assignment_id)
+    weights = assignments_crud.component_weights(parent.assignment_id)
 
     assert weights[first.assignment_id] == 50
     assert weights[second.assignment_id] == 25
@@ -1105,10 +1110,10 @@ def test_a_partial_rollup_rescales_to_what_is_marked(wf_db):
     figure."""
     parent = _assignment(title="NEA", due_date=_day(30), max_marks=100)
     first, _second = _components(parent, (40, 25), (60, 75))
-    a_sub = cw.add_student(first.assignment_id, wf_db.s1)
-    cw.mark_submission(a_sub.submission_id, marks=32)       # 80%
+    a_sub = assignments_crud.add_student(first.assignment_id, wf_db.s1)
+    assignments_crud.mark_submission(a_sub.submission_id, marks=32)       # 80%
 
-    rollup = cw.component_rollup(parent.assignment_id, wf_db.s1)
+    rollup = assignments_crud.component_rollup(parent.assignment_id, wf_db.s1)
 
     assert rollup.complete is False
     assert rollup.weighted_percent == 80.0
@@ -1117,25 +1122,25 @@ def test_a_partial_rollup_rescales_to_what_is_marked(wf_db):
 def test_rollup_writes_onto_the_parent(wf_db):
     parent = _assignment(title="NEA", due_date=_day(30), max_marks=100)
     first, second = _components(parent, (40, 50), (60, 50))
-    parent_sub = cw.add_student(parent.assignment_id, wf_db.s1)
-    a_sub = cw.add_student(first.assignment_id, wf_db.s1)
-    b_sub = cw.add_student(second.assignment_id, wf_db.s1)
-    cw.mark_submission(a_sub.submission_id, marks=40)       # 100%
-    cw.mark_submission(b_sub.submission_id, marks=30)       # 50%
+    parent_sub = assignments_crud.add_student(parent.assignment_id, wf_db.s1)
+    a_sub = assignments_crud.add_student(first.assignment_id, wf_db.s1)
+    b_sub = assignments_crud.add_student(second.assignment_id, wf_db.s1)
+    assignments_crud.mark_submission(a_sub.submission_id, marks=40)       # 100%
+    assignments_crud.mark_submission(b_sub.submission_id, marks=30)       # 50%
 
-    result = cw.rollup_all(parent.assignment_id, marked_by="HoD")
+    result = assignments_crud.rollup_all(parent.assignment_id, marked_by="HoD")
 
     assert result == {"applied": 1, "skipped": 0}
-    assert cw.get_submission(parent_sub.submission_id).marks == 75.0
+    assert assignments_store.get_submission(parent_sub.submission_id).marks == 75.0
 
 
 def test_rollup_needs_a_parent_submission_row(wf_db):
     parent = _assignment(title="NEA", due_date=_day(30), max_marks=100)
     first, = _components(parent, (40, 100))
-    a_sub = cw.add_student(first.assignment_id, wf_db.s1)
-    cw.mark_submission(a_sub.submission_id, marks=40)
+    a_sub = assignments_crud.add_student(first.assignment_id, wf_db.s1)
+    assignments_crud.mark_submission(a_sub.submission_id, marks=40)
 
-    assert cw.apply_component_rollup(parent.assignment_id,
+    assert assignments_crud.apply_component_rollup(parent.assignment_id,
                                       wf_db.s1) is None
 
 
@@ -1143,16 +1148,16 @@ def test_components_cannot_nest(wf_db):
     parent = _assignment(title="NEA", due_date=_day(30))
     child, = _components(parent, (40, 100))
 
-    with pytest.raises(cw.ValidationError, match="cannot be nested"):
-        cw.create_assignment({
+    with pytest.raises(assignments_models.ValidationError, match="cannot be nested"):
+        assignments_store.create_assignment({
             "title": "Sub-part", "subject_name": "History",
             "parent_assignment_id": child.assignment_id})
 
 
 def test_an_assignment_cannot_be_its_own_parent(wf_db):
     a = _assignment()
-    with pytest.raises(cw.ValidationError, match="its own parent"):
-        cw.update_assignment(a.assignment_id,
+    with pytest.raises(assignments_models.ValidationError, match="its own parent"):
+        assignments_store.update_assignment(a.assignment_id,
                               {"parent_assignment_id": a.assignment_id})
 
 
@@ -1161,15 +1166,15 @@ def test_a_parent_cannot_become_a_component(wf_db):
     _components(parent, (40, 100))
     other = _assignment(title="Other")
 
-    with pytest.raises(cw.ValidationError, match="already has components"):
-        cw.update_assignment(parent.assignment_id,
+    with pytest.raises(assignments_models.ValidationError, match="already has components"):
+        assignments_store.update_assignment(parent.assignment_id,
                               {"parent_assignment_id":
                                   other.assignment_id})
 
 
 def test_a_missing_parent_is_refused(wf_db):
-    with pytest.raises(cw.ValidationError, match="to be a parent"):
-        cw.create_assignment({"title": "Orphan",
+    with pytest.raises(assignments_models.ValidationError, match="to be a parent"):
+        assignments_store.create_assignment({"title": "Orphan",
                                "subject_name": "History",
                                "parent_assignment_id": 9999})
 
@@ -1178,10 +1183,10 @@ def test_components_can_be_unlinked(wf_db):
     parent = _assignment(title="NEA", due_date=_day(30))
     child, = _components(parent, (40, 100))
 
-    cw.update_assignment(child.assignment_id,
+    assignments_store.update_assignment(child.assignment_id,
                           {"parent_assignment_id": None,
                            "component_weight": None})
 
-    assert cw.list_components(parent.assignment_id) == []
-    assert cw.get_assignment(
+    assert assignments_store.list_components(parent.assignment_id) == []
+    assert assignments_store.get_assignment(
         child.assignment_id).is_component is False

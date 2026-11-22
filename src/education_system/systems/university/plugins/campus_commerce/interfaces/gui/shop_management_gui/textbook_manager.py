@@ -268,10 +268,10 @@ def _tb_load_exchange(self):
     try:
         with get_connection() as conn:
             rows = conn.execute("""
-                SELECT tl.*, t.title FROM textbook_listings tl
+                SELECT tl.*, date(tl.created_at) AS listed_date, t.title FROM textbook_listings tl
                 JOIN textbooks t ON tl.textbook_id = t.textbook_id
                 WHERE tl.status = 'available'
-                ORDER BY tl.listed_date DESC
+                ORDER BY tl.created_at DESC
             """).fetchall()
             for r in rows:
                 tree.insert("", tk.END, values=(
@@ -350,7 +350,7 @@ def _tb_find_used(self):
     try:
         with get_connection() as conn:
             rows = conn.execute("""
-                SELECT tl.*, t.title FROM textbook_listings tl
+                SELECT tl.*, date(tl.created_at) AS listed_date, t.title FROM textbook_listings tl
                 JOIN textbooks t ON tl.textbook_id = t.textbook_id
                 WHERE tl.textbook_id = ? AND tl.status = 'available'
                 ORDER BY tl.price ASC

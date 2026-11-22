@@ -5,7 +5,9 @@ from __future__ import annotations
 import logging
 import tkinter as tk
 from datetime import date as _date
-from tkinter import messagebox, ttk
+from tkinter import ttk
+from education_system.systems.sixth_form.interfaces.gui._sidebar import SidebarBook
+from education_system.platform.delivery.gui.parented_dialogs import messagebox
 from typing import Callable
 
 from education_system.systems.sixth_form.domain.governance.todo import todo as data
@@ -32,7 +34,7 @@ def open_todo_window(parent=None) -> None:
     win.title(f"To-Do — {branding.SYSTEM_NAME}")
     win.geometry(WIN_GEOMETRY)
     win.minsize(*WIN_MINSIZE)
-    nb = ttk.Notebook(win)
+    nb = SidebarBook(win)
     nb.pack(fill="both", expand=True, padx=10, pady=10)
     BoardTab(nb)
     AllTodosTab(nb)
@@ -402,11 +404,19 @@ class AllTodosTab:
         self.refresh()
 
     def _clear_completed(self) -> None:
+        mine = data.current_owner_names()
+        if not mine:
+            messagebox.showinfo(
+                "Clear Completed",
+                "Sign in to clear your completed to-dos.")
+            return
         if not messagebox.askyesno(
                 "Clear Completed",
-                "Remove all Done/Cancelled to-dos?"):
+                "Remove your own Done/Cancelled to-dos (owner: "
+                f"{' / '.join(mine)})?\n\nOther staff members' to-dos "
+                "are not affected."):
             return
-        n = data.clear_completed()
+        n = data.clear_completed(owners=mine)
         messagebox.showinfo("Done", f"Removed {n} to-do(s).")
         self.refresh()
 

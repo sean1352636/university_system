@@ -163,6 +163,9 @@ def approve_accommodation():
                 print(get_text("housing.accommodation.success.more_info_requested", "More information requested for accommodation {id}.").format(id=accommodation_id))
 
             conn.commit()
+            # Carry it to exams, assessments and module staff (consent-gated).
+            from education_system.systems.university.services.bus import accommodation_bus
+            accommodation_bus.after_change()
 
         # Log the action
         log_action(action_type, accommodation_id, f"{action_type.capitalize()} accommodation for {student_id}: {reason}")

@@ -4,7 +4,7 @@ Get the University Management System running in 5 minutes.
 
 ## Prerequisites
 
-- Python 3.8+ installed
+- Python 3.11+ installed
 - 500MB free disk space
 - Internet connection (for dependencies)
 
@@ -14,10 +14,10 @@ Get the University Management System running in 5 minutes.
 
 ```bash
 # Navigate to project directory
-cd university_system
+cd education-system
 
 # Install required packages
-pip install -r requirements.lock
+make install
 ```
 
 ### 2. Configure Environment
@@ -37,16 +37,16 @@ nano .env
 make run-gui
 
 # Or using Python directly
-python -m education_system --gui
+python -m education_system --university --gui
 ```
 
 ## First Login
 
-The system uses shared authentication with pre-seeded default accounts:
+The system uses shared authentication. These demo accounts are seeded only when `EDU_DEV_SEED=true` is set (see [Default Accounts](../reference/DEFAULT_ACCOUNTS.md)):
 
 | Role | Username | Password | Notes |
 |------|----------|----------|-------|
-| Super Admin | `superadmin` | `SuperAdmin@123` | Access to all 4 systems |
+| Super Admin | `superadmin` | `SuperAdmin@123` | Access to all 7 systems |
 | Administrator | `admin` | `admin123` | University admin |
 | Staff | `staff` | `staff123` | University staff |
 | Student | `S12345` | `student123` | Student-facing features |
@@ -105,7 +105,7 @@ For developers wanting to contribute:
 
 ```bash
 # Complete setup with development tools
-make setup
+make install-dev
 
 # Run tests
 make test

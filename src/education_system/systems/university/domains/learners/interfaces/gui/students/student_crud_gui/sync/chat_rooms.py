@@ -37,7 +37,7 @@ def _auto_join_module_chat_rooms(student_id, email_address, first_name, last_nam
     # Ensure a room exists for every module and add the student. The shared
     # helper creates any missing room (auto-generated modules have none seeded)
     # so the student is always joined to one room per module they study.
-    from education_system.systems.university.domains.academics.domain.services.admissions_selection.module_chat import (
+    from education_system.systems.university.domains.admissions.domain.services.admissions_selection.module_chat import (
         ensure_module_chat_rooms_and_join,
     )
 
@@ -84,7 +84,7 @@ def _sync_module_chat_rooms(student_id, removed_codes, added_codes):
     # Delegate the DB work to the shared helper, which removes the student
     # from dropped-module rooms and ensures+joins rooms for added modules
     # (creating missing ones — auto-generated modules have no seeded room).
-    from education_system.systems.university.domains.academics.domain.services.admissions_selection.module_chat import (
+    from education_system.systems.university.domains.admissions.domain.services.admissions_selection.module_chat import (
         sync_student_module_chat_rooms,
     )
     removed_pairs, added_pairs = sync_student_module_chat_rooms(

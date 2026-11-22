@@ -26,6 +26,17 @@ This module does that cross-reference and keeps the result.
 
 The threshold comes from :mod:`attendance_thresholds`
 (``bursary_hold``), so a college sets it once.
+
+**Where the money lives.** This module is the attendance *rule* layer;
+it no longer keeps a payment store of its own. An award here is a
+scheduled award in :mod:`...finance.bursaries.bursaries` (the
+``award_id`` is the bursary ``application_id``), and a payment is one of
+that award's instalments in ``bursary_schedule`` (``payment_id`` is the
+``instalment_id``). Paying or releasing writes a bursary disbursement, so
+the bursary window, the finance hub and this module all see the same
+money. Exemptions — an attendance rule, not money — stay here. The old
+``attendance_bursary_awards`` / ``attendance_bursary_payments`` tables
+are migrated into the bursary store on first use and left in place.
 """
 
 from __future__ import annotations
@@ -74,7 +85,9 @@ PAID: str = "Paid"
 HELD: str = "Held"
 RELEASED: str = "Released"
 FORFEITED: str = "Forfeited"
-PAYMENT_STATES: tuple[str, ...] = (PENDING, PAID, HELD, RELEASED, FORFEITED)
+CANCELLED: str = "Cancelled"
+PAYMENT_STATES: tuple[str, ...] = (PENDING, PAID, HELD, RELEASED, FORFEITED,
+                                   CANCELLED)
 
 # Reasons a learner is exempt from the attendance condition.
 EXEMPTION_REASONS: tuple[str, ...] = (
@@ -86,7 +99,10 @@ EXEMPTION_REASONS: tuple[str, ...] = (
 # periods. Long enough to be recoverable, short enough to be finite.
 FORFEIT_AFTER_PERIODS: int = 3
 
-_SCHEMA = """
+# The pre-consolidation award/payment tables. No longer created: kept as
+# the record of what ``bursaries._migrate_attendance_bursary`` reads from
+# databases that still have them.
+_LEGACY_SCHEMA = """
 CREATE TABLE IF NOT EXISTS attendance_bursary_awards (
     award_id     INTEGER PRIMARY KEY AUTOINCREMENT,
     student_id   TEXT NOT NULL,
@@ -123,7 +139,9 @@ CREATE TABLE IF NOT EXISTS attendance_bursary_payments (
     FOREIGN KEY (award_id) REFERENCES attendance_bursary_awards(award_id)
         ON DELETE CASCADE
 );
+"""
 
+_SCHEMA = """
 CREATE TABLE IF NOT EXISTS attendance_bursary_exemptions (
     exemption_id INTEGER PRIMARY KEY AUTOINCREMENT,
     student_id   TEXT NOT NULL,
@@ -136,12 +154,6 @@ CREATE TABLE IF NOT EXISTS attendance_bursary_exemptions (
     FOREIGN KEY (student_id) REFERENCES students(student_id) ON DELETE CASCADE
 );
 
-CREATE INDEX IF NOT EXISTS idx_att_burs_award_student
-    ON attendance_bursary_awards(student_id);
-CREATE INDEX IF NOT EXISTS idx_att_burs_pay_state
-    ON attendance_bursary_payments(state);
-CREATE INDEX IF NOT EXISTS idx_att_burs_pay_student
-    ON attendance_bursary_payments(student_id, period_from);
 CREATE INDEX IF NOT EXISTS idx_att_burs_exempt_student
     ON attendance_bursary_exemptions(student_id);
 """
@@ -308,8 +320,76 @@ def init_db() -> None:
     with _connect() as conn:
         conn.executescript(_SCHEMA)
         conn.commit()
+    # The payment store, at this module's path (the same sixthform.db in
+    # production; a test's temporary file under test).
+    _store().ensure_store(DB_PATH)
     logger.debug("Bursary schema ready at %s", DB_PATH)
     _DB_READY = True
+
+
+def _store():
+    from education_system.systems.sixth_form.domains.finance.domain.bursaries import (
+        bursaries,
+    )
+    return bursaries
+
+
+def _call(name: str, *args: Any, **kwargs: Any) -> Any:
+    """Call the bursary store, re-raising its validation errors as this
+    package's :class:`ValidationError` so callers catch one type."""
+    store = _store()
+    try:
+        return getattr(store, name)(*args, **kwargs)
+    except store.ValidationError as exc:
+        raise ValidationError(str(exc)) from None
+
+
+# Attendance vocabulary <-> bursary types.
+_TO_BURSARY_TYPE: dict[str, str] = {
+    VULNERABLE: "Vulnerable Bursary",
+    DISCRETIONARY: "Discretionary Bursary",
+    TRAVEL: "Transport",
+    MEALS: "Free Meals (FSM)",
+    EQUIPMENT: "Books & Equipment",
+}
+_FROM_BURSARY_TYPE: dict[str, str] = {
+    **{v: k for k, v in _TO_BURSARY_TYPE.items()},
+    "Travel Pass": TRAVEL,
+}
+
+
+def award_type_for(bursary_type: str) -> str:
+    """The attendance award type a bursary type behaves as."""
+    return _FROM_BURSARY_TYPE.get(bursary_type, DISCRETIONARY)
+
+
+def attendance_linked_type(bursary_type: str) -> bool:
+    """Whether attendance may ever hold this kind of bursary."""
+    return award_type_for(bursary_type) not in NEVER_HELD
+
+
+def _award_from_app(app: Any) -> Award:
+    return Award(
+        award_id=app.application_id, student_id=app.student_id,
+        award_type=award_type_for(app.bursary_type),
+        amount=(app.instalment_amount if app.instalment_amount is not None
+                else (app.amount_awarded or 0.0)),
+        period=app.payment_frequency or "Fortnightly",
+        start_date=app.schedule_start, end_date=app.schedule_end,
+        conditional=bool(app.attendance_conditional),
+        active=bool(app.active), notes=app.notes,
+        created_at=app.created_at)
+
+
+def _payment_from_inst(i: Any) -> Payment:
+    return Payment(
+        payment_id=i.instalment_id, award_id=i.application_id,
+        student_id=i.student_id, period_from=i.period_from,
+        period_to=i.period_to, amount=i.amount,
+        attendance_pct=i.attendance_pct, threshold_pct=i.threshold_pct,
+        decision=i.decision, state=i.state, decided_by=i.decided_by,
+        decided_at=i.decided_at, released_at=i.released_at,
+        released_by=i.released_by, note=i.note, created_at=i.created_at)
 
 
 def _award_row(r: sqlite3.Row) -> Award:
@@ -365,7 +445,10 @@ def create_award(
     conditional: bool = True,
     notes: str | None = None,
 ) -> Award:
-    """Record a learner's bursary award."""
+    """Record a learner's bursary award — as a scheduled bursary award.
+
+    *amount* is the per-period payment and *period* how often it is paid.
+    """
     init_db()
     from education_system.systems.sixth_form.domain.learners.students import (
         students as _students,
@@ -380,70 +463,46 @@ def create_award(
     if value < 0 or value > 10000:
         raise ValidationError("Amount is out of range")
     award_type = validate_award_type(award_type)
-
-    with _connect() as conn:
-        cur = conn.execute(
-            """INSERT INTO attendance_bursary_awards
-                   (student_id, award_type, amount, period, start_date,
-                    end_date, conditional, notes)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
-            (student.student_id, award_type, value, period,
-             core._validate_date(start_date) if start_date else None,
-             core._validate_date(end_date) if end_date else None,
-             1 if conditional else 0, (notes or "").strip() or None))
-        conn.commit()
-        award_id = int(cur.lastrowid or 0)
-    out = get_award(award_id)
-    assert out is not None
-    return out
+    app = _call("create_scheduled_award",
+        student.student_id, amount=value,
+        bursary_type=_TO_BURSARY_TYPE[award_type], frequency=period,
+        start=core._validate_date(start_date) if start_date else None,
+        end=core._validate_date(end_date) if end_date else None,
+        attendance_conditional=conditional, notes=notes, db_path=DB_PATH)
+    return _award_from_app(app)
 
 
 def get_award(award_id: int) -> Award | None:
     init_db()
-    with _connect() as conn:
-        r = conn.execute(
-            "SELECT * FROM attendance_bursary_awards WHERE award_id = ?",
-            (award_id,)).fetchone()
-    return _award_row(r) if r else None
+    app = _call("get_award_at", award_id, db_path=DB_PATH)
+    if app is None or not app.payment_frequency:
+        return None
+    return _award_from_app(app)
 
 
 def list_awards(*, student_id: str | None = None, active_only: bool = True,
                 award_type: str | None = None,
                 limit: int = 500) -> list[Award]:
     init_db()
-    clauses: list[str] = []
-    args: list[Any] = []
-    if active_only:
-        clauses.append("active = 1")
-    if student_id:
-        clauses.append("student_id = ?")
-        args.append(student_id.strip())
-    if award_type:
-        clauses.append("award_type = ?")
-        args.append(validate_award_type(award_type))
-    where = ("WHERE " + " AND ".join(clauses)) if clauses else ""
-    args.append(max(1, int(limit)))
-    with _connect() as conn:
-        rows = conn.execute(
-            f"SELECT * FROM attendance_bursary_awards {where} "
-            "ORDER BY student_id LIMIT ?", args).fetchall()
-    return [_award_row(r) for r in rows]
+    wanted = validate_award_type(award_type) if award_type else None
+    # This module's awards are the period-by-period ones; awards paid
+    # from a generated schedule go through the bursary payment run
+    # (which applies the same attendance rule, :func:`evaluate_attendance`).
+    apps = _call("list_scheduled_awards",
+        student_id=student_id, active_only=active_only, run_driven=True,
+        limit=limit, db_path=DB_PATH)
+    return [_award_from_app(a) for a in apps
+            if wanted is None or award_type_for(a.bursary_type) == wanted]
 
 
 def end_award(award_id: int, *, on: str | None = None) -> Award:
     init_db()
     if get_award(award_id) is None:
         raise ValidationError(f"No award with id {award_id}")
-    with _connect() as conn:
-        conn.execute(
-            "UPDATE attendance_bursary_awards SET active = 0, end_date = ? "
-            "WHERE award_id = ?",
-            (core._validate_date(on or _dt.date.today().isoformat()),
-             award_id))
-        conn.commit()
-    out = get_award(award_id)
-    assert out is not None
-    return out
+    app = _call("end_scheduled_award",
+        award_id, on=core._validate_date(on or _dt.date.today().isoformat()),
+        db_path=DB_PATH)
+    return _award_from_app(app)
 
 
 # ── Exemptions ──────────────────────────────────────────────────────
@@ -516,6 +575,49 @@ def is_exempt(student_id: str, *, on: str | None = None) -> bool:
     return any(e.covers(date) for e in list_exemptions(student_id=student_id))
 
 
+def is_exempt_for_period(student_id: str, period_from: str,
+                         period_to: str) -> bool:
+    """Exempt for a payment period being decided now.
+
+    True when an exemption overlaps the period, or is in force today —
+    hardship is usually granted after the poor attendance it explains,
+    so one recorded this morning must still protect last week's money.
+    """
+    today = _dt.date.today().isoformat()
+    for e in list_exemptions(student_id=student_id):
+        if e.covers(today):
+            return True
+        if e.start_date <= period_to and (e.end_date is None
+                                          or e.end_date >= period_from):
+            return True
+    return False
+
+
+def set_exemption_end(exemption_id: int,
+                      end_date: str | None) -> Exemption:
+    """End an exemption on *end_date* (``None`` re-opens it).
+
+    Ending rather than deleting keeps the record of which periods the
+    learner was protected for — used when the young-carer support record
+    an exemption is derived from ends or stops asking for it.
+    """
+    init_db()
+    existing = get_exemption(exemption_id)
+    if existing is None:
+        raise ValidationError(f"No exemption #{exemption_id}")
+    end = core._validate_date(end_date) if end_date else None
+    if end and end < existing.start_date:
+        end = existing.start_date
+    with _connect() as conn:
+        conn.execute(
+            "UPDATE attendance_bursary_exemptions SET end_date = ? "
+            "WHERE exemption_id = ?", (end, exemption_id))
+        conn.commit()
+    out = get_exemption(exemption_id)
+    assert out is not None
+    return out
+
+
 def remove_exemption(exemption_id: int) -> bool:
     init_db()
     with _connect() as conn:
@@ -542,6 +644,43 @@ def _unauthorised_percentage(student_id: str, date_from: str,
     if countable <= 0:
         return None, summary.total
     return round(100.0 * summary.attending / countable, 1), summary.total
+
+
+def evaluate_attendance(
+    student_id: str,
+    *,
+    attendance_linked: bool,
+    period_from: str,
+    period_to: str,
+    threshold_pct: float | None = None,
+    label: str = "This award",
+) -> tuple[str, str, float | None, float, bool]:
+    """The attendance rule for one payment period.
+
+    Returns ``(decision, reason, attendance_pct, threshold, exempt)``.
+    The single place the rule lives — :func:`assess` and the bursary
+    payment run (:func:`...bursaries.payment_run`) both call it.
+    """
+    threshold = (threshold_pct if threshold_pct is not None
+                 else thresholds.value_of(thresholds.BURSARY_HOLD,
+                                          default=85.0))
+    assert threshold is not None
+    if not attendance_linked:
+        return (PAY, f"{label} is not attendance-conditional", None,
+                threshold, False)
+    if is_exempt_for_period(student_id, period_from, period_to):
+        return (PAY, "Exempt from the attendance condition", None,
+                threshold, True)
+    percentage, sessions = _unauthorised_percentage(
+        student_id, period_from, period_to)
+    if percentage is None or sessions == 0:
+        return (PAY, "No attendance data for the period — paid by default",
+                percentage, threshold, False)
+    if percentage >= threshold:
+        return (PAY, f"{percentage:.1f}% meets {threshold:g}%", percentage,
+                threshold, False)
+    return (HOLD, f"{percentage:.1f}% is below {threshold:g}% "
+                  "(unauthorised absence only)", percentage, threshold, False)
 
 
 def assess(
@@ -581,51 +720,16 @@ def assess(
             continue
         if award.end_date and award.end_date < period_from:
             continue
-
-        if not award.attendance_linked:
-            result.assessments.append(Assessment(
-                student_id=award.student_id, award=award,
-                period_from=period_from, period_to=period_to,
-                amount=award.amount, attendance_pct=None,
-                threshold_pct=threshold, decision=PAY,
-                reason=f"{award.award_type} is not attendance-conditional",
-                student_name=names.get(award.student_id)))
-            continue
-
-        if is_exempt(award.student_id, on=period_to):
-            result.assessments.append(Assessment(
-                student_id=award.student_id, award=award,
-                period_from=period_from, period_to=period_to,
-                amount=award.amount, attendance_pct=None,
-                threshold_pct=threshold, decision=PAY,
-                reason="Exempt from the attendance condition", exempt=True,
-                student_name=names.get(award.student_id)))
-            continue
-
-        percentage, sessions = _unauthorised_percentage(
-            award.student_id, period_from, period_to)
-        if percentage is None or sessions == 0:
-            result.assessments.append(Assessment(
-                student_id=award.student_id, award=award,
-                period_from=period_from, period_to=period_to,
-                amount=award.amount, attendance_pct=percentage,
-                threshold_pct=threshold, decision=PAY,
-                reason="No attendance data for the period — paid by default",
-                student_name=names.get(award.student_id)))
-            continue
-
-        if percentage >= threshold:
-            decision, reason = PAY, f"{percentage:.1f}% meets {threshold:g}%"
-        else:
-            decision = HOLD
-            reason = (f"{percentage:.1f}% is below {threshold:g}% "
-                      "(unauthorised absence only)")
+        decision, reason, percentage, _t, exempt = evaluate_attendance(
+            award.student_id, attendance_linked=award.attendance_linked,
+            period_from=period_from, period_to=period_to,
+            threshold_pct=threshold, label=award.award_type)
         result.assessments.append(Assessment(
             student_id=award.student_id, award=award,
             period_from=period_from, period_to=period_to,
             amount=award.amount, attendance_pct=percentage,
             threshold_pct=threshold, decision=decision, reason=reason,
-            student_name=names.get(award.student_id)))
+            exempt=exempt, student_name=names.get(award.student_id)))
 
     result.assessments.sort(key=lambda a: (a.decision != HOLD,
                                            a.attendance_pct or 0))
@@ -652,32 +756,17 @@ def apply_decision(
     decision = override or assessment.decision
     if decision not in DECISIONS:
         raise ValidationError(f"Decision must be one of: {', '.join(DECISIONS)}")
-    state = HELD if decision == HOLD else PAID
-
-    with _connect() as conn:
-        conn.execute(
-            """INSERT INTO attendance_bursary_payments
-                   (award_id, student_id, period_from, period_to, amount,
-                    attendance_pct, threshold_pct, decision, state,
-                    decided_by, decided_at, note)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), ?)
-               ON CONFLICT(award_id, period_from, period_to) DO UPDATE SET
-                   decision = excluded.decision, state = excluded.state,
-                   attendance_pct = excluded.attendance_pct,
-                   decided_by = excluded.decided_by,
-                   decided_at = datetime('now'),
-                   note = COALESCE(excluded.note,
-                                   attendance_bursary_payments.note)""",
-            (assessment.award.award_id, assessment.student_id,
-             assessment.period_from, assessment.period_to, assessment.amount,
-             assessment.attendance_pct, assessment.threshold_pct, decision,
-             state, decided_by.strip(),
-             (note or assessment.reason).strip() or None))
-        conn.commit()
-    out = payment_for(assessment.award.award_id, assessment.period_from,
-                      assessment.period_to)
-    assert out is not None
-    if state == HELD:
+    store = _store()
+    instalment = _call("record_period_decision",
+        assessment.award.award_id, period_from=assessment.period_from,
+        period_to=assessment.period_to, amount=assessment.amount,
+        decision=(store.DECISION_HOLD if decision == HOLD
+                  else store.DECISION_PAY),
+        decided_by=decided_by.strip(), attendance_pct=assessment.attendance_pct,
+        threshold_pct=assessment.threshold_pct,
+        note=(note or assessment.reason), db_path=DB_PATH)
+    out = _payment_from_inst(instalment)
+    if out.state == HELD:
         logger.info("Bursary held for %s (%s): %s", assessment.student_id,
                     assessment.period_from, assessment.reason)
     return out
@@ -719,15 +808,8 @@ def release(payment_id: int, *, released_by: str,
             f"Payment #{payment_id} is {payment.state.lower()}, not held")
     if not (released_by or "").strip():
         raise ValidationError("A release must name who authorised it")
-    with _connect() as conn:
-        conn.execute(
-            """UPDATE attendance_bursary_payments
-                  SET state = ?, released_at = datetime('now'),
-                      released_by = ?, note = COALESCE(?, note)
-                WHERE payment_id = ?""",
-            (RELEASED, released_by.strip(), (note or "").strip() or None,
-             payment_id))
-        conn.commit()
+    _call("release_instalment", payment_id, released_by=released_by.strip(),
+                                note=note, db_path=DB_PATH)
     logger.info("Bursary payment #%d released for %s", payment_id,
                 payment.student_id)
     out = get_payment(payment_id)
@@ -780,12 +862,8 @@ def forfeit(payment_id: int, *, reason: str, by: str) -> Payment:
     if not note or not (by or "").strip():
         raise ValidationError(
             "Forfeiting a bursary payment needs a reason and a named person")
-    with _connect() as conn:
-        conn.execute(
-            "UPDATE attendance_bursary_payments SET state = ?, note = ?, "
-            "released_by = ? WHERE payment_id = ?",
-            (FORFEITED, note, by.strip(), payment_id))
-        conn.commit()
+    _call("forfeit_instalment", payment_id, reason=note, by=by.strip(),
+                                db_path=DB_PATH)
     out = get_payment(payment_id)
     assert out is not None
     return out
@@ -795,49 +873,39 @@ def forfeit(payment_id: int, *, reason: str, by: str) -> Payment:
 
 def get_payment(payment_id: int) -> Payment | None:
     init_db()
-    with _connect() as conn:
-        r = conn.execute(
-            "SELECT * FROM attendance_bursary_payments WHERE payment_id = ?",
-            (payment_id,)).fetchone()
-    return _payment_row(r) if r else None
+    inst = _call("get_instalment", payment_id, db_path=DB_PATH)
+    return _payment_from_inst(inst) if inst else None
 
 
 def payment_for(award_id: int, period_from: str,
                 period_to: str) -> Payment | None:
     init_db()
-    with _connect() as conn:
-        r = conn.execute(
-            "SELECT * FROM attendance_bursary_payments "
-            "WHERE award_id = ? AND period_from = ? AND period_to = ?",
-            (award_id, period_from, period_to)).fetchone()
-    return _payment_row(r) if r else None
+    for inst in _call("list_instalments", application_id=award_id,
+                                          period_from=period_from,
+                                          db_path=DB_PATH):
+        if inst.period_to == period_to:
+            return _payment_from_inst(inst)
+    return None
 
 
 def list_payments(*, student_id: str | None = None, state: str | None = None,
                   period_from: str | None = None,
                   limit: int = 500) -> list[Payment]:
+    """Decided payments (paid / held / released / forfeited).
+
+    Scheduled instalments nobody has decided on yet are left out unless
+    ``state=PENDING`` asks for them — they are the bursary payment run's
+    business, not a record of what attendance did.
+    """
     init_db()
-    clauses: list[str] = []
-    args: list[Any] = []
-    if student_id:
-        clauses.append("student_id = ?")
-        args.append(student_id.strip())
-    if state:
-        if state not in PAYMENT_STATES:
-            raise ValidationError(
-                f"State must be one of: {', '.join(PAYMENT_STATES)}")
-        clauses.append("state = ?")
-        args.append(state)
-    if period_from:
-        clauses.append("period_from = ?")
-        args.append(core._validate_date(period_from))
-    where = ("WHERE " + " AND ".join(clauses)) if clauses else ""
-    args.append(max(1, int(limit)))
-    with _connect() as conn:
-        rows = conn.execute(
-            f"SELECT * FROM attendance_bursary_payments {where} "
-            "ORDER BY period_from DESC, student_id LIMIT ?", args).fetchall()
-    return [_payment_row(r) for r in rows]
+    if state and state not in PAYMENT_STATES:
+        raise ValidationError(
+            f"State must be one of: {', '.join(PAYMENT_STATES)}")
+    rows = _call("list_instalments",
+        student_id=student_id, state=state,
+        period_from=core._validate_date(period_from) if period_from else None,
+        decided_only=state is None, limit=limit, db_path=DB_PATH)
+    return [_payment_from_inst(i) for i in rows]
 
 
 def held_payments(*, with_names: bool = True) -> list[Payment]:

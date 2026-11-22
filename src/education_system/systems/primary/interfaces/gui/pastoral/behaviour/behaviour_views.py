@@ -5,7 +5,7 @@ from __future__ import annotations
 import functools
 import logging
 import tkinter as tk
-from tkinter import messagebox, simpledialog, ttk
+from tkinter import messagebox, ttk
 from typing import Any, Callable
 
 from education_system.systems.primary.domain.pastoral.behaviour import (
@@ -14,12 +14,10 @@ from education_system.systems.primary.domain.pastoral.behaviour import (
 from education_system.systems.primary.domain.pastoral.behaviour.behaviour import (
     INCIDENT_TYPES, SEVERITIES, INCIDENT_STATUSES,
 )
-from education_system.systems.primary.domain.academics.subjects import (
-    subjects as subjects_data,
-)
 from education_system.systems.primary.domain.learners.pupils.pupils import (
     ValidationError, YEAR_GROUPS,
 )
+from education_system.systems.primary.interfaces.gui import kit
 
 logger = logging.getLogger(__name__)
 
@@ -49,13 +47,54 @@ def _safe_view(func: Callable[..., None]) -> Callable[..., None]:
     return wrapper
 
 
-def _incident_dialog(host, title: str,
-                      initial: dict[str, Any] | None = None
-                      ) -> dict[str, Any] | None:
-    dlg = tk.Toplevel(host.root)
+def _owner(host, owner=None):
+    """The window a pop-up belongs to: the page's own window when the page
+    was popped out, else the main window."""
+    return owner if owner is not None else host.root
+
+
+def _ask_value(owner, title: str, prompt: str,
+               make: Callable[[tk.Misc, tk.StringVar], tk.Widget],
+               initial: str = "") -> str | None:
+    """A small modal pop-up holding one picker; the picked value ("" when
+    left blank) or None when cancelled."""
+    dlg = tk.Toplevel(owner)
     dlg.title(title)
-    dlg.transient(host.root)
-    dlg.geometry("520x560")
+    dlg.transient(owner)
+    try:
+        dlg.wait_visibility()
+        dlg.grab_set()
+    except tk.TclError:
+        logger.debug("grab_set skipped", exc_info=True)
+    frm = ttk.Frame(dlg, padding=12)
+    frm.pack(fill="both", expand=True)
+    ttk.Label(frm, text=prompt).pack(anchor="w", pady=(0, 6))
+    var = tk.StringVar(value=initial)
+    make(frm, var).pack(anchor="w")
+    result: str | None = None
+
+    def _ok() -> None:
+        nonlocal result
+        result = var.get().strip()
+        dlg.destroy()
+
+    btns = ttk.Frame(frm)
+    btns.pack(fill="x", pady=(10, 0))
+    ttk.Button(btns, text="Cancel", command=dlg.destroy).pack(side="right",
+                                                              padx=4)
+    ttk.Button(btns, text="OK", command=_ok).pack(side="right")
+    dlg.wait_window()
+    return result
+
+
+def _incident_dialog(host, title: str,
+                      initial: dict[str, Any] | None = None, *,
+                      owner=None) -> dict[str, Any] | None:
+    master = _owner(host, owner)
+    dlg = tk.Toplevel(master)
+    dlg.title(title)
+    dlg.transient(master)
+    dlg.geometry("600x600")
     dlg.update_idletasks()
     try:
         dlg.wait_visibility()
@@ -64,8 +103,7 @@ def _incident_dialog(host, title: str,
         logger.debug("grab_set skipped — dialog not viewable", exc_info=True)
 
     initial = initial or {}
-    frm = ttk.Frame(dlg, padding=12)
-    frm.pack(fill="both", expand=True)
+    frm, footer = kit.scrolled_form(dlg)
 
     pupil_var  = tk.StringVar(value=str(initial.get("pupil_id") or ""))
     date_var   = tk.StringVar(value=str(initial.get("incident_date")
@@ -83,50 +121,33 @@ def _incident_dialog(host, title: str,
                                              or ""))
     status_var = tk.StringVar(value=str(initial.get("status") or "Open"))
 
-    try:
-        subjects = subjects_data.list_all(active_only=True)
-    except Exception:
-        subjects = []
-    subject_labels = [""] + [f"#{s.subject_id} {s.code} — {s.name}"
-                              for s in subjects]
-    subject_var = tk.StringVar(value="")
     initial_sid = initial.get("subject_id")
-    if initial_sid is not None:
-        for s in subjects:
-            if s.subject_id == int(initial_sid):
-                subject_var.set(f"#{s.subject_id} {s.code} — {s.name}")
-                break
+    subject_var = tk.StringVar(
+        value="" if initial_sid in (None, "") else str(initial_sid))
 
     rows: list[tuple[str, tk.Widget]] = [
-        ("Pupil ID:",   ttk.Entry(frm, textvariable=pupil_var,
-                                    width=14)),
-        ("Date:",       ttk.Entry(frm, textvariable=date_var,
-                                    width=14)),
-        ("Time:",       ttk.Entry(frm, textvariable=time_var,
-                                    width=8)),
+        ("Pupil:",      kit.PupilPicker(frm, pupil_var)),
+        ("Date:",       kit.DateField(frm, date_var)),
+        ("Time:",       kit.TimeField(frm, time_var)),
         ("Location:",   ttk.Entry(frm, textvariable=loc_var,
                                     width=24)),
-        ("Subject:",    ttk.Combobox(frm, textvariable=subject_var,
-                                      values=subject_labels,
-                                      state="readonly", width=42)),
-        ("Type:",       ttk.Combobox(frm, textvariable=type_var,
-                                      values=list(INCIDENT_TYPES.keys()),
-                                      state="readonly", width=22)),
-        ("Points:",     ttk.Entry(frm, textvariable=points_var,
-                                    width=6)),
-        ("Severity:",   ttk.Combobox(frm, textvariable=sev_var,
-                                      values=list(SEVERITIES),
-                                      state="readonly", width=10)),
-        ("Raised by:",  ttk.Entry(frm, textvariable=raisedby_var,
-                                    width=24)),
-        ("Status:",     ttk.Combobox(frm, textvariable=status_var,
-                                      values=list(INCIDENT_STATUSES),
-                                      state="readonly", width=12)),
+        ("Subject:",    kit.SubjectPicker(frm, subject_var, width=42)),
+        ("Type:",       kit.ChoiceField(frm, type_var,
+                                        choices=list(INCIDENT_TYPES.keys()),
+                                        width=22)),
+        ("Points:",     kit.NumberField(frm, points_var, from_=-100,
+                                        to=100, width=6)),
+        ("Severity:",   kit.ChoiceField(frm, sev_var, choices=SEVERITIES,
+                                        width=10)),
+        ("Raised by:",  kit.StaffPicker(frm, raisedby_var, by="name")),
+        ("Status:",     kit.ChoiceField(frm, status_var,
+                                        choices=INCIDENT_STATUSES,
+                                        width=12)),
     ]
     for i, (label, widget) in enumerate(rows):
         ttk.Label(frm, text=label).grid(row=i, column=0, sticky="w",
                                          pady=2)
-        widget.grid(row=i, column=1, sticky="ew", pady=2)
+        widget.grid(row=i, column=1, sticky="w", pady=2)
     frm.columnconfigure(1, weight=1)
 
     ttk.Label(frm, text="Description (required):").grid(
@@ -150,12 +171,6 @@ def _incident_dialog(host, title: str,
 
     result: dict[str, Any] | None = None
 
-    def _parse_subject(label: str) -> str:
-        label = (label or "").strip()
-        if not label.startswith("#"):
-            return ""
-        return label.split()[0][1:]
-
     def _save() -> None:
         nonlocal result
         result = {
@@ -163,7 +178,7 @@ def _incident_dialog(host, title: str,
             "incident_date": date_var.get().strip(),
             "incident_time": time_var.get().strip(),
             "location":      loc_var.get().strip(),
-            "subject_id":    _parse_subject(subject_var.get()),
+            "subject_id":    subject_var.get().strip(),
             "incident_type": type_var.get().strip(),
             "points":        points_var.get().strip(),
             "severity":      sev_var.get().strip(),
@@ -175,12 +190,9 @@ def _incident_dialog(host, title: str,
         }
         dlg.destroy()
 
-    btns = ttk.Frame(frm)
-    btns.grid(row=len(rows) + 3, column=0, columnspan=2, sticky="e",
-              pady=(12, 0))
-    ttk.Button(btns, text="Cancel",
+    ttk.Button(footer, text="Cancel",
                command=dlg.destroy).pack(side="right", padx=4)
-    ttk.Button(btns, text="Save", command=_save).pack(side="right")
+    ttk.Button(footer, text="Save", command=_save).pack(side="right")
     dlg.wait_window()
     return result
 
@@ -188,10 +200,15 @@ def _incident_dialog(host, title: str,
 @_safe_view
 def open_behaviour(host) -> None:
     logger.debug("GUI: open_behaviour")
-    host._clear_content()
-    root = host.content_frame
-    ttk.Label(root, text="Behaviour Log",
-              font=("", 16, "bold")).pack(anchor="w", pady=(0, 8))
+    kit.show_page(host, "Behaviour Log",
+                  lambda parent: _draw_behaviour(parent, host))
+
+
+def _draw_behaviour(parent, host) -> None:
+    root = parent
+    win = parent.winfo_toplevel()
+    kit.page_heading(root, "Behaviour Log",
+                     "Positive recognitions and behaviour incidents.")
 
     summary_var = tk.StringVar()
     ttk.Label(root, textvariable=summary_var, foreground="#666").pack(
@@ -201,72 +218,70 @@ def open_behaviour(host) -> None:
     bar.pack(fill="x", pady=(0, 6))
     ttk.Label(bar, text="Year:").pack(side="left", padx=(0, 4))
     year_var = tk.StringVar(value="")
-    ttk.Combobox(bar, textvariable=year_var,
-                 values=["", *YEAR_GROUPS], state="readonly",
-                 width=5).pack(side="left", padx=(0, 6))
+    kit.YearGroupPicker(bar, year_var, blank=True,
+                        width=10).pack(side="left", padx=(0, 6))
     ttk.Label(bar, text="Pupil:").pack(side="left", padx=(0, 4))
     pupil_var = tk.StringVar(value="")
-    ttk.Entry(bar, textvariable=pupil_var, width=12).pack(
-        side="left", padx=(0, 6))
+    pupil_pick = kit.PupilPicker(bar, pupil_var, width=30)
+    pupil_pick.pack(side="left", padx=(0, 6))
     ttk.Label(bar, text="Polarity:").pack(side="left", padx=(0, 4))
     polarity_var = tk.StringVar(value="")
-    ttk.Combobox(bar, textvariable=polarity_var,
-                 values=["", "positive", "negative"],
-                 state="readonly", width=10).pack(
-        side="left", padx=(0, 6))
+    kit.ChoiceField(bar, polarity_var, choices=("positive", "negative"),
+                    blank=True, width=10).pack(side="left", padx=(0, 6))
     ttk.Label(bar, text="Severity:").pack(side="left", padx=(0, 4))
     sev_var = tk.StringVar(value="")
-    ttk.Combobox(bar, textvariable=sev_var,
-                 values=["", *SEVERITIES], state="readonly",
-                 width=10).pack(side="left", padx=(0, 6))
+    kit.ChoiceField(bar, sev_var, choices=SEVERITIES, blank=True,
+                    width=10).pack(side="left", padx=(0, 6))
     ttk.Label(bar, text="Status:").pack(side="left", padx=(0, 4))
     status_var = tk.StringVar(value="")
-    ttk.Combobox(bar, textvariable=status_var,
-                 values=["", *INCIDENT_STATUSES], state="readonly",
-                 width=10).pack(side="left", padx=(0, 8))
+    kit.ChoiceField(bar, status_var, choices=INCIDENT_STATUSES, blank=True,
+                    width=10).pack(side="left", padx=(0, 8))
+    # The toolbar is wide; its buttons get a row of their own.
+    bar = ttk.Frame(root)
+    bar.pack(fill="x", pady=(0, 6))
     ttk.Button(bar, text="Apply",
                command=lambda: _refresh()).pack(side="left", padx=2)
     ttk.Button(bar, text="Log",
-               command=lambda: _new(host, on_done=_refresh)
+               command=lambda: _new(host, on_done=_refresh,
+                                owner=win)
                ).pack(side="left", padx=2)
     ttk.Button(bar, text="Edit",
-               command=lambda: _edit(host, tree, on_done=_refresh)
+               command=lambda: _edit(host, tree, on_done=_refresh,
+                                owner=win)
                ).pack(side="left", padx=2)
     ttk.Button(bar, text="Status",
-               command=lambda: _status(host, tree, on_done=_refresh)
+               command=lambda: _status(host, tree, on_done=_refresh,
+                                owner=win)
                ).pack(side="left", padx=2)
     ttk.Button(bar, text="Pupil summary",
-               command=lambda: _pupil_summary(host)
+               command=lambda: _pupil_summary(host, owner=win,
+                                              pupil_id=pupil_var.get())
                ).pack(side="left", padx=2)
     ttk.Button(bar, text="Threshold",
                command=lambda: _threshold(host,
                                             year_var.get().strip()
-                                            or None)
+                                            or None, owner=win)
                ).pack(side="left", padx=2)
     ttk.Button(bar, text="Delete",
-               command=lambda: _delete(host, tree, on_done=_refresh)
+               command=lambda: _delete(host, tree, on_done=_refresh,
+                                owner=win)
                ).pack(side="left", padx=2)
     ttk.Button(bar, text="Refresh",
                command=lambda: _refresh()).pack(side="left", padx=2)
 
-    cols = ("id", "date", "time", "pupil", "year", "type", "pol",
-            "pts", "sev", "status", "desc")
-    tree = ttk.Treeview(root, columns=cols, show="headings", height=18)
-    for c, label, w in [
+    tree = kit.tree(root, [
         ("id", "ID", 50), ("date", "Date", 90),
         ("time", "Time", 60), ("pupil", "Pupil", 90),
         ("year", "Yr", 50), ("type", "Type", 140),
         ("pol", "Pol", 60), ("pts", "Pts", 50),
         ("sev", "Severity", 80), ("status", "Status", 90),
         ("desc", "Description", 260),
-    ]:
-        tree.heading(c, text=label)
-        tree.column(c, width=w, anchor="w")
-    tree.pack(fill="both", expand=True)
-    tree.tag_configure("positive", background="#e6f7ec")
-    tree.tag_configure("negative", background="#fde7e7")
+    ], height=18, stretch=("desc",),
+        tags={"positive": "#e6f7ec", "negative": "#fde7e7"})
 
     def _refresh() -> None:
+        if not tree.winfo_exists():
+            return
         for i in tree.get_children():
             tree.delete(i)
         try:
@@ -279,13 +294,13 @@ def open_behaviour(host) -> None:
             )
         except ValidationError as e:
             messagebox.showerror("Behaviour Log", str(e),
-                                 parent=host.root)
+                                 parent=win)
             return
         except Exception as e:
             logger.exception("behaviour refresh failed")
             messagebox.showerror("Behaviour Log",
                                  f"Could not load:\n\n{e}",
-                                 parent=host.root)
+                                 parent=win)
             return
         for i in rows:
             tree.insert("", "end", iid=str(i.incident_id), values=(
@@ -303,10 +318,13 @@ def open_behaviour(host) -> None:
                 f"-: {s['negative']}    Open: {s['open']}")
         except Exception:
             summary_var.set(f"{len(rows)} incident(s)")
-        host.status_var.set(f"Behaviour: {len(rows)} record(s)")
+        status_bar = getattr(host, "status_var", None)
+        if status_bar is not None:
+            status_bar.set(f"Behaviour: {len(rows)} record(s)")
 
     tree.bind("<Double-1>", lambda _e: _edit(host, tree,
-                                              on_done=_refresh))
+                                              on_done=_refresh, owner=win))
+    pupil_pick.bind_change(lambda _v: _refresh())
     year_var.trace_add("write", lambda *_: _refresh())
     polarity_var.trace_add("write", lambda *_: _refresh())
     sev_var.trace_add("write", lambda *_: _refresh())
@@ -314,12 +332,12 @@ def open_behaviour(host) -> None:
     _refresh()
 
 
-def _selected_id(tree: ttk.Treeview, host) -> int | None:
+def _selected_id(tree: ttk.Treeview, host, owner=None) -> int | None:
     sel = tree.focus()
     if not sel:
         messagebox.showinfo("Behaviour Log",
                             "Select an incident first.",
-                            parent=host.root)
+                            parent=_owner(host, owner))
         return None
     try:
         return int(sel)
@@ -328,8 +346,8 @@ def _selected_id(tree: ttk.Treeview, host) -> int | None:
 
 
 @_safe_view
-def _new(host, *, on_done=None) -> None:
-    fields = _incident_dialog(host, "Log behaviour incident")
+def _new(host, *, on_done=None, owner=None) -> None:
+    fields = _incident_dialog(host, "Log behaviour incident", owner=owner)
     if not fields:
         return
     i = data.log_incident(fields)
@@ -338,15 +356,15 @@ def _new(host, *, on_done=None) -> None:
         f"Logged #{i.incident_id}: {i.pupil_id} — "
         f"{i.incident_type} ({'+' if i.points > 0 else ''}"
         f"{i.points} pts)",
-        parent=host.root,
+        parent=_owner(host, owner),
     )
     if on_done:
         on_done()
 
 
 @_safe_view
-def _edit(host, tree: ttk.Treeview, *, on_done=None) -> None:
-    iid = _selected_id(tree, host)
+def _edit(host, tree: ttk.Treeview, *, on_done=None, owner=None) -> None:
+    iid = _selected_id(tree, host, owner)
     if iid is None:
         return
     existing = data.get(iid)
@@ -358,7 +376,7 @@ def _edit(host, tree: ttk.Treeview, *, on_done=None) -> None:
         "description", "raised_by", "action_taken", "status",
         "notes")}
     fields = _incident_dialog(host, f"Edit incident #{iid}",
-                                initial=initial)
+                                initial=initial, owner=owner)
     if not fields:
         return
     data.update(iid, fields)
@@ -367,16 +385,16 @@ def _edit(host, tree: ttk.Treeview, *, on_done=None) -> None:
 
 
 @_safe_view
-def _status(host, tree: ttk.Treeview, *, on_done=None) -> None:
-    iid = _selected_id(tree, host)
+def _status(host, tree: ttk.Treeview, *, on_done=None, owner=None) -> None:
+    iid = _selected_id(tree, host, owner)
     if iid is None:
         return
     i = data.get(iid)
     if i is None:
         return
-    dlg = tk.Toplevel(host.root)
+    dlg = tk.Toplevel(_owner(host, owner))
     dlg.title(f"Status — #{iid}")
-    dlg.transient(host.root)
+    dlg.transient(_owner(host, owner))
     dlg.geometry("340x140")
     dlg.update_idletasks()
     try:
@@ -392,9 +410,7 @@ def _status(host, tree: ttk.Treeview, *, on_done=None) -> None:
     ttk.Label(frm, text=f"Current: {i.status}",
               foreground="#666").pack(anchor="w", pady=(0, 8))
     new_var = tk.StringVar(value=i.status)
-    ttk.Combobox(frm, textvariable=new_var,
-                 values=list(INCIDENT_STATUSES),
-                 state="readonly").pack(fill="x")
+    kit.ChoiceField(frm, new_var, choices=INCIDENT_STATUSES).pack(fill="x")
 
     def _save() -> None:
         try:
@@ -415,8 +431,8 @@ def _status(host, tree: ttk.Treeview, *, on_done=None) -> None:
 
 
 @_safe_view
-def _delete(host, tree: ttk.Treeview, *, on_done=None) -> None:
-    iid = _selected_id(tree, host)
+def _delete(host, tree: ttk.Treeview, *, on_done=None, owner=None) -> None:
+    iid = _selected_id(tree, host, owner)
     if iid is None:
         return
     existing = data.get(iid)
@@ -426,7 +442,7 @@ def _delete(host, tree: ttk.Treeview, *, on_done=None) -> None:
             "Delete incident",
             f"Delete incident #{iid} ({existing.pupil_id}, "
             f"{existing.incident_type})?",
-            parent=host.root):
+            parent=_owner(host, owner)):
         return
     data.delete(iid)
     if on_done:
@@ -434,9 +450,10 @@ def _delete(host, tree: ttk.Treeview, *, on_done=None) -> None:
 
 
 @_safe_view
-def _pupil_summary(host) -> None:
-    pid = simpledialog.askstring("Pupil summary", "Pupil ID:",
-                                  parent=host.root)
+def _pupil_summary(host, *, owner=None, pupil_id: str = "") -> None:
+    pid = _ask_value(_owner(host, owner), "Pupil summary", "Pupil:",
+                     lambda m, v: kit.PupilPicker(m, v),
+                     initial=pupil_id or "")
     if not pid:
         return
     s = data.pupil_summary(pid.strip())
@@ -460,22 +477,28 @@ def _pupil_summary(host) -> None:
                             key=lambda kv: -kv[1])[:10]:
             lines.append(f"  {k:<22} {v}")
     messagebox.showinfo("Behaviour — pupil summary",
-                        "\n".join(lines), parent=host.root)
+                        "\n".join(lines), parent=_owner(host, owner))
 
 
 @_safe_view
-def _threshold(host, year_group: str | None) -> None:
-    thr = simpledialog.askinteger(
-        "Threshold",
-        "Show pupils with net points at or below:",
-        initialvalue=-10, parent=host.root)
-    if thr is None:
+def _threshold(host, year_group: str | None, *, owner=None) -> None:
+    raw = _ask_value(_owner(host, owner), "Threshold",
+                     "Show pupils with net points at or below:",
+                     lambda m, v: kit.NumberField(m, v, from_=-500, to=500),
+                     initial="-10")
+    if raw is None:
+        return
+    try:
+        thr = int(float(raw))
+    except ValueError:
+        messagebox.showerror("Threshold", "Enter a whole number.",
+                             parent=_owner(host, owner))
         return
     rows = data.pupils_above_threshold(points_below=thr,
                                           year_group=year_group)
-    dlg = tk.Toplevel(host.root)
+    dlg = tk.Toplevel(_owner(host, owner))
     dlg.title("Pupils on threshold")
-    dlg.transient(host.root)
+    dlg.transient(_owner(host, owner))
     dlg.geometry("420x380")
     dlg.update_idletasks()
     try:

@@ -11,16 +11,24 @@ def dashboard(source_system: str) -> None:
     rows = service.list_applications(source_system=source_system)
     print("\n  University applications")
     print("  " + "-" * 100)
-    print(f"  {'Application':<12} {'Progress':<34} {'University status':<22} {'Created':<20}")
+    print(f"  {'Application':<12} {'Progress':<34} {'University status':<22} "
+          f"{'Created':<20} Entry / route")
     for row in rows:
         # "Unavailable" is not "—": one says the university could not be
         # read, the other that this learner has no record there.
         status = ("Unavailable" if row.get("university_lookup_failed")
                   else str(row.get("university_status") or "—"))
+        entry = " · ".join(p for p in (
+            row.get("entry_label"),
+            (f"via {row['handover_route']}" if row.get("handover_route")
+             and row.get("handover_route") != "Firm" else ""),
+        ) if p) or "—"
         print(f"  {str(row.get('university_application_id') or '—'):<12} "
               f"{row['application_status']:<34} "
               f"{status:<22} "
-              f"{str(row.get('initiated_at') or '—'):<20}")
+              f"{str(row.get('initiated_at') or '—'):<20} {entry}")
+        if row.get("reroute_reason"):
+            print(f"  {'':<12} {row['reroute_reason']}")
     if not rows:
         print("  No applications.")
     if any(r.get("university_lookup_failed") for r in rows):
@@ -29,7 +37,8 @@ def dashboard(source_system: str) -> None:
 
 
 def create(source_system: str, *, actor: str | None = None) -> None:
-    student = input("  College learner ID: ").strip()
+    student = input("  Learner ref (e.g. AE000012): " if source_system == "adult_education"
+                    else "  College learner ID: ").strip()
     ucas = input("  UCAS personal ID (10 digits): ").strip()
     default_year = str(date.today().year + 1)
 

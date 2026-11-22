@@ -402,7 +402,7 @@ def show_security_dashboard(self):
         user_id = self.auth.current_user.get('id', 1)
         dashboard = SecurityDashboard(self.root, user_id)
         try:
-            from education_system.systems.university.domains.academics.interfaces.gui.research.external_quality_assurance.qa_receivers import consume_eqa_context
+            from education_system.systems.university.domains.research.interfaces.gui.research.external_quality_assurance.qa_receivers import consume_eqa_context
             consume_eqa_context(self, "Security Dashboard", target=dashboard)
         except Exception:
             logger.debug("Suppressed exception", exc_info=True)

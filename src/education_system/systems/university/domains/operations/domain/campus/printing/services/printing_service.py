@@ -1,6 +1,7 @@
 """Printing service — database operations and business logic for the print-quota system."""
 
 import logging
+from datetime import datetime
 
 from education_system.systems.university.infrastructure.database.db import get_connection
 
@@ -188,16 +189,64 @@ def get_transactions(student_id):
         ).fetchall()
 
 
-def purchase_credits(student_id, pages, price):
-    """Add *pages* to the student's quota and record a credit transaction.
+class PaymentDeclined(Exception):
+    """Raised when the payment for a credit top-up could not be taken."""
+
+
+def purchase_credits(student_id, pages, price, payment_method="Cash", processed_by=None):
+    """Take payment for *pages* print credits, add them to the quota and post
+    the payment to Finance.
+
+    Shared by the GUI purchase dialog and the CLI, so the Finance posting lives
+    here and neither interface posts directly.
 
     Parameters
     ----------
     pages : int
         Number of page credits to add.
-    price : str
-        Display price (e.g. ``"4.50"``), stored in the transaction description.
+    price : str | float
+        Price charged (e.g. ``"4.50"``).
+    payment_method : str
+        ``"Cash"``, ``"Card"`` or a student-finance-account label
+        (``"student_finance"`` / ``"Student Finance Account"``). A
+        student-account purchase is drawn down from the balance first; a
+        cash/card purchase is posted to Finance after the credits are added.
+    processed_by : str, optional
+        Operator recorded on the Finance row (defaults to the student).
+
+    Returns a dict with ``transaction_id``, ``method_label``, ``new_total``
+    and ``new_balance`` (student account only). Raises :class:`PaymentDeclined`
+    when the money could not be taken, in which case no credits are added.
     """
+    from education_system.systems.university.services.bus import finance_bus
+
+    pages = int(pages)
+    price_f = float(price)
+    if pages <= 0 or price_f < 0:
+        raise ValueError("pages must be positive and price non-negative")
+    processed_by = processed_by or str(student_id)
+
+    new_balance = None
+    if finance_bus.is_student_account_method(payment_method):
+        method_label = "Student Finance Account"
+        result = finance_bus.pay_from_student_account(
+            student_id=student_id,
+            amount=price_f,
+            description=f"Print credits top-up ({pages} pages)",
+            transaction_source="Printing",
+            transaction_ref=f"CREDITS-{pages}",
+            processed_by=processed_by,
+        )
+        if not result.get("success"):
+            raise PaymentDeclined(result.get("message") or "Payment could not be processed.")
+        transaction_id = result.get("transaction_id")
+        new_balance = result.get("new_balance")
+        ref = None
+    else:
+        method_label = "Cash" if str(payment_method).strip().lower() == "cash" else "Card"
+        ref = f"CREDITS-{pages}-{datetime.now().strftime('%Y%m%d%H%M%S')}"
+        transaction_id = f"Printing-{ref}"
+
     with get_connection() as conn:
         ensure_quota(student_id, conn)
         conn.execute(
@@ -206,6 +255,33 @@ def purchase_credits(student_id, pages, price):
         )
         conn.execute(
             "INSERT INTO print_credit_transactions (student_id, amount, transaction_type, description) VALUES (?, ?, 'credit', ?)",
-            (student_id, pages, f"Purchased {pages} pages (\u00a3{price})"),
+            (student_id, pages,
+             f"Purchased {pages} pages (\u00a3{price}) via {method_label} [{transaction_id}]"),
         )
+        row = conn.execute(
+            "SELECT total_pages FROM print_quotas WHERE student_id = ?", (student_id,)
+        ).fetchone()
+        new_total = row[0] if row else pages
         conn.commit()
+
+    # Cash/card: post to Finance after the local write. A failure is logged
+    # and does not undo the credits already granted.
+    if ref is not None:
+        payment_id = finance_bus.record_payment(
+            student_id=student_id,
+            amount=price_f,
+            payment_method=method_label,
+            transaction_source="Printing",
+            transaction_ref=ref,
+            notes=f"Print credits top-up ({pages} pages)",
+            created_by=processed_by,
+        )
+        if not payment_id:
+            logger.error("Finance posting failed for print credits %s (credits kept)", ref)
+
+    return {
+        "transaction_id": transaction_id,
+        "method_label": method_label,
+        "new_total": new_total,
+        "new_balance": new_balance,
+    }

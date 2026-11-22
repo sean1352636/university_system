@@ -3,26 +3,25 @@
 Complete documentation for all system modules.
 
 > **Note:** In v5.41–v5.42, 49 single-file modules were restructured into package directories.
-> All existing imports remain backward-compatible. See the
-> [Migration Guide](../development/MIGRATION_GUIDE.md) for the complete file mapping and
-> refactoring patterns.
+> See the [Migration Guide](../development/MIGRATION_GUIDE.md) for that file mapping and
+> the refactoring patterns.
 
 ## Infrastructure Modules
 
 Core infrastructure services that power the entire system.
 
 ### [Authentication System](../security/AUTHENTICATION.md)
-**Location**: `infrastructure/auth/user_authentication.py`
+**Location**: `src/education_system/platform/identity/auth/` (shared) and `src/education_system/systems/university/infrastructure/auth/` (university façade)
 
-Centralized authentication system used across 92 files.
+Centralized authentication system shared by all seven systems.
 
-- **Features**: PBKDF2 password hashing, 2FA support, role-based access control
-- **Users**: Admin, Faculty, Staff, Student, Parent roles
-- **Security**: Salt-based hashing with 100,000 iterations
+- **Features**: bcrypt password hashing, 2FA support, role-based access control
+- **Users**: Admin, Instructor, Staff, Student, Parent roles
+- **Security**: bcrypt hashes in the central `auth.db`; legacy PBKDF2 hashes still verify
 - **Sessions**: Secure session management with automatic expiration
 
 ### Email System
-**Location**: `infrastructure/email/email_service/`
+**Location**: `src/education_system/systems/university/infrastructure/email/email_service/`
 
 Centralized SMTP email service with automated notifications.
 
@@ -32,7 +31,7 @@ Centralized SMTP email service with automated notifications.
 - **Configuration**: Supports Gmail, Outlook, custom SMTP servers
 
 ### [Database System](../infrastructure/DATABASE.md)
-**Location**: `infrastructure/database/`
+**Location**: `src/education_system/systems/university/infrastructure/database/`
 
 Centralized database management with SQLite.
 
@@ -71,7 +70,7 @@ Complete financial management suite.
 Campus life and student engagement.
 
 ### Student Union
-**Location**: `modules/domain/student_affairs/student_union/`
+**Location**: `src/education_system/systems/university/domains/student_life/domain/student_life/student_union/`
 
 26 fully implemented features for student life management.
 
@@ -139,40 +138,44 @@ Library management and book checkout.
 User interface components.
 
 ### GUI Modules
-**Location**: `modules/domain/<domain>/gui/` and `modules/shared/gui/`
+**Location**: `src/education_system/systems/university/domains/<slice>/interfaces/gui/` and `src/education_system/systems/university/shell/gui/`
 
-30+ graphical user interface modules organized by domain:
+Graphical user interface modules organized by domain slice:
 
-- `modules/shared/gui/main/` - Main application launcher and dashboard
-- `modules/domain/academics/gui/` - Course management, assignments, grading, library
-- `modules/domain/finance/gui/` - Financial management, financial aid, reporting
-- `modules/domain/health/gui/` - Health portal, medical accommodations
-- `modules/domain/student_affairs/gui/` - Helpdesk, internships, student union
-- `modules/domain/housing/gui/` - Housing and accommodation management
-- `modules/domain/mobility/gui/` - Parking, trip management
-- `modules/domain/commerce/gui/` - Cafe system, shop management
-- `modules/domain/campus/gui/` - Security, campus services
-- `modules/domain/campus_navigation/gui/` - Campus map and navigation
-- `modules/shared/gui/advanced_search/` - Advanced search interface
-- `modules/shared/gui/batch_operations/` - Batch operations interface
-- `modules/shared/gui/document_manager_gui/` - Document management interface
+- `shell/gui/main/` - Main application window, navigation and portals
+- `domains/curriculum/interfaces/gui/` - Course and module management
+- `domains/assessment/interfaces/gui/` - Assignments, exams, grading
+- `domains/teaching/interfaces/gui/` - Attendance, timetabling, academic calendar
+- `domains/library/interfaces/gui/` - Library
+- `domains/finance/interfaces/gui/` - Financial management, financial aid, reporting
+- `domains/health/interfaces/gui/` - Health portal
+- `domains/student_support/interfaces/gui/` - Helpdesk, disability, wellbeing
+- `domains/student_life/interfaces/gui/` - Internships, student union
+- `domains/operations/interfaces/gui/campus/housing/` - Housing and accommodation management
+- `domains/operations/interfaces/gui/campus/mobility/` - Parking, trip management
+- `domains/operations/interfaces/gui/campus/security/` - Campus security
+- `domains/operations/interfaces/gui/campus/campus_navigation/` - Campus map and navigation
+- `plugins/campus_commerce/interfaces/gui/` - Cafe system, shop management
+- `domains/learners/interfaces/gui/students/advanced_search.py` - Advanced search interface
+- `shell/gui/batch_operations.py` - Batch operations interface
+- `shell/gui/document_manager/` - Document management interface
 
 ### CLI Module
-**Location**: `modules/shared/cli/`
+**Location**: `src/education_system/systems/university/shell/cli/` and `src/education_system/systems/university/domains/<slice>/interfaces/cli/`
 
 Command-line interface for administrative tasks and automation.
 
 ### [REST API](../development/API.md)
-**Location**: `api/routes/`
+**Location**: `src/education_system/api/university/<area>/`
 
-59 REST API endpoint groups for web-based access, covering authentication, academics, finance, student life, campus services, health, career, support, and administration. See the [API Documentation](../development/API.md) for the complete endpoint reference.
+REST API endpoint groups for web-based access, covering authentication, academics, finance, student life, campus services, health, career, support, and administration. See the [API Documentation](../development/API.md) for the complete endpoint reference.
 
 ## AI & Automation Modules
 
 Intelligent features and automation.
 
 ### AI Chatbot
-**Location**: `utils/ai/university_chatbot/`
+**Location**: `src/education_system/systems/university/shared/ai/chatbot/`
 
 - Natural language query handling
 - 24/7 student assistance
@@ -212,19 +215,19 @@ Data analysis and reporting tools.
 Supporting utilities and extensions.
 
 ### Shared Utilities
-**Location**: `modules/shared/utils/`
+**Location**: `src/education_system/systems/university/infrastructure/utils/`
 
 - Common helper functions
 - Data validation
 - File handling
 - Date/time utilities
 
-### Extensions
-**Location**: `modules/extensions/`
+### Plugins
+**Location**: `src/education_system/systems/university/plugins/`
 
-- Database extensions
-- Custom plugins
-- Third-party integrations
+- `campus_commerce/` - Restaurant, shops, bar, gym, betting and more
+- `community_services/` - Community services
+- `registry.py` and `plugin.json` manifests
 
 ## Module Development
 
@@ -232,39 +235,41 @@ Supporting utilities and extensions.
 
 1. **Create Module Structure**
    ```
-   modules/domain/your_domain/
+   src/education_system/systems/university/domains/<slice>/
    ├── __init__.py
-   ├── services/
-   │   └── your_service.py
-   ├── gui/
-   │   └── your_gui.py
-   └── models/
-       └── your_model.py
+   ├── domain/
+   │   └── your_module/
+   │       └── your_service.py
+   └── interfaces/
+       ├── cli/
+       └── gui/
+           └── your_module/
+               └── your_gui.py
    ```
 
 2. **Integrate Authentication**
    ```python
-   from university_system.infrastructure.auth.user_authentication import UserAuth
+   from education_system.systems.university.infrastructure.auth import UserAuth
    auth = UserAuth()
    ```
 
 3. **Integrate Email**
    ```python
-   from university_system.infrastructure.email.smtp import send_email_via_smtp
+   from education_system.systems.university.infrastructure.email.smtp import send_email_via_smtp
    ```
 
 4. **Create GUI Interface**
    ```
-   modules/domain/your_domain/gui/your_gui.py
+   src/education_system/systems/university/domains/<slice>/interfaces/gui/your_module/your_gui.py
    ```
 
 5. **Add API Routes** (optional)
    ```
-   api/routes/your_domain.py
+   src/education_system/api/university/<area>/your_routes.py
    ```
 
 6. **Add Documentation**
-   Create `docs/modules/YOUR_MODULE.md`
+   Create `docs/university/guides/<area>/YOUR_MODULE.md`
 
 ### Module Standards
 
@@ -283,8 +288,6 @@ Supporting utilities and extensions.
 
 ---
 
-**Total Modules**: 80+ modules across 12 domains
-**GUI Modules**: 30+ interface modules
-**API Endpoint Groups**: 59 REST route blueprints
+**Domain Slices**: 18 under `domains/`
 **CLI Modules**: Domain-specific and shared CLI tools
-**Integration**: Centralized auth (92 files), Email (11 files)
+**Integration**: Centralized auth and email

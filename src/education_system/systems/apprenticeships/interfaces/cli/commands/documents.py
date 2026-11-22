@@ -25,11 +25,11 @@ from education_system.systems.apprenticeships.domain.records.documents import (
 )
 from education_system.systems.apprenticeships.interfaces.cli import prompts
 from education_system.systems.apprenticeships.interfaces.cli.commands import signatures
-from education_system.systems.apprenticeships.services import (
+from education_system.systems.apprenticeships.application.records import (
     document_service,
     signature_service,
 )
-from education_system.systems.apprenticeships.services.access import Actor
+from education_system.systems.apprenticeships.application.security.access import Actor
 
 logger = logging.getLogger(__name__)
 

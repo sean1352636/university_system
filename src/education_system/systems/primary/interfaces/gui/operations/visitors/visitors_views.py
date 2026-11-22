@@ -6,7 +6,7 @@ import datetime as _dt
 import logging
 import tkinter as tk
 from tkinter import messagebox, ttk
-from education_system.platform import branding
+
 from education_system.systems.primary.domain.operations.visitors import (
     visitors as data,
 )
@@ -23,6 +23,7 @@ from education_system.systems.primary.domain.operations.visitors.visitors import
 from education_system.systems.primary.domain.staff import (
     staff as staff_data,
 )
+from education_system.systems.primary.interfaces.gui import kit
 
 logger = logging.getLogger(__name__)
 
@@ -42,14 +43,23 @@ _STATUS_TAGS = {
 
 def open_visitors_window(parent=None) -> None:
     data.init_db()
-    master = getattr(parent, "root", parent)
-    win = tk.Toplevel(master) if master is not None else tk.Tk()
-    win.title(f"Visitors — {branding.SYSTEM_NAME}")
-    win.geometry(WIN_GEOMETRY)
-    win.minsize(*WIN_MINSIZE)
+    if parent is None:
+        root = tk.Tk()
+        root.title("Visitors")
+        root.geometry(WIN_GEOMETRY)
+        root.minsize(*WIN_MINSIZE)
+        frame = ttk.Frame(root, padding=10)
+        frame.pack(fill="both", expand=True)
+        _draw_visitors(frame)
+        return
+    kit.show_page(parent, "Visitors", _draw_visitors)
 
-    nb = ttk.Notebook(win)
-    nb.pack(fill="both", expand=True, padx=10, pady=10)
+
+def _draw_visitors(parent: ttk.Frame) -> None:
+    kit.page_heading(parent, "Visitors",
+                     "Visitor sign-in, on-site list, overdue departures and safeguarding.")
+    nb = ttk.Notebook(parent)
+    nb.pack(fill="both", expand=True)
 
     VisitorsTab(nb, scope="on_site",       label="On Site Now")
     VisitorsTab(nb, scope="overdue",       label="Overdue")
@@ -70,6 +80,55 @@ def _staff_options() -> list[tuple[str | None, str]]:
         opts.append((s.staff_id,
                        f"{s.staff_id} — {full}"))
     return opts
+
+
+class _DateTimeField(ttk.Frame):
+    """Date + time drop-downs bound to one StringVar holding
+    ``YYYY-MM-DDTHH:MM`` (or just the date when no time is chosen; "" when
+    no date). A stored value is left untouched until the user changes it, so
+    seconds on a recorded sign-in time survive an edit."""
+
+    def __init__(self, master: tk.Misc, var: tk.StringVar) -> None:
+        super().__init__(master)
+        self.var = var
+        self._d = tk.StringVar()
+        self._t = tk.StringVar()
+        self._sync = False
+        kit.DateField(self, self._d).pack(side="left")
+        kit.TimeField(self, self._t, hours=range(0, 24)).pack(side="left", padx=(6, 0))
+        self._d.trace_add("write", self._compose)
+        self._t.trace_add("write", self._compose)
+        self._trace = var.trace_add("write", self._show)
+        self._show()
+
+    def _show(self, *_a) -> None:
+        if self._sync:
+            return
+        self._sync = True
+        try:
+            value = (self.var.get() or "").strip().replace(" ", "T", 1)
+            date, _sep, time = value.partition("T")
+            self._d.set(date[:10])
+            self._t.set(time[:5])
+        finally:
+            self._sync = False
+
+    def _compose(self, *_a) -> None:
+        if self._sync:
+            return
+        self._sync = True
+        try:
+            d, t = self._d.get().strip(), self._t.get().strip()
+            self.var.set(f"{d}T{t}" if d and t else d)
+        finally:
+            self._sync = False
+
+    def destroy(self) -> None:
+        try:
+            self.var.trace_remove("write", self._trace)
+        except (tk.TclError, ValueError):
+            pass
+        super().destroy()
 
 
 class VisitorsTab:
@@ -405,10 +464,10 @@ class VisitorEditor:
                  visitor: Visitor | None = None) -> None:
         self.visitor = visitor
         self.result: Visitor | None = None
-        self.win = tk.Toplevel(parent)
+        self.win = tk.Toplevel(parent.winfo_toplevel())
         self.win.title(f"Edit visitor #{visitor.visitor_id}"
                           if visitor else "New visitor")
-        self.win.geometry("880x820")
+        self.win.geometry("900x720")
         self.win.transient(parent); self.win.after_idle(self.win.grab_set)
         self._build()
         if visitor:
@@ -416,8 +475,7 @@ class VisitorEditor:
         self.win.wait_window()
 
     def _build(self) -> None:
-        body = ttk.Frame(self.win)
-        body.pack(fill="both", expand=True, padx=12, pady=10)
+        body, footer = kit.scrolled_form(self.win)
         body.grid_columnconfigure(1, weight=1)
         body.grid_columnconfigure(3, weight=1)
         self.vars: dict[str, tk.Variable] = {}
@@ -431,6 +489,13 @@ class VisitorEditor:
             self.vars[key] = v
             ttk.Entry(body, textvariable=v, width=width).grid(
                 row=row, column=col + 1, sticky="ew", padx=4, pady=2)
+
+        def picker(row, col, label, key, make):
+            ttk.Label(body, text=label).grid(
+                row=row, column=col, sticky="w", padx=4, pady=2)
+            v = tk.StringVar()
+            self.vars[key] = v
+            make(v).grid(row=row, column=col + 1, sticky="w", padx=4, pady=2)
 
         def combo(row, col, label, key, values, width=22):
             ttk.Label(body, text=label).grid(
@@ -460,12 +525,15 @@ class VisitorEditor:
         entry(3, 2, "Host name", "host_name")
         entry(4, 0, "Badge number", "badge_number")
         combo(4, 2, "Status*", "status", STATUSES)
-        entry(5, 0, "Visit date*", "visit_date")
+        picker(5, 0, "Visit date*", "visit_date",
+               lambda v: kit.DateField(body, v))
         combo(5, 2, "ID check*", "id_check", ID_TYPES)
-        entry(6, 0, "Arrived at (YYYY-MM-DDTHH:MM)",
-                 "arrived_at")
-        entry(6, 2, "Expected departure", "expected_departure")
-        entry(7, 0, "Signed out at", "signed_out_at")
+        picker(6, 0, "Arrived at", "arrived_at",
+               lambda v: _DateTimeField(body, v))
+        picker(6, 2, "Expected departure", "expected_departure",
+               lambda v: _DateTimeField(body, v))
+        picker(7, 0, "Signed out at", "signed_out_at",
+               lambda v: _DateTimeField(body, v))
 
         flags = ttk.LabelFrame(body, text="Checks & flags")
         flags.grid(row=8, column=0, columnspan=4,
@@ -491,7 +559,8 @@ class VisitorEditor:
                              variable=v).grid(
                 row=1, column=col, sticky="w", padx=6, pady=4)
 
-        entry(9, 0, "Escorted by", "escorted_by")
+        picker(9, 0, "Escorted by", "escorted_by",
+               lambda v: kit.StaffPicker(body, v, by="name", width=30))
         entry(9, 2, "Car registration", "car_registration")
         entry(10, 0, "Car park used", "car_park_used")
         entry(10, 2, "Contact phone", "contact_phone")
@@ -504,8 +573,7 @@ class VisitorEditor:
         self.notes.grid(row=12, column=1, columnspan=3,
                           sticky="ew", padx=4, pady=(6, 2))
 
-        bar = ttk.Frame(self.win)
-        bar.pack(fill="x", padx=12, pady=(0, 10))
+        bar = footer
         ttk.Button(bar, text="Save",
                     command=self._save).pack(side="right", padx=4)
         ttk.Button(bar, text="Cancel",

@@ -7,7 +7,7 @@ import pytest
 from education_system.systems.university.infrastructure.database.db import sqlite3
 from pathlib import Path
 from datetime import datetime, timedelta
-from education_system.systems.university.domains.academics.domain.services.assessment_service import (
+from education_system.systems.university.domains.assessment.domain.assessment_service import (
     AssessmentAssignmentService
 )
 from education_system import paths

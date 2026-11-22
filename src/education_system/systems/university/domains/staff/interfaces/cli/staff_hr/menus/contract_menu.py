@@ -1,9 +1,17 @@
 """
 Contract Menu - Contract management CLI.
+
+Administration is HR's or payroll's; line managers may search their
+reports' contracts (no pay shown). Every call passes the signed-in person
+as ``actor``.
 """
 
 from datetime import datetime
-from education_system.systems.university.domains.staff.domain.staff_hr.services.managers.contract_manager import ContractManager
+from education_system.systems.university.domains.staff.domain.staff_hr import access
+from education_system.systems.university.domains.staff.domain.staff_hr.services.managers.contract_manager import (
+    ContractManager,
+    can_manage_contracts,
+)
 from education_system.systems.university.domains.staff.interfaces.cli.staff_hr.validators import (
     validate_date, validate_required, validate_choice, validate_number,
     validate_integer, validate_confirmation, validate_user_id,
@@ -12,8 +20,23 @@ from education_system.systems.university.domains.staff.interfaces.cli.staff_hr.v
 )
 
 
-def display_contract_menu(user_id: str, is_admin: bool = False) -> None:
+_ACTOR = None
+
+
+def _actor_for(user_id, is_admin: bool, auth=None):
+    if auth is not None and access.user_of(auth):
+        return auth
+    return {'username': access.staff_key(user_id) or str(user_id),
+            'role': 'admin' if is_admin else 'staff'}
+
+
+def display_contract_menu(user_id: str, is_admin: bool = False, auth=None) -> None:
     """Display contract management menu."""
+    global _ACTOR
+    _ACTOR = _actor_for(user_id, is_admin, auth)
+    user_id = access.username_of(_ACTOR)
+    can_manage = can_manage_contracts(_ACTOR)
+    can_search = can_manage or access.can(_ACTOR, 'manager')
     while True:
         print("\n" + "=" * 60)
         print("CONTRACT MANAGEMENT")
@@ -24,7 +47,10 @@ def display_contract_menu(user_id: str, is_admin: bool = False) -> None:
         print("  2. View Contract History")
         print("  3. View Probation Status")
 
-        if is_admin:
+        if can_search and not can_manage:
+            print("\n--- My Team ---")
+            print("  4. Search My Reports' Contracts")
+        if can_manage:
             print("\n--- Administration ---")
             print("  4. Search Contracts")
             print("  5. Create New Contract")
@@ -45,17 +71,17 @@ def display_contract_menu(user_id: str, is_admin: bool = False) -> None:
             _view_contract_history(user_id)
         elif choice == '3':
             _view_probation_status(user_id)
-        elif choice == '4' and is_admin:
+        elif choice == '4' and can_search:
             _search_contracts()
-        elif choice == '5' and is_admin:
+        elif choice == '5' and can_manage:
             _create_contract()
-        elif choice == '6' and is_admin:
+        elif choice == '6' and can_manage:
             _manage_contract()
-        elif choice == '7' and is_admin:
+        elif choice == '7' and can_manage:
             _expiring_contracts()
-        elif choice == '8' and is_admin:
+        elif choice == '8' and can_manage:
             _probation_reviews_due()
-        elif choice == '9' and is_admin:
+        elif choice == '9' and can_manage:
             _contract_statistics()
         else:
             print("Invalid choice.")
@@ -63,7 +89,7 @@ def display_contract_menu(user_id: str, is_admin: bool = False) -> None:
 
 def _view_my_contract(user_id: str) -> None:
     """View current contract."""
-    contract = ContractManager.get_active_contract(user_id)
+    contract = ContractManager.get_active_contract(user_id, actor=_ACTOR)
 
     if not contract:
         print("\nNo active contract found.")
@@ -71,6 +97,13 @@ def _view_my_contract(user_id: str) -> None:
         return
 
     print("\n--- Current Contract ---")
+    print(f"Grade / Spine Point: {contract.get('grade_code') or '-'} / "
+          f"{contract.get('spine_point') if contract.get('spine_point') is not None else '-'}")
+    print(f"FTE: {contract.get('fte') or 1.0}")
+    if contract.get('salary'):
+        print(f"Salary (full-time): {contract['salary']:,.2f}"
+              + (" (override)" if contract.get('salary_override') else ""))
+    print(f"Pension Scheme: {contract.get('pension_scheme') or '-'}")
     print(f"Contract ID: {contract.get('contract_id')}")
     print(f"Type: {contract.get('contract_type', 'N/A')}")
     print(f"Status: {contract.get('status', 'N/A')}")
@@ -89,7 +122,7 @@ def _view_my_contract(user_id: str) -> None:
 
 def _view_contract_history(user_id: str) -> None:
     """View contract history."""
-    contracts = ContractManager.get_user_contracts(user_id, include_inactive=True)
+    contracts = ContractManager.get_user_contracts(user_id, include_inactive=True, actor=_ACTOR)
 
     if not contracts:
         print("\nNo contracts found.")
@@ -109,7 +142,7 @@ def _view_contract_history(user_id: str) -> None:
 
 def _view_probation_status(user_id: str) -> None:
     """View probation status and reviews."""
-    contract = ContractManager.get_active_contract(user_id)
+    contract = ContractManager.get_active_contract(user_id, actor=_ACTOR)
 
     if not contract:
         print("\nNo active contract found.")
@@ -130,7 +163,7 @@ def _view_probation_status(user_id: str) -> None:
     print(f"Days Remaining: {max(0, days_remaining)}")
 
     # Get probation reviews
-    reviews = ContractManager.get_probation_reviews(user_id)
+    reviews = ContractManager.get_probation_reviews(user_id, actor=_ACTOR)
     if reviews:
         print("\n--- Review History ---")
         for r in reviews:
@@ -156,16 +189,16 @@ def _search_contracts() -> None:
 
     if search_choice == '1':
         term = input("Search term: ").strip()
-        contracts = ContractManager.search_contracts(search_term=term)
+        contracts = ContractManager.search_contracts(search_term=term, actor=_ACTOR)
     elif search_choice == '2':
         dept = input("Department: ").strip()
-        contracts = ContractManager.search_contracts(department=dept)
+        contracts = ContractManager.search_contracts(department=dept, actor=_ACTOR)
     elif search_choice == '3':
         print("Types: permanent, fixed-term, temporary, casual, contractor")
         ctype = input("Contract type: ").strip()
-        contracts = ContractManager.search_contracts(contract_type=ctype)
+        contracts = ContractManager.search_contracts(contract_type=ctype, actor=_ACTOR)
     elif search_choice == '4':
-        contracts = ContractManager.search_contracts()
+        contracts = ContractManager.search_contracts(actor=_ACTOR)
     else:
         print("Invalid choice.")
         return
@@ -211,7 +244,13 @@ def _create_contract() -> None:
             "Probation Period (months, Enter for none): ",
             "Probation Period", allow_empty=True, min_value=1, max_value=24
         )
-    except ValidationError as e:
+        grade_code = input("Grade (Enter for the job title's grade): ").strip() or None
+        spine_point = get_integer_input("Spine Point (Enter for none): ", "Spine Point",
+                                        allow_empty=True, min_value=1)
+        fte_text = input("FTE (0-1) [1.0]: ").strip()
+        fte = float(fte_text) if fte_text else 1.0
+        pension_scheme = input("Pension Scheme (USS/TPS/LGPS/NONE, Enter for none): ").strip().upper() or None
+    except (ValidationError, ValueError) as e:
         print(f"Error: {e}")
         input("Press Enter to continue...")
         return
@@ -225,6 +264,11 @@ def _create_contract() -> None:
     try:
         contract_id = ContractManager.create_contract(
             user_id,
+            actor=_ACTOR,
+            grade_code=grade_code,
+            spine_point=spine_point,
+            fte=fte,
+            pension_scheme=pension_scheme,
             contract_type=contract_type,
             start_date=start_date,
             end_date=end_date,
@@ -248,7 +292,7 @@ def _manage_contract() -> None:
         print(f"Error: {e}")
         return
 
-    contract = ContractManager.get_contract(contract_id)
+    contract = ContractManager.get_contract(contract_id, actor=_ACTOR)
     if not contract:
         print("Contract not found.")
         input("Press Enter to continue...")
@@ -291,8 +335,14 @@ def _update_contract(contract_id: int) -> None:
     department = input("Department: ").strip()
 
     try:
-        salary = get_currency_input("Salary: ", "Salary", allow_empty=True)
-    except ValidationError as e:
+        salary = get_currency_input("Salary (contracts without a spine point): ", "Salary",
+                                    allow_empty=True)
+        grade_code = input("Grade: ").strip()
+        spine_point = get_integer_input("Spine Point: ", "Spine Point", allow_empty=True, min_value=1)
+        fte_text = input("FTE (0-1): ").strip()
+        fte = float(fte_text) if fte_text else None
+        pension_scheme = input("Pension Scheme: ").strip().upper()
+    except (ValidationError, ValueError) as e:
         print(f"Error: {e}")
         input("Press Enter to continue...")
         return
@@ -304,10 +354,21 @@ def _update_contract(contract_id: int) -> None:
         updates['department'] = department
     if salary is not None:
         updates['salary'] = salary
+    if grade_code:
+        updates['grade_code'] = grade_code
+    if spine_point is not None:
+        updates['spine_point'] = spine_point
+    if fte is not None:
+        updates['fte'] = fte
+    if pension_scheme:
+        updates['pension_scheme'] = pension_scheme
 
     if updates:
-        ContractManager.update_contract(contract_id, **updates)
-        print("Contract updated.")
+        try:
+            ContractManager.update_contract(contract_id, actor=_ACTOR, **updates)
+            print("Contract updated.")
+        except (ValueError, PermissionError) as e:
+            print(f"Error: {e}")
     else:
         print("No changes made.")
 
@@ -342,7 +403,8 @@ def _add_amendment(contract_id: int) -> None:
             old_value=old_value,
             new_value=new_value,
             effective_date=effective_date,
-            reason=reason
+            reason=reason,
+            actor=_ACTOR,
         )
         print(f"\nAmendment added. ID: {amendment_id}")
     except Exception as e:
@@ -387,7 +449,8 @@ def _record_probation_review(contract: dict) -> None:
             review_type=review_type,
             performance_rating=performance_rating,
             outcome=outcome,
-            comments=comments
+            comments=comments,
+            actor=_ACTOR,
         )
         print(f"\nReview recorded. ID: {review_id}")
     except Exception as e:
@@ -401,13 +464,13 @@ def _extend_probation(contract_id: int) -> None:
     try:
         new_end_date = get_date_input("\nNew Probation End Date (YYYY-MM-DD): ", "New End Date")
         reason = get_required_input("Reason for Extension: ", "Reason")
-        extended_by = get_required_input("Extended By (User ID): ", "Extended By")
     except ValidationError as e:
         print(f"Error: {e}")
         input("Press Enter to continue...")
         return
 
-    ContractManager.extend_probation(contract_id, new_end_date, reason, extended_by)
+    ContractManager.extend_probation(contract_id, new_end_date, reason,
+                                     access.username_of(_ACTOR), actor=_ACTOR)
     print("Probation extended.")
 
     input("Press Enter to continue...")
@@ -417,13 +480,13 @@ def _complete_probation(contract_id: int) -> None:
     """Complete probation."""
     try:
         outcome = get_choice_input("\nOutcome (pass/fail): ", ['pass', 'fail'], "Outcome")
-        completed_by = get_required_input("Completed By (User ID): ", "Completed By")
     except ValidationError as e:
         print(f"Error: {e}")
         input("Press Enter to continue...")
         return
 
-    ContractManager.complete_probation(contract_id, outcome, completed_by)
+    ContractManager.complete_probation(contract_id, outcome, access.username_of(_ACTOR),
+                                       actor=_ACTOR)
     print("Probation completed.")
 
     input("Press Enter to continue...")
@@ -438,13 +501,13 @@ def _terminate_contract(contract_id: int) -> None:
     try:
         termination_date = get_date_input("Termination Date (YYYY-MM-DD): ", "Termination Date")
         reason = get_required_input("Reason: ", "Reason")
-        terminated_by = get_required_input("Terminated By (User ID): ", "Terminated By")
     except ValidationError as e:
         print(f"Error: {e}")
         input("Press Enter to continue...")
         return
 
-    ContractManager.terminate_contract(contract_id, termination_date, reason, terminated_by)
+    ContractManager.terminate_contract(contract_id, termination_date, reason,
+                                       access.username_of(_ACTOR), actor=_ACTOR)
     print("Contract terminated.")
 
     input("Press Enter to continue...")
@@ -463,7 +526,7 @@ def _expiring_contracts() -> None:
         input("Press Enter to continue...")
         return
 
-    contracts = ContractManager.get_expiring_contracts(days)
+    contracts = ContractManager.get_expiring_contracts(days, actor=_ACTOR)
 
     if not contracts:
         print(f"\nNo contracts expiring in the next {days} days.")
@@ -479,23 +542,25 @@ def _expiring_contracts() -> None:
 
 def _probation_reviews_due() -> None:
     """View pending probation reviews."""
-    reviews = ContractManager.get_pending_probation_reviews()
+    reviews = ContractManager.get_pending_probation_reviews(actor=_ACTOR)
 
     if not reviews:
         print("\nNo probation reviews due.")
     else:
         print(f"\n--- {len(reviews)} Probation Reviews Due ---")
         for r in reviews:
-            print(f"\n{r.get('user_id')}")
+            print(f"\n{r.get('employee_name') or r.get('user_id')} ({r.get('user_id')})")
             print(f"  {r.get('job_title')} | {r.get('department')}")
-            print(f"  Probation Ends: {r.get('probation_end_date')}")
+            when = (f"OVERDUE by {-r['days_left']} days" if r.get('overdue')
+                    else f"in {r.get('days_left')} days")
+            print(f"  Probation Ends: {r.get('probation_end_date')} ({when})")
 
     input("\nPress Enter to continue...")
 
 
 def _contract_statistics() -> None:
     """View contract statistics."""
-    stats = ContractManager.get_contract_statistics()
+    stats = ContractManager.get_contract_statistics(actor=_ACTOR)
 
     print("\n--- Contract Statistics ---")
     print(f"Total Active Contracts: {stats.get('total_active', 0)}")

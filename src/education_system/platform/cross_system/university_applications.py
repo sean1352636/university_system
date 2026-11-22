@@ -1,4 +1,5 @@
-"""Sixth Form, FE College and Apprenticeship progression into University admissions.
+"""Sixth Form, FE College, Apprenticeship and Adult Education (Access to HE)
+progression into University admissions.
 
 Both ends are reached through the platform adapter registry. The
 university's admissions operations this board drives — recording an
@@ -22,13 +23,13 @@ from education_system.platform.cross_system.adapters.base import HandoverRequest
 logger = logging.getLogger(__name__)
 
 DESTINATION = "university"
-SOURCES = frozenset({"sixth_form", "fe_college", "apprenticeships"})
+SOURCES = frozenset({"sixth_form", "fe_college", "apprenticeships", "adult_education"})
 
 #: Sources whose application *is* a UCAS application. An apprentice
 #: progressing onto a degree or top-up is admitted on their standard and
 #: EPA grade instead, so requiring a UCAS id of them would block the one
 #: route ``APPRENTICESHIPS_TO_UNIVERSITY`` exists to describe.
-UCAS_SOURCES = frozenset({"sixth_form", "fe_college"})
+UCAS_SOURCES = frozenset({"sixth_form", "fe_college", "adult_education"})
 
 #: A UCAS Personal ID is ten digits. Same rule the sixth form's own UCAS
 #: module enforces (``progression.ucas._UCAS_ID_RE``) — a reference that
@@ -207,6 +208,9 @@ def _normalise_source_record(source_system: str, student_id: str,
         record.setdefault("qualification_profile", record.get("vocational_profile"))
         record.setdefault("recognised_prior_learning", record.get("prior_learning"))
         record.setdefault("support_referral", record.get("send_support"))
+    if source_system == "adult_education":
+        record.setdefault("recognised_prior_learning", record.get("prior_learning"))
+        record.setdefault("qualification_profile", record.get("achieved_qualifications"))
     return record
 
 
@@ -484,7 +488,40 @@ def application_view(row: dict, app: dict | None | object = _MISSING) -> dict:
                                     or (app or {}).get("external_reference"))
     if app and app.get("status") in UNIVERSITY_STATUS_LABELS:
         out["application_status"] = UNIVERSITY_STATUS_LABELS[app["status"]]
+    # What the university recorded from the handover's routing: a deferred
+    # (gap year) entry, the route that placed the learner, and a
+    # withdrawal because the sixth form re-routed them elsewhere.
+    out.update(routing_view(app))
+    if out["routing_status"] == ROUTING_WITHDRAWN:
+        out["application_status"] = "Withdrawn — rerouted"
     return out
+
+
+#: ``routing_status`` the university writes when a learner's destination
+#: moved away from it after the handover (Insurance or Clearing elsewhere).
+ROUTING_WITHDRAWN = "withdrawn_by_reroute"
+
+
+def routing_view(app: dict | None) -> dict[str, Any]:
+    """Entry and routing labels from the university's application row.
+
+    Read from the keys the university's ``find_applications`` returns
+    (``deferred_entry``, ``handover_entry_year``, ``handover_route``,
+    ``routing_status``, ``reroute_reason``); an application without them —
+    one staged before routing was recorded — reads as an ordinary entry.
+    """
+    app = app or {}
+    deferred = bool(app.get("deferred_entry"))
+    year = app.get("handover_entry_year") or app.get("academic_year")
+    label = (f"Deferred to {year}" if deferred and year
+             else ("Deferred entry" if deferred else ""))
+    return {
+        "deferred_entry": deferred,
+        "entry_label": label,
+        "handover_route": app.get("handover_route") or None,
+        "routing_status": app.get("routing_status") or None,
+        "reroute_reason": app.get("reroute_reason") or None,
+    }
 
 
 def _reject_reused_ucas_id(ucas_id: str, journey_id: str, *,
@@ -534,5 +571,6 @@ __all__ = [
     "UNIVERSITY_STATUS_LABELS", "MAX_CHOICES", "normalise_ucas_id",
     "consent_record", "consent_reference", "payload_identity", "preview",
     "submit", "record_offer", "select_firm_choice", "confirm_place",
-    "list_applications", "application_view",
+    "list_applications", "application_view", "routing_view",
+    "ROUTING_WITHDRAWN",
 ]

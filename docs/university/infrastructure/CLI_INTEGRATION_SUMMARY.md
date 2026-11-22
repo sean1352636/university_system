@@ -27,7 +27,7 @@ Created full-featured monitoring interface with 8 options:
 | 8 | Clear Cache | Manual cache invalidation |
 
 #### 3. Functions Created ✅
-Added 9 new functions to `cli_main.py`:
+Added 9 new functions, now in `src/education_system/systems/university/shell/cli/system_monitoring.py`:
 
 ```python
 - display_system_monitoring_menu(auth)    # Main monitoring menu
@@ -127,7 +127,7 @@ Back to Monitoring Menu or Main Menu
 
 #### Example Session
 ```bash
-$ python -m education_system --cli
+$ python -m education_system --university --cli
 Username: admin
 Password: ****
 
@@ -186,11 +186,11 @@ Press Enter to continue...
 ### 🛠️ Technical Implementation
 
 #### File Modified
-- `university_system/modules/shared/cli/cli_main.py`
+- `src/education_system/systems/university/shell/cli/system_monitoring.py`
 
 #### Changes Made
-1. Added "System Monitoring" menu option (line ~7468)
-2. Added option handler (line ~7735)
+1. Added "System Monitoring" menu option (`src/education_system/systems/university/shell/cli/menus/main.py`)
+2. Added option handler
 3. Added 9 monitoring functions (~450 lines total)
 4. Integrated with monitoring infrastructure
 5. Added admin-only access control
@@ -198,19 +198,19 @@ Press Enter to continue...
 #### Integration Points
 ```python
 # Monitoring
-from university_system.infrastructure.monitoring import (
+from education_system.systems.university.infrastructure.monitoring import (
     check_system_health,
     get_metrics_collector,
     get_alert_manager
 )
 
 # Data Management
-from university_system.infrastructure.data_management import (
+from education_system.systems.university.infrastructure.data_management import (
     get_backup_scheduler
 )
 
 # Performance
-from university_system.infrastructure.performance import (
+from education_system.systems.university.infrastructure.performance import (
     get_cache_manager
 )
 ```
@@ -263,7 +263,7 @@ from university_system.infrastructure.performance import (
 
 ### 🎯 Usage Statistics
 
-**Lines of Code**: ~450 new lines in cli_main.py
+**Lines of Code**: ~450 new lines
 **Functions Added**: 9 monitoring functions
 **Menu Options**: 8 feature options + 1 back
 **Documentation Pages**: 3 comprehensive guides

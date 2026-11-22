@@ -27,62 +27,28 @@ This document contains solutions to common issues encountered in the University 
 
 **Solution:**
 
-Use the password reset utility to reset user passwords:
+Passwords live only in the shared `auth.db` (`var/data/platform/db_files/auth.db`), so a reset applies to every system that login can reach.
+
+Sign in as the system admin and reset the password from the admin panel, or use the reset tool:
 
 ```bash
-# From project root
-cd .
-
-# Reset all default development accounts
-python3 university_system/utils/reset_password.py --reset-defaults
-
-# Reset specific user (interactive)
-python3 university_system/utils/reset_password.py --user admin
-
-# List all users
-python3 university_system/utils/reset_password.py --list-users
+python tools/university/reset_password.py --user admin   # prompts for the new password
+python tools/university/reset_password.py --list-users
 ```
 
-**Default Credentials After Reset:**
+The tool unlocks the account, ends its sessions and sets the new password as temporary. The password must meet the strength rules. It doesn't reactivate a deactivated account.
+
+To put the University's demo accounts back to the passwords listed below on a development machine:
+
+```bash
+EDU_DEV_SEED=true python tools/university/reset_password.py --reset-defaults
+```
+
+**Default Credentials (seeded only when `EDU_DEV_SEED=true`):**
 - **Super Admin:** `superadmin` / `SuperAdmin@123`
 - **Admin:** `admin` / `admin123`
 - **Staff:** `staff` / `staff123`
 - **Student:** `S12345` / `student123`
-
-**Manual Password Reset (SQL):**
-
-If the utility doesn't work, you can reset passwords directly in SQLite:
-
-```python
-#!/usr/bin/env python3
-import hashlib
-import secrets
-import sqlite3
-
-def hash_password(password):
-    salt = secrets.token_hex(16)
-    key = hashlib.pbkdf2_hmac('sha256', password.encode(), salt.encode(), 1_000_000, dklen=64)
-    return salt, key.hex()
-
-# Connect to database
-conn = sqlite3.connect('university_system/data/db_files/student_records.db')
-cursor = conn.cursor()
-
-# Generate hash for 'admin123'
-salt, hash_value = hash_password('admin123')
-
-# Update admin password
-cursor.execute('''
-    UPDATE user_accounts
-    SET password_hash = ?, salt = ?, is_active = 1
-    WHERE username = 'admin'
-''', (hash_value, salt))
-
-conn.commit()
-conn.close()
-
-print("✅ Admin password reset to: admin123")
-```
 
 ### Account Locked Error
 
@@ -92,7 +58,7 @@ Account temporarily locked. Please try again in X minutes.
 ```
 
 **Cause:**
-- Too many failed login attempts (default: 5 attempts)
+- Too many failed login attempts (default: 3 attempts)
 - Automatic lockout period (default: 15 minutes)
 
 **Solution:**
@@ -102,13 +68,10 @@ Account temporarily locked. Please try again in X minutes.
 **Option 2: Clear failed login attempts** (SQL):
 
 ```sql
--- This clears in-memory attempts, but you may need to restart the application
-sqlite3 university_system/data/db_files/student_records.db "
-  UPDATE user_accounts SET is_active = 1 WHERE username = 'admin';
+sqlite3 var/data/platform/db_files/auth.db "
+  UPDATE users SET failed_login_attempts = 0, locked_until = NULL WHERE username = 'admin';
 "
 ```
-
-**Option 3: Restart the application** to clear in-memory lockout state
 
 ### Account Deactivated Error
 
@@ -122,20 +85,10 @@ This account has been deactivated. Please contact an administrator.
 Reactivate the account in database:
 
 ```bash
-sqlite3 university_system/data/db_files/student_records.db "
-  UPDATE user_accounts SET is_active = 1 WHERE username = 'your_username';
+sqlite3 var/data/platform/db_files/auth.db "
+  UPDATE users SET is_active = 1 WHERE username = 'your_username';
 "
 ```
-
-Or use the password reset utility:
-
-```bash
-python3 university_system/utils/reset_password.py --user your_username
-```
-
----
-
-## Database Issues
 
 ### Database Locked Error
 
@@ -155,7 +108,7 @@ sqlite3.OperationalError: database is locked
 
 2. **Enable WAL mode** (should be automatic, but can be set manually):
    ```bash
-   sqlite3 university_system/data/db_files/student_records.db "PRAGMA journal_mode=WAL;"
+   sqlite3 var/data/university/db_files/student_records.db "PRAGMA journal_mode=WAL;"
    ```
 
 3. **Check for zombie processes:**
@@ -165,7 +118,7 @@ sqlite3.OperationalError: database is locked
    kill -9 <PID>
    ```
 
-4. **Check connection pool limits** in `infrastructure/database/db.py`:
+4. **Check connection pool limits** in `src/education_system/systems/university/infrastructure/database/db.py`:
    - Default min: 2, max: 10 connections
    - Increase if needed for high concurrency
 
@@ -181,9 +134,8 @@ unable to open database file
 Initialize the database:
 
 ```bash
-cd .
 python3 -c "
-from university_system.infrastructure.database.schemas import initialize_all_schemas
+from education_system.systems.university.infrastructure.database.schemas import initialize_all_schemas
 initialize_all_schemas()
 print('✅ Database initialized')
 "
@@ -192,7 +144,7 @@ print('✅ Database initialized')
 Or run the setup script:
 
 ```bash
-python3 university_system/modules/setup_unified_database.py
+python3 tools/university/setup_unified_database.py
 ```
 
 ### Schema Mismatch
@@ -207,11 +159,10 @@ Check and update the schema:
 
 ```bash
 # Backup first!
-cp university_system/data/db_files/student_records.db university_system/data/db_files/student_records.db.backup
+cp var/data/university/db_files/student_records.db var/backups/university/database/student_records.db.backup
 
-# Run migrations
-python3 university_system/infrastructure/database/migrations/add_security_features.py
-python3 university_system/infrastructure/database/migrations/add_mfa_system.py
+# Run migrations (the launcher also applies these at startup)
+python -m alembic -c src/education_system/alembic.ini upgrade head
 ```
 
 ---
@@ -222,26 +173,25 @@ python3 university_system/infrastructure/database/migrations/add_mfa_system.py
 
 **Symptom:**
 ```
-ModuleNotFoundError: No module named 'university_system'
+ModuleNotFoundError: No module named 'education_system'
 ```
 
 **Solution:**
 
-1. **Always run from project root:**
+1. **Install the project:**
    ```bash
-   cd .
-   python3 -m university_system.modules.shared.cli.cli_main
+   make install-dev
+   python -m education_system --university --cli
    ```
 
-2. **Or use the run script:**
+2. **Or use the run script from project root:**
    ```bash
-   cd .
-   python -m education_system
+   python run.py
    ```
 
-3. **Check PYTHONPATH:**
+3. **Check PYTHONPATH (never add `src/education_system/` itself):**
    ```bash
-   export PYTHONPATH=".:$PYTHONPATH"
+   export PYTHONPATH="src:$PYTHONPATH"
    ```
 
 ### After Refactoring Import Errors
@@ -253,14 +203,11 @@ ImportError: cannot import name 'SomeClass' from 'old.module.path'
 
 **Solution:**
 
-Use the new modular imports (see `CLAUDE.md` for details):
+Use the current imports (see [Project Structure](../reference/PROJECT_STRUCTURE.md) for details):
 
 ```python
-# Old (deprecated but works via __init__.py)
-from university_system.modules.interfaces.gui.grade_tracking_gui import GradeTrackingApp
-
-# New (recommended)
-from university_system.modules.interfaces.gui.grade_tracking import GradeTrackingApp
+# Current
+from education_system.systems.university.domains.assessment.interfaces.gui.grade_tracking import GradeTrackingApp
 ```
 
 ---
@@ -271,7 +218,7 @@ from university_system.modules.interfaces.gui.grade_tracking import GradeTrackin
 
 **Symptom:**
 ```
-PermissionError: [Errno 13] Permission denied: 'data/db_files/student_records.db'
+PermissionError: [Errno 13] Permission denied: 'var/data/university/db_files/student_records.db'
 ```
 
 **Solution:**
@@ -279,9 +226,8 @@ PermissionError: [Errno 13] Permission denied: 'data/db_files/student_records.db
 Fix file permissions:
 
 ```bash
-cd university_system
-chmod -R 755 data/ logs/ backups/
-chmod 644 data/db_files/*.db
+chmod -R 755 var/data/ var/logs/ var/backups/
+chmod 644 var/data/university/db_files/*.db var/data/platform/db_files/*.db
 ```
 
 ### Access Denied in Application
@@ -299,15 +245,20 @@ chmod 644 data/db_files/*.db
 
 1. **Check user role:**
    ```bash
-   python3 university_system/utils/reset_password.py --list-users
+   sqlite3 var/data/platform/db_files/auth.db "
+     SELECT u.username, s.system_key, s.role FROM users u
+     JOIN user_systems s ON s.user_id = u.id WHERE u.username = 'your_username';
+   "
    ```
 
 2. **Grant admin privileges** (SQL):
    ```sql
-   UPDATE users SET role = 'admin' WHERE username = 'your_username';
+   UPDATE user_systems SET role = 'admin'
+   WHERE system_key = 'university'
+     AND user_id = (SELECT id FROM users WHERE username = 'your_username');
    ```
 
-3. **Check role permissions** in `infrastructure/auth/authorization.py`
+3. **Check role permissions** in `src/education_system/systems/university/infrastructure/auth/core_utils/constants.py`
 
 ---
 
@@ -340,7 +291,7 @@ chmod 644 data/db_files/*.db
 
 3. **Use CLI instead:**
    ```bash
-   python -m education_system --cli
+   python -m education_system --university --cli
    ```
 
 ### Cannot Start Web Interface
@@ -359,8 +310,8 @@ chmod 644 data/db_files/*.db
 
 2. **Use different port:**
    ```bash
-   export FLASK_PORT=5001
-   python3 university_system/modules/web/app.py
+   export API_PORT=5001
+   python -m education_system --university --api
    ```
 
 3. **Install Flask** (if missing):
@@ -381,14 +332,14 @@ chmod 644 data/db_files/*.db
 3. **Use connection pooling** (enabled by default)
 4. **Run VACUUM** periodically:
    ```bash
-   sqlite3 university_system/data/db_files/student_records.db "VACUUM;"
+   sqlite3 var/data/university/db_files/student_records.db "VACUUM;"
    ```
 
 ### High Memory Usage
 
 **Solution:**
 
-1. **Reduce connection pool size** in `infrastructure/database/db.py`
+1. **Reduce connection pool size** in `src/education_system/systems/university/infrastructure/database/db.py`
 2. **Close unused connections**
 3. **Use pagination** for large result sets
 
@@ -400,7 +351,7 @@ If you're still experiencing issues:
 
 1. **Check logs:**
    ```bash
-   tail -f university_system/logs/application.log
+   tail -f var/logs/app.log
    ```
 
 2. **Enable debug mode:**
@@ -413,29 +364,24 @@ If you're still experiencing issues:
    ```bash
    make test
    # or
-   python3 -m pytest university_system/tests/ -v
+   python3 -m pytest tests/unit/systems/university/ -v --timeout=60
    ```
 
 4. **Consult documentation:**
-   - `university_system/CLAUDE.md` - Project guide
-   - `university_system/docs/` - Full documentation
-   - `university_system/docs/SECURITY.md` - Security guide
+   - `CLAUDE.md` - Project guide
+   - `docs/` - Full documentation
+   - `SECURITY.md` - Security guide
 
 ---
 
 ## Quick Reference Commands
 
 ```bash
-# Password Reset
-python3 university_system/utils/reset_password.py --reset-defaults
-
 # List Users
-python3 university_system/utils/reset_password.py --list-users
+sqlite3 var/data/platform/db_files/auth.db "SELECT username FROM users;"
 
 # Database Backup
-make db-backup
-# or
-cp university_system/data/db_files/student_records.db backups/backup_$(date +%Y%m%d_%H%M%S).db
+cp var/data/university/db_files/student_records.db var/backups/university/database/backup_$(date +%Y%m%d_%H%M%S).db
 
 # Run Tests
 make test
@@ -446,8 +392,8 @@ make format
 
 # Start Application
 python -m education_system            # Interactive menu
-python -m education_system --cli      # CLI mode
-python -m education_system --gui      # GUI mode
+python -m education_system --university --cli      # CLI mode
+python -m education_system --university --gui      # GUI mode
 ```
 
 ---

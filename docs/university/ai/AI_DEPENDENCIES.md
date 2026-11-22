@@ -14,9 +14,7 @@ Run this to check your current setup:
 
 ```bash
 python -c "
-import sys
-sys.path.insert(0, '/path/to/university_system')
-from utils.ai.university_chatbot import LIBRARIES_AVAILABLE
+from education_system.systems.university.shared.ai.chatbot import LIBRARIES_AVAILABLE
 for lib, available in LIBRARIES_AVAILABLE.items():
     status = '✓' if available else '✗'
     print(f'{status} {lib}: {available}')

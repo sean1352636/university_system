@@ -41,6 +41,9 @@ from typing import Any
 from education_system.platform.cross_system import handover as _handover
 from education_system.platform.cross_system import identity_service
 from education_system.platform.integrations.external import cross_system_bus
+from education_system.systems.university.domains.admissions.domain import (
+    sixthform_handover_records as handover_records,
+)
 from education_system.systems.university.domains.admissions.domain.services import (
     admissions_lifecycle as lifecycle,
 )
@@ -57,6 +60,12 @@ CONSUMER_SYSTEM = "university"
 #: application as having arrived over this boundary rather than through
 #: the ordinary CRM.
 HANDOVER_SOURCE = "sixth_form_progression"
+
+#: Every prospect source the bus intake has written. ``sixthform_intake``
+#: stages its prospects as ``college_progression`` — the value it has
+#: always used — so a board matching on :data:`HANDOVER_SOURCE` alone
+#: listed nobody the intake had actually staged.
+HANDOVER_SOURCES: tuple[str, ...] = (HANDOVER_SOURCE, "college_progression")
 
 # ── Row states ──────────────────────────────────────────────────────
 #
@@ -75,9 +84,13 @@ READY_TO_ENROL = "Ready to enrol"
 ENROLLED = "Enrolled"
 #: Something is wrong with the record itself, not with its progress.
 NEEDS_ATTENTION = "Needs attention"
+#: The sixth form re-routed the learner elsewhere (Insurance / Clearing at
+#: another institution, or no place at all). Kept on the board, last.
+WITHDRAWN_REROUTED = "Withdrawn (rerouted)"
 
 STATE_ORDER: tuple[str, ...] = (
     NEEDS_ATTENTION, AWAITING_REVIEW, IN_PROGRESS, READY_TO_ENROL, ENROLLED,
+    WITHDRAWN_REROUTED,
 )
 
 
@@ -107,6 +120,23 @@ class Row:
     #: Something a human must look at: two applications on one journey, a
     #: name/DOB match against an existing student, an unreadable payload.
     warnings: tuple[str, ...] = ()
+    #: Which choice placed the learner (Firm, Insurance, Clearing…).
+    route: str = ""
+    #: "Deferred to 2028" for a gap-year entry, else "".
+    entry_label: str = ""
+    #: ``active`` or ``withdrawn_by_reroute``.
+    routing_status: str = ""
+    reroute_reason: str = ""
+    #: "Approved by … on …", or why no reference arrived.
+    reference_status: str = ""
+    #: One line per predicted grade, with when and by whom it was made
+    #: and last changed.
+    predictions: tuple[str, ...] = ()
+    #: Whether contextual flags arrived — never the flags themselves; those
+    #: are read through :func:`contextual_for` by admissions staff only.
+    contextual_status: str = ""
+    #: The sender's own notes on what was withheld or not held, and why.
+    advisories: tuple[str, ...] = ()
 
     @property
     def can_accept(self) -> bool:
@@ -184,7 +214,8 @@ def _handover_fields(envelope: dict | None) -> tuple[tuple[str, ...],
 
 
 def _offer_status(application: dict) -> str:
-    conditions = application.get("conditions") or []
+    conditions = [c for c in application.get("conditions") or []
+                  if c.get("status") != "superseded"]
     if not conditions:
         return "No conditions recorded"
     unsatisfied = [c for c in conditions if c.get("status") != "satisfied"]
@@ -218,14 +249,17 @@ def _outstanding(application: dict) -> tuple[str, ...]:
         if requirement.get("required") and requirement.get("status") != "verified":
             out.append(f"Requirement: {requirement.get('description') or requirement.get('requirement_type')}")
     for condition in application.get("conditions") or []:
-        if condition.get("status") != "satisfied":
+        if condition.get("status") not in lifecycle.CLOSED_CONDITION_STATES:
             out.append(f"Condition: {condition.get('description') or condition.get('condition_type')}")
     return tuple(out)
 
 
-def _state_for(application: dict, warnings: tuple[str, ...]) -> str:
+def _state_for(application: dict, warnings: tuple[str, ...],
+               routing: dict | None = None) -> str:
     if application.get("converted_student_id"):
         return ENROLLED
+    if (routing or {}).get("routing_status") == handover_records.ROUTING_WITHDRAWN:
+        return WITHDRAWN_REROUTED
     if warnings:
         return NEEDS_ATTENTION
     status = (application.get("status") or "").strip().lower()
@@ -323,9 +357,9 @@ def _handover_applications() -> list[dict]:
                      FROM admission_applications a
                      JOIN admission_prospects p
                        ON p.prospect_id = a.prospect_id
-                    WHERE p.source = ?
+                    WHERE p.source IN (?, ?)
                     ORDER BY a.application_id DESC""",
-                (HANDOVER_SOURCE,),
+                HANDOVER_SOURCES,
             ).fetchall()
         return [dict(r) for r in rows]
     except Exception:
@@ -368,17 +402,120 @@ def board() -> Board:
         if found:
             journeys[jid] = found
 
+    try:
+        routings = handover_records.routing_for(
+            s["application_id"] for s in summaries)
+    except Exception:
+        logger.exception("Could not read handover routing for the board")
+        routings = {}
+    try:
+        contextual = handover_records.contextual_statuses(
+            s["application_id"] for s in summaries)
+    except Exception:
+        logger.exception("Could not read contextual status for the board")
+        contextual = None
+
     rows: list[Row] = []
     for summary in summaries:
-        rows.append(_row_for(summary, events, journeys, rows_by_journey))
+        app_id = int(summary["application_id"])
+        rows.append(_row_for(
+            summary, events, journeys, rows_by_journey, routings.get(app_id),
+            contextual=(None if contextual is None else
+                        contextual.get(app_id, {"status": "not_received"}))))
     rows.sort(key=lambda r: r.sort_key)
     out = Board(rows=rows)
     logger.info("University progression board: %s", out.summary_line())
     return out
 
 
+def _reference_status(payload: dict, advisories: tuple[str, ...]) -> str:
+    ref = payload.get("reference") or {}
+    if ref:
+        stage = ref.get("signoff_stage") or "Submitted"
+        by = ref.get("approved_by") or ref.get("referee") or "referee"
+        when = (ref.get("approved_at") or ref.get("sent_at")
+                or ref.get("submitted_at") or "")
+        return f"{stage} — {by}" + (f" on {when[:10]}" if when else "")
+    note = next((a for a in advisories if a.startswith("reference:")), "")
+    return (note.split(":", 1)[1].strip() if note
+            else "Not received (withheld for consent or not sent)")
+
+
+def _prediction_lines(payload: dict) -> tuple[str, ...]:
+    """Each predicted grade with its provenance.
+
+    A university reading "A" needs to know whether that is the October
+    prediction or a January revision, and who made it.
+    """
+    out = []
+    for p in payload.get("predicted_qualifications") or []:
+        if not isinstance(p, dict):
+            continue
+        made = (p.get("predicted_at") or "")[:10]
+        line = f"{p.get('subject')}: {p.get('grade')}"
+        bits = []
+        if made:
+            bits.append(f"first predicted {made}")
+        if p.get("grade_changed_at"):
+            who = p.get("grade_changed_by") or p.get("predicted_by")
+            bits.append(f"this grade set {p['grade_changed_at'][:10]}"
+                        + (f" by {who}" if who else ""))
+        elif p.get("last_changed_at"):
+            # A row saved before grade changes were recorded: only the
+            # last edit of any kind is known, and the line says so.
+            bits.append(f"last edited {p['last_changed_at'][:10]}"
+                        + (f" by {p['predicted_by']}" if p.get("predicted_by")
+                           else "")
+                        + " (grade-change date not recorded)")
+        elif p.get("predicted_by"):
+            bits.append(f"by {p['predicted_by']}")
+        if p.get("confidence"):
+            bits.append(f"{p['confidence']} confidence")
+        out.append(line + (f"  ({'; '.join(bits)})" if bits else ""))
+    return tuple(out)
+
+
+def _contextual_line(application_id: int, payload: dict,
+                     advisories: tuple[str, ...],
+                     held: dict | None = None) -> str:
+    if held is None:
+        try:
+            held = handover_records.contextual_status(application_id)
+        except Exception:
+            logger.exception("Could not read contextual status for %s",
+                             application_id)
+            held = {"status": "unavailable"}
+    if held.get("status") == handover_records.CONTEXTUAL_RELEASED:
+        return (f"Released under consent — {held.get('count', 0)} flag(s); "
+                f"visible to admissions decision-makers only")
+    if held.get("status") == handover_records.CONTEXTUAL_WITHHELD:
+        reason = (held.get("reason") or "no consent recorded").strip()
+        return reason if reason.lower().startswith("withheld") \
+            else f"Withheld — {reason}"
+    note = next((a for a in advisories if a.startswith("contextual_flags:")), "")
+    if note:
+        reason = note.split(":", 1)[1].strip()
+        return reason if reason.lower().startswith("withheld") \
+            else f"Withheld — {reason}"
+    return "Not received"
+
+
+def contextual_for(application_id: int, *, viewer: Any) -> dict | None:
+    """The released contextual flags, for admissions staff only.
+
+    ``None`` when the viewer lacks the admissions-decision permission or
+    nothing was released. Every call is access-logged.
+    """
+    return handover_records.contextual_flags(application_id, viewer=viewer)
+
+
+def can_view_contextual(viewer: Any) -> bool:
+    return handover_records.can_view_contextual(viewer)
+
+
 def _row_for(summary: dict, events: dict, journeys: dict,
-             rows_by_journey: dict) -> Row:
+             rows_by_journey: dict, routing: dict | None = None, *,
+             contextual: dict | None = None) -> Row:
     application_id = int(summary["application_id"])
     journey_id = summary.get("journey_id") or ""
     try:
@@ -413,11 +550,21 @@ def _row_for(summary: dict, events: dict, journeys: dict,
         p for p in (summary.get("first_name"), summary.get("last_name")) if p
     ).strip() or f"Application {application_id}"
 
+    advisories = tuple(
+        f"{a.get('key')}: {a.get('note')}"
+        for a in payload.get("handover_advisories") or []
+        if isinstance(a, dict) and a.get("note"))
+    routing = routing or {}
+    entry_label = handover_records.entry_label(routing) or (
+        f"Deferred to {destination.get('entry_year')}"
+        if destination.get("deferred") and destination.get("entry_year")
+        else "")
+
     return Row(
         application_id=application_id,
         journey_id=journey_id,
         full_name=full_name,
-        state=_state_for(application, warnings),
+        state=_state_for(application, warnings, routing),
         status=(application.get("status") or "").strip(),
         source_sixth_form=(summary.get("high_school")
                            or payload.get("sixth_form_name") or ""),
@@ -436,6 +583,15 @@ def _row_for(summary: dict, events: dict, journeys: dict,
         withheld=withheld,
         outstanding=_outstanding(application),
         warnings=warnings,
+        route=str(routing.get("route") or destination.get("route") or ""),
+        entry_label=entry_label,
+        routing_status=str(routing.get("routing_status") or ""),
+        reroute_reason=str(routing.get("reroute_reason") or ""),
+        reference_status=_reference_status(payload, advisories),
+        predictions=_prediction_lines(payload),
+        contextual_status=_contextual_line(application_id, payload,
+                                           advisories, contextual),
+        advisories=advisories,
     )
 
 
@@ -576,7 +732,8 @@ def complete_enrolment_many(application_ids, *,
 __all__ = [
     "SOURCE_SYSTEM", "CONSUMER_SYSTEM", "HANDOVER_SOURCE",
     "AWAITING_REVIEW", "IN_PROGRESS", "READY_TO_ENROL", "ENROLLED",
-    "NEEDS_ATTENTION", "STATE_ORDER",
+    "NEEDS_ATTENTION", "WITHDRAWN_REROUTED", "STATE_ORDER",
+    "HANDOVER_SOURCES", "contextual_for", "can_view_contextual",
     "Row", "ActionResult", "Board",
     "board", "accept", "request_information", "enrolment_blockers",
     "complete_enrolment", "complete_enrolment_many",

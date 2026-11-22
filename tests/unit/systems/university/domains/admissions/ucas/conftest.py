@@ -44,6 +44,7 @@ _UNI_MODULES = (
     "education_system.systems.university.domains.admissions.domain.ucas.decision_log",
     "education_system.systems.university.domains.admissions.domain.ucas.pipeline_link",
     "education_system.systems.university.domains.admissions.domain.ucas.clearing_link",
+    "education_system.systems.university.domains.admissions.domain.ucas.results_day",
 )
 
 #: Tables the UCAS module reads on the university side but does not own.
@@ -133,7 +134,7 @@ def ucas_env(tmp_path, monkeypatch):
     from education_system.systems.sixth_form.domain.progression import (
         university_handover,
     )
-    from education_system.systems.university.application import prospectus
+    from education_system.systems.university.application.programmes import prospectus
 
     # Who "we" are, on both sides of the boundary. The sixth form's guard
     # and the university's applicant query have to agree or every test
@@ -146,9 +147,40 @@ def ucas_env(tmp_path, monkeypatch):
     # No real mail, no real audit database.
     monkeypatch.setattr(uni_ucas, "_send_decision_email",
                         lambda *a, **k: None)
+    # Confirming a place (results day) e-mails the outcome and closes the
+    # learner's logins in the shared auth database — neither is under test.
+    monkeypatch.setattr(uni_ucas, "_send_outcome_email",
+                        lambda *a, **k: None, raising=False)
+    monkeypatch.setattr(students, "disable_leaver_login",
+                        lambda *a, **k: None, raising=False)
+    monkeypatch.setattr(students, "disable_orphaned_parent_logins",
+                        lambda *a, **k: None, raising=False)
     audit: list = []
     real_audit = uni["decision_log"]._audit
     monkeypatch.setattr(uni["decision_log"], "_audit", audit.append)
+
+    # ── Platform auth DB (the cross-system bus) ──────────────────────
+    # A decision is now *published* (``ucas.decision.recorded``) and an
+    # admission publishes ``university.student.enrolled``; both land in the
+    # outbox in the shared auth database. Point the bus — and the journey
+    # lookups beside it — at a temp file instead of the live one.
+    from education_system.platform.cross_system import identity_service
+    from education_system.platform.identity.auth import db as auth_db
+    from education_system.platform.identity.auth import schema as auth_schema
+    from education_system.platform.integrations.external import (
+        cross_system_bus,
+    )
+    auth_path = str(tmp_path / "auth.db")
+    real_auth_connect = auth_db.connect
+
+    def _auth_connect(db_path=None, *args, **kwargs):
+        return real_auth_connect(db_path or auth_path, *args, **kwargs)
+
+    monkeypatch.setattr(auth_db, "connect", _auth_connect)
+    monkeypatch.setattr(cross_system_bus, "connect", _auth_connect)
+    monkeypatch.setattr(identity_service, "connect", _auth_connect)
+    monkeypatch.setattr(auth_schema, "connect", _auth_connect, raising=False)
+    auth_schema.initialise_auth_db(auth_path)
 
     # ── One applicant, two choices, ours in slot 1 ───────────────────
     #

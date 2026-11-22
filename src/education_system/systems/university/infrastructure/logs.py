@@ -115,8 +115,13 @@ logger = logging.getLogger(__name__)
 
 def log_event(level, message):
     """Enhanced logging function that uses both standard logging and activity logging"""
-    # Ensure log management is initialized
-    _init_log_management()
+    # The enhanced write below needs ``log_manager``, which nothing assigns
+    # (_init_log_management loads the package but never sets it), so only
+    # load the package once there is a manager to use. log_event runs inside
+    # callers' write transactions (the e-mail save), and loading the package
+    # there took seconds and left every other writer "database is locked".
+    if log_manager is not None:
+        _init_log_management()
 
     # Standard logging
     if level == 'debug':

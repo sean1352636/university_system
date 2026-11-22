@@ -738,5 +738,5 @@ The Facilities Management System provides comprehensive tools for managing campu
 ---
 
 **Last Updated**: January 2026
-**Module**: `university_system/modules/domain/facilities/`
+**Module**: `src/education_system/systems/university/domains/operations/domain/campus/facilities/`
 **Support**: facilities@university.edu | (555) 123-FACS

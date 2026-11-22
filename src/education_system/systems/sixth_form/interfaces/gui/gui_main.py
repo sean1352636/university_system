@@ -13,7 +13,8 @@ import logging
 import sys
 import tkinter as tk
 from datetime import datetime
-from tkinter import messagebox, ttk
+from tkinter import ttk
+from education_system.platform.delivery.gui.parented_dialogs import messagebox
 from typing import Callable
 from education_system.platform.delivery.gui import window_sizing
 from education_system.systems.sixth_form import SYSTEM_NAME
@@ -39,12 +40,12 @@ NAV_CATEGORIES: list[tuple[str, list[tuple[str, str]]]] = [
         ("Add Student", "open_add_student"),
         ("Search Students", "open_search_students"),
         ("Advanced Search", "open_advanced_search"),
-        ("Student Profile", "open_student_profile"),
         ("Admissions", "open_admissions"),
         ("Enrolment", "open_enrolment"),
         ("Onboarding", "open_onboarding"),
         ("Bulk Operations", "open_bulk_operations"),
         ("Alumni", "open_alumni"),
+        ("Student Exit Interviews", "open_student_exit_interviews"),
         ("Parent Portal", "open_parent_portal"),
     ]),
     ("Academic Management", [
@@ -68,6 +69,7 @@ NAV_CATEGORIES: list[tuple[str, list[tuple[str, str]]]] = [
         ("EPQ", "open_epq"),
         ("Work Experience", "open_work_experience"),
         ("Room Booking", "open_room_booking"),
+        ("Online Learning Space", "open_class_resources"),
     ]),
     ("Assessment & Grades", [
         ("Gradebook", "open_gradebook"),
@@ -82,6 +84,9 @@ NAV_CATEGORIES: list[tuple[str, list[tuple[str, str]]]] = [
         ("Mock Exams", "open_mock_exams"),
         ("Exam Entries", "open_exam_entries"),
         ("Results Day", "open_results_day"),
+        ("Exams Office", "open_exams_office"),
+        ("Report Cards", "open_report_cards"),
+        ("Study Programme", "open_study_programme_reports"),
         ("Observations", "open_observations"),
         ("Self Assessment", "open_self_assessment"),
         ("Quality Assurance", "open_quality_assurance"),
@@ -99,9 +104,15 @@ NAV_CATEGORIES: list[tuple[str, list[tuple[str, str]]]] = [
     ]),
     ("Pastoral & Wellbeing", [
         ("Tutor Groups", "open_tutor_groups"),
+        ("Tutorial & PSHE Programme", "open_tutorial"),
+        ("Contact Log", "open_contact_log"),
         ("Behaviour Log", "open_behaviour"),
         ("Disciplinary", "open_disciplinary"),
         ("Safeguarding", "open_safeguarding"),
+        ("Looked-After & Care Leavers", "open_looked_after"),
+        ("Young Carers", "open_young_carers"),
+        ("Report a Safeguarding Concern", "open_report_concern"),
+        ("LADO Allegations", "open_lado_register"),
         ("SEND", "open_send"),
         ("Accessibility", "open_accessibility"),
         ("Wellbeing", "open_wellbeing"),
@@ -123,14 +134,19 @@ NAV_CATEGORIES: list[tuple[str, list[tuple[str, str]]]] = [
     ]),
     ("Staff & Communication", [
         ("Staff Directory", "open_staff"),
+        ("My Area", "open_my_area"),
         ("Departments", "open_departments"),
         ("Staff HR", "open_staff_hr"),
         ("Staff Absence", "open_staff_absence"),
+        ("Staff Timetables & Directed Time", "open_directed_time"),
         ("Staff Wellbeing", "open_staff_wellbeing"),
         ("Recruitment", "open_recruitment"),
+        ("Staff Exit Interviews", "open_staff_exit_interviews"),
         ("Appraisals", "open_appraisals"),
         ("CPD", "open_cpd"),
+        ("Mandatory Training", "open_mandatory_training"),
         ("DBS Checks", "open_dbs_checks"),
+        ("Single Central Record", "open_single_central_record"),
         ("Visitors", "open_visitors"),
         ("Parent Contacts", "open_parents"),
         ("Parents' Evenings", "open_parents_evenings"),
@@ -149,9 +165,20 @@ NAV_CATEGORIES: list[tuple[str, list[tuple[str, str]]]] = [
         ("Bursary Applications", "open_bursaries"),
         ("Trips & Payments", "open_trips_payments"),
         ("Receipts", "open_receipts"),
+        ("Online Payments", "open_online_payments"),
         ("Expense Claims", "open_expense_claims"),
         ("Funding", "open_funding"),
         ("Census ILR", "open_census_ilr"),
+    ]),
+    ("Operations", [
+        ("Lockers", "open_lockers"),
+        ("Parking Permits", "open_parking"),
+        ("Catering", "open_catering"),
+        ("Cashless Catering", "open_cashless_catering"),
+        ("ID Cards", "open_id_cards"),
+        ("Site & IT Helpdesk", "open_helpdesk"),
+        ("Device Loans", "open_device_loans"),
+        ("Fire Drills & Premises Checks", "open_premises_checks"),
     ]),
     ("Reports & Analytics", [
         ("Attendance Report", "open_report_attendance"),
@@ -184,12 +211,14 @@ NAV_CATEGORIES: list[tuple[str, list[tuple[str, str]]]] = [
         ("User Accounts", "open_user_accounts"),
         ("User Management", "open_user_management"),
         ("Settings", "open_settings"),
+        ("Integrations & Backups", "open_integrations"),
         ("Compliance", "open_compliance"),
         ("Governance", "open_governance"),
         ("Policies", "open_policies"),
         ("GDPR", "open_gdpr"),
         ("Risk Management", "open_risk_management"),
         ("Automation Rules", "open_automation_rules"),
+        ("Scheduled Jobs", "open_scheduled_jobs"),
         ("Health & Safety", "open_health_safety"),
         ("Assets", "open_assets"),
         ("Multi-Language", "open_multi_language"),
@@ -200,8 +229,18 @@ NAV_CATEGORIES: list[tuple[str, list[tuple[str, str]]]] = [
 
 
 class SixthFormMainGUI:
-    def __init__(self, auth):
+    def __init__(self, auth, principal=None):
+        from education_system.systems.sixth_form.domain.governance.user_management import (
+            access,
+        )
         self.auth = auth
+        # Who is signed in and what they may open. Menu entries they
+        # can't open are left out of the sidebar, and the handlers
+        # themselves are swapped for a refusal so a quick-action tile,
+        # the search box or a dashboard link can't reach them either.
+        self.principal = principal or access.from_auth(auth)
+        access.set_current(self.principal)
+        self._lock_unpermitted_handlers()
         self.root = tk.Tk()
         self.root.title(SYSTEM_NAME)
         window_sizing.fit(self.root, "1400x900", (1200, 800))
@@ -237,6 +276,17 @@ class SixthFormMainGUI:
         except Exception:
             logger.exception("Could not start idle-timeout watcher")
             self._idle_watcher = None
+
+        # Scheduled jobs (announcements, notifications, scans, backups)
+        # run in a background thread while the window is open. Set
+        # EDU_SIXTHFORM_SCHEDULER=off to stop them.
+        try:
+            from education_system.systems.sixth_form.interfaces.gui.governance.scheduler import (
+                scheduler_views,
+            )
+            scheduler_views.start_background_scheduler(self.root)
+        except Exception:
+            logger.exception("Could not start the job scheduler")
 
     # ── Layout scaffolding ───────────────────────────────────────────
     def _setup_layout(self) -> None:
@@ -364,7 +414,8 @@ class SixthFormMainGUI:
         # Categories area (always present, hidden while searching)
         categories_holder = ttk.Frame(inner)
         categories_holder.pack(fill="x")
-        for group_label, items in NAV_CATEGORIES:
+        visible = self._visible_categories()
+        for group_label, items in visible:
             self._make_category(categories_holder, group_label, items, canvas)
 
         # Flat results area shown only when there's a query
@@ -372,7 +423,7 @@ class SixthFormMainGUI:
 
         all_actions: list[tuple[str, str]] = [
             (label, handler)
-            for _grp, items in NAV_CATEGORIES
+            for _grp, items in visible
             for label, handler in items
         ]
 
@@ -454,10 +505,20 @@ class SixthFormMainGUI:
         outer.rowconfigure(0, weight=1)
         outer.columnconfigure(0, weight=1)
 
+        # Above the page: open the page shown below in its own window.
+        page_bar = ttk.Frame(outer, padding=(10, 4, 10, 0))
+        page_bar.grid(row=0, column=0, columnspan=2, sticky="ew")
+        self._popout_btn = ttk.Button(
+            page_bar, text="⧉ Open in new window", state="disabled",
+            command=self._open_current_page_in_window)
+        self._popout_btn.pack(side="right")
+        outer.rowconfigure(0, weight=0)
+        outer.rowconfigure(1, weight=1)
+
         canvas = tk.Canvas(outer, highlightthickness=0)
-        canvas.grid(row=0, column=0, sticky="nsew")
+        canvas.grid(row=1, column=0, sticky="nsew")
         vs = ttk.Scrollbar(outer, orient="vertical", command=canvas.yview)
-        vs.grid(row=0, column=1, sticky="ns")
+        vs.grid(row=1, column=1, sticky="ns")
         canvas.configure(yscrollcommand=vs.set)
 
         self.content_frame = ttk.Frame(canvas, padding=10)
@@ -506,6 +567,7 @@ class SixthFormMainGUI:
 
     def _show_welcome(self) -> None:
         self._clear_content()
+        self._set_current_page(None)
         assert self.content_frame is not None
         root = self.content_frame
         root.columnconfigure(0, weight=1)
@@ -795,11 +857,76 @@ class SixthFormMainGUI:
                    command=self.open_calendar).pack(
             anchor="w", pady=(6, 0))
 
+    def _visible_categories(self) -> list[tuple[str, list[tuple[str, str]]]]:
+        out = []
+        for group_label, items in NAV_CATEGORIES:
+            allowed = [(lbl, h) for lbl, h in items
+                       if self.principal.can_open(lbl)]
+            if allowed:
+                out.append((group_label, allowed))
+        return out
+
+    def _lock_unpermitted_handlers(self) -> None:
+        permitted = {h for _g, items in NAV_CATEGORIES for lbl, h in items
+                     if self.principal.can_open(lbl)}
+        for _g, items in NAV_CATEGORIES:
+            for lbl, handler in items:
+                if handler not in permitted:
+                    setattr(self, handler,
+                            lambda lbl=lbl: self._show_denied(lbl))
+
+    def _show_denied(self, label: str) -> None:
+        logger.warning("Refused %s for user=%s role=%s", label,
+                       self.principal.username, self.principal.role)
+        messagebox.showwarning(
+            "Not available",
+            f"Your account doesn't have access to {label}.\n\n"
+            "If you need it for your job, ask a system administrator "
+            "to update your staff record or permissions.",
+            parent=self.root)
+
     def _handler(self, name: str, label: str) -> Callable[[], None]:
         method = getattr(self, name, None)
         if callable(method):
-            return method
+            return lambda: self._run_page(name, label, method)
         return lambda: self._show_stub(label)
+
+    def _run_page(self, name: str, label: str,
+                  method: Callable[[], None]) -> None:
+        """Run a sidebar handler. When it drew its page in the main
+        window (rather than opening a window of its own), remember it so
+        "Open in new window" can show the same page in a separate window."""
+        before = ([id(w) for w in self.content_frame.winfo_children()]
+                  if self.content_frame is not None else [])
+        method()
+        after = ([id(w) for w in self.content_frame.winfo_children()]
+                 if self.content_frame is not None else [])
+        if after and after != before:
+            func = getattr(type(self), name)
+            self._set_current_page((label, lambda host: func(host)))
+
+    def _set_current_page(
+            self, page: tuple[str, Callable[[object], None]] | None) -> None:
+        self._current_page = page
+        btn = self.__dict__.get("_popout_btn")
+        if btn is not None:
+            try:
+                btn.configure(state="normal" if page else "disabled")
+            except tk.TclError:
+                pass
+
+    def _open_current_page_in_window(self) -> None:
+        page = self.__dict__.get("_current_page")
+        if not page:
+            return
+        from education_system.systems.sixth_form.interfaces.gui import popout
+        label, draw = page
+        try:
+            popout.open_page(self, label, draw)
+        except Exception as e:  # noqa: BLE001
+            logger.exception("%s could not be opened in a new window", label)
+            messagebox.showerror(label, f"Could not open a new window:\n{e}",
+                                 parent=self.root)
 
     def _show_stub(self, label: str) -> None:
         self._clear_content()
@@ -827,32 +954,34 @@ class SixthFormMainGUI:
     def _idle_logout(self) -> None:
         """Auto-logout path fired by ``IdleTimeoutWatcher``.
 
-        Same teardown as the manual Logout button, plus a polite
-        notice so the user understands why they're back at the
-        login screen.
+        Same teardown as the manual Logout button, then a notice so the
+        user understands why they're back at the login screen. The notice
+        comes last: it's modal, and shown first it would keep an unattended
+        session signed in, with its window on screen, until someone clicked OK.
         """
         user = (self.auth.current_user or {}).get("username", "?")
         logger.info("Idle logout for user=%s", user)
         from education_system import switch as _switch
+        from education_system.platform.delivery.gui import idle_timeout as _idle
         self._stop_idle_watcher()
-        try:
-            messagebox.showinfo(
-                "Signed out",
-                "You've been signed out due to inactivity. "
-                "Please sign in again to continue.",
-                parent=self.root,
-            )
-        except tk.TclError:
-            pass
         try:
             self.auth.logout()
         except Exception:
-            pass
+            logger.exception("Logout failed during idle logout")
         _switch.request_logout("gui")
         try:
             self.root.destroy()
         except tk.TclError:
             pass
+        try:
+            _idle.notify_signed_out(
+                self.root,
+                "Signed out",
+                "You've been signed out due to inactivity. "
+                "Please sign in again to continue.",
+            )
+        except tk.TclError:
+            logger.debug("Could not show the signed-out notice", exc_info=True)
 
     def _stop_idle_watcher(self) -> None:
         watcher = getattr(self, "_idle_watcher", None)
@@ -915,10 +1044,6 @@ class SixthFormMainGUI:
         from education_system.systems.sixth_form.interfaces.gui.learners.students import student_views
         student_views.open_search(self)
 
-    def open_student_profile(self) -> None:
-        from education_system.systems.sixth_form.interfaces.gui.learners.students import student_views
-        student_views.open_profile(self)
-
     def open_enrolment(self) -> None:
         from education_system.systems.sixth_form.interfaces.gui.admissions.enrolments import enrolment_views
         enrolment_views.open_directory(self)
@@ -979,7 +1104,7 @@ class SixthFormMainGUI:
         offers. They opened six screens over one set of records; this
         opens one window with those as tabs.
         """
-        from education_system.systems.sixth_form.domain.progression.university.views import (
+        from education_system.systems.sixth_form.interfaces.gui.progression.university import (
             window as university_window,
         )
         university_window.open_window(self)
@@ -1049,39 +1174,39 @@ class SixthFormMainGUI:
         staff_views.open_directory(self)
 
     def open_parents(self) -> None:
-        from education_system.systems.sixth_form.interfaces.gui.operations.communications.parent_contacts import parent_contacts_views
+        from education_system.systems.sixth_form.domains.communications.interfaces.gui.parent_contacts import parent_contacts_views
         parent_contacts_views.open_directory(self)
 
     def open_parents_evenings(self) -> None:
-        from education_system.systems.sixth_form.interfaces.gui.operations.communications.parents_evenings import parents_evenings_views
+        from education_system.systems.sixth_form.domains.communications.interfaces.gui.parents_evenings import parents_evenings_views
         parents_evenings_views.open_parents_evenings_window(self)
 
     def open_notices(self) -> None:
-        from education_system.systems.sixth_form.interfaces.gui.operations.communications.notices import notices_views
+        from education_system.systems.sixth_form.domains.communications.interfaces.gui.notices import notices_views
         notices_views.open_notices_window(self)
 
     def open_messaging(self) -> None:
-        from education_system.systems.sixth_form.interfaces.gui.operations.communications.messages import messages_views
+        from education_system.systems.sixth_form.domains.communications.interfaces.gui.messages import messages_views
         messages_views.open_messages_window(self)
 
     def open_finance_hub(self) -> None:
-        from education_system.systems.sixth_form.interfaces.gui.finance.finance_hub import finance_hub_views
+        from education_system.systems.sixth_form.domains.finance.interfaces.gui.finance_hub import finance_hub_views
         finance_hub_views.open_finance_hub(self)
 
     def open_fees(self) -> None:
-        from education_system.systems.sixth_form.interfaces.gui.finance.fees import fees_views
+        from education_system.systems.sixth_form.domains.finance.interfaces.gui.fees import fees_views
         fees_views.open_fees_window(self)
 
     def open_bursaries(self) -> None:
-        from education_system.systems.sixth_form.interfaces.gui.finance.bursaries import bursaries_views
+        from education_system.systems.sixth_form.domains.finance.interfaces.gui.bursaries import bursaries_views
         bursaries_views.open_bursaries_window(self)
 
     def open_trips_payments(self) -> None:
-        from education_system.systems.sixth_form.interfaces.gui.finance.trips import trips_views
+        from education_system.systems.sixth_form.domains.finance.interfaces.gui.trips import trips_views
         trips_views.open_trips_window(self)
 
     def open_receipts(self) -> None:
-        from education_system.systems.sixth_form.interfaces.gui.finance.receipts import receipts_views
+        from education_system.systems.sixth_form.domains.finance.interfaces.gui.receipts import receipts_views
         receipts_views.open_receipts_window(self)
 
     def open_report_attendance(self) -> None:
@@ -1155,8 +1280,10 @@ class SixthFormMainGUI:
         settings_views.open_settings_window(self, auth=self.auth)
 
     def open_user_management(self) -> None:
-        from education_system.systems.sixth_form.interfaces.gui.governance.user_management import user_management_views
-        user_management_views.open_user_management_window(self)
+        from education_system.systems.sixth_form.interfaces.gui.governance.user_management import (
+            user_management_window,
+        )
+        user_management_window.open_user_management_window(self)
 
     def open_compliance(self) -> None:
         from education_system.systems.sixth_form.interfaces.gui.governance.compliance import compliance_views
@@ -1175,24 +1302,35 @@ class SixthFormMainGUI:
         absence_requests_views.open_absence_requests_window(self)
 
     def open_academic_year(self) -> None:
-        from education_system.systems.sixth_form.interfaces.gui.academics.academic_year import academic_year_views
-        academic_year_views.open_academic_year_window(self)
+        from education_system.systems.sixth_form.interfaces.gui.academics.academic_year import (
+            academic_year_window,
+        )
+        academic_year_window.open_academic_year_window(self)
 
     def open_accessibility(self) -> None:
         from education_system.systems.sixth_form.interfaces.gui.pastoral.accessibility import accessibility_views
         accessibility_views.open_accessibility_window(self)
 
     def open_activity_feed(self) -> None:
-        from education_system.systems.sixth_form.interfaces.gui.operations.communications.activity_feed import activity_feed_views
+        from education_system.systems.sixth_form.domains.communications.interfaces.gui.activity_feed import activity_feed_views
         activity_feed_views.open_activity_feed_window(self)
 
     def open_advanced_search(self) -> None:
-        from education_system.systems.sixth_form.interfaces.gui.learners.advanced_search import advanced_search_views
-        advanced_search_views.open_advanced_search_window(self)
+        from education_system.systems.sixth_form.interfaces.gui.learners.advanced_search import (
+            advanced_search_window,
+        )
+        advanced_search_window.open_advanced_search_window(self)
 
     def open_admissions(self) -> None:
-        from education_system.systems.sixth_form.interfaces.gui.admissions import admissions_views
-        admissions_views.open_admissions_window(self)
+        from education_system.systems.sixth_form.domain.governance.user_management import access
+        p = access.current()
+        if not p.can(access.ADMISSIONS) and p.can(access.SAFEGUARDING):
+            # The DSL sees only the admissions safeguarding queue.
+            from education_system.systems.sixth_form.interfaces.gui.admissions import pages_dsl
+            pages_dsl.open_dsl_queue_window(self)
+            return
+        from education_system.systems.sixth_form.interfaces.gui.admissions import admissions_window
+        admissions_window.open_admissions_window(self)
 
     def open_onboarding(self) -> None:
         from education_system.systems.sixth_form.interfaces.gui.admissions.onboarding import onboarding_views
@@ -1203,8 +1341,8 @@ class SixthFormMainGUI:
         bulk_operations_views.open_bulk_operations_window(self)
 
     def open_alumni(self) -> None:
-        from education_system.systems.sixth_form.interfaces.gui.learners.alumni import alumni_views
-        alumni_views.open_alumni_window(self)
+        from education_system.systems.sixth_form.interfaces.gui.learners.alumni import alumni_window
+        alumni_window.open_alumni_window(self)
 
     def open_parent_portal(self) -> None:
         from education_system.systems.sixth_form.interfaces.gui.operations.communications.parent_portal import parent_portal_views
@@ -1311,11 +1449,11 @@ class SixthFormMainGUI:
         emergency_views.open_emergency_window(self)
 
     def open_health_safety(self) -> None:
-        from education_system.systems.sixth_form.interfaces.gui.governance.health_safety import health_safety_views
+        from education_system.systems.sixth_form.domains.operations.interfaces.gui.health_safety import health_safety_views
         health_safety_views.open_health_safety_window(self)
 
     def open_assets(self) -> None:
-        from education_system.systems.sixth_form.interfaces.gui.governance.assets import assets_views
+        from education_system.systems.sixth_form.domains.operations.interfaces.gui.assets import assets_views
         assets_views.open_assets_window(self)
 
     def open_equality_diversity(self) -> None:
@@ -1339,7 +1477,7 @@ class SixthFormMainGUI:
         student_council_views.open_student_council_window(self)
 
     def open_transport(self) -> None:
-        from education_system.systems.sixth_form.interfaces.gui.pastoral.transport import transport_views
+        from education_system.systems.sixth_form.domains.operations.interfaces.gui.transport import transport_views
         transport_views.open_transport_window(self)
 
     def open_staff_hr(self) -> None:
@@ -1375,39 +1513,39 @@ class SixthFormMainGUI:
         dbs_checks_views.open_dbs_checks_window(self)
 
     def open_visitors(self) -> None:
-        from education_system.systems.sixth_form.interfaces.gui.operations.visitors import visitors_views
+        from education_system.systems.sixth_form.domains.operations.interfaces.gui.visitors import visitors_views
         visitors_views.open_visitors_window(self)
 
     def open_announcements(self) -> None:
-        from education_system.systems.sixth_form.interfaces.gui.operations.communications.announcements import announcements_views
+        from education_system.systems.sixth_form.domains.communications.interfaces.gui.announcements import announcements_views
         announcements_views.open_announcements_window(self)
 
     def open_notifications(self) -> None:
-        from education_system.systems.sixth_form.interfaces.gui.operations.communications.notifications import notifications_views
+        from education_system.systems.sixth_form.domains.communications.interfaces.gui.notifications import notifications_views
         notifications_views.open_notifications_window(self)
 
     def open_letter_templates(self) -> None:
-        from education_system.systems.sixth_form.interfaces.gui.operations.communications.letter_templates import letter_templates_views
+        from education_system.systems.sixth_form.domains.communications.interfaces.gui.letter_templates import letter_templates_views
         letter_templates_views.open_letter_templates_window(self)
 
     def open_document_hub(self) -> None:
-        from education_system.systems.sixth_form.interfaces.gui.operations.document_hub import document_hub_views
+        from education_system.systems.sixth_form.domains.communications.interfaces.gui.document_hub import document_hub_views
         document_hub_views.open_document_hub_window(self)
 
     def open_attachments(self) -> None:
-        from education_system.systems.sixth_form.interfaces.gui.operations.attachments import attachments_views
+        from education_system.systems.sixth_form.domains.communications.interfaces.gui.attachments import attachments_views
         attachments_views.open_attachments_window(self)
 
     def open_census_ilr(self) -> None:
-        from education_system.systems.sixth_form.interfaces.gui.governance.compliance.census_ilr import census_ilr_views
+        from education_system.systems.sixth_form.domains.finance.interfaces.gui.census_ilr import census_ilr_views
         census_ilr_views.open_census_ilr_window(self)
 
     def open_expense_claims(self) -> None:
-        from education_system.systems.sixth_form.interfaces.gui.finance.expense_claims import expense_claims_views
+        from education_system.systems.sixth_form.domains.finance.interfaces.gui.expense_claims import expense_claims_views
         expense_claims_views.open_expense_claims_window(self)
 
     def open_funding(self) -> None:
-        from education_system.systems.sixth_form.interfaces.gui.finance.funding import funding_views
+        from education_system.systems.sixth_form.domains.finance.interfaces.gui.funding import funding_views
         funding_views.open_funding_window(self)
 
     def open_about(self) -> None:
@@ -1461,6 +1599,155 @@ class SixthFormMainGUI:
         from education_system.platform.features.documents.document_gui import SharedDocumentsFrame
         self._open_cross_frame(SharedDocumentsFrame, "Shared Documents")
 
+    # ── Windows added in the 2026-10 gap build ──────────────────────
+    # Each lives in its own module; these just open it.
+    def _open_window(self, module: str, func: str, label: str, *,
+                     pass_gui: bool = False) -> None:
+        import importlib
+        try:
+            getattr(importlib.import_module(module), func)(
+                self if pass_gui else self.root)
+            self.status_var.set(f"Opened: {label}")
+        except Exception as e:
+            logger.exception("%s failed to open", label)
+            messagebox.showerror(label, f"{label} could not be opened:\n{e}",
+                                 parent=self.root)
+
+    def open_class_resources(self) -> None:
+        self._open_window(
+            "education_system.systems.sixth_form.interfaces.gui.academics.class_resources.class_resources_views",
+            "open_class_resources_window", "Online Learning Space")
+
+    def open_directed_time(self) -> None:
+        self._open_window(
+            "education_system.systems.sixth_form.interfaces.gui.staff.directed_time.directed_time_views",
+            "open_directed_time_window", "Staff Timetables & Directed Time")
+
+    def open_mandatory_training(self) -> None:
+        self._open_window(
+            "education_system.systems.sixth_form.interfaces.gui.staff.mandatory_training.mandatory_training_views",
+            "open_mandatory_training_window", "Mandatory Training")
+
+    def open_staff_exit_interviews(self) -> None:
+        self._open_window(
+            "education_system.systems.sixth_form.interfaces.gui.staff.staff_hr.exit_interviews_views",
+            "open_exit_interviews_window", "Staff Exit Interviews")
+
+    def open_my_area(self) -> None:
+        self._open_window(
+            "education_system.systems.sixth_form.interfaces.gui.staff.my_area.my_area_views",
+            "open_my_area_window", "My Area")
+
+    def open_helpdesk(self) -> None:
+        self._open_window(
+            "education_system.systems.sixth_form.domains.operations.interfaces.gui.helpdesk.helpdesk_views",
+            "open_helpdesk_window", "Site & IT Helpdesk")
+
+    def open_device_loans(self) -> None:
+        self._open_window(
+            "education_system.systems.sixth_form.domains.operations.interfaces.gui.device_loans.device_loans_views",
+            "open_device_loans_window", "Device Loans")
+
+    def open_premises_checks(self) -> None:
+        self._open_window(
+            "education_system.systems.sixth_form.domains.operations.interfaces.gui.health_safety.premises_checks_views",
+            "open_premises_checks_window", "Fire Drills & Premises Checks")
+
+    def open_scheduled_jobs(self) -> None:
+        self._open_window(
+            "education_system.systems.sixth_form.interfaces.gui.governance.scheduler.scheduler_views",
+            "open_scheduled_jobs_window", "Scheduled Jobs")
+
+    def open_online_payments(self) -> None:
+        self._open_window(
+            "education_system.systems.sixth_form.domains.finance.interfaces.gui.online_payments.online_payments_views",
+            "open_online_payments_window", "Online Payments")
+
+    def open_cashless_catering(self) -> None:
+        self._open_window(
+            "education_system.systems.sixth_form.domains.operations.interfaces.gui.catering.cashless_views",
+            "open_cashless_catering_window", "Cashless Catering")
+
+    def open_looked_after(self) -> None:
+        self._open_window(
+            "education_system.systems.sixth_form.interfaces.gui.pastoral.looked_after.looked_after_views",
+            "open_looked_after_window", "Looked-After & Care Leavers")
+
+    def open_young_carers(self) -> None:
+        self._open_window(
+            "education_system.systems.sixth_form.interfaces.gui.pastoral.young_carers.young_carers_views",
+            "open_young_carers_window", "Young Carers")
+
+    def open_tutorial(self) -> None:
+        self._open_window(
+            "education_system.systems.sixth_form.interfaces.gui.pastoral.tutorial.tutorial_views",
+            "open_tutorial_window", "Tutorial & PSHE Programme")
+
+    def open_contact_log(self) -> None:
+        self._open_window(
+            "education_system.systems.sixth_form.interfaces.gui.pastoral.contact_log.contact_log_views",
+            "open_contact_log_window", "Contact Log")
+
+    def open_student_exit_interviews(self) -> None:
+        self._open_window(
+            "education_system.systems.sixth_form.interfaces.gui.learners.exit_interviews.exit_interviews_views",
+            "open_exit_interviews_window", "Student Exit Interviews")
+
+    def open_lockers(self) -> None:
+        self._open_window(
+            "education_system.systems.sixth_form.domains.operations.interfaces.gui.lockers.lockers_views",
+            "open_lockers_window", "Lockers")
+
+    def open_parking(self) -> None:
+        self._open_window(
+            "education_system.systems.sixth_form.domains.operations.interfaces.gui.parking.parking_views",
+            "open_parking_window", "Parking Permits")
+
+    def open_catering(self) -> None:
+        self._open_window(
+            "education_system.systems.sixth_form.domains.operations.interfaces.gui.catering.catering_views",
+            "open_catering_window", "Catering")
+
+    def open_id_cards(self) -> None:
+        self._open_window(
+            "education_system.systems.sixth_form.domains.operations.interfaces.gui.id_cards.id_cards_views",
+            "open_id_cards_window", "ID Cards")
+
+    def open_report_concern(self) -> None:
+        self._open_window(
+            "education_system.systems.sixth_form.interfaces.gui.safeguarding.safeguarding_views",
+            "open_report_concern", "Report a Safeguarding Concern", pass_gui=True)
+
+    def open_lado_register(self) -> None:
+        self._open_window(
+            "education_system.systems.sixth_form.interfaces.gui.safeguarding.safeguarding_casework_views",
+            "open_lado_register", "LADO Allegations", pass_gui=True)
+
+    def open_single_central_record(self) -> None:
+        self._open_window(
+            "education_system.systems.sixth_form.interfaces.gui.staff.staff_hr.single_central_record_views",
+            "open_scr_window", "Single Central Record")
+
+    def open_integrations(self) -> None:
+        self._open_window(
+            "education_system.systems.sixth_form.interfaces.gui.operations.integrations.integrations_views",
+            "open_integrations_window", "Integrations & Backups")
+
+    def open_exams_office(self) -> None:
+        self._open_window(
+            "education_system.systems.sixth_form.interfaces.gui.assessment.exams_office.exams_office_views",
+            "open_exams_office", "Exams Office", pass_gui=True)
+
+    def open_report_cards(self) -> None:
+        self._open_window(
+            "education_system.systems.sixth_form.interfaces.gui.assessment.report_cards.report_cards_views",
+            "open_report_cards_window", "Report Cards", pass_gui=True)
+
+    def open_study_programme_reports(self) -> None:
+        self._open_window(
+            "education_system.systems.sixth_form.interfaces.gui.academics.qualifications.study_programme_views",
+            "open_programme_reports", "Study Programme")
+
     def open_self_service(self) -> None:
         from education_system.platform.delivery.portals.student.portal_gui import StudentSelfServiceFrame
         self._open_cross_frame(StudentSelfServiceFrame, "Student Self-Service")
@@ -1470,7 +1757,7 @@ class SixthFormMainGUI:
         self._open_cross_frame(CertificatesGUI, "Certificates")
 
     def open_university_visits_crm(self) -> None:
-        from education_system.systems.sixth_form.domain.progression.university_visits import (
+        from education_system.systems.sixth_form.interfaces.gui.progression.university_visits import (
             university_visits_views,
         )
         try:
@@ -1481,7 +1768,7 @@ class SixthFormMainGUI:
 
     def open_multi_language(self) -> None:
         from education_system.platform.features.i18n.selector_gui import show_language_selector
-        show_language_selector(self)
+        show_language_selector(self.root)
 
     def open_todo(self) -> None:
         from education_system.systems.sixth_form.interfaces.gui.governance.todo import todo_views
@@ -1506,12 +1793,26 @@ def run(user_info=None, role=None, shared_auth=None) -> int:
                 cu.get("username"), role)
 
     # This window is the whole college — every student, safeguarding,
-    # finance, staff records. Parents get their own read-only portal
-    # showing only the children they are linked to.
-    if str(role or "").lower() == "parent":
+    # finance, staff records — so only staff may open it, and even
+    # then they see only the areas their job needs. Parents and
+    # students get their own portals showing only their own records.
+    from education_system.systems.sixth_form.domain.governance.user_management import (
+        access,
+    )
+    principal = access.from_auth(shared_auth, role)
+    if principal.is_parent:
         return _run_parent_portal(shared_auth, cu)
+    if principal.is_student:
+        return _run_student_portal(shared_auth, principal)
+    if not principal.is_staff:
+        logger.warning("Refusing sixth-form staff GUI for user=%s role=%s",
+                       cu.get("username"), role)
+        _show_refusal(
+            f"The {SYSTEM_NAME} staff window is only for college staff.\n\n"
+            f"Your account is signed in as '{role or 'no role'}'.")
+        return 0
 
-    app = SixthFormMainGUI(shared_auth)
+    app = SixthFormMainGUI(shared_auth, principal)
     app.root.mainloop()
     logger.info("Sixth-form GUI exited for user=%s", cu.get("username"))
     return 0
@@ -1520,7 +1821,10 @@ def run(user_info=None, role=None, shared_auth=None) -> int:
 def _run_parent_portal(shared_auth, current_user: dict) -> int:
     """Open the parent-facing window, or explain why it can't open."""
     from education_system.systems.sixth_form.domain.operations.communications.parent_portal import (
-        parent_home_gui, parent_portal,
+        parent_portal,
+    )
+    from education_system.systems.sixth_form.interfaces.gui.operations.communications.parent_portal import (
+        parent_home_gui,
     )
 
     username = current_user.get("username", "")
@@ -1536,9 +1840,45 @@ def _run_parent_portal(shared_auth, current_user: dict) -> int:
 
     logger.info("Parent portal starting for %s (account %s)",
                 username, account.account_id)
-    result = parent_home_gui.run(shared_auth, account)
+    from education_system.systems.sixth_form.domains.finance.interfaces.gui.online_payments.pay_dialog import (
+        open_pay_dialog,
+    )
+
+    def _pay(root, acct, auth) -> None:
+        open_pay_dialog(root, "parent", acct.account_id, auth=auth)
+
+    result = parent_home_gui.run(shared_auth, account, on_pay=_pay)
     logger.info("Parent portal exited for %s", username)
     return result
+
+
+def _run_student_portal(shared_auth, principal) -> int:
+    """Open the student's own portal — never the staff window."""
+    from education_system.systems.sixth_form.domain.governance.user_management import (
+        access,
+    )
+    if not principal.student_id:
+        logger.warning("No student record for signed-in student '%s'",
+                       principal.username)
+        _show_refusal(
+            f"There is no sixth form student record for "
+            f"'{principal.username}'.\n\nPlease contact the college office.")
+        return 0
+    access.set_current(principal)
+    from education_system.systems.sixth_form.interfaces.gui.portals import (
+        student_portal_gui,
+    )
+    logger.info("Student portal starting for %s", principal.student_id)
+    result = student_portal_gui.run(shared_auth, principal)
+    logger.info("Student portal exited for %s", principal.student_id)
+    return result
+
+
+def _show_refusal(message: str) -> None:
+    root = tk.Tk()
+    root.withdraw()
+    messagebox.showinfo(SYSTEM_NAME, message, parent=root)
+    root.destroy()
 
 
 def _show_no_portal_account(username: str) -> None:

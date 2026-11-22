@@ -154,46 +154,23 @@ class NailBarGUI:
                             f"Required: £{total_amount:.2f}")
                         return
 
-                    # Process student account payment
-                    result = process_student_finance_account_payment(
-                        student_id=customer_id,
-                        amount=total_amount,
-                        description=f"Nail Bar: {treatments_text[:30]}",
-                        transaction_source="NailBar",
-                        transaction_ref=transaction_ref,
-                        processed_by=self.current_user.get('username', 'system')
+                # Record the payment; the service posts it to Finance
+                # (student-account debit or cash/card payment) - shared
+                # with the CLI, so nothing posts twice.
+                try:
+                    TransactionManager.process_payment(
+                        appointment_id=appt['appointment_id'],
+                        amount=appt['total_amount'],
+                        payment_method=method,
+                        customer_id=customer_id,
+                        tip_amount=tip,
+                        reference_number=transaction_ref,
+                        processed_by=self.current_user.get('username', 'system'),
+                        description=f"Nail Bar: {treatments_text[:50]}",
                     )
-
-                    if not result.get('success'):
-                        messagebox.showerror(_t("nailbar.msg_titles.payment_failed"), result.get('message', 'Unknown error'))
-                        return
-
-                    payment_id = result.get('transaction_id')
-
-                else:
-                    # Cash or Card payment - record to central finance
-                    if FINANCE_AVAILABLE:
-                        payment_id = record_payment_to_finance(
-                            student_id=customer_id,
-                            amount=total_amount,
-                            payment_method=method.title(),
-                            transaction_source="NailBar",
-                            transaction_ref=transaction_ref,
-                            notes=f"Treatments: {treatments_text[:50]}" + (f", Tip: £{tip:.2f}" if tip > 0 else ""),
-                            created_by=self.current_user.get('username', 'system')
-                        )
-                    else:
-                        payment_id = None
-
-                # Record in nailbar transactions table
-                local_trans_id = TransactionManager.process_payment(
-                    appointment_id=appt['appointment_id'],
-                    amount=appt['total_amount'],
-                    payment_method=method,
-                    customer_id=customer_id,
-                    tip_amount=tip,
-                    processed_by=self.current_user.get('username')
-                )
+                except ValueError as declined:
+                    messagebox.showerror(_t("nailbar.msg_titles.payment_failed"), str(declined))
+                    return
 
                 # Send receipt email if requested
                 if send_receipt_var.get() and customer_email:
@@ -243,7 +220,7 @@ class NailBarGUI:
 
             # Use JSON template for email
             from education_system.systems.university.infrastructure.email.template_utils import render_template
-            subject, body = render_template('commerce/nailbar/payment_receipt', {
+            subject, body = render_template('finance_commerce/commerce/nailbar/payment_receipt', {
                 'customer_name': customer_name,
                 'booking_reference': appt['booking_reference'],
                 'appointment_date': datetime.now().strftime('%Y-%m-%d %H:%M'),
@@ -286,7 +263,7 @@ class NailBarGUI:
 
             # Use JSON template for email
             from education_system.systems.university.infrastructure.email.template_utils import render_template
-            subject, body = render_template('commerce/nailbar/payment_receipt', {
+            subject, body = render_template('finance_commerce/commerce/nailbar/payment_receipt', {
                 'customer_name': appointment['customer_name'],
                 'booking_reference': appointment['booking_reference'],
                 'appointment_date': datetime.now().strftime('%Y-%m-%d %H:%M'),

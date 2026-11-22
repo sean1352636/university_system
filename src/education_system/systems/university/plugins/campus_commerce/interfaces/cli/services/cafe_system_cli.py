@@ -13,6 +13,7 @@ from education_system.systems.university.plugins.campus_commerce.domain.cafe.per
 from education_system.systems.university.plugins.campus_commerce.domain.cafe.persistence import schedule_repository as _schedules
 from education_system.systems.university.plugins.campus_commerce.domain.cafe.persistence import schema as _schema
 from education_system.systems.university.plugins.campus_commerce.domain.cafe.persistence import supplier_repository as _suppliers
+from education_system.systems.university.plugins.campus_commerce.domain.cafe.services import checkout as _checkout
 from education_system.systems.university.plugins.campus_commerce.domain.cafe.services import permissions as _permissions
 from education_system.systems.university.plugins.campus_commerce.domain.cafe.services import reporting as _reporting
 from .cafe import app as _app
@@ -78,7 +79,7 @@ add_menu_item = _compat(_menu.add_menu_item)
 update_menu_item = _compat(_menu.update_menu_item)
 delete_menu_item = _compat(_menu.delete_menu_item)
 
-create_order = _compat(_orders.create_order)
+create_order = _compat(_checkout.create_order)  # posts to Finance
 get_orders = _compat(_orders.get_orders)
 get_order_items = _compat(_orders.get_order_items)
 

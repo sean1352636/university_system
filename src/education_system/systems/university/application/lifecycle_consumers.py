@@ -18,6 +18,7 @@ SUPPORTED_TARGETS = frozenset(
         "accommodation",
         "library",
         "student_account",
+        "research_pgr",
     }
 )
 
@@ -29,7 +30,13 @@ def consume_action(
     *,
     handler_version: int = 1,
 ) -> bool:
-    """Run a handler once; return ``False`` when the delivery is a replay."""
+    """Run a handler once; return ``False`` when the delivery is a replay.
+
+    The handler runs between two short transactions, not inside one:
+    ``transaction()`` takes the write lock up front, and a handler that
+    writes through its own connection would otherwise wait on itself. A
+    crash after the handler and before the receipt runs it again, so
+    handlers must be idempotent."""
     if target_system not in SUPPORTED_TARGETS:
         raise EnrolmentBoundaryError(f"Unsupported lifecycle target {target_system!r}")
     with transaction() as conn:
@@ -42,16 +49,15 @@ def consume_action(
             raise EnrolmentBoundaryError(
                 f"Lifecycle action {action_id} does not belong to {target_system}"
             )
-        receipt = conn.execute(
-            """SELECT 1 FROM student_lifecycle_consumer_receipts
-                WHERE action_id = ? AND target_system = ? AND handler_version = ?""",
-            (action_id, target_system, handler_version),
-        ).fetchone()
-        if receipt:
+        if _has_receipt(conn, action_id, target_system, handler_version):
             return False
-
         payload = json.loads(action["payload_json"])
-        handler(payload)
+
+    handler(payload)
+
+    with transaction() as conn:
+        if _has_receipt(conn, action_id, target_system, handler_version):
+            return False
         conn.execute(
             """INSERT INTO student_lifecycle_consumer_receipts
                  (action_id, target_system, handler_version, outcome)
@@ -66,6 +72,14 @@ def consume_action(
             (action_id,),
         )
     return True
+
+
+def _has_receipt(conn, action_id: int, target_system: str, handler_version: int) -> bool:
+    return conn.execute(
+        """SELECT 1 FROM student_lifecycle_consumer_receipts
+            WHERE action_id = ? AND target_system = ? AND handler_version = ?""",
+        (action_id, target_system, handler_version),
+    ).fetchone() is not None
 
 
 def consume_pending(

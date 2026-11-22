@@ -17,6 +17,16 @@ except ImportError:
     pass
 
 
+def _restricted(recorded):
+    """What a report shows for a sealed special-category field: never the
+    text, only whether there is any (it is read through the restricted
+    Medical & dietary view, ``trip_management.medical``)."""
+    if recorded:
+        return get_text("mobility.trip_management.reports.restricted",
+                        "recorded - see Medical & dietary (restricted)")
+    return get_text("mobility.trip_management.reports.none_recorded", "none recorded")
+
+
 class TripReportGenerator:
     """Class to handle trip report generation in multiple formats"""
 
@@ -54,7 +64,7 @@ class TripReportGenerator:
             cursor.execute('''
             SELECT
                 COUNT(*) as total_trips,
-                COUNT(CASE WHEN status = 'planning' THEN 1 END) as planning_trips,
+                COUNT(CASE WHEN status IN ('proposed', 'planning', 'approved') THEN 1 END) as planning_trips,
                 COUNT(CASE WHEN status = 'open' THEN 1 END) as open_trips,
                 COUNT(CASE WHEN status = 'full' THEN 1 END) as full_trips,
                 COUNT(CASE WHEN status = 'completed' THEN 1 END) as completed_trips,
@@ -74,7 +84,7 @@ class TripReportGenerator:
                    SUM(CASE WHEN tp.payment_status = 'paid' THEN t.cost ELSE 0 END) as revenue_collected,
                    u.first_name || ' ' || u.last_name as created_by_name
             FROM trips t
-            LEFT JOIN trip_participants tp ON t.id = tp.trip_id AND tp.status = 'registered'
+            LEFT JOIN trip_participants tp ON t.id = tp.trip_id AND tp.status IN ('registered', 'offered', 'confirmed', 'attended')
             LEFT JOIN users u ON t.created_by = u.id
             GROUP BY t.id
             ORDER BY t.start_date DESC
@@ -86,7 +96,7 @@ class TripReportGenerator:
             cursor.execute('''
             SELECT
                 COUNT(*) as total_registrations,
-                COUNT(CASE WHEN status = 'registered' THEN 1 END) as active_registrations,
+                COUNT(CASE WHEN status IN ('registered', 'offered', 'confirmed', 'attended') THEN 1 END) as active_registrations,
                 COUNT(CASE WHEN status = 'cancelled' THEN 1 END) as cancelled_registrations,
                 COUNT(CASE WHEN payment_status = 'paid' THEN 1 END) as paid_registrations,
                 COUNT(CASE WHEN payment_status = 'pending' THEN 1 END) as pending_payments
@@ -121,7 +131,11 @@ class TripReportGenerator:
                 SELECT tp.id, t.trip_name, tp.student_id,
                        s.first_name || ' ' || s.last_name as student_name,
                        s.email_address, tp.registration_date, tp.payment_status,
-                       tp.status, tp.emergency_contact, tp.medical_info, tp.dietary_requirements
+                       tp.status, tp.emergency_contact,
+                       -- Special-category details are sealed and never printed here:
+                       -- only whether something is recorded (trip_management.medical).
+                       (COALESCE(tp.medical_info, '') <> '' OR COALESCE(tp.accessibility_needs, '') <> '') AS has_medical,
+                       COALESCE(tp.dietary_requirements, '') <> '' AS has_dietary
                 FROM trip_participants tp
                 JOIN trips t ON tp.trip_id = t.id
                 LEFT JOIN students s ON tp.student_id = s.student_id
@@ -134,7 +148,11 @@ class TripReportGenerator:
                 SELECT tp.id, t.trip_name, tp.student_id,
                        s.first_name || ' ' || s.last_name as student_name,
                        s.email_address, tp.registration_date, tp.payment_status,
-                       tp.status, tp.emergency_contact, tp.medical_info, tp.dietary_requirements
+                       tp.status, tp.emergency_contact,
+                       -- Special-category details are sealed and never printed here:
+                       -- only whether something is recorded (trip_management.medical).
+                       (COALESCE(tp.medical_info, '') <> '' OR COALESCE(tp.accessibility_needs, '') <> '') AS has_medical,
+                       COALESCE(tp.dietary_requirements, '') <> '' AS has_dietary
                 FROM trip_participants tp
                 JOIN trips t ON tp.trip_id = t.id
                 LEFT JOIN students s ON tp.student_id = s.student_id
@@ -172,7 +190,7 @@ class TripReportGenerator:
                 SUM(CASE WHEN tp.payment_status = 'pending' THEN t.cost ELSE 0 END) as revenue_pending,
                 t.cost * COUNT(tp.id) as revenue_potential
             FROM trips t
-            LEFT JOIN trip_participants tp ON t.id = tp.trip_id AND tp.status = 'registered'
+            LEFT JOIN trip_participants tp ON t.id = tp.trip_id AND tp.status IN ('registered', 'offered', 'confirmed', 'attended')
             GROUP BY t.id
             HAVING registered_participants > 0
             ORDER BY revenue_collected DESC
@@ -199,7 +217,7 @@ class TripReportGenerator:
                 COUNT(DISTINCT t.id) as trips_with_revenue,
                 COUNT(tp.id) as total_paid_participants
             FROM trips t
-            LEFT JOIN trip_participants tp ON t.id = tp.trip_id AND tp.status = 'registered'
+            LEFT JOIN trip_participants tp ON t.id = tp.trip_id AND tp.status IN ('registered', 'offered', 'confirmed', 'attended')
             ''')
 
             financial_summary = cursor.fetchone()
@@ -322,6 +340,9 @@ class TripReportGenerator:
             # Additional details section
             f.write("\n" + "-" * 100 + "\n")
             f.write("DETAILED PARTICIPANT INFORMATION\n")
+            f.write(f"Medical / accessibility details recorded: {sum(1 for p in participants if p[9])}; "
+                    f"dietary requirements recorded: {sum(1 for p in participants if p[10])} "
+                    f"(see Medical & dietary (restricted))\n")
             f.write("-" * 100 + "\n")
 
             for participant in participants:
@@ -333,8 +354,8 @@ class TripReportGenerator:
                 f.write(f"Trip: {trip_name}\n")
                 f.write(f"Registration Date: {reg_date}\n")
                 f.write(f"Emergency Contact: {emergency if emergency else 'Not provided'}\n")
-                f.write(f"Medical Info: {medical if medical else 'None'}\n")
-                f.write(f"Dietary Requirements: {dietary if dietary else 'None'}\n")
+                f.write(f"Medical / accessibility: {_restricted(medical)}\n")
+                f.write(f"Dietary Requirements: {_restricted(dietary)}\n")
                 f.write("-" * 50 + "\n")
 
         except Exception as e:

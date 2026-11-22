@@ -14,7 +14,7 @@ import tempfile
 from education_system.systems.university.infrastructure.database.db import sqlite3
 from unittest.mock import patch, MagicMock
 
-from education_system.systems.university.services.communication.schema import (
+from education_system.systems.university.infrastructure.communication.communication_schema import (
     COMMUNICATION_SCHEMA,
     create_communication_tables
 )
@@ -587,7 +587,7 @@ class TestMainExecution:
         # Simply verify that importing required modules works
 
         from education_system.paths import UNIVERSITY_DEFAULT_DB_PATH
-        from education_system.systems.university.services.communication.schema import create_communication_tables
+        from education_system.systems.university.infrastructure.communication.communication_schema import create_communication_tables
 
         # Verify functions exist
         assert UNIVERSITY_DEFAULT_DB_PATH is not None

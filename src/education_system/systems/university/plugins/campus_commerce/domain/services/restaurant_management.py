@@ -1,6 +1,7 @@
 """
 Restaurant management service module.
 """
+from education_system.systems.university.plugins.campus_commerce.domain.services.restaurant.operations.user_access import can as restaurant_can
 
 import os
 import sys
@@ -168,22 +169,22 @@ def menu_management(auth):
         elif choice == '1':
             view_menu()
         elif choice == '2':
-            if auth.has_permission('manage_takeaway_restaurants'):
+            if restaurant_can(auth, 'manage_takeaway_restaurants', check=auth.has_permission):
                 add_menu_item()
             else:
                 print("Access denied. Manager privileges required.")
         elif choice == '3':
-            if auth.has_permission('manage_takeaway_restaurants'):
+            if restaurant_can(auth, 'manage_takeaway_restaurants', check=auth.has_permission):
                 update_menu_item()
             else:
                 print("Access denied. Manager privileges required.")
         elif choice == '4':
-            if auth.has_permission('manage_takeaway_restaurants'):
+            if restaurant_can(auth, 'manage_takeaway_restaurants', check=auth.has_permission):
                 remove_menu_item()
             else:
                 print("Access denied. Manager privileges required.")
         elif choice == '5':
-            if auth.has_permission('manage_takeaway_restaurants'):
+            if restaurant_can(auth, 'manage_takeaway_restaurants', check=auth.has_permission):
                 toggle_availability()
             else:
                 print("Access denied. Manager privileges required.")

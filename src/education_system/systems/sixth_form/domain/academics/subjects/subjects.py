@@ -30,15 +30,32 @@ QUALIFICATIONS: tuple[str, ...] = (
     "BTEC",
     "T-Level",
     "Extended Project Qualification",
+    # Added with learning aims: a 16-19 study programme also carries
+    # GCSE resits, Core Maths and Functional Skills.
+    "GCSE",
+    "Core Maths",
+    "Functional Skills",
 )
 
-EXAM_BOARDS: tuple[str, ...] = (
-    "AQA",
-    "OCR",
-    "Edexcel",
-    "WJEC/Eduqas",
-    "CIE",
-    "Other",
+#: Catalogue qualification label -> grade_scales qualification type.
+#: "BTEC" is ambiguous in size; it maps to the single award and a
+#: subject can set ``qualification_type`` explicitly for double/triple.
+QUALIFICATION_TYPE_FOR_LABEL: dict[str, str] = {
+    "A-Level": "A Level",
+    "AS-Level": "AS Level",
+    "BTEC": "BTEC Extended Certificate",
+    "T-Level": "T Level",
+    "Extended Project Qualification": "EPQ",
+    "GCSE": "GCSE",
+    "Core Maths": "Core Maths",
+    "Functional Skills": "Functional Skills",
+}
+
+# One awarding-body list for the whole system, owned by the exams
+# office (exams_office/boards.py); re-exported here for existing callers.
+from education_system.systems.sixth_form.domain.assessment.exams_office.boards import (  # noqa: E402
+    EXAM_BOARDS,
+    normalise_board,
 )
 
 DEFAULT_QUALIFICATION: str = "A-Level"
@@ -68,6 +85,19 @@ class Subject:
     description: str | None
     is_active: bool
     created_at: str
+    #: Explicit grade_scales qualification type; None = derive from
+    #: ``qualification`` via QUALIFICATION_TYPE_FOR_LABEL.
+    qualification_type: str | None = None
+    #: Default planned (guided learning) hours per year for an aim.
+    guided_learning_hours: float | None = None
+    #: Default aim / QAN code for aims in this subject.
+    aim_code: str | None = None
+
+    @property
+    def effective_qualification_type(self) -> str:
+        return (self.qualification_type
+                or QUALIFICATION_TYPE_FOR_LABEL.get(self.qualification)
+                or "A Level")
 
 
 # ── DB plumbing ──────────────────────────────────────────────────────
@@ -89,6 +119,11 @@ def _row(r: sqlite3.Row) -> Subject:
         description=r["description"],
         is_active=bool(r["is_active"]),
         created_at=r["created_at"],
+        qualification_type=(r["qualification_type"]
+                            if "qualification_type" in r.keys() else None),
+        guided_learning_hours=(r["guided_learning_hours"]
+                               if "guided_learning_hours" in r.keys() else None),
+        aim_code=(r["aim_code"] if "aim_code" in r.keys() else None),
     )
 
 
@@ -102,6 +137,13 @@ def init_db() -> None:
     """Create the table and seed it from the legacy constant list once."""
     with _connect() as conn:
         conn.executescript(_SCHEMA)
+        cols = {r["name"] for r in conn.execute("PRAGMA table_info(subjects)")}
+        for col, ddl in (("qualification_type",    "TEXT"),
+                         ("guided_learning_hours", "REAL"),
+                         ("aim_code",              "TEXT")):
+            if col not in cols:
+                conn.execute(f"ALTER TABLE subjects ADD COLUMN {col} {ddl}")
+                logger.info("Subjects: added column %s", col)
         # First-run seed: only fires when the table is empty so we don't
         # re-add subjects the admin has deliberately deleted.
         row = conn.execute("SELECT COUNT(*) AS n FROM subjects").fetchone()
@@ -141,14 +183,42 @@ def _validate_payload(data: dict[str, Any]) -> dict[str, Any]:
         raise ValidationError(
             f"Qualification must be one of: {', '.join(QUALIFICATIONS)}")
     out["qualification"] = qual
-    board = (data.get("exam_board") or "").strip()
-    if board and board not in EXAM_BOARDS:
+    raw_board = (data.get("exam_board") or "").strip()
+    board = normalise_board(raw_board) if raw_board else None
+    if raw_board and board is None:
         raise ValidationError(
             f"Exam board must be blank or one of: {', '.join(EXAM_BOARDS)}")
-    out["exam_board"] = board or None
+    out["exam_board"] = board
     out["description"] = (data.get("description") or "").strip() or None
     is_active = data.get("is_active", True)
     out["is_active"] = 1 if bool(is_active) else 0
+
+    from education_system.systems.sixth_form.domain.academics.qualifications import (
+        grade_scales as _gs,
+    )
+    qtype_raw = (data.get("qualification_type") or "").strip()
+    if qtype_raw:
+        qtype = _gs.canonical_type(qtype_raw)
+        if qtype is None:
+            raise ValidationError(
+                "Qualification type must be blank or one of: "
+                + ", ".join(_gs.QUALIFICATION_TYPES))
+        out["qualification_type"] = qtype
+    else:
+        out["qualification_type"] = None
+    glh = data.get("guided_learning_hours")
+    if glh in (None, "") or (isinstance(glh, str) and not glh.strip()):
+        out["guided_learning_hours"] = None
+    else:
+        try:
+            g = float(glh)
+        except (TypeError, ValueError):
+            raise ValidationError("Guided learning hours must be a number") from None
+        if g < 0 or g > 2000:
+            raise ValidationError("Guided learning hours must be 0-2000")
+        out["guided_learning_hours"] = round(g, 1)
+    out["aim_code"] = ((data.get("aim_code") or "").strip().upper()
+                       .replace(" ", "") or None)
     return out
 
 
@@ -163,6 +233,12 @@ def get_active_names() -> list[str]:
             "SELECT name FROM subjects WHERE is_active = 1 ORDER BY name"
         ).fetchall()
         return [r["name"] for r in rows]
+
+
+def qualification_type_for_subject(name: str) -> str | None:
+    """grade_scales qualification type for a catalogue subject, or None."""
+    s = get_subject_by_name(name)
+    return s.effective_qualification_type if s else None
 
 
 def is_valid_subject(name: str) -> bool:
@@ -202,6 +278,15 @@ def is_in_use(name: str) -> dict[str, int]:
             ).fetchone()["n"]
         except sqlite3.OperationalError:
             pass
+        # Learning aims (any status) are funding records: a subject with
+        # aims behind it must be deactivated, never deleted.
+        try:
+            counts["aims"] = conn.execute(
+                "SELECT COUNT(*) AS n FROM learning_aims WHERE subject = ?",
+                (name,),
+            ).fetchone()["n"]
+        except sqlite3.OperationalError:
+            counts["aims"] = 0
     return counts
 
 
@@ -219,11 +304,13 @@ def create_subject(data: dict[str, Any]) -> Subject:
         with _connect() as conn:
             cur = conn.execute(
                 """INSERT INTO subjects
-                   (name, qualification, exam_board, description, is_active)
-                   VALUES (?, ?, ?, ?, ?)""",
+                   (name, qualification, exam_board, description, is_active,
+                    qualification_type, guided_learning_hours, aim_code)
+                   VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
                 (payload["name"], payload["qualification"],
                  payload["exam_board"], payload["description"],
-                 payload["is_active"]),
+                 payload["is_active"], payload["qualification_type"],
+                 payload["guided_learning_hours"], payload["aim_code"]),
             )
             conn.commit()
             new_id = cur.lastrowid
@@ -294,6 +381,12 @@ def update_subject(subject_id: int, data: dict[str, Any]) -> Subject:
         logger.warning("update_subject: unknown id %d", subject_id)
         raise ValidationError(f"No subject with id {subject_id}")
 
+    # Callers written before these fields existed don't send them; keep
+    # the stored values rather than blanking them on every edit.
+    data = dict(data)
+    for key in ("qualification_type", "guided_learning_hours", "aim_code"):
+        data.setdefault(key, getattr(existing, key))
+
     try:
         payload = _validate_payload(data)
     except ValidationError as e:
@@ -309,11 +402,15 @@ def update_subject(subject_id: int, data: dict[str, Any]) -> Subject:
             conn.execute(
                 """UPDATE subjects SET
                        name = ?, qualification = ?, exam_board = ?,
-                       description = ?, is_active = ?
+                       description = ?, is_active = ?,
+                       qualification_type = ?, guided_learning_hours = ?,
+                       aim_code = ?
                    WHERE subject_id = ?""",
                 (payload["name"], payload["qualification"],
                  payload["exam_board"], payload["description"],
-                 payload["is_active"], subject_id),
+                 payload["is_active"], payload["qualification_type"],
+                 payload["guided_learning_hours"], payload["aim_code"],
+                 subject_id),
             )
             if rename:
                 # Best-effort rename across reference tables; tables may
@@ -324,6 +421,9 @@ def update_subject(subject_id: int, data: dict[str, Any]) -> Subject:
                     "UPDATE students SET subject_2 = ? WHERE subject_2 = ?",
                     "UPDATE students SET subject_3 = ? WHERE subject_3 = ?",
                     "UPDATE courses  SET subject   = ? WHERE subject   = ?",
+                    "UPDATE learning_aims SET subject = ? WHERE subject = ?",
+                    "UPDATE option_block_subjects SET subject = ? WHERE subject = ?",
+                    "UPDATE option_choices SET subject = ? WHERE subject = ?",
                 ):
                     try:
                         conn.execute(sql, (new, old))
@@ -404,14 +504,15 @@ def delete_subject(subject_id: int) -> bool:
         logger.warning("delete_subject: unknown id %d", subject_id)
         return False
     usage = is_in_use(existing.name)
-    if usage["students"] or usage["courses"]:
+    if usage["students"] or usage["courses"] or usage.get("aims"):
         logger.warning(
             "delete_subject: refusing — %s still in use (students=%d, courses=%d)",
             existing.name, usage["students"], usage["courses"],
         )
         raise ValidationError(
             f"Cannot delete '{existing.name}': still referenced by "
-            f"{usage['students']} student(s) and {usage['courses']} course(s). "
+            f"{usage['students']} student(s), {usage['courses']} course(s) "
+            f"and {usage.get('aims', 0)} learning aim(s). "
             f"Deactivate it instead."
         )
     with _connect() as conn:

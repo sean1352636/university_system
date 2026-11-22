@@ -11,8 +11,18 @@ from education_system.systems.university.domains.staff.domain.staff_hr.services 
 )
 
 
-def display_reports_menu(user_id: str = None) -> None:
-    """Display reports and analytics menu."""
+def display_reports_menu(user_id: str = None, auth=None) -> None:
+    """Display reports and analytics menu.
+
+    Organisation-wide reports (1-12) are for HR; the compliance options
+    check their own access (``auth`` when the caller has it, else the
+    person ``user_id`` names)."""
+    from education_system.systems.university.domains.staff.domain.staff_hr import access
+    from education_system.systems.university.domains.staff.interfaces.cli.staff_hr.menus import (
+        compliance_menu,
+    )
+    actor = compliance_menu.actor_for(user_id, auth)
+    hr = access.can(actor, 'reports')
     while True:
         print("\n" + "=" * 60)
         print("REPORTS & ANALYTICS")
@@ -40,12 +50,31 @@ def display_reports_menu(user_id: str = None) -> None:
         print("  11. Appraisal Summary")
         print("  12. Goal Progress Report")
 
+        print("\n--- Compliance ---")
+        print("  13. Equality Monitoring")
+        print("  14. Gender Pay Gap")
+        print("  15. HESA Staff Return")
+        print("  16. HR Record Retention")
+        print("  17. My Equality Information")
+
         print("\n  0. Return")
 
         choice = input("\nEnter choice: ").strip()
 
         if choice == '0':
             break
+        elif choice == '13':
+            compliance_menu.equality_report(actor)
+        elif choice == '14':
+            compliance_menu.pay_gap_report(actor)
+        elif choice == '15':
+            compliance_menu.hesa_return(actor)
+        elif choice == '16':
+            compliance_menu.retention_menu(actor)
+        elif choice == '17':
+            compliance_menu.my_equality(actor)
+        elif choice in {str(n) for n in range(1, 13)} and not hr:
+            print("Organisation-wide reports are available to HR only.")
         elif choice == '1':
             _staff_summary()
         elif choice == '2':

@@ -77,7 +77,7 @@ Manage pupil admissions and intake.
 2. **Review** — Assess against admissions criteria. Record any SEND or medical information.
 3. **Offer place** — Change status to Offered. Generate offer letter.
 4. **Accept/Decline** — Record the parent's response.
-5. **Enrol** — On acceptance, convert the application to a pupil record (PRI ID assigned automatically).
+5. **Enrol** — On acceptance, convert the application to a pupil record (pupil ID assigned automatically).
 
 ### Application Statuses
 
@@ -213,13 +213,15 @@ General document storage and template management.
 
 ## Quick Reference
 
+> Student and parent logins cannot open these screens yet; see [SECURITY.md](../security/SECURITY.md#role-based-access-control-rbac). This table describes the intended access.
+
 | Module | Access Path | Key Roles |
 |---|---|---|
-| Users | Sidebar → Admin → Users | admin |
-| Settings | Sidebar → Admin → Settings | admin |
-| Admissions | Sidebar → Admin → Admissions | admin |
-| Finance | Sidebar → Admin → Finance | admin |
-| Data Export | Sidebar → Admin → Data Export | admin |
-| Audit Log | Sidebar → Admin → Audit Log | admin |
-| Policies | Sidebar → Admin → Policies | admin |
-| Documents | Sidebar → Admin → Documents | admin, teacher |
+| Users | Sidebar → System → User Accounts | admin |
+| Settings | Sidebar → System → Settings | admin |
+| Admissions | Sidebar → Pupil Management → Admissions | admin |
+| Finance | Sidebar → Finance | admin |
+| Data Export | Sidebar → Reports & Analytics → Data Export | admin |
+| Audit Log | Sidebar → Reports & Analytics → Audit Reports | admin |
+| Policies | Sidebar → System → Policies | admin |
+| Documents | Sidebar → Staff & Communication → Document Hub | admin, teacher |

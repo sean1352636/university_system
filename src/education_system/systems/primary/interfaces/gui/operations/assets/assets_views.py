@@ -6,7 +6,7 @@ import logging
 import tkinter as tk
 from datetime import date as _date
 from tkinter import messagebox, ttk
-from education_system.platform import branding
+
 from education_system.systems.primary.domain.operations.assets import (
     assets as data,
 )
@@ -33,6 +33,7 @@ from education_system.systems.primary.domain.operations.assets.assets import (
 from education_system.systems.primary.domain.staff import (
     staff as _staff_data,
 )
+from education_system.systems.primary.interfaces.gui import kit
 
 logger = logging.getLogger(__name__)
 
@@ -67,24 +68,48 @@ def _staff_options() -> list[tuple[str, str]]:
             for s in rows]
 
 
+def _locations() -> list[str]:
+    """Locations already in the register (location is free text)."""
+    try:
+        return sorted({a.location for a in data.list_assets() if a.location},
+                      key=str.lower)
+    except Exception:  # noqa: BLE001 - suggestions are a nicety
+        logger.debug("asset locations lookup failed", exc_info=True)
+        return []
+
+
+# Purchases can be old and warranties run for years.
+_PAST_YEARS = kit.recent_years(ahead=1, back=30)
+_FUTURE_YEARS = kit.recent_years(ahead=15, back=10)
+
+
 def open_assets_window(parent=None) -> None:
     data.init_db()
-    master = getattr(parent, "root", parent)
-    win = tk.Toplevel(master) if master is not None else tk.Tk()
-    win.title(f"Assets — {branding.SYSTEM_NAME}")
-    win.geometry(WIN_GEOMETRY)
-    win.minsize(*WIN_MINSIZE)
+    if parent is None:
+        root = tk.Tk()
+        root.title("Assets")
+        root.geometry(WIN_GEOMETRY)
+        root.minsize(*WIN_MINSIZE)
+        AssetsTab(root)
+        return
+    kit.show_page(parent, "Assets", _draw_assets)
 
-    AssetsTab(win)
+
+def _draw_assets(parent: ttk.Frame) -> None:
+    kit.page_heading(parent, "Assets",
+                     "The asset register: location, custodian, condition, depreciation, "
+                     "maintenance and disposal.")
+    AssetsTab(parent, padded=False)
 
 
 # ── Main tab ──────────────────────────────────────────────────────
 
 class AssetsTab:
-    def __init__(self, parent: tk.Misc) -> None:
+    def __init__(self, parent: tk.Misc, *, padded: bool = True) -> None:
         self.frame = ttk.Frame(parent)
+        pad = 10 if padded else 0
         self.frame.pack(fill="both", expand=True,
-                          padx=10, pady=10)
+                          padx=pad, pady=pad)
         self._build()
         self.refresh()
 
@@ -114,7 +139,9 @@ class AssetsTab:
         self.f_condition.pack(side="left", padx=(2, 8))
 
         ttk.Label(bar, text="Location:").pack(side="left")
-        self.f_location = ttk.Entry(bar, width=14)
+        self.f_location_var = tk.StringVar()
+        self.f_location = kit.ChoiceField(bar, self.f_location_var, choices=_locations(),
+                                          blank=True, editable=True, width=14)
         self.f_location.pack(side="left", padx=(2, 8))
 
         ttk.Label(bar, text="Search:").pack(side="left")
@@ -183,7 +210,7 @@ class AssetsTab:
         self.f_category.current(0)
         self.f_status.current(0)
         self.f_condition.current(0)
-        self.f_location.delete(0, "end")
+        self.f_location_var.set("")
         self.f_search.delete(0, "end")
         self.refresh()
 
@@ -195,8 +222,8 @@ class AssetsTab:
             f["status"] = self.f_status.get()
         if self.f_condition.get():
             f["condition"] = self.f_condition.get()
-        if self.f_location.get().strip():
-            f["location"] = self.f_location.get().strip()
+        if self.f_location_var.get().strip():
+            f["location"] = self.f_location_var.get().strip()
         if self.f_search.get().strip():
             f["search"] = self.f_search.get().strip()
         return f
@@ -296,10 +323,10 @@ class AssetEditor:
     def __init__(self, parent, *, asset: Asset | None = None) -> None:
         self.asset = asset
         self.result: Asset | None = None
-        self.win = tk.Toplevel(parent)
+        self.win = tk.Toplevel(parent.winfo_toplevel())
         self.win.title(f"Edit asset #{asset.asset_id}"
                           if asset else "New asset")
-        self.win.geometry("860x820")
+        self.win.geometry("900x720")
         self.win.transient(parent); self.win.after_idle(self.win.grab_set)
         self._staff_opts = _staff_options()
         self._build()
@@ -308,11 +335,27 @@ class AssetEditor:
         self.win.wait_window()
 
     def _build(self) -> None:
-        body = ttk.Frame(self.win)
-        body.pack(fill="both", expand=True, padx=12, pady=10)
+        body, footer = kit.scrolled_form(self.win)
         body.grid_columnconfigure(1, weight=1)
         body.grid_columnconfigure(3, weight=1)
         self.vars: dict[str, tk.StringVar] = {}
+
+        def picker(row, col, label, key, make, master=body):
+            ttk.Label(master, text=label).grid(
+                row=row, column=col, sticky="w", padx=4, pady=2)
+            v = tk.StringVar()
+            self.vars[key] = v
+            make(master, v).grid(row=row, column=col + 1, sticky="w",
+                                 padx=4, pady=2)
+
+        def date(row, col, label, key, years=None, master=body):
+            picker(row, col, label, key,
+                   lambda m, v: kit.DateField(m, v, years=years), master)
+
+        def money(row, col, label, key, master=body):
+            picker(row, col, label, key,
+                   lambda m, v: kit.NumberField(m, v, increment=0.01, to=999999,
+                                                width=12), master)
 
         def entry(row, col, label, key, width=22):
             ttk.Label(body, text=label).grid(
@@ -336,7 +379,9 @@ class AssetEditor:
         entry(0, 0, "Asset tag*", "asset_tag")
         entry(0, 2, "Name*", "name")
         combo(1, 0, "Category*", "category", CATEGORIES)
-        entry(1, 2, "Location*", "location")
+        picker(1, 2, "Location*", "location",
+               lambda m, v: kit.ChoiceField(m, v, choices=_locations(),
+                                            editable=True, width=22))
         entry(2, 0, "Manufacturer", "manufacturer")
         entry(2, 2, "Model", "model")
         entry(3, 0, "Serial number", "serial_number")
@@ -353,18 +398,19 @@ class AssetEditor:
             row=4, column=1, columnspan=3,
             sticky="ew", padx=4, pady=2)
 
-        entry(5, 0, "Purchase date", "purchase_date")
-        entry(5, 2, "Purchase cost", "purchase_cost")
+        date(5, 0, "Purchase date", "purchase_date", _PAST_YEARS)
+        money(5, 2, "Purchase cost", "purchase_cost")
         entry(6, 0, "Supplier", "supplier")
-        entry(6, 2, "Warranty expiry", "warranty_expiry")
-        entry(7, 0, "Useful life (yrs)", "useful_life_years")
+        date(6, 2, "Warranty expiry", "warranty_expiry", _FUTURE_YEARS)
+        picker(7, 0, "Useful life (yrs)", "useful_life_years",
+               lambda m, v: kit.NumberField(m, v, from_=1, to=100, width=6))
         combo(7, 2, "Depreciation method",
                  "depreciation_method", DEPRECIATION_METHODS)
-        entry(8, 0, "Residual value", "residual_value")
+        money(8, 0, "Residual value", "residual_value")
         combo(8, 2, "Condition*", "condition", CONDITIONS)
         combo(9, 0, "Status*", "status", STATUSES)
-        entry(9, 2, "Next audit due", "next_audit_due")
-        entry(10, 0, "Last audit date", "last_audit_date")
+        date(9, 2, "Next audit due", "next_audit_due", _FUTURE_YEARS)
+        date(10, 0, "Last audit date", "last_audit_date", _PAST_YEARS)
 
         disp = ttk.LabelFrame(
             body, text="Disposal (only if status = Disposed / Lost/Stolen)")
@@ -372,12 +418,7 @@ class AssetEditor:
                      sticky="ew", padx=4, pady=(8, 4))
         for c in range(4):
             disp.grid_columnconfigure(c, weight=1)
-        ttk.Label(disp, text="Disposal date").grid(
-            row=0, column=0, sticky="w", padx=4, pady=2)
-        self.vars["disposal_date"] = tk.StringVar()
-        ttk.Entry(disp, textvariable=self.vars["disposal_date"],
-                    width=22).grid(row=0, column=1,
-                                      sticky="ew", padx=4, pady=2)
+        date(0, 0, "Disposal date", "disposal_date", master=disp)
         ttk.Label(disp, text="Method").grid(
             row=0, column=2, sticky="w", padx=4, pady=2)
         self.vars["disposal_method"] = tk.StringVar()
@@ -386,13 +427,7 @@ class AssetEditor:
             values=("",) + DISPOSAL_METHODS,
             state="readonly", width=20).grid(
             row=0, column=3, sticky="ew", padx=4, pady=2)
-        ttk.Label(disp, text="Proceeds").grid(
-            row=1, column=0, sticky="w", padx=4, pady=2)
-        self.vars["disposal_proceeds"] = tk.StringVar()
-        ttk.Entry(disp,
-                    textvariable=self.vars["disposal_proceeds"],
-                    width=22).grid(row=1, column=1,
-                                      sticky="ew", padx=4, pady=2)
+        money(1, 0, "Proceeds", "disposal_proceeds", master=disp)
 
         ttk.Label(body, text="Notes").grid(
             row=12, column=0, sticky="nw", padx=4, pady=(6, 2))
@@ -400,8 +435,7 @@ class AssetEditor:
         self.notes.grid(row=12, column=1, columnspan=3,
                           sticky="ew", padx=4, pady=(6, 2))
 
-        bar = ttk.Frame(self.win)
-        bar.pack(fill="x", padx=12, pady=(0, 10))
+        bar = footer
         ttk.Button(bar, text="Save",
                     command=self._save).pack(side="right", padx=4)
         ttk.Button(bar, text="Cancel",
@@ -635,7 +669,7 @@ class MaintenanceEditor:
         self.win.title(
             f"Edit maintenance #{entry.maintenance_id}"
             if entry else "Add maintenance")
-        self.win.geometry("600x440")
+        self.win.geometry("640x480")
         self.win.transient(parent); self.win.after_idle(self.win.grab_set)
         self._staff_opts = _staff_options()
         self._build()
@@ -658,7 +692,7 @@ class MaintenanceEditor:
         v = tk.StringVar(value=_date.today().isoformat())
         self.vars["service_date"] = v
         row(0, "Service date*", "service_date",
-              ttk.Entry(body, textvariable=v))
+              kit.DateField(body, v))
 
         v = tk.StringVar(value=DEFAULT_SERVICE_TYPE)
         self.vars["service_type"] = v
@@ -684,7 +718,7 @@ class MaintenanceEditor:
         v = tk.StringVar()
         self.vars["cost"] = v
         row(4, "Cost", "cost",
-              ttk.Entry(body, textvariable=v))
+              kit.NumberField(body, v, increment=0.01, to=999999, width=12))
 
         v = tk.StringVar(value=DEFAULT_MAINTENANCE_OUTCOME)
         self.vars["outcome"] = v
@@ -696,7 +730,7 @@ class MaintenanceEditor:
         v = tk.StringVar()
         self.vars["next_service_due"] = v
         row(6, "Next service due", "next_service_due",
-              ttk.Entry(body, textvariable=v))
+              kit.DateField(body, v, years=_FUTURE_YEARS))
 
         ttk.Label(body, text="Notes").grid(
             row=7, column=0, sticky="nw", padx=4, pady=4)

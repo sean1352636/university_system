@@ -13,8 +13,11 @@ from __future__ import annotations
 
 import logging
 import tkinter as tk
-from tkinter import messagebox, ttk
+from tkinter import ttk
+from education_system.systems.sixth_form.interfaces.gui._sidebar import SidebarBook
+from education_system.platform.delivery.gui.parented_dialogs import messagebox
 from typing import Any, Callable
+from education_system.systems.sixth_form.infrastructure.record_links import describe
 from education_system.systems.sixth_form.domain.academics.class_groups import class_groups
 from education_system.systems.sixth_form.domain.academics.courses import courses
 from education_system.systems.sixth_form.domain.academics.class_groups import class_groups as cg_data
@@ -266,7 +269,7 @@ def open_directory(gui) -> None:
     frame = _clear(gui)
     _heading(frame, "Timetable")
 
-    notebook = ttk.Notebook(frame)
+    notebook = SidebarBook(frame)
     notebook.pack(fill="both", expand=True)
 
     slots_tab = ttk.Frame(notebook, padding=8)
@@ -288,6 +291,7 @@ def _build_slots_tab(gui, parent: ttk.Frame) -> None:
     day_var = tk.StringVar()
     period_var = tk.StringVar()
     room_var = tk.StringVar()
+    archived_var = tk.BooleanVar(value=False)
 
     groups = _load_groups()
     courses_by_id = {c.course_id: c for c in course_data.list_courses()}
@@ -335,6 +339,7 @@ def _build_slots_tab(gui, parent: ttk.Frame) -> None:
             rows = data.list_slots(
                 group_id=gid, day=day, period=per,
                 room=room_var.get().strip() or None,
+                include_archived=archived_var.get(),
             )
         except Exception as e:
             logger.exception("Failed to load slots")
@@ -364,10 +369,21 @@ def _build_slots_tab(gui, parent: ttk.Frame) -> None:
         vs.pack(side="right", fill="y")
 
         group_index = {g.group_id: g for g in groups}
+        if archived_var.get():
+            try:
+                group_index.update((g.group_id, g) for g in
+                                   cg_data.list_groups(include_archived=True))
+                courses_by_id.update(
+                    (c.course_id, c)
+                    for c in course_data.list_courses(include_archived=True))
+            except Exception:
+                logger.exception("Could not load archived groups")
         for s in rows:
             g = group_index.get(s.group_id)
             label = (_group_label(g, courses_by_id.get(g.course_id))
                      if g else f"#{s.group_id}")
+            if s.archived_at:
+                label += " (archived)"
             tree.insert("", "end", iid=str(s.slot_id), values=(
                 s.slot_id, day_name(s.day), s.period, label,
                 s.room or "—", s.start_time or "—", s.end_time or "—",
@@ -392,6 +408,9 @@ def _build_slots_tab(gui, parent: ttk.Frame) -> None:
         ttk.Button(actions_holder, text="Delete",
                    command=lambda: (_require() and _delete_with_confirm(gui, _selected()))
                    ).pack(side="left", padx=(0, 6))
+        ttk.Button(actions_holder, text="Restore",
+                   command=lambda: (_require() and _restore(gui, _selected()))
+                   ).pack(side="left", padx=(0, 6))
         ttk.Button(actions_holder, text="New Slot",
                    command=lambda: open_add_slot(gui)
                    ).pack(side="left", padx=(12, 6))
@@ -402,10 +421,13 @@ def _build_slots_tab(gui, parent: ttk.Frame) -> None:
                   lambda _e: (_selected() and open_edit_slot(gui, _selected())))
         gui.status_var.set(f"Timetable slots: {len(rows)} match(es)")
 
+    ttk.Checkbutton(filt, text="Show archived", variable=archived_var,
+                    command=refresh).pack(side="left", padx=(8, 0))
     ttk.Button(filt, text="Apply", command=refresh).pack(side="left", padx=(8, 0))
     ttk.Button(filt, text="Clear",
                command=lambda: (group_filter_var.set(""), day_var.set(""),
-                                period_var.set(""), room_var.set(""), refresh())
+                                period_var.set(""), room_var.set(""),
+                                archived_var.set(False), refresh())
                ).pack(side="left", padx=(4, 0))
     refresh()
 
@@ -584,14 +606,47 @@ def _build_grid_tab(gui, parent: ttk.Frame) -> None:
 # ── Delete confirm ─────────────────────────────────────────────────
 
 def _delete_with_confirm(gui, slot_id: int) -> None:
-    s = data.get_slot(slot_id)
+    """Delete a slot created by mistake; one with registers is archived."""
+    try:
+        s = data.get_slot(slot_id)
+        history = data.history_counts(slot_id) if s else {}
+    except Exception as e:
+        logger.exception("Could not load slot %d", slot_id)
+        messagebox.showerror("Error", f"Could not load slot: {e}", parent=gui.root)
+        return
     if s is None:
         messagebox.showerror("Not found", f"No slot #{slot_id}", parent=gui.root)
         return
+    label = f"slot #{s.slot_id} ({day_name(s.day)} P{s.period}, group #{s.group_id})"
+    if history:
+        if s.archived_at:
+            messagebox.showinfo(
+                "Slot archived",
+                f"The {label} has attendance history ({describe(history)}), "
+                "so it cannot be deleted. It is already archived; use Restore "
+                "to put it back on the timetable.", parent=gui.root)
+            return
+        if not messagebox.askyesno(
+                "Archive slot",
+                f"The {label} cannot be deleted — that would destroy:\n\n"
+                f"{describe(history)}\n\n"
+                "Archive it instead? It leaves the timetable; its registers "
+                "and attendance are kept and it can be restored.",
+                parent=gui.root):
+            return
+        try:
+            data.archive_slot(slot_id)
+        except Exception as e:
+            logger.exception("archive_slot crashed")
+            messagebox.showerror("Error", f"Could not archive: {e}", parent=gui.root)
+            return
+        gui.status_var.set(f"Archived slot #{slot_id}")
+        open_directory(gui)
+        return
     if not messagebox.askyesno(
         "Delete slot",
-        f"Delete slot #{s.slot_id} ({day_name(s.day)} P{s.period}, "
-        f"group #{s.group_id})?",
+        f"Delete {label}?\n\nNo registers or attendance are recorded "
+        "against it.",
         parent=gui.root,
     ):
         return
@@ -602,4 +657,19 @@ def _delete_with_confirm(gui, slot_id: int) -> None:
         messagebox.showerror("Error", f"Could not delete: {e}", parent=gui.root)
         return
     gui.status_var.set(f"Deleted slot #{slot_id}")
+    open_directory(gui)
+
+
+def _restore(gui, slot_id: int) -> None:
+    try:
+        restored = data.restore_slot(slot_id)
+    except Exception as e:
+        logger.exception("restore_slot failed")
+        messagebox.showerror("Error", f"Could not restore: {e}", parent=gui.root)
+        return
+    if not restored:
+        messagebox.showinfo("Restore", "That slot is not archived.",
+                            parent=gui.root)
+        return
+    gui.status_var.set(f"Restored slot #{slot_id}")
     open_directory(gui)

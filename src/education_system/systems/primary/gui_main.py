@@ -1,17 +1,18 @@
 """Tk GUI main menu for the Primary School System.
 
-Layout mirrors `sixthform_system` and `university_system`:
+Layout (shared with the other systems' main windows):
 
     row 0 — header (logout · switch-to-CLI · switch-system · shutdown)
     row 1 — left navigation (accordion of categories) + right content area
     row 2 — status bar (status · current user · system / version)
 
-Every sidebar action is a placeholder stub — domain modules will be
-wired in later.
+Every sidebar entry opens a real screen (``open_*`` methods below);
+access is checked per label by ``domain.access``.
 """
 
 from __future__ import annotations
 
+import functools
 import logging
 import sys
 import tkinter as tk
@@ -20,7 +21,9 @@ from tkinter import messagebox, ttk
 from typing import Callable
 
 from education_system.platform.delivery.gui import window_sizing
+from education_system.platform.delivery.gui.idle_timeout import install_idle_logout
 from education_system.systems.primary import SYSTEM_NAME
+from education_system.systems.primary.domain import access
 
 logger = logging.getLogger(__name__)
 
@@ -39,6 +42,7 @@ NAV_CATEGORIES: list[tuple[str, list[tuple[str, str]]]] = [
         ("Onboarding", "open_onboarding"),
         ("Bulk Operations", "open_bulk_operations"),
         ("Leavers", "open_leavers"),
+        ("Year 6 Transition", "open_year6_transition"),
     ]),
     ("Academic Management", [
         ("Academic Year", "open_academic_year"),
@@ -135,6 +139,10 @@ NAV_CATEGORIES: list[tuple[str, list[tuple[str, str]]]] = [
     ]),
     ("Cross-System", [
         ("Student Journey", "open_student_journey"),
+        ("Promote to Next System", "open_promote"),
+        ("Referrals to Alternative Provision", "open_ap_referrals"),
+        ("SEND Service Requests", "open_send_requests"),
+        ("Local Authority", "open_local_authority"),
         ("Analytics Dashboard", "open_cross_analytics"),
         ("Cross-System Calendar", "open_cross_calendar"),
         ("Central Admin Portal", "open_central_admin"),
@@ -186,9 +194,33 @@ def _safe_count(fn) -> str:
         return "—"
 
 
+def _wheel_scrolls(canvas: tk.Canvas) -> None:
+    """Scroll *canvas* with the mouse wheel while the pointer is over it
+    (Windows/macOS ``<MouseWheel>`` and Linux buttons 4/5)."""
+    def _on_mw(event):
+        canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")
+
+    def _on_linux(event):
+        canvas.yview_scroll(-1 if event.num == 4 else 1, "units")
+
+    def _bind(_e):
+        canvas.bind_all("<MouseWheel>", _on_mw)
+        canvas.bind_all("<Button-4>", _on_linux)
+        canvas.bind_all("<Button-5>", _on_linux)
+
+    def _unbind(_e):
+        for seq in ("<MouseWheel>", "<Button-4>", "<Button-5>"):
+            canvas.unbind_all(seq)
+
+    canvas.bind("<Enter>", _bind)
+    canvas.bind("<Leave>", _unbind)
+
+
 class PrimarySchoolMainGUI:
-    def __init__(self, auth):
+    def __init__(self, auth, principal: access.Principal | None = None):
         self.auth = auth
+        self.principal = principal or access.current_for(auth)
+        self._guard_screens()
         self.root = tk.Tk()
         self.root.title(SYSTEM_NAME)
         window_sizing.fit(self.root, "1400x900", (1200, 800))
@@ -206,10 +238,14 @@ class PrimarySchoolMainGUI:
         self.current_user_var = tk.StringVar(value=user)
 
         self.content_frame: ttk.Frame | None = None
+        self._content_canvas: tk.Canvas | None = None
+        self._current_page: tuple[str, Callable[[ttk.Frame], None]] | None = None
+        self._popout_btn: ttk.Button | None = None
         self._setup_layout()
         self._show_welcome()
 
         self.root.protocol("WM_DELETE_WINDOW", self._on_close)
+        self._cancel_idle_timeout = install_idle_logout(self.root, self._logout)
 
     def _setup_layout(self) -> None:
         main = ttk.Frame(self.root, padding=10)
@@ -279,11 +315,7 @@ class PrimarySchoolMainGUI:
         canvas.grid(row=1, column=0, sticky="nsew")
         scroll.grid(row=1, column=1, sticky="ns")
 
-        def _on_mw(event):
-            canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")
-
-        canvas.bind("<Enter>", lambda _e: canvas.bind_all("<MouseWheel>", _on_mw))
-        canvas.bind("<Leave>", lambda _e: canvas.unbind_all("<MouseWheel>"))
+        _wheel_scrolls(canvas)
 
         search_frame = ttk.Frame(nav)
         search_frame.grid(row=0, column=0, columnspan=2, sticky="ew", pady=(0, 6))
@@ -331,14 +363,15 @@ class PrimarySchoolMainGUI:
 
         categories_holder = ttk.Frame(inner)
         categories_holder.pack(fill="x")
-        for group_label, items in NAV_CATEGORIES:
+        visible_nav = self.principal.visible_menu(NAV_CATEGORIES)
+        for group_label, items in visible_nav:
             self._make_category(categories_holder, group_label, items, canvas)
 
         results_holder = ttk.Frame(inner)
 
         all_actions: list[tuple[str, str]] = [
             (label, handler)
-            for _grp, items in NAV_CATEGORIES
+            for _grp, items in visible_nav
             for label, handler in items
         ]
 
@@ -415,15 +448,25 @@ class PrimarySchoolMainGUI:
         btn.configure(command=toggle)
 
     def _build_content(self, parent: ttk.Frame) -> None:
+        """The content area, as the Secondary School window: a page bar with
+        the "Open in new window" button over a scrolling page."""
         outer = ttk.Frame(parent, padding=0)
         outer.grid(row=1, column=1, sticky="nsew")
-        outer.rowconfigure(0, weight=1)
         outer.columnconfigure(0, weight=1)
+        outer.rowconfigure(0, weight=0)
+        outer.rowconfigure(1, weight=1)
+
+        page_bar = ttk.Frame(outer, padding=(10, 4, 10, 0))
+        page_bar.grid(row=0, column=0, columnspan=2, sticky="ew")
+        self._popout_btn = ttk.Button(
+            page_bar, text="⧉ Open in new window", state="disabled",
+            command=self._open_current_page_in_window)
+        self._popout_btn.pack(side="right")
 
         canvas = tk.Canvas(outer, highlightthickness=0)
-        canvas.grid(row=0, column=0, sticky="nsew")
+        canvas.grid(row=1, column=0, sticky="nsew")
         vs = ttk.Scrollbar(outer, orient="vertical", command=canvas.yview)
-        vs.grid(row=0, column=1, sticky="ns")
+        vs.grid(row=1, column=1, sticky="ns")
         canvas.configure(yscrollcommand=vs.set)
 
         self.content_frame = ttk.Frame(canvas, padding=10)
@@ -437,6 +480,31 @@ class PrimarySchoolMainGUI:
             lambda e: canvas.itemconfigure(win, width=e.width),
         )
         self._content_canvas = canvas
+        _wheel_scrolls(canvas)
+
+    # ── Pages (drawn in the content area, poppable into a window) ────
+    def show_page(self, label: str, draw: Callable[[ttk.Frame], None]) -> None:
+        """Draw a screen into the content area and remember it so "Open in
+        new window" can draw it again in a window of its own. *draw(parent)*
+        builds the whole screen into *parent*."""
+        self._clear_content()
+        assert self.content_frame is not None
+        draw(self.content_frame)
+        self._current_page = (label, draw)
+        if self._popout_btn is not None:
+            self._popout_btn.configure(state="normal")
+        self.status_var.set(f"Opened: {label}")
+
+    def _open_current_page_in_window(self) -> None:
+        if not self._current_page:
+            return
+        label, draw = self._current_page
+        win = tk.Toplevel(self.root)
+        win.title(f"{label} — {SYSTEM_NAME}")
+        window_sizing.fit(win, "1000x700", (700, 500))
+        frame = ttk.Frame(win, padding=10)
+        frame.pack(fill="both", expand=True)
+        draw(frame)
 
     def _build_status_bar(self, parent: ttk.Frame) -> None:
         ttk.Separator(parent, orient="horizontal").grid(
@@ -468,10 +536,18 @@ class PrimarySchoolMainGUI:
             return
         for w in self.content_frame.winfo_children():
             w.destroy()
+        if self._content_canvas is not None:
+            self._content_canvas.yview_moveto(0)
+        self._current_page = None
+        if self._popout_btn is not None:
+            self._popout_btn.configure(state="disabled")
 
     def _show_welcome(self) -> None:
         self._clear_content()
         assert self.content_frame is not None
+        if not self.principal.has_staff_screens:
+            self._show_no_screens_notice()
+            return
         root = self.content_frame
         root.columnconfigure(0, weight=1)
 
@@ -525,10 +601,10 @@ class PrimarySchoolMainGUI:
         quick = [
             ("Add Pupil", self.open_add_pupil),
             ("Search Pupils", self.open_search_pupils),
-            ("Take Register", lambda: self._show_stub("Attendance Register")),
-            ("Timetable", lambda: self._show_stub("Timetable")),
-            ("Behaviour Log", lambda: self._show_stub("Behaviour Log")),
-            ("Reading Levels", lambda: self._show_stub("Reading Levels")),
+            ("Take Register", self.open_attendance),
+            ("Timetable", self.open_timetable),
+            ("Behaviour Log", self.open_behaviour),
+            ("Reading Levels", self.open_reading_levels),
         ]
         for i, (lbl, cmd) in enumerate(quick):
             ttk.Button(actions, text=lbl, command=cmd, style="Large.TButton").grid(
@@ -540,9 +616,9 @@ class PrimarySchoolMainGUI:
         ttk.Label(
             info,
             text=(
-                "Domain modules for the Primary School System have not been "
-                "wired up yet. Every sidebar action opens a placeholder — "
-                "use them as a map of the features that will land here."
+                "Pick an area on the left to open it, or use a quick action "
+                "above. Cross-System holds the linked learner record, "
+                "promotion to secondary school and the shared platform screens."
             ),
             wraplength=720, foreground="#555", justify="left",
         ).pack(anchor="w")
@@ -555,7 +631,54 @@ class PrimarySchoolMainGUI:
             return method
         return lambda: self._show_stub(label)
 
+    def _guard_screens(self) -> None:
+        """Check the rule wherever a screen opens, not only in the sidebar.
+
+        Quick actions, search results and screens that open each other all call
+        ``self.open_*``, so those are wrapped on the instance. A method with no
+        menu entry falls through to the staff rule.
+        """
+        labels = {handler: label
+                  for _group, items in NAV_CATEGORIES
+                  for label, handler in items}
+        labels.update(access.POLICY.own_handlers())
+        for name in dir(type(self)):
+            if name.startswith("open_") and callable(getattr(type(self), name)):
+                setattr(self, name, self._guarded(getattr(self, name),
+                                                  labels.get(name, name)))
+
+    def _guarded(self, screen: Callable, label: str) -> Callable:
+        @functools.wraps(screen)
+        def guarded(*args, **kwargs):
+            if not self.principal.can_open(label):
+                self._show_denied(label)
+                return None
+            return screen(*args, **kwargs)
+        return guarded
+
+    def _show_denied(self, label: str) -> None:
+        logger.warning("Refused %s to user=%s role=%s", label,
+                       self.principal.username, self.principal.role)
+        self._clear_content()
+        assert self.content_frame is not None
+        ttk.Label(self.content_frame, text=self.principal.denied_message(label),
+                  font=("", 12, "bold")).pack(anchor="w")
+        self.status_var.set("Not available for this account")
+
+    def _show_no_screens_notice(self) -> None:
+        """The dashboard for an account with no staff screens."""
+        assert self.content_frame is not None
+        ttk.Label(self.content_frame,
+                  text=f"Welcome, {self.current_user_var.get()}",
+                  font=("", 20, "bold")).pack(anchor="w", pady=(0, 12))
+        ttk.Label(self.content_frame, text=self.principal.notice(),
+                  wraplength=720, justify="left").pack(anchor="w")
+        self.status_var.set("Ready")
+
     def _show_stub(self, label: str) -> None:
+        if not self.principal.can_open(label):
+            self._show_denied(label)
+            return
         self._clear_content()
         assert self.content_frame is not None
         ttk.Label(self.content_frame, text=label, font=("", 16, "bold")).pack(
@@ -613,190 +736,224 @@ class PrimarySchoolMainGUI:
         self.root.destroy()
 
     def open_pupil_directory(self) -> None:
-        from education_system.systems.primary.domain.learners.pupils import (
-            pupil_views,
-        )
+        from education_system.systems.primary.interfaces.gui.learners.pupils import pupil_views
         pupil_views.open_directory(self)
 
     def open_add_pupil(self) -> None:
-        from education_system.systems.primary.domain.learners.pupils import (
-            pupil_views,
-        )
+        from education_system.systems.primary.interfaces.gui.learners.pupils import pupil_views
         pupil_views.open_add_pupil(self)
 
     def open_search_pupils(self) -> None:
-        from education_system.systems.primary.domain.learners.pupils import (
-            pupil_views,
-        )
+        from education_system.systems.primary.interfaces.gui.learners.pupils import pupil_views
         pupil_views.open_search(self)
 
     def open_pupil_profile(self) -> None:
-        from education_system.systems.primary.domain.learners.pupils import (
-            pupil_views,
-        )
+        from education_system.systems.primary.interfaces.gui.learners.pupils import pupil_views
         pupil_views.open_profile(self)
 
     def open_admissions(self) -> None:
-        from education_system.systems.primary.domain.admissions import (
-            admissions_views,
-        )
+        from education_system.systems.primary.interfaces.gui.admissions import admissions_views
         admissions_views.open_admissions(self)
 
     def open_enrolment(self) -> None:
-        from education_system.systems.primary.domain.admissions.enrolment import (
+        from education_system.systems.primary.interfaces.gui.admissions.enrolment import (
             enrolment_views,
         )
         enrolment_views.open_enrolment(self)
 
     def open_onboarding(self) -> None:
-        from education_system.systems.primary.domain.learners.pupils.onboarding import (
+        from education_system.systems.primary.interfaces.gui.learners.pupils.onboarding import (
             onboarding_views,
         )
         onboarding_views.open_onboarding(self)
 
     def open_bulk_operations(self) -> None:
-        from education_system.systems.primary.domain.learners.pupils.bulk_operations import (
+        from education_system.systems.primary.interfaces.gui.learners.pupils.bulk_operations import (
             bulk_operations_views,
         )
         bulk_operations_views.open_bulk_operations(self)
 
     def open_leavers(self) -> None:
-        from education_system.systems.primary.domain.learners.pupils.leavers import (
+        from education_system.systems.primary.interfaces.gui.learners.pupils.leavers import (
             leavers_views,
         )
         leavers_views.open_leavers(self)
 
-    def open_classes(self) -> None:
-        from education_system.systems.primary.domain.academics.classes import (
-            classes_views,
+    def open_year6_transition(self) -> None:
+        from education_system.systems.primary.interfaces.gui.learners.pupils.year6_transition import (
+            year6_transition_views,
         )
+        year6_transition_views.open_year6_transition(self)
+
+    def open_ap_referrals(self) -> None:
+        from education_system.systems.primary.interfaces.gui.learners.pupils.ap_referrals import (
+            ap_referrals_views,
+        )
+        ap_referrals_views.open_ap_referrals(self)
+
+    def open_send_requests(self) -> None:
+        from education_system.systems.primary.interfaces.gui.learners.pupils.send_requests import (
+            send_requests_views,
+        )
+        send_requests_views.open_send_requests(self)
+
+    def open_local_authority(self) -> None:
+        from education_system.systems.primary.interfaces.gui.learners.pupils.local_authority import (
+            local_authority_views,
+        )
+        local_authority_views.open_local_authority(self)
+
+    def open_classes(self) -> None:
+        from education_system.systems.primary.interfaces.gui.academics.classes import classes_views
         classes_views.open_classes(self)
 
     def open_phonics(self) -> None:
-        from education_system.systems.primary.domain.assessment.phonics import (
-            phonics_views,
-        )
+        from education_system.systems.primary.interfaces.gui.assessment.phonics import phonics_views
         phonics_views.open_phonics(self)
 
     def open_reading_levels(self) -> None:
-        from education_system.systems.primary.domain.assessment.reading_levels import (
+        from education_system.systems.primary.interfaces.gui.assessment.reading_levels import (
             reading_levels_views,
         )
         reading_levels_views.open_reading_levels(self)
 
     def open_clubs(self) -> None:
-        from education_system.systems.primary.domain.academics.enrichment.clubs import (
+        from education_system.systems.primary.interfaces.gui.academics.enrichment.clubs import (
             clubs_views,
         )
         clubs_views.open_clubs(self)
 
     def open_phonics_screening(self) -> None:
-        from education_system.systems.primary.domain.assessment.phonics_screening import (
+        from education_system.systems.primary.interfaces.gui.assessment.phonics_screening import (
             phonics_screening_views,
         )
         phonics_screening_views.open_phonics_screening(self)
 
     def open_assessment(self) -> None:
-        from education_system.systems.primary.domain.assessment import (
-            assessment_views,
-        )
+        from education_system.systems.primary.interfaces.gui.assessment import assessment_views
         assessment_views.open_assessment(self)
 
     def open_mtc(self) -> None:
-        from education_system.systems.primary.domain.assessment.mtc import (
-            mtc_views,
-        )
+        from education_system.systems.primary.interfaces.gui.assessment.mtc import mtc_views
         mtc_views.open_mtc(self)
 
     def open_ks1_sats(self) -> None:
-        from education_system.systems.primary.domain.assessment.ks1_sats import (
+        from education_system.systems.primary.interfaces.gui.assessment.ks1_sats import (
             ks1_sats_views,
         )
         ks1_sats_views.open_ks1_sats(self)
 
     def open_ks2_sats(self) -> None:
-        from education_system.systems.primary.domain.assessment.ks2_sats import (
+        from education_system.systems.primary.interfaces.gui.assessment.ks2_sats import (
             ks2_sats_views,
         )
         ks2_sats_views.open_ks2_sats(self)
 
     def open_eyfs_profile(self) -> None:
-        from education_system.systems.primary.domain.assessment.eyfs_profile import (
+        from education_system.systems.primary.interfaces.gui.assessment.eyfs_profile import (
             eyfs_profile_views,
         )
         eyfs_profile_views.open_eyfs_profile(self)
 
     def open_target_setting(self) -> None:
-        from education_system.systems.primary.domain.assessment.target_setting import (
+        from education_system.systems.primary.interfaces.gui.assessment.target_setting import (
             target_setting_views,
         )
         target_setting_views.open_target_setting(self)
 
     def open_pupil_reports(self) -> None:
-        from education_system.systems.primary.domain.operations.reporting.pupil_reports import (
+        from education_system.systems.primary.interfaces.gui.operations.reporting.pupil_reports import (
             pupil_reports_views,
         )
         pupil_reports_views.open_pupil_reports(self)
 
     def open_class_teachers(self) -> None:
-        from education_system.systems.primary.domain.staff.class_teachers import (
+        from education_system.systems.primary.interfaces.gui.staff.class_teachers import (
             class_teachers_views,
         )
         class_teachers_views.open_class_teachers(self)
 
     def open_house_points(self) -> None:
-        from education_system.systems.primary.domain.pastoral.house_points import (
+        from education_system.systems.primary.interfaces.gui.pastoral.house_points import (
             house_points_views,
         )
         house_points_views.open_house_points(self)
 
     def open_medical(self) -> None:
-        from education_system.systems.primary.domain.pastoral.health.medical_records import (
+        from education_system.systems.primary.interfaces.gui.pastoral.health.medical_records import (
             medical_records_views,
         )
         medical_records_views.open_medical(self)
 
     def open_wraparound_care(self) -> None:
-        from education_system.systems.primary.domain.operations.daily_care.wraparound import (
+        from education_system.systems.primary.interfaces.gui.operations.daily_care.wraparound import (
             wraparound_views,
         )
         wraparound_views.open_wraparound(self)
 
     def open_tas(self) -> None:
-        from education_system.systems.primary.domain.staff.teaching_assistants import (
+        from education_system.systems.primary.interfaces.gui.staff.teaching_assistants import (
             teaching_assistants_views,
         )
         teaching_assistants_views.open_teaching_assistants(self)
 
     def open_newsletters(self) -> None:
-        from education_system.systems.primary.domain.operations.communications.newsletters import (
+        from education_system.systems.primary.interfaces.gui.operations.communications.newsletters import (
             newsletters_views,
         )
         newsletters_views.open_newsletters(self)
 
     def open_dinner_money(self) -> None:
-        from education_system.systems.primary.domain.finance.dinner_money import (
+        from education_system.systems.primary.interfaces.gui.finance.dinner_money import (
             dinner_money_views,
         )
         dinner_money_views.open_dinner_money(self)
 
     def open_report_attendance(self) -> None:
-        from education_system.systems.primary.domain.operations.reporting.attendance_report import (
+        from education_system.systems.primary.interfaces.gui.operations.reporting.attendance_report import (
             attendance_report_views,
         )
         attendance_report_views.open_attendance_report(self)
 
     def open_report_progress(self) -> None:
-        from education_system.systems.primary.domain.operations.reporting.progress_report import (
+        from education_system.systems.primary.interfaces.gui.operations.reporting.progress_report import (
             progress_report_views,
         )
         progress_report_views.open_progress_report(self)
 
     def open_mfa(self) -> None:
-        from education_system.systems.primary.domain.governance.mfa import (
-            mfa_views,
+        from education_system.platform.delivery.gui import mfa_setup_gui
+        mfa_setup_gui.open_mfa(self, auth=getattr(self, "auth", None))
+
+    def _own_records(self):
+        from education_system.systems.primary.interfaces.gui.learners.own_records import (
+            own_records_views,
         )
-        mfa_views.open_mfa(self)
+        return own_records_views
+
+    def open_own_timetable(self) -> None:
+        self._own_records().open_timetable(self)
+
+    def open_own_homework(self) -> None:
+        self._own_records().open_homework(self)
+
+    def open_own_reading_log(self) -> None:
+        self._own_records().open_reading_log(self)
+
+    def open_child_attendance(self) -> None:
+        self._own_records().open_attendance(self)
+
+    def open_child_assessment(self) -> None:
+        self._own_records().open_assessment(self)
+
+    def open_child_reports(self) -> None:
+        self._own_records().open_reports(self)
+
+    def open_child_consent(self) -> None:
+        self._own_records().open_consent(self)
+
+    def open_child_evening(self) -> None:
+        self._own_records().open_evening(self)
 
     def open_multi_language(self) -> None:
         from education_system.platform.features.i18n.selector_gui import show_language_selector
@@ -809,6 +966,9 @@ class PrimarySchoolMainGUI:
 
     def open_safeguarding(self) -> None:
         from education_system.systems.primary.interfaces.gui.safeguarding import safeguarding_views
+        if self.principal.opens_raise_only("Safeguarding"):
+            safeguarding_views.open_raise_concern(self)
+            return
         safeguarding_views.open_safeguarding(self)
 
     def open_send(self) -> None:
@@ -1087,39 +1247,98 @@ class PrimarySchoolMainGUI:
 
     # Shared
     def open_change_password(self) -> None:
-        from education_system.systems.primary.interfaces.gui import change_password_views
+        from education_system.platform.delivery.gui import (
+            change_password_gui as change_password_views,
+        )
         change_password_views.open_change_password_dialog(self.root, auth=self.auth)
 
     def open_user_accounts(self) -> None:
         from education_system.systems.primary.interfaces.gui import user_accounts_views
-        user_accounts_views.open_user_accounts_window(self.root, auth=self.auth)
+        user_accounts_views.open_user_accounts_window(self, auth=self.auth)
 
     def open_settings(self) -> None:
         from education_system.systems.primary.interfaces.gui import settings_views
-        settings_views.open_settings_window(self.root, auth=self.auth)
+        settings_views.open_settings_window(self, auth=self.auth)
 
     def open_about(self) -> None:
         from education_system.systems.primary.interfaces.gui import about_views
-        about_views.open_about_window(self.root, auth=self.auth)
+        about_views.open_about_window(self, auth=self.auth)
 
     # ── Cross-System (shared frames from education_system/shared) ──
     def _open_cross_frame(self, FrameClass, label: str) -> None:
-        self._clear_content()
-        assert self.content_frame is not None
-        try:
-            frame = FrameClass(self.content_frame, auth=self.auth)
-        except Exception as e:
-            logger.exception("Failed to open cross-system frame %s", label)
-            ttk.Label(self.content_frame,
-                      text=f"{label}\n\nCould not open: {e}",
-                      foreground="#a00").pack(anchor="w")
-            return
-        frame.pack(fill="both", expand=True)
-        self.status_var.set(f"Opened: {label}")
+        def draw(parent: ttk.Frame) -> None:
+            try:
+                frame = FrameClass(parent, auth=self.auth)
+            except Exception as e:
+                logger.exception("Failed to open cross-system frame %s", label)
+                ttk.Label(parent, text=f"{label}\n\nCould not open: {e}",
+                          foreground="#a00").pack(anchor="w")
+                return
+            frame.pack(fill="both", expand=True)
+
+        self.show_page(label, draw)
 
     def open_student_journey(self) -> None:
         from education_system.platform.cross_system.journey_gui import StudentJourneyFrame
         self._open_cross_frame(StudentJourneyFrame, "Student Journey")
+
+    def open_promote(self) -> None:
+        """Promote a pupil to secondary school — the CLI's "Promote to Next
+        System", through the same ``journey_cli`` rules as the Student
+        Journey screen's promote button (confirm, then the transfer flow)."""
+        from tkinter import simpledialog
+
+        from education_system.platform.cross_system import journey_cli, progression
+        nxt = progression.next_phase("primary")
+        if not nxt or journey_cli.promote_kind("primary") is None:
+            messagebox.showinfo("Promote to Next System",
+                                "There is no next phase to promote to.", parent=self.root)
+            return
+        sid = simpledialog.askstring("Promote to Next System",
+                                     "Pupil ID to promote to secondary school:",
+                                     parent=self.root)
+        if not sid or not sid.strip():
+            return
+        sid = sid.strip()
+        if not messagebox.askyesno(
+                "Promote pupil",
+                f"Promote {sid} from Primary School to secondary school?\n\n"
+                "This creates their record in the next system and is hard to undo.",
+                parent=self.root):
+            return
+        extra: dict = {}
+        if journey_cli.promote_accepts_consent("primary"):
+            # Same consent rules as the Student Journey screen and the CLI:
+            # medical alerts / support needs cross only with the parent's consent.
+            medical = messagebox.askyesno("Consent to share",
+                                          journey_cli.MEDICAL_CONSENT_QUESTION,
+                                          parent=self.root)
+            support = messagebox.askyesno("Consent to share",
+                                          journey_cli.SUPPORT_CONSENT_QUESTION,
+                                          parent=self.root)
+            consent = journey_cli.build_consent("primary", medical=medical, support=support)
+            missing = journey_cli.missing_consent("primary", consent)
+            if missing:
+                messagebox.showwarning(
+                    "Consent needed",
+                    f"The handover to {nxt} requires {', '.join(missing)}, which may "
+                    "only be shared with the parent's consent.", parent=self.root)
+                return
+            extra["consent"] = consent
+            reference = simpledialog.askstring(
+                "Safeguarding reference", journey_cli.REFERENCE_QUESTION + ":",
+                parent=self.root)
+            if reference and reference.strip():
+                extra["safeguarding_reference"] = reference.strip()
+        try:
+            result = journey_cli.promote("primary", sid, **extra)
+        except Exception as exc:  # noqa: BLE001 - show the reason, keep the window
+            logger.exception("Promotion failed for %s", sid)
+            messagebox.showerror("Promotion failed", str(exc), parent=self.root)
+            return
+        messagebox.showinfo("Promoted", f"Promoted {sid} to {nxt}.\n\n{result}",
+                            parent=self.root)
+        self.status_var.set(f"Promoted {sid} to {nxt}")
 
     def open_cross_analytics(self) -> None:
         from education_system.platform.features.analytics.analytics_gui import AnalyticsDashboardFrame
@@ -1146,8 +1365,13 @@ class PrimarySchoolMainGUI:
         self._open_cross_frame(StudentSelfServiceFrame, "Pupil Self-Service")
 
     def open_certificates(self) -> None:
+        from education_system import paths
         from education_system.platform.features.certificates.certificates_gui import CertificatesGUI
-        self._open_cross_frame(CertificatesGUI, "Certificates")
+        # The register lives in the primary database; with no db_path the
+        # service would use a fresh in-memory database on every call.
+        self._open_cross_frame(
+            functools.partial(CertificatesGUI, db_path=str(paths.PRIMARY_PUPILS_DB)),
+            "Certificates")
 
 
 def run(user_info=None, role=None, shared_auth=None) -> int:
@@ -1160,7 +1384,9 @@ def run(user_info=None, role=None, shared_auth=None) -> int:
     cu = shared_auth.current_user or {}
     logger.info("Primary-school GUI starting for user=%s role=%s",
                 cu.get("username"), role)
-    app = PrimarySchoolMainGUI(shared_auth)
+    principal = access.from_auth(shared_auth, role)
+    access.set_current(principal)
+    app = PrimarySchoolMainGUI(shared_auth, principal)
     app.root.mainloop()
     logger.info("Primary-school GUI exited for user=%s", cu.get("username"))
     return 0

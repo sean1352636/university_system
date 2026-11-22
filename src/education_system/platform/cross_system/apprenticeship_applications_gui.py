@@ -92,7 +92,8 @@ def _application_dialog(host, source_system: str, *, after,
     body.pack(fill="both", expand=True)
     fields: dict[str, tk.StringVar] = {}
     definitions = (
-        ("student_id", "College learner ID", ""),
+        ("student_id", "Learner ref (e.g. TP000012)" if source_system == "training_provider"
+         else "College learner ID", ""),
         ("programme", "Intended programme / standard", ""),
         ("level", "Level", ""),
         ("eligibility", "Eligibility evidence", ""),

@@ -4,9 +4,13 @@ Leave Management GUI
 Provides interface for:
 - Viewing and submitting leave requests
 - Managing leave balances
-- Approving/rejecting leave requests (admin/staff)
+- Approving/rejecting leave requests (line managers and HR)
 - Leave calendar view
 - Exporting leave reports
+- Sickness absence, family leave, flexible working, entitlements (HR)
+
+Everything goes through ``LeaveManager`` and the ``domain/staff_hr``
+leave modules (no SQL here); people are keyed by username.
 """
 
 from __future__ import annotations
@@ -23,12 +27,16 @@ from typing import Optional
 import csv
 import os
 
-from education_system.systems.university.infrastructure.database.db import get_connection, transaction
+from education_system.systems.university.domains.staff.domain.staff_hr.services import LeaveManager
+from education_system.systems.university.domains.staff.interfaces.gui.staff_hr import _access as hr_access
+from education_system.systems.university.domains.staff.interfaces.gui.staff_hr.leave_extra_tabs import (
+    LeaveExtraTabsMixin,
+)
 from education_system.systems.university.infrastructure.auth import UserAuth
 from education_system.systems.university.infrastructure.activity_logger import log_activity
 
 
-class LeaveManagementGUI:
+class LeaveManagementGUI(LeaveExtraTabsMixin):
     """GUI for managing staff leave requests and balances."""
 
     def __init__(self, root, auth: Optional[UserAuth] = None, parent_notebook: Optional[ttk.Notebook] = None):
@@ -37,6 +45,8 @@ class LeaveManagementGUI:
         self.current_user = auth.current_user if auth and auth.current_user else None
         self.parent_notebook = parent_notebook
         self.window = None
+        self.actor = hr_access.actor(self)
+        self.me = hr_access.user_key(self) if self.current_user else ''
 
         if not self.current_user:
             messagebox.showerror(_t('gui.staff.staff_hr.leave_management.dialogs.error', default="Error"), _t('gui.staff.staff_hr.leave_management.dialogs.login_required_to_access_leave_management', default="Login required to access Leave Management"))
@@ -57,8 +67,8 @@ class LeaveManagementGUI:
         """Create as standalone window."""
         self.window = tk.Toplevel(self.root)
         self.window.title(_t('gui.staff.staff_hr.leave_management.windows.leave_management_system', default="Leave Management System"))
-        self.window.geometry("1200x700")
-        self.window.minsize(1000, 600)
+        self.window.geometry("1400x900")
+        self.window.minsize(1200, 800)
 
         # Bottom frame with close button
         bottom_frame = ttk.Frame(self.window)
@@ -84,9 +94,14 @@ class LeaveManagementGUI:
         # Create tabs
         self._create_requests_tab()
         self._create_balances_tab()
-        if self.current_user.get('role') in ['admin', 'Admin', 'administrator', 'staff']:
+        if hr_access.can(self, 'manager'):
             self._create_approvals_tab()
         self._create_calendar_tab()
+        self._create_absence_tab()
+        self._create_family_tab()
+        self._create_flexible_tab()
+        if hr_access.can(self, 'hr'):
+            self._create_entitlements_tab()
 
     def _create_requests_tab(self):
         """Create the leave requests tab."""
@@ -193,7 +208,8 @@ class LeaveManagementGUI:
         tree_frame = ttk.Frame(tab)
         tree_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
-        columns = ('Leave Type', 'Allocated', 'Used', 'Carried Over', 'Remaining')
+        columns = ('Leave Type', 'Allocated', 'Used', 'Carried Over', 'Remaining',
+                   'Bank Holidays', 'Pending', 'Carry Expires')
         self.balances_tree = ttk.Treeview(tree_frame, columns=columns, show='headings', height=10)
 
         for col in columns:
@@ -292,34 +308,16 @@ class LeaveManagementGUI:
 
             status_filter = self.status_filter.get()
             year_filter = self.year_filter.get()
-
-            with get_connection() as conn:
-                cursor = conn.cursor()
-
-                query = '''
-                    SELECT r.request_id, t.name, r.start_date, r.end_date,
-                           r.total_days, r.status, r.created_at, r.approved_by
-                    FROM leave_requests r
-                    JOIN leave_types t ON r.leave_type_id = t.leave_type_id
-                    WHERE r.user_id = ?
-                    AND strftime('%Y', r.start_date) = ?
-                '''
-                params = [self.current_user.get('id') or self.current_user.get('username'), year_filter]
-
-                if status_filter != 'All':
-                    query += ' AND r.status = ?'
-                    params.append(status_filter.lower())
-
-                query += ' ORDER BY r.created_at DESC'
-
-                cursor.execute(query, params)
-
-                for row in cursor.fetchall():
-                    status = row[5]
-                    values = (row[0], row[1], row[2], row[3],
-                              f"{row[4]:.1f}", status.capitalize(),
-                              row[6][:10] if row[6] else '', row[7] or '')
-                    self.requests_tree.insert('', 'end', values=values, tags=(status,))
+            rows = LeaveManager.get_requests(
+                self.me, status=None if status_filter == 'All' else status_filter.lower(),
+                year=int(year_filter) if year_filter else None, limit=500)
+            for row in rows:
+                status = row.get('status') or ''
+                values = (row['request_id'], row['leave_type_name'], row['start_date'],
+                          row['end_date'], f"{float(row['total_days'] or 0):.1f}",
+                          status.capitalize(), (row.get('created_at') or '')[:10],
+                          row.get('approved_by') or '')
+                self.requests_tree.insert('', 'end', values=values, tags=(status,))
 
             self._update_status(f"Loaded {len(self.requests_tree.get_children())} requests")
 
@@ -332,42 +330,28 @@ class LeaveManagementGUI:
             self.balances_tree.delete(*self.balances_tree.get_children())
 
             year = int(self.balance_year.get())
-            user_id = self.current_user.get('id') or self.current_user.get('username')
+            total_allocated = 0
+            total_used = 0
+            total_remaining = 0
 
-            with get_connection() as conn:
-                cursor = conn.cursor()
+            for row in LeaveManager.get_balance(self.me, year):
+                allocated = float(row.get('allocated_days') or 0)
+                used = float(row.get('used_days') or 0)
+                carried = float(row.get('carried_over') or 0) - \
+                    float(row.get('carry_over_expired') or 0)
+                bank = float(row.get('bank_holiday_days') or 0)
+                remaining = float(row.get('remaining_days') or 0)
 
-                # Get all leave types and balances
-                cursor.execute('''
-                    SELECT t.name,
-                           COALESCE(b.allocated_days, t.max_days_per_year) as allocated,
-                           COALESCE(b.used_days, 0) as used,
-                           COALESCE(b.carried_over, 0) as carried
-                    FROM leave_types t
-                    LEFT JOIN leave_balances b ON t.leave_type_id = b.leave_type_id
-                        AND b.user_id = ? AND b.year = ?
-                    WHERE t.is_active = 1
-                    ORDER BY t.name
-                ''', (user_id, year))
+                self.balances_tree.insert('', 'end', values=(
+                    row['leave_type_name'], f"{allocated:.1f}", f"{used:.1f}",
+                    f"{carried:.1f}", f"{remaining:.1f}", f"{bank:.1f}",
+                    f"{float(row.get('pending_days') or 0):.1f}",
+                    row.get('carry_over_expires') or ''
+                ))
 
-                total_allocated = 0
-                total_used = 0
-                total_remaining = 0
-
-                for row in cursor.fetchall():
-                    allocated = row[1] or 0
-                    used = row[2] or 0
-                    carried = row[3] or 0
-                    remaining = allocated + carried - used
-
-                    self.balances_tree.insert('', 'end', values=(
-                        row[0], f"{allocated:.1f}", f"{used:.1f}",
-                        f"{carried:.1f}", f"{remaining:.1f}"
-                    ))
-
-                    total_allocated += allocated
-                    total_used += used
-                    total_remaining += remaining
+                total_allocated += allocated
+                total_used += used
+                total_remaining += remaining
 
             self.total_allocated_label.config(text=f"Total Allocated: {total_allocated:.1f} days")
             self.total_used_label.config(text=f"Total Used: {total_used:.1f} days")
@@ -377,27 +361,17 @@ class LeaveManagementGUI:
             messagebox.showerror(_t('gui.staff.staff_hr.leave_management.dialogs.error', default="Error"), f"Failed to load balances: {e}")
 
     def _load_pending_approvals(self):
-        """Load pending leave requests for approval."""
+        """Load the pending requests the signed-in person may approve."""
         try:
             self.approvals_tree.delete(*self.approvals_tree.get_children())
 
-            with get_connection() as conn:
-                cursor = conn.cursor()
-
-                cursor.execute('''
-                    SELECT r.request_id, r.user_id, t.name, r.start_date,
-                           r.end_date, r.total_days, r.reason, r.created_at
-                    FROM leave_requests r
-                    JOIN leave_types t ON r.leave_type_id = t.leave_type_id
-                    WHERE r.status = 'pending'
-                    ORDER BY r.created_at ASC
-                ''')
-
-                for row in cursor.fetchall():
-                    values = (row[0], row[1], row[2], row[3], row[4],
-                              f"{row[5]:.1f}", row[6][:50] if row[6] else '',
-                              row[7][:10] if row[7] else '')
-                    self.approvals_tree.insert('', 'end', values=values)
+            for row in LeaveManager.get_pending_approvals(self.me, actor=self.actor):
+                name = f"{row.get('first_name') or ''} {row.get('last_name') or ''}".strip()
+                values = (row['request_id'], name or row['user_id'], row['leave_type_name'],
+                          row['start_date'], row['end_date'],
+                          f"{float(row['total_days'] or 0):.1f}",
+                          (row.get('reason') or '')[:50], (row.get('created_at') or '')[:10])
+                self.approvals_tree.insert('', 'end', iid=str(row['request_id']), values=values)
 
             self._update_status(f"Found {len(self.approvals_tree.get_children())} pending requests")
 
@@ -408,7 +382,7 @@ class LeaveManagementGUI:
         """Show dialog to submit a new leave request."""
         dialog = tk.Toplevel(self.root)
         dialog.title(_t('gui.staff.staff_hr.leave_management.windows.new_leave_request', default="New Leave Request"))
-        dialog.geometry("450x500")
+        dialog.geometry("450x560")
         dialog.transient(self.root)
         dialog.grab_set()
 
@@ -452,17 +426,27 @@ class LeaveManagementGUI:
         days_label = ttk.Label(days_frame, text="0", font=('Arial', 10, 'bold'))
         days_label.pack(side=tk.LEFT, padx=5)
 
+        half_frame = ttk.Frame(main_frame)
+        half_frame.pack(fill=tk.X, pady=5)
+        start_half_var = tk.BooleanVar(value=False)
+        end_half_var = tk.BooleanVar(value=False)
+        ttk.Checkbutton(half_frame, text="Half day at start", variable=start_half_var).pack(side=tk.LEFT, padx=5)
+        ttk.Checkbutton(half_frame, text="Half day at end", variable=end_half_var).pack(side=tk.LEFT, padx=5)
+
         def update_days(*args):
             try:
-                start = datetime.strptime(start_var.get(), "%Y-%m-%d")
-                end = datetime.strptime(end_var.get(), "%Y-%m-%d")
-                days = (end - start).days + 1
-                days_label.config(text=str(max(0, days)))
+                datetime.strptime(start_var.get(), "%Y-%m-%d")
+                datetime.strptime(end_var.get(), "%Y-%m-%d")
+                days = LeaveManager.count_days(self.me, start_var.get(), end_var.get(),
+                                               start_half_var.get(), end_half_var.get())
+                days_label.config(text=f"{days:g} working days")
             except ValueError:
                 days_label.config(text=_t('gui.staff.staff_hr.leave_management.text.invalid_dates', default="Invalid dates"))
 
         start_var.trace_add('write', update_days)
         end_var.trace_add('write', update_days)
+        start_half_var.trace_add('write', update_days)
+        end_half_var.trace_add('write', update_days)
 
         # Reason
         ttk.Label(main_frame, text=_t('gui.staff.staff_hr.leave_management.labels.reason', default="Reason:"), anchor=tk.W).pack(fill=tk.X, pady=(15, 5))
@@ -489,26 +473,21 @@ class LeaveManagementGUI:
                 error_label.config(text=_t('gui.staff.staff_hr.leave_management.text.end_date_must_be_after_start_date', default="End date must be after start date"))
                 return
 
-            total_days = (end_date - start_date).days + 1
             reason = reason_text.get('1.0', tk.END).strip()
             leave_type_id = leave_types[type_var.get()]
-            user_id = self.current_user.get('id') or self.current_user.get('username')
 
             try:
-                with transaction() as conn:
-                    conn.execute('''
-                        INSERT INTO leave_requests
-                        (user_id, leave_type_id, start_date, end_date, total_days, reason, status, created_at)
-                        VALUES (?, ?, ?, ?, ?, ?, 'pending', ?)
-                    ''', (user_id, leave_type_id, start_var.get(), end_var.get(),
-                          total_days, reason, datetime.now().isoformat()))
-
-                log_activity('create', 'leave_request', user_id=user_id,
-                             details={'leave_type': type_var.get(), 'days': total_days})
+                request_id = LeaveManager.submit_request(
+                    self.me, leave_type_id, start_var.get(), end_var.get(), reason=reason,
+                    start_half=start_half_var.get(), end_half=end_half_var.get(),
+                    actor=self.actor)
+                log_activity('create', 'leave_request', user_id=self.me,
+                             details={'leave_type': type_var.get(), 'request_id': request_id})
 
                 messagebox.showinfo(_t('gui.staff.staff_hr.leave_management.dialogs.success', default="Success"), _t('gui.staff.staff_hr.leave_management.dialogs.leave_request_submitted_successfully', default="Leave request submitted successfully!"))
                 dialog.destroy()
                 self._load_requests()
+                self._load_balances()
 
             except Exception as e:
                 error_label.config(text=f"Error: {str(e)}")
@@ -525,11 +504,8 @@ class LeaveManagementGUI:
         """Get active leave types as {name: id} dict."""
         leave_types = {}
         try:
-            with get_connection() as conn:
-                cursor = conn.cursor()
-                cursor.execute('SELECT leave_type_id, name FROM leave_types WHERE is_active = 1')
-                for row in cursor.fetchall():
-                    leave_types[row[1]] = row[0]
+            for row in LeaveManager.get_leave_types():
+                leave_types[row['name']] = row['leave_type_id']
         except Exception:
             logger.debug("Suppressed exception", exc_info=True)
         return leave_types
@@ -544,29 +520,20 @@ class LeaveManagementGUI:
         request_id = item['values'][0]
 
         try:
-            with get_connection() as conn:
-                cursor = conn.cursor()
-                cursor.execute('''
-                    SELECT r.*, t.name as leave_type
-                    FROM leave_requests r
-                    JOIN leave_types t ON r.leave_type_id = t.leave_type_id
-                    WHERE r.request_id = ?
-                ''', (request_id,))
-                row = cursor.fetchone()
-
+            row = LeaveManager.get_request(int(request_id), actor=self.actor)
             if row:
                 details = f"""
-Request ID: {row[0]}
-Leave Type: {row[-1]}
-Start Date: {row[4]}
-End Date: {row[5]}
-Total Days: {row[6]}
-Status: {row[8].capitalize()}
-Reason: {row[7] or 'Not specified'}
-Submitted: {row[12]}
-Approved By: {row[9] or 'N/A'}
-Approved Date: {row[10] or 'N/A'}
-Rejection Reason: {row[11] or 'N/A'}
+Request ID: {row['request_id']}
+Leave Type: {row['leave_type_name']}
+Start Date: {row['start_date']}{' (half day)' if row.get('start_half') else ''}
+End Date: {row['end_date']}{' (half day)' if row.get('end_half') else ''}
+Working Days: {row['total_days']}
+Status: {(row['status'] or '').capitalize()}
+Reason: {row.get('reason') or 'Not specified'}
+Submitted: {row.get('created_at')}
+Approved By: {row.get('approved_by') or 'N/A'}
+Approved Date: {row.get('approved_date') or 'N/A'}
+Rejection Reason: {row.get('rejection_reason') or 'N/A'}
                 """
                 messagebox.showinfo(_t('gui.staff.staff_hr.leave_management.dialogs.leave_request_details', default="Leave Request Details"), details.strip())
 
@@ -574,7 +541,7 @@ Rejection Reason: {row[11] or 'N/A'}
             messagebox.showerror(_t('gui.staff.staff_hr.leave_management.dialogs.error', default="Error"), f"Failed to load details: {e}")
 
     def _cancel_request(self):
-        """Cancel selected leave request."""
+        """Cancel selected leave request (pending, or approved and not yet started)."""
         selection = self.requests_tree.selection()
         if not selection:
             messagebox.showwarning(_t('gui.staff.staff_hr.leave_management.dialogs.warning', default="Warning"), _t('gui.staff.staff_hr.leave_management.dialogs.please_select_a_request_to_cancel', default="Please select a request to cancel"))
@@ -584,7 +551,7 @@ Rejection Reason: {row[11] or 'N/A'}
         request_id = item['values'][0]
         status = item['values'][5].lower()
 
-        if status != 'pending':
+        if status not in ('pending', 'approved'):
             messagebox.showwarning(_t('gui.staff.staff_hr.leave_management.dialogs.warning', default="Warning"), _t('gui.staff.staff_hr.leave_management.dialogs.only_pending_requests_can_be_cancelled', default="Only pending requests can be cancelled"))
             return
 
@@ -592,15 +559,14 @@ Rejection Reason: {row[11] or 'N/A'}
             return
 
         try:
-            with transaction() as conn:
-                conn.execute('''
-                    UPDATE leave_requests SET status = 'cancelled', updated_at = ?
-                    WHERE request_id = ?
-                ''', (datetime.now().isoformat(), request_id))
-
+            if not LeaveManager.cancel_request(int(request_id), self.me, actor=self.actor):
+                messagebox.showwarning(_t('gui.staff.staff_hr.leave_management.dialogs.warning', default="Warning"),
+                                       "This request can no longer be cancelled (leave that has started cannot be).")
+                return
             log_activity('update', 'leave_request', details={'action': 'cancelled', 'request_id': request_id})
             messagebox.showinfo(_t('gui.staff.staff_hr.leave_management.dialogs.success', default="Success"), _t('gui.staff.staff_hr.leave_management.dialogs.request_cancelled_successfully', default="Request cancelled successfully"))
             self._load_requests()
+            self._load_balances()
 
         except Exception as e:
             messagebox.showerror(_t('gui.staff.staff_hr.leave_management.dialogs.error', default="Error"), f"Failed to cancel request: {e}")
@@ -622,64 +588,27 @@ Rejection Reason: {row[11] or 'N/A'}
         if not messagebox.askyesno(_t('gui.staff.staff_hr.leave_management.dialogs.confirm', default="Confirm"), f"Approve {len(selection)} selected request(s)?"):
             return
 
-        approved_by = self.current_user.get('username') or self.current_user.get('id')
-        approved_date = datetime.now().isoformat()
-
-        availability_changes: list[dict] = []
-        try:
-            with transaction() as conn:
-                for item_id in selection:
-                    item = self.approvals_tree.item(item_id)
-                    request_id = item['values'][0]
-
-                    conn.execute('''
-                        UPDATE leave_requests
-                        SET status = 'approved', approved_by = ?, approved_date = ?, updated_at = ?
-                        WHERE request_id = ?
-                    ''', (approved_by, approved_date, approved_date, request_id))
-
-                    # Update leave balance
-                    user_id = item['values'][1]
-                    days = float(item['values'][5])
-                    self._update_leave_balance(conn, user_id, request_id, days)
-
-                    # Capture for the post-commit availability broadcast
-                    # (#8). Subscribers (Module Scheduling, Exam,
-                    # Timetable, Grade) repaint affected slots.
-                    try:
-                        full = conn.execute(
-                            "SELECT user_id, start_date, end_date, leave_type_id "
-                            "FROM leave_requests WHERE request_id = ?",
-                            (request_id,),
-                        ).fetchone()
-                        if full:
-                            availability_changes.append(dict(full))
-                    except Exception:
-                        logger.debug("Suppressed exception", exc_info=True)
-
-                    log_activity('update', 'leave_request',
-                                 details={'action': 'approved', 'approved_by': approved_by, 'request_id': request_id})
-
-            messagebox.showinfo(_t('gui.staff.staff_hr.leave_management.dialogs.success', default="Success"), f"Approved {len(selection)} request(s)")
-            self._load_pending_approvals()
-
-            # Bus broadcast (#8). Best-effort; never raises.
+        approved, problems = 0, []
+        for item_id in selection:
+            request_id = int(self.approvals_tree.item(item_id)['values'][0])
             try:
-                from education_system.systems.university.services.bus.staff_hr_bus import (
-                    publish_availability_change,
-                )
-                for r in availability_changes:
-                    publish_availability_change(
-                        r["user_id"], action="leave_approved",
-                        start_date=r["start_date"], end_date=r["end_date"],
-                        leave_type=str(r.get("leave_type_id") or ""),
-                        source="leave_management",
-                    )
-            except Exception:
-                logger.debug("Suppressed exception", exc_info=True)
+                if LeaveManager.approve_request(request_id, self.me, actor=self.actor):
+                    approved += 1
+                    log_activity('update', 'leave_request',
+                                 details={'action': 'approved', 'approved_by': self.me, 'request_id': request_id})
+                else:
+                    problems.append(f"#{request_id}: no longer pending")
+            except (PermissionError, ValueError) as e:
+                problems.append(f"#{request_id}: {e}")
+            except Exception as e:
+                logger.exception("leave approval failed")
+                problems.append(f"#{request_id}: {e}")
 
-        except Exception as e:
-            messagebox.showerror(_t('gui.staff.staff_hr.leave_management.dialogs.error', default="Error"), f"Failed to approve requests: {e}")
+        text = f"Approved {approved} request(s)"
+        if problems:
+            text += "\n\nNot approved:\n" + "\n".join(problems)
+        messagebox.showinfo(_t('gui.staff.staff_hr.leave_management.dialogs.success', default="Success"), text)
+        self._load_pending_approvals()
 
     def _reject_selected(self):
         """Reject selected leave requests."""
@@ -705,72 +634,31 @@ Rejection Reason: {row[11] or 'N/A'}
                 messagebox.showwarning(_t('gui.staff.staff_hr.leave_management.dialogs.warning', default="Warning"), _t('gui.staff.staff_hr.leave_management.dialogs.please_provide_a_rejection_reason', default="Please provide a rejection reason"))
                 return
 
-            rejected_by = self.current_user.get('username') or self.current_user.get('id')
-
-            try:
-                with transaction() as conn:
-                    for item_id in selection:
-                        item = self.approvals_tree.item(item_id)
-                        request_id = item['values'][0]
-
-                        conn.execute('''
-                            UPDATE leave_requests
-                            SET status = 'rejected', rejection_reason = ?, updated_at = ?
-                            WHERE request_id = ?
-                        ''', (reason, datetime.now().isoformat(), request_id))
-
+            rejected, problems = 0, []
+            for item_id in selection:
+                request_id = int(self.approvals_tree.item(item_id)['values'][0])
+                try:
+                    if LeaveManager.reject_request(request_id, self.me, reason, actor=self.actor):
+                        rejected += 1
                         log_activity('update', 'leave_request',
-                                     details={'action': 'rejected', 'rejected_by': rejected_by, 'request_id': request_id})
+                                     details={'action': 'rejected', 'rejected_by': self.me, 'request_id': request_id})
+                except (PermissionError, ValueError) as e:
+                    problems.append(f"#{request_id}: {e}")
+                except Exception as e:
+                    logger.exception("leave rejection failed")
+                    problems.append(f"#{request_id}: {e}")
 
-                messagebox.showinfo(_t('gui.staff.staff_hr.leave_management.dialogs.success', default="Success"), f"Rejected {len(selection)} request(s)")
-                dialog.destroy()
-                self._load_pending_approvals()
-
-            except Exception as e:
-                messagebox.showerror(_t('gui.staff.staff_hr.leave_management.dialogs.error', default="Error"), f"Failed to reject requests: {e}")
+            text = f"Rejected {rejected} request(s)"
+            if problems:
+                text += "\n\nNot rejected:\n" + "\n".join(problems)
+            messagebox.showinfo(_t('gui.staff.staff_hr.leave_management.dialogs.success', default="Success"), text)
+            dialog.destroy()
+            self._load_pending_approvals()
 
         btn_frame = ttk.Frame(dialog)
         btn_frame.pack(pady=10)
         ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.leave_management.buttons.reject', default="Reject"), command=reject).pack(side=tk.LEFT, padx=10)
         ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.leave_management.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(side=tk.LEFT, padx=10)
-
-    def _update_leave_balance(self, conn, user_id, request_id, days):
-        """Update leave balance when request is approved."""
-        cursor = conn.cursor()
-
-        # Get leave type from request
-        cursor.execute('SELECT leave_type_id, start_date FROM leave_requests WHERE request_id = ?', (request_id,))
-        result = cursor.fetchone()
-        if not result:
-            return
-
-        leave_type_id = result[0]
-        year = int(result[1][:4])
-
-        # Check if balance exists
-        cursor.execute('''
-            SELECT balance_id, used_days FROM leave_balances
-            WHERE user_id = ? AND leave_type_id = ? AND year = ?
-        ''', (user_id, leave_type_id, year))
-
-        balance = cursor.fetchone()
-
-        if balance:
-            # Update existing balance
-            cursor.execute('''
-                UPDATE leave_balances SET used_days = used_days + ?, updated_at = ?
-                WHERE balance_id = ?
-            ''', (days, datetime.now().isoformat(), balance[0]))
-        else:
-            # Get max days from leave type
-            cursor.execute('SELECT max_days_per_year FROM leave_types WHERE leave_type_id = ?', (leave_type_id,))
-            max_days = cursor.fetchone()[0] or 0
-
-            # Create new balance record
-            cursor.execute('''
-                INSERT INTO leave_balances (user_id, leave_type_id, year, allocated_days, used_days)
-                VALUES (?, ?, ?, ?, ?)
-            ''', (user_id, leave_type_id, year, max_days, days))
 
     def _show_approval_dialog(self, event=None):
         """Show detailed approval dialog."""
@@ -782,16 +670,7 @@ Rejection Reason: {row[11] or 'N/A'}
         request_id = item['values'][0]
 
         try:
-            with get_connection() as conn:
-                cursor = conn.cursor()
-                cursor.execute('''
-                    SELECT r.*, t.name as leave_type
-                    FROM leave_requests r
-                    JOIN leave_types t ON r.leave_type_id = t.leave_type_id
-                    WHERE r.request_id = ?
-                ''', (request_id,))
-                row = cursor.fetchone()
-
+            row = LeaveManager.get_request(int(request_id), actor=self.actor)
             if not row:
                 return
 
@@ -809,13 +688,15 @@ Rejection Reason: {row[11] or 'N/A'}
             details_frame = ttk.Frame(main_frame)
             details_frame.pack(fill=tk.X)
 
+            balance = LeaveManager.get_balance_for_type(row['user_id'], row['leave_type_id'])
             details = [
-                ("Employee:", row[1]),
-                ("Leave Type:", row[-1]),
-                ("Start Date:", row[4]),
-                ("End Date:", row[5]),
-                ("Total Days:", f"{float(row[6]):.1f}" if row[6] else "N/A"),
-                ("Reason:", row[7] or "Not specified"),
+                ("Employee:", item['values'][1]),
+                ("Leave Type:", row['leave_type_name']),
+                ("Start Date:", row['start_date']),
+                ("End Date:", row['end_date']),
+                ("Working Days:", f"{float(row['total_days']):.1f}" if row['total_days'] else "N/A"),
+                ("Remaining:", f"{balance['remaining_days']:.1f} days" if balance else "N/A"),
+                ("Reason:", row.get('reason') or "Not specified"),
             ]
 
             for label, value in details:
@@ -927,28 +808,19 @@ Rejection Reason: {row[11] or 'N/A'}
             year = self.current_calendar_date.year
             month = self.current_calendar_date.month
 
-            with get_connection() as conn:
-                cursor = conn.cursor()
-                cursor.execute('''
-                    SELECT r.user_id, r.start_date, r.end_date, t.name
-                    FROM leave_requests r
-                    JOIN leave_types t ON r.leave_type_id = t.leave_type_id
-                    WHERE r.status = 'approved'
-                    AND ((strftime('%Y', r.start_date) = ? AND strftime('%m', r.start_date) = ?)
-                         OR (strftime('%Y', r.end_date) = ? AND strftime('%m', r.end_date) = ?))
-                ''', (str(year), f"{month:02d}", str(year), f"{month:02d}"))
+            for row in LeaveManager.get_calendar(month=month, year=year, actor=self.actor):
+                start = datetime.strptime(row['start_date'], "%Y-%m-%d")
+                end = datetime.strptime(row['end_date'], "%Y-%m-%d")
+                name = f"{row.get('first_name') or ''} {row.get('last_name') or ''}".strip() \
+                    or row['user_id']
+                current = start
 
-                for row in cursor.fetchall():
-                    start = datetime.strptime(row[1], "%Y-%m-%d")
-                    end = datetime.strptime(row[2], "%Y-%m-%d")
-                    current = start
-
-                    while current <= end:
-                        date_str = current.strftime("%Y-%m-%d")
-                        if date_str not in leave_data:
-                            leave_data[date_str] = []
-                        leave_data[date_str].append(f"{row[0][:10]}")
-                        current += timedelta(days=1)
+                while current <= end:
+                    date_str = current.strftime("%Y-%m-%d")
+                    if date_str not in leave_data:
+                        leave_data[date_str] = []
+                    leave_data[date_str].append(f"{name[:14]} ({row['leave_type_name'][:10]})")
+                    current += timedelta(days=1)
 
         except Exception:
             logger.debug("Suppressed exception", exc_info=True)

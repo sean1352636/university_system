@@ -112,7 +112,18 @@ def sync_all(*, systems: Iterable[str] | None = None,
     """
     wanted = {_canonical(s) for s in systems} if systems is not None else None
     counts = dict.fromkeys(ACTIONS, 0)
-    for user_id in _candidate_users(wanted, db_path):
+    candidates = _candidate_users(wanted, db_path)
+    try:
+        settled = _settled_without_sync(candidates, db_path)
+    except Exception:
+        logger.warning("Could not pre-check learner logins in one pass; checking each",
+                       exc_info=True)
+        settled = {}
+    for action in settled.values():
+        counts[action] += 1
+    for user_id in candidates:
+        if user_id in settled:
+            continue
         outcome = try_sync_user(user_id, db_path=db_path)
         counts[outcome.action if outcome else SKIPPED] += 1
     if counts[LINKED] + counts[RELINKED] + counts[UNLINKED]:
@@ -316,6 +327,68 @@ def _journey_for(system: str, local_id: str, db_path: str | None) -> str | None:
 
     row = identity_service.find_by_student(system, local_id, db_path=db_path)
     return row["journey_id"] if row else None
+
+
+def _settled_without_sync(user_ids: list[int], db_path: str | None) -> dict[int, str]:
+    """Candidates whose sync can only report UNCHANGED or SKIPPED: {id: action}.
+
+    A login with no link today and no learner record behind it in any
+    system that pairs logins leaves :func:`_sync` nothing to do — it
+    returns SKIPPED (no learner role) or UNCHANGED (a learner role, no
+    record) without writing. Settling those from three batched reads keeps
+    the start-up catch-up from re-checking thousands of logins one at a
+    time. Anything uncertain — an existing link, a record found, an adapter
+    that fails — is left out so it gets the full per-login check.
+    """
+    if not user_ids:
+        return {}
+    from education_system.platform.identity.auth.db import connect
+
+    wanted_ids = set(user_ids)
+    conn = connect(db_path)
+    try:
+        accounts = {int(r["id"]): r for r in conn.execute(
+            "SELECT id, username, email, display_name, journey_id FROM users")
+            if int(r["id"]) in wanted_ids}
+        grants = [g for g in conn.execute("SELECT user_id, system_key, role FROM user_systems")
+                  if g["user_id"] is not None and int(g["user_id"]) in wanted_ids]
+    finally:
+        conn.close()
+
+    eligible: dict[int, set[str]] = {}
+    for grant in grants:
+        system = _canonical(grant["system_key"])
+        adapter = _pairing_adapter(system)
+        role = str(grant["role"] or "").strip().lower()
+        if adapter is not None and role in adapter.learner_login_roles:
+            eligible.setdefault(int(grant["user_id"]), set()).add(system)
+
+    has_records: set[int] = set()
+    by_system: dict[str, list[dict]] = {}
+    for uid, systems_held in eligible.items():
+        if uid in accounts:
+            for system in systems_held:
+                by_system.setdefault(system, []).append(
+                    {k: accounts[uid][k] for k in ("id", "username", "email", "display_name")})
+    for system, batch in by_system.items():
+        try:
+            found = _pairing_adapter(system).learner_ids_for_logins(batch)
+        except Exception:
+            logger.warning("Could not pair %s logins in one pass; checking them one by one",
+                           system, exc_info=True)
+            has_records.update(int(a["id"]) for a in batch)
+            continue
+        for a in batch:
+            if any(i not in (None, "") for i in found.get(int(a["id"]), [])):
+                has_records.add(int(a["id"]))
+
+    settled: dict[int, str] = {}
+    for uid in user_ids:
+        account = accounts.get(uid)
+        if account is None or account["journey_id"] or uid in has_records:
+            continue
+        settled[uid] = UNCHANGED if eligible.get(uid) else SKIPPED
+    return settled
 
 
 def _candidate_users(wanted: set[str] | None, db_path: str | None) -> list[int]:

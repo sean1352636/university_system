@@ -3,7 +3,11 @@ from __future__ import annotations
 
 from typing import Any, Callable
 
-from education_system.systems.university.domains.assessment.domain.boards import service
+from education_system.systems.university.domains.assessment.domain.boards import (
+    classification_admin,
+    progression,
+    service,
+)
 from education_system.systems.university.infrastructure.i18n import get_text
 
 auth: Any = None
@@ -22,6 +26,11 @@ def _t(key: str, default: str) -> str:
 def _actor() -> str:
     user = getattr(auth, "current_user", None) or {}
     return str(user.get("username") or user.get("id") or "cli")
+
+
+def _role() -> str:
+    user = getattr(auth, "current_user", None) or {}
+    return str(user.get("role", "")).lower()
 
 
 def _require_staff() -> bool:
@@ -183,6 +192,111 @@ def _releasable_award() -> None:
           f"{award['academic_year']}) ratified {award['ratified_at']} by {award['ratified_by']}")
 
 
+def _split(text: str) -> list[str] | None:
+    return [m.strip() for m in text.split(",") if m.strip()] or None
+
+
+def _propose_outcome() -> None:
+    proposal = progression.propose(_ask_int("Board ID"), _ask("Student ID"))
+    print(f"\nProposed: {proposal['label']}\n{proposal['reason']}")
+    print(f"Year {proposal['from_year']} -> {proposal['to_year'] or '-'}")
+    for key in ("trailing_modules", "resit_modules"):
+        if proposal[key]:
+            print(f"{key.replace('_', ' ').title()}: {', '.join(proposal[key])}")
+    print(f"Exit award the credit already meets: {proposal['exit_award'] or 'none'}")
+
+
+def _record_outcome() -> None:
+    board_id, student_id = _ask_int("Board ID"), _ask("Student ID")
+    outcome = _ask("Outcome (" + "/".join(progression.OUTCOMES) + ")", "progress")
+    to_year = _ask("Year of study next (blank = by outcome)")
+    outcome_id = progression.record_outcome(
+        board_id, student_id, outcome, decided_by=_actor(), rationale=_ask("Rationale"),
+        trailing_modules=_split(_ask("Trailing modules (comma-separated)")),
+        resit_modules=_split(_ask("Resit modules (blank = all failed)")),
+        exit_award=_ask("Exit award (blank = highest the credit meets)") or None,
+        to_year=int(to_year) if to_year else None)
+    print(f"Progression outcome #{outcome_id} recorded.")
+
+
+def _list_outcomes() -> None:
+    _print_table(progression.outcomes(_ask_int("Board ID")),
+                 [("outcome_id", 6), ("student_id", 10), ("outcome", 18), ("from_year", 4),
+                  ("to_year", 4), ("exit_award", 22), ("status", 16), ("released", 3),
+                  ("rollover_note", 40)])
+
+
+def _release_outcomes() -> None:
+    count = progression.release(_ask_int("Board ID"), released_by=_actor())
+    print(f"{count} outcome(s) released; students notified.")
+
+
+def _rollover() -> None:
+    board_id = _ask_int("Board ID")
+    if _ask("Apply the ratified outcomes now? (y/n)", "n").lower() != "y":
+        return
+    result = progression.rollover(board_id, actor_id=_actor())
+    for row in result["applied"]:
+        print(f"  {row['student_id']}: {row['note']}")
+    if not result["applied"]:
+        print("Nothing left to roll over.")
+
+
+def _preview_classification() -> None:
+    result = classification_admin.preview(_ask("Student ID"))
+    print(f"\nRules: {result['rule_set']} ({result['scheme']}; {result['basis']})")
+    print(f"Average: {result['average'] if result['average'] is not None else '-'}")
+    print(f"Classification: {result['classification'] or '-'}"
+          + (" (borderline)" if result["borderline"] else ""))
+    if result.get("note"):
+        print(result["note"])
+    award = result.get("exit_award")
+    print(f"Exit award met: {award['name'] if award else 'none'}")
+
+
+def _create_rule_set() -> None:
+    scheme = _ask("Scheme (" + "/".join(classification_admin.SCHEMES) + ")", "ug_honours")
+    print("Starting point (edit and paste back as one JSON line, or Enter to accept):")
+    template = classification_admin.template(scheme)
+    print(template)
+    config = input("Rules JSON: ").strip() or template
+    rule_set_id = classification_admin.create(_ask("Name"), scheme, config, actor=_actor(),
+                                              role=_role(), notes=_ask("Notes"))
+    print(f"Rule set #{rule_set_id} created.")
+
+
+def _bind_rule_set() -> None:
+    rule_set_id = _ask_int("Rule set ID")
+    version = _ask("Regulation version ID (blank to bind a programme code)")
+    binding_id = classification_admin.bind(
+        rule_set_id, actor=_actor(), role=_role(), version_id=int(version) if version else None,
+        programme_code=None if version else _ask("Programme code"))
+    print(f"Binding #{binding_id} saved.")
+
+
+def _classification_rules() -> None:
+    print("\nRule sets:")
+    _print_table(classification_admin.rule_sets(),
+                 [("rule_set_id", 6), ("name", 30), ("scheme", 18), ("bindings", 4),
+                  ("retired", 4)])
+    print("\nBindings (unbound students use the university default):")
+    _print_table(classification_admin.bindings(),
+                 [("binding_id", 6), ("version_id", 8), ("programme_code", 12),
+                  ("rule_set_id", 6), ("name", 30)])
+    choice = _ask("v = view rules, n = new rule set, b = bind, u = remove binding, Enter = back")
+    if choice == "v":
+        found = classification_admin.show(_ask_int("Rule set ID"))
+        import json
+        print(json.dumps(found["config"], indent=2))
+    elif choice == "n":
+        _create_rule_set()
+    elif choice == "b":
+        _bind_rule_set()
+    elif choice == "u":
+        removed = classification_admin.unbind(_ask_int("Binding ID"), role=_role())
+        print("Binding removed." if removed else "No such binding.")
+
+
 _ACTIONS: dict[str, tuple[str, Callable[[], None]]] = {
     "1": ("List boards", _list_boards),
     "2": ("Show board", _show_board),
@@ -197,7 +311,38 @@ _ACTIONS: dict[str, tuple[str, Callable[[], None]]] = {
     "11": ("Ratify", _ratify),
     "12": ("Reopen board", _reopen),
     "13": ("Releasable award lookup", _releasable_award),
+    "14": ("Propose progression outcome", _propose_outcome),
+    "15": ("Record progression outcome", _record_outcome),
+    "16": ("List progression outcomes", _list_outcomes),
+    "17": ("Release outcomes to students", _release_outcomes),
+    "18": ("Rollover (apply ratified outcomes)", _rollover),
+    "19": ("Classification rules", _classification_rules),
+    "20": ("Preview a student's classification", _preview_classification),
 }
+
+
+def display_my_progression_outcome() -> None:
+    """Student: my released progression outcomes (nothing before release)."""
+    user = getattr(auth, "current_user", None) or {}
+    student_id = progression.student_id_for(user)
+    if not student_id:
+        print(_t("students_only", "Sign in as a student to see your progression outcome."))
+        return
+    rows = progression.my_outcomes(student_id)
+    if not rows:
+        print(_t("no_outcome", "No outcome has been released to you yet."))
+        return
+    for row in rows:
+        print(f"\n{row['board_name']} ({row['academic_year']}): {row['label']}")
+        if row["to_year"]:
+            print(f"  Year of study next: {row['to_year']}")
+        for key in ("trailing_modules", "resit_modules"):
+            if row[key]:
+                print(f"  {key.replace('_', ' ').title()}: {', '.join(row[key])}")
+        if row["exit_award"]:
+            print(f"  Exit award: {row['exit_award']}"
+                  + (f" ({row['exit_classification']})" if row["exit_classification"] else ""))
+        print(f"  Released {row['released_at']}")
 
 
 def display_assessment_boards_menu() -> None:
@@ -221,5 +366,5 @@ def display_assessment_boards_menu() -> None:
             action[1]()
         except KeyboardInterrupt:
             print("\nCancelled.")
-        except ValueError as exc:
+        except (ValueError, PermissionError) as exc:
             print(f"Error: {exc}")

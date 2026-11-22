@@ -8,6 +8,7 @@ from datetime import datetime, timedelta
 from decimal import Decimal, InvalidOperation
 from typing import Any, Dict, List, Optional, Tuple
 import uuid
+import logging
 
 from education_system.paths import UNIVERSITY_DEFAULT_DB_PATH
 from education_system.systems.university.infrastructure.utils.activity_logger import (
@@ -34,12 +35,27 @@ except ImportError:
     set_auth_instance = lambda x: None
     get_auth = lambda: None
 
+# Finance hub: the ONLY way this plugin may touch finance tables. Posting
+# lives here in the domain service so the CLI and GUI share it.
 try:
-    from education_system.systems.university.domains.finance.infrastructure.finance_integration import record_payment_to_finance
+    from education_system.systems.university.domains.finance.infrastructure.finance_integration import (
+        process_student_finance_account_payment,
+        record_refund_to_finance,
+        record_revenue_to_finance,
+        top_up_student_finance_account,
+    )
     FINANCE_AVAILABLE = True
 except ImportError:
     FINANCE_AVAILABLE = False
-    record_payment_to_finance = None
+    process_student_finance_account_payment = None
+    record_refund_to_finance = None
+    record_revenue_to_finance = None
+    top_up_student_finance_account = None
+
+logger = logging.getLogger(__name__)
+
+FINANCE_SOURCE = "Grocery"
+STUDENT_ACCOUNT_METHOD = "student_account"
 
 auth = None
 
@@ -103,8 +119,8 @@ def init_grocery_db() -> bool:
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS grocery_transaction_items (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            transaction_id TEXT NOT NULL,
-            product_id TEXT NOT NULL,
+            transaction_id INTEGER NOT NULL,
+            product_id INTEGER NOT NULL,
             product_name TEXT NOT NULL,
             quantity INTEGER NOT NULL,
             unit_price REAL NOT NULL,
@@ -121,7 +137,7 @@ def init_grocery_db() -> bool:
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS grocery_stock_movements (
             movement_id INTEGER PRIMARY KEY AUTOINCREMENT,
-            product_id TEXT NOT NULL,
+            product_id INTEGER NOT NULL,
             movement_type TEXT NOT NULL,
             quantity INTEGER NOT NULL,
             previous_stock INTEGER,
@@ -515,15 +531,186 @@ def clear_cart(user_id: int) -> bool:
         return False
 
 
-def checkout(user_id: int, payment_method: str = 'card') -> Optional[str]:
-    """Process checkout"""
+def resolve_finance_identifier(user_id: int) -> Optional[str]:
+    """Identifier the finance hub keys accounts on: student_id, else username."""
     try:
-        items, subtotal = view_cart(user_id)
+        conn = get_connection()
+        try:
+            row = conn.execute(
+                'SELECT student_id, username FROM users WHERE id = ?', (user_id,)
+            ).fetchone()
+        finally:
+            conn.close()
+    except sqlite3.Error:
+        return None
+    if not row:
+        return None
+    return str(row['student_id'] or row['username'] or user_id)
 
-        if not items:
-            print("Cart is empty!")
-            return None
 
+def complete_checkout(user_id: int, payment_method: str = 'card', *,
+                      finance_user_id: Optional[str] = None,
+                      processed_by: Optional[str] = None) -> Dict[str, Any]:
+    """Ring up the cart and post the sale to Finance.
+
+    Shared by the CLI and GUI. Order of operations:
+
+    1. ``student_account`` → debit the finance account first
+       (``process_student_finance_account_payment`` records the payment row
+       and GL journal itself). Failure aborts the sale.
+    2. Write the local transaction / items / stock / cart rows.
+    3. Any other method → ``record_revenue_to_finance`` with the GUI's
+       historical payload. A posting failure is logged, never rolled back.
+
+    Returns ``{'transaction_id', 'finance_payment_id', 'account_result',
+    'error'}``; ``transaction_id`` is None when nothing was sold.
+    """
+    result: Dict[str, Any] = {
+        'transaction_id': None, 'finance_payment_id': None,
+        'account_result': None, 'error': None,
+    }
+    items, subtotal = view_cart(user_id)
+    if not items:
+        result['error'] = "Cart is empty!"
+        print(result['error'])
+        return result
+
+    finance_user_id = finance_user_id or resolve_finance_identifier(user_id)
+
+    if payment_method == STUDENT_ACCOUNT_METHOD:
+        if not (FINANCE_AVAILABLE and process_student_finance_account_payment):
+            result['error'] = "Student finance account payments are unavailable."
+            return result
+        account_result = process_student_finance_account_payment(
+            student_id=str(finance_user_id),
+            amount=subtotal,
+            description="Campus Grocery Shop purchase",
+            transaction_source=FINANCE_SOURCE,
+            transaction_ref=f"GR_{datetime.now().strftime('%Y%m%d%H%M%S')}",
+            processed_by=processed_by or 'System',
+        )
+        result['account_result'] = account_result
+        if not account_result.get('success'):
+            result['error'] = account_result.get('message', 'Payment failed')
+            return result
+
+    transaction_id = _write_checkout(user_id, items, subtotal, payment_method)
+    result['transaction_id'] = transaction_id
+    if not transaction_id:
+        result['error'] = "Checkout failed."
+        return result
+
+    if payment_method != STUDENT_ACCOUNT_METHOD and FINANCE_AVAILABLE and record_revenue_to_finance:
+        try:
+            result['finance_payment_id'] = record_revenue_to_finance(
+                student_id=str(finance_user_id or "EXTERNAL"),
+                amount=subtotal,
+                revenue_category="Grocery Sales",
+                transaction_source=FINANCE_SOURCE,
+                transaction_ref=str(transaction_id),
+                payment_method=payment_method.replace('_', ' ').title(),
+                notes="Campus Grocery Shop purchase",
+            )
+        except Exception:
+            logger.exception("Finance posting failed for grocery transaction %s", transaction_id)
+    return result
+
+
+def refund_transaction(transaction_id: str, amount: float, refund_method: str, *,
+                       student_id: Optional[str] = None,
+                       processed_by: Optional[str] = None,
+                       reason: str = "Customer Request") -> Dict[str, Any]:
+    """Mark a grocery transaction refunded and post the refund to Finance.
+
+    ``refund_method`` of ``'Student Account'`` re-credits the finance account
+    via ``top_up_student_finance_account`` (failure aborts the refund). The
+    refund itself is always recorded through ``record_refund_to_finance``,
+    which inserts the ``unified_refunds`` row and notifies the ledger.
+    """
+    result: Dict[str, Any] = {'success': False, 'refund_id': None,
+                              'refund_ref': None, 'message': ''}
+    try:
+        conn = get_connection()
+        try:
+            row = conn.execute(
+                "SELECT status, student_id, customer_id FROM transactions "
+                "WHERE source_type = 'grocery' AND source_transaction_id = ?",
+                (transaction_id,)).fetchone()
+            if not row:
+                result['message'] = "Transaction not found"
+                return result
+            if row['status'] == 'refunded':
+                result['message'] = "This transaction has already been refunded"
+                return result
+            if not student_id:
+                student_id = row['student_id'] or resolve_finance_identifier(row['customer_id'])
+        finally:
+            conn.close()
+
+        if refund_method == 'Student Account':
+            if not student_id:
+                result['message'] = "No student/finance account linked to this transaction"
+                return result
+            if not (FINANCE_AVAILABLE and top_up_student_finance_account):
+                result['message'] = "Student finance account refunds are unavailable."
+                return result
+            topup = top_up_student_finance_account(
+                create_if_missing=True,
+                student_id=str(student_id), amount=float(amount),
+                payment_method='Refund', processed_by=processed_by or 'System',
+                description=f'Grocery Shop Refund - Transaction: {transaction_id}')
+            if not topup.get('success'):
+                result['message'] = topup.get('message', 'Failed to credit student account')
+                return result
+            result['account_created'] = bool(topup.get('account_created'))
+
+        conn = get_connection()
+        try:
+            conn.execute(
+                "UPDATE transactions SET status = 'refunded' "
+                "WHERE source_type = 'grocery' AND source_transaction_id = ?",
+                (transaction_id,))
+            conn.commit()
+        finally:
+            conn.close()
+
+        refund_ref = f"GROC-REFUND-{uuid.uuid4().hex[:12].upper()}"
+        result['refund_ref'] = refund_ref
+        result['success'] = True
+        if FINANCE_AVAILABLE and record_refund_to_finance:
+            try:
+                result['refund_id'] = record_refund_to_finance(
+                    student_id=str(student_id or "EXTERNAL"),
+                    refund_amount=float(amount),
+                    original_payment_id=None,
+                    refund_reason=reason,
+                    refund_type='full',
+                    transaction_source=FINANCE_SOURCE,
+                    transaction_ref=str(transaction_id),
+                    refund_method=refund_method,
+                    requested_by=processed_by or 'System',
+                    notes=f"Refund reference {refund_ref}",
+                )
+            except Exception:
+                logger.exception("Finance refund posting failed for grocery %s", transaction_id)
+        result['message'] = f"Refund of GBP {float(amount):.2f} processed" + (
+            " (a finance account was opened for the student)"
+            if result.get('account_created') else "")
+        return result
+    except sqlite3.Error as e:
+        result['message'] = f"Database error: {e}"
+        return result
+
+
+def checkout(user_id: int, payment_method: str = 'card') -> Optional[str]:
+    """Process checkout (posts to Finance). Returns the transaction id."""
+    return complete_checkout(user_id, payment_method)['transaction_id']
+
+
+def _write_checkout(user_id: int, items: List[Dict], subtotal: float,
+                    payment_method: str) -> Optional[str]:
+    """Local write only: transaction, items, stock, movements, cart."""
+    try:
         conn = get_connection()
         cursor = conn.cursor()
 
@@ -1093,7 +1280,8 @@ def process_checkout(user_id: int):
     payment_method = payment_methods.get(payment_choice, 'card')
 
     print("\nProcessing payment...")
-    transaction_id = checkout(user_id, payment_method)
+    outcome = complete_checkout(user_id, payment_method)
+    transaction_id = outcome['transaction_id']
 
     if transaction_id:
         transaction, items = get_transaction_details(transaction_id)
@@ -1112,9 +1300,13 @@ def process_checkout(user_id: int):
         print("-" * 40)
         print(f"Total: £{transaction['total_amount']:.2f}")
         print(f"Payment: {transaction['payment_method'].title()}")
+        if outcome.get('account_result'):
+            print(f"Student account balance: £{outcome['account_result'].get('new_balance', 0):.2f}")
+        if outcome.get('finance_payment_id'):
+            print(f"Finance System Payment ID: {outcome['finance_payment_id']}")
         print("\nThank you for shopping with us!")
     else:
-        print("Checkout failed. Please try again.")
+        print(outcome.get('error') or "Checkout failed. Please try again.")
 
 
 def view_purchase_history(user_id: int):
@@ -1268,13 +1460,41 @@ def view_all_transactions():
 
         for t in transactions:
             print(f"\n{t['receipt_number']} | {t['transaction_date']}")
+            print(f"   ID: {t['source_transaction_id']}")
             print(f"   Total: £{t['total_amount']:.2f} | Payment: {t['payment_method']}")
             print(f"   Status: {t['payment_status']}")
 
-        input("\nPress Enter to continue...")
+        refund_cli_prompt(transactions)
 
     except sqlite3.Error as e:
         print(f"Error: {e}")
+
+
+def refund_cli_prompt(transactions: List[Dict]) -> None:
+    """Offer a refund for one of the listed transactions (blank to skip)."""
+    trans_id = input("\nTransaction ID to refund (blank to continue): ").strip()
+    if not trans_id:
+        return
+    match = next((t for t in transactions if t['source_transaction_id'] == trans_id), None)
+    if not match:
+        print("Transaction not found in the list above.")
+        return
+    print("\nRefund method:")
+    print("1. Cash")
+    print("2. Card")
+    print("3. Student Account")
+    method = {'1': 'Cash', '2': 'Card', '3': 'Student Account'}.get(
+        input("Choice: ").strip(), 'Cash')
+    user = get_current_user() if HAS_AUTH else None
+    outcome = refund_transaction(
+        trans_id, float(match['total_amount']), method,
+        student_id=match.get('student_id'),
+        processed_by=(user or {}).get('username') if isinstance(user, dict) else None,
+    )
+    print(outcome['message'])
+    if outcome['success']:
+        print(f"Refund reference: {outcome['refund_ref']}")
+    input("\nPress Enter to continue...")
 
 
 def generate_reports():

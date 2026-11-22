@@ -1,6 +1,6 @@
 # Appendices
 
-Appendix sections extracted from CHANGELOG.md.
+Appendix sections extracted from CHANGELOG.md. They are a historical record: file names, paths and setup steps are as they were at the time, not the current layout. See [PROJECT_STRUCTURE.md](PROJECT_STRUCTURE.md) for that.
 
 ---
 
@@ -27,7 +27,7 @@ of the `ParkingManager` instance.
 
 ### BUG-002 — Database nested path (v0.0.8)
 **Severity:** Critical  
-**Module:** refactored/database/db.py  
+**Module:** src/education_system/systems/university/infrastructure/database/db.py  
 **Symptom:** `sqlite3.OperationalError: unable to open database file` on startup.
 The error path shown was `refactored/database/refactored/db_files/student_records.db`.  
 **Root cause:** `DB_PATH = os.path.join(BASE_DIR, 'refactored', 'db_files', 'student_records.db')`
@@ -827,7 +827,7 @@ pip install pandas openpyxl matplotlib seaborn reportlab cryptography pyotp qrco
 export HEALTH_PORTAL_KEY=$(python3 -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())")
 
 # 5. Run the system
-python main.py
+python -m education_system
 ```
 
 ### First login credentials
@@ -842,9 +842,9 @@ to all system features including user management, system configuration, and all 
 
 ### Database location
 ```
-Default: [project_root]/refactored/db_files/student_records.db
-Backup:  [project_root]/refactored/db_files/auto_backups/
-Logs:    [project_root]/logs/
+Default: [project_root]/var/data/university/db_files/student_records.db
+Backup:  [project_root]/var/backups/university/
+Logs:    [project_root]/var/logs/university/
 ```
 
 ---

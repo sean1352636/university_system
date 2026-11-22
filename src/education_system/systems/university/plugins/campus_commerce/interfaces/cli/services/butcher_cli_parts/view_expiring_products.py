@@ -17,7 +17,7 @@ def view_expiring_products():
 
         with get_connection() as conn:
             cursor = conn.execute('''
-                SELECT e.batch_number, p.product_name, p.category,
+                SELECT e.batch_number, p.name, p.category,
                        e.quantity_kg, e.expiry_date, e.received_date
                 FROM butcher_product_expiry e
                 JOIN products p ON e.product_id = p.source_product_id AND p.source_type = 'butcher'

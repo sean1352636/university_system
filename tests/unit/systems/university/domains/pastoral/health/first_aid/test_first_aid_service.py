@@ -19,10 +19,10 @@ from education_system.systems.university.services.bus import (
     cases_bus,
     risk_bus,
 )
-from education_system.systems.university.domains.pastoral.domain.health.first_aid import (
+from education_system.systems.university.domains.health.domain.health.first_aid import (
     first_aid_service as mod,
 )
-from education_system.systems.university.domains.pastoral.domain.health.first_aid.first_aid_service import (
+from education_system.systems.university.domains.health.domain.health.first_aid.first_aid_service import (
     EMERGENCY_CONTACTS,
     IncidentDB,
 )

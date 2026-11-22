@@ -12,7 +12,7 @@ import tkinter as tk
 from unittest.mock import Mock, patch, MagicMock
 from datetime import datetime
 
-from education_system.systems.university.domains.pastoral.interfaces.gui.student_union_management_gui import StudentUnionManagementGUI
+from education_system.systems.university.domains.student_life.interfaces.gui.student_union_management_gui import StudentUnionManagementGUI
 
 
 @pytest.fixture
@@ -81,8 +81,8 @@ class TestStudentUnionManagementGUI:
             # Should call the actual open method
             mock_open.assert_called_once()
 
-    @patch('education_system.systems.university.domains.pastoral.interfaces.gui.student_union_management_gui.StudentUnionGUI')
-    @patch('education_system.systems.university.domains.pastoral.interfaces.gui.student_union_management_gui.tk.Toplevel')
+    @patch('education_system.systems.university.domains.student_life.interfaces.gui.student_union_management_gui.StudentUnionGUI')
+    @patch('education_system.systems.university.domains.student_life.interfaces.gui.student_union_management_gui.tk.Toplevel')
     def test_open_student_union_portal_gui_no_auth(self, mock_toplevel, mock_union_gui, mock_root):
         """Test opening portal without authentication"""
         auth = Mock()
@@ -90,26 +90,26 @@ class TestStudentUnionManagementGUI:
 
         gui = StudentUnionManagementGUI(mock_root, auth)
 
-        with patch('education_system.systems.university.domains.pastoral.interfaces.gui.student_union_management_gui.messagebox') as mock_msg:
+        with patch('education_system.systems.university.domains.student_life.interfaces.gui.student_union_management_gui.messagebox') as mock_msg:
             gui.open_student_union_portal_gui()
 
             # Should show error
             mock_msg.showerror.assert_called_once()
 
-    @patch('education_system.systems.university.domains.pastoral.interfaces.gui.student_union_management_gui.STUDENT_UNION_GUI_AVAILABLE', False)
+    @patch('education_system.systems.university.domains.student_life.interfaces.gui.student_union_management_gui.STUDENT_UNION_GUI_AVAILABLE', False)
     def test_open_student_union_portal_gui_not_available(self, mock_root, mock_auth):
         """Test opening portal when GUI not available"""
         gui = StudentUnionManagementGUI(mock_root, mock_auth)
 
-        with patch('education_system.systems.university.domains.pastoral.interfaces.gui.student_union_management_gui.messagebox') as mock_msg:
+        with patch('education_system.systems.university.domains.student_life.interfaces.gui.student_union_management_gui.messagebox') as mock_msg:
             gui.open_student_union_portal_gui()
 
             # Should show error
             mock_msg.showerror.assert_called_once()
 
-    @patch('education_system.systems.university.domains.pastoral.interfaces.gui.student_union_management_gui.STUDENT_UNION_GUI_AVAILABLE', True)
-    @patch('education_system.systems.university.domains.pastoral.interfaces.gui.student_union_management_gui.StudentUnionGUI')
-    @patch('education_system.systems.university.domains.pastoral.interfaces.gui.student_union_management_gui.tk.Toplevel')
+    @patch('education_system.systems.university.domains.student_life.interfaces.gui.student_union_management_gui.STUDENT_UNION_GUI_AVAILABLE', True)
+    @patch('education_system.systems.university.domains.student_life.interfaces.gui.student_union_management_gui.StudentUnionGUI')
+    @patch('education_system.systems.university.domains.student_life.interfaces.gui.student_union_management_gui.tk.Toplevel')
     def test_open_student_union_portal_gui_success(self, mock_toplevel, mock_union_gui, mock_root, mock_auth):
         """Test successful portal opening"""
         # Mock window and GUI
@@ -127,7 +127,7 @@ class TestStudentUnionManagementGUI:
 
         gui = StudentUnionManagementGUI(mock_root, mock_auth)
 
-        with patch('education_system.systems.university.domains.pastoral.interfaces.gui.student_union_management_gui.DEFAULT_DB_PATH', '/path/to/db'):
+        with patch('education_system.systems.university.domains.student_life.interfaces.gui.student_union_management_gui.DEFAULT_DB_PATH', '/path/to/db'):
             gui.open_student_union_portal_gui()
 
         # Should create window
@@ -139,9 +139,9 @@ class TestStudentUnionManagementGUI:
         mock_union_gui.assert_called_once()
         mock_gui_instance.show_main_dashboard.assert_called_once()
 
-    @patch('education_system.systems.university.domains.pastoral.interfaces.gui.student_union_management_gui.STUDENT_UNION_GUI_AVAILABLE', True)
-    @patch('education_system.systems.university.domains.pastoral.interfaces.gui.student_union_management_gui.StudentUnionGUI')
-    @patch('education_system.systems.university.domains.pastoral.interfaces.gui.student_union_management_gui.tk.Toplevel')
+    @patch('education_system.systems.university.domains.student_life.interfaces.gui.student_union_management_gui.STUDENT_UNION_GUI_AVAILABLE', True)
+    @patch('education_system.systems.university.domains.student_life.interfaces.gui.student_union_management_gui.StudentUnionGUI')
+    @patch('education_system.systems.university.domains.student_life.interfaces.gui.student_union_management_gui.tk.Toplevel')
     def test_open_student_union_portal_gui_not_initialized(self, mock_toplevel, mock_union_gui,
                                                            mock_root, mock_auth):
         """Test opening portal when GUI needs initialization"""
@@ -160,7 +160,7 @@ class TestStudentUnionManagementGUI:
 
         gui = StudentUnionManagementGUI(mock_root, mock_auth)
 
-        with patch('education_system.systems.university.domains.pastoral.interfaces.gui.student_union_management_gui.DEFAULT_DB_PATH', '/path/to/db'):
+        with patch('education_system.systems.university.domains.student_life.interfaces.gui.student_union_management_gui.DEFAULT_DB_PATH', '/path/to/db'):
             gui.open_student_union_portal_gui()
 
         # Should setup GUI manually
@@ -168,9 +168,9 @@ class TestStudentUnionManagementGUI:
         mock_gui_instance.setup_database.assert_called_once()
         mock_gui_instance.show_main_dashboard.assert_called_once()
 
-    @patch('education_system.systems.university.domains.pastoral.interfaces.gui.student_union_management_gui.STUDENT_UNION_GUI_AVAILABLE', True)
-    @patch('education_system.systems.university.domains.pastoral.interfaces.gui.student_union_management_gui.StudentUnionGUI')
-    @patch('education_system.systems.university.domains.pastoral.interfaces.gui.student_union_management_gui.tk.Toplevel')
+    @patch('education_system.systems.university.domains.student_life.interfaces.gui.student_union_management_gui.STUDENT_UNION_GUI_AVAILABLE', True)
+    @patch('education_system.systems.university.domains.student_life.interfaces.gui.student_union_management_gui.StudentUnionGUI')
+    @patch('education_system.systems.university.domains.student_life.interfaces.gui.student_union_management_gui.tk.Toplevel')
     def test_open_student_union_portal_gui_with_theme(self, mock_toplevel, mock_union_gui,
                                                        mock_root, mock_auth):
         """Test opening portal creates window and GUI"""
@@ -189,16 +189,16 @@ class TestStudentUnionManagementGUI:
 
         gui = StudentUnionManagementGUI(mock_root, mock_auth)
 
-        with patch('education_system.systems.university.domains.pastoral.interfaces.gui.student_union_management_gui.DEFAULT_DB_PATH', '/path/to/db'):
+        with patch('education_system.systems.university.domains.student_life.interfaces.gui.student_union_management_gui.DEFAULT_DB_PATH', '/path/to/db'):
             gui.open_student_union_portal_gui()
 
         # Should create window and show dashboard
         mock_toplevel.assert_called_once_with(mock_root)
         mock_gui_instance.show_main_dashboard.assert_called_once()
 
-    @patch('education_system.systems.university.domains.pastoral.interfaces.gui.student_union_management_gui.STUDENT_UNION_GUI_AVAILABLE', True)
-    @patch('education_system.systems.university.domains.pastoral.interfaces.gui.student_union_management_gui.StudentUnionGUI')
-    @patch('education_system.systems.university.domains.pastoral.interfaces.gui.student_union_management_gui.tk.Toplevel')
+    @patch('education_system.systems.university.domains.student_life.interfaces.gui.student_union_management_gui.STUDENT_UNION_GUI_AVAILABLE', True)
+    @patch('education_system.systems.university.domains.student_life.interfaces.gui.student_union_management_gui.StudentUnionGUI')
+    @patch('education_system.systems.university.domains.student_life.interfaces.gui.student_union_management_gui.tk.Toplevel')
     def test_open_student_union_portal_gui_error_handling(self, mock_toplevel, mock_union_gui,
                                                           mock_root, mock_auth):
         """Test error handling when opening portal"""
@@ -206,8 +206,8 @@ class TestStudentUnionManagementGUI:
 
         gui = StudentUnionManagementGUI(mock_root, mock_auth)
 
-        with patch('education_system.systems.university.domains.pastoral.interfaces.gui.student_union_management_gui.messagebox') as mock_msg, \
-             patch('education_system.systems.university.domains.pastoral.interfaces.gui.student_union_management_gui.display_student_union_menu') as mock_cli:
+        with patch('education_system.systems.university.domains.student_life.interfaces.gui.student_union_management_gui.messagebox') as mock_msg, \
+             patch('education_system.systems.university.domains.student_life.interfaces.gui.student_union_management_gui.display_student_union_menu') as mock_cli:
 
             gui.open_student_union_portal_gui()
 
@@ -216,9 +216,9 @@ class TestStudentUnionManagementGUI:
             # Should try CLI fallback
             mock_cli.assert_called_once()
 
-    @patch('education_system.systems.university.domains.pastoral.interfaces.gui.student_union_management_gui.STUDENT_UNION_GUI_AVAILABLE', True)
-    @patch('education_system.systems.university.domains.pastoral.interfaces.gui.student_union_management_gui.StudentUnionGUI')
-    @patch('education_system.systems.university.domains.pastoral.interfaces.gui.student_union_management_gui.tk.Toplevel')
+    @patch('education_system.systems.university.domains.student_life.interfaces.gui.student_union_management_gui.STUDENT_UNION_GUI_AVAILABLE', True)
+    @patch('education_system.systems.university.domains.student_life.interfaces.gui.student_union_management_gui.StudentUnionGUI')
+    @patch('education_system.systems.university.domains.student_life.interfaces.gui.student_union_management_gui.tk.Toplevel')
     def test_window_centering(self, mock_toplevel, mock_union_gui, mock_root, mock_auth):
         """Test window centering calculation"""
         # Mock window
@@ -236,7 +236,7 @@ class TestStudentUnionManagementGUI:
 
         gui = StudentUnionManagementGUI(mock_root, mock_auth)
 
-        with patch('education_system.systems.university.domains.pastoral.interfaces.gui.student_union_management_gui.DEFAULT_DB_PATH', '/path/to/db'):
+        with patch('education_system.systems.university.domains.student_life.interfaces.gui.student_union_management_gui.DEFAULT_DB_PATH', '/path/to/db'):
             gui.open_student_union_portal_gui()
 
         # Should center window
@@ -247,9 +247,9 @@ class TestStudentUnionManagementGUI:
 
     def test_auth_context_passed_to_union_gui(self, mock_root, mock_auth):
         """Test that auth context is passed to union GUI"""
-        with patch('education_system.systems.university.domains.pastoral.interfaces.gui.student_union_management_gui.STUDENT_UNION_GUI_AVAILABLE', True), \
-             patch('education_system.systems.university.domains.pastoral.interfaces.gui.student_union_management_gui.StudentUnionGUI') as mock_union_gui, \
-             patch('education_system.systems.university.domains.pastoral.interfaces.gui.student_union_management_gui.tk.Toplevel'):
+        with patch('education_system.systems.university.domains.student_life.interfaces.gui.student_union_management_gui.STUDENT_UNION_GUI_AVAILABLE', True), \
+             patch('education_system.systems.university.domains.student_life.interfaces.gui.student_union_management_gui.StudentUnionGUI') as mock_union_gui, \
+             patch('education_system.systems.university.domains.student_life.interfaces.gui.student_union_management_gui.tk.Toplevel'):
 
             mock_gui_instance = Mock()
             mock_gui_instance.initialized = False
@@ -257,7 +257,7 @@ class TestStudentUnionManagementGUI:
 
             gui = StudentUnionManagementGUI(mock_root, mock_auth)
 
-            with patch('education_system.systems.university.domains.pastoral.interfaces.gui.student_union_management_gui.DEFAULT_DB_PATH', '/path/to/db'):
+            with patch('education_system.systems.university.domains.student_life.interfaces.gui.student_union_management_gui.DEFAULT_DB_PATH', '/path/to/db'):
                 gui.open_student_union_portal_gui()
 
             # Should set auth manager on union GUI

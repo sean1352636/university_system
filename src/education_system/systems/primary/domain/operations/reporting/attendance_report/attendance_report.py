@@ -50,12 +50,20 @@ class PupilAttendance:
     authorised_absent: int
     unauthorised_absent: int
     other: int
+    # "X" sessions (also inside ``other``): not possible sessions under DfE
+    # rules, so they stay out of the percentage denominator.
+    not_required: int = 0
+
+    @property
+    def possible_sessions(self) -> int:
+        return self.total_sessions - self.not_required
 
     @property
     def attendance_pct(self) -> float:
-        if self.total_sessions == 0:
+        if self.possible_sessions <= 0:
             return 0.0
-        return round(100.0 * (self.present + self.late) / self.total_sessions, 2)
+        return round(100.0 * (self.present + self.late)
+                     / self.possible_sessions, 2)
 
     @property
     def absence_pct(self) -> float:
@@ -63,7 +71,7 @@ class PupilAttendance:
 
     @property
     def is_persistent_absentee(self) -> bool:
-        return (self.total_sessions > 0
+        return (self.possible_sessions > 0
                 and self.attendance_pct < PERSISTENT_ABSENCE_THRESHOLD_PCT)
 
 
@@ -94,6 +102,17 @@ def _category_counts(records: Iterable[Any]) -> dict[str, int]:
         else:
             counts["other"] += 1
     return counts
+
+
+def _not_required(records: Iterable[Any]) -> int:
+    """Count "X" (not required) marks — not possible sessions (DfE)."""
+    return sum(1 for r in records
+               if MARK_CODES.get(r.mark, (None, None))[1] == "not_required")
+
+
+def _pct(attended: int, total: int, not_required: int) -> float:
+    possible = total - not_required
+    return round(100.0 * attended / possible, 2) if possible > 0 else 0.0
 
 
 def _query_records(*, from_date: str | None = None,
@@ -148,7 +167,7 @@ def cohort_summary(*, from_date: str | None = None,
     counts = _category_counts(records)
     total = sum(counts.values())
     present_or_late = counts["present"] + counts["late"]
-    pct = round(100.0 * present_or_late / total, 2) if total else 0.0
+    pct = _pct(present_or_late, total, _not_required(records))
     return {
         "from_date": from_date,
         "to_date": to_date,
@@ -203,6 +222,7 @@ def pupil_attendance(*, from_date: str | None = None,
             authorised_absent=counts["auth_absent"],
             unauthorised_absent=counts["unauth_absent"],
             other=counts["other"],
+            not_required=_not_required(recs),
         ))
     rollups.sort(key=lambda r: (r.attendance_pct, r.year_group,
                                 r.full_name))
@@ -219,7 +239,7 @@ def persistent_absentees(*, from_date: str | None = None,
     rows = pupil_attendance(from_date=from_date, to_date=to_date,
                             year_group=year_group)
     return [r for r in rows
-            if r.total_sessions > 0 and r.attendance_pct < threshold_pct]
+            if r.possible_sessions > 0 and r.attendance_pct < threshold_pct]
 
 
 def daily_breakdown(*, from_date: str,
@@ -239,8 +259,8 @@ def daily_breakdown(*, from_date: str,
         recs = by_date[date]
         counts = _category_counts(recs)
         total = sum(counts.values())
-        pct = (100.0 * (counts["present"] + counts["late"]) / total
-               if total else 0.0)
+        pct = _pct(counts["present"] + counts["late"], total,
+                   _not_required(recs))
         out.append({
             "date": date,
             "sessions": total,

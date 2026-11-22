@@ -29,36 +29,13 @@ except ImportError:
 
 def _create_visa_record_for_new_student(student_id, email_address, first_name,
                                          nationality, passport_number,
-                                         visa_expiry_date, brp_number, module_codes):
-    """Create the initial Tier-4 visa record for a newly enrolled international
-    student, flag ATAS modules, and email a right-to-study check reminder.
-
-    All best-effort: a problem here must never block student creation. The
-    record starts in ``status='pending'`` because we don't yet have the
-    in-person right-to-study check on file."""
-    from education_system.systems.university.domains.governance.domain.compliance.international_compliance.services import (
-        visa_service as vs,
+                                         visa_expiry_date, brp_number, module_codes,
+                                         details=None):
+    """Kept for existing imports; the logic is front-end agnostic now
+    (``services/student_provisioning.create_visa_record``) so the CLI can
+    use it without tkinter."""
+    from education_system.systems.university.services.student_provisioning import (
+        create_visa_record,
     )
-
-    atas_codes = [c for c in (module_codes or []) if vs.is_atas_required_for_module(c)]
-    rec = vs.VisaRecord(
-        student_id=student_id,
-        nationality=nationality,
-        passport_number=passport_number,
-        visa_expiry_date=visa_expiry_date,
-        brp_number=brp_number,
-        atas_required=bool(atas_codes),
-        status="pending",
-    )
-    vs.upsert_visa_record(rec)
-    for code in atas_codes:
-        vs.record_atas_clearance(
-            student_id=student_id, module_code=code,
-            certificate_number=None, issued_on=None, expires_on=None,
-            status="pending",
-            notes=f"Auto-flagged at enrolment for {code} (ATAS-restricted prefix)",
-        )
-    if email_address:
-        vs.notify_right_to_study_required(student_id, email_address, first_name=first_name or "")
-
-
+    create_visa_record(student_id, email_address, first_name, nationality, passport_number,
+                       visa_expiry_date, brp_number, module_codes, details=details)

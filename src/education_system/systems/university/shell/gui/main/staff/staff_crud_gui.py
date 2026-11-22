@@ -351,7 +351,7 @@ def create_staff_dialog(self):
             instructor_note = ""
             if role == 'instructor':
                 try:
-                    from education_system.systems.university.domains.academics.domain.services.course_management.instructor_service import (
+                    from education_system.systems.university.domains.curriculum.domain.course_management.instructor_service import (
                         create_instructor as create_instructor_service,
                     )
                     res = create_instructor_service(
@@ -377,7 +377,7 @@ def create_staff_dialog(self):
                     UNIVERSITY_EMAIL_DOMAIN = "university.edu"
 
                 sent = send_template_email(
-                    'user_management/staff_welcome',
+                    'student_life/user_management/staff_welcome',
                     email,
                     {
                         'first_name': first_name,

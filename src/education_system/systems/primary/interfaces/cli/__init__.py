@@ -1,1 +1,1 @@
-"""Secondary-school `modules/shared/cli` package."""
+"""Primary School shared CLI screens (account, settings, about)."""

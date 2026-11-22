@@ -19,8 +19,8 @@ API raises the matching domain exception.
 Design notes
 ------------
 The gate covers the registration window (``registration_calendar``),
-prerequisites and co-requisites, module capacity, and — where a module runs in
-sections — the chosen section's capacity and timetable fit.
+prerequisites and co-requisites, module exclusions, module capacity, and — where a
+module runs in sections — the chosen section's capacity and timetable fit.
 
 * **Fail closed on a rule, open on an outage.** A missing prerequisite is a
   block; an unreadable ``course_prerequisites`` table is not — a schema
@@ -63,6 +63,7 @@ logger = logging.getLogger(__name__)
 # Block kinds, so callers can branch without matching on message text.
 BLOCK_PREREQUISITE = "prerequisite"
 BLOCK_COREQUISITE = "corequisite"
+BLOCK_EXCLUSION = "exclusion"          # an overlapping module was taken
 BLOCK_CAPACITY = "capacity"
 BLOCK_WINDOW = "window"              # registration is not open at this date
 BLOCK_SECTION_REQUIRED = "section_required"   # the module runs in sections
@@ -147,8 +148,10 @@ def ensure_section_column(conn=None) -> bool:
             conn = get_connection()
         cols = {r[1] for r in conn.execute("PRAGMA table_info(student_modules)")}
         if "section_id" not in cols:
+            busy = conn.in_transaction
             conn.execute("ALTER TABLE student_modules ADD COLUMN section_id INTEGER")
-            conn.commit()
+            if not busy:       # never commit a caller's open transaction
+                conn.commit()
         return True
     except Exception as exc:
         logger.warning("could not ensure student_modules.section_id: %s", exc)
@@ -320,6 +323,35 @@ def missing_requisites(conn, student_id: str | int, module_code: str) -> tuple[l
         elif code not in passed:
             missing_pre.append(entry)
     return missing_pre, missing_co
+
+
+def exclusion_conflicts(conn, student_id: str | int, module_code: str) -> list[str]:
+    """Modules the student has taken or is taking that exclude *module_code*.
+
+    ``module_exclusions`` (Module Management) is symmetric: a rule either way
+    round blocks. A withdrawn enrolment does not count; a recorded final
+    grade does, pass or fail — the content was studied.
+    """
+    try:
+        others = {r[0] for r in conn.execute(
+            "SELECT CASE WHEN module_code = ? THEN excluded_module_code "
+            "ELSE module_code END FROM module_exclusions "
+            "WHERE ? IN (module_code, excluded_module_code)",
+            (module_code, module_code)).fetchall()}
+    except sqlite3.OperationalError:
+        return []
+    if not others:
+        return []
+    taken = {r[0] for r in conn.execute(
+        "SELECT module_code FROM student_modules WHERE student_id = ? "
+        "AND COALESCE(status, '') <> 'Withdrawn'", (str(student_id),)).fetchall()}
+    try:
+        taken |= {r[0] for r in conn.execute(
+            "SELECT module_code FROM module_grades WHERE student_id = ?",
+            (str(student_id),)).fetchall()}
+    except sqlite3.OperationalError:
+        pass
+    return sorted(others & taken)
 
 
 # ---------------------------------------------------------------------------
@@ -498,6 +530,14 @@ def check_enrolment_eligibility(
                 BLOCK_COREQUISITE,
                 f"Missing co-requisite(s) — must be taken concurrently: {names}",
                 {"missing": missing_co},
+            ))
+        excluded = exclusion_conflicts(conn, student_id, module_code)
+        if excluded:
+            result.blocks.append(Block(
+                BLOCK_EXCLUSION,
+                f"{module_code} cannot be taken with {', '.join(excluded)} "
+                "(the modules overlap).",
+                {"conflicts": excluded},
             ))
         if cap is not None and taken >= cap:
             result.blocks.append(Block(

@@ -233,6 +233,22 @@ CREATE TABLE IF NOT EXISTS student_journey (
     -- Named ``learner_id``, not ``student_id``: an apprentice is employed
     -- and the system's own vocabulary says so throughout.
     apprenticeships_learner_id TEXT,
+    -- Alternative Provision: a PRU / AP placement, usually alongside the
+    -- home school (dual registration), so it is a slot of its own.
+    alternative_provision_pk INTEGER,
+    alternative_provision_pupil_id TEXT,
+    -- Special Education (SEND): the SEND service's case, alongside the school.
+    special_education_pk INTEGER,
+    special_education_learner_id TEXT,
+    -- Adult Education: community learning, often alongside an FE course.
+    adult_education_pk INTEGER,
+    adult_education_learner_id TEXT,
+    -- Training Provider: short courses, alongside an apprenticeship or FE.
+    training_provider_pk INTEGER,
+    training_provider_learner_id TEXT,
+    -- Local Authority: the authority's record of the child, alongside the school.
+    local_authority_pk INTEGER,
+    local_authority_child_id TEXT,
     legal_first_name      TEXT    NOT NULL,
     legal_last_name       TEXT    NOT NULL,
     date_of_birth         TEXT    NOT NULL,
@@ -454,10 +470,11 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_staffdir_name
 # They MUST be changed before any production or internet-facing deployment.
 # Consider using environment variables or a secrets manager in production.
 #
-# 26 accounts total:
+# 32 accounts total:
 #   1  Super Admin   — every system as admin (SuperAdmin@123)
-#   7  Admins        — 1 per system
-#                     (admin/admin1/admin2/admin3/admin4/admin5/admin6)
+#  12  Admins        — 1 per system
+#                     (admin/admin1/admin2/admin3/admin4/admin5/admin6/admin7/admin8/admin9/
+#                      admin10/admin11)
 #   4  Staff         — university, college, school, primary
 #                     (staff/staff1/staff2/staff3)
 #   4  Students      — university, college, school, primary
@@ -466,6 +483,11 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_staffdir_name
 #                     (parent/parent1/parent2/parent3)
 #   4  Apprenticeships-specific — tutor1, apprentice1, employer1, assessor1
 #   2  FE College-specific      — lecturer1, learner1
+#   1  SEND-specific            — senco1 (staff)
+#   1  Adult Education-specific — aetutor1 (staff)
+#   1  Alternative Provision    — keyworker1 (staff)
+#   1  Training Provider        — tptrainer1 (staff)
+#   1  Local Authority          — laofficer1 (staff)
 #
 # Nursery seeds an admin only.
 
@@ -484,6 +506,11 @@ _DEFAULT_ACCOUNTS = [
             ("nursery", "admin"),
             ("apprenticeships", "admin"),
             ("fe_college", "admin"),
+            ("special_education", "admin"),
+            ("adult_education", "admin"),
+            ("alternative_provision", "admin"),
+            ("training_provider", "admin"),
+            ("local_authority", "admin"),
         ],
     },
     # ── University accounts ────────────────────────────────────────────────
@@ -646,6 +673,87 @@ _DEFAULT_ACCOUNTS = [
         "display_name": "FE College Learner",
         "email": "student@riverside.ac.uk",
         "systems": [("fe_college", "student")],
+    },
+    # ── Special Education (SEND) accounts ────────────────────────────────
+    # Staff only: the SEND system has no learner or parent screens yet.
+    {
+        "username": "admin7",
+        "password": "admin1234",
+        "display_name": "SEND Administrator",
+        "email": "admin@send.local",
+        "systems": [("special_education", "admin")],
+    },
+    {
+        "username": "senco1",
+        "password": "senco1234",
+        "display_name": "SENCO",
+        "email": "senco@send.local",
+        "systems": [("special_education", "staff")],
+    },
+    # ── Adult Education accounts ─────────────────────────────────────────
+    # Staff only: no learner portal yet. (tutor1 is the apprenticeships tutor.)
+    {
+        "username": "admin8",
+        "password": "admin1234",
+        "display_name": "Adult Education Administrator",
+        "email": "admin@adulted.local",
+        "systems": [("adult_education", "admin")],
+    },
+    {
+        "username": "aetutor1",
+        "password": "aetutor1234",
+        "display_name": "Adult Education Tutor",
+        "email": "tutor@adulted.local",
+        "systems": [("adult_education", "staff")],
+    },
+    # ── Alternative Provision accounts ───────────────────────────────────
+    # Staff only: no pupil or parent screens yet.
+    {
+        "username": "admin9",
+        "password": "admin1234",
+        "display_name": "Alternative Provision Administrator",
+        "email": "admin@ap.local",
+        "systems": [("alternative_provision", "admin")],
+    },
+    {
+        "username": "keyworker1",
+        "password": "keyworker1234",
+        "display_name": "AP Key Worker",
+        "email": "keyworker@ap.local",
+        "systems": [("alternative_provision", "staff")],
+    },
+    # ── Training Provider accounts ───────────────────────────────────────
+    # Staff only: no learner or client portal yet. ``trainer1`` is left free
+    # (apprenticeships uses ``tutor1``); the TP staff account is tptrainer1.
+    {
+        "username": "admin10",
+        "password": "admin1234",
+        "display_name": "Training Provider Administrator",
+        "email": "admin@tp.local",
+        "systems": [("training_provider", "admin")],
+    },
+    {
+        "username": "tptrainer1",
+        "password": "tptrainer1234",
+        "display_name": "TP Trainer",
+        "email": "trainer@tp.local",
+        "systems": [("training_provider", "staff")],
+    },
+    # ── Local Authority Education accounts ───────────────────────────────
+    # Council staff only: no parent or school portal yet.
+    {
+        "username": "admin11",
+        "password": "admin1234",
+        "display_name": "Local Authority Administrator",
+        "email": "admin@la.local",
+        "systems": [("local_authority", "admin")],
+    },
+    {
+        "username": "laofficer1",
+        "password": "laofficer1234",
+        "display_name": "LA Education Officer",
+        "email": "officer@la.local",
+        "systems": [("local_authority", "staff")],
     },
     # ── Parent accounts ─────────────────────────────────────────────────
     {
@@ -865,6 +973,11 @@ def initialise_auth_db(db_path: str | None = None):
         # have?" could only be guessed from names or emails.
         if "journey_id" not in cols:
             conn.execute("ALTER TABLE users ADD COLUMN journey_id TEXT")
+        # Shown instead of "Invalid username or password" when someone signs in
+        # to a deactivated account with its correct password (e.g. "you have
+        # left the school"). See UserAuth.set_deactivation_message.
+        if "deactivation_message" not in cols:
+            conn.execute("ALTER TABLE users ADD COLUMN deactivation_message TEXT")
         conn.execute(
             "CREATE INDEX IF NOT EXISTS idx_users_journey "
             "ON users(journey_id) WHERE journey_id IS NOT NULL"
@@ -905,6 +1018,21 @@ def initialise_auth_db(db_path: str | None = None):
                 ("fe_college_student_id", "TEXT"),
                 ("apprenticeships_pk", "INTEGER"),
                 ("apprenticeships_learner_id", "TEXT"),
+                # Alternative Provision joined the linked platform 2026-11-09.
+                ("alternative_provision_pk", "INTEGER"),
+                ("alternative_provision_pupil_id", "TEXT"),
+                # Special Education (SEND) joined the linked platform 2026-11-09.
+                ("special_education_pk", "INTEGER"),
+                ("special_education_learner_id", "TEXT"),
+                # Adult Education joined the linked platform 2026-11-09.
+                ("adult_education_pk", "INTEGER"),
+                ("adult_education_learner_id", "TEXT"),
+                # Training Provider joined the linked platform 2026-11-09.
+                ("training_provider_pk", "INTEGER"),
+                ("training_provider_learner_id", "TEXT"),
+                # Local Authority joined the linked platform 2026-11-09.
+                ("local_authority_pk", "INTEGER"),
+                ("local_authority_child_id", "TEXT"),
                 # Identity merge tombstone: a merged journey keeps its row
                 # (status 'merged') and points at the survivor.
                 ("merged_into", "TEXT"),
@@ -1042,7 +1170,7 @@ def _bootstrap_admin_from_env(conn) -> bool:
     Reads ``EDU_INITIAL_ADMIN_USER`` and ``EDU_INITIAL_ADMIN_PASSWORD`` (and
     optional ``EDU_INITIAL_ADMIN_EMAIL``) and, if both are present and the
     password meets the minimum strength bar, creates one admin account with
-    access to all five systems. The operator chose this password, so it is
+    access to every system. The operator chose this password, so it is
     *not* flagged must-change. Returns True if an account was created.
     """
     username = os.environ.get("EDU_INITIAL_ADMIN_USER", "").strip()
@@ -1065,7 +1193,13 @@ def _bootstrap_admin_from_env(conn) -> bool:
         ("secondary", "admin"),
         ("primary", "admin"),
         ("nursery", "admin"),
+        ("apprenticeships", "admin"),
         ("fe_college", "admin"),
+        ("special_education", "admin"),
+        ("adult_education", "admin"),
+        ("alternative_provision", "admin"),
+        ("training_provider", "admin"),
+        ("local_authority", "admin"),
     ]
     _create_default_user(
         conn,

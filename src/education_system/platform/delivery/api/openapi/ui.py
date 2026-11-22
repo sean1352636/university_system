@@ -99,15 +99,18 @@ def build_openapi_spec(app=None) -> dict:
                 },
             }
         if methods:
-            paths[openapi_path] = methods
+            # GET and POST on one URL are often separate Flask rules, so merge
+            # them. Assigning here kept only the last rule's methods.
+            paths.setdefault(openapi_path, {}).update(methods)
 
     return {
         "openapi": "3.0.3",
         "info": {
             "title": "Education System API",
             "description": (
-                "Unified API serving University, College, Secondary School, "
-                "and Primary School management systems."
+                "Unified API serving the Nursery, Primary School, Secondary "
+                "School, Sixth Form College, FE College, Apprenticeships and "
+                "University management systems."
             ),
             "version": "1.0.0",
         },

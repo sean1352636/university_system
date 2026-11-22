@@ -3,13 +3,14 @@
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 
 from education_system.systems.university.plugins.campus_commerce.interfaces.gui.charity_shop_gui._imports import (
-    messagebox, datetime, json, sqlite3,
+    messagebox, datetime,
     FINANCE_INTEGRATION_AVAILABLE, ACTIVITY_LOGGER_AVAILABLE, EMAIL_SERVICE_AVAILABLE,
-    DEFAULT_DB_PATH,
     get_current_user, get_student_info,
-    record_revenue_to_finance, process_student_finance_account_payment,
     send_email, log_activity, logger,
     load_email_template, render_email_template,
+)
+from education_system.systems.university.plugins.campus_commerce.domain.charity_shop.services.charity_shop_service import (
+    checkout_basket as checkout_basket_service,
 )
 
 
@@ -104,54 +105,30 @@ class BasketOpsMixin:
         customer_email = checkout_data.get('customer_email')
         total_amount = checkout_data['total']
 
-        # Generate transaction reference
-        transaction_ref = f"CS-BASKET-{datetime.now().strftime('%Y%m%d%H%M%S')}"
-
-        # Process payment based on method
-        if payment_method == "Finance Account":
-            if FINANCE_INTEGRATION_AVAILABLE and student_id:
-                current_user = get_current_user()
-                processed_by = current_user.get('username', 'System') if current_user else "System"
-                result = process_student_finance_account_payment(
-                    student_id=student_id,
-                    amount=total_amount,
-                    description=f"Charity Shop: {len(self.basket)} items",
-                    transaction_source="Charity Shop",
-                    transaction_ref=transaction_ref,
-                    processed_by=processed_by
-                )
-                if not result.get('success', False):
-                    messagebox.showerror(_t('gui.shell.services.charity_shop_gui.basket_ops.dialogs.payment_failed', default="Payment Failed"), f"Finance Account payment failed: {result.get('message', '')}")
-                    return
+        # The domain service saves the transaction, updates stock and posts to
+        # Finance (Finance Account debit, or revenue for cash/card) exactly once.
+        current_user = get_current_user()
+        processed_by = current_user.get('username', 'System') if current_user else "System"
+        sale = checkout_basket_service(
+            items=self.basket,
+            payment_method=payment_method,
+            student_id=student_id,
+            processed_by=processed_by,
+        )
+        if not sale.get('success'):
+            if payment_method == "Finance Account":
+                messagebox.showerror(_t('gui.shell.services.charity_shop_gui.basket_ops.dialogs.payment_failed', default="Payment Failed"), f"Finance Account payment failed: {sale.get('message', '')}")
             else:
-                messagebox.showerror(_t('gui.shell.services.charity_shop_gui.basket_ops.dialogs.error', default="Error"), _t('gui.shell.services.charity_shop_gui.basket_ops.dialogs.finance_integration_not_available_for_student_account_payment', default="Finance integration not available for student account payment"))
-                return
+                messagebox.showerror(_t('gui.shell.services.charity_shop_gui.basket_ops.dialogs.error', default="Error"), sale.get('message', 'Checkout failed'))
+            return
+        transaction_ref = sale['transaction_ref']
 
-        # Save transaction to database
-        self._save_transaction(transaction_ref, student_id, total_amount, payment_method, self.basket)
-
-        # Process each item in basket
-        items_sold = []
-        for basket_item in self.basket:
-            self.db.mark_as_sold(basket_item['id'], basket_item['quantity'])
-            items_sold.append({
-                'name': basket_item['name'],
-                'quantity': basket_item['quantity'],
-                'price': basket_item['price'],
-                'subtotal': basket_item['price'] * basket_item['quantity']
-            })
-
-        # Record revenue to central finance system
-        if FINANCE_INTEGRATION_AVAILABLE:
-            record_revenue_to_finance(
-                student_id=student_id or "WALK-IN",
-                amount=total_amount,
-                revenue_category="Charity Shop Sale",
-                transaction_source="Charity Shop",
-                transaction_ref=transaction_ref,
-                payment_method=payment_method,
-                notes=f"Basket checkout: {len(items_sold)} items"
-            )
+        items_sold = [{
+            'name': basket_item['name'],
+            'quantity': basket_item['quantity'],
+            'price': basket_item['price'],
+            'subtotal': basket_item['price'] * basket_item['quantity']
+        } for basket_item in self.basket]
 
         # Send email receipt if email provided
         receipt_sent = False
@@ -240,34 +217,3 @@ class BasketOpsMixin:
         except Exception as e:
             logger.error(f"Error sending basket receipt: {e}")
             return False
-
-    def _save_transaction(self, transaction_ref, student_id, total_amount, payment_method, basket_items):
-        """Save transaction to database for refund tracking"""
-        try:
-            conn = sqlite3.connect(str(DEFAULT_DB_PATH))
-            cursor = conn.cursor()
-
-            # Charity shop transactions now use unified 'transactions' table with source_type='charity_shop'
-
-            # Convert basket items to JSON string
-            items_json = json.dumps([{
-                'id': item['id'],
-                'name': item['name'],
-                'quantity': item['quantity'],
-                'price': item['price']
-            } for item in basket_items])
-
-            # Insert transaction
-            cursor.execute('''
-                INSERT INTO transactions
-                (source_type, reference_number, customer_id, amount, payment_method, status, notes, created_at)
-                VALUES ('charity_shop', ?, ?, ?, ?, 'completed', ?, ?)
-            ''', (transaction_ref, student_id, total_amount, payment_method, items_json,
-                  datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
-
-            conn.commit()
-            conn.close()
-            logger.info(f"Transaction {transaction_ref} saved to database")
-
-        except Exception as e:
-            logger.error(f"Error saving transaction: {e}")

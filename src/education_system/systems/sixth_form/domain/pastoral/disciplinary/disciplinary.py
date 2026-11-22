@@ -6,6 +6,14 @@ permanent exclusions, behaviour contracts and parent meetings.
 Each case has a workflow Reported → Under Investigation → Sanction
 Issued → Sanction Served → Closed (with an optional Appealed
 branch). FK cascade on students.
+
+The appeal branch has formal stages (``disciplinary_hearings``): an
+appeal hearing, the governor panel that must consider suspensions and
+exclusions, and an independent review panel — each with panel members,
+hearing date, outcome and the date the decision letter went out.
+``disciplinary_la_notifications`` records every statutory notification
+of a suspension / exclusion (local authority, virtual school head for
+a looked-after child, governing board, parents).
 """
 
 from __future__ import annotations
@@ -17,6 +25,8 @@ from contextlib import contextmanager
 from dataclasses import dataclass, field
 from typing import Any, Iterator
 from education_system import paths as _paths
+from education_system.systems.sixth_form.infrastructure import soft_delete as _soft
+from education_system.systems.sixth_form.domain.pastoral import _records
 
 logger = logging.getLogger(__name__)
 
@@ -94,6 +104,10 @@ class DisciplinaryCase:
     notes: str | None
     created_on: str
     updated_on: str
+    #: Archive (soft delete) — set by delete_*, cleared by restore_*.
+    archived_at: str | None = None
+    archived_by: str | None = None
+    archive_reason: str | None = None
 
     @property
     def is_open(self) -> bool:
@@ -183,6 +197,8 @@ def init_db() -> None:
                   ON DELETE CASCADE
             )
         """)
+        conn.executescript(_HEARING_SCHEMA)
+        _soft.ensure_columns(conn, "disciplinary_cases")
 
 
 # ── Validation ─────────────────────────────────────────────────────
@@ -325,6 +341,9 @@ def _row(r: sqlite3.Row) -> DisciplinaryCase:
         notes=r["notes"],
         created_on=r["created_on"],
         updated_on=r["updated_on"],
+        archived_at=r["archived_at"] if "archived_at" in r.keys() else None,
+        archived_by=r["archived_by"] if "archived_by" in r.keys() else None,
+        archive_reason=r["archive_reason"] if "archive_reason" in r.keys() else None,
     )
 
 
@@ -407,13 +426,36 @@ def update_case(case_id: int,
     return get_case(case_id)
 
 
-def delete_case(case_id: int) -> bool:
+def delete_case(case_id: int, *, reason: str | None = None) -> bool:
+    """Archive the disciplinary case (a soft delete: UK retention rules expect it to
+    be kept). It drops out of :func:`list_cases` unless
+    ``include_archived=True``, keeps who/when/why, and can be brought
+    back with :func:`restore_case`. Nothing is
+    hard-deleted. Returns False if unknown or already archived."""
     init_db()
     with _connect() as conn:
-        cur = conn.execute(
-            "DELETE FROM disciplinary_cases WHERE case_id=?",
-            (case_id,))
-        return cur.rowcount > 0
+        ok = _soft.archive(conn, "disciplinary_cases", "case_id", case_id,
+                           by=_archive_actor(), reason=reason)
+    return ok
+
+
+def restore_case(case_id: int) -> bool:
+    """Undo :func:`delete_case` (archive)."""
+    init_db()
+    with _connect() as conn:
+        ok = _soft.restore(conn, "disciplinary_cases", "case_id", case_id)
+    return ok
+
+
+def _archive_actor() -> str | None:
+    """Username recorded on archive (the signed-in principal)."""
+    try:
+        from education_system.systems.sixth_form.domain.governance.user_management import (
+            access,
+        )
+        return access.current().username or None
+    except Exception:
+        return None
 
 
 def get_case(case_id: int) -> DisciplinaryCase | None:
@@ -426,6 +468,7 @@ def get_case(case_id: int) -> DisciplinaryCase | None:
 
 
 def list_cases(*,
+                  include_archived: bool = False,
                   student_id: str | None = None,
                   case_type: str | None = None,
                   status: str | None = None,
@@ -441,6 +484,8 @@ def list_cases(*,
                   ) -> list[DisciplinaryCase]:
     init_db()
     sql = "SELECT * FROM disciplinary_cases WHERE 1=1"
+    if not include_archived:
+        sql += " AND archived_at IS NULL"
     params: list[Any] = []
     if student_id:
         sql += " AND student_id=?"
@@ -677,4 +722,455 @@ __all__ = [
     "submit_appeal", "resolve_appeal", "close_case",
     "set_status",
     "summary",
+    # Appeal stages + LA notifications
+    "HEARING_STAGES", "HEARING_OUTCOMES", "EXCLUSION_CASE_TYPES",
+    "NOTIFICATION_TYPES", "NOTIFIED_PARTIES", "NOTIFICATION_METHODS",
+    "Hearing", "LANotification", "HEARING_SPEC", "NOTIFICATION_SPEC",
+    "NotificationGap", "add_school_days",
+    "schedule_hearing", "get_hearing", "list_hearings", "update_hearing",
+    "record_hearing_outcome", "mark_letter_sent", "delete_hearing",
+    "governor_panel_deadline", "record_notification", "list_notifications",
+    "update_notification", "delete_notification",
+    "notifications_outstanding",
 ]
+
+
+# ══ Appeal hearings, governor panel, LA notifications ═════════════
+
+HEARING_STAGES: tuple[str, ...] = (
+    "Appeal Hearing",
+    "Governor Panel",
+    "Independent Review Panel",
+)
+HEARING_OUTCOMES: tuple[str, ...] = (
+    "Pending",
+    "Sanction upheld",
+    "Sanction varied",
+    "Sanction overturned",
+    "Reinstated",
+    "Reconsider (IRP direction)",
+    "Withdrawn",
+)
+#: Case types that need the governor panel and LA notification.
+EXCLUSION_CASE_TYPES: tuple[str, ...] = (
+    "Fixed-Term Suspension", "Permanent Exclusion",
+)
+NOTIFICATION_TYPES: tuple[str, ...] = (
+    "Suspension", "Permanent Exclusion", "Governor Decision",
+    "Reinstatement", "Exclusion Withdrawn", "IRP Outcome",
+)
+NOTIFIED_PARTIES: tuple[str, ...] = (
+    "Local Authority", "Home Local Authority", "Virtual School Head",
+    "Social Worker", "Parent / Carer", "Governing Board",
+)
+NOTIFICATION_METHODS: tuple[str, ...] = (
+    "E-mail", "Letter", "LA portal", "Phone", "In person",
+)
+
+#: Hearing outcome -> case status (others leave the status alone).
+_OUTCOME_STATUS: dict[str, str] = {
+    "Sanction upheld": "Appeal Upheld",
+    "Sanction overturned": "Appeal Overturned",
+    "Reinstated": "Appeal Overturned",
+}
+
+_HEARING_SCHEMA = """
+CREATE TABLE IF NOT EXISTS disciplinary_hearings (
+    hearing_id        INTEGER PRIMARY KEY AUTOINCREMENT,
+    case_id           INTEGER NOT NULL,
+    student_id        TEXT NOT NULL,
+    stage             TEXT NOT NULL,
+    requested_on      TEXT,
+    hearing_date      TEXT,
+    panel_members     TEXT,
+    chair             TEXT,
+    clerk             TEXT,
+    parent_attended   INTEGER NOT NULL DEFAULT 0,
+    student_attended  INTEGER NOT NULL DEFAULT 0,
+    representations   TEXT,
+    outcome           TEXT NOT NULL DEFAULT 'Pending',
+    outcome_reasons   TEXT,
+    decision_date     TEXT,
+    letter_sent_on    TEXT,
+    letter_sent_by    TEXT,
+    notes             TEXT,
+    created_at        TEXT DEFAULT (datetime('now')),
+    updated_at        TEXT DEFAULT (datetime('now')),
+    FOREIGN KEY (case_id) REFERENCES disciplinary_cases(case_id) ON DELETE CASCADE,
+    FOREIGN KEY (student_id) REFERENCES students(student_id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS disciplinary_la_notifications (
+    notification_id    INTEGER PRIMARY KEY AUTOINCREMENT,
+    case_id            INTEGER NOT NULL,
+    student_id         TEXT NOT NULL,
+    notification_type  TEXT NOT NULL,
+    notified_party     TEXT NOT NULL,
+    party_name         TEXT,
+    notified_on        TEXT NOT NULL,
+    method             TEXT,
+    reference          TEXT,
+    days_excluded      INTEGER,
+    reason             TEXT,
+    notified_by        TEXT,
+    notes              TEXT,
+    created_at         TEXT DEFAULT (datetime('now')),
+    updated_at         TEXT DEFAULT (datetime('now')),
+    FOREIGN KEY (case_id) REFERENCES disciplinary_cases(case_id) ON DELETE CASCADE,
+    FOREIGN KEY (student_id) REFERENCES students(student_id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_dh_case  ON disciplinary_hearings(case_id);
+CREATE INDEX IF NOT EXISTS idx_dln_case ON disciplinary_la_notifications(case_id);
+"""
+
+
+@dataclass
+class Hearing:
+    hearing_id: int
+    case_id: int
+    student_id: str
+    stage: str
+    requested_on: str | None
+    hearing_date: str | None
+    panel_members: str | None
+    chair: str | None
+    clerk: str | None
+    parent_attended: bool
+    student_attended: bool
+    representations: str | None
+    outcome: str
+    outcome_reasons: str | None
+    decision_date: str | None
+    letter_sent_on: str | None
+    letter_sent_by: str | None
+    notes: str | None
+    created_at: str | None
+    updated_at: str | None
+
+    @property
+    def letter_outstanding(self) -> bool:
+        return self.outcome != "Pending" and not self.letter_sent_on
+
+
+@dataclass
+class LANotification:
+    notification_id: int
+    case_id: int
+    student_id: str
+    notification_type: str
+    notified_party: str
+    party_name: str | None
+    notified_on: str
+    method: str | None
+    reference: str | None
+    days_excluded: int | None
+    reason: str | None
+    notified_by: str | None
+    notes: str | None
+    created_at: str | None
+    updated_at: str | None
+
+
+_C = _records.Col
+
+HEARING_SPEC = _records.TableSpec(
+    table="disciplinary_hearings", id_col="hearing_id", row_type=Hearing,
+    label="Hearing", order_by="hearing_date IS NULL, hearing_date, hearing_id",
+    cols=(
+        _C("case_id", "Case #", "int", required=True, fixed=True),
+        _C("student_id", "Student", "student", fixed=True, hidden=True),
+        _C("stage", "Stage", "choice", required=True,
+           choices=HEARING_STAGES),
+        _C("requested_on", "Requested on", "date"),
+        _C("hearing_date", "Hearing date", "date"),
+        _C("panel_members", "Panel members", "multiline"),
+        _C("chair", "Chair"),
+        _C("clerk", "Clerk", listed=False),
+        _C("parent_attended", "Parent attended", "bool", listed=False),
+        _C("student_attended", "Student attended", "bool", listed=False),
+        _C("representations", "Representations", "multiline",
+           listed=False),
+        _C("outcome", "Outcome", "choice", choices=HEARING_OUTCOMES,
+           default="Pending"),
+        _C("outcome_reasons", "Reasons", "multiline", listed=False),
+        _C("decision_date", "Decision date", "date"),
+        _C("letter_sent_on", "Letter sent", "date"),
+        _C("letter_sent_by", "Letter sent by", listed=False),
+        _C("notes", "Notes", "multiline", listed=False),
+    ))
+
+NOTIFICATION_SPEC = _records.TableSpec(
+    table="disciplinary_la_notifications", id_col="notification_id",
+    row_type=LANotification, label="Statutory notification",
+    order_by="notified_on DESC, notification_id DESC",
+    cols=(
+        _C("case_id", "Case #", "int", required=True, fixed=True),
+        _C("student_id", "Student", "student", fixed=True, hidden=True),
+        _C("notification_type", "Type", "choice", required=True,
+           choices=NOTIFICATION_TYPES),
+        _C("notified_party", "Notified", "choice", required=True,
+           choices=NOTIFIED_PARTIES, default="Local Authority"),
+        _C("party_name", "Name / authority"),
+        _C("notified_on", "Notified on", "date", required=True,
+           default=_records.today),
+        _C("method", "Method", "choice", choices=NOTIFICATION_METHODS),
+        _C("reference", "Reference"),
+        _C("days_excluded", "School days excluded", "int", min_value=0),
+        _C("reason", "Reason given", "multiline", listed=False),
+        _C("notified_by", "Notified by", listed=False),
+        _C("notes", "Notes", "multiline", listed=False),
+    ))
+
+
+def _case_or_error(case_id: int) -> DisciplinaryCase:
+    c = get_case(case_id)
+    if c is None:
+        raise ValidationError(f"No disciplinary case with id {case_id}")
+    return c
+
+
+def add_school_days(start: str, days: int) -> str:
+    """*start* plus *days* school days (Mon-Fri; holidays not known)."""
+    d = _dt.date.fromisoformat(start)
+    left = days
+    while left > 0:
+        d += _dt.timedelta(days=1)
+        if d.weekday() < 5:
+            left -= 1
+    return d.isoformat()
+
+
+def governor_panel_deadline(case: DisciplinaryCase) -> str | None:
+    """Governors must consider a permanent exclusion (or a suspension
+    taking the student over 15 school days in a term) within 15 school
+    days of being notified. Counted from the sanction start."""
+    if case.case_type not in EXCLUSION_CASE_TYPES:
+        return None
+    if case.case_type == "Fixed-Term Suspension" \
+            and (case.sanction_days or 0) <= 5:
+        return None
+    start = case.sanction_start or case.reported_on
+    return add_school_days(start, 15)
+
+
+def _hearing_rules(p: dict[str, Any], case: DisciplinaryCase) -> None:
+    if p["stage"] in ("Governor Panel", "Independent Review Panel") \
+            and case.case_type not in EXCLUSION_CASE_TYPES:
+        raise ValidationError(
+            f"A {p['stage']} is only for suspensions and exclusions "
+            f"(case #{case.case_id} is a {case.case_type})")
+    if p["stage"] == "Independent Review Panel" \
+            and case.case_type != "Permanent Exclusion":
+        raise ValidationError(
+            "An independent review panel only follows a permanent "
+            "exclusion")
+    if p["hearing_date"] and p["requested_on"] \
+            and p["hearing_date"] < p["requested_on"]:
+        raise ValidationError("Hearing date cannot be before the request")
+    if p["outcome"] != "Pending":
+        if not p["hearing_date"]:
+            raise ValidationError("Record the hearing date with the outcome")
+        if not (p["panel_members"] or "").strip():
+            raise ValidationError("Record the panel members with the outcome")
+        if not p["decision_date"]:
+            p["decision_date"] = p["hearing_date"]
+    if p["letter_sent_on"] and p["outcome"] == "Pending":
+        raise ValidationError("A decision letter needs an outcome first")
+
+
+def schedule_hearing(data: dict[str, Any]) -> Hearing:
+    """Open an appeal / governor panel / IRP stage on a case. The case
+    moves to 'Appealed' and appeal_submitted_on is filled if blank."""
+    init_db()
+    p = _records.validate(HEARING_SPEC, data, error=ValidationError)
+    case = _case_or_error(p["case_id"])
+    p["student_id"] = case.student_id
+    _hearing_rules(p, case)
+    with _connect() as conn:
+        new_id = _records.insert(conn, HEARING_SPEC, p)
+    if case.status != "Appealed" and p["outcome"] == "Pending":
+        submit_appeal(case.case_id, submitted_on=(
+            case.appeal_submitted_on or p["requested_on"]
+            or _records.today()))
+    logger.info("Scheduled %s #%d for case #%d", p["stage"], new_id,
+                case.case_id)
+    if p["outcome"] != "Pending":
+        _apply_outcome(case.case_id, p)
+    return get_hearing(new_id)
+
+
+def get_hearing(hearing_id: int) -> Hearing | None:
+    init_db()
+    with _connect() as conn:
+        return _records.fetch(conn, HEARING_SPEC, hearing_id)
+
+
+def list_hearings(*, case_id: int | None = None,
+                  stage: str | None = None,
+                  pending_only: bool = False,
+                  letters_outstanding: bool = False) -> list[Hearing]:
+    init_db()
+    where = []
+    if pending_only:
+        where.append("outcome = 'Pending'")
+    if letters_outstanding:
+        where.append("outcome <> 'Pending' AND letter_sent_on IS NULL")
+    with _connect() as conn:
+        return _records.select(conn, HEARING_SPEC, equals={
+            "case_id": case_id, "stage": stage}, where=where)
+
+
+def update_hearing(hearing_id: int, data: dict[str, Any]) -> Hearing:
+    init_db()
+    existing = get_hearing(hearing_id)
+    if existing is None:
+        raise ValidationError(f"No hearing #{hearing_id}")
+    p = _records.validate(HEARING_SPEC, data, error=ValidationError,
+                          existing=existing)
+    case = _case_or_error(existing.case_id)
+    _hearing_rules(p, case)
+    with _connect() as conn:
+        _records.update(conn, HEARING_SPEC, hearing_id, p)
+    if p["outcome"] != existing.outcome and p["outcome"] != "Pending":
+        _apply_outcome(case.case_id, p)
+    return get_hearing(hearing_id)
+
+
+def _apply_outcome(case_id: int, p: dict[str, Any]) -> None:
+    case = _case_or_error(case_id)
+    data = _to_dict(case)
+    line = (f"{p['stage']} {p['decision_date'] or p['hearing_date']}: "
+            f"{p['outcome']}"
+            + (f" — {p['outcome_reasons']}" if p.get("outcome_reasons")
+               else ""))
+    data["appeal_outcome"] = (f"{case.appeal_outcome}\n{line}"
+                              if case.appeal_outcome else line)
+    new_status = _OUTCOME_STATUS.get(p["outcome"])
+    if new_status:
+        data["status"] = new_status
+    update_case(case_id, data)
+
+
+def record_hearing_outcome(hearing_id: int, *, outcome: str,
+                           panel_members: str | None = None,
+                           hearing_date: str | None = None,
+                           reasons: str | None = None,
+                           decision_date: str | None = None) -> Hearing:
+    if outcome not in HEARING_OUTCOMES or outcome == "Pending":
+        raise ValidationError(
+            "Outcome must be one of: "
+            + ", ".join(o for o in HEARING_OUTCOMES if o != "Pending"))
+    payload: dict[str, Any] = {"outcome": outcome}
+    for k, v in (("panel_members", panel_members),
+                 ("hearing_date", hearing_date),
+                 ("outcome_reasons", reasons),
+                 ("decision_date", decision_date)):
+        if v not in (None, ""):
+            payload[k] = v
+    return update_hearing(hearing_id, payload)
+
+
+def mark_letter_sent(hearing_id: int, *, sent_on: str | None = None,
+                     sent_by: str | None = None) -> Hearing:
+    return update_hearing(hearing_id, {
+        "letter_sent_on": sent_on or _records.today(),
+        "letter_sent_by": sent_by or _records.current_username()})
+
+
+def delete_hearing(hearing_id: int) -> bool:
+    init_db()
+    with _connect() as conn:
+        return _records.delete(conn, HEARING_SPEC, hearing_id)
+
+
+# ── Statutory notifications ───────────────────────────────────────
+
+def record_notification(data: dict[str, Any]) -> LANotification:
+    init_db()
+    p = _records.validate(NOTIFICATION_SPEC, data, error=ValidationError)
+    case = _case_or_error(p["case_id"])
+    p["student_id"] = case.student_id
+    if p["days_excluded"] is None and case.sanction_days is not None:
+        p["days_excluded"] = case.sanction_days
+    p["notified_by"] = p["notified_by"] or _records.current_username()
+    with _connect() as conn:
+        new_id = _records.insert(conn, NOTIFICATION_SPEC, p)
+        out = _records.fetch(conn, NOTIFICATION_SPEC, new_id)
+    logger.info("Recorded %s notification to %s for case #%d",
+                p["notification_type"], p["notified_party"], case.case_id)
+    return out
+
+
+def list_notifications(*, case_id: int | None = None,
+                       student_id: str | None = None
+                       ) -> list[LANotification]:
+    init_db()
+    with _connect() as conn:
+        return _records.select(conn, NOTIFICATION_SPEC, equals={
+            "case_id": case_id, "student_id": student_id})
+
+
+def update_notification(notification_id: int,
+                        data: dict[str, Any]) -> LANotification:
+    init_db()
+    with _connect() as conn:
+        existing = _records.fetch(conn, NOTIFICATION_SPEC, notification_id)
+        if existing is None:
+            raise ValidationError(f"No notification #{notification_id}")
+        p = _records.validate(NOTIFICATION_SPEC, data, error=ValidationError,
+                              existing=existing)
+        _records.update(conn, NOTIFICATION_SPEC, notification_id, p)
+        return _records.fetch(conn, NOTIFICATION_SPEC, notification_id)
+
+
+def delete_notification(notification_id: int) -> bool:
+    init_db()
+    with _connect() as conn:
+        return _records.delete(conn, NOTIFICATION_SPEC, notification_id)
+
+
+@dataclass
+class NotificationGap:
+    case: DisciplinaryCase
+    missing: list[str]
+    governor_deadline: str | None
+
+
+def notifications_outstanding() -> list[NotificationGap]:
+    """Suspension / exclusion cases with a sanction issued that are
+    missing a statutory notification: the local authority always,
+    parents always, the virtual school head when the student has an
+    active care record (looked-after / previously looked-after)."""
+    init_db()
+    today = _records.today()
+    with _connect() as conn:
+        lac: set[str] = set()
+        if _records.table_exists(conn, "vg_care_records"):
+            lac = {r[0] for r in conn.execute(
+                "SELECT student_id FROM vg_care_records "
+                "WHERE care_status IN ('Looked-After Child', "
+                "'Previously Looked-After') "
+                "AND (end_date IS NULL OR end_date >= ?)", (today,))}
+    out: list[NotificationGap] = []
+    for c in list_cases():
+        if c.case_type not in EXCLUSION_CASE_TYPES:
+            continue
+        if c.status in ("Reported", "Under Investigation"):
+            continue
+        sent = {n.notified_party for n in list_notifications(
+            case_id=c.case_id)}
+        missing = []
+        if not sent & {"Local Authority", "Home Local Authority"}:
+            missing.append("Local Authority")
+        if "Parent / Carer" not in sent and not c.parent_informed:
+            missing.append("Parent / Carer")
+        if c.student_id in lac and "Virtual School Head" not in sent:
+            missing.append("Virtual School Head")
+        deadline = governor_panel_deadline(c)
+        if deadline and "Governing Board" not in sent and not list_hearings(
+                case_id=c.case_id, stage="Governor Panel"):
+            missing.append("Governing Board")
+        if missing:
+            out.append(NotificationGap(c, missing, deadline))
+    return out

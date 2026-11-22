@@ -4,10 +4,10 @@ This document covers the SQLite database layer for the Sixth Form College Manage
 
 Source files:
 
-- `infrastructure/database/db.py` -- connection management and pooling
-- `infrastructure/database/schema.py` -- table definitions and initialization
-- `infrastructure/database/migrations.py` -- schema versioning framework
-- `infrastructure/database/constants.py` -- configuration constants
+- `src/education_system/paths.py` -- database location
+- `src/education_system/systems/sixth_form/infrastructure/database.py` -- `sqlite3` names for the domain layer
+- `src/education_system/systems/sixth_form/domain/**` and `domains/**` -- each module's own schema and connection helper
+- `src/education_system/platform/identity/auth/schema.py` -- the central authentication database
 
 ---
 
@@ -16,260 +16,110 @@ Source files:
 The system uses a single SQLite database file located at:
 
 ```
-college_system/data/db_files/sixthform.db
+var/data/sixth_form/sixthform.db
 ```
 
-Path resolution is handled by `core/paths.py`, which derives all paths from the project root. The `ensure_directories()` function creates the required directory tree on first run.
+Path resolution is handled by `src/education_system/paths.py` (`SIXTH_FORM_STUDENTS_DB`, with per-module aliases such as `SIXTH_FORM_ENRICHMENTS_DB`). The `ensure_sixth_form_directories()` function creates the required directories.
 
-The database path can be overridden at runtime (primarily for testing) via `set_db_path(path)`.
+The data directory can be overridden with the `EDU_SIXTHFORM_DATA_DIR` environment variable. Tests redirect a module's `DB_PATH` attribute instead.
+
+Users, sessions, MFA and roles are not stored here. They live in the central `var/data/platform/db_files/auth.db`, shared by all seven systems.
 
 
 ## Connection Management
 
-### The `connect()` Function
+### The `_connect()` Helper
 
-All database access flows through `connect()` in `db.py`. Each call:
+There is no shared connection function. Each domain module has its own `_connect()`, and `infrastructure/database.py` re-exports the `sqlite3` names (`connect`, `Row`, `IntegrityError`, ...) for domain code, which may not import the driver itself. Each call:
 
-1. Resolves the database path (override or default).
-2. Opens a new `sqlite3.Connection` with a 30-second timeout.
+1. Ensures the data directory exists.
+2. Opens a new connection to the module's `DB_PATH`.
 3. Sets `row_factory = sqlite3.Row` so query results are accessible by column name.
-4. Applies the configured PRAGMAs (see below).
-5. Returns the connection or raises `DatabaseError` on failure.
+4. Turns on foreign keys.
+5. Returns the connection.
 
 ```python
-from education_system.college_system.infrastructure.database.db import connect
+from education_system import paths
+from education_system.systems.sixth_form.infrastructure import database as _sql
 
-conn = connect()
-row = conn.execute("SELECT * FROM students WHERE id = ?", (1,)).fetchone()
-print(row["first_name"])
-conn.close()
+DB_PATH = paths.SIXTH_FORM_STUDENTS_DB
+
+
+def _connect() -> _sql.Connection:
+    paths.ensure_sixth_form_directories()
+    conn = _sql.connect(str(DB_PATH))
+    conn.row_factory = _sql.Row
+    conn.execute("PRAGMA foreign_keys=ON")
+    return conn
 ```
-
-`get_connection()` is a convenience alias for `connect()`.
 
 ### PRAGMAs
 
-Every connection applies the following SQLite PRAGMAs (defined in `constants.py`):
+Connections apply the following SQLite PRAGMA. Individual modules may set others.
 
 | PRAGMA | Value | Purpose |
 |---|---|---|
-| `journal_mode` | `WAL` | Write-Ahead Logging for concurrent read/write access |
 | `foreign_keys` | `ON` | Enforce foreign key constraints |
-| `busy_timeout` | `5000` | Wait up to 5 seconds when the database is locked |
-| `cache_size` | `-8000` | 8 MB page cache (negative = kibibytes) |
-| `synchronous` | `NORMAL` | Balance between safety and write performance |
 
 
-### Transaction Context Manager
+### Transactions
 
-The `transaction()` context manager provides automatic commit/rollback semantics:
+Using a connection as a context manager provides automatic commit/rollback semantics:
 
 ```python
-from education_system.college_system.infrastructure.database.db import transaction
-
-with transaction() as conn:
+with _connect() as conn:
     conn.execute("INSERT INTO students (...) VALUES (...)", params)
-    conn.execute("INSERT INTO enrollments (...) VALUES (...)", params)
+    conn.execute("INSERT INTO enrolments (...) VALUES (...)", params)
 # Commits automatically. Rolls back on any exception.
 ```
 
-If a connection is passed in, `transaction()` uses it and leaves it open. If no connection is passed, it creates and closes its own.
-
-
-### Connection Pool
-
-`ConnectionPool` provides a thread-safe pool of reusable connections. Default pool size is configured in `constants.py`:
-
-- **Minimum connections:** 1 (pre-created on init)
-- **Maximum connections:** 5
-- **Connection timeout:** 30 seconds
-
-The pool expands on demand up to `POOL_MAX_SIZE`. If the pool is exhausted, `get()` blocks until a connection is returned or the timeout expires. When a connection is returned via `put()` and the pool is full, the connection is closed instead.
-
-```python
-pool = ConnectionPool()
-conn = pool.get()
-try:
-    cursor = conn.execute("SELECT ...")
-finally:
-    pool.put(conn)
-
-# Or using the context manager:
-with pool.connection() as conn:
-    conn.execute("SELECT ...")
-```
-
-
-### DatabaseManager
-
-`DatabaseManager` is a high-level class that combines the connection pool with convenience methods:
-
-| Method | Description |
-|---|---|
-| `execute(sql, params)` | Run a query, return all rows. Auto-commits. |
-| `execute_one(sql, params)` | Run a query, return the first row or `None`. |
-| `execute_write(sql, params)` | Run INSERT/UPDATE/DELETE, return `lastrowid` or `rowcount`. |
-| `transaction()` | Context manager yielding a connection with commit/rollback. |
-| `close()` | Shut down the pool and close all connections. |
+The context manager does not close the connection.
 
 
 ---
 
 ## Schema Overview
 
-The schema is defined in `schema.py` as a `TABLES` dictionary mapping table names to `CREATE TABLE IF NOT EXISTS` SQL statements. On startup, `init_db()` iterates over all entries and creates any missing tables. `seed_default_data()` populates initial roles, permissions, and default user accounts.
+Each module defines its tables in a `_SCHEMA` string of `CREATE TABLE IF NOT EXISTS` statements, sometimes split into its own `schema.py`. Its `init_db()` runs the schema the first time the module is used, and first initialises any module whose tables it references. There is no central table list and no seeding of default accounts here.
 
-The database contains approximately 180 tables organized into the following domains.
+The code defines about 630 tables, organized into the following areas. Paths are relative to `src/education_system/systems/sixth_form/`.
 
-
-### Authentication and Access Control
-
-| Table | Key Columns | Purpose |
+| Area | Tables | Examples |
 |---|---|---|
-| `users` | `id`, `username`, `password_hash`, `role`, `email`, `is_active`, `failed_login_attempts`, `locked_until` | User accounts with lockout support |
-| `sessions` | `id`, `user_id` (FK users), `token`, `expires_at`, `is_active` | Session tokens |
-| `roles` | `id`, `name`, `description`, `level` | Role definitions with hierarchy level |
-| `permissions` | `id`, `role_id` (FK roles), `resource`, `action` | Resource-action permission grants |
-| `mfa_secrets` | `id`, `user_id`, `totp_secret`, `is_enabled` | TOTP secrets for MFA |
-| `mfa_recovery_codes` | `id`, `user_id`, `code_hash`, `is_used` | Hashed one-time recovery codes |
-| `audit_log` | `id`, `user_id`, `username`, `action`, `resource`, `details`, `ip_address`, `timestamp` | Audit trail |
+| `domain/academics/` | 149 | `courses`, `subjects`, `class_groups`, `timetable_slots`, `attendance_records`, `coursework_assignments`, `library_loans`, `calendar_events`, `academic_years`, `enrichment_activities` |
+| `domain/admissions/` | 63 | `admissions_applicants`, `admissions_programme_choices`, `enrolments`, `enrolment_ilr`, `onboarding_checklists` |
+| `domain/assessment/` | 47 | `predicted_grades`, `targets`, `exam_entries`, `exam_results`, `exams_timetable`, `exams_access_evidence`, `report_cards`, `value_added_records`, `sef_sections` |
+| `domain/governance/` | 46 | `policies`, `risks`, `gdpr_requests`, `compliance_items`, `governors`, `role_permissions`, `user_audit_log` |
+| `domain/learners/` | 95 | `students`, `student_record_history`, `alumni`, `bulk_jobs`, `saved_searches`, `exit_interviews` |
+| `domain/operations/` | 7 | `parent_accounts`, `parent_student_links`, `data_export_jobs`, `progress_reviews` |
+| `domain/pastoral/` | 61 | `behaviour_entries`, `send_register`, `first_aid_incidents`, `med_profiles`, `complaints`, `surveys`, `tutor_groups`, `wellbeing_checkins` |
+| `domain/progression/` | 34 | `ucas_applications`, `ucas_choices`, `dest_records`, `academic_references`, `we_placements` |
+| `domain/safeguarding/` | 7 | `safeguarding_plans`, `safeguarding_referrals`, `lado_allegations` |
+| `domain/staff/` | 22 | `staff`, `appraisals`, `cpd_records`, `departments`, `scr_checks`, `vacancies` |
+| `domains/communications/` | 16 | `messages`, `notifications`, `announcements`, `letter_templates`, `parents_evenings` |
+| `domains/finance/` | 31 | `fee_items`, `fee_invoices`, `fee_payments`, `bursary_applications`, `funding_allocations`, `expense_claims`, `trips` |
+| `domains/operations/` | 35 | `assets`, `visitors`, `helpdesk_tickets`, `transport_routes`, `hs_incidents`, `catering_menus`, `lockers` |
+| `infrastructure/` | 15 | `system_logs`, `sf_scheduler_jobs`, `ctf_imports`, `integration_settings` |
 
+To find a table's owner, search for its name:
 
-### Students and Enrollment
-
-| Table | Key Columns | Purpose |
-|---|---|---|
-| `students` | `id`, `student_id` (e.g. SFC0001), `user_id` (FK users), `first_name`, `last_name`, `year_group`, `form_group`, `form_tutor`, `status` | Student records |
-| `courses` | `id`, `course_code`, `title`, `credits`, `capacity`, `qualification_type`, `subject_area`, `teacher`, `term`, `status` | Course catalogue |
-| `prerequisites` | `course_id` (FK courses), `prerequisite_id` (FK courses) | Course prerequisite links |
-| `enrollments` | `student_id` (FK students), `course_id` (FK courses), `status`, `enrolled_at`, `dropped_at` | Enrollment records |
-| `waitlist` | `student_id` (FK students), `course_id` (FK courses), `position` | Waitlist queue |
-
-
-### Grades and Assessment
-
-| Table | Key Columns | Purpose |
-|---|---|---|
-| `grades` | `student_id` (FK), `course_id` (FK), `score`, `letter_grade`, `grade_type`, `predicted_grade`, `term`, `recorded_by` | Grade records (actual and predicted) |
-| `assignments` | `id`, `course_id` (FK), `title`, `due_date`, `max_score` | Assignment definitions |
-| `submissions` | `id`, `assignment_id` (FK), `student_id` (FK), `score`, `feedback`, `submitted_at` | Student submissions |
-| `markbook_columns` | `id`, `course_id` (FK), `column_name`, `max_marks`, `weight` | Markbook column definitions |
-| `markbook_entries` | `id`, `column_id` (FK), `student_id` (FK), `marks`, `grade` | Individual markbook entries |
-
-
-### Attendance and Timetabling
-
-| Table | Key Columns | Purpose |
-|---|---|---|
-| `attendance_sessions` | `id`, `course_id` (FK), `session_date`, `topic`, `timetable_slot_id` | Attendance session records |
-| `attendance_records` | `session_id` (FK), `student_id` (FK), `status`, `notes` | Per-student attendance marks |
-| `timetable_slots` | `id`, `course_id` (FK), `day_of_week` (Mon-Fri), `start_time`, `end_time`, `room`, `instructor_name` | Weekly timetable slots |
-| `rooms` | `id`, `room_code`, `building`, `capacity`, `room_type` | Physical rooms |
-
-
-### Pastoral and Safeguarding
-
-| Table | Key Columns | Purpose |
-|---|---|---|
-| `safeguarding_concerns` | `id`, `student_id`, `concern_type`, `severity`, `reported_by`, `status` | Safeguarding reports |
-| `behaviour_records` | `id`, `student_id`, `incident_type`, `severity`, `reported_by` | Behaviour incidents |
-| `pastoral_notes` | `id`, `student_id`, `note_type`, `content`, `created_by` | Pastoral care notes |
-| `wellbeing_records` | `id`, `student_id`, `wellbeing_type`, `score`, `notes` | Wellbeing tracking |
-| `send_records` | `id`, `student_id`, `send_type`, `status`, `support_plan` | SEND provision records |
-| `lac_records` | `id`, `student_id`, `lac_status`, `social_worker`, `pip_targets` | Looked-After Children |
-
-
-### Exams
-
-| Table | Key Columns | Purpose |
-|---|---|---|
-| `exam_entries` | `id`, `student_id`, `course_id`, `exam_board`, `entry_code`, `status` | Exam board entries |
-| `exam_timetable` | `id`, `course_id`, `exam_date`, `start_time`, `duration`, `venue` | Exam scheduling |
-| `exam_access` | `id`, `student_id`, `access_type`, `details` | Access arrangements |
-| `exam_results` | `id`, `student_id`, `course_id`, `grade`, `ums_score` | Final exam results |
-
-
-### Finance and Funding
-
-| Table | Key Columns | Purpose |
-|---|---|---|
-| `funding_records` | `id`, `student_id`, `funding_type`, `amount`, `status` | Student funding (16-19 bursary, etc.) |
-| `bursary_records` | `id`, `student_id`, `bursary_type`, `amount`, `status` | Bursary allocations |
-| `fee_items` | `id`, `description`, `amount`, `category` | Fee catalogue |
-| `invoices` | `id`, `student_id`, `total`, `status`, `due_date` | Invoices |
-| `payments` | `id`, `invoice_id`, `amount`, `method`, `paid_at` | Payment records |
-| `payroll_records` | `id`, `staff_id`, `month`, `gross`, `net` | Staff payroll |
-
-
-### Staff and HR
-
-| Table | Key Columns | Purpose |
-|---|---|---|
-| `staff` | `id`, `staff_id`, `user_id`, `first_name`, `last_name`, `department`, `role`, `contract_type` | Staff records |
-| `staff_hr` | `id`, `staff_id`, `contract_start`, `salary`, `fte` | HR details |
-| `cover_arrangements` | `id`, `absent_staff_id`, `cover_staff_id`, `date`, `period` | Cover planning |
-| `cpd_records` | `id`, `staff_id`, `title`, `provider`, `hours` | CPD activities |
-| `teaching_observations` | `id`, `staff_id`, `observer`, `grade`, `feedback` | Lesson observations |
-| `appraisals` | `id`, `staff_id`, `appraiser`, `period`, `overall_grade` | Staff appraisals |
-| `dbs_checks` | `id`, `staff_id`, `check_type`, `certificate_number`, `issue_date`, `expiry_date`, `status` | DBS verification |
-
-
-### Student Life and Support
-
-| Table | Key Columns | Purpose |
-|---|---|---|
-| `first_aid_incidents` | `id`, `student_id`, `incident_type`, `treatment`, `reported_by` | First aid log |
-| `helpdesk_tickets` | `id`, `user_id`, `category`, `subject`, `status`, `priority` | IT/general helpdesk |
-| `parent_links` | `id`, `student_id`, `parent_user_id`, `relationship` | Parent-student links |
-| `careers_activities` | `id`, `student_id`, `activity_type`, `provider`, `notes` | Careers guidance |
-| `ucas_records` | `id`, `student_id`, `personal_id`, `status` | UCAS tracking |
-| `destinations` | `id`, `student_id`, `destination_type`, `institution`, `status` | Post-college destinations |
-| `transport_records` | `id`, `student_id`, `transport_type`, `route`, `pass_number` | Transport arrangements |
-| `library_items` | `id`, `title`, `isbn`, `category`, `status` | Library catalogue |
-| `library_loans` | `id`, `item_id`, `borrower_id`, `due_date`, `returned_at` | Library borrowing |
-
-
-### Communication
-
-| Table | Key Columns | Purpose |
-|---|---|---|
-| `messages` | `id`, `sender_id`, `recipient_id`, `subject`, `body`, `is_read` | Internal messaging |
-| `notifications` | `id`, `user_id`, `title`, `message`, `is_read`, `notification_type` | Push/in-app notifications |
-| `announcements` | `id`, `title`, `content`, `author_id`, `target_audience`, `publish_date` | System announcements |
-| `calendar_events` | `id`, `title`, `start_datetime`, `end_datetime`, `event_type`, `created_by` | Calendar |
-
-
-### Quality and Compliance
-
-| Table | Key Columns | Purpose |
-|---|---|---|
-| `quality_reviews` | `id`, `review_type`, `area`, `grade`, `reviewer` | Quality reviews |
-| `compliance_checks` | `id`, `check_type`, `area`, `status`, `checked_by` | Compliance tracking |
-| `sef_sections` | `id`, `section_name`, `grade`, `evidence`, `priorities` | Self-evaluation form |
-| `ofsted_prep_checklist` | `id`, `item`, `status`, `evidence_location` | Ofsted preparation |
-| `policies` | `id`, `title`, `category`, `version`, `review_date`, `status` | Policy management |
-| `equality_impact_assessments` | `id`, `title`, `policy_area`, `outcome`, `assessor` | EIA records |
-
-Additional domains include: enrichment activities, peer mentoring, surveys, skills passports, student portfolios, study planning, forums, internal verification, T-Level placements, apprenticeship tracking, value-added analysis, governance/board management, health and safety, lettings, disciplinary cases, and data export.
+```bash
+grep -rl "CREATE TABLE IF NOT EXISTS students\b" src/education_system/systems/sixth_form/
+```
 
 
 ### Foreign Key Handling
 
-Foreign key enforcement is enabled on every connection via `PRAGMA foreign_keys = ON`. This means:
+Foreign key enforcement is enabled by each connection via `PRAGMA foreign_keys=ON`. This means:
 
 - INSERT or UPDATE operations that reference a non-existent parent row will fail with a constraint error.
 - DELETE operations on parent rows will fail if child rows exist (default `RESTRICT` behaviour), unless the schema specifies `ON DELETE CASCADE`.
-- All foreign key relationships use `FOREIGN KEY (column) REFERENCES parent_table(id)` syntax.
+- A foreign key to a table that does not exist yet also fails, which is why `init_db()` initialises its dependencies first.
 
-Common foreign key chains:
+`students` is keyed on the text `student_id`, in the form `C1470977`. A typical reference is:
 
-```
-users.id  <--  students.user_id
-users.id  <--  sessions.user_id
-students.id  <--  enrollments.student_id  -->  courses.id
-students.id  <--  grades.student_id  -->  courses.id
-students.id  <--  attendance_records.student_id  -->  attendance_sessions.id  -->  courses.id
-roles.id  <--  permissions.role_id
+```sql
+FOREIGN KEY (student_id) REFERENCES students(student_id) ON DELETE CASCADE
 ```
 
 
@@ -277,43 +127,21 @@ roles.id  <--  permissions.role_id
 
 ## Migrations
 
-The migration framework lives in `migrations.py` and provides a lightweight versioned migration system.
+Alembic does not manage this database: its chain in `src/education_system/migrations/` covers the University's `student_records.db`. Sixth form schema changes are made in the module's own code.
 
-### How It Works
+### Adding a Table
 
-1. A `schema_migrations` table tracks which migrations have been applied:
-   ```sql
-   CREATE TABLE IF NOT EXISTS schema_migrations (
-       id INTEGER PRIMARY KEY AUTOINCREMENT,
-       version TEXT UNIQUE NOT NULL,
-       description TEXT,
-       applied_at TEXT NOT NULL DEFAULT (datetime('now'))
-   );
-   ```
+Add a `CREATE TABLE IF NOT EXISTS` statement to the module's `_SCHEMA`. It is created the next time `init_db()` runs.
 
-2. Each migration is a tuple of `(version, description, sql_statements)` registered in the `MIGRATIONS` list.
+### Adding a Column
 
-3. `run_all_migrations()` iterates over the list and applies any migration whose version is not yet recorded.
-
-4. Each migration runs its SQL statements in sequence, then records the version. The entire migration is committed atomically.
-
-### Adding a New Migration
-
-Append a new entry to the `MIGRATIONS` list in `migrations.py`:
+`CREATE TABLE IF NOT EXISTS` does nothing to an existing table, so a module's `init_db()` adds new columns itself. It uses `PRAGMA table_info()` to check for the column before issuing `ALTER TABLE`:
 
 ```python
-MIGRATIONS = [
-    ("001", "Add phone_verified column to users", [
-        "ALTER TABLE users ADD COLUMN phone_verified INTEGER DEFAULT 0",
-    ]),
-]
+existing = {r["name"] for r in conn.execute("PRAGMA table_info(awards)")}
+if "phone_verified" not in existing:
+    conn.execute("ALTER TABLE awards ADD COLUMN phone_verified INTEGER DEFAULT 0")
 ```
-
-Run `run_all_migrations()` at application startup or via a management command.
-
-### Inline Migrations
-
-For simple column additions, `init_db()` in `schema.py` also contains inline migration logic (e.g., adding `timetable_slot_id` to `attendance_sessions` if missing). This approach uses `PRAGMA table_info()` to check for column existence before issuing `ALTER TABLE`.
 
 
 ---
@@ -324,10 +152,12 @@ SQLite databases can be backed up by copying the database file while respecting 
 
 ```bash
 # Safe copy using sqlite3 .backup command
-sqlite3 college_system/data/db_files/sixthform.db ".backup '/path/to/backup.db'"
+sqlite3 var/data/sixth_form/sixthform.db ".backup 'var/backups/sixth_form/sixthform.db'"
 ```
 
-With WAL mode enabled, there may be `-wal` and `-shm` files alongside the main database. For a complete backup, either:
+All backups belong under `var/backups/sixth_form/` (`SIXTH_FORM_BACKUP_DIR`). `infrastructure/integrations/db_backup.py` writes its own there, using `paths.system_backup_dir("sixth_form", "database")`.
+
+If the database is in WAL mode, there may be `-wal` and `-shm` files alongside the main database. For a complete backup, either:
 
 - Use the `.backup` command (recommended), which produces a self-contained copy.
 - Copy all three files (`sixthform.db`, `sixthform.db-wal`, `sixthform.db-shm`) together.
@@ -356,45 +186,28 @@ conn.execute(f"SELECT * FROM students WHERE student_id = '{sid}'")
 Wrap related writes in a transaction to maintain consistency:
 
 ```python
-with transaction() as conn:
-    conn.execute("INSERT INTO enrollments (...) VALUES (...)", ...)
+with _connect() as conn:
+    conn.execute("INSERT INTO enrolments (...) VALUES (...)", ...)
     conn.execute("UPDATE courses SET ... WHERE ...", ...)
 ```
 
-### Connection Lifecycle
-
-Service layer code follows the pattern:
-
-```python
-def some_operation(self):
-    conn = self._conn()
-    try:
-        # ... database operations ...
-        conn.commit()
-    except Exception:
-        conn.rollback()
-        raise
-    finally:
-        conn.close()
-```
-
-Always close connections in a `finally` block to prevent resource leaks. When using `ConnectionPool` or `DatabaseManager`, prefer the context manager forms which handle cleanup automatically.
-
 ### Row Factory
 
-All connections use `sqlite3.Row` as the row factory. Access columns by name rather than index:
+Connections use `sqlite3.Row` as the row factory. Access columns by name rather than index:
 
 ```python
-row = conn.execute("SELECT first_name, last_name FROM students WHERE id = ?", (1,)).fetchone()
+row = conn.execute(
+    "SELECT first_name, last_name FROM students WHERE student_id = ?", (sid,)
+).fetchone()
 name = f"{row['first_name']} {row['last_name']}"
 ```
 
 ### Constants
 
-Use the constants defined in `constants.py` for grade scales, qualification types, year groups, terms, and attendance statuses rather than hardcoding values:
+Use the constants a module already declares for statuses, year groups and terms rather than hardcoding values. For grades, use the scales in `domain/academics/qualifications/grade_scales.py`:
 
 ```python
-from education_system.college_system.infrastructure.database.constants import (
-    GRADE_SCALE, BTEC_GRADE_SCALE, QUALIFICATION_TYPES, YEAR_GROUPS, TERMS, ATTENDANCE_STATUSES
+from education_system.systems.sixth_form.domain.academics.qualifications.grade_scales import (
+    QUALIFICATION_TYPES, SCALES, validate_grade,
 )
 ```

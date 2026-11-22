@@ -403,10 +403,10 @@ def real_time_financial_dashboard():
 
         # Recent alerts
         cursor.execute('''
-        SELECT alert_type, message, created_date
+        SELECT alert_type, message, created_at
         FROM financial_alerts
-        WHERE created_date >= date('now', '-7 days')
-        ORDER BY created_date DESC
+        WHERE created_at >= date('now', '-7 days')
+        ORDER BY created_at DESC
         LIMIT 5
         ''')
 
@@ -478,11 +478,11 @@ def real_time_financial_dashboard():
         # Collection rate trend
         cursor.execute('''
         SELECT
-            strftime('%Y-%m', sf.created_date) as month,
+            strftime('%Y-%m', sf.created_at) as month,
             SUM(sf.amount) as total,
             SUM(CASE WHEN sf.status = 'paid' THEN sf.amount ELSE 0 END) as collected
         FROM student_fees sf
-        WHERE sf.created_date >= date('now', '-12 months')
+        WHERE sf.created_at >= date('now', '-12 months')
         GROUP BY month
         ORDER BY month
         ''')
@@ -561,10 +561,10 @@ def real_time_financial_dashboard():
         # Alert frequency
         cursor.execute('''
         SELECT
-            DATE(created_date) as alert_date,
+            DATE(created_at) as alert_date,
             COUNT(*) as alert_count
         FROM financial_alerts
-        WHERE created_date >= date('now', '-30 days')
+        WHERE created_at >= date('now', '-30 days')
         GROUP BY alert_date
         ORDER BY alert_date
         ''')
@@ -662,7 +662,7 @@ def automated_reporting_system():
 
         # Try to get alert count - handle case where table/column may not exist
         try:
-            cursor.execute('SELECT COUNT(*) FROM financial_alerts WHERE DATE(created_date) = ?', (today,))
+            cursor.execute('SELECT COUNT(*) FROM financial_alerts WHERE DATE(created_at) = ?', (today,))
             alert_count = cursor.fetchone()[0] or 0
         except Exception:
             alert_count = 0

@@ -17,6 +17,11 @@ from education_system.systems.university.domains.operations.domain.campus.housin
 from education_system.systems.university.domains.operations.domain.campus.housing.services.housing_accommodation.assignments import (
     apply_relocations, describe_move, notify_relocated_residents, plan_relocations,
 )
+from education_system.systems.university.domains.operations.domain.campus.housing.services.housing_accommodation.room_setup import (
+    CSV_OPTIONAL_COLUMNS, CSV_REQUIRED_COLUMNS, ROOM_STATUSES, ROOM_TYPES,
+    building_count, import_rooms, normalise_room_status, normalise_room_type,
+    parse_rooms_csv, rooms_csv_template,
+)
 
 
 def show_room_management(gui_instance, building_id=None, building_name=None):
@@ -167,9 +172,9 @@ def show_building_rooms_management(gui_instance, building_id, building_name):
 
             # Room Type
             ttk.Label(form_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.room_manager.labels.room_type', default="Room Type:")).grid(row=2, column=0, sticky="w", pady=5)
-            room_type_var = tk.StringVar(value=current_room[2])
+            room_type_var = tk.StringVar(value=normalise_room_type(current_room[2]) or current_room[2])
             room_type_combo = ttk.Combobox(form_frame, textvariable=room_type_var, width=28,
-                                          values=["single", "double", "triple", "suite", "studio"])
+                                          values=list(ROOM_TYPES))
             room_type_combo.grid(row=2, column=1, pady=5)
 
             # Max Occupants
@@ -184,9 +189,9 @@ def show_building_rooms_management(gui_instance, building_id, building_name):
 
             # Status
             ttk.Label(form_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.room_manager.labels.status', default="Status:")).grid(row=5, column=0, sticky="w", pady=5)
-            status_var = tk.StringVar(value=current_room[5])
+            status_var = tk.StringVar(value=normalise_room_status(current_room[5]) or current_room[5])
             status_combo = ttk.Combobox(form_frame, textvariable=status_var, width=28,
-                                       values=["available", "occupied", "maintenance", "reserved"])
+                                       values=list(ROOM_STATUSES))
             status_combo.grid(row=5, column=1, pady=5)
 
             # Monthly Rent
@@ -345,9 +350,9 @@ def show_building_rooms_management(gui_instance, building_id, building_name):
 
         # Room Type
         ttk.Label(form_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.room_manager.labels.room_type', default="Room Type:")).grid(row=2, column=0, sticky="w", pady=5)
-        room_type_var = tk.StringVar(value=_t('gui.operations.campus.housing.housing_accommodation_gui.room_manager.values.single', default="single"))
+        room_type_var = tk.StringVar(value='Single')
         room_type_combo = ttk.Combobox(form_frame, textvariable=room_type_var, width=28,
-                                      values=["single", "double", "triple", "suite", "studio"],
+                                      values=list(ROOM_TYPES),
                                       state='readonly')
         room_type_combo.grid(row=2, column=1, pady=5)
 
@@ -358,9 +363,9 @@ def show_building_rooms_management(gui_instance, building_id, building_name):
 
         # Status
         ttk.Label(form_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.room_manager.labels.status', default="Status:")).grid(row=4, column=0, sticky="w", pady=5)
-        status_var = tk.StringVar(value=_t('gui.operations.campus.housing.housing_accommodation_gui.room_manager.values.available', default="available"))
+        status_var = tk.StringVar(value='Available')
         status_combo = ttk.Combobox(form_frame, textvariable=status_var, width=28,
-                                   values=["available", "occupied", "maintenance", "reserved"],
+                                   values=list(ROOM_STATUSES),
                                    state='readonly')
         status_combo.grid(row=4, column=1, pady=5)
 
@@ -402,7 +407,7 @@ def show_building_rooms_management(gui_instance, building_id, building_name):
                 cursor.execute('''
                 UPDATE housing_buildings
                 SET total_rooms = total_rooms + 1,
-                    available_rooms = available_rooms + CASE WHEN ? = 'available' THEN 1 ELSE 0 END,
+                    available_rooms = available_rooms + CASE WHEN ? = 'Available' THEN 1 ELSE 0 END,
                     updated_at = ?
                 WHERE building_id = ?
                 ''', (status_var.get(), timestamp, building_id))
@@ -449,6 +454,7 @@ def create_rooms_interface(gui_instance, parent):
     gui_instance.rooms_building_combo.grid(row=0, column=1, padx=10)
 
     # Load buildings
+    building_values = []
     try:
         conn = get_connection()
         cursor = conn.cursor()
@@ -498,6 +504,15 @@ def create_rooms_interface(gui_instance, parent):
         row=6, column=0, pady=20)
     ttk.Button(room_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.room_manager.buttons.batch_create_rooms', default="Batch Create Rooms"),
               command=lambda: show_batch_room_creation(gui_instance)).grid(row=6, column=1, pady=20, padx=10)
+    ttk.Button(room_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.room_manager.buttons.import_rooms_csv', default="Import Rooms from CSV..."),
+              command=lambda: show_rooms_csv_import(gui_instance)).grid(row=6, column=2, pady=20, padx=10)
+
+    if not building_values:
+        ttk.Label(building_frame,
+                  text=_t('gui.operations.campus.housing.housing_accommodation_gui.room_manager.labels.no_buildings_yet',
+                          default="No residences are set up yet. Add one under Buildings > Add Building, "
+                                  "then add rooms here or import them from a CSV file."),
+                  foreground='#555555', wraplength=600).grid(row=1, column=0, columnspan=2, sticky='w', pady=(8, 0))
 
 
 def add_single_room(gui_instance):
@@ -828,3 +843,161 @@ def show_batch_room_creation(gui_instance):
 
     ttk.Button(buttons_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.room_manager.buttons.create_rooms', default="Create Rooms"), command=create_batch_rooms).pack(side='left', padx=5)
     ttk.Button(buttons_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.room_manager.buttons.cancel', default="Cancel"), command=batch_window.destroy).pack(side='left', padx=5)
+
+
+def show_rooms_csv_import(gui_instance, parent_window=None):
+    """Import rooms from a CSV file: validate every row, preview, then insert.
+
+    Nothing is written unless the whole file is valid. Occupancy always starts
+    at 0 — it comes from assignments, not from the file.
+    """
+    from tkinter import filedialog
+
+    owner = parent_window or gui_instance.root
+    _title = _t('gui.operations.campus.housing.housing_accommodation_gui.room_manager.windows.import_rooms',
+                default="Import Rooms from CSV")
+
+    try:
+        conn = get_connection()
+        try:
+            has_buildings = building_count(conn.cursor()) > 0
+        finally:
+            conn.close()
+    except Exception:
+        has_buildings = False
+    if not has_buildings:
+        messagebox.showinfo(
+            _title,
+            "There are no residences to import rooms into yet.\n\n"
+            "Add a building first under Buildings > Add Building.",
+            parent=owner)
+        return
+
+    window = tk.Toplevel(owner)
+    window.title(_title)
+    window.geometry("760x560")
+    window.transient(owner)
+    window.grab_set()
+
+    ttk.Label(window, text=_title, font=("Arial", 14, "bold")).pack(pady=(10, 4))
+    ttk.Label(window, text=("Required columns: " + ", ".join(CSV_REQUIRED_COLUMNS)
+                            + "\nOptional: " + ", ".join(CSV_OPTIONAL_COLUMNS)
+                            + " (is_accessible yes/no; status defaults to Available). "
+                            "'building' is the building id or its exact name."),
+              wraplength=720, justify='left').pack(padx=12, anchor='w')
+
+    path_var = tk.StringVar()
+    path_frame = ttk.Frame(window)
+    path_frame.pack(fill='x', padx=12, pady=8)
+    ttk.Entry(path_frame, textvariable=path_var).pack(side='left', fill='x', expand=True)
+
+    def browse():
+        chosen = filedialog.askopenfilename(
+            parent=window, title=_title,
+            filetypes=[("CSV files", "*.csv"), ("All files", "*.*")])
+        if chosen:
+            path_var.set(chosen)
+            validate()
+
+    ttk.Button(path_frame, text="Browse...", command=browse).pack(side='left', padx=(6, 0))
+
+    report = tk.Text(window, height=18, wrap='word')
+    report.pack(fill='both', expand=True, padx=12, pady=4)
+    report.insert('1.0', "Example file:\n\n" + rooms_csv_template())
+    report.configure(state='disabled')
+
+    state = {'rows': []}
+
+    def show(text):
+        report.configure(state='normal')
+        report.delete('1.0', tk.END)
+        report.insert('1.0', text)
+        report.configure(state='disabled')
+
+    def validate():
+        state['rows'] = []
+        import_btn.state(['disabled'])
+        path = path_var.get().strip()
+        if not path:
+            show("Choose a CSV file first.")
+            return
+        try:
+            conn = get_connection()
+            try:
+                rows, errors = parse_rooms_csv(conn.cursor(), path)
+            finally:
+                conn.close()
+        except OSError as e:
+            show(f"Cannot read {path}:\n{e}")
+            return
+        except Exception as e:
+            show(f"Could not check the file:\n{e}")
+            return
+        if errors:
+            show(f"Nothing can be imported - {len(errors)} problem(s):\n\n" + "\n".join(errors))
+            return
+        state['rows'] = rows
+        lines = [f"{len(rows)} room(s) are valid and ready to import:\n"]
+        for row in rows[:200]:
+            lines.append(f"  {row['building_id']}  room {row['room_number']}  floor {row['floor_number']}  "
+                         f"{row['room_type']}  max {row['max_occupants']}  £{row['monthly_rent']:.2f}  "
+                         f"{row['status']}{'  accessible' if row['is_accessible'] else ''}")
+        if len(rows) > 200:
+            lines.append(f"  ... and {len(rows) - 200} more")
+        show("\n".join(lines))
+        import_btn.state(['!disabled'])
+
+    def do_import():
+        rows = state['rows']
+        if not rows:
+            return
+        if not messagebox.askyesno(_title, f"Import {len(rows)} room(s)?", parent=window):
+            return
+        try:
+            conn = get_connection()
+            try:
+                cursor = conn.cursor()
+                # Re-validate inside the write: the data may have changed since
+                # the preview (another user adding the same room number).
+                rows_now, errors = parse_rooms_csv(cursor, path_var.get().strip())
+                if errors:
+                    show("The file no longer validates - nothing imported:\n\n" + "\n".join(errors))
+                    import_btn.state(['disabled'])
+                    return
+                added = import_rooms(cursor, rows_now)
+                conn.commit()
+            except Exception:
+                conn.rollback()
+                raise
+            finally:
+                conn.close()
+        except Exception as e:
+            messagebox.showerror(_title, f"Import failed - nothing was saved:\n{e}", parent=window)
+            return
+        try:
+            log_activity("import", "housing",
+                         details=f"Imported {sum(added.values())} room(s) from CSV")
+        except Exception:
+            pass
+        messagebox.showinfo(_title, f"Imported {sum(added.values())} room(s) into "
+                                    f"{len(added)} building(s).", parent=window)
+        window.destroy()
+        if hasattr(gui_instance, 'all_rooms_tree'):
+            try:
+                refresh_rooms_list(gui_instance)
+            except Exception:
+                pass
+        if hasattr(gui_instance, 'buildings_tree'):
+            try:
+                from education_system.systems.university.domains.operations.interfaces.gui.campus.housing.housing_accommodation_gui.building_manager import refresh_buildings_list
+                refresh_buildings_list(gui_instance)
+            except Exception:
+                pass
+
+    buttons = ttk.Frame(window)
+    buttons.pack(fill='x', padx=12, pady=10)
+    ttk.Button(buttons, text="Check File", command=validate).pack(side='left')
+    import_btn = ttk.Button(buttons, text="Import", command=do_import)
+    import_btn.pack(side='left', padx=6)
+    import_btn.state(['disabled'])
+    ttk.Button(buttons, text="Close", command=window.destroy).pack(side='right')

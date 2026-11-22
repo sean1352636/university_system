@@ -325,5 +325,5 @@ When equipment is unavailable:
 ---
 
 **Last Updated**: February 2026
-**Module**: `university_system/modules/domain/equipment/`
+**Module**: `src/education_system/systems/university/domains/operations/domain/campus/equipment/`
 **Support**: equipment@university.edu | (555) 123-EQUIP

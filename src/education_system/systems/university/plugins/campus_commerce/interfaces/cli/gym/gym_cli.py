@@ -122,6 +122,12 @@ def display_menu():
             print(f"\nError: {e}")
 
 
+def _ask_payment_method():
+    """Prompt for how the fee is paid (Enter = record without payment)."""
+    method = input("Payment method (cash/card/student_account, Enter to skip): ").strip()
+    return method or None
+
+
 def _create_membership():
     """Create a new gym membership."""
     print("\n--- Create Membership ---")
@@ -140,17 +146,22 @@ def _create_membership():
     emergency_contact = input("Emergency contact name (optional): ").strip() or None
     emergency_phone = input("Emergency contact phone (optional): ").strip() or None
     health_conditions = input("Health conditions (optional): ").strip() or None
+    payment_method = _ask_payment_method()
 
+    # The service takes the fee and posts it to Finance (shared with the GUI).
     result = MembershipManager.create_membership(
         user_id, user_name, user_email, membership_type, months,
         emergency_contact=emergency_contact,
         emergency_phone=emergency_phone,
         health_conditions=health_conditions,
+        payment_method=payment_method,
     )
     if result:
         print("\nMembership created successfully!")
         print(f"  Member Number: {result['member_number']}")
         print(f"  Total Fee:     £{result['total_fee']:.2f}")
+        if result.get('payment'):
+            print(f"  Payment Ref:   {result['payment']['reference']}")
         print(f"  Start Date:    {result['start_date']}")
         print(f"  End Date:      {result['end_date']}")
     else:
@@ -218,12 +229,16 @@ def _renew_membership():
     membership_id = int(input("Membership ID: ").strip())
     months_str = input("Months to renew (default 1): ").strip()
     months = int(months_str) if months_str else 1
+    payment_method = _ask_payment_method()
 
-    result = MembershipManager.renew_membership(membership_id, months)
+    result = MembershipManager.renew_membership(membership_id, months,
+                                                payment_method=payment_method)
     if result:
         print("Membership renewed successfully!")
         print(f"  New End Date: {result['new_end_date']}")
         print(f"  Total Fee:    £{result['total_fee']:.2f}")
+        if result.get('payment'):
+            print(f"  Payment Ref:  {result['payment']['reference']}")
     else:
         print("Failed to renew membership.")
 
@@ -348,16 +363,19 @@ def _book_pt_session():
 
     duration_str = input("Duration in minutes (default 60): ").strip()
     duration = int(duration_str) if duration_str else 60
+    payment_method = _ask_payment_method()
 
     result = PTSessionManager.book_session(
         member_id, trainer_name, session_date, session_time,
-        session_type, duration,
+        session_type, duration, payment_method=payment_method,
     )
     if result:
         print("PT session booked successfully!")
         print(f"  Session ID:  {result['session_id']}")
         print(f"  Booking Ref: {result['booking_ref']}")
         print(f"  Fee:         £{result['fee']:.2f}")
+        if result.get('payment'):
+            print(f"  Payment Ref: {result['payment']['reference']}")
     else:
         print("Failed to book PT session.")
 

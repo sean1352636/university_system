@@ -474,11 +474,10 @@ TC: HIST201 → Elective Credit (3 cr) - Free elective
 
 - **Degree Requirements Catalog**: `catalog.university.edu`
 - **Course Planner Tutorial**: `video.university.edu/degree-audit`
-- **Transfer Credit Guide**: `docs/transfer_credit_guide.pdf`
 - **Graduation Application**: `registrar.university.edu/graduation`
 
 ---
 
 **Last Updated**: January 2026
-**Module**: `university_system/modules/domain/academics/gui/degree_audit_gui.py`
+**Module**: `src/education_system/systems/university/domains/curriculum/interfaces/gui/course_management_gui/degree_audit_gui.py`
 **Support**: advising@university.edu | (555) 123-ADVISE

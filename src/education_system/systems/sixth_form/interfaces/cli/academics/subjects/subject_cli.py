@@ -104,6 +104,17 @@ def _collect_form(existing: Subject | None) -> dict[str, Any]:
     payload["is_active"] = _yes_no(
         "Active?", default=(existing.is_active if is_edit else True),
     )
+    # Learning-aim defaults (blank type = derive from the qualification).
+    payload["qualification_type"] = _input(
+        "Qualification type (blank = from qualification; e.g. 'BTEC Diploma')",
+        default=(existing.qualification_type or "") if is_edit else "")
+    payload["guided_learning_hours"] = _input(
+        "Guided learning hours per year (optional)",
+        default=("" if not is_edit or existing.guided_learning_hours is None
+                 else f"{existing.guided_learning_hours:g}"))
+    payload["aim_code"] = _input(
+        "Aim / QAN code (optional)",
+        default=(existing.aim_code or "") if is_edit else "")
     return payload
 
 
@@ -240,7 +251,11 @@ def view_subject(subject_id: int | None = None) -> None:
     print(f"    Active        : {'Yes' if s.is_active else 'No'}")
     print(f"    Created       : {s.created_at}")
     print(f"    In use        : {usage['students']} student(s), "
-          f"{usage['courses']} course(s)")
+          f"{usage['courses']} course(s), {usage.get('aims', 0)} learning aim(s)")
+    print(f"    Qual. type    : {s.effective_qualification_type}")
+    print(f"    GLH / year    : "
+          f"{'—' if s.guided_learning_hours is None else f'{s.guided_learning_hours:g}'}")
+    print(f"    Aim / QAN code: {s.aim_code or '—'}")
     if s.description:
         print(f"    Description   : {s.description}")
     _pause()
@@ -433,6 +448,16 @@ def _row_action_loop(rows: list[Subject]) -> None:
 
 # ── Submenu dispatcher ──────────────────────────────────────────────
 
+def _study_programme(which: str) -> None:
+    from education_system.systems.sixth_form.interfaces.cli.academics.qualifications import (
+        study_programme_cli,
+    )
+    if which == "blocks":
+        study_programme_cli.run_option_blocks()
+    else:
+        study_programme_cli.run_reports()
+
+
 _MENU: list[tuple[str, Callable[[], None]]] = [
     ("List All Subjects",  list_all),
     ("Filter Subjects",    filter_subjects),
@@ -441,6 +466,8 @@ _MENU: list[tuple[str, Callable[[], None]]] = [
     ("Edit Subject",       edit_subject),
     ("Activate/Deactivate", toggle_active),
     ("Delete Subject",     delete_subject_flow),
+    ("Option Blocks",      lambda: _study_programme("blocks")),
+    ("Study Programme Reports", lambda: _study_programme("reports")),
 ]
 
 

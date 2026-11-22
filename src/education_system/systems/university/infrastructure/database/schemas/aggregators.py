@@ -82,7 +82,7 @@ def init_additional_missing_tables():
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS accommodation_requests (
             request_id INTEGER PRIMARY KEY AUTOINCREMENT,
-            student_id INTEGER NOT NULL,
+            student_id TEXT NOT NULL,
             accommodation_type TEXT NOT NULL,
             description TEXT,
             status TEXT DEFAULT 'pending',
@@ -116,7 +116,7 @@ def init_additional_missing_tables():
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS aid_packages (
             package_id INTEGER PRIMARY KEY AUTOINCREMENT,
-            student_id INTEGER NOT NULL,
+            student_id TEXT NOT NULL,
             academic_year TEXT NOT NULL,
             total_aid_amount REAL DEFAULT 0,
             total_grants REAL DEFAULT 0,
@@ -192,31 +192,9 @@ def init_additional_missing_tables():
         )
         ''')
 
-        # assignment_group_members
-        cursor.execute('''
-        CREATE TABLE IF NOT EXISTS assignment_group_members (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            group_id INTEGER NOT NULL,
-            student_id INTEGER NOT NULL,
-            role TEXT DEFAULT 'member',
-            joined_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (group_id) REFERENCES assignment_groups(id),
-            FOREIGN KEY (student_id) REFERENCES users(id)
-        )
-        ''')
-
-        # assignment_groups
-        cursor.execute('''
-        CREATE TABLE IF NOT EXISTS assignment_groups (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            assignment_id INTEGER NOT NULL,
-            group_name TEXT NOT NULL,
-            description TEXT,
-            max_members INTEGER DEFAULT 4,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (assignment_id) REFERENCES assignments(id)
-        )
-        ''')
+        # Assignment groups and their members live in ``groups`` / ``group_members``
+        # (assignments core database); the old assignment_groups /
+        # assignment_group_members pair was merged into them (migration 6f8b0d2e4a7c).
 
         # assignment_templates
         cursor.execute('''
@@ -238,7 +216,7 @@ def init_additional_missing_tables():
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS assistive_tech_requests (
             request_id INTEGER PRIMARY KEY AUTOINCREMENT,
-            student_id INTEGER NOT NULL,
+            student_id TEXT NOT NULL,
             technology_type TEXT NOT NULL,
             status TEXT DEFAULT 'pending',
             requested_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -252,7 +230,7 @@ def init_additional_missing_tables():
         CREATE TABLE IF NOT EXISTS badge_issuances (
             issuance_id INTEGER PRIMARY KEY AUTOINCREMENT,
             badge_id INTEGER NOT NULL,
-            student_id INTEGER NOT NULL,
+            student_id TEXT NOT NULL,
             issued_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             blockchain_hash TEXT,
             evidence_url TEXT,
@@ -267,7 +245,7 @@ def init_additional_missing_tables():
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS blockchain_credentials (
             credential_id INTEGER PRIMARY KEY AUTOINCREMENT,
-            student_id INTEGER NOT NULL,
+            student_id TEXT NOT NULL,
             credential_type TEXT NOT NULL,
             credential_name TEXT NOT NULL,
             issue_date DATE NOT NULL,
@@ -424,7 +402,7 @@ def init_additional_missing_tables():
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS disability_documentation (
             doc_id INTEGER PRIMARY KEY AUTOINCREMENT,
-            student_id INTEGER NOT NULL,
+            student_id TEXT NOT NULL,
             disability_type TEXT NOT NULL,
             file_url TEXT,
             uploaded_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -441,7 +419,7 @@ def init_additional_missing_tables():
             disbursement_id INTEGER PRIMARY KEY AUTOINCREMENT,
             award_id INTEGER,
             component_id INTEGER,
-            student_id INTEGER NOT NULL,
+            student_id TEXT NOT NULL,
             amount REAL NOT NULL,
             disbursement_type TEXT,
             disbursement_date DATE NOT NULL,
@@ -516,7 +494,7 @@ def init_additional_missing_tables():
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS exam_accommodations (
             accommodation_id INTEGER PRIMARY KEY AUTOINCREMENT,
-            student_id INTEGER NOT NULL,
+            student_id TEXT NOT NULL,
             exam_id INTEGER,
             extended_time INTEGER,
             separate_room BOOLEAN DEFAULT 0,
@@ -531,7 +509,7 @@ def init_additional_missing_tables():
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS external_scholarships (
             external_id INTEGER PRIMARY KEY AUTOINCREMENT,
-            student_id INTEGER NOT NULL,
+            student_id TEXT NOT NULL,
             provider_name TEXT NOT NULL,
             scholarship_name TEXT,
             amount REAL NOT NULL,
@@ -550,7 +528,7 @@ def init_additional_missing_tables():
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS fafsa_data (
             fafsa_id INTEGER PRIMARY KEY AUTOINCREMENT,
-            student_id INTEGER NOT NULL,
+            student_id TEXT NOT NULL,
             academic_year TEXT NOT NULL,
             efc INTEGER,
             submission_date DATE,
@@ -599,7 +577,7 @@ def init_additional_missing_tables():
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS financial_aid_applications (
             application_id INTEGER PRIMARY KEY AUTOINCREMENT,
-            student_id INTEGER NOT NULL,
+            student_id TEXT NOT NULL,
             academic_year TEXT NOT NULL,
             application_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             status TEXT DEFAULT 'pending',
@@ -962,7 +940,7 @@ def init_additional_missing_tables():
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS parent_communications (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            parent_id INTEGER NOT NULL,
+            parent_id TEXT NOT NULL,
             student_id TEXT NOT NULL,
             type TEXT NOT NULL,
             subject TEXT,
@@ -978,7 +956,7 @@ def init_additional_missing_tables():
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS parent_conference_requests (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            parent_id INTEGER NOT NULL,
+            parent_id TEXT NOT NULL,
             student_id TEXT NOT NULL,
             instructor_id INTEGER,
             requested_date TEXT,
@@ -995,7 +973,7 @@ def init_additional_missing_tables():
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS parent_conferences (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            parent_id INTEGER NOT NULL,
+            parent_id TEXT NOT NULL,
             student_id TEXT NOT NULL,
             instructor_id INTEGER,
             scheduled_date TEXT,
@@ -1029,7 +1007,7 @@ def init_additional_missing_tables():
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS parent_document_access (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            parent_id INTEGER NOT NULL,
+            parent_id TEXT NOT NULL,
             document_id INTEGER NOT NULL,
             accessed_at TEXT,
             FOREIGN KEY (parent_id) REFERENCES parent_accounts (id),
@@ -1073,7 +1051,7 @@ def init_additional_missing_tables():
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS parent_portal_activity (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            parent_id INTEGER NOT NULL,
+            parent_id TEXT NOT NULL,
             activity_type TEXT NOT NULL,
             description TEXT,
             ip_address TEXT,
@@ -1086,7 +1064,7 @@ def init_additional_missing_tables():
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS parent_student_links (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            parent_id INTEGER NOT NULL,
+            parent_id TEXT NOT NULL,
             student_id TEXT NOT NULL,
             relationship TEXT,
             is_primary_contact INTEGER DEFAULT 0,
@@ -1105,7 +1083,7 @@ def init_additional_missing_tables():
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS parking_occupancy (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            lot_id INTEGER NOT NULL,
+            lot_id TEXT NOT NULL,
             timestamp TEXT NOT NULL,
             occupied_spaces INTEGER DEFAULT 0,
             available_spaces INTEGER DEFAULT 0,
@@ -1333,7 +1311,7 @@ def init_additional_missing_tables():
         CREATE TABLE IF NOT EXISTS scholarship_awards (
             award_id INTEGER PRIMARY KEY AUTOINCREMENT,
             application_id INTEGER,
-            student_id INTEGER NOT NULL,
+            student_id TEXT NOT NULL,
             scholarship_id INTEGER NOT NULL,
             academic_year TEXT NOT NULL,
             amount_awarded REAL NOT NULL,
@@ -1543,7 +1521,7 @@ def init_additional_missing_tables():
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS verification_requests (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            student_id INTEGER NOT NULL,
+            student_id TEXT NOT NULL,
             request_type TEXT NOT NULL,
             status TEXT DEFAULT 'pending',
             requested_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -1558,7 +1536,7 @@ def init_additional_missing_tables():
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS violation_appeals (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            violation_id INTEGER NOT NULL,
+            violation_id TEXT NOT NULL,
             appealed_by INTEGER NOT NULL,
             appeal_reason TEXT NOT NULL,
             appeal_date TEXT NOT NULL,
@@ -1576,7 +1554,7 @@ def init_additional_missing_tables():
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS virtual_classrooms (
             classroom_id INTEGER PRIMARY KEY AUTOINCREMENT,
-            course_id INTEGER NOT NULL,
+            course_id TEXT NOT NULL,
             classroom_name TEXT NOT NULL,
             platform TEXT DEFAULT 'internal',
             meeting_url TEXT,

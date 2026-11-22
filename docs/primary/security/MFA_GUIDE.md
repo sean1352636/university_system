@@ -6,7 +6,7 @@
 
 Multi-Factor Authentication (MFA) adds a second layer of security to user accounts. Even if a password is compromised, an attacker cannot access the system without the second factor.
 
-The Primary School system supports MFA through the shared authentication module (`education_system/shared/auth/`), which provides:
+The Primary School system supports MFA through the shared authentication module (`src/education_system/platform/identity/auth/`), which provides:
 
 - **TOTP (Time-based One-Time Password)** via authenticator apps (Google Authenticator, Microsoft Authenticator, Authy, etc.)
 - **Email OTP** as an alternative second factor
@@ -21,7 +21,7 @@ The Primary School system supports MFA through the shared authentication module 
 | **Admin accounts** | **Required.** Admins have full system access including user management and data export. |
 | **Safeguarding leads** | **Required.** These accounts can access sensitive safeguarding records about children. |
 | **Teachers** | **Strongly recommended.** Teachers access pupil personal data and assessment records. |
-| **superadmin** | **Required.** This account has access to all four Education System subsystems. |
+| **superadmin** | **Required.** This account has access to all seven Education System systems. |
 | **Student accounts** | Optional. Typically not needed given limited access scope. |
 | **Parent accounts** | Optional. Recommended if parents access sensitive pupil information remotely. |
 
@@ -75,15 +75,13 @@ x5y0z-h2j7w
 
 ## Setting Up MFA via CLI
 
-For administrators managing accounts in bulk or via scripting:
+The CLI has the same setup screen, for headless or remote use. There are no command-line arguments for MFA; a user sets it up from their own session:
 
 ```bash
-# Enable MFA for a specific user (interactive)
-python -m primary_school.cli mfa enable --username primary_admin
-
-# Generate new recovery codes for a user
-python -m primary_school.cli mfa recovery --username primary_admin
+python -m education_system --primary --cli
 ```
+
+Then choose **System** > **Multi-Factor Authentication**.
 
 ---
 
@@ -143,13 +141,7 @@ MFA can be disabled when necessary, but this is discouraged for staff accounts.
 
 Administrators can disable MFA for other users (e.g., if a user is locked out with no recovery codes):
 
-1. Log in as admin.
-2. Go to **Admin** > **User Management**.
-3. Select the affected user.
-4. Click **Reset MFA** or **Disable MFA**.
-5. Advise the user to re-enable MFA and generate new recovery codes immediately.
-
-This action is recorded in the audit log.
+The Primary School has no screen for this at present. An administrator with shell access can call `MFAService.disable_mfa` in `src/education_system/platform/identity/auth/mfa_service.py` for the account. Advise the user to re-enable MFA and generate new recovery codes immediately.
 
 ---
 
@@ -213,11 +205,11 @@ This requires administrator intervention:
 |---|---|---|
 | TOTP secrets | `mfa_secrets` table in `auth.db` | Encrypted or hashed at rest. One secret per user. |
 | Recovery codes | `mfa_recovery_codes` table in `auth.db` | Hashed. Consumed codes are deleted. |
-| MFA status | `users` table flag in `auth.db` | Indicates whether MFA is enabled for the account. |
+| MFA status | `is_enabled` in the `mfa_secrets` table in `auth.db` | Indicates whether MFA is enabled for the account. |
 
 ### Security Considerations
 
 - TOTP secrets are generated using a cryptographically secure random number generator.
 - Recovery codes are stored as hashed values; the plaintext is shown only once at generation time.
-- MFA verification failures contribute to the account lockout counter (5 attempts, 15-minute lockout).
+- MFA verification failures contribute to the account lockout counter (3 attempts, 15-minute lockout).
 - All MFA-related operations (enable, disable, recovery code use, admin reset) are recorded in the audit log.

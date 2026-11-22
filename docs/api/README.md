@@ -1,38 +1,43 @@
 # Education System — API Reference
 
 This directory contains machine-readable **OpenAPI 3.0.3** specifications
-for the Education System REST API. They're auto-generated from the live
-Flask URL maps by `scripts/generate_openapi_spec.py` and committed so
+for the Education System REST API. They were generated from the live
+Flask URL maps by `tools/university/generate_openapi_spec.py` and committed so
 they're available offline, in version control, and to SDK generators /
 contract tests / API gateways.
+
+The committed files predate the current API layout: they still use the old
+`college` prefix and don't cover Nursery, FE College or Apprenticeships. For the
+current surface, use the runtime spec below.
 
 ## Files
 
 | File | Endpoints | Source app | Purpose |
 |------|-----------|------------|---------|
-| [`openapi.json`](openapi.json) | 1363 | `unified_server.create_unified_app()` | The **production** spec — covers shared infrastructure (auth, MFA, parent portal, retention, LMS, webhooks, GraphQL, tenants) plus all four subsystems (university, college, secondary school, primary school) mounted at their canonical prefixes. |
-| [`openapi-college.json`](openapi-college.json) | 470 | `college/api_server.create_app()` | Standalone college API spec for deployments that run only the college subsystem. |
-| [`openapi-secondary.json`](openapi-secondary.json) | 319 | `secondary/api_server.create_app()` | Standalone secondary school API spec for single-subsystem deployments. |
-| [`openapi-primary.json`](openapi-primary.json) | 203 | `primary/api_server.create_app()` | Standalone primary school API spec for single-subsystem deployments. |
+| [`openapi.json`](openapi.json) | 1363 | `unified_server.create_unified_app()` | The **production** spec — covers shared infrastructure (auth, MFA, parent portal, retention, LMS, webhooks, GraphQL, tenants) plus the four systems mounted when it was generated (university, sixth form under the old `college` prefix, secondary school, primary school). |
+| [`openapi-college.json`](openapi-college.json) | 470 | Historical standalone app (removed) | Sixth form spec from when each system had its own server. Nothing regenerates it now. |
+| [`openapi-secondary.json`](openapi-secondary.json) | 319 | Historical standalone app (removed) | Secondary school spec from when each system had its own server. Nothing regenerates it now. |
+| [`openapi-primary.json`](openapi-primary.json) | 203 | Historical standalone app (removed) | Primary school spec from when each system had its own server. Nothing regenerates it now. |
 
 ## Generating / regenerating
 
 ```bash
-# Generate everything (writes only files that have changed)
-PYTHONPATH=. python scripts/generate_openapi_spec.py
-
-# Generate one system
-PYTHONPATH=. python scripts/generate_openapi_spec.py --system unified
-PYTHONPATH=. python scripts/generate_openapi_spec.py --system college
+# Generate the unified spec
+PYTHONPATH=src python tools/university/generate_openapi_spec.py --system unified
 
 # CI mode — exit non-zero if any spec is stale (no writes)
-PYTHONPATH=. python scripts/generate_openapi_spec.py --check
+PYTHONPATH=src python tools/university/generate_openapi_spec.py --check
 ```
 
-The script imports each subsystem's `create_app()` (or
-`create_unified_app()`), passes the resulting Flask app to
-`education_system.shared.api.docs.build_openapi_spec`, and writes the
+The script calls `create_unified_app()`, passes the resulting Flask app to
+`education_system.platform.delivery.api.docs.build_openapi_spec`, and writes the
 JSON output sorted-and-indented so diffs are stable.
+
+> **Known problem:** since the script moved under `tools/university/`, its
+> `REPO_ROOT` resolves to `tools/`, so it targets `tools/docs/api/` rather than
+> `docs/api/`. Its `university` builder also imports
+> `platform/delivery/api/university/api_server.py`, which no longer exists. Fix
+> both before relying on it to refresh the committed files.
 
 ## Runtime equivalents
 
@@ -48,14 +53,11 @@ freshest spec; commit the generated file when the change lands.
 
 ## Known limitations
 
-- **Standalone university spec is not generated separately** — running
-  `university/api_server.create_app()` after the unified app in the
-  same process raises a Flask blueprint name collision (`'health'`).
-  University routes are fully covered by `openapi.json`. If you need
-  the standalone spec, run `--system university` in a fresh Python
-  process.
+- **There is no standalone university spec** — the standalone
+  per-system servers are gone. University routes are served only by the
+  unified app, so use `/api/v1/openapi.json`.
 - **Endpoint summaries are auto-generated from URL paths**, not from
-  per-route docstrings. The current generator (`shared/api/docs.py`)
+  per-route docstrings. The current generator (`src/education_system/platform/delivery/api/openapi/ui.py`)
   doesn't introspect view-function docstrings; if you want richer
   summaries, that's the file to extend.
 - **Request/response schemas are not yet documented** — every operation
@@ -77,5 +79,5 @@ freshest spec; commit the generated file when the change lands.
 
 - [`../reference/API_REFERENCE.md`](../reference/API_REFERENCE.md) — high-level human-readable API reference (route prefix index)
 - [`../shared/AUTHENTICATION.md`](../shared/AUTHENTICATION.md) — how the JWT auth flow used by all endpoints works
-- [`scripts/generate_openapi_spec.py`](../../tools/university/generate_openapi_spec.py) — the generator script
-- [`education_system/shared/api/docs.py`](../../education_system/platform/delivery/api/docs.py) — the runtime spec builder
+- [`tools/university/generate_openapi_spec.py`](../../tools/university/generate_openapi_spec.py) — the generator script
+- [`src/education_system/platform/delivery/api/openapi/ui.py`](../../src/education_system/platform/delivery/api/openapi/ui.py) — the runtime spec builder

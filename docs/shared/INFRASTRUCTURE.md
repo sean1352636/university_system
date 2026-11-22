@@ -1,31 +1,31 @@
 # Shared Infrastructure
 
-This document describes the shared modules in `education_system/shared/` that all four subsystems (university, college, secondary, primary) use.
+This document describes the shared modules in `education_system/platform/` that all seven systems (nursery, primary, secondary, sixth form, FE college, apprenticeships, university) use.
 
 ---
 
 ## Overview
 
-The shared directory provides centralised infrastructure so that common code is written once and consumed by all systems via thin wrappers. Each subsystem's wrapper can add system-specific behaviour (e.g. domain-specific exception types, locale directories) while delegating the core logic to shared.
+The platform package provides centralised infrastructure so that common code is written once and consumed by all systems, directly or through a thin wrapper. A wrapper can add system-specific behaviour (e.g. domain-specific exception types, locale directories) while delegating the core logic to the platform.
 
 ```
-shared/
-    auth/           # Unified authentication (UserAuth, sessions, MFA, roles)
-    base/           # Base classes for services and GUI frames
-    cli/            # CLI login prompt and menu helpers
-    core/           # Paths factory, logging setup, defaults
-    database/       # DB constants, connection utilities, SQL safety
-    gui/            # Universal login window, MFA dialogs
-    i18n/           # Multi-language translation engine
-    testing/        # Pytest fixture factories
-    validation/     # Common input validators
+platform/
+    identity/auth/      # Unified authentication (UserAuth, sessions, MFA, roles)
+    kernel/base/        # Base classes for services and GUI frames
+    kernel/core/        # Logging setup, defaults, system keys, tenancy
+    kernel/database/    # DB constants, connection utilities, SQL safety
+    kernel/validation/  # Common input validators
+    delivery/cli/       # CLI login prompt and menu helpers
+    delivery/gui/       # Universal login window, MFA dialogs
+    features/i18n/      # Multi-language translation engine
+    testing/            # Pytest fixture factories
 ```
 
 ---
 
-## Authentication (`shared/auth/`)
+## Authentication (`src/education_system/platform/identity/auth/`)
 
-Single auth system for all 4 subsystems. One database (`shared/data/db_files/auth.db`).
+Single auth system for all 7 systems. One database (`var/data/platform/db_files/auth.db`).
 
 | File | Purpose |
 |------|---------|
@@ -39,15 +39,14 @@ Single auth system for all 4 subsystems. One database (`shared/data/db_files/aut
 | `db.py` | Auth DB connection with retry logic and file permissions |
 | `defaults.py` | Configurable timeouts, lockout settings |
 
-**Usage in subsystems:**
+**Usage in systems:**
 ```python
-# Each system's infrastructure/auth/core.py is a 1-line re-export:
-from education_system.shared.auth.core import UserAuth
+from education_system.platform.identity.auth.core import UserAuth
 ```
 
 ---
 
-## Database Constants (`shared/database/constants.py`)
+## Database Constants (`src/education_system/platform/kernel/database/constants.py`)
 
 Common SQLite configuration shared by all systems:
 
@@ -60,7 +59,7 @@ Each system imports these and adds domain-specific constants (grade scales, year
 
 ---
 
-## SQL Safety (`shared/database/sql_safety.py`)
+## SQL Safety (`src/education_system/platform/kernel/database/sql_safety.py`)
 
 Safe SQL construction utilities to prevent injection:
 
@@ -71,40 +70,41 @@ Safe SQL construction utilities to prevent injection:
 
 ---
 
-## Paths Factory (`shared/core/paths.py`)
+## Paths (`src/education_system/paths.py`)
 
-`SystemPaths` dataclass and `get_system_paths()` factory:
+The single module defining every filesystem path. Each constant carries the prefix of the system that owns it:
 
 ```python
-from education_system.shared.core.paths import get_system_paths
+from education_system.paths import SIXTH_FORM_STUDENTS_DB, ensure_sixth_form_directories
 
-_paths = get_system_paths(__file__, "sixthform.db")
-# _paths.system_root, _paths.db_file, _paths.logs_dir, etc.
+ensure_sixth_form_directories()
+# SIXTH_FORM_STUDENTS_DB is var/data/sixth_form/sixthform.db
 ```
 
-Each system calls this from its `core/paths.py` and re-exports the standard path constants for backward compatibility.
+Directories are never created on import. `SYSTEM_DB_PATHS` maps each system key to its database.
 
 ---
 
-## Logging (`shared/core/logging.py`)
+## Logging (`src/education_system/platform/kernel/core/logging.py`)
 
 `setup_logging()` function providing consistent file + console handlers:
 
 ```python
-from education_system.shared.core.logging import setup_logging
+from education_system.paths import UNIVERSITY_LOG_DIR
+from education_system.platform.kernel.core.logging import setup_logging
 
 setup_logging(
-    logger_name="education_system.college_system",
-    log_dir=LOGS_DIR,
+    logger_name="education_system.systems.university",
+    log_dir=UNIVERSITY_LOG_DIR,
     log_filename="app.log",
 )
 ```
 
-Each system's `core/logs.py` is a thin wrapper that calls this with system-specific parameters.
+Callers pass their own logger name and a log directory from `education_system.paths`.
 
 ---
 
-## i18n Engine (`shared/i18n/`)
+## i18n Engine (`src/education_system/platform/features/i18n/`)
 
 Multi-language translation engine supporting 13 languages with JSON-based locale files.
 
@@ -117,7 +117,7 @@ Each system calls `init_i18n()` then `add_locale_dir()` to load its own translat
 
 ---
 
-## Validators (`shared/validation/validators.py`)
+## Validators (`src/education_system/platform/kernel/validation/validators.py`)
 
 Common input validators used across all systems:
 
@@ -125,20 +125,20 @@ Common input validators used across all systems:
 - `validate_grade_score()`, `validate_positive_int()`
 - `validate_day_of_week()`, `validate_time()`, `validate_time_range()`
 
-Each system wraps these to re-raise as its own `ValidationError` subclass, then adds domain-specific validators (e.g. `validate_student_id`, `validate_gcse_grade`).
+Systems can wrap these to re-raise as their own `ValidationError` subclass and add domain-specific validators.
 
 ---
 
-## GUI (`shared/gui/`)
+## GUI (`src/education_system/platform/delivery/gui/`)
 
 | File | Purpose |
 |------|---------|
 | `login_gui.py` | `UniversalLoginWindow` -- single login for all systems with system picker |
-| `mfa_gui.py` | `MFAVerifyDialog` and `MFASettingsFrame` -- shared MFA UI |
+| `mfa_setup_gui.py` | `MFASetupWizard` and `MFAVerificationDialog` -- shared MFA UI |
 
 ---
 
-## CLI Helpers (`shared/cli/`)
+## CLI Helpers (`src/education_system/platform/delivery/cli/`)
 
 | File | Purpose |
 |------|---------|
@@ -147,12 +147,12 @@ Each system wraps these to re-raise as its own `ValidationError` subclass, then 
 
 ---
 
-## Test Fixtures (`shared/testing/conftest_helpers.py`)
+## Test Fixtures (`src/education_system/platform/testing/conftest_helpers.py`)
 
 Factory functions for building pytest fixtures without duplicating boilerplate:
 
 ```python
-from education_system.shared.testing.conftest_helpers import (
+from education_system.platform.testing.conftest_helpers import (
     make_template_db_fixture,
     make_db_path_fixture,
     make_auth_fixture,
@@ -165,7 +165,7 @@ auth = make_auth_fixture(UserAuth)
 
 ---
 
-## Base Classes (`shared/base/`)
+## Base Classes (`src/education_system/platform/kernel/base/`)
 
 | File | Purpose |
 |------|---------|
@@ -174,12 +174,12 @@ auth = make_auth_fixture(UserAuth)
 
 ---
 
-## Adding to Shared
+## Adding to the Platform
 
-Before adding something to shared, ask:
+Before adding something to the platform, ask:
 
 1. **Is it used by 2+ systems?** If only one system needs it, keep it there.
-2. **Is it infrastructure or domain logic?** Domain logic stays in the subsystem.
-3. **Will it pull in system-specific dependencies?** If yes, it doesn't belong in shared.
+2. **Is it infrastructure or domain logic?** Domain logic stays in the system.
+3. **Will it pull in system-specific dependencies?** If yes, it doesn't belong in the platform.
 
-The pattern: shared provides the engine/base, each system provides a thin wrapper that configures it for that system's needs.
+The pattern: the platform provides the engine/base, and a system adds a thin wrapper where it needs its own configuration.

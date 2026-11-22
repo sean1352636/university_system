@@ -13,6 +13,40 @@ from __future__ import annotations
 import pytest
 
 
+
+def _drain_as_sixth_form(monkeypatch):
+    """Run the sixth form's UCAS consumers over the (temp) outbox.
+
+    Notifications are captured rather than sent: they would reach the
+    sixth form's messaging tables, which this fixture does not redirect.
+    Returns the decision envelopes the handler saw.
+    """
+    from education_system.platform.integrations.external import (
+        cross_system_bus,
+    )
+    from education_system.systems.sixth_form.domain.progression.university import (
+        ucas_events,
+    )
+    seen = []
+    monkeypatch.setattr(ucas_events, "_notify_decision",
+                        lambda choice, payload: seen.append(payload))
+    envelopes = []
+    real = ucas_events.handle_decision_recorded
+
+    def _capture(envelope):
+        envelopes.append(envelope)
+        real(envelope)
+
+    unsubscribe = cross_system_bus.subscribe(
+        ucas_events.EVENT_DECISION_RECORDED, _capture,
+        handler_name="test.sixth_form.ucas.decision")
+    try:
+        cross_system_bus.poll_and_dispatch(
+            "sixth_form", handler_names={"test.sixth_form.ucas.decision"})
+    finally:
+        unsubscribe()
+    return envelopes
+
 class TestListingApplicants:
     """Which sixth-form choices count as ours."""
 
@@ -49,7 +83,7 @@ class TestListingApplicants:
                                                               monkeypatch):
         """Matching on "" would silently return nothing, which reads as
         "no applicants" rather than "misconfigured"."""
-        from education_system.systems.university.application import prospectus
+        from education_system.systems.university.application.programmes import prospectus
         monkeypatch.setattr(prospectus, "institution_name", lambda: None)
         monkeypatch.setattr(ucas_env.uni_ucas, "UNIVERSITY_NAME", "")
         with pytest.raises(ucas_env.uni_ucas.UcasError):
@@ -71,13 +105,48 @@ class TestFullApplication:
 class TestRecordingADecision:
     """The write-back, and everything it is supposed to record."""
 
-    def test_an_offer_lands_on_the_sixth_forms_choice(self, ucas_env):
+    def test_an_offer_lands_on_the_sixth_forms_choice(self, ucas_env,
+                                                      monkeypatch):
+        """By event: the university no longer writes the sixth form's row;
+        the sixth form applies ``ucas.decision.recorded`` itself."""
         ucas_env.uni_ucas.record_decision(
             ucas_env.our_choice_id, "Conditional Offer",
-            offer_terms="ABB", issued_by="admissions.officer")
+            offer_terms="ABB", terms={"reply_deadline": "2027-05-01"},
+            issued_by="admissions.officer")
+        # Not written across the boundary...
+        assert ucas_env.sf_ucas.get_choice(
+            ucas_env.our_choice_id).decision_status == "Awaiting"
+        # ...until the sixth form drains its events.
+        _drain_as_sixth_form(monkeypatch)
         choice = ucas_env.sf_ucas.get_choice(ucas_env.our_choice_id)
         assert choice.decision_status == "Conditional Offer"
         assert choice.offer_terms == "ABB"
+        assert choice.reply_by == "2027-05-01"
+        assert choice.decided_by == "admissions.officer"
+
+    def test_redelivery_is_idempotent(self, ucas_env, monkeypatch):
+        ucas_env.uni_ucas.record_decision(
+            ucas_env.our_choice_id, "Conditional Offer",
+            offer_terms="ABB", issued_by="a.officer")
+        events = _drain_as_sixth_form(monkeypatch)
+        assert len(events) == 1
+        before = ucas_env.sf_ucas.get_choice(ucas_env.our_choice_id)
+        choice, changed = ucas_env.sf_ucas.apply_university_decision(
+            events[0]["payload"])
+        assert changed is False
+        assert choice.decision_ref == before.decision_ref
+        assert choice.decision_status == "Conditional Offer"
+
+    def test_the_university_shows_its_decision_at_once(self, ucas_env):
+        """No lag in the admissions screens while the event is in flight."""
+        out = ucas_env.uni_ucas.record_decision(
+            ucas_env.our_choice_id, "Unconditional Offer",
+            issued_by="a.officer")
+        assert out.decision_status == "Unconditional Offer"
+        listed = {a.choice_id: a for a in ucas_env.uni_ucas.list_applicants()}
+        assert listed[ucas_env.our_choice_id].decision_status == \
+            "Unconditional Offer"
+        assert listed[ucas_env.our_choice_id].sf_decision_status == "Awaiting"
 
     def test_a_conditional_offer_must_say_what_the_condition_is(self, ucas_env):
         with pytest.raises(ucas_env.uni_ucas.UcasError):
@@ -160,10 +229,11 @@ class TestRecordingADecision:
             raise RuntimeError("link store unavailable")
         monkeypatch.setattr(ucas_env.links, "ensure_link_for_choice", _explode)
 
-        ucas_env.uni_ucas.record_decision(
+        out = ucas_env.uni_ucas.record_decision(
             ucas_env.our_choice_id, "Unconditional Offer",
             issued_by="a.officer")
-        assert ucas_env.sf_ucas.get_choice(
+        assert out.decision_status == "Unconditional Offer"
+        assert ucas_env.decision_log.last_decision(
             ucas_env.our_choice_id).decision_status == "Unconditional Offer"
 
 

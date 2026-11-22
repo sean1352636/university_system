@@ -1,4 +1,4 @@
-from education_system.systems.university.infrastructure.ai.university_chatbot import LIBRARIES_AVAILABLE
+from education_system.systems.university.shared.ai.chatbot import LIBRARIES_AVAILABLE
 
 
 class BackwardCompatibilityWrapper:

@@ -41,7 +41,7 @@ _TENANTS_BASE = (_SHARED_ROOT / "data" / "tenants").resolve()
 _SLUG_RE = re.compile(r"\A[A-Za-z0-9_\-]{1,64}\Z")
 
 #: Systems we know how to provision (all five; keys match the canonical
-#: SYSTEM_DB_PATHS registry in education_system/paths.py).
+#: SYSTEM_DB_PATHS registry in education_system/paths/registry.py).
 KNOWN_SYSTEMS: tuple[str, ...] = ("nursery", "primary", "secondary", "sixth_form", "university")
 
 #: Maximum cached connections per (slug, system_key) pair.

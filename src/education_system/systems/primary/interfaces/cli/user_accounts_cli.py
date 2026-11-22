@@ -119,8 +119,8 @@ def list_all(auth: Any) -> None:
     _row_action_loop(auth)
 
 
-def list_sixthform(auth: Any) -> None:
-    print("\n═══ Secondary-School Users ═══")
+def list_primary(auth: Any) -> None:
+    print("\n═══ Primary-School Users ═══")
     _print_users(data.list_users(auth, system_key=SYSTEM_KEY))
     _row_action_loop(auth)
 
@@ -136,7 +136,7 @@ def filter_users(auth: Any) -> None:
     try:
         q = _input("Search (username / name / email)") or None
         role = _input(f"Role ({'/'.join(ROLES)}, blank=skip)") or None
-        sixth = _yes_no("Secondary-school only?", default=True)
+        own = _yes_no("Primary-school only?", default=True)
         active = _yes_no("Active only?", default=False)
         locked = _yes_no("Locked only?", default=False)
     except _UserAbort:
@@ -145,7 +145,7 @@ def filter_users(auth: Any) -> None:
     try:
         rows = data.list_users(
             auth, query=q, role=role,
-            system_key=SYSTEM_KEY if sixth else None,
+            system_key=SYSTEM_KEY if own else None,
             active_only=active, locked_only=locked)
     except UserAccountError as e:
         print(f"  ✗ {e}")
@@ -196,7 +196,7 @@ def new_user(auth: Any) -> None:
         username = _input("Username", allow_empty=False)
         display = _input("Display name (optional)")
         email = _input("Email (optional)")
-        role = _pick_from("Secondary-school role", list(ROLES),
+        role = _pick_from("Primary-school role", list(ROLES),
                             default=DEFAULT_ROLE)
         also_other = _yes_no(
             "Grant access in any other system too?", default=False)
@@ -449,11 +449,11 @@ def summary_flow(auth: Any) -> None:
     print(f"  Active                : {s.active}")
     print(f"  Inactive              : {s.inactive}")
     print(f"  Locked (right now)    : {s.locked}")
-    print(f"  Secondary-school users      : {s.sixth_form_users}")
+    print(f"  Primary-school users      : {s.primary_users}")
     print(f"  Logins in last 7 days : {s.recent_logins_7d}")
-    print("\n  By role in secondary-school:")
+    print("\n  By role in primary-school:")
     for r in ROLES:
-        n = s.by_role_in_sixthform.get(r, 0)
+        n = s.by_role_in_primary.get(r, 0)
         if n:
             print(f"    {r:<20} : {n}")
     _pause()
@@ -508,7 +508,7 @@ def _row_action_loop(auth: Any) -> None:
 # ── Submenu ───────────────────────────────────────────────────────
 
 _MENU: list[tuple[str, Callable[[Any], None]]] = [
-    ("Secondary-School Users",      list_sixthform),
+    ("Primary-School Users",      list_primary),
     ("All Users",             list_all),
     ("Locked Users",          list_locked),
     ("Filter / Search",       filter_users),

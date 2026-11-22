@@ -1,0 +1,27 @@
+{
+  "name": "dinner_money_low_balance",
+  "description": "An alert that a pupil's school meal account is running low.",
+  "subject": "School meals account running low - {pupil_name}",
+  "body": [
+    "Dear {recipient_name},",
+    "",
+    "{pupil_name}'s school meals account balance is {balance}, which is below {threshold}.",
+    "",
+    "Please top up the account at the school office or online so that it doesn't become overdrawn.",
+    "",
+    "Yours sincerely,",
+    "{sender_name}",
+    "{school_name}"
+  ],
+  "placeholders": {
+    "recipient_name": "The contact's name",
+    "pupil_name": "The pupil's first name",
+    "balance": "The balance now",
+    "threshold": "The low-balance level",
+    "sender_name": "The member of staff sending it",
+    "school_name": "The school's name"
+  },
+  "defaults": {
+    "school_name": "Secondary School"
+  }
+}

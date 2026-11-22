@@ -24,7 +24,7 @@ _DB_PATH_ATTR = (
     "education_system.systems.university.infrastructure.database.db.DEFAULT_DB_PATH"
 )
 _PLS_PATH = (
-    "education_system.systems.university.domains.academics.domain."
+    "education_system.systems.university.domains.admissions.domain."
     "prior_learning_recognition.services.prior_learning_service.PriorLearningService"
 )
 
@@ -96,9 +96,10 @@ class TestDatabase:
             )
         }
         assert {"students", "employers", "apprenticeships", "applications"} <= names
-        # optional columns added by ALTER
+        # students belongs to Student Records: no US-style gpa column is added
         cols = {r[1] for r in db.fetch_all("PRAGMA table_info(students)")}
-        assert "gpa" in cols
+        assert "gpa" not in cols
+        assert db.fetch_one("PRAGMA foreign_keys")[0] == 1
         cols_e = {r[1] for r in db.fetch_all("PRAGMA table_info(employers)")}
         assert "address" in cols_e
         db.close()
@@ -198,9 +199,8 @@ def _seed_student(svc, student_id, first, last, email, course, **extra):
     """
     svc.db.execute(
         "INSERT INTO students (student_id, first_name, last_name, "
-        " email_address, course, year_of_study, gpa) VALUES (?, ?, ?, ?, ?, ?, ?)",
-        (student_id, first, last, email, course,
-         extra.get("year_of_study", 0), extra.get("gpa")),
+        " email_address, course, year_of_study) VALUES (?, ?, ?, ?, ?, ?)",
+        (student_id, first, last, email, course, extra.get("year_of_study", 0)),
     )
 
 
@@ -209,13 +209,14 @@ class TestStudents:
 
     def test_list(self, service):
         _seed_student(service, "S1", "Ann", "Smith", "ann@x.test", "CS",
-                      year_of_study=2, gpa=3.5)
+                      year_of_study=2)
         students = service.list_students()
         assert len(students) == 1
         s = students[0]
         assert s["student_id"] == "S1"
         assert s["first_name"] == "Ann"
-        assert s["gpa"] == 3.5
+        assert s["year_of_study"] == 2
+        assert "gpa" not in s
 
     def test_list_ordered_by_last_name(self, service):
         _seed_student(service, "S1", "Ann", "Zephyr", "a@x.test", "CS")
@@ -278,7 +279,7 @@ class TestEmployers:
         assert emp["industry"] == "Eng"
 
     def test_delete_employer_cascades_apprenticeships_and_applications(self, service):
-        service.add_student("S1", "Ann", "Smith", "ann@x.test", "CS")
+        _seed_student(service, "S1", "Ann", "Smith", "ann@x.test", "CS")
         eid, appr_id = _employer_and_appr(service)
         service.submit_application("S1", appr_id)
 
@@ -319,7 +320,7 @@ class TestApprenticeships:
         assert row["status"] == "Closed"
 
     def test_delete_apprenticeship_clears_applications(self, service):
-        service.add_student("S1", "Ann", "Smith", "ann@x.test", "CS")
+        _seed_student(service, "S1", "Ann", "Smith", "ann@x.test", "CS")
         eid, appr_id = _employer_and_appr(service)
         service.submit_application("S1", appr_id)
         service.delete_apprenticeship(appr_id)
@@ -333,7 +334,7 @@ class TestApprenticeships:
 
 class TestApplications:
     def test_submit_and_list_joins(self, service):
-        service.add_student("S1", "Ann", "Smith", "ann@x.test", "CS")
+        _seed_student(service, "S1", "Ann", "Smith", "ann@x.test", "CS")
         eid, appr_id = _employer_and_appr(service, company="Acme",
                                           title="Data Apprentice")
         app_id = service.submit_application("S1", appr_id, notes="keen")
@@ -348,7 +349,7 @@ class TestApplications:
         assert r["status"] == "Pending"
 
     def test_list_filtered_by_status(self, service):
-        service.add_student("S1", "Ann", "Smith", "ann@x.test", "CS")
+        _seed_student(service, "S1", "Ann", "Smith", "ann@x.test", "CS")
         eid, appr_id = _employer_and_appr(service)
         a1 = service.submit_application("S1", appr_id, status="Pending")
         service.update_application_status(a1, "Accepted")
@@ -356,7 +357,7 @@ class TestApplications:
         assert service.list_applications(status="Pending") == []
 
     def test_update_status_without_notes(self, service):
-        service.add_student("S1", "Ann", "Smith", "ann@x.test", "CS")
+        _seed_student(service, "S1", "Ann", "Smith", "ann@x.test", "CS")
         eid, appr_id = _employer_and_appr(service)
         a1 = service.submit_application("S1", appr_id, notes="original")
         service.update_application_status(a1, "Reviewed")
@@ -366,7 +367,7 @@ class TestApplications:
         assert row[1] == "original"  # notes untouched
 
     def test_update_status_with_notes(self, service):
-        service.add_student("S1", "Ann", "Smith", "ann@x.test", "CS")
+        _seed_student(service, "S1", "Ann", "Smith", "ann@x.test", "CS")
         eid, appr_id = _employer_and_appr(service)
         a1 = service.submit_application("S1", appr_id)
         service.update_application_status(a1, "Rejected", notes="not a fit")
@@ -376,7 +377,7 @@ class TestApplications:
         assert row[1] == "not a fit"
 
     def test_delete_application(self, service):
-        service.add_student("S1", "Ann", "Smith", "ann@x.test", "CS")
+        _seed_student(service, "S1", "Ann", "Smith", "ann@x.test", "CS")
         eid, appr_id = _employer_and_appr(service)
         a1 = service.submit_application("S1", appr_id)
         service.delete_application(a1)
@@ -402,7 +403,7 @@ class TestSubmitAsApl:
         _FakePLS.calls = []
 
     def test_resolves_employer_from_latest_application(self, service):
-        service.add_student("S1", "Ann", "Smith", "ann@x.test", "CS")
+        _seed_student(service, "S1", "Ann", "Smith", "ann@x.test", "CS")
         eid, appr_id = _employer_and_appr(service, company="Acme Corp")
         service.submit_application("S1", appr_id)
 
@@ -417,7 +418,7 @@ class TestSubmitAsApl:
         assert kwargs["total_hours"] == 0.0
 
     def test_defaults_employer_when_no_application(self, service):
-        service.add_student("S2", "Bea", "Jones", "bea@x.test", "CS")
+        _seed_student(service, "S2", "Bea", "Jones", "bea@x.test", "CS")
 
         with patch(_PLS_PATH, _FakePLS):
             claim_id = service.submit_as_apl("S2")
@@ -438,3 +439,98 @@ class TestSubmitAsApl:
         assert claim_id == 4242
         _, kwargs = _FakePLS.calls[0]
         assert kwargs["employer"] == "Apprenticeship employer"
+
+
+# ---------------------------------------------------------------------------
+# Import from the apprenticeships system (gateway) + vacancies CSV
+# ---------------------------------------------------------------------------
+
+from education_system.systems.university.domains.progression.domain.apprenticeships.apprenticeships_gateway import (  # noqa: E402
+    EmployerSummary,
+    ProgrammeSummary,
+)
+
+
+class _FakeGateway:
+    def __init__(self, employers=(), programmes=()):
+        self._employers = list(employers)
+        self._programmes = list(programmes)
+
+    def list_employers(self, *, active_only=False):
+        return self._employers
+
+    def list_programmes(self, *, open_only=False):
+        return self._programmes
+
+
+def _emp(eid, name, status="Active", sector="Digital"):
+    return EmployerSummary(eid, name, sector, status, "LS1 1AA", "Pat Lee", "pat@x.test")
+
+
+_PROG = ProgrammeSummary(7, "ST0119", "Software Developer", 4, 24, 18000.0, "Digital", "Active")
+
+
+class TestImportFromGateway:
+    def test_employers_added_then_updated_not_duplicated(self, service):
+        gw = _FakeGateway([_emp(1, "Acme"), _emp(2, "Old Co", status="Ended")], [_PROG])
+        first = service.import_from_gateway(gw)
+        assert first["employers_created"] == 1
+        assert first["employers_skipped"] == ["Old Co (Ended)"]
+        second = service.import_from_gateway(gw)
+        assert second["employers_created"] == 0 and second["employers_updated"] == 1
+        assert [e["company_name"] for e in service.list_employers()] == ["Acme"]
+
+    def test_listing_for_programme_gives_a_real_row_for_applications(self, service):
+        _seed_student(service, "S1", "Ann", "Smith", "ann@x.test", "CS")
+        listing = service.listing_for_programme(_PROG, _emp(1, "Acme"))
+        assert service.listing_for_programme(_PROG, _emp(1, "Acme")) == listing
+        service.submit_application("S1", listing, employer_id=1)
+        assert service.list_applications()[0]["company_name"] == "Acme"
+
+    def test_application_to_missing_listing_is_refused(self, service):
+        import sqlite3
+        _seed_student(service, "S1", "Ann", "Smith", "ann@x.test", "CS")
+        with pytest.raises(sqlite3.IntegrityError):
+            service.submit_application("S1", 999)
+
+
+class TestVacanciesCsv:
+    def _csv(self, tmp_path, text):
+        path = tmp_path / "v.csv"
+        path.write_text(text, encoding="utf-8")
+        return str(path)
+
+    def test_valid_rows_added_and_programme_fills_gaps(self, service, tmp_path):
+        service.add_employer("Acme", "Pat", "pat@x.test")
+        path = self._csv(tmp_path, "title,employer,duration_months,salary,programme_reference\n"
+                                   "Data Apprentice,Acme,12,£21,000,\n"
+                                   ",acme,,,ST0119\n")
+        # The salary with a comma needs quoting; check the error first.
+        bad = service.import_vacancies_csv(path, [_PROG])
+        assert bad["added"] == 0 and bad["errors"]
+        path = self._csv(tmp_path, 'title,employer,duration_months,salary,programme_reference\n'
+                                   'Data Apprentice,Acme,12,"£21,000",\n'
+                                   ',acme,,,ST0119\n')
+        out = service.import_vacancies_csv(path, [_PROG])
+        assert out == {"added": 2, "skipped": [], "errors": []}
+        rows = {r["title"]: r for r in service.list_apprenticeships()}
+        assert rows["Data Apprentice"]["salary"] == 21000
+        assert rows["Software Developer"]["duration_months"] == 24
+        again = service.import_vacancies_csv(path, [_PROG])
+        assert again["added"] == 0 and len(again["skipped"]) == 2
+
+    def test_any_invalid_row_means_nothing_is_written(self, service, tmp_path):
+        service.add_employer("Acme", "Pat", "pat@x.test")
+        path = self._csv(tmp_path, "title,employer,duration_months,status\n"
+                                   "Good,Acme,12,Open\n"
+                                   "Bad,Nobody Ltd,0,Maybe\n")
+        out = service.import_vacancies_csv(path, [])
+        assert out["added"] == 0
+        assert "Row 3" in out["errors"][0]
+        assert "Nobody Ltd" in out["errors"][0] and "status" in out["errors"][0]
+        assert service.list_apprenticeships() == []
+
+    def test_unknown_columns_rejected(self, service, tmp_path):
+        path = self._csv(tmp_path, "title,employer,duration_months,gpa\nX,Acme,12,3.9\n")
+        out = service.import_vacancies_csv(path, [])
+        assert out["added"] == 0 and "gpa" in out["errors"][0]

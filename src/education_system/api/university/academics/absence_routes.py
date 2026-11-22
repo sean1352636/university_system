@@ -12,7 +12,15 @@ from pathlib import Path
 
 from flask import Blueprint, g, jsonify, request
 
-from education_system.platform.delivery.api.university.auth import scoped_to, token_required
+from education_system.platform.delivery.api.university.auth import (
+    current_subject_id,
+    deny_unless_owner_or_staff,
+    is_staff,
+    require_staff,
+    scoped_to,
+    staff_required,
+    token_required,
+)
 from education_system.platform.kernel.core.safe_paths import (
     PathSecurityError,
     ensure_secure_dir,
@@ -20,13 +28,34 @@ from education_system.platform.kernel.core.safe_paths import (
     safe_join,
 )
 from education_system.systems.university.infrastructure.database.db import get_connection
-from education_system.systems.university.domains.academics.domain.services.attendance.absence_tracking import (
+from education_system.systems.university.domains.teaching.domain.attendance.absence_tracking import (
     absence_enhancements as ae,
 )
 
 logger = logging.getLogger(__name__)
 
 absence_bp = Blueprint("absence", __name__, url_prefix="/api/absence")
+
+#: UKVI monitoring, evidence signatures, LMS sync and anomaly review are
+#: central attendance work: ``manage_attendance`` (admin, staff).
+ABSENCE_ADMIN = "manage_attendance"
+#: Taking a register for someone else (kiosk scans, staff check-ins):
+#: central staff hold ``manage_attendance``, module tutors hold
+#: ``manage_module_attendance`` (admin, instructor). Either is enough.
+REGISTER_TAKERS = ("manage_attendance", "manage_module_attendance")
+#: Queueing a push to a named user: ``send_notifications`` (admin, instructor).
+PUSH_SEND = "send_notifications"
+#: Draining the push queue is an operator job: ``system_admin`` (admin).
+PUSH_DRAIN = "system_admin"
+#: The HESA attendance export: ``export_data`` (admin, staff).
+ABSENCE_EXPORT = "export_data"
+
+
+def _deny_unless_register_taker():
+    """403 unless the caller may record attendance for another student."""
+    if any(require_staff(permission=p) is None for p in REGISTER_TAKERS):
+        return None
+    return jsonify({"error": "Forbidden", "status": 403}), 403
 
 
 def _conn():
@@ -67,13 +96,27 @@ def list_categories():
 @token_required
 def checkin():
     body = request.get_json(force=True) or {}
-    required = {"student_id", "module_code", "lat", "lon"}
-    if not required.issubset(body):
-        return jsonify({"error": f"missing fields: {required - set(body)}"}), 400
+    # A learner checks in only themselves - the student id is the caller's,
+    # never one from the body. Staff checking someone else in must be able
+    # to take a register.
+    if is_staff():
+        denial = _deny_unless_register_taker()
+        if denial is not None:
+            return denial
+        student_id = body.get("student_id")
+    else:
+        student_id = current_subject_id()
+    denial = deny_unless_owner_or_staff(student_id)
+    if denial is not None:
+        return denial
+    required = {"module_code", "lat", "lon"}
+    if not student_id or not required.issubset(body):
+        missing = (required - set(body)) | (set() if student_id else {"student_id"})
+        return jsonify({"error": f"missing fields: {missing}"}), 400
     conn = _conn()
     ae.ensure_enhanced_schema(conn)
     ok, msg = ae.record_geofenced_checkin(
-        conn, body["student_id"], body["module_code"],
+        conn, student_id, body["module_code"],
         float(body["lat"]), float(body["lon"]),
         device_id=body.get("device_id", ""),
     )
@@ -84,6 +127,9 @@ def checkin():
 @absence_bp.route("/kiosk/scan", methods=["POST"])
 @token_required
 def kiosk_scan():
+    denial = _deny_unless_register_taker()
+    if denial is not None:
+        return denial
     body = request.get_json(force=True) or {}
     required = {"kiosk_id", "module_code", "image_path"}
     if not required.issubset(body):
@@ -98,6 +144,7 @@ def kiosk_scan():
 # ---- push queue (#21) ----
 @absence_bp.route("/push", methods=["POST"])
 @token_required
+@staff_required(permission=PUSH_SEND)
 def enqueue_push():
     body = request.get_json(force=True) or {}
     required = {"user_id", "title", "body"}
@@ -112,6 +159,7 @@ def enqueue_push():
 
 @absence_bp.route("/push/drain", methods=["POST"])
 @token_required
+@staff_required(permission=PUSH_DRAIN)
 def drain_push():
     conn = _conn()
     ae.ensure_enhanced_schema(conn)
@@ -122,6 +170,7 @@ def drain_push():
 # ---- HESA export (#30) ----
 @absence_bp.route("/hesa-export", methods=["POST"])
 @token_required
+@staff_required(permission=ABSENCE_EXPORT)
 def hesa_export_route():
     body = request.get_json(silent=True) or {}
     # The client may name the export file but may not choose where it lands:
@@ -149,6 +198,7 @@ def hesa_export_route():
 # ---- UKVI (#31) ----
 @absence_bp.route("/ukvi/at-risk", methods=["GET"])
 @token_required
+@staff_required(permission=ABSENCE_ADMIN)
 def ukvi_at_risk_route():
     conn = _conn()
     ae.ensure_enhanced_schema(conn)
@@ -166,6 +216,7 @@ def ukvi_at_risk_route():
 
 @absence_bp.route("/ukvi/events", methods=["POST"])
 @token_required
+@staff_required(permission=ABSENCE_ADMIN)
 def ukvi_log():
     body = request.get_json(force=True) or {}
     if "student_id" not in body or "event_type" not in body:
@@ -181,6 +232,7 @@ def ukvi_log():
 # ---- evidence signature (#35) ----
 @absence_bp.route("/evidence/sign", methods=["POST"])
 @token_required
+@staff_required(permission=ABSENCE_ADMIN)
 def sign_route():
     body = request.get_json(force=True) or {}
     required = {"request_id", "file_path"}
@@ -196,6 +248,7 @@ def sign_route():
 
 @absence_bp.route("/evidence/verify", methods=["POST"])
 @token_required
+@staff_required(permission=ABSENCE_ADMIN)
 def verify_route():
     body = request.get_json(force=True) or {}
     conn = _conn()
@@ -207,6 +260,7 @@ def verify_route():
 # ---- LMS (#46) ----
 @absence_bp.route("/lms/sync", methods=["POST"])
 @token_required
+@staff_required(permission=ABSENCE_ADMIN)
 def lms_sync_route():
     conn = _conn()
     ae.ensure_enhanced_schema(conn)
@@ -217,6 +271,7 @@ def lms_sync_route():
 # ---- anomalies (#50) ----
 @absence_bp.route("/anomalies/scan", methods=["POST"])
 @token_required
+@staff_required(permission=ABSENCE_ADMIN)
 def anomalies_scan():
     conn = _conn()
     ae.ensure_enhanced_schema(conn)
@@ -226,6 +281,7 @@ def anomalies_scan():
 
 @absence_bp.route("/anomalies", methods=["GET"])
 @token_required
+@staff_required(permission=ABSENCE_ADMIN)
 def anomalies_list():
     conn = _conn()
     ae.ensure_enhanced_schema(conn)

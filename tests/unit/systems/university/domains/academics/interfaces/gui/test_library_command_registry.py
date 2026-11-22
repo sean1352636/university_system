@@ -2,7 +2,7 @@
 
 import pytest
 
-from education_system.systems.university.domains.academics.interfaces.gui.library import LibraryGUI
+from education_system.systems.university.domains.library.interfaces.gui.library import LibraryGUI
 
 
 EXPLICIT_CONTEXT_COMMANDS = {

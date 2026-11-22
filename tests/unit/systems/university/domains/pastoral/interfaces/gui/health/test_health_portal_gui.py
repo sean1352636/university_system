@@ -16,7 +16,7 @@ import os
 import tempfile
 from pathlib import Path
 
-from education_system.systems.university.domains.pastoral.interfaces.gui.health.health_portal import (
+from education_system.systems.university.domains.health.interfaces.gui.health.health_portal import (
     HealthPortalGUI,
     launch_health_portal_gui
 )
@@ -59,7 +59,7 @@ def root_window():
 class TestHealthPortalGUIInit:
     """Test HealthPortalGUI initialization"""
 
-    @patch('education_system.systems.university.domains.pastoral.interfaces.gui.health.health_portal.main.messagebox')
+    @patch('education_system.systems.university.domains.health.interfaces.gui.health.health_portal.main.messagebox')
     def test_gui_init_with_auth(self, mock_messagebox, root_window, mock_auth):
         """Test GUI initialization with authenticated user"""
         with patch('education_system.systems.university.infrastructure.shared_context.get_auth', return_value=mock_auth):
@@ -70,8 +70,8 @@ class TestHealthPortalGUIInit:
             assert gui.cipher_suite is not None
             assert gui.audit_logger is not None
 
-    @patch('education_system.systems.university.domains.pastoral.interfaces.gui.health.health_portal.main.messagebox')
-    @patch('education_system.systems.university.domains.pastoral.interfaces.gui.health.health_portal.main.get_auth')
+    @patch('education_system.systems.university.domains.health.interfaces.gui.health.health_portal.main.messagebox')
+    @patch('education_system.systems.university.domains.health.interfaces.gui.health.health_portal.main.get_auth')
     def test_gui_init_without_auth_shows_error(self, mock_get_auth, mock_messagebox, root_window):
         """Test GUI shows error when no authentication is present"""
         unauth_mock = Mock(spec=UserAuth)
@@ -85,7 +85,7 @@ class TestHealthPortalGUIInit:
     def test_encryption_key_generation(self, root_window, mock_auth):
         """Test encryption key is generated properly"""
         with patch('education_system.systems.university.infrastructure.shared_context.get_auth', return_value=mock_auth):
-            with patch('education_system.systems.university.domains.pastoral.interfaces.gui.health.health_portal.main.messagebox'):
+            with patch('education_system.systems.university.domains.health.interfaces.gui.health.health_portal.main.messagebox'):
                 gui = HealthPortalGUI(root_window, auth_system=mock_auth)
 
                 # Verify encryption key is valid
@@ -103,7 +103,7 @@ class TestEncryptionMethods:
     """Test encryption and decryption methods"""
 
     @patch('education_system.systems.university.infrastructure.shared_context.get_auth')
-    @patch('education_system.systems.university.domains.pastoral.interfaces.gui.health.health_portal.main.messagebox')
+    @patch('education_system.systems.university.domains.health.interfaces.gui.health.health_portal.main.messagebox')
     def test_encrypt_decrypt_sensitive_data(self, mock_messagebox, mock_get_auth, root_window, mock_auth):
         """Test encryption and decryption of sensitive data"""
         mock_get_auth.return_value = mock_auth
@@ -121,7 +121,7 @@ class TestEncryptionMethods:
         assert decrypted == test_data
 
     @patch('education_system.systems.university.infrastructure.shared_context.get_auth')
-    @patch('education_system.systems.university.domains.pastoral.interfaces.gui.health.health_portal.main.messagebox')
+    @patch('education_system.systems.university.domains.health.interfaces.gui.health.health_portal.main.messagebox')
     def test_encrypt_none_data(self, mock_messagebox, mock_get_auth, root_window, mock_auth):
         """Test encrypting None returns None"""
         mock_get_auth.return_value = mock_auth
@@ -131,7 +131,7 @@ class TestEncryptionMethods:
         assert result is None
 
     @patch('education_system.systems.university.infrastructure.shared_context.get_auth')
-    @patch('education_system.systems.university.domains.pastoral.interfaces.gui.health.health_portal.main.messagebox')
+    @patch('education_system.systems.university.domains.health.interfaces.gui.health.health_portal.main.messagebox')
     def test_decrypt_invalid_data(self, mock_messagebox, mock_get_auth, root_window, mock_auth):
         """Test decrypting invalid data returns original"""
         mock_get_auth.return_value = mock_auth
@@ -147,7 +147,7 @@ class TestRoleChecking:
     """Test role checking methods"""
 
     @patch('education_system.systems.university.infrastructure.shared_context.get_auth')
-    @patch('education_system.systems.university.domains.pastoral.interfaces.gui.health.health_portal.main.messagebox')
+    @patch('education_system.systems.university.domains.health.interfaces.gui.health.health_portal.main.messagebox')
     def test_is_admin(self, mock_messagebox, mock_get_auth, root_window, mock_auth):
         """Test admin role detection"""
         mock_get_auth.return_value = mock_auth
@@ -160,7 +160,7 @@ class TestRoleChecking:
         assert gui.is_student() is False
 
     @patch('education_system.systems.university.infrastructure.shared_context.get_auth')
-    @patch('education_system.systems.university.domains.pastoral.interfaces.gui.health.health_portal.main.messagebox')
+    @patch('education_system.systems.university.domains.health.interfaces.gui.health.health_portal.main.messagebox')
     def test_is_staff(self, mock_messagebox, mock_get_auth, root_window, mock_auth):
         """Test staff role detection"""
         mock_get_auth.return_value = mock_auth
@@ -173,7 +173,7 @@ class TestRoleChecking:
         assert gui.is_student() is False
 
     @patch('education_system.systems.university.infrastructure.shared_context.get_auth')
-    @patch('education_system.systems.university.domains.pastoral.interfaces.gui.health.health_portal.main.messagebox')
+    @patch('education_system.systems.university.domains.health.interfaces.gui.health.health_portal.main.messagebox')
     def test_is_student(self, mock_messagebox, mock_get_auth, root_window, mock_auth):
         """Test student role detection"""
         mock_get_auth.return_value = mock_auth
@@ -186,7 +186,7 @@ class TestRoleChecking:
         assert gui.is_student() is True
 
     @patch('education_system.systems.university.infrastructure.shared_context.get_auth')
-    @patch('education_system.systems.university.domains.pastoral.interfaces.gui.health.health_portal.main.messagebox')
+    @patch('education_system.systems.university.domains.health.interfaces.gui.health.health_portal.main.messagebox')
     def test_get_user_role(self, mock_messagebox, mock_get_auth, root_window, mock_auth):
         """Test getting user role"""
         mock_get_auth.return_value = mock_auth
@@ -199,14 +199,14 @@ class TestRoleChecking:
 class TestDatabaseOperations:
     """Test database initialization and operations"""
 
-    @patch('education_system.systems.university.domains.pastoral.interfaces.gui.health.health_portal.main.get_auth')
-    @patch('education_system.systems.university.domains.pastoral.interfaces.gui.health.health_portal.main.messagebox')
+    @patch('education_system.systems.university.domains.health.interfaces.gui.health.health_portal.main.get_auth')
+    @patch('education_system.systems.university.domains.health.interfaces.gui.health.health_portal.main.messagebox')
     def test_database_initialization(self, mock_messagebox, mock_get_auth, root_window, mock_auth, temp_db_path):
         """Test database tables are created properly"""
         mock_get_auth.return_value = mock_auth
 
-        with patch('education_system.systems.university.domains.pastoral.interfaces.gui.health.health_portal.auth_encryption.paths.DEFAULT_DB_PATH', temp_db_path), \
-             patch('education_system.systems.university.domains.pastoral.interfaces.gui.health.health_portal.database.paths.DEFAULT_DB_PATH', temp_db_path), \
+        with patch('education_system.systems.university.domains.health.interfaces.gui.health.health_portal.auth_encryption.paths.DEFAULT_DB_PATH', temp_db_path), \
+             patch('education_system.systems.university.domains.health.interfaces.gui.health.health_portal.database.paths.DEFAULT_DB_PATH', temp_db_path), \
              patch('education_system.systems.university.infrastructure.database.db.DEFAULT_DB_PATH', temp_db_path):
             gui = HealthPortalGUI(root_window, auth_system=mock_auth)
 
@@ -224,12 +224,12 @@ class TestDatabaseOperations:
             conn.close()
 
     @patch('education_system.systems.university.infrastructure.shared_context.get_auth')
-    @patch('education_system.systems.university.domains.pastoral.interfaces.gui.health.health_portal.main.messagebox')
+    @patch('education_system.systems.university.domains.health.interfaces.gui.health.health_portal.main.messagebox')
     def test_get_connection(self, mock_messagebox, mock_get_auth, root_window, mock_auth, temp_db_path):
         """Test get_connection method"""
         mock_get_auth.return_value = mock_auth
 
-        with patch('education_system.systems.university.domains.pastoral.interfaces.gui.health.health_portal.auth_encryption.paths.DEFAULT_DB_PATH', temp_db_path):
+        with patch('education_system.systems.university.domains.health.interfaces.gui.health.health_portal.auth_encryption.paths.DEFAULT_DB_PATH', temp_db_path):
             gui = HealthPortalGUI(root_window, auth_system=mock_auth)
 
             conn = gui.get_connection()
@@ -241,7 +241,7 @@ class TestAuditLogging:
     """Test audit logging functionality"""
 
     @patch('education_system.systems.university.infrastructure.shared_context.get_auth')
-    @patch('education_system.systems.university.domains.pastoral.interfaces.gui.health.health_portal.main.messagebox')
+    @patch('education_system.systems.university.domains.health.interfaces.gui.health.health_portal.main.messagebox')
     def test_log_audit_event(self, mock_messagebox, mock_get_auth, root_window, mock_auth):
         """Test audit event logging"""
         mock_get_auth.return_value = mock_auth
@@ -264,8 +264,8 @@ class TestAuditLogging:
 class TestLaunchFunction:
     """Test launch_health_portal_gui function"""
 
-    @patch('education_system.systems.university.domains.pastoral.interfaces.gui.health.health_portal.main.tk.Tk')
-    @patch('education_system.systems.university.domains.pastoral.interfaces.gui.health.health_portal.main.HealthPortalGUI')
+    @patch('education_system.systems.university.domains.health.interfaces.gui.health.health_portal.main.tk.Tk')
+    @patch('education_system.systems.university.domains.health.interfaces.gui.health.health_portal.main.HealthPortalGUI')
     def test_launch_health_portal_gui_with_auth(self, mock_gui_class, mock_tk, mock_auth):
         """Test launching GUI with authentication"""
         mock_root = Mock()
@@ -279,8 +279,8 @@ class TestLaunchFunction:
         # Verify HealthPortalGUI was instantiated
         mock_gui_class.assert_called_once()
 
-    @patch('education_system.systems.university.domains.pastoral.interfaces.gui.health.health_portal.main.tk.Tk')
-    @patch('education_system.systems.university.domains.pastoral.interfaces.gui.health.health_portal.main.HealthPortalGUI')
+    @patch('education_system.systems.university.domains.health.interfaces.gui.health.health_portal.main.tk.Tk')
+    @patch('education_system.systems.university.domains.health.interfaces.gui.health.health_portal.main.HealthPortalGUI')
     def test_launch_health_portal_gui_without_auth(self, mock_gui_class, mock_tk):
         """Test launching GUI without explicit auth creates GUI with no auth"""
         mock_root = Mock()
@@ -295,7 +295,7 @@ class TestErrorHandling:
     """Test error handling scenarios"""
 
     @patch('education_system.systems.university.infrastructure.shared_context.get_auth')
-    @patch('education_system.systems.university.domains.pastoral.interfaces.gui.health.health_portal.main.messagebox')
+    @patch('education_system.systems.university.domains.health.interfaces.gui.health.health_portal.main.messagebox')
     def test_get_user_role_with_no_auth(self, mock_messagebox, mock_get_auth, root_window):
         """Test get_user_role handles missing auth gracefully"""
         no_auth = Mock(spec=UserAuth)
@@ -309,7 +309,7 @@ class TestErrorHandling:
         assert role is None
 
     @patch('education_system.systems.university.infrastructure.shared_context.get_auth')
-    @patch('education_system.systems.university.domains.pastoral.interfaces.gui.health.health_portal.main.messagebox')
+    @patch('education_system.systems.university.domains.health.interfaces.gui.health.health_portal.main.messagebox')
     def test_decrypt_with_wrong_key(self, mock_messagebox, mock_get_auth, root_window, mock_auth):
         """Test decryption with wrong key returns original data"""
         mock_get_auth.return_value = mock_auth
@@ -328,8 +328,8 @@ class TestErrorHandling:
 class TestSecurityFeatures:
     """Test security-related features"""
 
-    @patch('education_system.systems.university.domains.pastoral.interfaces.gui.health.health_portal.main.get_auth')
-    @patch('education_system.systems.university.domains.pastoral.interfaces.gui.health.health_portal.main.messagebox')
+    @patch('education_system.systems.university.domains.health.interfaces.gui.health.health_portal.main.get_auth')
+    @patch('education_system.systems.university.domains.health.interfaces.gui.health.health_portal.main.messagebox')
     def test_encryption_key_persistence(self, mock_messagebox, mock_get_auth, root_window, mock_auth):
         """Test encryption key is persisted and reused"""
         mock_get_auth.return_value = mock_auth
@@ -337,7 +337,7 @@ class TestSecurityFeatures:
         with tempfile.TemporaryDirectory() as temp_dir:
             key_file = os.path.join(temp_dir, 'health_encryption.key')
 
-            with patch('education_system.systems.university.domains.pastoral.interfaces.gui.health.health_portal.auth_encryption.paths.DATA_DIR', Path(temp_dir)):
+            with patch('education_system.systems.university.domains.health.interfaces.gui.health.health_portal.auth_encryption.paths.DATA_DIR', Path(temp_dir)):
                 # First instance creates key
                 gui1 = HealthPortalGUI(root_window, auth_system=mock_auth)
                 key1 = gui1.encryption_key
@@ -355,7 +355,7 @@ class TestDataEncryptionIntegration:
     """Integration tests for data encryption workflows"""
 
     @patch('education_system.systems.university.infrastructure.shared_context.get_auth')
-    @patch('education_system.systems.university.domains.pastoral.interfaces.gui.health.health_portal.main.messagebox')
+    @patch('education_system.systems.university.domains.health.interfaces.gui.health.health_portal.main.messagebox')
     def test_encrypt_decrypt_workflow(self, mock_messagebox, mock_get_auth, root_window, mock_auth):
         """Test complete encrypt/decrypt workflow"""
         mock_get_auth.return_value = mock_auth
@@ -377,7 +377,7 @@ class TestDataEncryptionIntegration:
             assert decrypted == test_data
 
     @patch('education_system.systems.university.infrastructure.shared_context.get_auth')
-    @patch('education_system.systems.university.domains.pastoral.interfaces.gui.health.health_portal.main.messagebox')
+    @patch('education_system.systems.university.domains.health.interfaces.gui.health.health_portal.main.messagebox')
     def test_audit_logging_integration(self, mock_messagebox, mock_get_auth, root_window, mock_auth):
         """Test audit logging captures all required information"""
         mock_get_auth.return_value = mock_auth

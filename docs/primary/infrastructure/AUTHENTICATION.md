@@ -1,10 +1,10 @@
 # Primary School Authentication Guide
 
-> Last Updated: March 2026
+> Last Updated: October 2026
 
 ## Overview
 
-The Primary School Management System uses the **shared authentication module** that is common to all four Education System subsystems. This architecture ensures consistent security policies, a single set of user credentials, and the ability for users to access multiple systems with one account.
+The Primary School Management System uses the **shared authentication module** that is common to all seven Education System systems. This architecture ensures consistent security policies, a single set of user credentials, and the ability for users to access multiple systems with one account.
 
 ---
 
@@ -13,7 +13,7 @@ The Primary School Management System uses the **shared authentication module** t
 Authentication is handled by a centralised module at:
 
 ```
-education_system/shared/auth/
+src/education_system/platform/identity/auth/
 ```
 
 This module provides:
@@ -25,19 +25,10 @@ This module provides:
 - Account lockout protection
 - Role-based access control per system
 
-The Primary School system does **not** implement its own authentication logic. Instead, it delegates to the shared module through a thin wrapper.
-
-### Wrapper Layer
-
-```
-education_system/primary_school/infrastructure/auth/
-```
-
-The Primary School's `infrastructure/auth/` package re-exports functions from `shared/auth/`, providing a stable import path for the rest of the Primary School codebase. This indirection allows system-specific customisation (e.g., role defaults) without modifying the shared module.
+The Primary School system does **not** implement its own authentication logic. There is no wrapper package: the launcher signs the user in and passes the system a `shared_auth` object, an instance of `UserAuth`.
 
 ```python
-# primary_school/infrastructure/auth/__init__.py (simplified)
-from shared.auth import authenticate, create_session, validate_session, ...
+from education_system.platform.identity.auth import UserAuth, SessionManager, MFAService
 ```
 
 ---
@@ -47,33 +38,33 @@ from shared.auth import authenticate, create_session, validate_session, ...
 All authentication data is stored in a single shared database:
 
 ```
-education_system/shared/data/db_files/auth.db
+var/data/platform/db_files/auth.db
 ```
 
 ### Auth Database Tables
 
 | Table | Description |
 |---|---|
-| `users` | User accounts: username, email, password hash, `legacy_salt`, locked status, creation date. |
-| `sessions` | Active sessions: token, user ID, expiry timestamp, IP address. |
+| `users` | User accounts: username, email, password hash, `legacy_salt`, `failed_login_attempts`, `locked_until`, creation date. |
+| `sessions` | Sessions: token, user ID, expiry timestamp, active flag. |
 | `mfa_secrets` | TOTP secrets for users who have enabled MFA. |
 | `mfa_recovery_codes` | One-time recovery codes for MFA bypass. |
-| `user_systems` | Maps each user to one or more systems (university, college, school, primary) with a per-system role. |
+| `user_systems` | Maps each user to one or more systems (nursery, primary, secondary, sixth_form, fe_college, apprenticeships, university) with a per-system role. |
 
 ### user_systems Table
 
 The `user_systems` table is the key to multi-system access. Each row links a user to a specific system with a specific role:
 
 ```
-user_id | system   | role
---------|----------|--------
-1       | primary  | admin
-2       | primary  | teacher
-2       | college  | staff
-3       | primary  | parent
+user_id | system_key | role
+--------|------------|--------
+1       | primary    | admin
+2       | primary    | teacher
+2       | sixth_form | staff
+3       | primary    | parent
 ```
 
-This means a single user account can have different roles in different systems, and the Primary School only sees users who have a `system = 'primary'` entry.
+This means a single user account can have different roles in different systems, and the Primary School only sees users who have a `system_key = 'primary'` entry.
 
 ---
 
@@ -118,15 +109,14 @@ Sessions are **database-backed** rather than stored in cookies or local memory, 
 
 1. **Creation**: On successful login, a cryptographically random token is generated and stored in the `sessions` table with the user ID and an expiry timestamp.
 2. **Validation**: Each request includes the session token. The system checks the `sessions` table to verify the token exists and has not expired.
-3. **Renewal**: Active sessions may have their expiry extended on each valid request.
-4. **Expiry**: Sessions expire after **30 minutes** of inactivity (configurable via `SESSION_TIMEOUT`).
-5. **Logout**: The session record is deleted from the database.
+3. **Expiry**: Sessions expire **30 minutes** after creation (configurable via `EDU_SESSION_TIMEOUT`).
+4. **Logout**: The session record is marked inactive, and expired or inactive records are cleared later.
 
 ### Session Configuration
 
 | Parameter | Default | Description |
 |---|---|---|
-| `SESSION_TIMEOUT` | 30 minutes | Time before an inactive session expires. |
+| `EDU_SESSION_TIMEOUT` | 30 minutes | Time before a session expires. |
 
 ---
 
@@ -136,10 +126,10 @@ To protect against brute-force password attacks, the system enforces account loc
 
 | Parameter | Value |
 |---|---|
-| Maximum login attempts | **5** |
+| Maximum login attempts | **3** |
 | Lockout duration | **15 minutes** |
 
-After 5 consecutive failed login attempts, the account is locked for 15 minutes. The lockout counter resets after a successful login.
+After 3 consecutive failed login attempts, the account is locked for 15 minutes. The lockout counter resets after a successful login.
 
 Administrators can manually unlock accounts through the admin panel.
 
@@ -147,7 +137,7 @@ Administrators can manually unlock accounts through the admin panel.
 
 ## Roles
 
-The Primary School system defines four roles, each with different levels of access:
+The Primary School system uses these roles from the shared role vocabulary, each with different levels of access:
 
 | Role | Description | Typical Permissions |
 |---|---|---|
@@ -156,21 +146,21 @@ The Primary School system defines four roles, each with different levels of acce
 | `student` | Pupil (limited) | View own records, homework, timetable, reading log. Minimal write access. |
 | `parent` | Parent/guardian | View linked pupil's records, attendance, reports, consent forms. Book parents' evening slots. |
 
-Role-based access control (RBAC) is enforced at the service layer. Each service method checks the current user's role before permitting the operation.
+Role filtering is enforced in the primary GUI and CLI by one rule, `systems/primary/domain/access.py`, checked both when a menu is drawn and when a screen opens. Domain modules still do not check roles. On the API, routes require a token (`token_required`), and the generated menu routes also require staff (`staff_required`). See [SECURITY.md](../security/SECURITY.md#role-based-access-control-rbac) for what each role sees.
 
 ---
 
 ## Default Accounts
 
-The shared auth module provisions default accounts for each system. For Primary School:
+The shared auth module provisions default accounts for each system when `EDU_DEV_SEED=true`; without that flag none are created. For Primary School:
 
 | Username | Password | Role | Notes |
 |---|---|---|---|
-| `superadmin` | `Super@Admin123` | admin | Access to all 4 systems. |
-| `primary_admin` | `Admin@Primary123` | admin | Primary school administrator. |
-| `primary_teacher` | `Staff@Primary123` | teacher | Sample teacher account. |
-| `primary_student` | `Student@Primary123` | student | Sample pupil account. |
-| `primary_parent` | `Parent@Primary123` | parent | Sample parent account. |
+| `superadmin` | `SuperAdmin@123` | admin | Access to all 7 systems. |
+| `admin3` | `admin1234` | admin | Primary school administrator. |
+| `staff3` | `staff1234` | teacher | Sample teacher account. |
+| `student3` | `student1234` | student | Sample pupil account. |
+| `parent3` | `parent1234` | parent | Sample parent account. |
 
 **Important:** Change all default passwords before any production or real-school deployment. These credentials are documented publicly and must be treated as insecure.
 
@@ -184,13 +174,13 @@ The Education System platform provides a unified login experience via `python -m
 python -m education_system
   |
   v
-UniversalLoginWindow (shared/gui/login_gui.py)
+UniversalLoginWindow (src/education_system/platform/delivery/gui/login_gui.py)
   |
   v
 User enters credentials
   |
   v
-shared/auth/ authenticates against auth.db
+src/education_system/platform/identity/auth/ authenticates against auth.db
   |
   v
 System selection (if user has access to multiple systems)
@@ -205,10 +195,10 @@ Primary School GUI launches with user_info=, role=, shared_auth=
 2. The **UniversalLoginWindow** is displayed, prompting for username and password.
 3. Credentials are verified against `auth.db` using the shared auth module.
 4. If the user has MFA enabled, a TOTP code (or recovery code) is requested.
-5. If the user has access to **multiple systems** (e.g., primary and college), they select which system to enter.
+5. If the user has access to **multiple systems** (e.g., primary and sixth form), they select which system to enter.
 6. The Primary School application is launched, receiving `user_info`, `role`, and a `shared_auth` reference so it does not need to re-authenticate.
-7. The Primary School GUI skips its own login screen and proceeds directly to the dashboard.
+7. The Primary School GUI has no login screen of its own and proceeds directly to the dashboard.
 
 ### Direct Launch (Development)
 
-For development or testing, individual systems can be launched directly. The Primary School launcher also accepts `user_info=`, `role=`, and `shared_auth=` keyword arguments to bypass login.
+For development or testing, the launcher can go straight to this system with `python -m education_system --primary --gui`. You still sign in: `gui_main.run()` and `cli_main.run()` refuse to start without a signed-in `shared_auth`.

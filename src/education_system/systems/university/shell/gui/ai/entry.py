@@ -1,7 +1,7 @@
 import logging
 
 from education_system.systems.university.infrastructure.database.db import DEFAULT_DB_PATH
-from education_system.systems.university.infrastructure.ai.university_chatbot import LIBRARIES_AVAILABLE
+from education_system.systems.university.shared.ai.chatbot import LIBRARIES_AVAILABLE
 
 from education_system.systems.university.shell.gui.ai.manager import ChatbotManager
 from education_system.systems.university.shell.gui.ai.compat import BackwardCompatibilityWrapper
@@ -12,10 +12,10 @@ logger = logging.getLogger(__name__)
 def run_enhanced_chatbot():
     """Enhanced main function with GUI and multiple interface support"""
     # Lazy imports to avoid circular dependencies
-    from education_system.systems.university.infrastructure.ai.university_chatbot import UniversityChatbot
+    from education_system.systems.university.shared.ai.chatbot import UniversityChatbot
 
     try:
-        from education_system.systems.university.infrastructure.ai.university_chatbot import _lazy_auth, AUTH_AVAILABLE, MinimalChatbot
+        from education_system.systems.university.shared.ai.chatbot import _lazy_auth, AUTH_AVAILABLE, MinimalChatbot
     except ImportError:
         AUTH_AVAILABLE = False
         _lazy_auth = lambda: None
@@ -126,7 +126,7 @@ def update_main_execution():
 
 def create_chatbot_with_gui(auth_system=None, db_path=str(DEFAULT_DB_PATH)):
     """Factory function to create chatbot with GUI support"""
-    from education_system.systems.university.infrastructure.ai.university_chatbot import UniversityChatbot
+    from education_system.systems.university.shared.ai.chatbot import UniversityChatbot
 
     chatbot = UniversityChatbot(db_path=db_path)
 
@@ -141,7 +141,7 @@ def create_chatbot_with_gui(auth_system=None, db_path=str(DEFAULT_DB_PATH)):
 
 def test_gui_integration():
     """Test GUI integration with existing chatbot"""
-    from education_system.systems.university.infrastructure.ai.university_chatbot import UniversityChatbot
+    from education_system.systems.university.shared.ai.chatbot import UniversityChatbot
     from education_system.systems.university.shell.gui.ai.chatbot_gui import ChatbotGUI
 
     print("Testing GUI integration...")

@@ -24,15 +24,16 @@ _FEATURE_MODULES = (
     # Creating a parent account sends the welcome email, which writes to
     # the messages log — redirect it too or the test writes real mail
     # into the live sixthform.db.
-    "education_system.systems.sixth_form.domain.operations.communications.messages.messages",
+    "education_system.systems.sixth_form.domains.communications.domain.messages.messages",
     # ``messages`` carries foreign keys to staff, parent_contacts and
     # alumni. With ``PRAGMA foreign_keys=ON`` SQLite refuses the INSERT
     # when a parent table is absent, even for NULL columns — so these are
     # built from their owning modules rather than stubbed, to keep the
     # fixture's schema identical to the live one.
     "education_system.systems.sixth_form.domain.staff.staff",
-    "education_system.systems.sixth_form.domain.operations.communications.parent_contacts.parent_contacts",
-    "education_system.systems.sixth_form.domain.learners.alumni.alumni",
+    "education_system.systems.sixth_form.domains.communications.domain.parent_contacts.parent_contacts",
+    # alumni: DB_PATH / _DB_READY / init_db live in alumni/db.py
+    "education_system.systems.sixth_form.domain.learners.alumni.db",
 )
 
 # Input tables the feature modules READ but don't own. We create them
@@ -148,7 +149,7 @@ def feature_db(tmp_path, monkeypatch):
     # staff / parent_contacts / alumni before messages — they are the
     # targets of its foreign keys.
     for key in ("timetable_optimiser", "risk_analytics", "ucas_workflow",
-                "automation_rules", "staff", "parent_contacts", "alumni",
+                "automation_rules", "staff", "parent_contacts", "db",
                 "messages", "parent_portal"):
         mods[key].init_db()
 
@@ -224,3 +225,32 @@ def fresh_ay_db(tmp_path, monkeypatch):
     monkeypatch.setattr(data, "CURRENT_ACTOR", None)
     data.init_db()
     return data
+
+
+#: Tests under these folders sign their own principals in (and some
+#: assert that nobody signed in is refused), so the default writer below
+#: is not applied there.
+_MANAGES_OWN_PRINCIPAL = ("/domain/admissions/",)
+
+
+@pytest.fixture(autouse=True)
+def _signed_in_records_writer(request, monkeypatch):
+    """Student, aim, tutor-group, class-list and onboarding writes check
+    the signed-in principal and refuse an anonymous call. Tests that just
+    need records to exist run as a staff member who manages students;
+    a test can still sign someone else in (``access._current``) or bind
+    ``access.ANONYMOUS`` to check a refusal."""
+    path = str(getattr(request.node, "fspath", "") or "")
+    if any(part in path for part in _MANAGES_OWN_PRINCIPAL):
+        yield None
+        return
+    from education_system.systems.sixth_form.domain.governance.user_management import (
+        access,
+    )
+    p = access.Principal(
+        username="test-records", user_id=None, role="staff",
+        capabilities=frozenset({
+            access.STUDENTS_VIEW, access.STUDENTS_MANAGE, access.ADMISSIONS,
+            access.PASTORAL, access.TEACHING, access.EXAMS}))
+    monkeypatch.setattr(access, "_current", p)
+    yield p

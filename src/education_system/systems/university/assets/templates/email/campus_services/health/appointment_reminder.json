@@ -1,0 +1,18 @@
+{
+    "subject": "Reminder: your $appointment_type appointment $when_label",
+    "body": "Dear $patient_name,\n\nThis is a reminder of your appointment $when_label.\n\nDate: $date\nTime: $time\nWith: $practitioner\nWhere: $location\n\nIf you can no longer attend, please cancel through the Health Portal or call the Health Centre so the slot can be offered to someone on the waiting list.\n\nBest regards,\nUniversity Health Centre\n\n$signature",
+    "variables": {
+        "location": {
+            "default": "University Health Centre"
+        },
+        "practitioner": {
+            "default": "the health team"
+        },
+        "appointment_type": {
+            "default": "health"
+        },
+        "signature": {
+            "default": ""
+        }
+    }
+}

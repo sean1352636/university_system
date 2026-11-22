@@ -40,8 +40,8 @@ from education_system.systems.university.infrastructure.email.email_db_utilities
 
 # Check if we can import auth database connection
 try:
-    from education_system.systems.university.infrastructure.auth import (
-        get_connection as auth_get_connection,
+    from education_system.platform.identity.auth.db import (
+        connect as auth_get_connection,
     )
     USE_AUTH_DB = True
 except ImportError:

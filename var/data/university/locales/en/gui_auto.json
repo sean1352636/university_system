@@ -23449,7 +23449,11 @@
               "schedule": "Schedule",
               "track_update_status": "Track / Update Status",
               "update_progress": "Update Progress",
-              "update_status": "Update Status"
+              "update_status": "Update Status",
+              "population_report": "Population Report",
+              "send_overdue": "Send Overdue Notices",
+              "send_reminders": "Send Reminders",
+              "update_referral": "Update Referral"
             },
             "dialogs": {
               "error": "Error",
@@ -23485,7 +23489,15 @@
             "buttons": {
               "browse": "Browse",
               "create_backup": "Create Backup",
-              "export_data": "Export Data"
+              "export_data": "Export Data",
+              "configure": "Configure New",
+              "disconnect": "Disconnect",
+              "generate_key": "Generate Key",
+              "refresh": "Refresh",
+              "revoke_key": "Revoke Key",
+              "rotate_key": "Rotate Key",
+              "run_check": "Run Check",
+              "test_connection": "Test Connection"
             },
             "dialogs": {
               "error": "Error",
@@ -23503,11 +23515,20 @@
               "date_to_optional": "Date To (optional):",
               "export_log": "Export Log",
               "export_options": "Export Options",
-              "format": "Format:"
+              "format": "Format:",
+              "integration_management": "Integration Management",
+              "status_filter": "Status:"
             },
             "tabs": {
               "data_export": "Data Export",
-              "database_backup": "Database Backup"
+              "database_backup": "Database Backup",
+              "api_keys": "API Keys",
+              "connections": "Connections",
+              "health_check": "Health Check",
+              "insurance": "Insurance",
+              "integration_logs": "Integration Logs",
+              "laboratory": "Laboratory",
+              "sync_status": "Data Sync Status"
             },
             "values": {
               "csv": "CSV",
@@ -23616,7 +23637,9 @@
               "student_id_is_required": "Student ID is required",
               "student_id_not_found": "Student ID not found",
               "success": "Success",
-              "there_are_no_students_in_the_sixth_form_database": "There are no students in the sixth-form database."
+              "there_are_no_students_in_the_sixth_form_database": "There are no students in the sixth-form database.",
+              "import_refused": "Import refused",
+              "no_handover_consent": "No handover consent"
             },
             "labels": {
               "destination_university_student": "Destination — University student",

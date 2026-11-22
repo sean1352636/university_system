@@ -5,7 +5,7 @@ import sqlite3
 import tempfile
 import os
 
-from education_system.systems.university.domains.pastoral.domain.wellbeing.student_wellbeing.services.wellbeing_service import (
+from education_system.systems.university.domains.student_support.domain.wellbeing.student_wellbeing.services.wellbeing_service import (
     WellbeingService,
 )
 

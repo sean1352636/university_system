@@ -318,7 +318,7 @@ def _delete() -> None:
         print(f"  Deleted event #{eid}.")
 
 
-_DISPATCH = {"Emergency": open_emergency}
+_DISPATCH = {"Emergency": open_emergency, "Emergency Contacts": open_emergency}
 
 
 def dispatch(label: str) -> bool:

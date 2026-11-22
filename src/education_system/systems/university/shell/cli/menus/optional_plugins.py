@@ -7,11 +7,6 @@ _NEW_FEATURE_CLI_DISPATCH = {
         "employer_portal.employer_portal_cli",
         "display_employer_portal_menu",
     ),
-    "nf_intervention_outcomes": (
-        "education_system.systems.university.domains.pastoral.domain."
-        "services.early_warning.outcomes.intervention_outcomes_cli",
-        "display_intervention_outcomes_menu",
-    ),
     "nf_kpi_dashboard": (
         "education_system.systems.university.domains.operations.interfaces.cli."
         "reporting.kpi_dashboard.kpi_dashboard_cli",
@@ -28,8 +23,8 @@ _NEW_FEATURE_CLI_DISPATCH = {
         "display_bursary_menu",
     ),
     "nf_mentoring_matching": (
-        "education_system.systems.university.domains.pastoral.interfaces.cli."
-        "student_life.student_union.services.mentoring_matching.matching_cli",
+        "education_system.systems.university.domains.student_life.interfaces."
+        "cli.student_life.student_union.services.mentoring_matching.matching_cli",
         "display_mentoring_matching_menu",
     ),
     "nf_room_booking": (
@@ -38,13 +33,12 @@ _NEW_FEATURE_CLI_DISPATCH = {
         "display_room_booking_menu",
     ),
     "nf_programme_governance": (
-        "education_system.systems.university.domains.academics.interfaces.cli."
-        "programme_governance.programme_governance_cli",
+        "education_system.systems.university.domains.curriculum.interfaces."
+        "cli.programme_governance.programme_governance_cli",
         "display_programme_governance_menu",
     ),
     "nf_pgr_admin": (
-        "education_system.systems.university.domains.academics.interfaces.cli."
-        "research.pgr.pgr_cli",
+        "education_system.systems.university.domains.research.interfaces.cli.research.pgr.pgr_cli",
         "display_pgr_menu",
     ),
     "nf_assessment_boards": (
@@ -57,8 +51,18 @@ _NEW_FEATURE_CLI_DISPATCH = {
         "case_management.case_management_cli",
         "display_case_management_menu",
     ),
+    "nf_academic_appeals": (
+        "education_system.systems.university.domains.governance.interfaces.cli."
+        "case_management.appeals_cli",
+        "display_appeals_menu",
+    ),
+    "nf_complaints": (
+        "education_system.systems.university.domains.operations.interfaces.cli."
+        "communications.feedback.complaints_cli",
+        "display_complaints_menu",
+    ),
     "nf_timetabling": (
-        "education_system.systems.university.domains.academics.interfaces.cli."
+        "education_system.systems.university.domains.teaching.interfaces.cli."
         "timetabling.timetabling_cli",
         "display_timetabling_menu",
     ),
@@ -70,6 +74,10 @@ _NEW_FEATURE_CLI_DISPATCH = {
     "nf_sso_providers": (
         "education_system.systems.university.shell.cli.auth.sso_providers_cli",
         "display_sso_providers_menu",
+    ),
+    "nf_connectors": (
+        "education_system.systems.university.shell.cli.auth.connectors_cli",
+        "display_connectors_menu",
     ),
 }
 

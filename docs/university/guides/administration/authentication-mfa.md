@@ -23,14 +23,14 @@ This guide covers multi-factor authentication setup, user authentication, sessio
 The Authentication & MFA module provides secure user authentication with PBKDF2 password hashing, multi-factor authentication (TOTP, Email OTP, SMS OTP), role-based access control, and advanced session management with suspicious activity detection.
 
 **Key files:**
-- Auth: `infrastructure/auth/`
-- MFA Service: `infrastructure/auth/mfa_service.py`
-- MFA Integration: `infrastructure/auth/mfa_integration.py`
-- MFA Enforcement: `infrastructure/auth/mfa_enforcement.py`
-- MFA Admin GUI: `infrastructure/auth/mfa_admin_gui.py`
-- MFA User GUI: `infrastructure/auth/mfa_gui.py`
-- Session Management: `infrastructure/security/session_management.py`
-- Shared Context: `infrastructure/shared_context.py`
+- Auth: `src/education_system/systems/university/infrastructure/auth/`
+- MFA Service: `src/education_system/systems/university/infrastructure/auth/mfa_service.py`
+- MFA Integration: `src/education_system/systems/university/infrastructure/auth/mfa_integration.py`
+- MFA Enforcement: `src/education_system/systems/university/infrastructure/auth/mfa_enforcement.py`
+- MFA Admin GUI: `src/education_system/systems/university/infrastructure/auth/mfa_admin_gui.py`
+- MFA User GUI: `src/education_system/systems/university/infrastructure/auth/mfa_gui.py`
+- Session Management: `src/education_system/systems/university/infrastructure/security/session_management.py`
+- Shared Context: `src/education_system/systems/university/infrastructure/shared_context.py`
 
 ## Authentication System
 
@@ -49,7 +49,7 @@ The Authentication & MFA module provides secure user authentication with PBKDF2 
 ### Accessing the Auth Instance
 
 ```python
-from university_system.infrastructure.shared_context import get_auth
+from education_system.systems.university.infrastructure.shared_context import get_auth
 
 auth = get_auth()
 if auth.is_logged_in():
@@ -256,7 +256,7 @@ Use decorators or inline checks:
 
 ```python
 # Decorator approach
-from university_system.infrastructure.auth.authorization import require_permission
+from education_system.systems.university.infrastructure.auth import require_permission
 
 @require_permission('manage_students')
 def edit_student_record(student_id):
@@ -330,14 +330,14 @@ The setup wizard guides users through MFA configuration:
 
 The system includes rate limiting for security:
 
-- **Login Attempts**: Configurable limit (default: 5 attempts)
+- **Login Attempts**: Accounts lock for 15 minutes after 3 failed attempts
 - **Lockout Duration**: Temporary account lockout after failed attempts
 - **MFA Attempts**: Separate limit for MFA verification failures
 - **MFA Lockout**: 15-minute lockout after multiple failed MFA attempts
 
 ### Data Encryption
 
-The security module (`infrastructure/security/data_encryption.py`) provides:
+The security module (`src/education_system/systems/university/infrastructure/security/data_encryption.py`) provides:
 - Field-level encryption for sensitive data
 - Encryption key management
 - Secure storage patterns
@@ -353,7 +353,7 @@ Critical security events are logged to an immutable audit log:
 
 ### Security Dashboard
 
-The security dashboard CLI (`infrastructure/security/security_dashboard_cli.py`) provides:
+The security dashboard CLI (`src/education_system/systems/university/infrastructure/security/security_dashboard_cli.py`) provides:
 - Active session monitoring
 - Failed login attempt tracking
 - Security event timeline
@@ -375,7 +375,7 @@ The security dashboard CLI (`infrastructure/security/security_dashboard_cli.py`)
 
 ### Email OTP Settings
 
-Configure the email OTP service in `infrastructure/auth/email_otp_service.py`:
+Configure the email OTP service in `src/education_system/systems/university/infrastructure/auth/email_otp_service.py`:
 - SMTP server details
 - OTP validity period
 - Email template
@@ -383,7 +383,7 @@ Configure the email OTP service in `infrastructure/auth/email_otp_service.py`:
 
 ### SMS Provider Settings
 
-Configure the SMS provider in `infrastructure/auth/sms_provider.py`:
+Configure the SMS provider in `src/education_system/systems/university/infrastructure/auth/sms_provider.py`:
 - Provider API credentials
 - Phone number validation
 - Message templates

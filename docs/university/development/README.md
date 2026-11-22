@@ -15,7 +15,7 @@ Complete guide for developers contributing to the University Management System.
 
 ### Prerequisites
 
-- Python 3.8+ (3.9+ recommended)
+- Python 3.11+
 - Git
 - Make (optional but recommended)
 - SQLite3
@@ -26,16 +26,13 @@ Complete guide for developers contributing to the University Management System.
 ```bash
 # Clone repository
 git clone <repository-url>
-cd university_system
+cd education-system
 
 # Complete development setup
-make setup
+make install-dev
 
-# This will:
-# 1. Install all dependencies
-# 2. Install development tools (pytest, black, ruff, mypy)
-# 3. Set up pre-commit hooks
-# 4. Create necessary directories
+# This will install all dependencies and development tools
+# (pytest, ruff, mypy) from requirements-dev.lock
 ```
 
 ### Development Workflow
@@ -97,11 +94,11 @@ git push origin feature/your-feature-name
 
 ### Module Restructuring (v5.41–v5.42)
 
-In v5.41–v5.42, 49 single-file modules that had grown to 1,000–4,500 lines were decomposed into package directories. Each original `.py` file was replaced by a directory with focused submodules. All existing imports remain backward-compatible via `__init__.py` re-exports. See the [Migration Guide](MIGRATION_GUIDE.md) for the complete file mapping and refactoring patterns used.
+In v5.41–v5.42, 49 single-file modules that had grown to 1,000–4,500 lines were decomposed into package directories. Each original `.py` file was replaced by a directory with focused submodules. Imports stayed backward-compatible at the time via `__init__.py` re-exports. See the [Migration Guide](MIGRATION_GUIDE.md) for that file mapping and the refactoring patterns used.
 
 ### Key Design Patterns
 
-- **Centralized Authentication**: Single UserAuth system across 92 files
+- **Centralized Authentication**: Shared auth for all seven systems (`src/education_system/platform/identity/auth/`)
 - **Centralized Email**: Unified SMTP service for all notifications
 - **Layered Architecture**: Clear separation of concerns
 - **Repository Pattern**: Data access abstraction
@@ -116,23 +113,20 @@ In v5.41–v5.42, 49 single-file modules that had grown to 1,000–4,500 lines w
 # Installation
 make install          # Install production dependencies
 make install-dev      # Install dev dependencies
-make setup            # Complete setup
 
 # Code Quality
 make lint             # Run linter (ruff)
 make lint-fix         # Auto-fix linting issues
-make format           # Format code (black, isort)
-make format-check     # Check formatting
+make format           # Format code (ruff format)
 make type-check       # Run MyPy type checking
-make security-check   # Run security scans
-make check            # Run all quality checks
+make security-scan    # Run security scans
+make check            # Run lint and tests
 
 # Testing
-make test             # Run all tests
+make test             # Run the default fast, non-GUI suite
+make test-all         # Run every test, including slow and GUI tests
 make test-coverage    # Run tests with coverage
-make test-fast        # Run tests in parallel
-make test-unit        # Run unit tests only
-make test-integration # Run integration tests
+make test-university  # Run the university suite
 make test-security    # Run security tests
 
 # Running
@@ -140,15 +134,8 @@ make run              # Interactive menu
 make run-gui          # GUI mode
 make run-cli          # CLI mode
 
-# Database
-make db-backup        # Backup database
-make db-restore       # Restore database
-make db-reset         # Reset database (WARNING)
-
 # Utilities
 make clean            # Remove cache files
-make logs             # View logs
-make info             # Show project info
 make help             # Show all commands
 ```
 
@@ -161,11 +148,10 @@ make lint      # Check code
 make lint-fix  # Auto-fix issues
 ```
 
-#### Black (Formatter)
+#### Ruff (Formatter)
 Code formatter (100-character lines):
 ```bash
 make format        # Format code
-make format-check  # Check formatting
 ```
 
 #### MyPy (Type Checker)
@@ -173,13 +159,6 @@ Static type checking:
 ```bash
 make type-check
 ```
-
-#### Pre-commit Hooks
-Automatically run on `git commit`:
-- Format with Black
-- Lint with Ruff
-- Check for secrets
-- Validate YAML/JSON
 
 ## 📝 Coding Standards
 
@@ -244,8 +223,8 @@ import pandas as pd
 from flask import Flask
 
 # Local imports
-from university_system.infrastructure.auth import UserAuth
-from university_system.infrastructure.email import send_email_via_smtp
+from education_system.systems.university.infrastructure.auth import UserAuth
+from education_system.systems.university.infrastructure.email.smtp import send_email_via_smtp
 ```
 
 ## 🧪 Testing
@@ -253,9 +232,9 @@ from university_system.infrastructure.email import send_email_via_smtp
 ### Writing Tests
 
 ```python
-# tests/test_feature.py
+# tests/unit/systems/university/domains/<slice>/test_feature.py
 import unittest
-from university_system.modules.domain.feature import FeatureService
+from education_system.systems.university.domains.<slice>.domain.feature import FeatureService
 
 class TestFeatureService(unittest.TestCase):
     """Test suite for FeatureService"""
@@ -281,10 +260,12 @@ class TestFeatureService(unittest.TestCase):
 
 ### Test Organization
 
-- **Unit Tests**: Test individual functions/methods
-- **Integration Tests**: Test module interactions
-- **Security Tests**: Test authentication, permissions
-- **GUI Tests**: Test interface components
+Tests are organised by scope, then by owner:
+
+- **Unit Tests**: Test individual functions/methods (`tests/unit/systems/university/`)
+- **Integration Tests**: Test module interactions (`tests/integration/systems/university/`)
+- **Security Tests**: Test authentication, permissions (`tests/security/`)
+- **GUI Tests**: Test interface components (marked `gui`, e.g. `tests/unit/systems/university/shell/gui/`)
 
 ### Running Tests
 
@@ -295,12 +276,11 @@ make test
 # With coverage
 make test-coverage
 
-# Fast (parallel)
-make test-fast
+# University suite
+make test-university
 
 # Specific category
-make test-unit
-make test-integration
+pytest tests/unit/systems/university/domains/<slice>/ -v --timeout=60
 make test-security
 ```
 
@@ -310,20 +290,30 @@ make test-security
 
 1. **Create Migration**
    ```python
-   # migrations/002_add_new_table.py
-   def upgrade(conn):
-       conn.execute("""
+   # src/education_system/migrations/versions/<revision>_add_new_table.py
+   from alembic import op
+
+   revision = "<revision>"
+   down_revision = "<current head>"  # The chain must keep exactly one head
+
+
+   def upgrade() -> None:
+       op.execute("""
            CREATE TABLE new_table (
                id INTEGER PRIMARY KEY,
                name TEXT NOT NULL
            )
        """)
+
+
+   def downgrade() -> None:
+       op.execute("DROP TABLE new_table")
    ```
 
 2. **Test Migration**
    ```bash
-   make db-backup  # Backup first!
-   python migrations/run_migrations.py
+   # Run against a copy of the database; backups belong in var/backups/
+   python -m alembic -c src/education_system/alembic.ini upgrade head
    ```
 
 3. **Update Models**

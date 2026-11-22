@@ -153,6 +153,13 @@ def _domain_roots(src: Path):
         domain = system / "domain"
         if domain.is_dir():
             yield domain
+        # Areas already moved into vertical slices keep their rules
+        # under domains/<area>/domain/.
+        slices = system / "domains"
+        if slices.is_dir():
+            for area in sorted(slices.iterdir()):
+                if (area / "domain").is_dir():
+                    yield area / "domain"
 
 
 def collect(src: Path = SRC) -> dict:

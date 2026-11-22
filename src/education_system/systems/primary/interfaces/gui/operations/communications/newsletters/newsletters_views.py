@@ -5,8 +5,11 @@ from __future__ import annotations
 import functools
 import logging
 import tkinter as tk
-from tkinter import messagebox, ttk
+from tkinter import ttk
 from typing import Callable
+
+from education_system.platform.delivery.gui.parented_dialogs import make_toplevel, messagebox
+from education_system.systems.primary.interfaces.gui import kit
 
 from education_system.systems.primary.domain.operations.communications.newsletters import (
     newsletters as data,
@@ -56,43 +59,53 @@ def _get_text(text: tk.Text) -> str:
     return text.get("1.0", "end").strip()
 
 
+_ALL = ("All", "All")
+
+
+def _audience_choices() -> list[tuple[str, str]]:
+    return [(a, AUDIENCE_LABELS.get(a, a)) for a in AUDIENCE_CHOICES]
+
+
+def _year_group_choices() -> list[tuple[str, str]]:
+    return [(y, kit.YEAR_GROUP_LABELS.get(y, y)) for y in YEAR_GROUPS]
+
+
 @_safe_view
 def open_newsletters(host) -> None:
     logger.debug("GUI: open_newsletters")
+    kit.show_page(host, "Newsletters", lambda parent: _draw_newsletters(parent, host))
 
-    win = tk.Toplevel(host.root)
-    win.title("Newsletters")
-    win.transient(host.root)
-    win.geometry("1180x640")
 
-    top = ttk.Frame(win, padding=10)
+def _draw_newsletters(parent, host) -> None:
+    kit.page_heading(parent, "Newsletters",
+                     "Draft, publish and archive school newsletters by academic year.")
+    win = parent.winfo_toplevel()
+
+    top = ttk.Frame(parent, padding=(0, 0, 0, 6))
     top.pack(fill="x")
     summary_var = tk.StringVar()
     ttk.Label(top, textvariable=summary_var,
               font=("Segoe UI", 10, "bold")).pack(side="left")
 
-    filt = ttk.Frame(win, padding=(10, 0, 10, 6))
+    filt = ttk.Frame(parent, padding=(0, 0, 0, 6))
     filt.pack(fill="x")
     ttk.Label(filt, text="Year:").pack(side="left")
     year_var = tk.StringVar(value="All")
-    year_box = ttk.Combobox(filt, textvariable=year_var,
-                            values=["All"], state="readonly", width=10)
+    year_box = kit.ChoiceField(filt, year_var, choices=[_ALL], width=10)
     year_box.pack(side="left", padx=(4, 10))
     ttk.Label(filt, text="Status:").pack(side="left")
     status_var = tk.StringVar(value="All")
-    ttk.Combobox(filt, textvariable=status_var,
-                 values=["All"] + list(STATUSES),
-                 state="readonly", width=10).pack(side="left", padx=(4, 10))
+    kit.ChoiceField(filt, status_var,
+                    choices=[_ALL] + [(st, STATUS_LABELS.get(st, st)) for st in STATUSES],
+                    width=20).pack(side="left", padx=(4, 10))
     ttk.Label(filt, text="Audience:").pack(side="left")
     aud_var = tk.StringVar(value="All")
-    ttk.Combobox(filt, textvariable=aud_var,
-                 values=["All"] + list(AUDIENCE_CHOICES),
-                 state="readonly", width=14).pack(side="left", padx=(4, 10))
+    kit.ChoiceField(filt, aud_var, choices=[_ALL] + _audience_choices(),
+                    width=22).pack(side="left", padx=(4, 10))
     ttk.Label(filt, text="Year group:").pack(side="left")
     yg_var = tk.StringVar(value="All")
-    ttk.Combobox(filt, textvariable=yg_var,
-                 values=["All"] + list(YEAR_GROUPS),
-                 state="readonly", width=6).pack(side="left", padx=(4, 10))
+    kit.ChoiceField(filt, yg_var, choices=[_ALL] + _year_group_choices(),
+                    width=10).pack(side="left", padx=(4, 10))
     ttk.Label(filt, text="Search:").pack(side="left", padx=(10, 0))
     search_var = tk.StringVar()
     ttk.Entry(filt, textvariable=search_var, width=24).pack(
@@ -100,7 +113,7 @@ def open_newsletters(host) -> None:
 
     cols = ("newsletter_id", "academic_year", "issue", "title",
             "audience", "status", "issue_date", "published_on", "author")
-    tree = ttk.Treeview(win, columns=cols, show="headings", height=15)
+    tree = ttk.Treeview(parent, columns=cols, show="headings", height=15)
     for col, label, width, anchor in [
         ("newsletter_id", "#", 50, "center"),
         ("academic_year", "AcYr", 80, "center"),
@@ -117,9 +130,9 @@ def open_newsletters(host) -> None:
     tree.tag_configure("draft", foreground="#666")
     tree.tag_configure("archived", foreground="#888", background="#f4f4f4")
     tree.tag_configure("published", foreground="#1e7c1e")
-    tree.pack(fill="both", expand=True, padx=10, pady=(0, 6))
+    tree.pack(fill="both", expand=True, pady=(0, 6))
 
-    btns = ttk.Frame(win, padding=10)
+    btns = ttk.Frame(parent, padding=(0, 6))
     btns.pack(fill="x")
 
     def _refresh() -> None:
@@ -155,7 +168,7 @@ def open_newsletters(host) -> None:
                 n.authored_by or "",
             ), tags=(n.status,))
         try:
-            year_box["values"] = ["All"] + data.known_years()
+            year_box.set_choices([_ALL] + list(data.known_years()))
             s = data.summary()
         except Exception:
             s = {"total": 0, "by_status": {st: 0 for st in STATUSES},
@@ -272,7 +285,8 @@ def open_newsletters(host) -> None:
         side="left", padx=(8, 0))
     ttk.Button(btns, text="Refresh", command=_refresh).pack(
         side="left", padx=(8, 0))
-    ttk.Button(btns, text="Close", command=win.destroy).pack(side="right")
+    ttk.Button(btns, text="Close",
+               command=lambda: kit.close_page(host, parent)).pack(side="right")
 
     tree.bind("<Double-Button-1>", lambda _e: _view())
     for v in (year_var, status_var, aud_var, yg_var, search_var):
@@ -304,18 +318,16 @@ def _open_form_dialog(parent, *, newsletter_id: int | None,
                 parent=parent)
             return
 
-    dlg = tk.Toplevel(parent)
+    dlg = make_toplevel(parent.winfo_toplevel())
     dlg.title("Newsletter" if existing else "New newsletter")
-    dlg.transient(parent)
-    dlg.geometry("720x680")
+    dlg.geometry("760x680")
     try:
         dlg.wait_visibility()
         dlg.grab_set()
     except tk.TclError:
         logger.debug("grab_set skipped", exc_info=True)
 
-    frm = ttk.Frame(dlg, padding=12)
-    frm.pack(fill="both", expand=True)
+    frm, footer = kit.scrolled_form(dlg)
 
     ttk.Label(frm, text="Title *").grid(row=0, column=0, sticky="w", pady=3)
     title_var = tk.StringVar(value=existing.title if existing else "")
@@ -325,17 +337,15 @@ def _open_form_dialog(parent, *, newsletter_id: int | None,
     ttk.Label(frm, text="Academic year *").grid(
         row=1, column=0, sticky="w", pady=3)
     ay_var = tk.StringVar(value=existing.academic_year if existing else "")
-    ttk.Entry(frm, textvariable=ay_var, width=14).grid(
+    kit.AcademicYearPicker(frm, ay_var, width=12).grid(
         row=1, column=1, sticky="w", pady=3)
-    ttk.Label(frm, text="e.g. 2025-26", foreground="#888").grid(
-        row=1, column=2, sticky="w", padx=(8, 0))
 
     ttk.Label(frm, text="Issue number").grid(
         row=2, column=0, sticky="w", pady=3)
     iss_var = tk.StringVar(
         value=str(existing.issue_number) if existing and existing.issue_number
         else "")
-    ttk.Entry(frm, textvariable=iss_var, width=8).grid(
+    kit.NumberField(frm, iss_var, from_=1, to=999, width=6).grid(
         row=2, column=1, sticky="w", pady=3)
     suggest_var = tk.StringVar()
     ttk.Label(frm, textvariable=suggest_var,
@@ -355,35 +365,32 @@ def _open_form_dialog(parent, *, newsletter_id: int | None,
     ay_var.trace_add("write", _suggest_issue)
     _suggest_issue()
 
-    ttk.Label(frm, text="Issue date (YYYY-MM-DD)").grid(
+    ttk.Label(frm, text="Issue date").grid(
         row=3, column=0, sticky="w", pady=3)
     date_var = tk.StringVar(
         value=existing.issue_date or "" if existing else "")
-    ttk.Entry(frm, textvariable=date_var, width=14).grid(
-        row=3, column=1, sticky="w", pady=3)
+    kit.DateField(frm, date_var).grid(
+        row=3, column=1, columnspan=3, sticky="w", pady=3)
 
     ttk.Label(frm, text="Audience *").grid(row=4, column=0, sticky="w", pady=3)
     aud_var = tk.StringVar(
         value=existing.audience if existing else "whole_school")
-    ttk.Combobox(frm, textvariable=aud_var, values=list(AUDIENCE_CHOICES),
-                 state="readonly", width=18).grid(
-        row=4, column=1, sticky="w", pady=3)
+    kit.ChoiceField(frm, aud_var, choices=_audience_choices(), width=22).grid(
+        row=4, column=1, columnspan=2, sticky="w", pady=3)
 
     ttk.Label(frm, text="Year group (if year_group)").grid(
         row=5, column=0, sticky="w", pady=3)
     yg_var = tk.StringVar(
         value=existing.target_year_group or "" if existing else "")
-    ttk.Combobox(frm, textvariable=yg_var,
-                 values=[""] + list(YEAR_GROUPS),
-                 state="readonly", width=8).grid(
-        row=5, column=1, sticky="w", pady=3)
+    kit.ChoiceField(frm, yg_var, choices=_year_group_choices(), blank=True,
+                    width=12).grid(row=5, column=1, sticky="w", pady=3)
 
     ttk.Label(frm, text="Authored by").grid(
         row=6, column=0, sticky="w", pady=3)
     author_var = tk.StringVar(
         value=existing.authored_by or "" if existing else "")
-    ttk.Entry(frm, textvariable=author_var, width=30).grid(
-        row=6, column=1, columnspan=2, sticky="ew", pady=3)
+    kit.StaffPicker(frm, author_var, by="name", width=34).grid(
+        row=6, column=1, columnspan=3, sticky="w", pady=3)
 
     ttk.Label(frm, text="Body").grid(row=7, column=0, sticky="nw", pady=(8, 0))
     body_text = tk.Text(frm, height=14, width=70, wrap="word")
@@ -431,8 +438,7 @@ def _open_form_dialog(parent, *, newsletter_id: int | None,
         on_saved()
         dlg.destroy()
 
-    btn_row = ttk.Frame(frm)
-    btn_row.grid(row=9, column=0, columnspan=4, sticky="ew", pady=(12, 0))
+    btn_row = footer
     ttk.Button(btn_row, text="Save draft", command=_save).pack(side="right")
     ttk.Button(btn_row, text="Save & publish",
                command=lambda: _save(then_publish=True)).pack(
@@ -455,9 +461,8 @@ def _open_view_dialog(parent, newsletter_id: int,
                              f"No newsletter #{newsletter_id}", parent=parent)
         return
 
-    dlg = tk.Toplevel(parent)
+    dlg = make_toplevel(parent.winfo_toplevel())
     dlg.title(f"Newsletter #{rec.newsletter_id}")
-    dlg.transient(parent)
     dlg.geometry("720x620")
     try:
         dlg.wait_visibility()

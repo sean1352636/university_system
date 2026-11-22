@@ -5,7 +5,8 @@ from __future__ import annotations
 import logging
 import tkinter as tk
 from pathlib import Path
-from tkinter import filedialog, messagebox, ttk
+from tkinter import ttk
+from education_system.platform.delivery.gui.parented_dialogs import filedialog, messagebox
 from typing import Callable
 from education_system.systems.sixth_form.domain.operations.reporting.custom_export import custom_export as data
 from education_system.platform import branding

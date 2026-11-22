@@ -1,4 +1,10 @@
-"""Wellness routes: check-ins, mood, sleep, exercise, goals, and crisis resources."""
+"""Wellness routes: check-ins, mood, sleep, exercise, goals, and crisis resources.
+
+A student reads and writes only their own entries; the wellbeing team
+(counsellors, wellness officers and the health team, see ``_health_access``)
+sees everyone's. Generic staff and lecturers are not on the team. Crisis
+lines are readable by anyone signed in and maintained by the team.
+"""
 
 from __future__ import annotations
 
@@ -7,6 +13,14 @@ from datetime import datetime
 
 from flask import Blueprint, g, jsonify, request
 
+from education_system.api.university.pastoral._health_access import (
+    audit_health_view,
+    deny_unless_health_team,
+    is_health_team,
+    own_student_id,
+    seal,
+    unseal,
+)
 from education_system.platform.delivery.api.university.auth import token_required
 from education_system.platform.delivery.api.university.pagination import get_pagination_params, paginated_response
 from education_system.systems.university.infrastructure.exceptions import ValidationError
@@ -22,11 +36,14 @@ _STAFF_ROLES = {"admin", "staff", "superadmin", "counselor", "wellness_officer"}
 
 
 def _is_staff() -> bool:
-    return (g.current_user or {}).get("role") in _STAFF_ROLES
+    """The wellbeing team. (``_STAFF_ROLES`` used to decide this and let every
+    generic ``staff`` account read every student's wellness entries.)"""
+    return is_health_team(pastoral=True)
 
 
 def _caller_student_id() -> str:
-    return str((g.current_user or {}).get("sub") or "")
+    """The caller's own student number (from ``users``), or ``""``."""
+    return str(own_student_id() or "")
 
 
 def _effective_student_filter(requested: str | None) -> str | None:
@@ -90,10 +107,11 @@ def list_checkins():
         ).fetchone()
         total = total_row[0] if total_row else 0
 
+    denial = audit_health_view("wellness_checkins", student_id=student_id)
+    if denial is not None:
+        return denial
     log_activity("view", "wellness_checkins", user=g.current_user.get("sub"))
-    return jsonify(paginated_response(
-        [_row_to_dict(r) for r in rows], total, page, per_page
-    ))
+    return jsonify(paginated_response(unseal(rows, "wellness_checkins"), total, page, per_page))
 
 
 @wellness_bp.route("/checkins/<int:checkin_id>", methods=["GET"])
@@ -108,8 +126,12 @@ def get_checkin(checkin_id: int):
     denied = _authorize_record(row)
     if denied is not None:
         return denied
+    denied = audit_health_view("wellness_checkin", student_id=row["student_id"],
+                               record_id=checkin_id)
+    if denied is not None:
+        return denied
     log_activity("view", "wellness_checkins", user=g.current_user.get("sub"))
-    return jsonify(_row_to_dict(row))
+    return jsonify(unseal([row], "wellness_checkins")[0])
 
 @wellness_bp.route("/checkins", methods=["POST"])
 @token_required
@@ -127,7 +149,7 @@ def create_checkin():
             """INSERT INTO wellness_checkins
                (student_id, overall_mood, stress_level, sleep_quality, energy_level, anxiety_level, notes, created_at)
                VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
-            (data["student_id"], data["overall_mood"], data["stress_level"], data.get("sleep_quality", ""), data.get("energy_level", ""), data.get("anxiety_level", ""), data.get("notes", ""), now,),
+            (data["student_id"], data["overall_mood"], data["stress_level"], data.get("sleep_quality", ""), data.get("energy_level", ""), data.get("anxiety_level", ""), seal("wellness_checkins", {"notes": data.get("notes", "")})["notes"], now,),
         )
         new_id = conn.execute("SELECT last_insert_rowid()").fetchone()[0]
 
@@ -137,7 +159,7 @@ def create_checkin():
         ).fetchone()
 
     log_activity("create", "wellness_checkins", user=g.current_user.get("sub"))
-    return jsonify(_row_to_dict(row)), 201
+    return jsonify(unseal([row], "wellness_checkins")[0]), 201
 
 # ---- mood ----
 
@@ -461,6 +483,9 @@ def get_crisis_resource(resource_id: int):
 @wellness_bp.route("/crisis-resources", methods=["POST"])
 @token_required
 def create_crisis_resource():
+    denial = deny_unless_health_team("add crisis resources", pastoral=True)
+    if denial is not None:
+        return denial
     data = request.get_json(silent=True) or {}
     for field in ["resource_name", "resource_type", "contact_info"]:
         if field not in data:

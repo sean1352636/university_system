@@ -4,6 +4,14 @@ from education_system.systems.university.infrastructure.utils.document_manager._
     EMAIL_SYSTEM_AVAILABLE,
 )
 
+# The document manager's notices are inbox messages (see create_notification);
+# this subject prefix is what tells them apart from a person's other messages.
+DOCUMENT_NOTICE_LIKE = '[Documents] %'
+
+
+def _notice_title(subject):
+    return (subject or '').replace('[Documents] ', '', 1)
+
 
 class NotificationsMixin:
     def notification_center(self):
@@ -37,13 +45,14 @@ class NotificationsMixin:
             cursor = conn.cursor()
 
             cursor.execute('''
-            SELECT notification_id, notification_type, title, message,
-                   created_date, is_read, priority
-            FROM notifications
-            WHERE recipient_id = ?
-            ORDER BY created_date DESC
+            SELECT m.subject, COALESCE(m.message, m.content), m.sent_at, m.is_read
+            FROM messages m
+            JOIN users u ON u.id = m.recipient_id
+            WHERE u.student_id = ? AND m.subject LIKE ?
+              AND COALESCE(m.is_deleted_by_recipient, 0) = 0
+            ORDER BY m.sent_at DESC
             LIMIT 20
-            ''', (student_id,))
+            ''', (student_id, DOCUMENT_NOTICE_LIKE))
 
             notifications = cursor.fetchall()
 
@@ -58,17 +67,17 @@ class NotificationsMixin:
             unread_count = 0
 
             for notification in notifications:
-                notif_id, notif_type, title, message, created_date, is_read, priority = notification
+                subject, message, created_date, is_read = notification
+                title = _notice_title(subject)
 
                 if not is_read:
                     unread_count += 1
 
                 read_indicator = "📖" if is_read else "📩"
-                priority_indicator = "🔴" if priority == 'high' else "🟡" if priority == 'medium' else "⚪"
 
                 created_display = created_date[:16] if created_date else "Unknown"
 
-                print(f"\n{read_indicator} {priority_indicator} {title}")
+                print(f"\n{read_indicator} {title}")
                 print(f"   {message}")
                 print(f"   {created_display}")
 
@@ -79,10 +88,11 @@ class NotificationsMixin:
                 mark_read = input("\nMark all as read? (y/n): ").strip().lower()
                 if mark_read == 'y':
                     cursor.execute('''
-                    UPDATE notifications
-                    SET is_read = 1
-                    WHERE recipient_id = ? AND is_read = 0
-                    ''', (student_id,))
+                    UPDATE messages
+                    SET is_read = 1, read_at = datetime('now')
+                    WHERE recipient_id IN (SELECT id FROM users WHERE student_id = ?)
+                      AND subject LIKE ? AND is_read = 0
+                    ''', (student_id, DOCUMENT_NOTICE_LIKE))
 
                     conn.commit()
                     print(_t("shared.utils.document_manager.all_notifications_read", default="All notifications marked as read."))
@@ -251,18 +261,20 @@ class NotificationsMixin:
             print(f"Database error: {e}")
 
     def view_pending_notifications(self):
-        """View notifications that are pending delivery"""
+        """View document notices their recipients have not read yet"""
         try:
             conn = get_connection()
             cursor = conn.cursor()
 
             cursor.execute('''
-            SELECT notification_id, recipient_id, notification_type, title,
-                   message, created_date, priority
-            FROM notifications
-            WHERE is_sent = 0
-            ORDER BY priority DESC, created_date ASC
-            ''')
+            SELECT m.id, COALESCE(u.username, m.recipient_id), m.subject,
+                   COALESCE(m.message, m.content), m.sent_at
+            FROM messages m
+            LEFT JOIN users u ON u.id = m.recipient_id
+            WHERE m.is_read = 0 AND m.subject LIKE ?
+              AND COALESCE(m.is_deleted_by_recipient, 0) = 0
+            ORDER BY m.sent_at ASC
+            ''', (DOCUMENT_NOTICE_LIKE,))
 
             pending = cursor.fetchall()
 
@@ -275,30 +287,30 @@ class NotificationsMixin:
                 return
 
             for notif in pending:
-                notif_id, recipient, notif_type, title, message, created, priority = notif
+                notif_id, recipient, subject, message, created = notif
 
                 print(f"\nNotification ID: {notif_id}")
                 print(f"To: {recipient}")
-                print(f"Type: {notif_type}")
-                print(f"Priority: {priority}")
-                print(f"Title: {title}")
-                print(f"Message: {message[:100]}...")
+                print(f"Title: {_notice_title(subject)}")
+                print(f"Message: {(message or '')[:100]}...")
                 print(f"Created: {created}")
                 print("-" * 80)
 
             print(f"\nTotal Pending: {len(pending)}")
 
             # Option to mark as sent or delete
-            action = input("\nActions: (m)ark as sent, (d)elete, (q)uit: ").strip().lower()
+            action = input("\nActions: (m)ark as read, (d)elete, (q)uit: ").strip().lower()
 
             if action == 'm':
-                cursor.execute('UPDATE notifications SET is_sent = 1 WHERE is_sent = 0')
+                cursor.execute("""UPDATE messages SET is_read = 1, read_at = datetime('now')
+                                  WHERE is_read = 0 AND subject LIKE ?""", (DOCUMENT_NOTICE_LIKE,))
                 conn.commit()
-                print("✅ All pending notifications marked as sent.")
+                print("✅ All pending notifications marked as read.")
             elif action == 'd':
                 confirm = input("Delete all pending notifications? (y/n): ").strip().lower()
                 if confirm == 'y':
-                    cursor.execute('DELETE FROM notifications WHERE is_sent = 0')
+                    cursor.execute("""UPDATE messages SET is_deleted_by_recipient = 1
+                                      WHERE is_read = 0 AND subject LIKE ?""", (DOCUMENT_NOTICE_LIKE,))
                     conn.commit()
                     print("✅ Pending notifications deleted.")
 

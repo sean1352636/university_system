@@ -9,6 +9,8 @@ from tkinter.scrolledtext import ScrolledText
 from tkinter import ttk, messagebox, filedialog, scrolledtext
 from tkinter.font import Font
 import threading
+from education_system.platform.delivery.gui.tk_threads import start_thread, ui
+from education_system.platform.delivery.gui.tk_threads import ui
 from datetime import datetime, timedelta
 import json
 import webbrowser
@@ -285,13 +287,13 @@ def real_time_financial_dashboard(self):
         fig.tight_layout()
 
         # Show in window
-        self.root.after(0, lambda: self.show_chart_window(
+        ui(self.root, lambda: self.show_chart_window(
             "Real-Time Financial Dashboard",
             fig
         ))
 
     except Exception as e:
-        messagebox.showerror(_("common.error"), _("finance_reporting.messages.dashboard_error").format(error=str(e)))
+        ui(self.root, messagebox.showerror, _("common.error"), _("finance_reporting.messages.dashboard_error").format(error=str(e)))
         print(f"Dashboard error: {e}")
         import traceback
         traceback.print_exc()
@@ -341,28 +343,24 @@ def update_dashboard_metrics(self):
 
             # Update GUI in main thread (with safety check)
             try:
-                if self.root.winfo_exists():
-                    self.root.after(0, lambda: self.set_metric_values({
-                        'total_revenue': f"£{total_revenue:,.2f}",
-                        'collection_rate': f"{collection_rate:.1f}%",
-                        'active_students': f"{active_students:,}",
-                        'overdue_amount': f"£{overdue_amount:,.2f}",
-                        'today_payments': today_payments,
-                        'alert_count': str(alert_count)
-                    }))
+                ui(self.root, lambda: self.root.winfo_exists() and self.set_metric_values({
+                    'total_revenue': f"£{total_revenue:,.2f}",
+                    'collection_rate': f"{collection_rate:.1f}%",
+                    'active_students': f"{active_students:,}",
+                    'overdue_amount': f"£{overdue_amount:,.2f}",
+                    'today_payments': today_payments,
+                    'alert_count': str(alert_count)
+                }))
             except Exception:
                 logger.debug("Suppressed exception", exc_info=True)
 
         except Exception as e:
             try:
-                if self.root.winfo_exists():
-                    self.root.after(0, lambda err=e: self.log_activity(f"Error updating metrics: {err}"))
+                ui(self.root, lambda err=e: self.root.winfo_exists() and self.log_activity(f"Error updating metrics: {err}"))
             except Exception:
                 logger.debug("Suppressed exception", exc_info=True)
 
-    thread = threading.Thread(target=update_in_background)
-    thread.daemon = True
-    thread.start()
+    start_thread(self.root, update_in_background)
 
 def set_metric_values(self, values):
     """Set metric values in the GUI"""

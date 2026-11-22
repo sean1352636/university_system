@@ -177,7 +177,7 @@ def all_slots(*, course_id: int | None = None,
         import timetable as _tt
     _tt.init_db()
 
-    clauses: list[str] = []
+    clauses: list[str] = ["t.archived_at IS NULL"]   # live slots only
     args: list[Any] = []
     if course_id is not None:
         clauses.append("cg.course_id = ?")
@@ -446,7 +446,8 @@ def student_timetable_clashes(
         rows = conn.execute(
             f"{_SLOT_SQL} JOIN class_group_students cgs "
             "  ON cgs.group_id = t.group_id "
-            "WHERE cgs.student_id = ? ORDER BY t.day, t.period",
+            "WHERE cgs.student_id = ? AND t.archived_at IS NULL "
+            "ORDER BY t.day, t.period",
             (sid,),
         ).fetchall()
     slots = [v for v in (_slot_view(r) for r in rows) if v is not None]

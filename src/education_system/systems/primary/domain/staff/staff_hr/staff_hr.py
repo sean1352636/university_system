@@ -331,8 +331,11 @@ def _validate_record(p: dict[str, Any], *,
     _check_date("Last review on",            out.get("last_review_on"))
     _check_date("Next review due",           out.get("next_review_due"))
 
+    raw_fte = out.get("fte_percent")
+    if raw_fte is None or (isinstance(raw_fte, str) and not raw_fte.strip()):
+        raw_fte = 100   # blank defaults to full time; 0 is refused below
     try:
-        fte = float(out.get("fte_percent") or 100)
+        fte = float(raw_fte)
     except (TypeError, ValueError):
         raise ValidationError(
             "FTE percent must be a number 0-100")
@@ -911,9 +914,11 @@ def summary() -> StaffHRSummary:
             out.on_probation += 1
             if r.probation_ending_soon:
                 out.probation_ending_soon += 1
-        if r.dbs_expired:
+        # A leaver's lapsed checks are not open compliance issues;
+        # this matches list_records(dbs_expired/safeguarding_expired).
+        if r.is_active and r.dbs_expired:
             out.dbs_expired += 1
-        if r.safeguarding_expired:
+        if r.is_active and r.safeguarding_expired:
             out.safeguarding_expired += 1
         if r.review_overdue:
             out.reviews_overdue += 1

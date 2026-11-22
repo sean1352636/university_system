@@ -10,21 +10,22 @@ import logging
 from datetime import date as _date, timedelta as _timedelta
 from typing import Callable
 
-from education_system.systems.sixth_form.domain.academics.attendance import (
-    attendance_calling as calling,
-    attendance_letters as letters,
-    attendance_notifications as notifications,
-    attendance_nudges as nudges,
-)
 from education_system.systems.sixth_form.domain.academics.attendance.attendance import (
     ValidationError,
 )
 from education_system.systems.sixth_form.interfaces.cli.academics.attendance.attendance_cli import (
+    lazy_domain,
     _input,
     _pause,
     _pick_from,
     _UserAbort,
 )
+
+# Domain modules load on first use (see attendance_cli.lazy_domain).
+calling = lazy_domain("attendance_calling")
+letters = lazy_domain("attendance_letters")
+notifications = lazy_domain("attendance_notifications")
+nudges = lazy_domain("attendance_nudges")
 
 logger = logging.getLogger(__name__)
 

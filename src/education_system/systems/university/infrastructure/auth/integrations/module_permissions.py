@@ -110,73 +110,37 @@ def initialize_complete_system():
 def init_trip_db():
     """Initialize trip management database tables
 
+    The trip schema is Trip Management's (``trip_management.database``);
+    this used to declare an incompatible copy (``title`` instead of
+    ``trip_name``, status 'active') and now runs the real DDL.
+
     Returns:
         bool: True if successful, False otherwise
     """
+    from education_system.systems.university.domains.operations.domain.campus.mobility.services.trip_management import (
+        database as trip_database,
+    )
+    conn = None
     try:
         conn = get_connection()
-        cursor = conn.cursor()
-
-        # Create trips table
-        cursor.execute('''
-        CREATE TABLE IF NOT EXISTS trips (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            title TEXT NOT NULL,
-            description TEXT,
-            destination TEXT NOT NULL,
-            start_date TEXT NOT NULL,
-            end_date TEXT NOT NULL,
-            max_participants INTEGER,
-            cost REAL DEFAULT 0,
-            status TEXT DEFAULT 'active',
-            created_by INTEGER,
-            created_at TEXT NOT NULL,
-            updated_at TEXT NOT NULL,
-            FOREIGN KEY (created_by) REFERENCES users (id)
-        )
-        ''')
-
-        # Create trip registrations table
-        cursor.execute('''
-        CREATE TABLE IF NOT EXISTS trip_registrations (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            trip_id INTEGER NOT NULL,
-            user_id INTEGER NOT NULL,
-            registration_date TEXT NOT NULL,
-            status TEXT DEFAULT 'pending',
-            notes TEXT,
-            FOREIGN KEY (trip_id) REFERENCES trips (id) ON DELETE CASCADE,
-            FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE,
-            UNIQUE(trip_id, user_id)
-        )
-        ''')
-
-        # Create trip expenses table
-        cursor.execute('''
-        CREATE TABLE IF NOT EXISTS trip_expenses (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            trip_id INTEGER NOT NULL,
-            description TEXT NOT NULL,
-            amount REAL NOT NULL,
-            expense_date TEXT NOT NULL,
-            category TEXT,
-            created_by INTEGER,
-            created_at TEXT NOT NULL,
-            FOREIGN KEY (trip_id) REFERENCES trips (id) ON DELETE CASCADE,
-            FOREIGN KEY (created_by) REFERENCES users (id)
-        )
-        ''')
-
+        trip_database.apply(conn.execute)
         conn.commit()
-        conn.close()
         return True
 
     except sqlite3.Error as e:
+        if conn is not None:
+            conn.rollback()
         logging.error(f"Error initializing trip database: {e}")
         return False
+    finally:
+        if conn is not None:
+            conn.close()
 
 def setup_trip_permissions(auth=None):
     """Setup trip management permissions
+
+    Seeds Trip Management's own permission list and role grants
+    (``trip_management.permissions``) so the two cannot drift.
 
     Args:
         auth: Optional UserAuth instance (unused, kept for compatibility)
@@ -184,77 +148,10 @@ def setup_trip_permissions(auth=None):
     Returns:
         bool: True if successful, False otherwise
     """
-    try:
-        conn = get_connection()
-        cursor = conn.cursor()
-
-        # Trip permissions
-        trip_permissions = [
-            ('manage_trips', 'Manage Trip Records'),
-            ('create_trips', 'Create New Trips'),
-            ('view_trips', 'View Trip Information'),
-            ('register_for_trips', 'Register for Trips'),
-            ('view_own_trip_registrations', 'View Own Trip Registrations'),
-            ('cancel_trip_registration', 'Cancel Trip Registration'),
-            ('manage_trip_participants', 'Manage Trip Participants'),
-            ('view_trip_reports', 'View Trip Reports'),
-            ('manage_trip_expenses', 'Manage Trip Expenses'),
-            ('approve_trip_registrations', 'Approve Trip Registrations')
-        ]
-
-        timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-
-        for perm_name, perm_desc in trip_permissions:
-            cursor.execute(
-                'INSERT OR IGNORE INTO permissions (permission_name, description, created_at) VALUES (?, ?, ?)',
-                (perm_name, perm_desc, timestamp)
-            )
-
-        # Assign permissions to roles
-        role_permissions = {
-            'admin': [
-                'manage_trips', 'create_trips', 'view_trips', 'register_for_trips',
-                'view_own_trip_registrations', 'cancel_trip_registration',
-                'manage_trip_participants', 'view_trip_reports', 'manage_trip_expenses',
-                'approve_trip_registrations'
-            ],
-            'staff': [
-                'create_trips', 'view_trips', 'manage_trip_participants',
-                'view_trip_reports', 'manage_trip_expenses', 'approve_trip_registrations'
-            ],
-            'instructor': [
-                'view_trips', 'register_for_trips', 'view_own_trip_registrations',
-                'cancel_trip_registration'
-            ],
-            'student': [
-                'view_trips', 'register_for_trips', 'view_own_trip_registrations',
-                'cancel_trip_registration'
-            ]
-        }
-
-        for role_name, permissions in role_permissions.items():
-            cursor.execute('SELECT id FROM roles WHERE role_name = ?', (role_name,))
-            role_result = cursor.fetchone()
-            if role_result:
-                role_id = role_result[0]
-
-                for perm_name in permissions:
-                    cursor.execute('SELECT id FROM permissions WHERE permission_name = ?', (perm_name,))
-                    perm_result = cursor.fetchone()
-                    if perm_result:
-                        perm_id = perm_result[0]
-                        cursor.execute(
-                            'INSERT OR IGNORE INTO role_permissions (role_id, permission_id) VALUES (?, ?)',
-                            (role_id, perm_id)
-                        )
-
-        conn.commit()
-        conn.close()
-        return True
-
-    except sqlite3.Error as e:
-        logging.error(f"Error setting up trip permissions: {e}")
-        return False
+    from education_system.systems.university.domains.operations.domain.campus.mobility.services.trip_management import (
+        permissions as trip_permissions,
+    )
+    return trip_permissions.setup_trip_permissions(auth)
 
 def set_trip_auth(auth_instance):
     """Set the authentication instance for trip management
@@ -264,6 +161,15 @@ def set_trip_auth(auth_instance):
     """
     global _trip_auth_instance
     _trip_auth_instance = auth_instance
+    # Trip Management reads its own auth (trip_management._common.auth);
+    # without this the CLI's trip menu saw nobody signed in.
+    try:
+        from education_system.systems.university.domains.operations.domain.campus.mobility.services.trip_management import (
+            set_auth as _set_trip_management_auth,
+        )
+        _set_trip_management_auth(auth_instance)
+    except ImportError as exc:
+        logging.warning("Trip management auth not set: %s", exc)
     logging.info("Trip management authentication configured")
 
 def integrate_trip_management_with_main():

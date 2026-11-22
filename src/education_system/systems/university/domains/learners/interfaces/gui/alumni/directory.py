@@ -30,49 +30,53 @@ except ImportError:
     get_current_language = lambda: "en"
 
 # Alumni service functions
-from education_system.systems.university.domains.learners.interfaces.gui.alumni._service_imports import init_alumni_db, register_alumni, view_alumni, update_alumni, view_events, create_enhanced_event, event_check_in_system, record_donation, view_donations, setup_mentorship, view_mentorships, search_alumni_directory, manage_business_directory, create_newsletter, manage_alumni_forum, post_job_opportunity, view_job_board, schedule_career_counseling, view_fundraising_campaigns, create_fundraising_campaign, view_engagement_leaderboard, view_my_badges, manage_photo_gallery, manage_class_reunions, manage_regional_chapters, setup_alumni_directory, generate_alumni_report, set_auth, setup_alumni_permissions, smart_mentorship_matching, generate_engagement_recommendations, create_alumni_story, view_alumni_stories, get_connection
+from education_system.systems.university.domains.learners.interfaces.gui.alumni._service_imports import (
+    init_alumni_db,
+    view_events,
+    create_enhanced_event,
+    event_check_in_system,
+    manage_business_directory,
+    manage_alumni_forum,
+    post_job_opportunity,
+    view_job_board,
+    schedule_career_counseling,
+    view_engagement_leaderboard,
+    view_my_badges,
+    manage_photo_gallery,
+    manage_class_reunions,
+    generate_alumni_report,
+    set_auth,
+    setup_alumni_permissions,
+    generate_engagement_recommendations,
+    get_connection,
+)
 
 
 
 class DirectoryMixin:
+        """Networking connections between alumni. Only alumni listed in the
+        directory and open to networking can be found (the directory itself
+        is ``AlumniOfficeRecordsMixin.show_directory``)."""
+
         def _ensure_connections_schema(self, conn=None):
-            """Create the alumni_connections table if it doesn't exist."""
+            """``alumni_connections`` is created by migration e6a8c0d2f4b7
+            (alumni_office_schema); make sure it exists on this database."""
+            from education_system.systems.university.infrastructure.database.schemas import (
+                alumni_office_schema,
+            )
             own = conn is None
             if own:
                 conn = db_get_connection()
             try:
-                conn.execute(
-                    """
-                    CREATE TABLE IF NOT EXISTS alumni_connections (
-                        connection_id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        requester_id  TEXT NOT NULL,
-                        recipient_id  TEXT NOT NULL,
-                        status        TEXT DEFAULT 'pending',
-                        message       TEXT,
-                        request_date  TEXT DEFAULT (datetime('now')),
-                        response_date TEXT
-                    )
-                    """
-                )
-                conn.commit()
+                alumni_office_schema.apply_to_connection(conn)
             finally:
                 if own:
                     conn.close()
 
         def _current_alumni_id(self):
-            """Resolve the signed-in user's alumni_id (via the alumni table),
-            falling back to their user id."""
-            uid = str(self._current_user_id())
-            try:
-                with db_get_connection() as conn:
-                    row = conn.execute(
-                        "SELECT alumni_id FROM alumni WHERE alumni_id = ? OR student_id = ? LIMIT 1",
-                        (uid, uid)).fetchone()
-                    if row:
-                        return str(row[0])
-            except sqlite3.Error:
-                pass
-            return uid
+            """The signed-in alumnus's alumni id (None for anyone else)."""
+            who = getattr(self, "who", None)
+            return who.alumni_id if who is not None else None
 
         def _respond_to_request(self, response):
             """Accept/decline the selected incoming connection request."""
@@ -111,11 +115,6 @@ class DirectoryMixin:
             except sqlite3.Error as e:
                 messagebox.showerror(_t('gui.learners.alumni.directory.dialogs.database_error', default="Database Error"), f"Failed to respond: {str(e)}")
 
-        def _save_basic_directory_settings(self, privacy_vars):
-            """Save basic directory privacy settings"""
-            messagebox.showinfo(_t('gui.learners.alumni.directory.dialogs.settings_saved', default="Settings Saved"), _t('gui.learners.alumni.directory.dialogs.directory_privacy_settings_have_been_saved_successfully', default="Directory privacy settings have been saved successfully!"))
-            self.update_status("Directory settings updated")
-
         def _search_alumni_for_connection(self):
             """Search alumni for connection requests"""
             try:
@@ -146,8 +145,11 @@ class DirectoryMixin:
                                    ELSE 'Not Connected'
                                END as status
                         FROM alumni a
+                        JOIN alumni_directory_settings d ON d.alumni_id = a.alumni_id
                         WHERE (a.first_name LIKE ? OR a.last_name LIKE ?)
                         AND a.alumni_id != ?
+                        AND d.searchable = 1 AND d.networking_available = 1
+                        AND a.deceased_at IS NULL AND a.anonymised_at IS NULL
                         ORDER BY a.last_name
                     """
                     cursor.execute(query, (me, me, f"%{escape_like(search_term)}%",
@@ -233,93 +235,6 @@ class DirectoryMixin:
             ttk.Button(frame, text=_t('gui.learners.alumni.directory.buttons.cancel', default="Cancel"),
                       command=msg_window.destroy).pack(side=tk.LEFT)
 
-        def perform_directory_search(self, search_vars):
-            """Search the alumni directory (real data). With no criteria, list
-            every alumnus."""
-            self.directory_results.delete(1.0, tk.END)
-
-            search_criteria = {k: v.get().strip() for k, v in search_vars.items() if v.get().strip()}
-
-            clauses = []
-            params = []
-            if 'name' in search_criteria:
-                clauses.append("(first_name LIKE ? OR last_name LIKE ?)")
-                like = f"%{escape_like(search_criteria['name'])}%"
-                params += [like, like]
-            if 'year' in search_criteria:
-                clauses.append("CAST(graduation_year AS TEXT) LIKE ?")
-                params.append(f"%{escape_like(search_criteria['year'])}%")
-            if 'industry' in search_criteria:
-                clauses.append("industry LIKE ?")
-                params.append(f"%{escape_like(search_criteria['industry'])}%")
-            if 'location' in search_criteria:
-                clauses.append("(city LIKE ? OR country LIKE ? OR address LIKE ?)")
-                like = f"%{escape_like(search_criteria['location'])}%"
-                params += [like, like, like]
-            if 'skills' in search_criteria:
-                clauses.append("skills LIKE ?")
-                params.append(f"%{escape_like(search_criteria['skills'])}%")
-
-            where = (" WHERE " + " AND ".join(clauses)) if clauses else ""
-            try:
-                with db_get_connection() as conn:
-                    rows = conn.execute(
-                        "SELECT TRIM(COALESCE(first_name,'')||' '||COALESCE(last_name,'')), "
-                        "graduation_year, job_title, current_employer, industry, "
-                        "COALESCE(city || ', ' || country, city, country, '') AS location, is_mentor "
-                        "FROM alumni" + where +
-                        " ORDER BY COALESCE(graduation_year,0) DESC, last_name, first_name",
-                        params).fetchall()
-            except sqlite3.Error as e:
-                self.directory_results.insert(tk.END, f"Search failed: {e}")
-                return
-
-            header = "Alumni Directory Search Results\n" + "=" * 40 + "\n\n"
-            if search_criteria:
-                header += "Search criteria: " + ", ".join(
-                    f"{k}: {v}" for k, v in search_criteria.items()) + "\n\n"
-            else:
-                header += "Showing all alumni.\n\n"
-            self.directory_results.insert(tk.END, header)
-
-            if not rows:
-                self.directory_results.insert(tk.END, "No alumni matched your search.")
-                self.update_status("No alumni found")
-                return
-
-            for i, (name, year, title, employer, industry, location, is_mentor) in enumerate(rows, 1):
-                line = f"{i}. {name or '(no name)'}"
-                if year:
-                    line += f" (Class of {year})"
-                line += "\n"
-                if title or employer:
-                    line += f"   Current: {title or 'N/A'}{(' at ' + employer) if employer else ''}\n"
-                if industry:
-                    line += f"   Industry: {industry}\n"
-                if location:
-                    line += f"   Location: {location}\n"
-                if is_mentor:
-                    line += "   ✓ Available as mentor\n"
-                self.directory_results.insert(tk.END, line + "\n")
-
-            self.update_status(f"Found {len(rows)} alumni matching search criteria")
-
-        def save_directory_settings(self):
-            """Save directory privacy settings"""
-            settings_summary = []
-            for var_name, var in self.privacy_vars.items():
-                if var.get():
-                    settings_summary.append(var_name.replace('_', ' ').title())
-
-            summary_text = "Settings saved:\n"
-            summary_text += f"• Profile Visibility: {self.visibility_level.get()}\n"
-            summary_text += f"• Contact Method: {self.contact_method.get()}\n"
-            summary_text += f"• Notification Frequency: {self.notification_freq.get()}\n"
-            summary_text += f"• Enabled Options: {', '.join(settings_summary)}"
-
-            messagebox.showinfo(_t('gui.learners.alumni.directory.dialogs.settings_saved', default="Settings Saved"), summary_text)
-            self.update_status("Directory settings updated")
-
         def send_connection_request(self):
             """Send connection request to another alumni"""
             self.clear_content()
@@ -364,190 +279,9 @@ class DirectoryMixin:
             ttk.Button(button_frame, text=_t('gui.learners.alumni.directory.buttons.send_connection_request', default="Send Connection Request"),
                       command=self._send_selected_connection_request).pack(side=tk.LEFT)
 
-        def show_alumni_directory(self):
-            """Show alumni directory settings"""
-            self.clear_content()
-            self.update_status("Alumni Directory Settings")
-
-            ttk.Label(self.content_frame, text=_t('gui.learners.alumni.directory.labels.alumni_directory_privacy_settings', default="Alumni Directory Privacy Settings"),
-                     font=('Arial', 16, 'bold')).pack(pady=20)
-
-            settings_frame = ttk.LabelFrame(self.content_frame, text=_t('gui.learners.alumni.directory.labels.privacy_settings', default="Privacy Settings"), padding=20)
-            settings_frame.pack(fill=tk.X, pady=20, padx=20)
-
-            # Privacy checkboxes
-            privacy_vars = {}
-            privacy_options = [
-                ("show_contact", "Show contact information in directory"),
-                ("show_employment", "Show employment information"),
-                ("show_education", "Show education information"),
-                ("searchable", "Make profile searchable"),
-                ("networking", "Available for networking"),
-                ("mentor", "Available as mentor")
-            ]
-
-            for var_name, description in privacy_options:
-                privacy_vars[var_name] = tk.BooleanVar(value=True)
-                ttk.Checkbutton(settings_frame, text=description,
-                               variable=privacy_vars[var_name]).pack(anchor='w', pady=5)
-
-            # Save button
-            ttk.Button(settings_frame, text=_t('gui.learners.alumni.directory.buttons.save_settings', default="Save Settings"),
-                      command=lambda: self._save_basic_directory_settings(privacy_vars)).pack(pady=20)
-
         def show_connections(self):
             """Networking connections — uses the functional, DB-backed view."""
             self.view_connection_requests()
-
-        def show_directory_search(self):
-            """Show advanced directory search"""
-            self.clear_content()
-            self.update_status("Alumni Directory Search")
-
-            ttk.Label(self.content_frame, text=_t('gui.learners.alumni.directory.labels.alumni_directory_search', default="Alumni Directory Search"),
-                     font=('Arial', 16, 'bold')).pack(pady=(0, 20))
-
-            # Search form
-            search_frame = ttk.LabelFrame(self.content_frame, text=_t('gui.learners.alumni.directory.labels.search_criteria', default="Search Criteria"), padding=10)
-            search_frame.pack(fill=tk.X, pady=(0, 20), padx=20)
-
-            search_vars = {}
-            search_fields = [
-                ("Name", "name"),
-                ("Graduation Year", "year"),
-                ("Industry", "industry"),
-                ("Location", "location"),
-                ("Skills", "skills")
-            ]
-
-            # Create fields grid
-            fields_container = ttk.Frame(search_frame)
-            fields_container.pack(fill=tk.X, pady=(0, 10))
-
-            for i, (label, var_name) in enumerate(search_fields):
-                row = i // 2
-                col = i % 2
-
-                field_frame = ttk.Frame(fields_container)
-                field_frame.grid(row=row, column=col, padx=10, pady=5, sticky='ew')
-
-                ttk.Label(field_frame, text=f"{label}:").pack(anchor='w')
-                search_vars[var_name] = tk.StringVar()
-                ttk.Entry(field_frame, textvariable=search_vars[var_name]).pack(fill=tk.X)
-
-            fields_container.columnconfigure(0, weight=1)
-            fields_container.columnconfigure(1, weight=1)
-
-            # Search button in separate frame using pack
-            ttk.Button(search_frame, text=_t('gui.learners.alumni.directory.buttons.search_directory', default="Search Directory"),
-                      command=lambda: self.perform_directory_search(search_vars)).pack(pady=10)
-
-            # Results area
-            self.directory_results = ScrolledText(self.content_frame, height=15, wrap=tk.WORD)
-            self.directory_results.pack(fill=tk.BOTH, expand=True, padx=20, pady=(0, 20))
-
-        def show_directory_settings(self):
-            """Show directory privacy settings with scrollbar"""
-            self.clear_content()
-            self.update_status("Directory Settings")
-
-            # Create scrollable container
-            canvas = tk.Canvas(self.content_frame)
-            scrollbar = ttk.Scrollbar(self.content_frame, orient="vertical", command=canvas.yview)
-            scrollable_frame = ttk.Frame(canvas)
-
-            scrollable_frame.bind(
-                "<Configure>",
-                lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
-            )
-
-            canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
-            canvas.configure(yscrollcommand=scrollbar.set)
-
-            # Enable mouse wheel scrolling
-            def _on_mousewheel(event):
-                canvas.yview_scroll(int(-1*(event.delta/120)), "units")
-
-            def _on_mousewheel_linux(event):
-                if event.num == 4:
-                    canvas.yview_scroll(-1, "units")
-                elif event.num == 5:
-                    canvas.yview_scroll(1, "units")
-
-            canvas.bind_all("<MouseWheel>", _on_mousewheel)
-            canvas.bind_all("<Button-4>", _on_mousewheel_linux)
-            canvas.bind_all("<Button-5>", _on_mousewheel_linux)
-
-            # Pack scrollbar and canvas
-            scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
-            canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-
-            # Title
-            ttk.Label(scrollable_frame, text=_t('gui.learners.alumni.directory.labels.alumni_directory_privacy_settings', default="Alumni Directory Privacy Settings"),
-                     font=('Arial', 16, 'bold')).pack(pady=(0, 20), padx=20)
-
-            # Settings form
-            settings_frame = ttk.LabelFrame(scrollable_frame, text=_t('gui.learners.alumni.directory.labels.privacy_settings', default="Privacy Settings"), padding=20)
-            settings_frame.pack(fill=tk.X, padx=20, pady=(0, 20))
-
-            # Privacy options
-            self.privacy_vars = {}
-
-            privacy_options = [
-                ("show_contact", "Show contact information in directory"),
-                ("show_employment", "Show employment information"),
-                ("show_education", "Show education information"),
-                ("searchable", "Make profile searchable"),
-                ("networking", "Available for networking requests"),
-                ("mentor", "Available as mentor"),
-                ("email_notifications", "Receive email notifications"),
-                ("event_invitations", "Receive event invitations"),
-                ("newsletter", "Subscribe to alumni newsletter")
-            ]
-
-            for var_name, description in privacy_options:
-                self.privacy_vars[var_name] = tk.BooleanVar(value=True)
-                ttk.Checkbutton(settings_frame, text=description,
-                               variable=self.privacy_vars[var_name]).pack(anchor='w', pady=5)
-
-            # Profile visibility level
-            visibility_frame = ttk.LabelFrame(scrollable_frame, text=_t('gui.learners.alumni.directory.labels.profile_visibility', default="Profile Visibility"), padding=20)
-            visibility_frame.pack(fill=tk.X, padx=20, pady=(0, 20))
-
-            self.visibility_level = tk.StringVar(value=_t('gui.learners.alumni.directory.values.alumni_only', default="Alumni Only"))
-
-            ttk.Radiobutton(visibility_frame, text=_t('gui.learners.alumni.directory.buttons.public_visible_to_all', default="Public (visible to all)"),
-                           variable=self.visibility_level, value="Public").pack(anchor='w', pady=2)
-            ttk.Radiobutton(visibility_frame, text=_t('gui.learners.alumni.directory.buttons.alumni_only_registered_alumni_only', default="Alumni Only (registered alumni only)"),
-                           variable=self.visibility_level, value="Alumni Only").pack(anchor='w', pady=2)
-            ttk.Radiobutton(visibility_frame, text=_t('gui.learners.alumni.directory.buttons.private_only_visible_to_me', default="Private (only visible to me)"),
-                           variable=self.visibility_level, value="Private").pack(anchor='w', pady=2)
-
-            # Communication preferences
-            comm_frame = ttk.LabelFrame(scrollable_frame, text=_t('gui.learners.alumni.directory.labels.communication_preferences', default="Communication Preferences"), padding=20)
-            comm_frame.pack(fill=tk.X, padx=20, pady=(0, 20))
-
-            ttk.Label(comm_frame, text=_t('gui.learners.alumni.directory.labels.preferred_contact_method', default="Preferred Contact Method:")).pack(anchor='w', pady=(0, 5))
-            self.contact_method = tk.StringVar(value=_t('gui.learners.alumni.directory.values.email', default="Email"))
-
-            contact_methods = ["Email", "Phone", "LinkedIn", "Alumni Platform Messages"]
-            for method in contact_methods:
-                ttk.Radiobutton(comm_frame, text=method, variable=self.contact_method,
-                               value=method).pack(anchor='w', pady=2)
-
-            # Notification frequency
-            freq_frame = ttk.Frame(comm_frame)
-            freq_frame.pack(fill=tk.X, pady=(10, 0))
-
-            ttk.Label(freq_frame, text=_t('gui.learners.alumni.directory.labels.notification_frequency', default="Notification Frequency:")).pack(side=tk.LEFT, padx=(0, 10))
-            self.notification_freq = tk.StringVar(value=_t('gui.learners.alumni.directory.values.weekly', default="Weekly"))
-            freq_combo = ttk.Combobox(freq_frame, textvariable=self.notification_freq,
-                                     values=["Immediate", "Daily", "Weekly", "Monthly", "Never"])
-            freq_combo.pack(side=tk.LEFT)
-
-            # Save button
-            ttk.Button(scrollable_frame, text=_t('gui.learners.alumni.directory.buttons.save_settings', default="Save Settings"),
-                      command=self.save_directory_settings).pack(pady=20)
 
         def view_connection_requests(self):
             """View pending connection requests"""

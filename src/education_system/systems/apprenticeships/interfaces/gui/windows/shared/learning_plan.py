@@ -27,8 +27,8 @@ from education_system.systems.apprenticeships.interfaces.gui import widgets
 from education_system.systems.apprenticeships.interfaces.gui.windows.shared import (
     signatures as signature_window,
 )
-from education_system.systems.apprenticeships.services import (
-    apprentice_service,
+from education_system.systems.apprenticeships.application.apprentices import apprentice_service
+from education_system.systems.apprenticeships.application.learning import (
     learning_plan_service,
     training_service,
 )

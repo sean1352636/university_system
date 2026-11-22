@@ -53,8 +53,9 @@ class InstructorPortalCLI:
             try:
                 modules = conn.execute(
                     "SELECT module_code, module_name FROM modules "
-                    "WHERE instructor_id = ? OR taught_by = ?",
-                    (self.instructor_id, self.instructor_id),
+                    "WHERE instructor_id = ? OR instructor = ? OR instructor_id IN "
+                    "(SELECT id FROM users WHERE username = ?)",
+                    (self.instructor_id, self.instructor_id, self.instructor_id),
                 ).fetchall()
                 if modules:
                     for i, mod in enumerate(modules, 1):
@@ -87,7 +88,7 @@ class InstructorPortalCLI:
             print("\n--- Recent Grade Submissions ---")
             try:
                 row = conn.execute(
-                    "SELECT COUNT(*) AS cnt FROM module_grades "
+                    "SELECT COUNT(*) AS cnt FROM grades "
                     "WHERE graded_by = ?",
                     (self.instructor_id,),
                 ).fetchone()
@@ -132,7 +133,7 @@ class InstructorPortalCLI:
 
     def _handle_course_management(self):
         try:
-            from education_system.systems.university.domains.academics.interfaces.gui.course_management_gui.cli.course_planning_cli import display_course_planning_menu
+            from education_system.systems.university.domains.curriculum.interfaces.gui.course_management_gui.cli.course_planning_cli import display_course_planning_menu
             display_course_planning_menu()
         except ImportError as e:
             print(f"\n  Course Management module is not available: {e}")
@@ -148,7 +149,7 @@ class InstructorPortalCLI:
 
     def _handle_assignments(self):
         try:
-            from education_system.systems.university.domains.academics.domain.services.assignments.assignment_submission import display_assignment_menu
+            from education_system.systems.university.domains.assessment.domain.assignments.assignment_submission import display_assignment_menu
             display_assignment_menu(self.auth)
         except ImportError as e:
             print(f"\n  Assignments module is not available: {e}")
@@ -156,7 +157,7 @@ class InstructorPortalCLI:
 
     def _handle_grade_tracking(self):
         try:
-            from education_system.systems.university.domains.academics.interfaces.gui.grade_tracking_management_gui import display_enhanced_grade_menu
+            from education_system.systems.university.domains.assessment.interfaces.gui.grade_tracking_management_gui import display_enhanced_grade_menu
             if display_enhanced_grade_menu:
                 display_enhanced_grade_menu()
             else:
@@ -176,7 +177,7 @@ class InstructorPortalCLI:
 
     def _handle_office_hours(self):
         try:
-            from education_system.systems.university.domains.academics.interfaces.cli.office_hours_cli import display_office_hours_menu
+            from education_system.systems.university.domains.teaching.interfaces.cli.office_hours_cli import display_office_hours_menu
             display_office_hours_menu(self.auth)
         except ImportError as e:
             print(f"\n  Office Hours module is not available: {e}")
@@ -184,7 +185,7 @@ class InstructorPortalCLI:
 
     def _handle_ta_management(self):
         try:
-            from education_system.systems.university.domains.academics.domain.services.assignments.admin_tools.ta_management_cli import display_ta_management_menu
+            from education_system.systems.university.domains.assessment.domain.assignments.admin_tools.ta_management_cli import display_ta_management_menu
             display_ta_management_menu(self.auth)
         except ImportError as e:
             print(f"\n  TA Management module is not available: {e}")
@@ -200,7 +201,7 @@ class InstructorPortalCLI:
 
     def _handle_student_analytics(self):
         try:
-            from education_system.systems.university.services.analytics.student_analytics import StudentAnalytics
+            from education_system.systems.university.shared.analytics.student_analytics import StudentAnalytics
             StudentAnalytics().display_main_menu()
         except ImportError as e:
             print(f"\n  Student Analytics module is not available: {e}")
@@ -216,10 +217,10 @@ class InstructorPortalCLI:
 
     def _handle_early_warning(self):
         try:
-            from education_system.systems.university.domains.pastoral.domain.services.early_warning.early_warning_core_parts.display_early_warning_menu import display_early_warning_menu
-            display_early_warning_menu(self.auth)
+            from education_system.systems.university.domains.student_support.interfaces.cli.wellbeing.intervention_hub.intervention_hub_cli import display_intervention_hub_menu
+            display_intervention_hub_menu(self.auth)
         except ImportError as e:
-            print(f"\n  Early Warning System module is not available: {e}")
+            print(f"\n  Early Warning & Interventions is not available: {e}")
             input("Press Enter to continue...")
 
     def _handle_academic_progress(self):
@@ -233,7 +234,7 @@ class InstructorPortalCLI:
 
     def _handle_academic_calendar(self):
         try:
-            from education_system.systems.university.domains.academics.domain.services.academic_calendar.cli import display_academic_calendar_menu
+            from education_system.systems.university.domains.teaching.domain.academic_calendar.cli import display_academic_calendar_menu
             display_academic_calendar_menu()
         except ImportError as e:
             print(f"\n  Academic Calendar module is not available: {e}")
@@ -241,7 +242,7 @@ class InstructorPortalCLI:
 
     def _handle_timetable(self):
         try:
-            from education_system.systems.university.domains.academics.domain.services.timetable import display_timetable_optimizer_menu
+            from education_system.systems.university.domains.teaching.domain.timetable import display_timetable_optimizer_menu
             display_timetable_optimizer_menu()
         except ImportError as e:
             print(f"\n  Timetable module is not available: {e}")
@@ -249,7 +250,7 @@ class InstructorPortalCLI:
 
     def _handle_attendance(self):
         try:
-            from education_system.systems.university.domains.academics.interfaces.cli.services.attendance.menu import display_attendance_menu
+            from education_system.systems.university.domains.teaching.interfaces.cli.services.attendance.menu import display_attendance_menu
             display_attendance_menu()  # resolves the acting user itself
         except ImportError as e:
             print(f"\n  Attendance module is not available: {e}")
@@ -257,7 +258,7 @@ class InstructorPortalCLI:
 
     def _handle_exam_scheduler(self):
         try:
-            from education_system.systems.university.domains.academics.interfaces.cli.exam_management_cli import display_exam_portal_menu
+            from education_system.systems.university.domains.assessment.interfaces.cli.exam_management_cli import display_exam_portal_menu
             display_exam_portal_menu(self.auth)
         except ImportError as e:
             print(f"\n  Exam Scheduler module is not available: {e}")
@@ -265,7 +266,7 @@ class InstructorPortalCLI:
 
     def _handle_analytics_reports(self):
         try:
-            from education_system.systems.university.services.analytics.enhanced_reporting.menu import display_enhanced_reporting_menu
+            from education_system.systems.university.shared.analytics.enhanced_reporting.menu import display_enhanced_reporting_menu
             display_enhanced_reporting_menu()
         except ImportError as e:
             print(f"\n  Analytics & Reports module is not available: {e}")
@@ -289,7 +290,7 @@ class InstructorPortalCLI:
 
     def _handle_library(self):
         try:
-            from education_system.systems.university.domains.academics.domain.services.library.menu import display_library_menu
+            from education_system.systems.university.domains.library.domain.library.menu import display_library_menu
             display_library_menu()
         except ImportError as e:
             print(f"\n  Library module is not available: {e}")
@@ -329,7 +330,7 @@ class InstructorPortalCLI:
 
     def _handle_transfer_credits(self):
         try:
-            from education_system.systems.university.domains.academics.interfaces.cli.transfer_credits_cli import display_transfer_credits_menu
+            from education_system.systems.university.domains.curriculum.interfaces.cli.transfer_credits_cli import display_transfer_credits_menu
             display_transfer_credits_menu(self.auth)
         except ImportError as e:
             print(f"\n  Transfer Credits module is not available: {e}")
@@ -337,15 +338,23 @@ class InstructorPortalCLI:
 
     def _handle_accreditation(self):
         try:
-            from education_system.systems.university.domains.academics.interfaces.cli.accreditation_cli import display_accreditation_menu
+            from education_system.systems.university.domains.quality.interfaces.cli.accreditation_cli import display_accreditation_menu
             display_accreditation_menu(self.auth)
         except ImportError as e:
             print(f"\n  Accreditation module is not available: {e}")
             input("Press Enter to continue...")
 
+    def _handle_student_handbook(self):
+        try:
+            from education_system.systems.university.domains.student_life.interfaces.cli.student_handbook import run_student_handbook_cli
+            run_student_handbook_cli(self.auth)
+        except ImportError as e:
+            print(f"\n  Student Handbook is not available: {e}")
+            input("Press Enter to continue...")
+
     def _handle_course_catalog(self):
         try:
-            from education_system.systems.university.domains.academics.interfaces.cli.course_catalog_cli import display_course_catalog_menu
+            from education_system.systems.university.domains.curriculum.interfaces.cli.course_catalog_cli import display_course_catalog_menu
             display_course_catalog_menu(self.auth)
         except ImportError as e:
             print(f"\n  Course Catalog module is not available: {e}")
@@ -405,6 +414,7 @@ class InstructorPortalCLI:
             print("\n  RESOURCES:")
             print("    21. Library")
             print("    22. University Shop")
+            print("    27. Student Handbook")
 
             print("\n  ACADEMIC ADMIN:")
             print("    24. Transfer Credits")
@@ -487,6 +497,8 @@ class InstructorPortalCLI:
                 self._handle_accreditation()
             elif choice == '26':
                 self._handle_course_catalog()
+            elif choice == '27':
+                self._handle_student_handbook()
             else:
                 print("\n  Invalid choice. Please try again.")
                 input("Press Enter to continue...")

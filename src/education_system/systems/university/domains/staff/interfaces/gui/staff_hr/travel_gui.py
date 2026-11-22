@@ -17,6 +17,7 @@ logger = logging.getLogger(__name__)
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 
 import json
+from education_system.systems.university.domains.staff.interfaces.gui.staff_hr import _access as _hr
 import tkinter as tk
 from tkinter import ttk, messagebox
 from datetime import datetime
@@ -51,7 +52,7 @@ class TravelGUI:
 
     def _get_user_id(self):
         """Get user ID from current user dict."""
-        return self.current_user.get('id') or self.current_user.get('username')
+        return _hr.user_key(self)
 
     def create_as_tab(self, notebook: ttk.Notebook):
         """Create as a tab in parent notebook."""
@@ -63,7 +64,8 @@ class TravelGUI:
         """Create as standalone window."""
         self.window = tk.Toplevel(self.root)
         self.window.title(_t('gui.staff.staff_hr.travel.windows.travel_conference_management', default="Travel & Conference Management"))
-        self.window.geometry("1200x700")
+        self.window.geometry("1400x900")
+        self.window.minsize(1200, 800)
         self.window.minsize(1000, 600)
 
         bottom_frame = ttk.Frame(self.window)
@@ -87,9 +89,11 @@ class TravelGUI:
         self._create_new_request_tab()
         self._create_conferences_tab()
 
-        if self.current_user.get('role') in ['admin', 'Admin', 'administrator', 'staff']:
+        if _hr.can(self, 'manager'):
             self._create_approvals_tab()
+        if _hr.can(self, 'manager'):
             self._create_expenses_tab()
+        if _hr.can(self, 'hr'):
             self._create_reports_tab()
 
     # ==================== TAB 1: MY TRIPS ====================
@@ -874,7 +878,7 @@ class TravelGUI:
             self.travel_approvals_tree.delete(item)
 
         try:
-            approvals = TravelManager.get_pending_approvals()
+            approvals = _hr.approvable(self, TravelManager.get_pending_approvals())
         except Exception:
             approvals = []
 
@@ -904,6 +908,9 @@ class TravelGUI:
 
         item = self.travel_approvals_tree.item(selection[0])
         approval_id = item['values'][0]
+        if not _hr.may_approve(self, item['values'][1]):
+            messagebox.showerror(_t('gui.staff.staff_hr.travel.dialogs.error', default="Error"), "You may not approve or reject this person's request.")
+            return
 
         # Comment dialog
         dialog = tk.Toplevel(self.root)
@@ -922,7 +929,7 @@ class TravelGUI:
         def confirm():
             comments = comments_text.get("1.0", "end-1c").strip() or None
             try:
-                TravelManager.approve_request(approval_id, self._get_user_id(), comments)
+                TravelManager.approve_request(approval_id, self._get_user_id(), comments, actor=_hr.actor(self))
                 messagebox.showinfo(_t('gui.staff.staff_hr.travel.dialogs.success', default="Success"), _t('gui.staff.staff_hr.travel.dialogs.travel_request_approved', default="Travel request approved"))
                 dialog.destroy()
                 self._load_travel_approvals()
@@ -943,6 +950,9 @@ class TravelGUI:
 
         item = self.travel_approvals_tree.item(selection[0])
         approval_id = item['values'][0]
+        if not _hr.may_approve(self, item['values'][1]):
+            messagebox.showerror(_t('gui.staff.staff_hr.travel.dialogs.error', default="Error"), "You may not approve or reject this person's request.")
+            return
 
         # Reason dialog
         dialog = tk.Toplevel(self.root)
@@ -964,7 +974,7 @@ class TravelGUI:
                 messagebox.showerror(_t('gui.staff.staff_hr.travel.dialogs.error', default="Error"), _t('gui.staff.staff_hr.travel.dialogs.rejection_reason_is_required', default="Rejection reason is required"), parent=dialog)
                 return
             try:
-                TravelManager.reject_request(approval_id, self._get_user_id(), reason)
+                TravelManager.reject_request(approval_id, self._get_user_id(), reason, actor=_hr.actor(self))
                 messagebox.showinfo(_t('gui.staff.staff_hr.travel.dialogs.success', default="Success"), _t('gui.staff.staff_hr.travel.dialogs.travel_request_rejected', default="Travel request rejected"))
                 dialog.destroy()
                 self._load_travel_approvals()

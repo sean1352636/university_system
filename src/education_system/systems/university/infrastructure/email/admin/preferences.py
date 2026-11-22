@@ -35,6 +35,20 @@ _DEFAULT_PREFS = {
 _TYPED_COLUMNS = {'email_notifications'}
 
 
+def _merged_json(cursor, user_id, updates) -> str:
+    """updates over what the row already holds: the same JSON column also
+    keeps other screens' settings (assignment_notifications, library)."""
+    cursor.execute("SELECT preferences_json FROM user_preferences WHERE user_id = ?", (user_id,))
+    row = cursor.fetchone()
+    try:
+        stored = json.loads(row[0]) if row and row[0] else {}
+    except (TypeError, ValueError):
+        stored = {}
+    if not isinstance(stored, dict):
+        stored = {}
+    return json.dumps({**stored, **updates})
+
+
 class _PreferencesMixin:
     """Mixin providing notification preference management."""
 
@@ -100,7 +114,6 @@ class _PreferencesMixin:
         # Split typed vs JSON
         email_flag = 1 if merged.get('email_notifications', True) else 0
         json_blob = {k: v for k, v in merged.items() if k not in _TYPED_COLUMNS}
-        prefs_json = json.dumps(json_blob)
 
         def _update_prefs(cursor):
             cursor.execute(
@@ -109,7 +122,7 @@ class _PreferencesMixin:
                 "ON CONFLICT(user_id) DO UPDATE SET "
                 "  email_notifications = excluded.email_notifications, "
                 "  preferences_json    = excluded.preferences_json",
-                (user_id, email_flag, prefs_json),
+                (user_id, email_flag, _merged_json(cursor, user_id, json_blob)),
             )
             self._log_communication_action(
                 user_id,

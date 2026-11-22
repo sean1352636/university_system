@@ -39,6 +39,12 @@ PUBLIC_ROUTES = {
         "not need a university login. Returns a redacted public view.",
     "GET /api/v1/university/credentials/blockchain/verify/<blockchain_hash>":
         "Public credential verification (progression domain), same rationale.",
+    "GET /api/v1/university/admissions-references/<token>":
+        "Postgraduate referee's one-time reference form: the referee is an "
+        "outsider following an e-mailed link. The hashed, single-use, expiring "
+        "token is the credential.",
+    "POST /api/v1/university/admissions-references/<token>":
+        "Submits that reference; same one-time token, same rationale.",
 }
 
 
@@ -104,7 +110,7 @@ def test_baseline_has_no_stale_entries(mounted, baseline):
 
 def test_baseline_is_shrinking_not_growing(baseline):
     """A tripwire on the headline number, so progress is visible in review."""
-    assert len(baseline) <= 279, (
+    assert len(baseline) <= 200, (
         f"The IDOR backlog grew to {len(baseline)}. It is allowed to shrink "
         "only; lower this ceiling as routes are gated."
     )

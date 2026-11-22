@@ -25,19 +25,42 @@ from education_system.systems.university.domains.safeguarding.application.servic
 
 
 def create_wellbeing_appointment(case_id, when_iso, service="Wellbeing", notes="", actor="system"):
-    """Try to forward to the shared wellbeing booking module if importable;
-    otherwise store a stub reference. Returns the booking reference."""
-    ref = f"WB-{case_id}-{datetime.now():%Y%m%d%H%M%S}"
-    try:
-        from education_system.systems.university.domains.pastoral.domain.health.wellness import (
-            book_appointment,
-        )  # type: ignore
+    """Book a wellbeing (counselling) appointment for the case's linked
+    student through the Pastoral wellness service, and link it to the case.
 
-        booked = book_appointment(case_id=case_id, when=when_iso, service=service, notes=notes)
-        if booked:
-            ref = str(booked)
-    except Exception:
-        logger.debug("Wellbeing booking module unavailable; using stub ref", exc_info=True)
+    The case note says exactly what happened: "booked" only when the
+    appointment exists; otherwise "requested, not booked" with the reason
+    (no linked student, a bad date, or the booking failing), so a case never
+    claims a booking that wasn't made. Returns the reference stored on the
+    case (``COUNS-<id>`` when booked, ``REQ-…`` when only requested)."""
+    conn = _connect()
+    cur = conn.cursor()
+    cur.execute("SELECT linked_subject_id FROM safeguarding_submissions WHERE id=?", (case_id,))
+    row = cur.fetchone()
+    conn.close()
+    student_id = row[0] if row and row[0] else None
+    booked_id, reason = None, None
+    when = str(when_iso or "").replace("T", " ").strip()
+    day, _, clock = when.partition(" ")
+    if not student_id:
+        reason = "no student is linked to the case"
+    elif not day:
+        reason = "no date was given"
+    else:
+        try:
+            from education_system.systems.university.domains.student_support.domain.wellbeing.wellness.services.wellness_service import (  # noqa: E501
+                WellnessService,
+            )
+            booked_id = WellnessService().schedule_counseling(
+                str(student_id), day, (clock or "09:00")[:5], service,
+                notes or f"Safeguarding case {case_id}")
+        except Exception as exc:
+            logger.warning("Wellbeing booking for case %s failed: %s", case_id, exc)
+            reason = f"the booking failed ({exc})"
+    if booked_id:
+        ref, outcome = f"COUNS-{booked_id}", "booked"
+    else:
+        ref, outcome = f"REQ-{case_id}-{datetime.now():%Y%m%d%H%M%S}", "requested, not booked"
     conn = _connect()
     cur = conn.cursor()
     cur.execute(
@@ -46,12 +69,13 @@ def create_wellbeing_appointment(case_id, when_iso, service="Wellbeing", notes="
     )
     conn.commit()
     conn.close()
-    add_case_note(case_id, actor, f"[wellbeing] appointment booked: {ref} @ {when_iso} ({service})")
+    add_case_note(case_id, actor, f"[wellbeing] appointment {outcome}: {ref} @ {when_iso} "
+                                  f"({service})" + (f" — {reason}" if reason else ""))
     audit_log(
         actor=actor,
-        action="wellbeing_booked",
+        action="wellbeing_booked" if booked_id else "wellbeing_requested",
         case_id=case_id,
-        details=f"ref={ref} when={when_iso}",
+        details=f"ref={ref} when={when_iso}" + (f" reason={reason}" if reason else ""),
     )
     return ref
 

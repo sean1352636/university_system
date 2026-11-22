@@ -352,7 +352,8 @@ class RefundsMixin:
             except Exception as auth_err:
                 logger.warning(f"Could not get authenticated user: {auth_err}")
 
-            # First, create refund in barber system (uses its own transaction)
+            # The service records the refund, posts it to Finance and
+            # credits the student account (shared with the CLIs).
             from education_system.systems.university.plugins.campus_commerce.domain.barber.services.barber_core import RefundManager
             RefundManager.issue_refund(
                 transaction_id=transaction_id,
@@ -362,10 +363,8 @@ class RefundsMixin:
                 processed_by=processed_by
             )
 
-            # Then update student account and transaction reference (separate transaction)
             with transaction() as conn:
                 cursor = conn.cursor()
-
                 # Update transaction reference
                 cursor.execute("""
                     UPDATE transactions
@@ -373,40 +372,7 @@ class RefundsMixin:
                     WHERE transaction_id = ? AND source_type = 'barber'
                 """, (refund_ref, transaction_id))
 
-                # Get account_id and balance before update
-                cursor.execute("""
-                    SELECT account_id, balance
-                    FROM student_finance_accounts
-                    WHERE student_id = ?
-                """, (customer_id,))
-                account_row = cursor.fetchone()
-
-                if not account_row:
-                    raise Exception(f"No finance account found for student {customer_id}")
-
-                account_id = account_row[0]
-                balance_before = account_row[1]
-                balance_after = balance_before + amount
-
-                # Add to student finance account
-                cursor.execute("""
-                    UPDATE student_finance_accounts
-                    SET balance = balance + ?,
-                        updated_at = CURRENT_TIMESTAMP
-                    WHERE student_id = ?
-                """, (amount, customer_id))
-
-                # Log in student finance transactions table
-                sft_table = 'student_finance_transactions'
-                # db-audit: ignore[DBW001] - string literal
-                cursor.execute(f"""
-                    INSERT INTO {sft_table}
-                    (account_id, student_id, transaction_type, amount, balance_before, balance_after, description, reference_id)
-                    VALUES (?, ?, 'credit', ?, ?, ?, ?, ?)
-                """, (account_id, customer_id, amount, balance_before, balance_after, 'Barber shop refund', refund_ref))
-
-                # Use the calculated balance
-                new_balance = balance_after
+            new_balance = get_student_finance_account_balance(customer_id)
 
             # Log activity
             log_activity('refund', 'barber_transaction',
@@ -507,7 +473,7 @@ class RefundsMixin:
 
             # Render email from template
             from education_system.systems.university.infrastructure.email.template_utils import render_template
-            subject, email_body = render_template('commerce/barber/refund_receipt', {
+            subject, email_body = render_template('finance_commerce/commerce/barber/refund_receipt', {
                 'customer_name': customer_name,
                 'refund_ref': refund_ref,
                 'original_transaction': str(transaction_id),

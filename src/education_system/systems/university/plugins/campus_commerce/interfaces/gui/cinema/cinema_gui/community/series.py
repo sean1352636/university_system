@@ -72,9 +72,9 @@ def on_series_select(self, event):
     conn = sqlite3.connect(DB_FILE)
     try:
         cursor = conn.cursor()
-        cursor.execute("""SELECT sl.order_in_series, m.title, m.release_year
+        cursor.execute("""SELECT sl.sequence_number, m.title, substr(m.release_date, 1, 4)
                         FROM movie_series_link sl JOIN movies m ON sl.movie_id = m.id
-                        WHERE sl.series_id = ? ORDER BY sl.order_in_series""", (series_id,))
+                        WHERE sl.series_id = ? ORDER BY sl.sequence_number""", (series_id,))
         for row in cursor.fetchall():
             self.series_movies_tree.insert("", "end", values=(row[0], row[1], row[2] or "-"))
     finally:
@@ -170,7 +170,7 @@ def link_movie_to_series(self):
         conn = sqlite3.connect(DB_FILE)
         try:
             cursor = conn.cursor()
-            cursor.execute("INSERT OR REPLACE INTO movie_series_link (series_id, movie_id, order_in_series) VALUES (?, ?, ?)",
+            cursor.execute("INSERT OR REPLACE INTO movie_series_link (series_id, movie_id, sequence_number) VALUES (?, ?, ?)",
                           (series_id, movie_id, order))
             conn.commit()
         finally:

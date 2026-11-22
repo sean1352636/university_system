@@ -1,4 +1,4 @@
-"""CLI flows for Primary School Census / ILR."""
+"""CLI flows for the Primary School Census."""
 
 from __future__ import annotations
 
@@ -10,16 +10,9 @@ from education_system.systems.primary.domain.governance.compliance.census import
     census as data,
 )
 from education_system.systems.primary.domain.governance.compliance.census.census import (
-    AIM_TYPES,
     CensusReturn,
-    DEFAULT_AIM_TYPE,
-    DEFAULT_FUNDING_MODEL,
-    DEFAULT_LEARNER_AIM_STATUS,
     DEFAULT_RETURN_STATUS,
     DEFAULT_RETURN_TYPE,
-    FUNDING_MODELS,
-    LearnerAim,
-    LEARNER_AIM_STATUSES,
     RETURN_STATUSES,
     RETURN_TYPES,
     ValidationError,
@@ -129,32 +122,6 @@ def _pick_return() -> CensusReturn:
         print("    No matching return.")
 
 
-def _pick_aim() -> LearnerAim:
-    rows = data.list_aims()
-    if not rows:
-        print("    No aims yet.")
-        raise _UserAbort
-    print("\n  Aims:")
-    for i, a in enumerate(rows, 1):
-        print(f"    {i:>3}) #{a.aim_id}  "
-              f"{a.learner_ref[:10]:<10}  "
-              f"{a.aim_reference[:14]:<14}  "
-              f"{(a.aim_title or '—')[:28]:<28}  "
-              f"[{a.status}]")
-    while True:
-        raw = _input(f"  Pick #1..{len(rows)} (or id)",
-                      allow_empty=False)
-        if raw.isdigit():
-            k = int(raw)
-            if 1 <= k <= len(rows):
-                return rows[k - 1]
-            m = next((x for x in rows if x.aim_id == k),
-                       None)
-            if m:
-                return m
-        print("    No matching aim.")
-
-
 def _print_returns(rows: list[CensusReturn]) -> None:
     if not rows:
         print("\n  (none)")
@@ -162,7 +129,7 @@ def _print_returns(rows: list[CensusReturn]) -> None:
     print()
     print(f"  {'#':>4} ! {'Type':<22}  {'Year':<8}  "
           f"{'Ref date':<10}  {'Deadline':<10}  "
-          f"{'Submitted':<10}  {'Learners':>8}  "
+          f"{'Submitted':<10}  {'Pupils':>8}  "
           f"{'Errs':>4}  {'Wrns':>4}  {'Status':<12}")
     print("  " + "-" * 130)
     for r in rows:
@@ -177,29 +144,6 @@ def _print_returns(rows: list[CensusReturn]) -> None:
               f"{r.error_count:>4}  {r.warning_count:>4}  "
               f"{r.status:<12}")
     print(f"\n  {len(rows)} return(s).")
-
-
-def _print_aims(rows: list[LearnerAim]) -> None:
-    if not rows:
-        print("\n  (none)")
-        return
-    print()
-    print(f"  {'#':>4}  {'Learner':<10}  "
-          f"{'Ref':<14}  {'Title':<30}  "
-          f"{'Model':<28}  {'Start':<10}  "
-          f"{'Status':<14}  Hours  Value")
-    print("  " + "-" * 150)
-    for a in rows:
-        print(f"  {a.aim_id:>4}  "
-              f"{a.learner_ref[:10]:<10}  "
-              f"{a.aim_reference[:14]:<14}  "
-              f"{(a.aim_title or '—')[:30]:<30}  "
-              f"{a.funding_model[:28]:<28}  "
-              f"{a.start_date:<10}  "
-              f"{a.status[:14]:<14}  "
-              f"{(a.planned_hours or 0):>5}  "
-              f"£{(a.funding_band_value or 0):>8,.0f}")
-    print(f"\n  {len(rows)} aim(s).")
 
 
 def _print_return_full(r: CensusReturn) -> None:
@@ -218,7 +162,7 @@ def _print_return_full(r: CensusReturn) -> None:
     print(f"    Submitted on      : {r.submitted_on or '—'}")
     print(f"    Submitted by      : {r.submitted_by or '—'}")
     print(f"    Accepted on       : {r.accepted_on or '—'}")
-    print(f"    Learner count     : {r.learner_count}")
+    print(f"    Pupils on roll    : {r.learner_count}")
     print(f"    Errors / Warnings : "
           f"{r.error_count} / {r.warning_count}")
     print(f"    File ref          : {r.file_ref or '—'}")
@@ -226,10 +170,6 @@ def _print_return_full(r: CensusReturn) -> None:
         print("\n    Notes:")
         for line in r.notes.splitlines():
             print(f"      {line}")
-    aim_rows = data.aims_for_return(r.return_id)
-    if aim_rows:
-        print(f"\n    Aims ({len(aim_rows)}):")
-        _print_aims(aim_rows)
 
 
 # ── Return flows ─────────────────────────────────────────
@@ -339,7 +279,7 @@ def _collect_return(existing: CensusReturn | None
         default=(existing.accepted_on or "")
         if is_edit else "")
     payload["learner_count"] = _input(
-        "Learner count",
+        "Pupils on roll",
         default=(str(existing.learner_count)
                   if is_edit else "0"))
     payload["error_count"] = _input(
@@ -515,191 +455,10 @@ def delete_return_flow() -> None:
     _pause()
 
 
-# ── Aim flows ────────────────────────────────────────────
-
-def list_all_aims() -> None:
-    print("\n═══ All Aims ═══")
-    _print_aims(data.list_aims())
-    _pause()
-
-
-def list_active_aims() -> None:
-    print("\n═══ Active Aims ═══")
-    _print_aims(data.list_aims(active_only=True))
-    _pause()
-
-
-def list_aims_for_return_flow() -> None:
-    print("\n═══ Aims for a Return ═══")
-    try:
-        r = _pick_return()
-    except _UserAbort:
-        print("\n  Cancelled.")
-        return
-    _print_aims(data.aims_for_return(r.return_id))
-    _pause()
-
-
-def list_aims_for_learner_flow() -> None:
-    print("\n═══ Aims for a Learner ═══")
-    try:
-        ref = _input("Learner ref", allow_empty=False)
-    except _UserAbort:
-        print("\n  Cancelled.")
-        return
-    _print_aims(data.aims_for_learner(ref))
-    _pause()
-
-
-def _collect_aim(existing: LearnerAim | None
-                       ) -> dict[str, Any]:
-    payload: dict[str, Any] = {}
-    is_edit = existing is not None
-    payload["return_id"] = _input(
-        "Return id (blank = none)",
-        default=(str(existing.return_id or "")
-                  if is_edit else ""))
-    payload["learner_ref"] = _input(
-        "Learner ref",
-        default=(existing.learner_ref if is_edit else ""),
-        allow_empty=False)
-    payload["learner_name"] = _input(
-        "Learner name",
-        default=(existing.learner_name or "")
-        if is_edit else "")
-    payload["ukprn"] = _input(
-        "UKPRN",
-        default=(existing.ukprn or "")
-        if is_edit else "")
-    payload["uln"] = _input(
-        "ULN",
-        default=(existing.uln or "")
-        if is_edit else "")
-    payload["aim_type"] = _pick_from(
-        "Aim type", list(AIM_TYPES),
-        default=(existing.aim_type if is_edit
-                  else DEFAULT_AIM_TYPE))
-    payload["aim_reference"] = _input(
-        "Aim reference",
-        default=(existing.aim_reference if is_edit else ""),
-        allow_empty=False)
-    payload["aim_title"] = _input(
-        "Aim title",
-        default=(existing.aim_title or "")
-        if is_edit else "")
-    payload["funding_model"] = _pick_from(
-        "Funding model", list(FUNDING_MODELS),
-        default=(existing.funding_model if is_edit
-                  else DEFAULT_FUNDING_MODEL))
-    payload["start_date"] = _input(
-        "Start date (YYYY-MM-DD)",
-        default=(existing.start_date if is_edit else ""),
-        allow_empty=False)
-    payload["planned_end_date"] = _input(
-        "Planned end date (YYYY-MM-DD)",
-        default=(existing.planned_end_date or "")
-        if is_edit else "")
-    payload["actual_end_date"] = _input(
-        "Actual end date (YYYY-MM-DD)",
-        default=(existing.actual_end_date or "")
-        if is_edit else "")
-    payload["completion_code"] = _input(
-        "Completion code (1/2/3/6/7/10)",
-        default=(str(existing.completion_code or "")
-                  if is_edit else ""))
-    payload["outcome_code"] = _input(
-        "Outcome code",
-        default=(existing.outcome_code or "")
-        if is_edit else "")
-    payload["status"] = _pick_from(
-        "Status", list(LEARNER_AIM_STATUSES),
-        default=(existing.status if is_edit
-                  else DEFAULT_LEARNER_AIM_STATUS))
-    payload["planned_hours"] = _input(
-        "Planned hours",
-        default=(str(existing.planned_hours or "")
-                  if is_edit else ""))
-    payload["actual_hours"] = _input(
-        "Actual hours",
-        default=(str(existing.actual_hours or "")
-                  if is_edit else ""))
-    payload["funding_band_value"] = _input(
-        "Funding band value",
-        default=(str(existing.funding_band_value or "")
-                  if is_edit else ""))
-    payload["delivery_location"] = _input(
-        "Delivery location",
-        default=(existing.delivery_location or "")
-        if is_edit else "")
-    payload["partner_ukprn"] = _input(
-        "Partner UKPRN",
-        default=(existing.partner_ukprn or "")
-        if is_edit else "")
-    try:
-        payload["notes"] = _multiline(
-            "Notes",
-            default=(existing.notes or "")
-            if is_edit else "")
-    except _UserAbort:
-        raise
-    return payload
-
-
-def new_aim() -> None:
-    print("\n═══ New Aim ═══")
-    try:
-        payload = _collect_aim(None)
-    except _UserAbort:
-        print("\n  Cancelled.")
-        return
-    try:
-        a = data.create_aim(payload)
-    except ValidationError as exc:
-        print(f"\n  ✗ {exc}")
-        _pause()
-        return
-    print(f"\n  ✓ Created aim #{a.aim_id}")
-    _pause()
-
-
-def edit_aim() -> None:
-    print("\n═══ Edit Aim ═══")
-    try:
-        a = _pick_aim()
-        payload = _collect_aim(a)
-    except _UserAbort:
-        print("\n  Cancelled.")
-        return
-    try:
-        data.update_aim(a.aim_id, payload)
-    except ValidationError as exc:
-        print(f"\n  ✗ {exc}")
-        _pause()
-        return
-    print(f"\n  ✓ Updated #{a.aim_id}")
-    _pause()
-
-
-def delete_aim_flow() -> None:
-    print("\n═══ Delete Aim ═══")
-    try:
-        a = _pick_aim()
-    except _UserAbort:
-        print("\n  Cancelled.")
-        return
-    if _input(f"Delete aim #{a.aim_id}? Type 'yes'",
-              default="no").lower() != "yes":
-        print("\n  Cancelled.")
-        return
-    if data.delete_aim(a.aim_id):
-        print(f"\n  ✓ Deleted #{a.aim_id}")
-    _pause()
-
-
 # ── Summary ─────────────────────────────────────────────
 
 def summary_flow() -> None:
-    print("\n═══ Census / ILR Summary ═══")
+    print("\n═══ School Census Summary ═══")
     s = data.summary()
     print(f"\n  Total returns        : {s.total_returns}")
     print(f"  Planned              : {s.planned}")
@@ -709,15 +468,7 @@ def summary_flow() -> None:
     print(f"  Rejected             : {s.rejected}")
     print(f"  Overdue              : {s.overdue}")
     print(f"  Open windows         : {s.open_windows}")
-    print(f"\n  Total aims           : {s.total_aims}")
-    print(f"  Distinct learners    : {s.distinct_learners}")
-    print(f"  Continuing           : {s.continuing_aims}")
-    print(f"  Completed            : {s.completed_aims}")
-    print(f"  Achieved             : {s.achieved_aims}")
-    print(f"  Withdrawn            : {s.withdrawn_aims}")
-    print(f"  Total planned hours  : {s.total_planned_hours}")
-    print(f"  Total funding value  : "
-          f"£{s.total_funding_value:,.2f}")
+    print(f"\n  Pupils on roll       : {s.pupils_on_roll}")
     print("\n  By return type:")
     for k in RETURN_TYPES:
         n = s.by_return_type.get(k, 0)
@@ -728,16 +479,6 @@ def summary_flow() -> None:
         n = s.by_return_status.get(k, 0)
         if n:
             print(f"    {k:<14}: {n}")
-    print("\n  By funding model:")
-    for k in FUNDING_MODELS:
-        n = s.by_funding_model.get(k, 0)
-        if n:
-            print(f"    {k:<36}: {n}")
-    print("\n  By aim status:")
-    for k in LEARNER_AIM_STATUSES:
-        n = s.by_aim_status.get(k, 0)
-        if n:
-            print(f"    {k:<22}: {n}")
     _pause()
 
 
@@ -763,21 +504,13 @@ _MENU: list[tuple[str, Callable[[], None]]] = [
     ("Change return status",  set_return_status_flow),
     ("Delete return",         delete_return_flow),
     ("─" * 6,                 lambda: None),
-    ("List all aims",         list_all_aims),
-    ("Active aims",           list_active_aims),
-    ("Aims for return",       list_aims_for_return_flow),
-    ("Aims for learner",      list_aims_for_learner_flow),
-    ("New aim",               new_aim),
-    ("Edit aim",              edit_aim),
-    ("Delete aim",            delete_aim_flow),
-    ("─" * 6,                 lambda: None),
     ("Summary",               summary_flow),
 ]
 
 
 def run() -> None:
     while True:
-        print("\n── Census / ILR ──")
+        print("\n── School Census ──")
         for i, (label, _) in enumerate(_MENU, 1):
             if label.startswith("─"):
                 print(f"      {label * 3}")
@@ -803,7 +536,7 @@ def run() -> None:
         except _UserAbort:
             print("\n  Cancelled.")
         except Exception as e:
-            logger.exception("Census/ILR CLI crashed")
+            logger.exception("School Census CLI crashed")
             print(f"\n  ✗ Unexpected error: {e}")
             _pause()
 
@@ -814,7 +547,7 @@ def dispatch(label: str) -> bool:
     try:
         run()
     except Exception as e:
-        logger.exception("Census/ILR CLI submenu crashed")
+        logger.exception("School Census CLI submenu crashed")
         print(f"\n  ✗ Unexpected error: {e}")
         _pause()
     return True

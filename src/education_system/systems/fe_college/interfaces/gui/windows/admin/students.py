@@ -7,10 +7,13 @@ them onto a course, withdraw them, or remove the record entirely.
 from __future__ import annotations
 
 import logging
+from dataclasses import replace
 from datetime import date
 from tkinter import ttk
 
 from education_system.systems.fe_college.config import (
+    EMERGENCY_RELATIONSHIPS,
+    GENDERS,
     LEARNER_TYPES,
     MODES_OF_STUDY,
     STUDENT_STATUSES,
@@ -74,6 +77,7 @@ class Screen:
             ("View profile", self.view),
             ("Edit", self.edit),
             ("Enrol on course", self.enrol),
+            ("Create login", self.create_login),
             ("Withdraw", self.withdraw),
             ("Delete", self.delete),
         ])
@@ -130,44 +134,95 @@ class Screen:
         w.show_text(self.host, f"{learner.display_name}", _profile_text(profile))
 
     def new(self) -> None:
-        result = w.ask(
-            self.host, "New learner", _FIELDS,
-            initial={
-                "student_id": self.ctl.students.next_reference(),
-                "learner_type": LEARNER_TYPES[0],
-                "mode_of_study": MODES_OF_STUDY[0],
-                "status": "applicant",
-                "start_date": date.today().isoformat(),
-            },
-            submit_label="Create",
-        )
-        if result is None:
-            return
-        try:
-            created = self.ctl.students.create(_to_student(result))
-        except ValidationError as exc:
-            w.error(self.host, "New learner", str(exc))
-            return
+        values: dict = {
+            "student_id": self.ctl.students.next_reference(),
+            "learner_type": LEARNER_TYPES[0],
+            "mode_of_study": MODES_OF_STUDY[0],
+            "status": "applicant",
+            "start_date": date.today().isoformat(),
+            "create_login": True,
+        }
+        fields = (*_FIELDS,
+                  ("_login", "Login", "section"),
+                  ("create_login", "Create their login (e-mails a temporary password)", "bool"))
+        while True:
+            result = w.ask(self.host, "New learner", fields, initial=values,
+                           submit_label="Create")
+            if result is None:
+                return
+            values = result      # a refused save reopens the form as it was typed
+            learner = _to_student(result)
+            try:
+                created = self.ctl.students.create(learner, check_duplicate=True)
+            except self.ctl.students.DuplicateLearner as dup:
+                if not w.confirm(self.host, "Possible duplicate",
+                                 f"{dup}\n\nTwins and common names can match. "
+                                 "Save this as a new learner anyway?"):
+                    continue
+                try:
+                    created = self.ctl.students.create(learner)
+                except ValidationError as exc:
+                    w.error(self.host, "New learner", str(exc))
+                    continue
+            except ValidationError as exc:
+                w.error(self.host, "New learner", str(exc))
+                continue
+            break
+        if result.get("create_login"):
+            self._create_login_for(created)
         self.refresh()
         self.host.set_status(f"Created {created.display_name}")
+
+    def create_login(self) -> None:
+        learner = self.table.require_selection("a learner")
+        if learner is None:
+            return
+        if not w.confirm(self.host, "Create login",
+                         f"Create a login for {learner.full_name} (username "
+                         f"{learner.student_id}) and e-mail them a temporary password?"):
+            return
+        self._create_login_for(learner)
+
+    def _create_login_for(self, learner: Student) -> None:
+        """Create the login and show the sign-in details once."""
+        from education_system.systems.fe_college.services import learner_accounts
+
+        try:
+            new = learner_accounts.create_login(learner.student_id)
+        except Exception as exc:  # ValidationError / AccountError
+            w.error(self.host, "Create login",
+                    f"The login could not be created:\n{exc}\n\n"
+                    "Use Create login on the learner list to try again.")
+            return
+        w.info(self.host, "Create login",
+               f"Login created for {learner.full_name}:\n\n"
+               f"    Username:  {new.username}\n"
+               f"    Password:  {new.password}\n\n"
+               "Note the password now. It won't be shown again.\n\n"
+               f"{new.welcome_detail}")
 
     def edit(self) -> None:
         learner = self.table.require_selection("a learner")
         if learner is None:
             return
-        result = w.ask(
-            self.host, f"Edit {learner.display_name}", _FIELDS,
-            initial=_from_student(learner), submit_label="Save",
-        )
-        if result is None:
-            return
-        try:
-            updated = _to_student(result)
-            updated.created_at = learner.created_at
-            self.ctl.students.update(updated)
-        except ValidationError as exc:
-            w.error(self.host, "Edit learner", str(exc))
-            return
+        values = _from_student(learner)
+        while True:
+            result = w.ask(
+                self.host, f"Edit {learner.display_name}", _FIELDS,
+                initial=values, submit_label="Save",
+            )
+            if result is None:
+                return
+            values = result
+            try:
+                # Start from the stored record so fields this form doesn't
+                # show (learning support, end date) are kept, not blanked.
+                updated = _to_student(result, base=learner)
+                self.ctl.students.update(updated)
+            except ValidationError as exc:
+                w.error(self.host, "Edit learner", str(exc))
+                continue
+            break
         self.refresh()
         self.host.set_status(f"Saved {learner.display_name}")
 
@@ -263,14 +318,29 @@ class Screen:
 # ── Form plumbing ───────────────────────────────────────────────────────────
 
 _FIELDS = (
+    ("_identity", "Identity", "section"),
     ("student_id", "Student ID", "text"),
-    ("first_name", "First name", "text"),
-    ("last_name", "Last name", "text"),
+    ("first_name", "Legal first name", "text"),
+    ("middle_name", "Middle name(s)", "text"),
+    ("last_name", "Legal last name", "text"),
+    ("preferred_name", "Preferred name", "text"),
     ("date_of_birth", "Date of birth", "date"),
+    ("gender", "Gender", "choice", ("", *GENDERS)),
     ("uln", "ULN (10 digits)", "text"),
+    ("_contact", "Contact", "section"),
     ("email", "Email", "text"),
     ("phone", "Phone", "text"),
+    ("_address", "Home address", "section"),
+    ("address", "Address line 1", "text"),
+    ("address_line2", "Address line 2", "text"),
+    ("town", "Town / city", "text"),
     ("postcode", "Postcode", "text"),
+    ("_emergency", "Emergency contact", "section"),
+    ("emergency_contact_name", "Name", "text"),
+    ("emergency_contact_relationship", "Relationship", "choice",
+     ("", *EMERGENCY_RELATIONSHIPS)),
+    ("emergency_contact_phone", "Phone", "text"),
+    ("_study", "Study", "section"),
     ("learner_type", "Learner type", "choice", LEARNER_TYPES),
     ("mode_of_study", "Mode of study", "choice", MODES_OF_STUDY),
     ("status", "Status", "choice", STUDENT_STATUSES),
@@ -278,59 +348,34 @@ _FIELDS = (
     ("personal_tutor", "Personal tutor (staff ID)", "text"),
     ("start_date", "Start date", "date"),
     ("prior_attainment", "Prior attainment", "text"),
+    ("_needs", "Needs and medical", "section"),
+    ("has_lldd", "Learning difficulty / disability", "bool"),
     ("has_ehcp", "Has an EHC Plan", "bool"),
-    ("emergency_contact_name", "Emergency contact", "text"),
-    ("emergency_contact_phone", "Emergency phone", "text"),
+    ("medical_notes", "Medical notes", "multiline"),
     ("notes", "Notes", "multiline"),
 )
 
+# Every input on the form (sections are headings, not values).
+_FORM_KEYS = tuple(spec[0] for spec in _FIELDS if spec[2] != "section")
+
 
 def _from_student(s: Student) -> dict:
-    return {
-        "student_id": s.student_id,
-        "first_name": s.first_name,
-        "last_name": s.last_name,
-        "date_of_birth": w.when(s.date_of_birth, ""),
-        "uln": s.uln,
-        "email": s.email,
-        "phone": s.phone,
-        "postcode": s.postcode,
-        "learner_type": s.learner_type,
-        "mode_of_study": s.mode_of_study,
-        "status": s.status,
-        "tutor_group": s.tutor_group,
-        "personal_tutor": s.personal_tutor,
-        "start_date": w.when(s.start_date, ""),
-        "prior_attainment": s.prior_attainment,
-        "has_ehcp": s.has_ehcp,
-        "emergency_contact_name": s.emergency_contact_name,
-        "emergency_contact_phone": s.emergency_contact_phone,
-        "notes": s.notes,
-    }
+    values = {key: getattr(s, key) for key in _FORM_KEYS}
+    values["date_of_birth"] = w.when(s.date_of_birth, "")
+    values["start_date"] = w.when(s.start_date, "")
+    return values
 
 
-def _to_student(d: dict) -> Student:
-    return Student(
-        student_id=d["student_id"],
-        first_name=d["first_name"],
-        last_name=d["last_name"],
-        date_of_birth=d["date_of_birth"],
-        uln=d["uln"],
-        email=d["email"],
-        phone=d["phone"],
-        postcode=d["postcode"],
-        learner_type=d["learner_type"],
-        mode_of_study=d["mode_of_study"],
-        status=d["status"],
-        tutor_group=d["tutor_group"],
-        personal_tutor=d["personal_tutor"],
-        start_date=d["start_date"],
-        prior_attainment=d["prior_attainment"],
-        has_ehcp=d["has_ehcp"],
-        emergency_contact_name=d["emergency_contact_name"],
-        emergency_contact_phone=d["emergency_contact_phone"],
-        notes=d["notes"],
-    )
+def _to_student(d: dict, base: Student | None = None) -> Student:
+    """The learner the form describes.
+
+    With *base* (an edit), every field the form doesn't show is carried over
+    from the stored record rather than reset to blank.
+    """
+    values = {key: d[key] for key in _FORM_KEYS if key in d}
+    if base is not None:
+        return replace(base, **values)
+    return Student(**values)
 
 
 def _profile_text(profile) -> str:
@@ -338,16 +383,24 @@ def _profile_text(profile) -> str:
     lines = [
         f"{s.full_name}  ({s.student_id})",
         "=" * 64,
+        f"Legal name      : {s.legal_name}"
+        + (f"   (known as {s.preferred_name})" if s.preferred_name else ""),
         f"Date of birth   : {w.when(s.date_of_birth)}   (age {s.age if s.age is not None else '—'})",
+        f"Gender          : {s.gender or '—'}",
         f"ULN             : {s.uln or '—'}",
         f"Email / phone   : {s.email or '—'} / {s.phone or '—'}",
+        f"Address         : {s.full_address or '—'}",
         f"Learner type    : {s.learner_type} · {s.mode_of_study}",
         f"Status          : {s.status}",
         f"Tutor group     : {s.tutor_group or '—'}   Personal tutor: {s.personal_tutor or '—'}",
         f"Started         : {w.when(s.start_date)}",
         f"Prior attainment: {s.prior_attainment or '—'}",
-        f"EHC Plan        : {w.yes_no(s.has_ehcp)}",
-        f"Emergency       : {s.emergency_contact_name or '—'} {s.emergency_contact_phone or ''}".rstrip(),
+        f"EHC Plan        : {w.yes_no(s.has_ehcp)}   "
+        f"Learning difficulty / disability: {w.yes_no(s.has_lldd)}",
+        f"Emergency       : " + (" · ".join(p for p in (
+            s.emergency_contact_name, s.emergency_contact_relationship,
+            s.emergency_contact_phone) if p) or "—"),
+        f"Medical notes   : {s.medical_notes or '—'}",
         "",
         "Attendance",
         "-" * 64,

@@ -1,4 +1,11 @@
-"""Admissions data layer for the Primary School System."""
+"""Admissions data layer for the Primary School System.
+
+A school place the local authority allocated on the platform
+(``platform.cross_system.local_authority_links``) arrives as an *accepted*
+application carrying its ``transition_id`` and ``journey_id``; enrolling it
+links the new pupil to the child's journey and tells the platform the child
+is on roll.
+"""
 
 from __future__ import annotations
 
@@ -59,6 +66,9 @@ class Application:
     status: str
     pupil_id: str | None
     notes: str | None
+    transition_id: str | None = None
+    journey_id: str | None = None
+    source: str | None = None
 
     @property
     def applicant_name(self) -> str:
@@ -79,6 +89,10 @@ def init_db() -> None:
     try:
         with _connect() as conn:
             conn.executescript(_SCHEMA)
+            cols = {r[1] for r in conn.execute("PRAGMA table_info(admissions)")}
+            for col in ("transition_id", "journey_id", "source"):   # platform places
+                if col not in cols:
+                    conn.execute(f"ALTER TABLE admissions ADD COLUMN {col} TEXT")
     except sqlite3.Error:
         logger.exception("Failed to initialise admissions table")
         raise
@@ -100,6 +114,9 @@ def _row(r: sqlite3.Row) -> Application:
         status=r["status"],
         pupil_id=r["pupil_id"],
         notes=r["notes"],
+        transition_id=r["transition_id"] if "transition_id" in r.keys() else None,
+        journey_id=r["journey_id"] if "journey_id" in r.keys() else None,
+        source=r["source"] if "source" in r.keys() else None,
     )
 
 
@@ -186,6 +203,62 @@ def create_application(data: dict[str, Any]) -> Application:
     logger.info("Created application %s for %s (year %s)",
                 aid, app.applicant_name, app.year_applying)
     return app
+
+
+def create_platform_place(data: dict[str, Any], *, transition_id: str, journey_id: str,
+                          source: str) -> Application:
+    """An accepted application for a place allocated on the platform (the
+    local authority). Idempotent on the transition."""
+    init_db()
+    with _connect() as conn:
+        row = conn.execute("SELECT application_id FROM admissions WHERE transition_id = ?",
+                           (transition_id,)).fetchone()
+    if row is not None:
+        app = get_application(row[0])
+        assert app is not None
+        return app
+    payload = _validate(data)
+    aid = generate_application_id()
+    with _connect() as conn:
+        conn.execute(
+            "INSERT INTO admissions (application_id, applicant_first, applicant_last, "
+            "date_of_birth, year_applying, parent_name, parent_phone, parent_email, notes, "
+            "status, transition_id, journey_id, source) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'accepted', ?, ?, ?)",
+            (aid, payload["applicant_first"], payload["applicant_last"],
+             payload["date_of_birth"], payload["year_applying"], payload["parent_name"],
+             payload["parent_phone"], payload["parent_email"], payload["notes"],
+             transition_id, journey_id, source))
+        conn.commit()
+    logger.info("Platform place %s from %s -> application %s", transition_id, source, aid)
+    app = get_application(aid)
+    assert app is not None
+    return app
+
+
+def _tell_platform_withdrawn(app: Application, status: str) -> None:
+    """A platform place this school turned down or the parent withdrew."""
+    if not app.transition_id or app.source != "local_authority":
+        return
+    try:
+        from education_system.platform.cross_system import local_authority_links
+        local_authority_links.withdraw_place(
+            app.transition_id, reason=f"{status.capitalize()} by the primary school")
+    except Exception:  # noqa: BLE001 - this school's record stands
+        logger.exception("Platform not told application %s was %s",
+                         app.application_id, status)
+
+
+def _tell_platform_enrolled(app: Application, pupil: Any) -> None:
+    if not app.transition_id or app.source != "local_authority":
+        return
+    try:
+        from education_system.platform.cross_system import local_authority_links
+        local_authority_links.admitted(app.transition_id, local_student_id=pupil.pupil_id,
+                                       year_group=pupil.year_group)
+    except Exception:  # noqa: BLE001 - the pupil stands; the platform can be told again
+        logger.exception("Platform not told application %s was enrolled",
+                         app.application_id)
 
 
 def get_application(application_id: str) -> Application | None:
@@ -277,6 +350,9 @@ def set_status(application_id: str, new_status: str) -> Application:
     if existing.status == "enrolled":
         raise ValidationError(
             "Enrolled applications cannot be re-statused (delete instead)")
+    if new_status == "enrolled":
+        raise ValidationError(
+            "Use Enrol to enrol an application - it creates the pupil record")
     try:
         with _connect() as conn:
             conn.execute(
@@ -292,6 +368,8 @@ def set_status(application_id: str, new_status: str) -> Application:
                 application_id, existing.status, new_status)
     app = get_application(application_id)
     assert app is not None
+    if new_status in ("rejected", "withdrawn"):
+        _tell_platform_withdrawn(app, new_status)
     return app
 
 
@@ -316,9 +394,10 @@ def enrol_application(application_id: str) -> tuple[Application, Any]:
         "date_of_birth": existing.date_of_birth,
         "parent_name":   existing.parent_name,
         "parent_phone":  existing.parent_phone,
+        "parent_email":  existing.parent_email,
         "medical_notes": None,
         "send_status":   None,
-    })
+    }, journey_id=existing.journey_id)
     try:
         with _connect() as conn:
             conn.execute(
@@ -336,6 +415,7 @@ def enrol_application(application_id: str) -> tuple[Application, Any]:
                 application_id, pupil.pupil_id)
     app = get_application(application_id)
     assert app is not None
+    _tell_platform_enrolled(app, pupil)
     return app, pupil
 
 

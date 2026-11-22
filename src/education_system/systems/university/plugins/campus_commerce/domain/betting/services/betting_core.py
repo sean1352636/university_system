@@ -6,6 +6,7 @@ casino games, and account management with database operations.
 """
 
 from education_system.systems.university.infrastructure.database.db import sqlite3
+import logging
 import random
 from datetime import datetime, timedelta
 from typing import Optional, List, Dict, Any
@@ -14,11 +15,19 @@ import hashlib
 
 from education_system.systems.university.infrastructure.database.db import get_connection, transaction
 from education_system.systems.university.infrastructure.activity_logger import log_activity
+from education_system.systems.university.domains.finance.infrastructure.finance_integration import (
+    ensure_student_finance_account_exists,
+    process_student_finance_account_payment,
+    record_payment_to_finance,
+    top_up_student_finance_account,
+)
 from education_system.systems.university.infrastructure.sql_safety import validate_identifier  # nosec B608
 
 # Betting configuration
 MIN_BET = 1.00
 MAX_BET = 500.00
+logger = logging.getLogger(__name__)
+
 MIN_DEPOSIT = 10.00
 MAX_DEPOSIT = 1000.00
 HOUSE_EDGE = 0.05  # 5% house edge
@@ -176,7 +185,6 @@ def init_betting_db():
             # with source_type = 'betting'
 
             # Create indexes
-            cursor.execute('CREATE INDEX IF NOT EXISTS idx_betting_accounts_user ON betting_accounts(user_id)')
             cursor.execute('CREATE INDEX IF NOT EXISTS idx_sports_bets_user ON sports_bets(user_id)')
             cursor.execute('CREATE INDEX IF NOT EXISTS idx_casino_games_user ON casino_games(user_id)')
             cursor.execute('CREATE INDEX IF NOT EXISTS idx_betting_events_date ON betting_events(event_date)')
@@ -193,6 +201,43 @@ def generate_reference() -> str:
     timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
     unique_id = uuid.uuid4().hex[:8].upper()
     return f"BET-{timestamp}-{unique_id}"
+
+FINANCE_SOURCE = 'BettingShop'
+STUDENT_ACCOUNT_DEPOSIT = 'Student Account'
+STUDENT_ACCOUNT_WITHDRAWAL = 'Student Finance Account'
+_STUDENT_ACCOUNT_METHODS = {'student account', 'student finance account', 'student_account', 'finance_account'}
+
+
+def is_student_account_method(payment_method: Optional[str]) -> bool:
+    """True when a deposit/withdrawal method means the student's finance account."""
+    return (payment_method or '').strip().lower() in _STUDENT_ACCOUNT_METHODS
+
+
+def post_deposit_to_finance(transaction_id: int, student_id: str, amount: float,
+                            payment_method: str, processed_by: Optional[str] = None) -> Optional[int]:
+    """Record a cash/card betting deposit in Finance. Never raises.
+
+    Student-account deposits are debited by ``AccountManager.deposit`` before
+    the wallet is credited (the finance account records its own payments row),
+    so they are not re-posted here.
+    """
+    try:
+        payment_id = record_payment_to_finance(
+            student_id=student_id,
+            amount=amount,
+            payment_method=payment_method,
+            transaction_source=FINANCE_SOURCE,
+            transaction_ref=f"DEP-{transaction_id}",
+            notes=f"Betting deposit via {payment_method}",
+            created_by=processed_by,
+        )
+        if payment_id is None:
+            logger.warning("Betting deposit %s: payment not posted to finance", transaction_id)
+        return payment_id
+    except Exception:
+        logger.exception("Betting deposit %s: finance posting failed", transaction_id)
+        return None
+
 
 class AccountManager:
     """Manager for betting account operations"""
@@ -250,8 +295,15 @@ class AccountManager:
             return None
 
     @staticmethod
-    def deposit(user_id: str, amount: float, payment_method: str, processed_by: str = None) -> Optional[int]:
-        """Deposit funds to account"""
+    def deposit(user_id: str, amount: float, payment_method: str, processed_by: str = None,
+                student_id: str = None) -> Optional[int]:
+        """Deposit funds to account and post the deposit to Finance.
+
+        ``student_id`` is the finance-account id (defaults to ``user_id``).
+        A student-account deposit is debited from the finance account first,
+        so an insufficient balance blocks the deposit; cash/card deposits are
+        recorded as payments after the wallet is credited.
+        """
         if amount < MIN_DEPOSIT or amount > MAX_DEPOSIT:
             return None
 
@@ -259,6 +311,21 @@ class AccountManager:
             account = AccountManager.get_account(user_id)
             if not account:
                 return None
+
+            finance_id = student_id or user_id
+            if is_student_account_method(payment_method):
+                result = process_student_finance_account_payment(
+                    student_id=finance_id,
+                    amount=amount,
+                    description="Betting shop deposit",
+                    transaction_source=FINANCE_SOURCE,
+                    transaction_ref=f"deposit_{user_id}",
+                    processed_by=processed_by or 'System',
+                )
+                if not result.get('success'):
+                    logger.warning("Betting deposit for %s not debited from student account: %s",
+                                   user_id, result.get('message'))
+                    return None
 
             balance_before = account['balance']
             balance_after = balance_before + amount
@@ -288,6 +355,9 @@ class AccountManager:
             log_activity('deposit', 'betting_account', details={
                 'user_id': user_id, 'amount': amount, 'reference': reference
             })
+
+            if not is_student_account_method(payment_method):
+                post_deposit_to_finance(transaction_id, finance_id, amount, payment_method, processed_by)
 
             return transaction_id
 
@@ -348,12 +418,38 @@ class AccountManager:
             return None
 
     @staticmethod
-    def withdraw(user_id: str, amount: float, payment_method: str, processed_by: str = None) -> Optional[int]:
-        """Withdraw funds from account"""
+    def withdraw(user_id: str, amount: float, payment_method: str, processed_by: str = None,
+                 student_id: str = None) -> Optional[int]:
+        """Withdraw funds from account.
+
+        A withdrawal to the student finance account (``payment_method`` of
+        ``'Student Finance Account'``/``'Student Account'``) credits the
+        finance account through ``top_up_student_finance_account`` after the
+        wallet is debited; a failed credit is logged, never silently lost.
+        Use :meth:`withdraw_to_student_account` to get the finance reference
+        and new balance back.
+        """
+        result = AccountManager._withdraw(user_id, amount, payment_method, processed_by, student_id)
+        return result.get('transaction_id') if result else None
+
+    @staticmethod
+    def withdraw_to_student_account(user_id: str, amount: float, student_id: str,
+                                    processed_by: str = None) -> Dict[str, Any]:
+        """Withdraw betting funds into the student's finance account.
+
+        Returns ``{'success', 'transaction_id', 'reference', 'new_balance', 'message'}``.
+        """
+        return AccountManager._withdraw(user_id, amount, STUDENT_ACCOUNT_WITHDRAWAL,
+                                        processed_by, student_id)
+
+    @staticmethod
+    def _withdraw(user_id: str, amount: float, payment_method: str, processed_by: str = None,
+                  student_id: str = None) -> Dict[str, Any]:
         try:
             account = AccountManager.get_account(user_id)
             if not account or account['balance'] < amount:
-                return None
+                return {'success': False, 'transaction_id': None,
+                        'message': 'Insufficient balance or no account'}
 
             balance_before = account['balance']
             balance_after = balance_before - amount
@@ -384,11 +480,34 @@ class AccountManager:
                 'user_id': user_id, 'amount': amount, 'reference': reference
             })
 
-            return transaction_id
+            out: Dict[str, Any] = {'success': True, 'transaction_id': transaction_id,
+                                   'reference': reference, 'new_balance': None, 'message': ''}
+            if is_student_account_method(payment_method):
+                # Credit the student's finance account with the withdrawn funds.
+                try:
+                    ensure_student_finance_account_exists(student_id or user_id)
+                    topup = top_up_student_finance_account(
+                        student_id=student_id or user_id,
+                        amount=amount,
+                        payment_method='betting_withdrawal',
+                        processed_by=processed_by or 'System',
+                        description=f'Betting shop withdrawal - {reference}',
+                    )
+                except Exception as e:
+                    logger.exception("Betting withdrawal %s: student account credit failed", reference)
+                    topup = {'success': False, 'message': str(e)}
+                if topup.get('success'):
+                    out['new_balance'] = topup.get('new_balance')
+                else:
+                    logger.error("Betting withdrawal %s: funds left wallet but student account %s "
+                                 "was not credited: %s", reference, student_id or user_id,
+                                 topup.get('message'))
+                    out['message'] = topup.get('message', 'Student account credit failed')
+            return out
 
         except sqlite3.Error as e:
             print(f"Error withdrawing funds: {e}")
-            return None
+            return {'success': False, 'transaction_id': None, 'message': str(e)}
 
     @staticmethod
     def deduct_stake(user_id: str, amount: float, description: str = 'Bet placed') -> bool:

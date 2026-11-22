@@ -6,6 +6,16 @@ individual students (use FK-free schema) — `students_affected` is
 a free-text list. Workflow Reported → Responding → Resolved →
 Debriefed → Closed. Includes a timeline log and post-incident
 debrief / lessons-learned.
+
+Per-student emergency contacts (added): ``emergency_contacts`` is a
+priority-ordered call list per student. A row can point at a
+``parent_contacts`` record (read only — names and numbers come from
+there when linked) or hold a contact typed in here. When a student has
+no list yet, :func:`emergency_contacts_for` falls back to parent
+contacts flagged as emergency contacts, then the medical profile's
+single emergency contact. ``emergency_contact_attempts`` logs every
+call made in an emergency (who, number, time, outcome), optionally
+against an incident.
 """
 
 from __future__ import annotations
@@ -17,6 +27,7 @@ from contextlib import contextmanager
 from dataclasses import dataclass, field
 from typing import Any, Iterator
 from education_system import paths as _paths
+from education_system.systems.sixth_form.domain.pastoral import _records
 
 logger = logging.getLogger(__name__)
 
@@ -184,6 +195,7 @@ def init_db() -> None:
                 updated_on TEXT NOT NULL
             )
         """)
+    _init_contacts()
 
 
 def _check_date(label: str, value: str | None) -> None:
@@ -639,4 +651,505 @@ __all__ = [
     "append_log", "start_response", "resolve",
     "record_debrief", "close_incident", "set_status",
     "summary",
+    # Per-student emergency contacts + contact-attempt log
+    "ATTEMPT_METHODS", "ATTEMPT_OUTCOMES", "SUCCESSFUL_OUTCOMES",
+    "EmergencyContact", "ContactAttempt", "CallListEntry",
+    "CONTACT_SPEC", "ATTEMPT_SPEC",
+    "add_contact", "get_contact", "list_contacts", "update_contact",
+    "delete_contact", "move_contact", "import_parent_contacts",
+    "emergency_contacts_for", "log_attempt", "list_attempts",
+    "update_attempt", "delete_attempt", "call_sheet", "CallSheetLine",
 ]
+
+
+# ══ Per-student emergency contacts and contact-attempt log ════════
+
+ATTEMPT_METHODS: tuple[str, ...] = (
+    "Phone call", "SMS", "E-mail", "In person",
+)
+ATTEMPT_OUTCOMES: tuple[str, ...] = (
+    "Answered — informed",
+    "Answered — coming to college",
+    "No answer",
+    "Voicemail left",
+    "Message left with someone else",
+    "Wrong number",
+    "Number unavailable",
+)
+#: Outcomes that mean the contact was actually reached.
+SUCCESSFUL_OUTCOMES: frozenset[str] = frozenset({
+    "Answered — informed", "Answered — coming to college",
+})
+
+_CONTACTS_SCHEMA = """
+CREATE TABLE IF NOT EXISTS emergency_contacts (
+    contact_id         INTEGER PRIMARY KEY AUTOINCREMENT,
+    student_id         TEXT NOT NULL,
+    priority           INTEGER NOT NULL,
+    parent_contact_id  INTEGER,
+    name               TEXT NOT NULL,
+    relationship       TEXT,
+    phone              TEXT,
+    alt_phone          TEXT,
+    email              TEXT,
+    language           TEXT,
+    can_collect        INTEGER NOT NULL DEFAULT 1,
+    notes              TEXT,
+    created_at         TEXT DEFAULT (datetime('now')),
+    updated_at         TEXT DEFAULT (datetime('now')),
+    FOREIGN KEY (student_id) REFERENCES students(student_id) ON DELETE CASCADE,
+    FOREIGN KEY (parent_contact_id) REFERENCES parent_contacts(contact_id)
+        ON DELETE SET NULL
+);
+
+CREATE TABLE IF NOT EXISTS emergency_contact_attempts (
+    attempt_id      INTEGER PRIMARY KEY AUTOINCREMENT,
+    student_id      TEXT NOT NULL,
+    incident_id     INTEGER,
+    contact_id      INTEGER,
+    contact_name    TEXT NOT NULL,
+    phone_dialled   TEXT,
+    attempted_on    TEXT NOT NULL,
+    attempted_time  TEXT NOT NULL,
+    method          TEXT NOT NULL DEFAULT 'Phone call',
+    outcome         TEXT NOT NULL,
+    reason          TEXT,
+    attempted_by    TEXT,
+    notes           TEXT,
+    created_at      TEXT DEFAULT (datetime('now')),
+    updated_at      TEXT DEFAULT (datetime('now')),
+    FOREIGN KEY (student_id) REFERENCES students(student_id) ON DELETE CASCADE,
+    FOREIGN KEY (incident_id) REFERENCES emergency_incidents(incident_id)
+        ON DELETE SET NULL,
+    FOREIGN KEY (contact_id) REFERENCES emergency_contacts(contact_id)
+        ON DELETE SET NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_ec_student  ON emergency_contacts(student_id, priority);
+CREATE INDEX IF NOT EXISTS idx_eca_student ON emergency_contact_attempts(student_id);
+CREATE INDEX IF NOT EXISTS idx_eca_inc     ON emergency_contact_attempts(incident_id);
+"""
+
+
+@dataclass
+class EmergencyContact:
+    contact_id: int
+    student_id: str
+    priority: int
+    parent_contact_id: int | None
+    name: str
+    relationship: str | None
+    phone: str | None
+    alt_phone: str | None
+    email: str | None
+    language: str | None
+    can_collect: bool
+    notes: str | None
+    created_at: str | None
+    updated_at: str | None
+
+
+@dataclass
+class ContactAttempt:
+    attempt_id: int
+    student_id: str
+    incident_id: int | None
+    contact_id: int | None
+    contact_name: str
+    phone_dialled: str | None
+    attempted_on: str
+    attempted_time: str
+    method: str
+    outcome: str
+    reason: str | None
+    attempted_by: str | None
+    notes: str | None
+    created_at: str | None
+    updated_at: str | None
+
+    @property
+    def reached(self) -> bool:
+        return self.outcome in SUCCESSFUL_OUTCOMES
+
+
+@dataclass
+class CallListEntry:
+    """One line of a student's emergency call list, whatever its source."""
+    order: int
+    source: str                    # "Emergency list" / "Parent contacts" / "Medical profile"
+    name: str
+    relationship: str | None
+    phone: str | None
+    alt_phone: str | None
+    contact_id: int | None = None
+    parent_contact_id: int | None = None
+    can_collect: bool = True
+    notes: str | None = None
+
+
+def _hhmm() -> str:
+    return _dt.datetime.now().strftime("%H:%M")
+
+
+_C = _records.Col
+
+CONTACT_SPEC = _records.TableSpec(
+    table="emergency_contacts", id_col="contact_id",
+    row_type=EmergencyContact, label="Emergency contact",
+    order_by="student_id, priority",
+    cols=(
+        _C("student_id", "Student", "student", required=True, fixed=True),
+        _C("priority", "Priority (1 = call first)", "int", min_value=1),
+        _C("parent_contact_id", "Parent contact # (links, read only)",
+           "int", listed=False),
+        _C("name", "Name"),
+        _C("relationship", "Relationship"),
+        _C("phone", "Phone"),
+        _C("alt_phone", "Alternative phone"),
+        _C("email", "E-mail", listed=False),
+        _C("language", "Language", listed=False),
+        _C("can_collect", "May collect the student", "bool", default=True),
+        _C("notes", "Notes", "multiline", listed=False),
+    ))
+
+ATTEMPT_SPEC = _records.TableSpec(
+    table="emergency_contact_attempts", id_col="attempt_id",
+    row_type=ContactAttempt, label="Contact attempt",
+    order_by="attempted_on DESC, attempted_time DESC, attempt_id DESC",
+    cols=(
+        _C("student_id", "Student", "student", required=True, fixed=True),
+        _C("incident_id", "Incident # (optional)", "int"),
+        _C("contact_id", "Emergency contact #", "int", listed=False),
+        _C("contact_name", "Contact name"),
+        _C("phone_dialled", "Number used"),
+        _C("attempted_on", "Date", "date", required=True,
+           default=_records.today),
+        _C("attempted_time", "Time", "time", required=True, default=_hhmm),
+        _C("method", "Method", "choice", choices=ATTEMPT_METHODS,
+           default="Phone call"),
+        _C("outcome", "Outcome", "choice", required=True,
+           choices=ATTEMPT_OUTCOMES),
+        _C("reason", "Reason for contact"),
+        _C("attempted_by", "Made by"),
+        _C("notes", "Notes", "multiline", listed=False),
+    ))
+
+
+def _init_contacts() -> None:
+    # parent_contacts must exist for the FK (read-only reuse).
+    from education_system.systems.sixth_form.domains.communications.domain.parent_contacts import (
+        parent_contacts as _pc,
+    )
+    _pc.init_db()
+    with _connect() as conn:
+        conn.executescript(_CONTACTS_SCHEMA)
+
+
+def _student_ok(sid: str) -> bool:
+    with _connect() as conn:
+        try:
+            return conn.execute("SELECT 1 FROM students WHERE student_id=?",
+                                (sid,)).fetchone() is not None
+        except sqlite3.OperationalError:
+            return False
+
+
+def _parent_contact(conn: sqlite3.Connection, pcid: int) -> sqlite3.Row:
+    r = conn.execute("SELECT * FROM parent_contacts WHERE contact_id = ?",
+                     (pcid,)).fetchone()
+    if r is None:
+        raise ValidationError(f"No parent contact #{pcid}")
+    return r
+
+
+def _fill_from_parent(conn: sqlite3.Connection,
+                      p: dict[str, Any]) -> None:
+    """A linked parent contact supplies blank name / numbers."""
+    if p.get("parent_contact_id") is None:
+        return
+    r = _parent_contact(conn, p["parent_contact_id"])
+    if r["student_id"] != p["student_id"]:
+        raise ValidationError("That parent contact belongs to another student")
+    full = " ".join(x for x in (r["title"], r["first_name"], r["last_name"])
+                    if x)
+    p["name"] = p.get("name") or full
+    p["relationship"] = p.get("relationship") or r["relationship"]
+    p["phone"] = p.get("phone") or r["primary_phone"]
+    p["alt_phone"] = p.get("alt_phone") or r["secondary_phone"]
+    p["email"] = p.get("email") or r["email"]
+    p["language"] = p.get("language") or r["preferred_language"]
+
+
+def _renumber(conn: sqlite3.Connection, student_id: str,
+              first_id: int | None = None) -> None:
+    """Close gaps so priorities run 1..n; *first_id* wins ties."""
+    rows = conn.execute(
+        "SELECT contact_id, priority FROM emergency_contacts "
+        "WHERE student_id = ? ORDER BY priority, "
+        "CASE WHEN contact_id = ? THEN 0 ELSE 1 END, contact_id",
+        (student_id, first_id or -1)).fetchall()
+    for i, r in enumerate(rows, 1):
+        if r["priority"] != i:
+            conn.execute("UPDATE emergency_contacts SET priority = ? "
+                         "WHERE contact_id = ?", (i, r["contact_id"]))
+
+
+def add_contact(data: dict[str, Any]) -> EmergencyContact:
+    init_db()
+    p = _records.validate(CONTACT_SPEC, data, error=ValidationError,
+                          student_exists=_student_ok)
+    with _connect() as conn:
+        _fill_from_parent(conn, p)
+        if not p.get("name"):
+            raise ValidationError("Name is required")
+        if not p.get("phone") and not p.get("alt_phone"):
+            raise ValidationError("An emergency contact needs a phone number")
+        if p["priority"] is None:
+            p["priority"] = (conn.execute(
+                "SELECT COALESCE(MAX(priority), 0) FROM emergency_contacts "
+                "WHERE student_id = ?", (p["student_id"],)).fetchone()[0]
+                + 1)
+        new_id = _records.insert(conn, CONTACT_SPEC, p)
+        _renumber(conn, p["student_id"], new_id)
+    logger.info("Added emergency contact #%d for %s", new_id,
+                p["student_id"])
+    return get_contact(new_id)
+
+
+def get_contact(contact_id: int) -> EmergencyContact | None:
+    init_db()
+    with _connect() as conn:
+        return _records.fetch(conn, CONTACT_SPEC, contact_id)
+
+
+def list_contacts(student_id: str | None = None) -> list[EmergencyContact]:
+    init_db()
+    with _connect() as conn:
+        return _records.select(conn, CONTACT_SPEC,
+                               equals={"student_id": student_id})
+
+
+def update_contact(contact_id: int,
+                   data: dict[str, Any]) -> EmergencyContact:
+    init_db()
+    with _connect() as conn:
+        existing = _records.fetch(conn, CONTACT_SPEC, contact_id)
+        if existing is None:
+            raise ValidationError(f"No emergency contact #{contact_id}")
+        p = _records.validate(CONTACT_SPEC, data, error=ValidationError,
+                              existing=existing)
+        _fill_from_parent(conn, p)
+        if not p.get("name"):
+            raise ValidationError("Name is required")
+        if not p.get("phone") and not p.get("alt_phone"):
+            raise ValidationError("An emergency contact needs a phone number")
+        if p["priority"] is None:
+            p["priority"] = existing.priority
+        _records.update(conn, CONTACT_SPEC, contact_id, p)
+        _renumber(conn, existing.student_id, contact_id)
+    return get_contact(contact_id)
+
+
+def move_contact(contact_id: int, direction: int) -> EmergencyContact:
+    """Move a contact up (-1) or down (+1) the call order."""
+    c = get_contact(contact_id)
+    if c is None:
+        raise ValidationError(f"No emergency contact #{contact_id}")
+    with _connect() as conn:
+        other = conn.execute(
+            "SELECT contact_id, priority FROM emergency_contacts "
+            "WHERE student_id = ? AND priority = ?",
+            (c.student_id, c.priority + (1 if direction > 0 else -1))
+        ).fetchone()
+        if other is None:
+            return c
+        conn.execute("UPDATE emergency_contacts SET priority = ?, "
+                     "updated_at = datetime('now') WHERE contact_id = ?",
+                     (c.priority, other["contact_id"]))
+        conn.execute("UPDATE emergency_contacts SET priority = ?, "
+                     "updated_at = datetime('now') WHERE contact_id = ?",
+                     (other["priority"], contact_id))
+    return get_contact(contact_id)
+
+
+def delete_contact(contact_id: int) -> bool:
+    init_db()
+    with _connect() as conn:
+        existing = _records.fetch(conn, CONTACT_SPEC, contact_id)
+        if existing is None:
+            return False
+        ok = _records.delete(conn, CONTACT_SPEC, contact_id)
+        _renumber(conn, existing.student_id)
+        return ok
+
+
+def import_parent_contacts(student_id: str) -> list[EmergencyContact]:
+    """Add the student's parent contacts flagged as emergency contacts
+    (primary first) to the end of their call list, skipping any already
+    linked. Returns the full list."""
+    init_db()
+    with _connect() as conn:
+        linked = {r[0] for r in conn.execute(
+            "SELECT parent_contact_id FROM emergency_contacts "
+            "WHERE student_id = ? AND parent_contact_id IS NOT NULL",
+            (student_id,))}
+        pcs = conn.execute(
+            "SELECT contact_id FROM parent_contacts WHERE student_id = ? "
+            "AND is_emergency_contact = 1 "
+            "AND (COALESCE(primary_phone, '') <> '' "
+            "     OR COALESCE(secondary_phone, '') <> '') "
+            "ORDER BY is_primary DESC, contact_id", (student_id,)).fetchall()
+    for r in pcs:
+        if r["contact_id"] not in linked:
+            add_contact({"student_id": student_id,
+                         "parent_contact_id": r["contact_id"]})
+    return list_contacts(student_id)
+
+
+def emergency_contacts_for(student_id: str) -> list[CallListEntry]:
+    """The order to ring people in an emergency.
+
+    The student's own list when it exists (linked rows show the live
+    parent-contact details). Otherwise parent contacts flagged as
+    emergency contacts, primary first, then the medical profile's
+    emergency contact if it is not already on the list.
+    """
+    init_db()
+    out: list[CallListEntry] = []
+    with _connect() as conn:
+        rows = _records.select(conn, CONTACT_SPEC,
+                               equals={"student_id": student_id})
+        for c in rows:
+            name, rel, ph, alt = c.name, c.relationship, c.phone, c.alt_phone
+            if c.parent_contact_id is not None:
+                r = conn.execute(
+                    "SELECT * FROM parent_contacts WHERE contact_id = ?",
+                    (c.parent_contact_id,)).fetchone()
+                if r is not None:
+                    name = " ".join(x for x in (r["title"], r["first_name"],
+                                                r["last_name"]) if x)
+                    rel = r["relationship"]
+                    ph = r["primary_phone"] or ph
+                    alt = r["secondary_phone"] or alt
+            out.append(CallListEntry(
+                order=c.priority, source="Emergency list", name=name,
+                relationship=rel, phone=ph, alt_phone=alt,
+                contact_id=c.contact_id,
+                parent_contact_id=c.parent_contact_id,
+                can_collect=c.can_collect, notes=c.notes))
+        if not out:
+            for r in conn.execute(
+                    "SELECT * FROM parent_contacts WHERE student_id = ? "
+                    "AND is_emergency_contact = 1 "
+                    "ORDER BY is_primary DESC, contact_id", (student_id,)):
+                out.append(CallListEntry(
+                    order=len(out) + 1, source="Parent contacts",
+                    name=" ".join(x for x in (r["title"], r["first_name"],
+                                              r["last_name"]) if x),
+                    relationship=r["relationship"], phone=r["primary_phone"],
+                    alt_phone=r["secondary_phone"],
+                    parent_contact_id=r["contact_id"]))
+        if _records.table_exists(conn, "med_profiles"):
+            m = conn.execute(
+                "SELECT emergency_contact_name, emergency_contact_phone, "
+                "emergency_contact_rel FROM med_profiles "
+                "WHERE student_id = ?", (student_id,)).fetchone()
+            if m and m["emergency_contact_phone"]:
+                digits = "".join(ch for ch in m["emergency_contact_phone"]
+                                 if ch.isdigit())
+                known = {"".join(ch for ch in (e.phone or "") if ch.isdigit())
+                         for e in out} | {
+                    "".join(ch for ch in (e.alt_phone or "") if ch.isdigit())
+                    for e in out}
+                if digits not in known:
+                    out.append(CallListEntry(
+                        order=len(out) + 1, source="Medical profile",
+                        name=m["emergency_contact_name"] or "(no name)",
+                        relationship=m["emergency_contact_rel"],
+                        phone=m["emergency_contact_phone"], alt_phone=None))
+    return out
+
+
+# ── Contact attempts ──────────────────────────────────────────────
+
+def log_attempt(data: dict[str, Any]) -> ContactAttempt:
+    init_db()
+    p = _records.validate(ATTEMPT_SPEC, data, error=ValidationError,
+                          student_exists=_student_ok)
+    with _connect() as conn:
+        if p["incident_id"] is not None and conn.execute(
+                "SELECT 1 FROM emergency_incidents WHERE incident_id = ?",
+                (p["incident_id"],)).fetchone() is None:
+            raise ValidationError(f"No emergency incident #{p['incident_id']}")
+        if p["contact_id"] is not None:
+            c = _records.fetch(conn, CONTACT_SPEC, p["contact_id"])
+            if c is None:
+                raise ValidationError(
+                    f"No emergency contact #{p['contact_id']}")
+            if c.student_id != p["student_id"]:
+                raise ValidationError(
+                    "That emergency contact belongs to another student")
+            p["contact_name"] = p["contact_name"] or c.name
+            p["phone_dialled"] = p["phone_dialled"] or c.phone or c.alt_phone
+        if not p["contact_name"]:
+            raise ValidationError("Contact name is required")
+        p["attempted_by"] = p["attempted_by"] or _records.current_username()
+        new_id = _records.insert(conn, ATTEMPT_SPEC, p)
+        out = _records.fetch(conn, ATTEMPT_SPEC, new_id)
+    logger.info("Logged contact attempt #%d for %s: %s (%s)", new_id,
+                p["student_id"], p["contact_name"], p["outcome"])
+    return out
+
+
+def list_attempts(*, student_id: str | None = None,
+                  incident_id: int | None = None) -> list[ContactAttempt]:
+    init_db()
+    with _connect() as conn:
+        return _records.select(conn, ATTEMPT_SPEC, equals={
+            "student_id": student_id, "incident_id": incident_id})
+
+
+def update_attempt(attempt_id: int, data: dict[str, Any]) -> ContactAttempt:
+    init_db()
+    with _connect() as conn:
+        existing = _records.fetch(conn, ATTEMPT_SPEC, attempt_id)
+        if existing is None:
+            raise ValidationError(f"No contact attempt #{attempt_id}")
+        p = _records.validate(ATTEMPT_SPEC, data, error=ValidationError,
+                              existing=existing)
+        _records.update(conn, ATTEMPT_SPEC, attempt_id, p)
+        return _records.fetch(conn, ATTEMPT_SPEC, attempt_id)
+
+
+def delete_attempt(attempt_id: int) -> bool:
+    init_db()
+    with _connect() as conn:
+        return _records.delete(conn, ATTEMPT_SPEC, attempt_id)
+
+
+@dataclass
+class CallSheetLine:
+    entry: CallListEntry
+    attempts: list[ContactAttempt]
+
+    @property
+    def reached(self) -> bool:
+        return any(a.reached for a in self.attempts)
+
+
+def call_sheet(student_id: str, *, incident_id: int | None = None,
+               since: str | None = None) -> list[CallSheetLine]:
+    """The call list with the attempts made so far (for an incident, or
+    since a date — default today) against each line."""
+    since = _records.check_date(since, "Since", ValidationError) \
+        or _records.today()
+    attempts = [a for a in list_attempts(student_id=student_id,
+                                         incident_id=incident_id)
+                if incident_id is not None or a.attempted_on >= since]
+    lines = []
+    for e in emergency_contacts_for(student_id):
+        mine = [a for a in attempts
+                if (e.contact_id and a.contact_id == e.contact_id)
+                or (not a.contact_id and a.contact_name == e.name)]
+        lines.append(CallSheetLine(e, mine))
+    return lines

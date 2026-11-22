@@ -17,6 +17,7 @@ from education_system.systems.primary.domain.learners.pupils.leavers.leavers imp
 from education_system.systems.primary.domain.learners.pupils.pupils import (
     ValidationError, YEAR_GROUPS,
 )
+from education_system.systems.primary.interfaces.gui import kit
 
 logger = logging.getLogger(__name__)
 
@@ -50,8 +51,8 @@ FORM_FIELDS: list[tuple[str, str]] = [
     ("first_name", "First name *"),
     ("last_name", "Last name *"),
     ("year_left", "Year left *"),
-    ("date_of_birth", "Date of birth (YYYY-MM-DD)"),
-    ("leaving_date", "Leaving date (YYYY-MM-DD)"),
+    ("date_of_birth", "Date of birth"),
+    ("leaving_date", "Leaving date"),
     ("destination_school", "Destination school"),
     ("current_email", "Current email"),
     ("parent_phone", "Parent phone"),
@@ -65,20 +66,21 @@ FORM_FIELDS: list[tuple[str, str]] = [
 @_safe_view
 def open_leavers(host) -> None:
     logger.debug("GUI: open_leavers")
+    kit.show_page(host, "Leavers", lambda parent: _draw_leavers(parent, host))
 
-    win = tk.Toplevel(host.root)
-    win.title("Leavers")
-    win.transient(host.root)
-    win.geometry("960x560")
 
-    top = ttk.Frame(win, padding=10)
+def _draw_leavers(page: ttk.Frame, host) -> None:
+    win = page.winfo_toplevel()
+    kit.page_heading(page, "Leavers", "Pupils who have left the school, and where they went.")
+
+    top = ttk.Frame(page, padding=(0, 0, 0, 6))
     top.pack(fill="x")
 
     summary_var = tk.StringVar()
     ttk.Label(top, textvariable=summary_var,
               font=("Segoe UI", 10, "bold")).pack(side="left")
 
-    filt = ttk.Frame(win, padding=(10, 0, 10, 6))
+    filt = ttk.Frame(page, padding=(0, 0, 0, 6))
     filt.pack(fill="x")
     ttk.Label(filt, text="Status:").pack(side="left")
     status_var = tk.StringVar(value="All")
@@ -87,16 +89,14 @@ def open_leavers(host) -> None:
                  state="readonly", width=10).pack(side="left", padx=(4, 12))
     ttk.Label(filt, text="Year left:").pack(side="left")
     year_var = tk.StringVar(value="All")
-    ttk.Combobox(filt, textvariable=year_var,
-                 values=["All"] + list(YEAR_GROUPS),
-                 state="readonly", width=6).pack(side="left", padx=(4, 12))
+    kit.YearGroupPicker(filt, year_var, extra=("All",)).pack(side="left", padx=(4, 12))
     ttk.Label(filt, text="Search:").pack(side="left")
     search_var = tk.StringVar()
     ttk.Entry(filt, textvariable=search_var, width=22).pack(side="left", padx=(4, 0))
 
     cols = ("leaver_id", "pupil_id", "name", "year", "leaving_date",
             "destination", "status")
-    tree = ttk.Treeview(win, columns=cols, show="headings", height=15)
+    tree = ttk.Treeview(page, columns=cols, show="headings", height=15)
     for col, label, width, anchor in [
         ("leaver_id", "Leaver ID", 90, "w"),
         ("pupil_id", "Pupil ID", 80, "w"),
@@ -108,9 +108,9 @@ def open_leavers(host) -> None:
     ]:
         tree.heading(col, text=label)
         tree.column(col, width=width, anchor=anchor)
-    tree.pack(fill="both", expand=True, padx=10, pady=(0, 6))
+    tree.pack(fill="both", expand=True, pady=(0, 6))
 
-    btns = ttk.Frame(win, padding=10)
+    btns = ttk.Frame(page, padding=(0, 4))
     btns.pack(fill="x")
 
     def _refresh() -> None:
@@ -217,7 +217,8 @@ def open_leavers(host) -> None:
         side="left", padx=(8, 0))
     ttk.Button(btns, text="Refresh", command=_refresh).pack(
         side="left", padx=(8, 0))
-    ttk.Button(btns, text="Close", command=win.destroy).pack(side="right")
+    ttk.Button(btns, text="Close",
+               command=lambda: kit.close_page(host, page)).pack(side="right")
 
     tree.bind("<Double-Button-1>", lambda _e: _edit())
     status_var.trace_add("write", lambda *_: _refresh())
@@ -248,15 +249,14 @@ def _open_form_dialog(parent, *, leaver_id: str | None,
     dlg = tk.Toplevel(parent)
     dlg.title("Leaver" if existing else "New leaver")
     dlg.transient(parent)
-    dlg.geometry("520x560")
+    dlg.geometry("620x600")
     try:
         dlg.wait_visibility()
         dlg.grab_set()
     except tk.TclError:
         logger.debug("grab_set skipped", exc_info=True)
 
-    frm = ttk.Frame(dlg, padding=12)
-    frm.pack(fill="both", expand=True)
+    frm, footer = kit.scrolled_form(dlg)
 
     vars_: dict[str, tk.StringVar] = {}
     for i, (key, label) in enumerate(FORM_FIELDS):
@@ -268,19 +268,18 @@ def _open_form_dialog(parent, *, leaver_id: str | None,
             v.set("active")
         vars_[key] = v
         if key == "year_left":
-            ttk.Combobox(frm, textvariable=v, values=list(YEAR_GROUPS),
-                         state="readonly", width=28).grid(
-                row=i, column=1, sticky="ew", pady=2)
+            widget: tk.Misc = kit.YearGroupPicker(frm, v, blank=existing is None)
         elif key == "status":
-            ttk.Combobox(frm, textvariable=v, values=list(STATUSES),
-                         state="readonly", width=28).grid(
-                row=i, column=1, sticky="ew", pady=2)
-        elif key == "notes":
-            ttk.Entry(frm, textvariable=v, width=30).grid(
-                row=i, column=1, sticky="ew", pady=2)
+            widget = kit.ChoiceField(frm, v, choices=STATUSES, width=12)
+        elif key == "date_of_birth":
+            widget = kit.DateField(frm, v, years=kit.pupil_birth_years(), today=False)
+        elif key == "leaving_date":
+            widget = kit.DateField(frm, v)
+        elif key == "pupil_id":
+            widget = kit.PupilPicker(frm, v, include_off_roll=True)
         else:
-            ttk.Entry(frm, textvariable=v, width=30).grid(
-                row=i, column=1, sticky="ew", pady=2)
+            widget = ttk.Entry(frm, textvariable=v, width=34)
+        widget.grid(row=i, column=1, sticky="w", pady=2)
     frm.columnconfigure(1, weight=1)
 
     def _save() -> None:
@@ -303,9 +302,7 @@ def _open_form_dialog(parent, *, leaver_id: str | None,
         on_saved()
         dlg.destroy()
 
-    btns = ttk.Frame(frm)
-    btns.grid(row=len(FORM_FIELDS), column=0, columnspan=2,
-              sticky="ew", pady=(12, 0))
+    btns = footer
     ttk.Button(btns, text="Save", command=_save).pack(side="right")
     ttk.Button(btns, text="Cancel",
                command=dlg.destroy).pack(side="right", padx=(0, 8))
@@ -315,7 +312,7 @@ def _open_promote_dialog(parent, *, on_saved: Callable[[], None]) -> None:
     dlg = tk.Toplevel(parent)
     dlg.title("Promote pupil to leaver")
     dlg.transient(parent)
-    dlg.geometry("440x340")
+    dlg.geometry("560x380")
     try:
         dlg.wait_visibility()
         dlg.grab_set()
@@ -344,21 +341,26 @@ def _open_promote_dialog(parent, *, on_saved: Callable[[], None]) -> None:
         "destination_school": "Destination school",
         "current_email": "Current email",
         "reason": "Reason",
-        "leaving_date": "Leaving date (YYYY-MM-DD)",
+        "leaving_date": "Leaving date",
         "notes": "Notes",
     }
     grid = ttk.Frame(frm)
     grid.pack(fill="both", expand=True)
     for i, key in enumerate(fields):
         ttk.Label(grid, text=labels[key]).grid(row=i, column=0, sticky="w", pady=3)
-        ttk.Entry(grid, textvariable=fields[key], width=30).grid(
-            row=i, column=1, sticky="ew", pady=3)
+        if key == "pupil_id":
+            widget: tk.Misc = kit.PupilPicker(grid, fields[key])
+        elif key == "leaving_date":
+            widget = kit.DateField(grid, fields[key])
+        else:
+            widget = ttk.Entry(grid, textvariable=fields[key], width=34)
+        widget.grid(row=i, column=1, sticky="w", pady=3)
     grid.columnconfigure(1, weight=1)
 
     def _go() -> None:
         pid = fields["pupil_id"].get().strip()
         if not pid:
-            messagebox.showerror("Promote", "Pupil ID is required.", parent=dlg)
+            messagebox.showerror("Promote", "Choose a pupil.", parent=dlg)
             return
         if not messagebox.askyesno(
                 "Promote pupil",

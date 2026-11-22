@@ -57,7 +57,6 @@ from ..bootstrap.integrations import (
     display_charity_shop_menu,
     display_course_evaluation_menu,
     display_course_management_menu,
-    display_early_warning_menu,
     display_enhanced_grade_menu,
     display_facilities_management_menu,
     display_finance_menu,
@@ -72,6 +71,7 @@ from ..bootstrap.integrations import (
     display_office_hours_menu,
     display_pdf_export_menu,
     display_research_grants_menu,
+    display_research_office_menu,
     display_security_dashboard_menu,
     display_staff_hr_menu,
     display_student_records_menu,
@@ -352,12 +352,12 @@ def display_menu():
             add_option(get_text('cli.menu.student_union', default='Student Union'), "student_union_portal"),
             add_option(get_text('cli.menu.career_services', default='Career Services'), "career_services"),
         ]
-        if MEDICAL_ACCOMMODATION_AVAILABLE:
-            items.append(add_option(get_text('cli.menu.medical_accommodation', default='Medical Accommodations'), "medical_accommodation"))
+        # Medical Accommodations and the Accessibility portal merged 2026-10-19.
+        items.append(add_option('Disability & Accessibility', "medical_accommodation"))
         print_row(items)
         items = [
             add_option(get_text('cli.menu.financial_aid', default='Financial Aid'), "financial_aid"),
-            add_option(get_text('cli.menu.early_warning', default='Early Warning'), "early_warning_system"),
+            add_option(get_text('cli.menu.early_warning_interventions', default='Early Warning & Interventions'), "early_warning_system"),
             add_option(get_text('cli.menu.support_helpdesk', default='Support/Helpdesk'), "student_support"),
         ]
         if LEGAL_SERVICES_AVAILABLE:
@@ -369,6 +369,7 @@ def display_menu():
         items.append(add_option("Advising", "advising"))
         items.append(add_option("Wellbeing", "student_wellbeing"))
         items.append(add_option("Student Finance", "student_finance"))
+        items.append(add_option("Student Handbook", "student_handbook"))
         print_row(items)
         items = [
             add_option("First Aid", "first_aid"),
@@ -458,7 +459,7 @@ def display_menu():
             add_option(get_text('cli.menu.admissions_crm', default='Admissions CRM'), "admissions_crm"),
             add_option(get_text('cli.menu.ucas_management', default='UCAS Management'), "ucas_management"),
             add_option(get_text('cli.menu.alumni_relations', default='Alumni Relations'), "alumni_relations"),
-            add_option(get_text('cli.menu.research_grants', default='Research/Grants'), "research_grants"),
+            add_option(get_text('cli.menu.research_office', default='Research Office'), "research_grants"),
         ]
         print_row(items)
         items = [
@@ -518,10 +519,18 @@ def display_menu():
         ]
         print_row(items)
         items = [
+            add_option("Academic Integrity", "academic_integrity"),
+        ]
+        # The AI Content Detector is a staff tool.
+        if str((auth.current_user or {}).get('role') or '').lower() in (
+                'staff', 'instructor', 'lecturer', 'teacher', 'faculty', 'admin',
+                'administrator', 'superadmin'):
+            items.append(add_option("AI Content Detector", "ai_content_detector"))
+        print_row(items)
+        items = [
             add_option("Student App", "student_app"),
-            add_option("Status Letters", "enrolment_letters"),
             add_option("Achievement Badges", "achievement_badges"),
-            add_option("Study Recommend.", "study_recommendations"),
+            add_option("Study Hub", "study_hub"),
             add_option("Clearing/Adjust.", "clearing_adjustment"),
             add_option("APL/RPL", "prior_learning"),
         ]
@@ -568,7 +577,6 @@ def display_menu():
         category(f"✨ {get_text('cli.menu.new_features', default='NEW FEATURES')}")
         items = [
             add_option("Employer Portal", "nf_employer_portal"),
-            add_option("Intervention Outcomes", "nf_intervention_outcomes"),
             add_option("KPI Dashboard", "nf_kpi_dashboard"),
             add_option("Institutional Analytics", "nf_institutional_analytics"),
             add_option("Bursary Management", "nf_bursary"),
@@ -582,11 +590,14 @@ def display_menu():
 
         items = [
             add_option("Case Management", "nf_case_management"),
+            add_option("Academic Appeals", "nf_academic_appeals"),
             add_option("Timetabling", "nf_timetabling"),
+            add_option("Complaints Portal", "nf_complaints"),
         ]
         if auth.current_user and auth.current_user.get('role', '').lower() in ('admin', 'administrator'):
             items.append(add_option("Identity Management", "nf_identity_management"))
             items.append(add_option("SSO Providers", "nf_sso_providers"))
+            items.append(add_option("Connectors & Event Queue", "nf_connectors"))
         print_row(items)
 
         # 📱 INFRASTRUCTURE & ⚙️ SYSTEM
@@ -702,7 +713,7 @@ def _dispatch_menu_option(option):
     elif option == "lms_system":
         # The LMS menu key had no dispatch branch and printed "Invalid choice".
         # The only LMS CLI is the attendance package's integration handler.
-        from education_system.systems.university.domains.academics.interfaces.cli.services.attendance.integrations_cli import (
+        from education_system.systems.university.domains.teaching.interfaces.cli.services.attendance.integrations_cli import (
             handle_lms_integration,
         )
         handle_lms_integration()
@@ -722,7 +733,7 @@ def _dispatch_menu_option(option):
             input("Press Enter to continue...")
     elif option == "exam_portal":
         try:
-            from education_system.systems.university.domains.academics.interfaces.cli.exam_management_cli import display_exam_portal_menu
+            from education_system.systems.university.domains.assessment.interfaces.cli.exam_management_cli import display_exam_portal_menu
             display_exam_portal_menu(auth)
         except ImportError as e:
             print(f"\n❌ Exam Management CLI is not available: {e}")
@@ -756,15 +767,16 @@ def _dispatch_menu_option(option):
     elif option == "health_portal":
         display_health_portal_menu(auth)
     elif option == "medical_accommodation":
-        if MEDICAL_ACCOMMODATION_AVAILABLE:
-            launch_medical_accommodation_cli(auth)
-        else:
-            print("\n❌ Medical Accommodation CLI is not available")
-            input("Press Enter to continue...")
+        # Disability & Accessibility: students' requests, the staff queue and
+        # the full Medical Accommodations tool (merged 2026-10-19).
+        from education_system.systems.university.shell.cli.features.accessibility import (
+            display_accessibility_tools_menu,
+        )
+        display_accessibility_tools_menu(auth)
     elif option == "student_union_portal":
         if display_student_union_menu:
             try:
-                from education_system.systems.university.domains.pastoral.domain.student_life.student_union import set_auth as _su_set_auth
+                from education_system.systems.university.domains.student_life.domain.student_life.student_union import set_auth as _su_set_auth
                 _su_set_auth(auth)
             except ImportError:
                 pass
@@ -777,10 +789,16 @@ def _dispatch_menu_option(option):
     elif option == "financial_aid":
         display_financial_aid_menu(auth)
     elif option == "early_warning_system":
-        display_early_warning_menu(auth)
+        # Early Warning, Support Cases and Outcomes — one menu since 2026-10-19.
+        from education_system.systems.university.domains.student_support.interfaces.cli.wellbeing.intervention_hub.intervention_hub_cli import display_intervention_hub_menu
+        display_intervention_hub_menu(auth)
     elif option == "student_support":
+        # Student Support portal (the IT Helpdesk is its 'H' option).
+        from education_system.systems.university.domains.student_support.interfaces.cli.student_support import (
+            display_support_menu as display_student_support_menu,
+        )
         set_support_auth(auth)
-        display_support_menu()
+        display_student_support_menu(auth)
     elif option == "finance_management":
         set_finance_auth(auth)
         display_finance_menu(auth)
@@ -821,9 +839,9 @@ def _dispatch_menu_option(option):
     elif option == "ucas_management":
         display_ucas_management_menu()
     elif option == "alumni_relations":
-        display_alumni_relations_menu()
+        display_alumni_relations_menu(auth)
     elif option == "research_grants":
-        display_research_grants_menu(auth)
+        display_research_office_menu(auth)
     elif option == "campus_events":
         display_campus_events_menu(auth)
     elif option == "staff_hr_management":
@@ -890,7 +908,7 @@ def _dispatch_menu_option(option):
             input("Press Enter to continue...")
     elif option == "equality_diversity":
         try:
-            from education_system.systems.university.domains.pastoral.interfaces.cli.equality_diversity import run_equality_diversity_menu
+            from education_system.systems.university.domains.student_support.interfaces.cli.equality_diversity import run_equality_diversity_menu
             run_equality_diversity_menu(auth)
         except Exception as e:
             print(f"\n❌ Equality & Diversity CLI is not available: {e}")
@@ -990,7 +1008,7 @@ def _dispatch_menu_option(option):
             input("Press Enter to continue...")
     elif option == "dentist":
         if DENTIST_AVAILABLE:
-            dentist_menu()
+            dentist_menu(auth)
         else:
             print("\n❌ Dentist CLI is not available")
             input("Press Enter to continue...")
@@ -1055,6 +1073,15 @@ def _dispatch_menu_option(option):
         except ImportError as e:
             print(f"\n❌ HESA Export CLI is not available: {e}")
             input("Press Enter to continue...")
+    elif option == "academic_integrity":
+        from education_system.systems.university.shell.cli.integrity_menu import integrity_menu
+        integrity_menu(auth)
+    elif option == "ai_content_detector":
+        # Staff-gated again inside, in case the option key is reached directly.
+        from education_system.systems.university.shell.cli.ai.tools_integration import (
+            display_ai_detector_menu_from_main,
+        )
+        display_ai_detector_menu_from_main(auth)
     elif option == "external_examiners":
         try:
             from education_system.systems.university.domains.assessment.interfaces.cli.external_examiners.external_examiner_cli import display_external_examiner_menu
@@ -1064,7 +1091,7 @@ def _dispatch_menu_option(option):
             input("Press Enter to continue...")
     elif option == "external_qa":
         try:
-            from education_system.systems.university.domains.academics.interfaces.cli.research.external_quality_assurance.eqa_cli import display_external_qa_menu
+            from education_system.systems.university.domains.research.interfaces.cli.research.external_quality_assurance.eqa_cli import display_external_qa_menu
             display_external_qa_menu(auth)
         except ImportError as e:
             print(f"\n❌ External QA CLI is not available: {e}")
@@ -1078,52 +1105,45 @@ def _dispatch_menu_option(option):
             input("Press Enter to continue...")
     elif option == "collaborative_provision":
         try:
-            from education_system.systems.university.domains.academics.interfaces.cli.collaborative_provision.collaborative_provision_cli import display_collaborative_provision_menu
+            from education_system.systems.university.domains.curriculum.interfaces.cli.collaborative_provision.collaborative_provision_cli import display_collaborative_provision_menu
             display_collaborative_provision_menu(auth)
         except ImportError as e:
             print(f"\n❌ Partner Provision CLI is not available: {e}")
             input("Press Enter to continue...")
     elif option == "student_mobility":
         try:
-            from education_system.systems.university.domains.academics.interfaces.cli.student_mobility.student_mobility_cli import display_student_mobility_menu
+            from education_system.systems.university.domains.curriculum.interfaces.cli.student_mobility.student_mobility_cli import display_student_mobility_menu
             display_student_mobility_menu(auth)
         except ImportError as e:
             print(f"\n❌ Study Abroad CLI is not available: {e}")
             input("Press Enter to continue...")
     elif option == "curriculum_specification":
         try:
-            from education_system.systems.university.domains.academics.interfaces.cli.curriculum_specification.curriculum_specification_cli import display_curriculum_specification_menu
+            from education_system.systems.university.domains.curriculum.interfaces.cli.curriculum_specification.curriculum_specification_cli import display_curriculum_specification_menu
             display_curriculum_specification_menu(auth)
         except ImportError as e:
             print(f"\n❌ Curriculum Specification CLI is not available: {e}")
             input("Press Enter to continue...")
     elif option == "student_app":
         try:
-            from education_system.systems.university.domains.pastoral.interfaces.cli.student_app.student_app_cli import display_student_app_menu
+            from education_system.systems.university.domains.student_life.interfaces.cli.student_app.student_app_cli import display_student_app_menu
             display_student_app_menu(auth)
         except ImportError as e:
             print(f"\n❌ Student App CLI is not available: {e}")
             input("Press Enter to continue...")
-    elif option == "enrolment_letters":
-        try:
-            from education_system.systems.university.domains.pastoral.interfaces.cli.student_app.documentation.documentation_cli import display_documentation_menu
-            display_documentation_menu(auth)
-        except ImportError as e:
-            print(f"\n❌ Status Letters CLI is not available: {e}")
-            input("Press Enter to continue...")
     elif option == "achievement_badges":
         try:
-            from education_system.systems.university.domains.pastoral.interfaces.cli.achievement_badges.achievement_badge_cli import display_achievement_badge_menu
+            from education_system.systems.university.domains.student_life.interfaces.cli.achievement_badges.achievement_badge_cli import display_achievement_badge_menu
             display_achievement_badge_menu(auth)
         except ImportError as e:
             print(f"\n❌ Achievement Badges CLI is not available: {e}")
             input("Press Enter to continue...")
-    elif option == "study_recommendations":
+    elif option == "study_hub":
         try:
-            from education_system.systems.university.domains.academics.interfaces.cli.study_recommendations.study_recommendation_cli import display_study_recommendation_menu
-            display_study_recommendation_menu(auth)
+            from education_system.systems.university.domains.student_life.interfaces.cli.study_hub import display_study_hub_menu
+            display_study_hub_menu(auth)
         except ImportError as e:
-            print(f"\n❌ Study Recommendations CLI is not available: {e}")
+            print(f"\n❌ Study Hub CLI is not available: {e}")
             input("Press Enter to continue...")
     elif option == "clearing_adjustment":
         try:
@@ -1141,14 +1161,14 @@ def _dispatch_menu_option(option):
             input("Press Enter to continue...")
     elif option == "course_planning":
         try:
-            from education_system.systems.university.domains.academics.interfaces.cli.course_planning.planning_cli import main as course_planning_main
+            from education_system.systems.university.domains.curriculum.interfaces.cli.course_planning.planning_cli import main as course_planning_main
             course_planning_main()
         except ImportError as e:
             print(f"\n  Course Planning CLI is not available: {e}")
             input("Press Enter to continue...")
     elif option == "lesson_planner":
         try:
-            from education_system.systems.university.domains.academics.interfaces.cli.course_planning import run_lesson_planner_menu
+            from education_system.systems.university.domains.curriculum.interfaces.cli.course_planning import run_lesson_planner_menu
             run_lesson_planner_menu(auth)
         except Exception as e:
             print(f"\n  Lesson Planner CLI is not available: {e}")
@@ -1193,7 +1213,7 @@ def _dispatch_menu_option(option):
             input("Press Enter to continue...")
     elif option == "first_aid":
         try:
-            from education_system.systems.university.domains.pastoral.interfaces.cli.health.first_aid import run_first_aid_menu
+            from education_system.systems.university.domains.health.interfaces.cli.health.first_aid import run_first_aid_menu
             run_first_aid_menu(auth)
         except Exception as e:
             print(f"\n  First Aid CLI is not available: {e}")
@@ -1207,14 +1227,21 @@ def _dispatch_menu_option(option):
             input("Press Enter to continue...")
     elif option == "advising":
         try:
-            from education_system.systems.university.domains.pastoral.interfaces.cli.advising.advising_cli import main as advising_main
+            from education_system.systems.university.domains.student_support.interfaces.cli.advising.advising_cli import main as advising_main
             advising_main()
         except ImportError as e:
             print(f"\n  Advising CLI is not available: {e}")
             input("Press Enter to continue...")
+    elif option == "student_handbook":
+        try:
+            from education_system.systems.university.domains.student_life.interfaces.cli.student_handbook import run_student_handbook_cli
+            run_student_handbook_cli(auth)
+        except ImportError as e:
+            print(f"\n  Student Handbook is not available: {e}")
+            input("Press Enter to continue...")
     elif option == "student_wellbeing":
         try:
-            from education_system.systems.university.domains.pastoral.interfaces.cli.wellbeing.student_wellbeing.student_wellbeing_cli import main as wellbeing_main
+            from education_system.systems.university.domains.student_support.interfaces.cli.wellbeing.student_wellbeing.student_wellbeing_cli import main as wellbeing_main
             wellbeing_main()
         except ImportError as e:
             print(f"\n  Student Wellbeing CLI is not available: {e}")

@@ -14,8 +14,13 @@ import sqlite3
 import pytest
 
 from education_system.systems.sixth_form.domain.academics.assignments import (
-    assignments as cw,
     assignments_marking as mk,
+)
+from education_system.systems.sixth_form.domain.academics.assignments import (
+    crud as assignments_crud,
+    models as assignments_models,
+    store as assignments_store,
+    submissions as assignments_submissions,
 )
 from education_system.systems.sixth_form.domain.academics.subjects import (
     subjects as subjects_mod,
@@ -61,7 +66,7 @@ def _seed_students(db_path: str, *first_names: str) -> list[str]:
 def mk_db(tmp_path, monkeypatch):
     """Marking, assignments, students and accessibility on one temp DB."""
     db_path = str(tmp_path / "sixthform.db")
-    for mod in (cw, mk, students_mod, subjects_mod, access_mod):
+    for mod in (assignments_store, mk, students_mod, subjects_mod, access_mod):
         monkeypatch.setattr(mod, "DB_PATH", db_path)
         monkeypatch.setattr(mod, "_DB_READY", False)
     monkeypatch.setattr(paths, "SIXTH_FORM_COURSEWORK_FILES_DIR",
@@ -84,7 +89,7 @@ def _assignment(**over):
                "set_date": _day(-20), "due_date": _day(-4),
                "max_marks": 60, "status": "Set"}
     payload.update(over)
-    return cw.create_assignment(payload)
+    return assignments_store.create_assignment(payload)
 
 
 def _rubric(assignment, *sizes):
@@ -98,10 +103,10 @@ def _rubric(assignment, *sizes):
 
 def test_penalty_scales_with_days_late(mk_db):
     a = _assignment(late_penalty_percent_per_day=10)
-    sub = cw.add_student(a.assignment_id, mk_db.s1)
-    cw.submit_work(sub.submission_id, submitted_on=_day(-1))   # 3 late
+    sub = assignments_crud.add_student(a.assignment_id, mk_db.s1)
+    assignments_submissions.submit_work(sub.submission_id, submitted_on=_day(-1))   # 3 late
 
-    penalty = mk.compute_late_penalty(a, cw.get_submission(
+    penalty = mk.compute_late_penalty(a, assignments_store.get_submission(
         sub.submission_id))
 
     assert penalty.days_late == 3
@@ -112,10 +117,10 @@ def test_penalty_scales_with_days_late(mk_db):
 def test_penalty_respects_grace_days(mk_db):
     a = _assignment(late_penalty_percent_per_day=10,
                      late_penalty_grace_days=2)
-    sub = cw.add_student(a.assignment_id, mk_db.s1)
-    cw.submit_work(sub.submission_id, submitted_on=_day(-1))   # 3 late
+    sub = assignments_crud.add_student(a.assignment_id, mk_db.s1)
+    assignments_submissions.submit_work(sub.submission_id, submitted_on=_day(-1))   # 3 late
 
-    penalty = mk.compute_late_penalty(a, cw.get_submission(
+    penalty = mk.compute_late_penalty(a, assignments_store.get_submission(
         sub.submission_id))
 
     assert penalty.days_late == 3        # still reported as 3 late
@@ -126,10 +131,10 @@ def test_penalty_is_capped(mk_db):
     a = _assignment(set_date=_day(-60), due_date=_day(-30),
                      late_penalty_percent_per_day=10,
                      late_penalty_cap_percent=40)
-    sub = cw.add_student(a.assignment_id, mk_db.s1)
-    cw.submit_work(sub.submission_id, submitted_on=_day(0))
+    sub = assignments_crud.add_student(a.assignment_id, mk_db.s1)
+    assignments_submissions.submit_work(sub.submission_id, submitted_on=_day(0))
 
-    penalty = mk.compute_late_penalty(a, cw.get_submission(
+    penalty = mk.compute_late_penalty(a, assignments_store.get_submission(
         sub.submission_id))
 
     assert penalty.percent == 40
@@ -138,10 +143,10 @@ def test_penalty_is_capped(mk_db):
 
 def test_raw_mark_is_preserved_under_penalty(mk_db):
     a = _assignment(late_penalty_percent_per_day=10)
-    sub = cw.add_student(a.assignment_id, mk_db.s1)
-    cw.submit_work(sub.submission_id, submitted_on=_day(-2))   # 2 late
+    sub = assignments_crud.add_student(a.assignment_id, mk_db.s1)
+    assignments_submissions.submit_work(sub.submission_id, submitted_on=_day(-2))   # 2 late
 
-    out = cw.mark_submission(sub.submission_id, marks=50,
+    out = assignments_crud.mark_submission(sub.submission_id, marks=50,
                               marked_by="JS")
 
     assert out.raw_marks == 50           # what the marker awarded
@@ -152,10 +157,10 @@ def test_raw_mark_is_preserved_under_penalty(mk_db):
 
 def test_on_time_work_is_not_penalised(mk_db):
     a = _assignment(due_date=_day(5), late_penalty_percent_per_day=10)
-    sub = cw.add_student(a.assignment_id, mk_db.s1)
-    cw.submit_work(sub.submission_id, submitted_on=_day(0))
+    sub = assignments_crud.add_student(a.assignment_id, mk_db.s1)
+    assignments_submissions.submit_work(sub.submission_id, submitted_on=_day(0))
 
-    out = cw.mark_submission(sub.submission_id, marks=50)
+    out = assignments_crud.mark_submission(sub.submission_id, marks=50)
 
     assert out.raw_marks == out.marks == 50
     assert out.penalty_percent is None
@@ -163,11 +168,11 @@ def test_on_time_work_is_not_penalised(mk_db):
 
 def test_penalty_clock_runs_from_the_extended_deadline(mk_db):
     a = _assignment(late_penalty_percent_per_day=10)
-    sub = cw.add_student(a.assignment_id, mk_db.s1)
-    cw.grant_extension(sub.submission_id, _day(2), reason="Illness")
-    cw.submit_work(sub.submission_id, submitted_on=_day(0))
+    sub = assignments_crud.add_student(a.assignment_id, mk_db.s1)
+    assignments_submissions.grant_extension(sub.submission_id, _day(2), reason="Illness")
+    assignments_submissions.submit_work(sub.submission_id, submitted_on=_day(0))
 
-    out = cw.mark_submission(sub.submission_id, marks=50)
+    out = assignments_crud.mark_submission(sub.submission_id, marks=50)
 
     assert out.marks == 50
     assert out.penalty_percent is None
@@ -175,9 +180,9 @@ def test_penalty_clock_runs_from_the_extended_deadline(mk_db):
 
 def test_waiving_a_penalty_restores_the_raw_mark(mk_db):
     a = _assignment(late_penalty_percent_per_day=10)
-    sub = cw.add_student(a.assignment_id, mk_db.s1)
-    cw.submit_work(sub.submission_id, submitted_on=_day(-2))
-    cw.mark_submission(sub.submission_id, marks=50)
+    sub = assignments_crud.add_student(a.assignment_id, mk_db.s1)
+    assignments_submissions.submit_work(sub.submission_id, submitted_on=_day(-2))
+    assignments_crud.mark_submission(sub.submission_id, marks=50)
 
     waived = mk.waive_penalty(sub.submission_id,
                                reason="Server outage on the deadline",
@@ -191,9 +196,9 @@ def test_waiving_a_penalty_restores_the_raw_mark(mk_db):
 
 def test_restoring_a_penalty_reapplies_it(mk_db):
     a = _assignment(late_penalty_percent_per_day=10)
-    sub = cw.add_student(a.assignment_id, mk_db.s1)
-    cw.submit_work(sub.submission_id, submitted_on=_day(-2))
-    cw.mark_submission(sub.submission_id, marks=50)
+    sub = assignments_crud.add_student(a.assignment_id, mk_db.s1)
+    assignments_submissions.submit_work(sub.submission_id, submitted_on=_day(-2))
+    assignments_crud.mark_submission(sub.submission_id, marks=50)
     mk.waive_penalty(sub.submission_id, reason="Mistake")
 
     restored = mk.restore_penalty(sub.submission_id)
@@ -205,17 +210,17 @@ def test_restoring_a_penalty_reapplies_it(mk_db):
 
 def test_waiver_needs_a_reason(mk_db):
     a = _assignment()
-    sub = cw.add_student(a.assignment_id, mk_db.s1)
-    with pytest.raises(cw.ValidationError):
+    sub = assignments_crud.add_student(a.assignment_id, mk_db.s1)
+    with pytest.raises(assignments_models.ValidationError):
         mk.waive_penalty(sub.submission_id, reason="   ")
 
 
 def test_no_policy_means_no_deduction(mk_db):
     a = _assignment(due_date=_day(-10))
-    sub = cw.add_student(a.assignment_id, mk_db.s1)
-    cw.submit_work(sub.submission_id, submitted_on=_day(0))
+    sub = assignments_crud.add_student(a.assignment_id, mk_db.s1)
+    assignments_submissions.submit_work(sub.submission_id, submitted_on=_day(0))
 
-    out = cw.mark_submission(sub.submission_id, marks=50)
+    out = assignments_crud.mark_submission(sub.submission_id, marks=50)
 
     assert out.marks == 50
     assert "no penalty policy" in mk.compute_late_penalty(
@@ -278,9 +283,9 @@ def test_adding_a_student_applies_their_arrangements(mk_db):
     _grant_access(mk_db.s1, "50% extra time")
     a = _assignment(set_date=_day(0), due_date=_day(10))
 
-    sub = cw.add_student(a.assignment_id, mk_db.s1)
+    sub = assignments_crud.add_student(a.assignment_id, mk_db.s1)
 
-    stored = cw.get_submission(sub.submission_id)
+    stored = assignments_store.get_submission(sub.submission_id)
     assert stored.extended_due_date == _day(15)
     assert "50% extra time" in (stored.extension_reason or "")
     assert stored.access_arrangements == "50% extra time"
@@ -291,31 +296,31 @@ def test_arrangements_can_be_switched_off_per_assignment(mk_db):
     a = _assignment(set_date=_day(0), due_date=_day(10),
                      honour_access_arrangements=False)
 
-    sub = cw.add_student(a.assignment_id, mk_db.s1)
+    sub = assignments_crud.add_student(a.assignment_id, mk_db.s1)
 
-    assert cw.get_submission(sub.submission_id).extended_due_date is None
+    assert assignments_store.get_submission(sub.submission_id).extended_due_date is None
 
 
 def test_applying_arrangements_does_not_overwrite_a_human_extension(mk_db):
     _grant_access(mk_db.s1, "25% extra time")
     a = _assignment(set_date=_day(0), due_date=_day(10),
                      honour_access_arrangements=False)
-    sub = cw.add_student(a.assignment_id, mk_db.s1)
-    cw.grant_extension(sub.submission_id, _day(30), reason="Bereavement")
+    sub = assignments_crud.add_student(a.assignment_id, mk_db.s1)
+    assignments_submissions.grant_extension(sub.submission_id, _day(30), reason="Bereavement")
 
-    a = cw.update_assignment(a.assignment_id,
+    a = assignments_store.update_assignment(a.assignment_id,
                               {"honour_access_arrangements": True})
     result = mk.apply_access_arrangements(a.assignment_id)
 
     assert result == {"eligible": 1, "granted": 0, "skipped": 1}
-    assert cw.get_submission(sub.submission_id).extended_due_date \
+    assert assignments_store.get_submission(sub.submission_id).extended_due_date \
         == _day(30)
 
 
 def test_applying_arrangements_is_idempotent(mk_db):
     _grant_access(mk_db.s1, "25% extra time")
     a = _assignment(set_date=_day(0), due_date=_day(10))
-    cw.add_student(a.assignment_id, mk_db.s1)
+    assignments_crud.add_student(a.assignment_id, mk_db.s1)
 
     again = mk.apply_access_arrangements(a.assignment_id)
 
@@ -350,9 +355,9 @@ def test_rubric_mismatch_is_reported_not_blocked(mk_db):
 
 def test_criterion_needs_a_title_and_max_marks(mk_db):
     a = _assignment()
-    with pytest.raises(cw.ValidationError):
+    with pytest.raises(assignments_models.ValidationError):
         mk.add_criterion(a.assignment_id, {"title": "", "max_marks": 10})
-    with pytest.raises(cw.ValidationError):
+    with pytest.raises(assignments_models.ValidationError):
         mk.add_criterion(a.assignment_id, {"title": "AO1"})
 
 
@@ -372,14 +377,14 @@ def test_reorder_criteria(mk_db):
 def test_reorder_rejects_a_partial_list(mk_db):
     a = _assignment()
     c1, _c2 = _rubric(a, 10, 10)
-    with pytest.raises(cw.ValidationError):
+    with pytest.raises(assignments_models.ValidationError):
         mk.reorder_criteria(a.assignment_id, [c1.criterion_id])
 
 
 def test_deleting_a_criterion_removes_its_marks(mk_db):
     a = _assignment()
     c1, c2 = _rubric(a, 30, 30)
-    sub = cw.add_student(a.assignment_id, mk_db.s1)
+    sub = assignments_crud.add_student(a.assignment_id, mk_db.s1)
     mk.set_criterion_mark(sub.submission_id, c1.criterion_id, marks=20)
     mk.set_criterion_mark(sub.submission_id, c2.criterion_id, marks=20)
 
@@ -393,7 +398,7 @@ def test_deleting_an_assignment_removes_its_rubric(mk_db):
     a = _assignment()
     _rubric(a, 30, 30)
 
-    cw.delete_assignment(a.assignment_id)
+    assignments_store.delete_assignment(a.assignment_id)
 
     assert mk.list_criteria(a.assignment_id) == []
 
@@ -403,7 +408,7 @@ def test_deleting_an_assignment_removes_its_rubric(mk_db):
 def test_criterion_marks_sum_to_the_total(mk_db):
     a = _assignment(max_marks=60)
     c1, c2, c3 = _rubric(a, 20, 25, 15)
-    sub = cw.add_student(a.assignment_id, mk_db.s1)
+    sub = assignments_crud.add_student(a.assignment_id, mk_db.s1)
 
     mk.set_criterion_mark(sub.submission_id, c1.criterion_id, marks=18)
     mk.set_criterion_mark(sub.submission_id, c2.criterion_id, marks=20)
@@ -416,8 +421,8 @@ def test_criterion_marks_sum_to_the_total(mk_db):
 def test_criterion_mark_cannot_exceed_the_criterion_max(mk_db):
     a = _assignment()
     c1, = _rubric(a, 20)
-    sub = cw.add_student(a.assignment_id, mk_db.s1)
-    with pytest.raises(cw.ValidationError):
+    sub = assignments_crud.add_student(a.assignment_id, mk_db.s1)
+    with pytest.raises(assignments_models.ValidationError):
         mk.set_criterion_mark(sub.submission_id, c1.criterion_id,
                                marks=21)
 
@@ -426,8 +431,8 @@ def test_criterion_must_belong_to_the_same_assignment(mk_db):
     a1 = _assignment(title="One")
     a2 = _assignment(title="Two")
     other, = _rubric(a2, 20)
-    sub = cw.add_student(a1.assignment_id, mk_db.s1)
-    with pytest.raises(cw.ValidationError, match="belongs to assignment"):
+    sub = assignments_crud.add_student(a1.assignment_id, mk_db.s1)
+    with pytest.raises(assignments_models.ValidationError, match="belongs to assignment"):
         mk.set_criterion_mark(sub.submission_id, other.criterion_id,
                                marks=5)
 
@@ -435,7 +440,7 @@ def test_criterion_must_belong_to_the_same_assignment(mk_db):
 def test_criterion_marks_upsert(mk_db):
     a = _assignment()
     c1, = _rubric(a, 20)
-    sub = cw.add_student(a.assignment_id, mk_db.s1)
+    sub = assignments_crud.add_student(a.assignment_id, mk_db.s1)
 
     mk.set_criterion_mark(sub.submission_id, c1.criterion_id, marks=10)
     mk.set_criterion_mark(sub.submission_id, c1.criterion_id, marks=15)
@@ -448,7 +453,7 @@ def test_criterion_marks_upsert(mk_db):
 def test_first_and_second_markers_score_independently(mk_db):
     a = _assignment()
     c1, = _rubric(a, 20)
-    sub = cw.add_student(a.assignment_id, mk_db.s1)
+    sub = assignments_crud.add_student(a.assignment_id, mk_db.s1)
 
     mk.set_criterion_mark(sub.submission_id, c1.criterion_id, marks=12,
                            role="First")
@@ -462,10 +467,10 @@ def test_first_and_second_markers_score_independently(mk_db):
 def test_an_incomplete_rubric_cannot_be_totalled(mk_db):
     a = _assignment()
     c1, _c2 = _rubric(a, 30, 30)
-    sub = cw.add_student(a.assignment_id, mk_db.s1)
+    sub = assignments_crud.add_student(a.assignment_id, mk_db.s1)
     mk.set_criterion_mark(sub.submission_id, c1.criterion_id, marks=20)
 
-    with pytest.raises(cw.ValidationError, match="Only 1 of 2"):
+    with pytest.raises(assignments_models.ValidationError, match="Only 1 of 2"):
         mk.apply_criterion_total(sub.submission_id)
 
     out = mk.apply_criterion_total(sub.submission_id,
@@ -476,7 +481,7 @@ def test_an_incomplete_rubric_cannot_be_totalled(mk_db):
 def test_totalling_the_rubric_marks_the_submission(mk_db):
     a = _assignment(due_date=_day(5), max_marks=60)
     c1, c2 = _rubric(a, 30, 30)
-    sub = cw.add_student(a.assignment_id, mk_db.s1)
+    sub = assignments_crud.add_student(a.assignment_id, mk_db.s1)
     mk.set_criterion_mark(sub.submission_id, c1.criterion_id, marks=24)
     mk.set_criterion_mark(sub.submission_id, c2.criterion_id, marks=21)
 
@@ -524,13 +529,13 @@ def test_partly_pinned_boundaries_fall_back_for_the_rest(mk_db):
 
 def test_boundaries_must_descend(mk_db):
     a = _assignment(max_marks=60)
-    with pytest.raises(cw.ValidationError, match="cannot be above"):
+    with pytest.raises(assignments_models.ValidationError, match="cannot be above"):
         mk.set_grade_boundaries(a.assignment_id, {"A*": 40, "A": 50})
 
 
 def test_boundaries_cannot_exceed_max_marks(mk_db):
     a = _assignment(max_marks=60)
-    with pytest.raises(cw.ValidationError, match="exceeds the assignment"):
+    with pytest.raises(assignments_models.ValidationError, match="exceeds the assignment"):
         mk.set_grade_boundaries(a.assignment_id, {"A*": 70})
 
 
@@ -545,9 +550,9 @@ def test_boundaries_accept_letters_or_column_names(mk_db):
 def test_marking_derives_the_grade_from_the_boundaries(mk_db):
     a = _assignment(due_date=_day(5), max_marks=60)
     mk.set_grade_boundaries(a.assignment_id, {"A*": 54, "A": 48})
-    sub = cw.add_student(a.assignment_id, mk_db.s1)
+    sub = assignments_crud.add_student(a.assignment_id, mk_db.s1)
 
-    out = cw.mark_submission(sub.submission_id, marks=55)
+    out = assignments_crud.mark_submission(sub.submission_id, marks=55)
 
     assert out.grade == "A*"
 
@@ -555,9 +560,9 @@ def test_marking_derives_the_grade_from_the_boundaries(mk_db):
 def test_an_explicit_grade_overrides_the_boundaries(mk_db):
     a = _assignment(due_date=_day(5), max_marks=60)
     mk.set_grade_boundaries(a.assignment_id, {"A*": 54})
-    sub = cw.add_student(a.assignment_id, mk_db.s1)
+    sub = assignments_crud.add_student(a.assignment_id, mk_db.s1)
 
-    out = cw.mark_submission(sub.submission_id, marks=55, grade="B")
+    out = assignments_crud.mark_submission(sub.submission_id, marks=55, grade="B")
 
     assert out.grade == "B"
 
@@ -576,10 +581,10 @@ def test_the_grade_reflects_the_mark_after_penalty(mk_db):
     a = _assignment(max_marks=60, late_penalty_percent_per_day=10)
     mk.set_grade_boundaries(a.assignment_id,
                              {"A*": 54, "A": 48, "B": 42, "C": 36})
-    sub = cw.add_student(a.assignment_id, mk_db.s1)
-    cw.submit_work(sub.submission_id, submitted_on=_day(-2))
+    sub = assignments_crud.add_student(a.assignment_id, mk_db.s1)
+    assignments_submissions.submit_work(sub.submission_id, submitted_on=_day(-2))
 
-    out = cw.mark_submission(sub.submission_id, marks=50)
+    out = assignments_crud.mark_submission(sub.submission_id, marks=50)
 
     assert out.raw_marks == 50           # would have been an A
     assert out.marks == 40.0
@@ -590,18 +595,18 @@ def test_the_grade_reflects_the_mark_after_penalty(mk_db):
 
 def test_a_second_mark_does_not_change_the_submission(mk_db):
     a = _assignment(due_date=_day(5))
-    sub = cw.add_student(a.assignment_id, mk_db.s1)
-    cw.mark_submission(sub.submission_id, marks=45)
+    sub = assignments_crud.add_student(a.assignment_id, mk_db.s1)
+    assignments_crud.mark_submission(sub.submission_id, marks=45)
 
     mk.record_mark(sub.submission_id, role="Second", marks=38,
                     marked_by="RT")
 
-    assert cw.get_submission(sub.submission_id).marks == 45
+    assert assignments_store.get_submission(sub.submission_id).marks == 45
 
 
 def test_discrepancy_and_tolerance(mk_db):
     a = _assignment(moderation_tolerance=4)
-    sub = cw.add_student(a.assignment_id, mk_db.s1)
+    sub = assignments_crud.add_student(a.assignment_id, mk_db.s1)
     mk.record_mark(sub.submission_id, role="First", marks=45)
     mk.record_mark(sub.submission_id, role="Second", marks=38)
 
@@ -614,7 +619,7 @@ def test_discrepancy_and_tolerance(mk_db):
 
 def test_agreement_inside_tolerance_needs_no_moderation(mk_db):
     a = _assignment(moderation_tolerance=5)
-    sub = cw.add_student(a.assignment_id, mk_db.s1)
+    sub = assignments_crud.add_student(a.assignment_id, mk_db.s1)
     mk.record_mark(sub.submission_id, role="First", marks=45)
     mk.record_mark(sub.submission_id, role="Second", marks=42)
 
@@ -626,7 +631,7 @@ def test_agreement_inside_tolerance_needs_no_moderation(mk_db):
 
 def test_no_tolerance_means_no_moderation_queue(mk_db):
     a = _assignment(moderation_tolerance=None)
-    sub = cw.add_student(a.assignment_id, mk_db.s1)
+    sub = assignments_crud.add_student(a.assignment_id, mk_db.s1)
     mk.record_mark(sub.submission_id, role="First", marks=60)
     mk.record_mark(sub.submission_id, role="Second", marks=10)
 
@@ -636,9 +641,9 @@ def test_no_tolerance_means_no_moderation_queue(mk_db):
 
 def test_moderation_queue_lists_only_disagreements(mk_db):
     a = _assignment(moderation_tolerance=4)
-    close = cw.add_student(a.assignment_id, mk_db.s1)
-    far = cw.add_student(a.assignment_id, mk_db.s2)
-    single = cw.add_student(a.assignment_id, mk_db.s3)
+    close = assignments_crud.add_student(a.assignment_id, mk_db.s1)
+    far = assignments_crud.add_student(a.assignment_id, mk_db.s2)
+    single = assignments_crud.add_student(a.assignment_id, mk_db.s3)
     for sub, first, second in ((close, 40, 42), (far, 40, 55)):
         mk.record_mark(sub.submission_id, role="First", marks=first)
         mk.record_mark(sub.submission_id, role="Second", marks=second)
@@ -651,7 +656,7 @@ def test_moderation_queue_lists_only_disagreements(mk_db):
 
 def test_resolving_moderation_sets_the_final_mark(mk_db):
     a = _assignment(due_date=_day(5), moderation_tolerance=4)
-    sub = cw.add_student(a.assignment_id, mk_db.s1)
+    sub = assignments_crud.add_student(a.assignment_id, mk_db.s1)
     mk.record_mark(sub.submission_id, role="First", marks=40)
     mk.record_mark(sub.submission_id, role="Second", marks=50)
 
@@ -668,23 +673,23 @@ def test_resolving_moderation_sets_the_final_mark(mk_db):
 
 def test_cannot_resolve_without_two_marks(mk_db):
     a = _assignment()
-    sub = cw.add_student(a.assignment_id, mk_db.s1)
+    sub = assignments_crud.add_student(a.assignment_id, mk_db.s1)
     mk.record_mark(sub.submission_id, role="First", marks=40)
-    with pytest.raises(cw.ValidationError, match="no first and second"):
+    with pytest.raises(assignments_models.ValidationError, match="no first and second"):
         mk.resolve_moderation(sub.submission_id, marks=45)
 
 
 def test_marks_cannot_exceed_the_assignment_max(mk_db):
     a = _assignment(max_marks=60)
-    sub = cw.add_student(a.assignment_id, mk_db.s1)
-    with pytest.raises(cw.ValidationError, match="exceed max_marks"):
+    sub = assignments_crud.add_student(a.assignment_id, mk_db.s1)
+    with pytest.raises(assignments_models.ValidationError, match="exceed max_marks"):
         mk.record_mark(sub.submission_id, role="First", marks=61)
 
 
 def test_an_invalid_marker_role_is_refused(mk_db):
     a = _assignment()
-    sub = cw.add_student(a.assignment_id, mk_db.s1)
-    with pytest.raises(cw.ValidationError, match="Marker role"):
+    sub = assignments_crud.add_student(a.assignment_id, mk_db.s1)
+    with pytest.raises(assignments_models.ValidationError, match="Marker role"):
         mk.record_mark(sub.submission_id, role="Third", marks=10)
 
 
@@ -692,7 +697,7 @@ def test_an_invalid_marker_role_is_refused(mk_db):
 
 def test_flag_and_unflag_a_sample(mk_db):
     a = _assignment()
-    sub = cw.add_student(a.assignment_id, mk_db.s1)
+    sub = assignments_crud.add_student(a.assignment_id, mk_db.s1)
 
     flagged = mk.flag_sample(sub.submission_id, band="Top",
                               note="Strong exemplar", flagged_by="JS")
@@ -709,8 +714,8 @@ def test_flag_and_unflag_a_sample(mk_db):
 
 def test_sample_band_is_validated(mk_db):
     a = _assignment()
-    sub = cw.add_student(a.assignment_id, mk_db.s1)
-    with pytest.raises(cw.ValidationError, match="Sample band"):
+    sub = assignments_crud.add_student(a.assignment_id, mk_db.s1)
+    with pytest.raises(assignments_models.ValidationError, match="Sample band"):
         mk.flag_sample(sub.submission_id, band="Best")
 
 
@@ -718,8 +723,8 @@ def test_auto_sample_spans_the_range(mk_db):
     a = _assignment(due_date=_day(5), max_marks=60)
     marks = [55, 45, 30, 12]
     for student, value in zip(mk_db.students, marks):
-        sub = cw.add_student(a.assignment_id, student)
-        cw.mark_submission(sub.submission_id, marks=value)
+        sub = assignments_crud.add_student(a.assignment_id, student)
+        assignments_crud.mark_submission(sub.submission_id, marks=value)
 
     chosen = mk.auto_select_sample(a.assignment_id, per_band=1)
 
@@ -732,8 +737,8 @@ def test_auto_sample_spans_the_range(mk_db):
 def test_auto_sample_replaces_the_previous_selection(mk_db):
     a = _assignment(due_date=_day(5))
     for student in mk_db.students[:2]:
-        sub = cw.add_student(a.assignment_id, student)
-        cw.mark_submission(sub.submission_id, marks=30)
+        sub = assignments_crud.add_student(a.assignment_id, student)
+        assignments_crud.mark_submission(sub.submission_id, marks=30)
     first = mk.auto_select_sample(a.assignment_id, per_band=1)
 
     second = mk.auto_select_sample(a.assignment_id, per_band=1)
@@ -745,8 +750,8 @@ def test_auto_sample_replaces_the_previous_selection(mk_db):
 
 def test_auto_sample_needs_marks(mk_db):
     a = _assignment()
-    cw.add_student(a.assignment_id, mk_db.s1)
-    with pytest.raises(cw.ValidationError, match="Nothing is marked"):
+    assignments_crud.add_student(a.assignment_id, mk_db.s1)
+    with pytest.raises(assignments_models.ValidationError, match="Nothing is marked"):
         mk.auto_select_sample(a.assignment_id)
 
 
@@ -754,9 +759,9 @@ def test_auto_sample_needs_marks(mk_db):
 
 def test_marking_writes_an_audit_row(mk_db):
     a = _assignment(due_date=_day(5), max_marks=60)
-    sub = cw.add_student(a.assignment_id, mk_db.s1)
+    sub = assignments_crud.add_student(a.assignment_id, mk_db.s1)
 
-    cw.mark_submission(sub.submission_id, marks=45, marked_by="JS")
+    assignments_crud.mark_submission(sub.submission_id, marks=45, marked_by="JS")
 
     rows = mk.list_mark_audit(submission_id=sub.submission_id)
     fields = {r.field for r in rows}
@@ -767,10 +772,10 @@ def test_marking_writes_an_audit_row(mk_db):
 
 def test_audit_records_the_before_and_after(mk_db):
     a = _assignment(due_date=_day(5))
-    sub = cw.add_student(a.assignment_id, mk_db.s1)
-    cw.mark_submission(sub.submission_id, marks=40)
+    sub = assignments_crud.add_student(a.assignment_id, mk_db.s1)
+    assignments_crud.mark_submission(sub.submission_id, marks=40)
 
-    cw.mark_submission(sub.submission_id, marks=48)
+    assignments_crud.mark_submission(sub.submission_id, marks=48)
 
     change = next(r for r in mk.list_mark_audit(
         submission_id=sub.submission_id, field="marks"))
@@ -781,7 +786,7 @@ def test_audit_records_the_before_and_after(mk_db):
 def test_audit_distinguishes_its_sources(mk_db):
     a = _assignment(due_date=_day(5), moderation_tolerance=2)
     c1, = _rubric(a, 60)
-    sub = cw.add_student(a.assignment_id, mk_db.s1)
+    sub = assignments_crud.add_student(a.assignment_id, mk_db.s1)
     mk.set_criterion_mark(sub.submission_id, c1.criterion_id, marks=40)
     mk.apply_criterion_total(sub.submission_id)
     mk.record_mark(sub.submission_id, role="Second", marks=50)
@@ -796,10 +801,10 @@ def test_audit_distinguishes_its_sources(mk_db):
 
 def test_audit_is_newest_first_and_scoped(mk_db):
     a = _assignment(due_date=_day(5))
-    one = cw.add_student(a.assignment_id, mk_db.s1)
-    two = cw.add_student(a.assignment_id, mk_db.s2)
-    cw.mark_submission(one.submission_id, marks=30)
-    cw.mark_submission(two.submission_id, marks=40)
+    one = assignments_crud.add_student(a.assignment_id, mk_db.s1)
+    two = assignments_crud.add_student(a.assignment_id, mk_db.s2)
+    assignments_crud.mark_submission(one.submission_id, marks=30)
+    assignments_crud.mark_submission(two.submission_id, marks=40)
 
     scoped = mk.list_mark_audit(submission_id=two.submission_id)
     whole = mk.list_mark_audit(assignment_id=a.assignment_id)
@@ -811,9 +816,9 @@ def test_audit_is_newest_first_and_scoped(mk_db):
 
 def test_waiving_a_penalty_is_audited(mk_db):
     a = _assignment(late_penalty_percent_per_day=10)
-    sub = cw.add_student(a.assignment_id, mk_db.s1)
-    cw.submit_work(sub.submission_id, submitted_on=_day(-2))
-    cw.mark_submission(sub.submission_id, marks=50)
+    sub = assignments_crud.add_student(a.assignment_id, mk_db.s1)
+    assignments_submissions.submit_work(sub.submission_id, submitted_on=_day(-2))
+    assignments_crud.mark_submission(sub.submission_id, marks=50)
 
     mk.waive_penalty(sub.submission_id, reason="Outage", waived_by="HoD")
 
@@ -827,8 +832,8 @@ def test_waiving_a_penalty_is_audited(mk_db):
 
 def test_an_unknown_audit_source_is_refused(mk_db):
     a = _assignment()
-    sub = cw.add_student(a.assignment_id, mk_db.s1)
-    with pytest.raises(cw.ValidationError, match="Audit source"):
+    sub = assignments_crud.add_student(a.assignment_id, mk_db.s1)
+    with pytest.raises(assignments_models.ValidationError, match="Audit source"):
         mk.record_mark_change(sub.submission_id, field="marks",
                                old_value="1", new_value="2",
                                source="telepathy")
@@ -836,10 +841,10 @@ def test_an_unknown_audit_source_is_refused(mk_db):
 
 def test_a_mark_edited_outside_the_pipeline_is_still_audited(mk_db):
     a = _assignment(due_date=_day(5))
-    sub = cw.add_student(a.assignment_id, mk_db.s1)
-    cw.mark_submission(sub.submission_id, marks=40)
+    sub = assignments_crud.add_student(a.assignment_id, mk_db.s1)
+    assignments_crud.mark_submission(sub.submission_id, marks=40)
 
-    cw.update_submission(sub.submission_id, {"marks": 42})
+    assignments_crud.update_submission(sub.submission_id, {"marks": 42})
 
     assert any(r.reason == "Edited directly" for r in
                mk.list_mark_audit(submission_id=sub.submission_id))
@@ -872,7 +877,7 @@ def test_subject_filter_includes_shared_comments(mk_db):
 
 
 def test_comment_category_is_validated(mk_db):
-    with pytest.raises(cw.ValidationError, match="Category"):
+    with pytest.raises(assignments_models.ValidationError, match="Category"):
         mk.add_comment({"body": "x", "category": "Vibes"})
 
 
@@ -887,8 +892,8 @@ def test_inactive_comments_are_hidden_by_default(mk_db):
 def test_using_a_comment_counts_and_expands_it(mk_db):
     a = _assignment(due_date=_day(5), max_marks=60)
     mk.set_grade_boundaries(a.assignment_id, {"A*": 54, "A": 48})
-    sub = cw.add_student(a.assignment_id, mk_db.s1)
-    cw.mark_submission(sub.submission_id, marks=55)
+    sub = assignments_crud.add_student(a.assignment_id, mk_db.s1)
+    assignments_crud.mark_submission(sub.submission_id, marks=55)
     c = mk.add_comment(
         {"body": "Well done {first_name} — {grade} ({marks}/{max_marks})."})
 
@@ -900,7 +905,7 @@ def test_using_a_comment_counts_and_expands_it(mk_db):
 
 def test_unknown_placeholders_are_left_alone(mk_db):
     a = _assignment()
-    sub = cw.add_student(a.assignment_id, mk_db.s1)
+    sub = assignments_crud.add_student(a.assignment_id, mk_db.s1)
 
     text = mk.expand_comment("Hi {first_name}, see {mystery}.",
                               sub.submission_id)
@@ -922,7 +927,7 @@ def test_the_bank_sorts_by_use(mk_db):
 
 def test_bulk_mark_applies_a_whole_class(mk_db):
     a = _assignment(due_date=_day(5), max_marks=60)
-    subs = [cw.add_student(a.assignment_id, s) for s in mk_db.students]
+    subs = [assignments_crud.add_student(a.assignment_id, s) for s in mk_db.students]
 
     result = mk.bulk_mark(a.assignment_id, [
         {"student_id": mk_db.s1, "marks": 50},
@@ -931,13 +936,13 @@ def test_bulk_mark_applies_a_whole_class(mk_db):
 
     assert result.applied == 2
     assert result.all_ok is True
-    assert cw.get_submission(subs[0].submission_id).marks == 50
-    assert cw.get_submission(subs[1].submission_id).marks == 40
+    assert assignments_store.get_submission(subs[0].submission_id).marks == 50
+    assert assignments_store.get_submission(subs[1].submission_id).marks == 40
 
 
 def test_bulk_mark_reports_bad_rows_without_losing_good_ones(mk_db):
     a = _assignment(due_date=_day(5), max_marks=60)
-    sub = cw.add_student(a.assignment_id, mk_db.s1)
+    sub = assignments_crud.add_student(a.assignment_id, mk_db.s1)
 
     result = mk.bulk_mark(a.assignment_id, [
         {"student_id": mk_db.s1, "marks": 50},
@@ -947,14 +952,14 @@ def test_bulk_mark_reports_bad_rows_without_losing_good_ones(mk_db):
 
     assert result.applied == 1
     assert result.failed == 2
-    assert cw.get_submission(sub.submission_id).marks == 50
+    assert assignments_store.get_submission(sub.submission_id).marks == 50
     assert any("exceed max_marks" in o.message
                for o in result.outcomes if not o.ok)
 
 
 def test_bulk_mark_can_refuse_to_write_anything_on_error(mk_db):
     a = _assignment(due_date=_day(5), max_marks=60)
-    sub = cw.add_student(a.assignment_id, mk_db.s1)
+    sub = assignments_crud.add_student(a.assignment_id, mk_db.s1)
 
     result = mk.bulk_mark(a.assignment_id, [
         {"student_id": mk_db.s1, "marks": 50},
@@ -962,18 +967,18 @@ def test_bulk_mark_can_refuse_to_write_anything_on_error(mk_db):
     ], stop_on_error=True)
 
     assert result.applied == 0
-    assert cw.get_submission(sub.submission_id).marks is None
+    assert assignments_store.get_submission(sub.submission_id).marks is None
 
 
 def test_bulk_mark_applies_late_penalties(mk_db):
     a = _assignment(max_marks=60, late_penalty_percent_per_day=10)
-    sub = cw.add_student(a.assignment_id, mk_db.s1)
-    cw.submit_work(sub.submission_id, submitted_on=_day(-2))
+    sub = assignments_crud.add_student(a.assignment_id, mk_db.s1)
+    assignments_submissions.submit_work(sub.submission_id, submitted_on=_day(-2))
 
     result = mk.bulk_mark(a.assignment_id,
                            [{"student_id": mk_db.s1, "marks": 50}])
 
-    out = cw.get_submission(sub.submission_id)
+    out = assignments_store.get_submission(sub.submission_id)
     assert out.raw_marks == 50
     assert out.marks == 40.0
     assert "late penalty" in result.outcomes[0].message
@@ -984,9 +989,9 @@ def test_marking_grid_carries_everything_the_marker_needs(mk_db):
     a = _assignment(max_marks=60, late_penalty_percent_per_day=10,
                      moderation_tolerance=2)
     c1, = _rubric(a, 60)
-    first = cw.add_student(a.assignment_id, mk_db.s1)
-    second = cw.add_student(a.assignment_id, mk_db.s2)
-    cw.submit_work(first.submission_id, submitted_on=_day(-2))
+    first = assignments_crud.add_student(a.assignment_id, mk_db.s1)
+    second = assignments_crud.add_student(a.assignment_id, mk_db.s2)
+    assignments_submissions.submit_work(first.submission_id, submitted_on=_day(-2))
     mk.set_criterion_mark(first.submission_id, c1.criterion_id, marks=45)
     mk.record_mark(first.submission_id, role="First", marks=45)
     mk.record_mark(first.submission_id, role="Second", marks=52)

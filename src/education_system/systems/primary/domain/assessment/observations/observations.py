@@ -120,7 +120,7 @@ def init_db() -> None:
     except sqlite3.Error:
         logger.exception("Failed to initialise observations table")
         raise
-    logger.info("Secondary observations table ready")
+    logger.info("Primary observations table ready")
     _DB_READY = True
 
 

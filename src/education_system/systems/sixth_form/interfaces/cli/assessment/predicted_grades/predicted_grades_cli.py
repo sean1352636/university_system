@@ -219,13 +219,25 @@ def per_student() -> None:
     _pause()
 
 
+def _grades_for(student_id: str | None, subject: str | None) -> list[str]:
+    """Grade list for the learner's aim in ``subject`` (A*-U default)."""
+    try:
+        from education_system.systems.sixth_form.domain.academics.qualifications import (
+            learning_aims,
+        )
+        return list(learning_aims.grade_options(student_id, subject))
+    except Exception:
+        return list(LETTER_GRADES)
+
+
 def new_or_update() -> None:
     print("\n═══ New / Update Prediction ═══")
     print("  (type 'cancel' at any prompt to abort)")
     try:
         sid = _pick_student()
         subj = _pick_from("Subject", _active_subjects())
-        grade = _pick_from("Grade", list(LETTER_GRADES))
+        # Grades on the scale of the learner's aim in that subject.
+        grade = _pick_from("Grade", _grades_for(sid, subj))
         confidence = _pick_from("Confidence", list(CONFIDENCE_LEVELS),
                                  default=DEFAULT_CONFIDENCE)
         by = _input("Predicted by (optional)")
@@ -274,7 +286,8 @@ def edit_prediction(prediction_id: int | None = None) -> None:
           f"confidence={existing.confidence}, "
           f"by={existing.predicted_by or '—'}")
     try:
-        grade = _pick_from("Grade", list(LETTER_GRADES),
+        grade = _pick_from("Grade",
+                           _grades_for(existing.student_id, existing.subject),
                            default=existing.grade)
         confidence = _pick_from("Confidence", list(CONFIDENCE_LEVELS),
                                  default=existing.confidence)
@@ -377,14 +390,21 @@ def group_sheet() -> None:
         print(f"\n  {v.student_id}  {v.full_name}{existing}")
         try:
             default = (v.prediction.grade if v.prediction else "")
-            raw = _input("  Grade (1-7 / S)", default=default)
+            scale = _grades_for(v.student_id, subject)
+            raw = _input(f"  Grade (1-{len(scale)} = {'/'.join(scale)}, "
+                         "or type it; S = skip)", default=default)
         except _UserAbort:
             print("\n  Cancelled.")
             return
         if raw.lower() == "s":
             continue
-        grade = grade_map.get(raw, raw)
-        if grade not in LETTER_GRADES:
+        # Numbers index this learner's own scale (1 = best), so 1-7 is
+        # still A*-U for an A level.
+        if raw.isdigit() and 1 <= int(raw) <= len(scale):
+            grade = scale[int(raw) - 1]
+        else:
+            grade = grade_map.get(raw, raw) if scale[0] == "A*" else raw
+        if grade not in scale:
             print(f"    ✗ Unknown grade {raw!r}, skipping.")
             continue
         try:

@@ -15,6 +15,7 @@ from contextlib import contextmanager
 from dataclasses import dataclass, field
 from typing import Any, Iterator
 from education_system import paths as _paths
+from education_system.systems.sixth_form.infrastructure import soft_delete as _soft
 
 logger = logging.getLogger(__name__)
 
@@ -95,6 +96,10 @@ class Incident:
     notes: str | None
     created_on: str
     updated_on: str
+    #: Archive (soft delete) — set by delete_*, cleared by restore_*.
+    archived_at: str | None = None
+    archived_by: str | None = None
+    archive_reason: str | None = None
 
     @property
     def is_open(self) -> bool:
@@ -175,6 +180,7 @@ def init_db() -> None:
                   ON DELETE CASCADE
             )
         """)
+        _soft.ensure_columns(conn, "first_aid_incidents")
 
 
 def _check_date(label: str, value: str | None) -> None:
@@ -291,6 +297,9 @@ def _row(r: sqlite3.Row) -> Incident:
         notes=r["notes"],
         created_on=r["created_on"],
         updated_on=r["updated_on"],
+        archived_at=r["archived_at"] if "archived_at" in r.keys() else None,
+        archived_by=r["archived_by"] if "archived_by" in r.keys() else None,
+        archive_reason=r["archive_reason"] if "archive_reason" in r.keys() else None,
     )
 
 
@@ -366,13 +375,36 @@ def update_incident(incident_id: int,
     return get_incident(incident_id)
 
 
-def delete_incident(incident_id: int) -> bool:
+def delete_incident(incident_id: int, *, reason: str | None = None) -> bool:
+    """Archive the first-aid incident (a soft delete: UK retention rules expect it to
+    be kept). It drops out of :func:`list_incidents` unless
+    ``include_archived=True``, keeps who/when/why, and can be brought
+    back with :func:`restore_incident`. Nothing is
+    hard-deleted. Returns False if unknown or already archived."""
     init_db()
     with _connect() as conn:
-        cur = conn.execute(
-            "DELETE FROM first_aid_incidents WHERE incident_id=?",
-            (incident_id,))
-        return cur.rowcount > 0
+        ok = _soft.archive(conn, "first_aid_incidents", "incident_id", incident_id,
+                           by=_archive_actor(), reason=reason)
+    return ok
+
+
+def restore_incident(incident_id: int) -> bool:
+    """Undo :func:`delete_incident` (archive)."""
+    init_db()
+    with _connect() as conn:
+        ok = _soft.restore(conn, "first_aid_incidents", "incident_id", incident_id)
+    return ok
+
+
+def _archive_actor() -> str | None:
+    """Username recorded on archive (the signed-in principal)."""
+    try:
+        from education_system.systems.sixth_form.domain.governance.user_management import (
+            access,
+        )
+        return access.current().username or None
+    except Exception:
+        return None
 
 
 def get_incident(incident_id: int) -> Incident | None:
@@ -385,6 +417,7 @@ def get_incident(incident_id: int) -> Incident | None:
 
 
 def list_incidents(*,
+                       include_archived: bool = False,
                        student_id: str | None = None,
                        nature: str | None = None,
                        status: str | None = None,
@@ -402,6 +435,8 @@ def list_incidents(*,
                        ) -> list[Incident]:
     init_db()
     sql = "SELECT * FROM first_aid_incidents WHERE 1=1"
+    if not include_archived:
+        sql += " AND archived_at IS NULL"
     params: list[Any] = []
     if student_id:
         sql += " AND student_id=?"

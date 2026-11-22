@@ -4,7 +4,7 @@ import logging
 import subprocess
 import sys
 
-from education_system.launcher.auth import init_shared_auth, gui_universal_login
+from education_system.launcher.auth import gui_universal_login, init_shared_auth
 from education_system.launcher.environment import apply_launcher_env_defaults
 
 logger = logging.getLogger(__name__)
@@ -46,7 +46,9 @@ def _init_university():
     from education_system.systems.university.infrastructure.shared_context import set_auth
     set_auth(UserAuth())
 
-    from education_system.systems.university.infrastructure.defaults import print_generated_passwords
+    from education_system.systems.university.infrastructure.defaults import (
+        print_generated_passwords,
+    )
     print_generated_passwords()
 
     from education_system.systems.university.infrastructure.database.database_utils import init_db
@@ -60,7 +62,9 @@ def _init_university():
     _start_security_training_links()
 
     try:
-        from education_system.systems.university.infrastructure.auth.migration_to_shared import migrate
+        from education_system.systems.university.infrastructure.auth.migration_to_shared import (
+            migrate,
+        )
         migrate()
     except Exception as exc:
         logger.debug("University auth migration skipped: %s", exc)
@@ -112,12 +116,116 @@ def _init_university():
     except Exception as exc:
         logger.debug("University background drainer not started: %s", exc)
 
+    # Deliver the university e-mail outbox (retries, retention purge).
+    try:
+        from education_system.systems.university.infrastructure.email import outbox_delivery
+        outbox_delivery.start_worker()
+    except Exception as exc:
+        logger.debug("University e-mail worker not started: %s", exc)
+
+    # The university event outbox (provisioning retries, erasure requests,
+    # the institutional connector feeds) and the student lifecycle actions
+    # (fees, modules, visa, housing, library and sign-in after a status change).
+    try:
+        from education_system.systems.university.application import outbox_dispatcher
+        outbox_dispatcher.start_worker()
+    except Exception as exc:
+        logger.debug("University outbox dispatcher not started: %s", exc)
+
+    # General daily jobs (degree audit, ungraded exams, mailroom, attendance
+    # risk, record retention, safeguarding digest / SLA alerts) and the
+    # safeguarding e-mail retry every fifteen minutes.
+    try:
+        from education_system.systems.university.services.bus.jobs import university_jobs
+        university_jobs.start_worker()
+    except Exception as exc:
+        logger.debug("University jobs worker not started: %s", exc)
+
+    # Timed e-mails: library return reminders and overdue notices, ticket
+    # satisfaction surveys, visa-expiry alerts and the compliance KPI refresh.
+    try:
+        from education_system.systems.university.infrastructure.email import email_scheduler
+        email_scheduler.start_scheduler()
+    except Exception as exc:
+        logger.debug("University e-mail scheduler not started: %s", exc)
+
+    # Scheduled batch work: watched folders at their daily time, batch reports.
+    try:
+        from education_system.systems.university.infrastructure.batch import scheduler
+        scheduler.start_worker()
+    except Exception as exc:
+        logger.debug("University batch scheduler not started: %s", exc)
+
+    # Academic integrity daily jobs: remove submitted text past the retention
+    # period, send review / case / deadline reminders, close cases whose appeal
+    # period has passed, and retry failed automatic similarity checks.
+    try:
+        from education_system.systems.university.infrastructure.integrity import retention_worker
+        retention_worker.start_worker()
+    except Exception as exc:
+        logger.debug("University integrity daily worker not started: %s", exc)
+
+    # Daily health jobs: the retention purge (only when a health retention
+    # policy has auto_delete = 1), first aid reminders (certificates, RIDDOR
+    # deadlines, kit/AED checks) and medical accommodation reconciliation.
+    try:
+        from education_system.systems.university.domains.health.infrastructure.health import (
+            retention_worker as health_retention_worker,
+        )
+        health_retention_worker.start_worker()
+    except Exception as exc:
+        logger.debug("University health retention worker not started: %s", exc)
+
+    # Trip jobs: waiting-list offer expiry and T-7 / T-1 reminders (hourly);
+    # retention purge of participants' personal details, sealing of any
+    # plain-text medical values and trip attendance (daily).
+    try:
+        from education_system.systems.university.services.bus.jobs import trip_jobs
+        trip_jobs.start_worker()
+    except Exception as exc:
+        logger.debug("University trip jobs worker not started: %s", exc)
+
+    # Student Support / Helpdesk jobs: escalation rules every five minutes
+    # (each rule acts on a ticket once), the support metrics hourly.
+    try:
+        from education_system.systems.university.services.bus.jobs import support_jobs
+        support_jobs.start_worker()
+    except Exception as exc:
+        logger.debug("University support jobs worker not started: %s", exc)
+
+    # Staff HR jobs (daily): HR reminders (contract ends, probation, onboarding,
+    # right to work / DBS, documents), certification expiry, leave year, increments.
+    try:
+        from education_system.systems.university.services.bus.jobs import staff_hr_jobs
+        staff_hr_jobs.start_worker()
+    except Exception as exc:
+        logger.debug("University Staff HR jobs worker not started: %s", exc)
+
+    # UCAS results day: apply confirmations held under the results embargo
+    # once every result they rely on is published (every 15 minutes).
+    try:
+        from education_system.systems.university.services.bus.jobs import ucas_results_jobs
+        ucas_results_jobs.start_worker()
+    except Exception as exc:
+        logger.debug("University results-day hold job not started: %s", exc)
+
+    # Health clinic reminders: hourly 24h/2h appointment reminders (every
+    # clinic), feedback requests, screening reminders, waiting-list offers.
+    try:
+        from education_system.systems.university.domains.health.infrastructure.health import (
+            reminder_worker as health_reminder_worker,
+        )
+        health_reminder_worker.start_worker()
+    except Exception as exc:
+        logger.debug("University health reminder worker not started: %s", exc)
+
 
 def run_university_cli(user_info=None, role=None, shared_auth=None):
     from education_system.platform import branding
     branding.set_system_name("University System")
     _init_university()
-    from education_system.systems.university.infrastructure.i18n import init_i18n, get_text as _
+    from education_system.systems.university.infrastructure.i18n import get_text as _
+    from education_system.systems.university.infrastructure.i18n import init_i18n
     try:
         from education_system.platform.features.i18n import get_current_language
         lang = get_current_language()
@@ -133,7 +241,8 @@ def run_university_gui(user_info=None, role=None, shared_auth=None):
     from education_system.platform import branding
     branding.set_system_name("University System")
     _init_university()
-    from education_system.systems.university.infrastructure.i18n import init_i18n, get_text as _
+    from education_system.systems.university.infrastructure.i18n import get_text as _
+    from education_system.systems.university.infrastructure.i18n import init_i18n
     try:
         from education_system.platform.features.i18n import get_current_language
         lang = get_current_language()
@@ -203,15 +312,25 @@ _PHASE_ADAPTERS = {
     "primary":
         "education_system.systems.primary.domain.learners.pupils.cross_system_adapter",
     "secondary":
-        "education_system.systems.secondary.domain.admissions.cross_system_adapter",
+        "education_system.systems.secondary.infrastructure.integrations.cross_system_adapter",
     "sixth_form":
-        "education_system.systems.sixth_form.domain.progression.cross_system_adapter",
+        "education_system.systems.sixth_form.infrastructure.adapters.cross_system_adapter",
     "apprenticeships":
         "education_system.systems.apprenticeships.infrastructure.integrations.cross_system_adapter",
     "fe_college":
         "education_system.systems.fe_college.services.cross_system_adapter",
     "university":
         "education_system.systems.university.domains.admissions.domain.cross_system_adapter",
+    "alternative_provision":
+        "education_system.systems.alternative_provision.infrastructure.cross_system_adapter",
+    "special_education":
+        "education_system.systems.special_education.infrastructure.cross_system_adapter",
+    "adult_education":
+        "education_system.systems.adult_education.infrastructure.cross_system_adapter",
+    "training_provider":
+        "education_system.systems.training_provider.infrastructure.cross_system_adapter",
+    "local_authority":
+        "education_system.systems.local_authority.infrastructure.cross_system_adapter",
 }
 
 
@@ -279,7 +398,9 @@ def _drain_progression(system_key):
     if system_key == "apprenticeships":
         try:
             from education_system.platform.integrations.external import cross_system_bus
-            from education_system.systems.apprenticeships.infrastructure.integrations import degree_events
+            from education_system.systems.apprenticeships.infrastructure.integrations import (
+                degree_events,
+            )
             degree_events.register_consumers()
             cross_system_bus.poll_and_dispatch("apprenticeships")
         except Exception as exc:
@@ -329,7 +450,7 @@ def run_secondarysch_cli(user_info=None, role=None, shared_auth=None):
     branding.set_system_name(SYSTEM_NAME)
     _drain_progression("secondary")
     _start_security_training_links()
-    from education_system.systems.secondary.cli_main import run
+    from education_system.systems.secondary.app.cli_main import run
     run(user_info=user_info, role=role, shared_auth=shared_auth)
 
 
@@ -339,7 +460,7 @@ def run_secondarysch_gui(user_info=None, role=None, shared_auth=None):
     branding.set_system_name(SYSTEM_NAME)
     _drain_progression("secondary")
     _start_security_training_links()
-    from education_system.systems.secondary.gui_main import run
+    from education_system.systems.secondary.app.gui_main import run
     run(user_info=user_info, role=role, shared_auth=shared_auth)
 
 
@@ -403,6 +524,120 @@ def run_fecollege_gui(user_info=None, role=None, shared_auth=None):
     run(user_info=user_info, role=role, shared_auth=shared_auth)
 
 
+def run_special_education_cli(user_info=None, role=None, shared_auth=None):
+    # No _drain_progression: SEND has a learner adapter (school requests and
+    # EHCP updates, platform.cross_system.send_referrals) but no
+    # SYSTEM_DB_PATHS entry, so it isn't a full cross-system member.
+    from education_system.platform import branding
+    from education_system.systems.special_education import SYSTEM_NAME
+    branding.set_system_name(SYSTEM_NAME)
+    _start_security_training_links()
+    _register_phase_adapter("special_education")
+    from education_system.systems.special_education.app.cli_main import run
+    run(user_info=user_info, role=role, shared_auth=shared_auth)
+
+
+def run_special_education_gui(user_info=None, role=None, shared_auth=None):
+    from education_system.platform import branding
+    from education_system.systems.special_education import SYSTEM_NAME
+    branding.set_system_name(SYSTEM_NAME)
+    _start_security_training_links()
+    _register_phase_adapter("special_education")
+    from education_system.systems.special_education.app.gui_main import run
+    run(user_info=user_info, role=role, shared_auth=shared_auth)
+
+
+def run_adult_education_cli(user_info=None, role=None, shared_auth=None):
+    # Linked to FE College and University through its adapter (referrals
+    # both ways with FE, Access to HE applications to university); no
+    # progression intake to drain and no SYSTEM_DB_PATHS entry yet.
+    from education_system.platform import branding
+    from education_system.systems.adult_education import SYSTEM_NAME
+    branding.set_system_name(SYSTEM_NAME)
+    _start_security_training_links()
+    _register_phase_adapter("adult_education")
+    from education_system.systems.adult_education.app.cli_main import run
+    run(user_info=user_info, role=role, shared_auth=shared_auth)
+
+
+def run_adult_education_gui(user_info=None, role=None, shared_auth=None):
+    from education_system.platform import branding
+    from education_system.systems.adult_education import SYSTEM_NAME
+    branding.set_system_name(SYSTEM_NAME)
+    _start_security_training_links()
+    _register_phase_adapter("adult_education")
+    from education_system.systems.adult_education.app.gui_main import run
+    run(user_info=user_info, role=role, shared_auth=shared_auth)
+
+
+def run_alternative_provision_cli(user_info=None, role=None, shared_auth=None):
+    # Linked to primary and secondary through its adapter (school referrals
+    # in, reintegration out); no progression intake to drain and no
+    # SYSTEM_DB_PATHS entry yet.
+    from education_system.platform import branding
+    from education_system.systems.alternative_provision import SYSTEM_NAME
+    branding.set_system_name(SYSTEM_NAME)
+    _start_security_training_links()
+    _register_phase_adapter("alternative_provision")
+    from education_system.systems.alternative_provision.app.cli_main import run
+    run(user_info=user_info, role=role, shared_auth=shared_auth)
+
+
+def run_alternative_provision_gui(user_info=None, role=None, shared_auth=None):
+    from education_system.platform import branding
+    from education_system.systems.alternative_provision import SYSTEM_NAME
+    branding.set_system_name(SYSTEM_NAME)
+    _start_security_training_links()
+    _register_phase_adapter("alternative_provision")
+    from education_system.systems.alternative_provision.app.gui_main import run
+    run(user_info=user_info, role=role, shared_auth=shared_auth)
+
+
+def run_training_provider_cli(user_info=None, role=None, shared_auth=None):
+    # Linked to Apprenticeships and FE College through its adapter (training
+    # requests in, progression out); no progression intake to drain and no
+    # SYSTEM_DB_PATHS entry yet.
+    from education_system.platform import branding
+    from education_system.systems.training_provider import SYSTEM_NAME
+    branding.set_system_name(SYSTEM_NAME)
+    _start_security_training_links()
+    _register_phase_adapter("training_provider")
+    from education_system.systems.training_provider.app.cli_main import run
+    run(user_info=user_info, role=role, shared_auth=shared_auth)
+
+
+def run_training_provider_gui(user_info=None, role=None, shared_auth=None):
+    from education_system.platform import branding
+    from education_system.systems.training_provider import SYSTEM_NAME
+    branding.set_system_name(SYSTEM_NAME)
+    _start_security_training_links()
+    _register_phase_adapter("training_provider")
+    from education_system.systems.training_provider.app.gui_main import run
+    run(user_info=user_info, role=role, shared_auth=shared_auth)
+
+
+def run_local_authority_cli(user_info=None, role=None, shared_auth=None):
+    # No _drain_progression: Local Authority has a learner adapter (linked to
+    # Primary and Secondary) but no SYSTEM_DB_PATHS entry.
+    from education_system.platform import branding
+    from education_system.systems.local_authority import SYSTEM_NAME
+    branding.set_system_name(SYSTEM_NAME)
+    _start_security_training_links()
+    _register_phase_adapter("local_authority")
+    from education_system.systems.local_authority.app.cli_main import run
+    run(user_info=user_info, role=role, shared_auth=shared_auth)
+
+
+def run_local_authority_gui(user_info=None, role=None, shared_auth=None):
+    from education_system.platform import branding
+    from education_system.systems.local_authority import SYSTEM_NAME
+    branding.set_system_name(SYSTEM_NAME)
+    _start_security_training_links()
+    _register_phase_adapter("local_authority")
+    from education_system.systems.local_authority.app.gui_main import run
+    run(user_info=user_info, role=role, shared_auth=shared_auth)
+
+
 def run_nursery_cli(user_info=None, role=None, shared_auth=None):
     from education_system.platform import branding
     from education_system.systems.nursery import SYSTEM_NAME
@@ -456,6 +691,26 @@ def run_nursery_tests():
 
 def run_fecollege_tests():
     return _run_pytest("tests/unit/systems/fe_college")
+
+
+def run_special_education_tests():
+    return _run_pytest("tests/unit/systems/special_education")
+
+
+def run_adult_education_tests():
+    return _run_pytest("tests/unit/systems/adult_education")
+
+
+def run_alternative_provision_tests():
+    return _run_pytest("tests/unit/systems/alternative_provision")
+
+
+def run_training_provider_tests():
+    return _run_pytest("tests/unit/systems/training_provider")
+
+
+def run_local_authority_tests():
+    return _run_pytest("tests/unit/systems/local_authority")
 
 
 def run_apprenticeships_tests():
@@ -553,14 +808,41 @@ LAUNCHERS = {
     ("fe_college", "cli"):  run_fecollege_cli,
     ("fe_college", "gui"):  run_fecollege_gui,
     ("fe_college", "test"): run_fecollege_tests,
+    # Special Education (SEND) — auth seed key is "special_education". Signed
+    # in like the others, but not a cross-system member yet.
+    ("special_education", "cli"):  run_special_education_cli,
+    ("special_education", "gui"):  run_special_education_gui,
+    ("special_education", "test"): run_special_education_tests,
+    # Adult Education — auth seed key is "adult_education". Signed in like the
+    # others, but not a cross-system member yet.
+    ("adult_education", "cli"):  run_adult_education_cli,
+    ("adult_education", "gui"):  run_adult_education_gui,
+    ("adult_education", "test"): run_adult_education_tests,
+    # Alternative Provision — auth seed key is "alternative_provision". Signed
+    # in like the others, but not a cross-system member yet.
+    ("alternative_provision", "cli"):  run_alternative_provision_cli,
+    ("alternative_provision", "gui"):  run_alternative_provision_gui,
+    ("alternative_provision", "test"): run_alternative_provision_tests,
+    # Training Provider — auth seed key is "training_provider". Signed in like
+    # the others, but not a cross-system member yet.
+    ("training_provider", "cli"):  run_training_provider_cli,
+    ("training_provider", "gui"):  run_training_provider_gui,
+    ("training_provider", "test"): run_training_provider_tests,
+    # Local Authority Education — auth seed key is "local_authority". Signed in
+    # like the others, but not a cross-system member yet.
+    ("local_authority", "cli"):  run_local_authority_cli,
+    ("local_authority", "gui"):  run_local_authority_gui,
+    ("local_authority", "test"): run_local_authority_tests,
 }
 
 # Systems that support pre-authenticated launch
 AUTH_GUI_SYSTEMS = {
     "university", "sixth_form", "secondary", "primary", "nursery",
-    "apprenticeships", "fe_college",
+    "apprenticeships", "fe_college", "special_education", "adult_education",
+    "alternative_provision", "training_provider", "local_authority",
 }
 AUTH_CLI_SYSTEMS = {
     "university", "sixth_form", "secondary", "primary", "nursery",
-    "apprenticeships", "fe_college",
+    "apprenticeships", "fe_college", "special_education", "adult_education",
+    "alternative_provision", "training_provider", "local_authority",
 }

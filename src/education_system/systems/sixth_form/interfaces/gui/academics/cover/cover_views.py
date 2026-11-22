@@ -6,7 +6,9 @@ from education_system.systems.sixth_form.interfaces.gui._ui import grab_when_vie
 import datetime as _dt
 import logging
 import tkinter as tk
-from tkinter import messagebox, ttk
+from tkinter import ttk
+from education_system.systems.sixth_form.interfaces.gui._sidebar import SidebarBook
+from education_system.platform.delivery.gui.parented_dialogs import messagebox
 from typing import Callable
 from education_system.platform import branding
 from education_system.systems.sixth_form.domain.academics.cover import (
@@ -38,7 +40,7 @@ def open_cover_window(parent=None) -> None:
     win.geometry(WIN_GEOMETRY)
     win.minsize(*WIN_MINSIZE)
 
-    nb = ttk.Notebook(win)
+    nb = SidebarBook(win)
     nb.pack(fill="both", expand=True, padx=10, pady=10)
 
     CoverTab(nb, scope="today",   label="Today")
@@ -181,8 +183,27 @@ class CoverTab:
         ttk.Button(actions, text="Delete",
                     command=self._delete_selected).pack(side="left",
                                                           padx=4)
+        ttk.Button(actions, text="Sync from staff absences",
+                    command=self._sync_absences).pack(side="left",
+                                                       padx=4)
         ttk.Button(actions, text="Refresh",
                     command=self.refresh).pack(side="right")
+
+    def _sync_absences(self) -> None:
+        try:
+            results = data.sync_open_absences()
+        except Exception as e:
+            logger.exception("Cover sync from staff absences failed")
+            messagebox.showerror("Sync", str(e))
+            return
+        created = sum(r.created + r.reopened for r in results)
+        cancelled = sum(r.cancelled for r in results)
+        messagebox.showinfo(
+            "Sync from staff absences",
+            f"{len(results)} open absence(s) checked against the "
+            f"timetable.\n{created} lesson(s) added for cover, "
+            f"{cancelled} stood down.")
+        self.refresh()
 
     def _clear(self) -> None:
         self.f_status.current(0)
@@ -275,6 +296,11 @@ class CoverTab:
                 f"Agency teacher  : {r.agency_teacher or '—'}")
         else:
             lines.append(f"Cover staff     : {r.cover_staff or '—'}")
+        if r.slot_id or r.staff_absence_id:
+            lines.append(
+                f"Timetable slot  : #{r.slot_id or '—'}   "
+                f"Staff absence: #{r.staff_absence_id or '—'}   "
+                f"Source: {r.source or 'manual'}")
         lines.extend([
             f"Status          : {r.status}",
             f"Requested on    : {r.requested_on or '—'}",
@@ -561,8 +587,32 @@ class AllocateDialog:
             self.agency_teacher_e.insert(0, self.existing.agency_teacher)
         self.agency_teacher_e.grid(row=4, column=1, sticky="w", padx=6)
 
+        ttk.Label(form, text="Free staff\n(suggested):",
+                  justify="right").grid(row=5, column=0, sticky="ne",
+                                        pady=4)
+        sug_box = ttk.Frame(form)
+        sug_box.grid(row=5, column=1, sticky="w", padx=6)
+        self.sug_list = tk.Listbox(sug_box, width=70, height=7,
+                                   exportselection=False)
+        self.sug_list.pack(side="left")
+        self.sug_list.bind("<Double-1>", lambda _e: self._use_suggestion())
+        ttk.Button(sug_box, text="Use",
+                   command=self._use_suggestion).pack(side="left",
+                                                      padx=4, anchor="n")
+        try:
+            self._suggestions = data.suggest_cover_staff(
+                self.existing.cover_id)
+        except Exception:
+            logger.exception("Cover suggestions failed")
+            self._suggestions = []
+        for sug in self._suggestions:
+            self.sug_list.insert("end", sug.label)
+        if not self._suggestions:
+            self.sug_list.insert(
+                "end", "(nobody free on the timetable at that time)")
+
         bar = ttk.Frame(form)
-        bar.grid(row=5, column=0, columnspan=2, pady=(12, 0))
+        bar.grid(row=6, column=0, columnspan=2, pady=(12, 0))
         ttk.Button(bar, text="Allocate",
                     command=self._save).pack(side="left")
         ttk.Button(bar, text="Cancel",
@@ -580,6 +630,15 @@ class AllocateDialog:
         self.agency_teacher_e.configure(
             state="normal" if is_agency else "disabled")
 
+    def _use_suggestion(self) -> None:
+        sel = self.sug_list.curselection()
+        if not sel or sel[0] >= len(self._suggestions):
+            return
+        self.type_cb.set("Internal")
+        self._on_type_change()
+        self.staff_e.delete(0, "end")
+        self.staff_e.insert(0, self._suggestions[sel[0]].name)
+
     def _save(self) -> None:
         ctype = self.type_cb.get()
         kwargs: dict = {"cover_type": ctype}
@@ -595,8 +654,22 @@ class AllocateDialog:
             kwargs["agency_teacher"] = (
                 self.agency_teacher_e.get().strip() or None)
         try:
-            data.allocate(self.existing.cover_id, **kwargs)
-        except (ValidationError, Exception) as e:
+            data.allocate(self.existing.cover_id, check_free=True,
+                          **kwargs)
+        except ValidationError as e:
+            if "is not free" in str(e) and messagebox.askyesno(
+                    "Not free", f"{e}.\n\nAllocate anyway?",
+                    parent=self.win):
+                try:
+                    data.allocate(self.existing.cover_id, **kwargs)
+                except Exception as e2:
+                    messagebox.showerror("Allocate failed", str(e2))
+                    return
+            else:
+                if "is not free" not in str(e):
+                    messagebox.showerror("Allocate failed", str(e))
+                return
+        except Exception as e:
             messagebox.showerror("Allocate failed", str(e))
             return
         self.win.destroy()

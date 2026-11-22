@@ -99,7 +99,7 @@ from education_system.systems.university.infrastructure.utils.language_selector 
 from education_system.systems.university.infrastructure.database.database_utils import cleanup_database_connections
 
 # Module definitions
-from education_system.systems.university.domains.academics.domain.services.modules import (
+from education_system.systems.university.domains.curriculum.domain.modules import (
     compulsory_module_1,
     compulsory_module_2,
     optional_module_1,
@@ -117,20 +117,20 @@ from education_system.systems.university.domains.academics.domain.services.modul
 )
 
 # Assignment system
-from education_system.systems.university.domains.academics.domain.services.assignments.assignment_submission import (
+from education_system.systems.university.domains.assessment.domain.assignments.assignment_submission import (
     display_assignment_menu,
     init_assignment_system,
     add_assignment_permissions
 )
 
-# Academic Misconduct CLI
-try:
-    from education_system.systems.university.shell.cli.services.academic_misconduct_cli import academic_misconduct_menu
-    ACADEMIC_MISCONDUCT_AVAILABLE = True
-except ImportError as e:
-    academic_misconduct_menu = None
-    ACADEMIC_MISCONDUCT_AVAILABLE = False
-    logger.warning(f"Academic Misconduct CLI not available: {e}")
+# Academic misconduct is the academic integrity case workflow (the old
+# misconduct CLI and its table are retired).
+def academic_misconduct_menu(auth=None):
+    from education_system.systems.university.shell.cli.integrity_menu import integrity_menu
+    integrity_menu(auth if auth is not None else get_auth())
+
+
+ACADEMIC_MISCONDUCT_AVAILABLE = True
 
 # Security Desk CLI
 try:
@@ -307,7 +307,7 @@ except ImportError as e:
 
 # Degree Audit CLI
 try:
-    from education_system.systems.university.domains.academics.interfaces.gui.course_management_gui.cli.degree_audit_cli import launch_degree_audit_cli
+    from education_system.systems.university.domains.curriculum.interfaces.gui.course_management_gui.cli.degree_audit_cli import launch_degree_audit_cli
     DEGREE_AUDIT_CLI_AVAILABLE = True
 except ImportError as e:
     launch_degree_audit_cli = None
@@ -316,7 +316,7 @@ except ImportError as e:
 
 # Graduation Ceremony CLI
 try:
-    from education_system.systems.university.domains.academics.interfaces.cli.graduation_ceremony_cli import launch_graduation_ceremony_cli
+    from education_system.systems.university.domains.progression.interfaces.cli.graduation_ceremony_cli import launch_graduation_ceremony_cli
     GRADUATION_CEREMONY_CLI_AVAILABLE = True
 except ImportError as e:
     launch_graduation_ceremony_cli = None
@@ -343,7 +343,7 @@ except ImportError as e:
 
 # Dentist CLI
 try:
-    from education_system.systems.university.domains.pastoral.domain.health.portal.dentist_cli import dentist_menu
+    from education_system.systems.university.domains.health.domain.health.portal.dentist_cli import dentist_menu
     DENTIST_AVAILABLE = True
 except ImportError as e:
     dentist_menu = None
@@ -376,12 +376,6 @@ except ImportError as e:
     MFAService = None
     MFA_AVAILABLE = False
     logger.warning(f"MFA services not available: {e}")
-
-try:
-    from education_system.systems.university.infrastructure.auth.mfa_integration import integrate_mfa_with_auth
-    MFA_INTEGRATION_AVAILABLE = True
-except ImportError:
-    MFA_INTEGRATION_AVAILABLE = False
 
 try:
     from education_system.systems.university.infrastructure.auth.email_otp_service import EmailOTPService
@@ -449,15 +443,15 @@ except ImportError as e:
     logger.warning(f"Security Dashboard CLI not available: {e}")
 
 # Student Union modules
-from education_system.systems.university.domains.pastoral.domain.student_life.student_union.clubs import club_management as su_club
-from education_system.systems.university.domains.pastoral.domain.student_life.student_union.events import event_management as su_event
-from education_system.systems.university.domains.pastoral.domain.student_life.student_union.facilities import facility_management as su_fac
-from education_system.systems.university.domains.pastoral.domain.student_life.student_union.administration import (
+from education_system.systems.university.domains.student_life.domain.student_life.student_union.clubs import club_management as su_club
+from education_system.systems.university.domains.student_life.domain.student_life.student_union.events import event_management as su_event
+from education_system.systems.university.domains.student_life.domain.student_life.student_union.facilities import facility_management as su_fac
+from education_system.systems.university.domains.student_life.domain.student_life.student_union.administration import (
     admin_management as su_admin,
     finance_oversight as su_fin,
     student_union_core,
 )
-from education_system.systems.university.domains.pastoral.domain.student_life.student_union.elections import election_management as su_elec
+from education_system.systems.university.domains.student_life.domain.student_life.student_union.elections import election_management as su_elec
 
 # Trip Management
 from education_system.systems.university.domains.operations.domain.campus.mobility.services.trip_management import (
@@ -475,24 +469,21 @@ from education_system.systems.university.domains.operations.domain.campus.housin
     set_auth as set_accommodation_auth,
 )
 
-# AI Detector
-from education_system.systems.university.infrastructure.ai.ai_detector.detector import AIDetector
-
 # Academic Calendar
-from education_system.systems.university.domains.academics.domain.services.academic_calendar.cli import (
+from education_system.systems.university.domains.teaching.domain.academic_calendar.cli import (
     display_academic_calendar_menu,
     set_auth as set_calendar_auth,
     ensure_calendar_permissions,
 )
 
 # Course Management
-from education_system.systems.university.domains.academics.domain.services.course_management import display_course_management_menu
+from education_system.systems.university.domains.curriculum.domain.course_management import display_course_management_menu
 
 # Log Management
 from education_system.systems.university.infrastructure.logging.log_management import display_log_management_menu
 
 # Parent Portal
-from education_system.systems.university.domains.academics.domain.services.parent_portal import (
+from education_system.systems.university.domains.learners.domain.parent_portal import (
     ParentPortal,
     integrate_parent_portal_with_main,
     display_parent_portal_menu,
@@ -601,7 +592,7 @@ except ImportError as e:
 def get_enhanced_reporting():
     """Lazy import for enhanced reporting"""
     try:
-        from education_system.systems.university.services.analytics.enhanced_reporting import display_enhanced_reporting_menu
+        from education_system.systems.university.shared.analytics.enhanced_reporting import display_enhanced_reporting_menu
         return display_enhanced_reporting_menu
     except ImportError:
         return None
@@ -609,7 +600,7 @@ def get_enhanced_reporting():
 def get_predictive_analytics():
     """Lazy import for predictive analytics GUI class"""
     try:
-        from education_system.systems.university.services.analytics.predictive_analytics_gui import PredictiveAnalyticsGUI
+        from education_system.systems.university.shell.gui.analytics.predictive_analytics_gui import PredictiveAnalyticsGUI
         return PredictiveAnalyticsGUI
     except ImportError:
         return None
@@ -617,7 +608,7 @@ def get_predictive_analytics():
 def get_business_intelligence():
     """Lazy import for business intelligence"""
     try:
-        from education_system.systems.university.services.business_intelligence.bi_reports_core import display_business_intelligence_menu
+        from education_system.systems.university.shared.analytics.business_intelligence.bi_reports_core import display_business_intelligence_menu
         return display_business_intelligence_menu
     except ImportError:
         return None
@@ -625,7 +616,7 @@ def get_business_intelligence():
 def get_enhanced_menu():
     """Lazy import for enhanced search menu"""
     try:
-        from education_system.systems.university.services.analytics.advanced_search.menu import display_enhanced_menu
+        from education_system.systems.university.shell.cli.student_search_cli import display_enhanced_menu
         return display_enhanced_menu
     except ImportError:
         return None
@@ -676,7 +667,7 @@ __all__ = [
     'BARBER_SHOP_AVAILABLE', 'NAILBAR_AVAILABLE', 'CINEMA_AVAILABLE',
     'MEDICAL_ACCOMMODATION_AVAILABLE', 'DEGREE_AUDIT_CLI_AVAILABLE',
     'MAIL_POST_AVAILABLE', 'GYM_AVAILABLE', 'DENTIST_AVAILABLE',
-    'MFA_AVAILABLE', 'MFA_INTEGRATION_AVAILABLE', 'EMAIL_OTP_AVAILABLE',
+    'MFA_AVAILABLE', 'EMAIL_OTP_AVAILABLE',
     'SMS_PROVIDER_AVAILABLE', 'SESSION_MANAGEMENT_AVAILABLE',
     'COMPREHENSIVE_SECURITY_AVAILABLE', 'DATA_ENCRYPTION_AVAILABLE',
     'SECURITY_DASHBOARD_CLI_AVAILABLE', 'CHARITY_SHOP_CLI_AVAILABLE',

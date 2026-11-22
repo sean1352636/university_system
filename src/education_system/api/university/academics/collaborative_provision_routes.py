@@ -6,8 +6,12 @@ import logging
 
 from flask import Blueprint, jsonify, request
 
-from education_system.platform.delivery.api.university.auth import token_required
-from education_system.systems.university.domains.academics.domain.collaborative_provision._db_init import (
+from education_system.platform.delivery.api.university.auth import (
+    is_staff,
+    staff_required,
+    token_required,
+)
+from education_system.systems.university.domains.curriculum.domain.collaborative_provision._db_init import (
     AGREEMENT_STATUSES,
     DELIVERY_MODELS,
     PARTNER_TYPES,
@@ -15,7 +19,7 @@ from education_system.systems.university.domains.academics.domain.collaborative_
     REVIEW_TYPES,
     RISK_LEVELS,
 )
-from education_system.systems.university.domains.academics.domain.collaborative_provision.services.collaborative_provision_service import (
+from education_system.systems.university.domains.curriculum.domain.collaborative_provision.services.collaborative_provision_service import (
     CollaborativeProvisionService,
 )
 from education_system.systems.university.infrastructure.activity_logger import log_activity
@@ -24,6 +28,17 @@ logger = logging.getLogger(__name__)
 
 collaborative_provision_bp = Blueprint(
     "collaborative_provision", __name__, url_prefix="/api/collaborative-provision")
+
+
+#: Partner contracts, reviews, cohorts and risk ratings are staff-internal:
+#: any staff role may read them. Changing them needs ``manage_courses``
+#: (admin, staff) - instructors and learners cannot.
+COLLAB_MANAGE = "manage_courses"
+
+#: Partner fields a non-staff caller may see. The partner list is reference
+#: information; contacts, due diligence, risk and notes are not.
+_PUBLIC_PARTNER_FIELDS = ("partner_id", "name", "partner_type", "country",
+                          "city", "website")
 
 
 def _service() -> CollaborativeProvisionService:
@@ -49,6 +64,7 @@ def vocabulary():
 
 @collaborative_provision_bp.route("/summary", methods=["GET"])
 @token_required
+@staff_required
 def summary():
     return jsonify(_service().summary())
 
@@ -62,11 +78,14 @@ def list_partners():
         active_only=request.args.get("active", "1") != "0",
         country=request.args.get("country"),
         search=request.args.get("search"))
+    if not is_staff():
+        items = [{k: p.get(k) for k in _PUBLIC_PARTNER_FIELDS} for p in items]
     return jsonify({"items": items, "total": len(items)})
 
 
 @collaborative_provision_bp.route("/partners", methods=["POST"])
 @token_required
+@staff_required(permission=COLLAB_MANAGE)
 def create_partner():
     data = _payload()
     if not (data.get("name") or "").strip():
@@ -88,6 +107,7 @@ def create_partner():
 
 @collaborative_provision_bp.route("/partners/<int:partner_id>", methods=["GET"])
 @token_required
+@staff_required
 def get_partner(partner_id: int):
     partner = _service().get_partner(partner_id)
     if partner is None:
@@ -97,6 +117,7 @@ def get_partner(partner_id: int):
 
 @collaborative_provision_bp.route("/partners/<int:partner_id>", methods=["PATCH"])
 @token_required
+@staff_required(permission=COLLAB_MANAGE)
 def update_partner(partner_id: int):
     if not _service().update_partner(partner_id, **_payload()):
         return jsonify({"error": "no updatable fields supplied"}), 400
@@ -107,6 +128,7 @@ def update_partner(partner_id: int):
 
 @collaborative_provision_bp.route("/agreements", methods=["GET"])
 @token_required
+@staff_required
 def list_agreements():
     items = _service().list_agreements(
         partner_id=request.args.get("partner_id", type=int),
@@ -117,6 +139,7 @@ def list_agreements():
 
 @collaborative_provision_bp.route("/agreements", methods=["POST"])
 @token_required
+@staff_required(permission=COLLAB_MANAGE)
 def create_agreement():
     data = _payload()
     if not data.get("partner_id") or not data.get("delivery_model"):
@@ -137,6 +160,7 @@ def create_agreement():
 
 @collaborative_provision_bp.route("/agreements/<int:agreement_id>", methods=["GET"])
 @token_required
+@staff_required
 def get_agreement(agreement_id: int):
     agreement = _service().get_agreement(agreement_id)
     if agreement is None:
@@ -146,6 +170,7 @@ def get_agreement(agreement_id: int):
 
 @collaborative_provision_bp.route("/agreements/<int:agreement_id>", methods=["PATCH"])
 @token_required
+@staff_required(permission=COLLAB_MANAGE)
 def update_agreement(agreement_id: int):
     try:
         updated = _service().update_agreement(agreement_id, **_payload())
@@ -160,6 +185,7 @@ def update_agreement(agreement_id: int):
 
 @collaborative_provision_bp.route("/programmes", methods=["GET"])
 @token_required
+@staff_required
 def list_programmes():
     items = _service().list_programmes(
         agreement_id=request.args.get("agreement_id", type=int),
@@ -169,6 +195,7 @@ def list_programmes():
 
 @collaborative_provision_bp.route("/programmes", methods=["POST"])
 @token_required
+@staff_required(permission=COLLAB_MANAGE)
 def create_programme():
     data = _payload()
     if not data.get("agreement_id") or not data.get("programme_title"):
@@ -187,6 +214,7 @@ def create_programme():
 
 @collaborative_provision_bp.route("/programmes/unlinked", methods=["GET"])
 @token_required
+@staff_required
 def unlinked_programmes():
     items = _service().unlinked_programmes()
     return jsonify({"items": items, "total": len(items)})
@@ -194,6 +222,7 @@ def unlinked_programmes():
 
 @collaborative_provision_bp.route("/cohorts", methods=["GET"])
 @token_required
+@staff_required
 def list_cohorts():
     items = _service().list_cohorts(
         collab_programme_id=request.args.get("collab_programme_id", type=int),
@@ -203,6 +232,7 @@ def list_cohorts():
 
 @collaborative_provision_bp.route("/cohorts", methods=["POST"])
 @token_required
+@staff_required(permission=COLLAB_MANAGE)
 def create_cohort():
     data = _payload()
     if not data.get("collab_programme_id") or not data.get("academic_year"):
@@ -218,6 +248,7 @@ def create_cohort():
 
 @collaborative_provision_bp.route("/cohorts/<int:cohort_id>", methods=["PATCH"])
 @token_required
+@staff_required(permission=COLLAB_MANAGE)
 def update_cohort(cohort_id: int):
     if not _service().update_cohort(cohort_id, **_payload()):
         return jsonify({"error": "no updatable fields supplied"}), 400
@@ -228,6 +259,7 @@ def update_cohort(cohort_id: int):
 
 @collaborative_provision_bp.route("/reviews", methods=["GET"])
 @token_required
+@staff_required
 def list_reviews():
     items = _service().list_reviews(
         partner_id=request.args.get("partner_id", type=int))
@@ -236,6 +268,7 @@ def list_reviews():
 
 @collaborative_provision_bp.route("/reviews", methods=["POST"])
 @token_required
+@staff_required(permission=COLLAB_MANAGE)
 def create_review():
     data = _payload()
     required = ("partner_id", "review_type", "review_date")
@@ -253,6 +286,7 @@ def create_review():
 
 @collaborative_provision_bp.route("/monitoring/overdue-reviews", methods=["GET"])
 @token_required
+@staff_required
 def overdue_reviews():
     items = _service().overdue_reviews(as_of=request.args.get("as_of"))
     return jsonify({"items": items, "total": len(items)})
@@ -260,6 +294,7 @@ def overdue_reviews():
 
 @collaborative_provision_bp.route("/monitoring/expiring", methods=["GET"])
 @token_required
+@staff_required
 def expiring_agreements():
     items = _service().expiring_agreements(
         within_days=request.args.get("within_days", default=180, type=int))
@@ -268,6 +303,7 @@ def expiring_agreements():
 
 @collaborative_provision_bp.route("/monitoring/over-recruited", methods=["GET"])
 @token_required
+@staff_required
 def over_recruited():
     items = _service().over_recruited()
     return jsonify({"items": items, "total": len(items)})
@@ -275,6 +311,7 @@ def over_recruited():
 
 @collaborative_provision_bp.route("/provision-map", methods=["GET"])
 @token_required
+@staff_required
 def provision_map():
     items = _service().provision_map()
     return jsonify({"items": items, "total": len(items)})

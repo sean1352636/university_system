@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import logging
 from typing import Any
-from education_system.systems.sixth_form.interfaces import about as data
+from education_system.systems.sixth_form.domain.governance.about import about as data
 
 logger = logging.getLogger(__name__)
 

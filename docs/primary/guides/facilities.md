@@ -188,7 +188,7 @@ Record and manage incidents, accidents, and near-misses.
 
 | Module | Access Path | Key Roles |
 |---|---|---|
-| Room Booking | Sidebar → Facilities → Room Booking | admin, teacher |
-| Assets | Sidebar → Facilities → Assets | admin |
-| Visitors | Sidebar → Facilities → Visitors | admin |
-| Incidents | Sidebar → Facilities → Incidents | admin, teacher |
+| Room Booking | No menu entry at present | admin, teacher |
+| Assets | Sidebar → System → Assets | admin |
+| Visitors | Sidebar → Staff & Communication → Visitors | admin |
+| Incidents | Sidebar → System → Health & Safety | admin, teacher |

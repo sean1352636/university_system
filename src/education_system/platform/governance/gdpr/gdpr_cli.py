@@ -5,7 +5,11 @@ searching students across systems, generating SAR reports,
 exporting data, anonymising records, and checking data retention.
 """
 
-from education_system.platform.governance.gdpr.gdpr_service import GDPRService, SYSTEM_LABELS
+from education_system.platform.governance.gdpr.gdpr_service import (
+    AmbiguousSubjectError,
+    GDPRService,
+    SYSTEM_LABELS,
+)
 
 SYSTEM_KEYS = ["primary", "secondary", "sixth_form", "university"]
 
@@ -40,6 +44,31 @@ def _search_student(svc):
     print()
 
 
+def _with_exact_subject(name, call):
+    """Run ``call(student_ids)``; when the name matches more than one
+    person, list the candidates and ask for the right id per system."""
+    try:
+        return call(None)
+    except AmbiguousSubjectError as e:
+        print(f"\n  {e}")
+        ids = {}
+        for system, rows in e.candidates.items():
+            print(f"\n  {SYSTEM_LABELS.get(system, system)}:")
+            for r in rows:
+                print(f"    {r['id']}: {r['name']}  "
+                      f"(born {r['date_of_birth'] or '?'})")
+            sid = input("  Student id (blank to cancel): ").strip()
+            if not sid:
+                print("\n  Cancelled.")
+                return None
+            ids[system] = sid
+        try:
+            return call(ids)
+        except ValueError as e2:
+            print(f"\n  Error: {e2}")
+            return None
+
+
 def _generate_sar(svc):
     _print_header("Generate SAR Report")
     name = input("  Student name: ").strip()
@@ -47,7 +76,10 @@ def _generate_sar(svc):
         print("\n  Name is required.")
         return
 
-    report = svc.generate_sar_report(name)
+    report = _with_exact_subject(
+        name, lambda ids: svc.generate_sar_report(name, student_ids=ids))
+    if report is None:
+        return
     print()
     print(report)
 
@@ -70,7 +102,10 @@ def _export_data(svc):
         print("\n  Name is required.")
         return
 
-    data = svc.get_full_data_export(name)
+    data = _with_exact_subject(
+        name, lambda ids: svc.get_full_data_export(name, student_ids=ids))
+    if data is None:
+        return
     if not data:
         print(f"\n  No data found for '{name}'.")
         return
@@ -114,6 +149,35 @@ def _anonymise_student(svc):
         return
     system = SYSTEM_KEYS[int(choice) - 1]
 
+    # Dry run: show exactly which records would change before asking.
+    student_id = None
+    try:
+        preview = svc.preview_anonymisation(name, system)
+        if preview["ambiguous"]:
+            print(f"\n  '{name}' matches more than one person:")
+            for r in preview["rows"]:
+                print(f"    {preview['id_column'] or 'rowid'} {r['id']}: "
+                      f"{r['name']}  (born {r['date_of_birth'] or '?'})")
+            student_id = input("  Student id to anonymise "
+                               "(blank to cancel): ").strip()
+            if not student_id:
+                print("\n  Cancelled.")
+                return
+            preview = svc.preview_anonymisation(
+                name, system, student_id=student_id)
+    except Exception as e:
+        print(f"\n  Error: {e}")
+        return
+    if not preview["rows"]:
+        print(f"\n  No record exactly matching '{name}' in "
+              f"{SYSTEM_LABELS.get(system, system)}.")
+        return
+    print("\n  These record(s) will be anonymised:")
+    for r in preview["rows"]:
+        print(f"    {preview['id_column'] or 'rowid'} {r['id']}: "
+              f"{r['name']}  (born {r['date_of_birth'] or '?'})")
+    print(f"  Fields redacted: {', '.join(preview['columns'])}")
+
     # Strong confirmation
     confirm = input(
         f"\n  Type '{name}' to confirm anonymisation in "
@@ -125,7 +189,7 @@ def _anonymise_student(svc):
         return
 
     try:
-        count = svc.anonymise_student(name, system)
+        count = svc.anonymise_student(name, system, student_id=student_id)
         print(f"\n  Successfully anonymised {count} record(s) for '{name}' "
               f"in {SYSTEM_LABELS.get(system, system)}.")
     except Exception as e:

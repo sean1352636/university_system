@@ -12,6 +12,10 @@ from datetime import datetime
 from typing import Any, Dict, List, Optional
 
 from education_system.systems.university.infrastructure.database.db import get_connection, transaction
+from education_system.systems.university.domains.staff.domain.staff_hr import access
+from education_system.systems.university.domains.staff.domain.staff_hr.services.managers import (
+    _people as people,
+)
 
 try:
     from education_system.systems.university.infrastructure.activity_logger import log_activity
@@ -36,6 +40,22 @@ class AdminToolsManager:
                 WHERE status = 'pending' AND current_approver = ?
                 ORDER BY submitted_date
             ''', (approver_id,)).fetchall()
+            return [dict(row) for row in rows]
+
+    @staticmethod
+    def get_pending_document_approvals(approver_id: str) -> List[Dict[str, Any]]:
+        """Documents waiting on this person, or on nobody in particular,
+        oldest first. Never their own: nobody approves what they submitted."""
+        with get_connection() as conn:
+            approver = people.key(approver_id, conn)
+            rows = conn.execute('''
+                SELECT *, document_title AS document_name,
+                       COALESCE(submitted_by_name, submitted_by) AS submitter_name
+                FROM document_approvals
+                WHERE status IN ('pending', 'in_review') AND submitted_by <> ?
+                  AND (current_approver = ? OR COALESCE(current_approver, '') = '')
+                ORDER BY submitted_date
+            ''', (approver, approver)).fetchall()
             return [dict(row) for row in rows]
 
     @staticmethod
@@ -169,6 +189,112 @@ class AdminToolsManager:
             return cursor.lastrowid
 
     @staticmethod
+    def submit_request(requested_by: str, request_type: str, target_department: str,
+                       description: Optional[str] = None, priority: str = 'normal',
+                       title: Optional[str] = None) -> int:
+        """A member of staff asks another department for something. The title
+        defaults to the first line of the description, and the asking
+        department comes from their staff profile."""
+        with get_connection() as conn:
+            person = people.key(requested_by, conn)
+            profile = conn.execute('SELECT department FROM staff_profiles WHERE user_id = ?',
+                                   (person,)).fetchone()
+            name = access.display_name(person, conn)
+        text = str(description or '').strip()
+        return AdminToolsManager.create_request(
+            person, request_type,
+            str(title or '').strip() or (text.splitlines()[0][:80] if text else request_type),
+            target_department,
+            from_department=profile[0] if profile else None,
+            requested_by_name=name, request_description=text or None,
+            priority='normal' if priority in (None, '', 'medium') else priority)
+
+    @staticmethod
+    def get_user_requests(user_id: str, limit: int = 50) -> List[Dict[str, Any]]:
+        """The requests a person has made, newest first."""
+        with get_connection() as conn:
+            rows = conn.execute('''
+                SELECT *, to_department AS target_department, created_at AS submitted_date
+                FROM interdepartmental_requests
+                WHERE requested_by = ?
+                ORDER BY created_at DESC LIMIT ?
+            ''', (people.key(user_id, conn), limit)).fetchall()
+            return [dict(row) for row in rows]
+
+    @staticmethod
+    def _may_decide_request(conn, row, who: dict) -> bool:
+        """The department asked or whoever it is assigned to decides a
+        request, or HR. Never the person who asked."""
+        name = who['username']
+        if row['requested_by'] == name:
+            return False
+        if row['assigned_to'] == name or access.is_hr(who, conn):
+            return True
+        mine = conn.execute('SELECT department FROM staff_profiles WHERE user_id = ?',
+                            (name,)).fetchone()
+        return bool(mine and mine[0] and mine[0] == row['to_department'])
+
+    @staticmethod
+    def get_pending_requests(user_id: str) -> List[Dict[str, Any]]:
+        """Pending requests this person may decide, oldest first."""
+        with get_connection() as conn:
+            who = people.decider(None, user_id, conn)
+            rows = conn.execute('''
+                SELECT *, COALESCE(requested_by_name, requested_by) AS requester_name
+                FROM interdepartmental_requests
+                WHERE status = 'pending'
+                ORDER BY created_at
+            ''').fetchall()
+            return [dict(row) for row in rows
+                    if AdminToolsManager._may_decide_request(conn, row, who)]
+
+    @staticmethod
+    def _pending_request_for(conn, request_id: int, user_id: str) -> Optional[dict]:
+        """The decider, when this request is pending (None otherwise).
+        PermissionError when they may not decide it."""
+        who = people.decider(None, user_id, conn)
+        row = conn.execute('SELECT * FROM interdepartmental_requests WHERE request_id = ?',
+                           (request_id,)).fetchone()
+        if not row or row['status'] != 'pending':
+            return None
+        if not AdminToolsManager._may_decide_request(conn, row, who):
+            raise PermissionError("Only the department asked or HR can decide this request")
+        return who
+
+    @staticmethod
+    def approve_request(request_id: int, user_id: str) -> bool:
+        """Accept a pending request: it moves to in progress with the person
+        accepting it. False when it is not pending."""
+        with transaction() as conn:
+            who = AdminToolsManager._pending_request_for(conn, request_id, user_id)
+            if not who:
+                return False
+            conn.execute('''
+                UPDATE interdepartmental_requests
+                SET status = 'in_progress', assigned_to = ?, assigned_to_name = ?, updated_at = ?
+                WHERE request_id = ?
+            ''', (who['username'], access.display_name(who['username'], conn),
+                  datetime.now().isoformat(), request_id))
+            return True
+
+    @staticmethod
+    def reject_request(request_id: int, user_id: str, reason: str) -> bool:
+        """Turn down a pending request: it is cancelled with the reason as its
+        response. False when it is not pending."""
+        now = datetime.now().isoformat()
+        with transaction() as conn:
+            who = AdminToolsManager._pending_request_for(conn, request_id, user_id)
+            if not who:
+                return False
+            conn.execute('''
+                UPDATE interdepartmental_requests
+                SET status = 'cancelled', response = ?, completed_date = ?, updated_at = ?
+                WHERE request_id = ?
+            ''', (f"Rejected by {who['username']}: {reason}" if reason
+                  else f"Rejected by {who['username']}", now, now, request_id))
+            return True
+
+    @staticmethod
     def assign_request(request_id: int, assigned_to: str,
                        assigned_to_name: Optional[str] = None) -> bool:
         """Assign a request to someone."""
@@ -245,6 +371,32 @@ class AdminToolsManager:
             ''', (f'Deactivated: {reason}' if reason else 'Deactivated', card_id))
             return True
 
+    @staticmethod
+    def deactivate_card_by_number(card_number: str, reason: Optional[str] = None) -> bool:
+        """Deactivate the access card with this number. False when no such card."""
+        with get_connection() as conn:
+            row = conn.execute('SELECT card_id FROM access_cards WHERE card_number = ?',
+                               (card_number,)).fetchone()
+        return AdminToolsManager.deactivate_access_card(row[0], reason) if row else False
+
+    @staticmethod
+    def report_lost_card(card_number: str, reported_by: Optional[str] = None) -> bool:
+        """Mark an access card lost, which stops it working. False when no
+        such card, or it was already reported."""
+        note = f"Reported lost {datetime.now().strftime('%Y-%m-%d')}"
+        if reported_by:
+            note += f" by {reported_by}"
+        with transaction() as conn:
+            cur = conn.execute('''
+                UPDATE access_cards
+                SET status = 'lost', notes = COALESCE(notes || ' | ', '') || ?
+                WHERE card_number = ? AND status <> 'lost'
+            ''', (note, card_number))
+            if cur.rowcount:
+                log_activity('update', 'access_card', details={'card_number': card_number,
+                                                               'action': 'reported_lost'})
+            return bool(cur.rowcount)
+
     # ==================== KEY ASSIGNMENTS ====================
 
     @staticmethod
@@ -282,6 +434,59 @@ class AdminToolsManager:
             log_activity('assign', 'key', user_id=user_id,
                         details={'key_number': key_number})
             return cursor.lastrowid
+
+    @staticmethod
+    def get_issued_keys() -> List[Dict[str, Any]]:
+        """Every key currently out with someone, latest first."""
+        with get_connection() as conn:
+            rows = conn.execute('''
+                SELECT *, room_location AS location, assigned_date AS issued_date,
+                       COALESCE(assigned_to_name, assigned_to) AS holder_name
+                FROM key_assignments
+                WHERE status = 'assigned'
+                ORDER BY assigned_date DESC
+            ''').fetchall()
+            return [dict(row) for row in rows]
+
+    @staticmethod
+    def issue_key(user_id: str, key_number: str, location: Optional[str] = None,
+                  issued_by: Optional[str] = None, **data) -> int:
+        """Hand a key to someone. One key can only be with one person, so a
+        key still out with someone must come back first."""
+        with get_connection() as conn:
+            if conn.execute("SELECT 1 FROM key_assignments WHERE key_number = ? "
+                            "AND status = 'assigned'", (key_number,)).fetchone():
+                raise ValueError(f"Key {key_number} is already issued")
+            holder = people.key(user_id, conn)
+            name = access.display_name(holder, conn)
+        return AdminToolsManager.assign_key(key_number, holder, issued_by,
+                                            room_location=location, assigned_to_name=name,
+                                            **data)
+
+    @staticmethod
+    def return_key_by_number(key_number: str) -> bool:
+        """Record the return of a key that is out. False when it is not out."""
+        with get_connection() as conn:
+            row = conn.execute("SELECT assignment_id FROM key_assignments WHERE key_number = ? "
+                               "AND status = 'assigned'", (key_number,)).fetchone()
+        return AdminToolsManager.return_key(row[0]) if row else False
+
+    @staticmethod
+    def report_lost_key(key_number: str, reported_by: Optional[str] = None) -> bool:
+        """Mark a key that is out as lost. False when it is not out."""
+        note = f"Reported lost {datetime.now().strftime('%Y-%m-%d')}"
+        if reported_by:
+            note += f" by {reported_by}"
+        with transaction() as conn:
+            cur = conn.execute('''
+                UPDATE key_assignments
+                SET status = 'lost', notes = COALESCE(notes || ' | ', '') || ?
+                WHERE key_number = ? AND status = 'assigned'
+            ''', (note, key_number))
+            if cur.rowcount:
+                log_activity('update', 'key', details={'key_number': key_number,
+                                                       'action': 'reported_lost'})
+            return bool(cur.rowcount)
 
     @staticmethod
     def return_key(assignment_id: int) -> bool:
@@ -336,6 +541,27 @@ class AdminToolsManager:
                   data.get('scheduled_time'), data.get('vehicle_registration'),
                   data.get('notes')))
             return cursor.lastrowid
+
+    @staticmethod
+    def find_visitor(reference: str) -> Optional[int]:
+        """The visitor a registration number or a name refers to: a name means
+        one of today's visitors. None when nobody matches; ValueError when a
+        name matches more than one."""
+        text = str(reference or '').strip()
+        if not text:
+            return None
+        with get_connection() as conn:
+            if text.isdigit():
+                row = conn.execute('SELECT visitor_id FROM visitor_registrations '
+                                   'WHERE visitor_id = ?', (int(text),)).fetchone()
+                return row[0] if row else None
+            rows = conn.execute('''
+                SELECT visitor_id FROM visitor_registrations
+                WHERE scheduled_date = ? AND LOWER(visitor_name) = LOWER(?)
+            ''', (datetime.now().strftime('%Y-%m-%d'), text)).fetchall()
+        if len(rows) > 1:
+            raise ValueError(f"More than one visitor today is called {text}; use the ID")
+        return rows[0][0] if rows else None
 
     @staticmethod
     def check_in_visitor(visitor_id: int,

@@ -280,6 +280,15 @@ def init_db() -> None:
     _students.init_db()
     with _connect() as conn:
         conn.executescript(_SCHEMA)
+        # Back-link to the early-warning alert that opened this
+        # intervention (added later; soft pointer, no FK).
+        cols = {r[1] for r in conn.execute(
+            "PRAGMA table_info(interventions)").fetchall()}
+        if "early_warning_alert_id" not in cols:
+            conn.execute("ALTER TABLE interventions "
+                         "ADD COLUMN early_warning_alert_id INTEGER")
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_iv_ew_alert "
+                     "ON interventions(early_warning_alert_id)")
     logger.debug("Intervention-tracking schema ready at %s", DB_PATH)
 
     _DB_READY = True
@@ -996,3 +1005,44 @@ def summary() -> Summary:
 
 def impact_label(grade: int | None) -> str:
     return _IMPACT_LABELS.get(grade, "—") if grade else "—"
+
+
+
+# ── Early-warning links ───────────────────────────────────────────
+#
+# An early-warning alert can open an intervention. The alert records
+# ``linked_intervention_id``; the intervention records
+# ``early_warning_alert_id`` so the link can be followed either way and
+# a second "open intervention" on the same alert finds the first.
+
+def set_source_alert(intervention_id: int, alert_id: int | None) -> None:
+    """Record which early-warning alert this intervention answers."""
+    init_db()
+    with _connect() as conn:
+        conn.execute(
+            "UPDATE interventions SET early_warning_alert_id = ?, "
+            "updated_at = datetime('now') WHERE intervention_id = ?",
+            (alert_id, intervention_id))
+        conn.commit()
+
+
+def source_alert_id(intervention_id: int) -> int | None:
+    init_db()
+    with _connect() as conn:
+        r = conn.execute(
+            "SELECT early_warning_alert_id FROM interventions "
+            "WHERE intervention_id = ?", (intervention_id,)).fetchone()
+    return r[0] if r else None
+
+
+def interventions_for_alert(alert_id: int) -> list[Intervention]:
+    init_db()
+    with _connect() as conn:
+        rows = conn.execute(
+            "SELECT * FROM interventions WHERE early_warning_alert_id = ? "
+            "ORDER BY intervention_id", (int(alert_id),)).fetchall()
+    return [_row_iv(r) for r in rows]
+
+
+def open_interventions_for_student(student_id: str) -> list[Intervention]:
+    return list_interventions(student_id=student_id, open_only=True)

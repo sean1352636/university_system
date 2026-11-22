@@ -14,12 +14,10 @@ from education_system.systems.primary.domain.pastoral.house_points import (
 from education_system.systems.primary.domain.pastoral.house_points.house_points import (
     Award, House, POINTS_MAX, POINTS_MIN,
 )
-from education_system.systems.primary.domain.learners.pupils import (
-    pupils as pupils_data,
-)
 from education_system.systems.primary.domain.learners.pupils.pupils import (
     ValidationError,
 )
+from education_system.systems.primary.interfaces.gui import kit
 
 logger = logging.getLogger(__name__)
 
@@ -49,32 +47,38 @@ def _safe_view(func: Callable[..., None]) -> Callable[..., None]:
     return wrapper
 
 
-def _house_choices() -> tuple[list[str], dict[str, int]]:
+# Common house colours offered in the house form (any other can be typed).
+_COLOURS = ("Red", "Blue", "Green", "Yellow", "Orange", "Purple", "Black",
+            "White", "Gold", "Silver", "Pink", "Navy", "Maroon", "Teal")
+
+
+def _house_choices() -> list[tuple[str, str]]:
+    """``(house id, label)`` pairs for a house drop-down."""
     try:
         houses = data.list_houses()
     except Exception:
         logger.exception("list_houses failed")
-        return [], {}
-    labels: list[str] = []
-    mapping: dict[str, int] = {}
-    for h in houses:
-        lbl = f"#{h.house_id}  {h.name}" + (" (inactive)" if not h.is_active else "")
-        labels.append(lbl)
-        mapping[lbl] = h.house_id
-    return labels, mapping
+        return []
+    return [(str(h.house_id),
+             f"#{h.house_id}  {h.name}" + (" (inactive)" if not h.is_active else ""))
+            for h in houses]
 
 
 @_safe_view
 def open_house_points(host) -> None:
     logger.debug("GUI: open_house_points")
+    kit.show_page(host, "House Points",
+                  lambda parent: _draw_house_points(parent, host))
 
-    win = tk.Toplevel(host.root)
-    win.title("House Points")
-    win.transient(host.root)
-    win.geometry("1100x640")
 
-    nb = ttk.Notebook(win)
-    nb.pack(fill="both", expand=True, padx=10, pady=10)
+def _draw_house_points(parent, host) -> None:
+    win = parent.winfo_toplevel()
+    kit.page_heading(parent, "House Points",
+                     "House and pupil leaderboards, houses, and the points "
+                     "awarded.")
+
+    nb = ttk.Notebook(parent)
+    nb.pack(fill="both", expand=True)
 
     leaderboard_tab = ttk.Frame(nb, padding=10)
     houses_tab = ttk.Frame(nb, padding=10)
@@ -90,17 +94,15 @@ def open_house_points(host) -> None:
 
     filt = ttk.Frame(leaderboard_tab)
     filt.pack(fill="x", pady=(6, 6))
-    ttk.Label(filt, text="From (YYYY-MM-DD):").pack(side="left")
+    ttk.Label(filt, text="From:").pack(side="left")
     from_var = tk.StringVar()
-    ttk.Entry(filt, textvariable=from_var, width=12).pack(
-        side="left", padx=(4, 10))
-    ttk.Label(filt, text="To (YYYY-MM-DD):").pack(side="left")
+    kit.DateField(filt, from_var).pack(side="left", padx=(4, 10))
+    ttk.Label(filt, text="To:").pack(side="left")
     to_var = tk.StringVar()
-    ttk.Entry(filt, textvariable=to_var, width=12).pack(
-        side="left", padx=(4, 10))
+    kit.DateField(filt, to_var).pack(side="left", padx=(4, 10))
     ttk.Label(filt, text="Top N pupils:").pack(side="left")
     topn_var = tk.StringVar(value="20")
-    ttk.Entry(filt, textvariable=topn_var, width=6).pack(
+    kit.NumberField(filt, topn_var, from_=1, to=500, width=6).pack(
         side="left", padx=(4, 10))
 
     cols_lb = ("rank", "house", "total")
@@ -131,6 +133,8 @@ def open_house_points(host) -> None:
     pupil_tree.pack(fill="both", expand=True)
 
     def _refresh_leaderboard() -> None:
+        if not house_tree.winfo_exists():
+            return
         fr = from_var.get().strip() or None
         to = to_var.get().strip() or None
         try:
@@ -267,22 +271,23 @@ def open_house_points(host) -> None:
     a_filt = ttk.Frame(awards_tab)
     a_filt.pack(fill="x", pady=(0, 6))
     ttk.Label(a_filt, text="House:").pack(side="left")
-    house_filter_var = tk.StringVar(value="All")
-    house_filter_box = ttk.Combobox(a_filt, textvariable=house_filter_var,
-                                    values=["All"], state="readonly", width=22)
+    house_filter_var = tk.StringVar(value="")  # "" = all houses
+    house_filter_box = kit.ChoiceField(a_filt, house_filter_var,
+                                       choices=[("", "All")], width=22)
     house_filter_box.pack(side="left", padx=(4, 10))
-    ttk.Label(a_filt, text="Pupil ID:").pack(side="left")
+    ttk.Label(a_filt, text="Pupil:").pack(side="left")
     pupil_filter_var = tk.StringVar()
-    ttk.Entry(a_filt, textvariable=pupil_filter_var, width=12).pack(
-        side="left", padx=(4, 10))
-    ttk.Label(a_filt, text="From:").pack(side="left")
+    kit.PupilPicker(a_filt, pupil_filter_var, include_off_roll=True,
+                    width=30).pack(side="left", padx=(4, 10))
+    # The dates go on a second row so the filter bar fits the window.
+    a_filt2 = ttk.Frame(awards_tab)
+    a_filt2.pack(fill="x", pady=(0, 6))
+    ttk.Label(a_filt2, text="From:").pack(side="left")
     from2_var = tk.StringVar()
-    ttk.Entry(a_filt, textvariable=from2_var, width=12).pack(
-        side="left", padx=(4, 10))
-    ttk.Label(a_filt, text="To:").pack(side="left")
+    kit.DateField(a_filt2, from2_var).pack(side="left", padx=(4, 10))
+    ttk.Label(a_filt2, text="To:").pack(side="left")
     to2_var = tk.StringVar()
-    ttk.Entry(a_filt, textvariable=to2_var, width=12).pack(
-        side="left", padx=(4, 10))
+    kit.DateField(a_filt2, to2_var).pack(side="left", padx=(4, 10))
 
     cols_a = ("award_id", "date", "house", "pupil", "points", "by", "reason")
     atree = ttk.Treeview(awards_tab, columns=cols_a, show="headings", height=18)
@@ -302,26 +307,20 @@ def open_house_points(host) -> None:
     a_btns = ttk.Frame(awards_tab)
     a_btns.pack(fill="x")
 
-    def _house_filter_map() -> tuple[dict[str, int], list[str]]:
+    def _house_filter_choices() -> list[tuple[str, str]]:
         try:
             houses = data.list_houses()
         except Exception:
-            return {}, ["All"]
-        mapping: dict[str, int] = {}
-        labels = ["All"]
-        for h in houses:
-            lbl = f"#{h.house_id} {h.name}"
-            labels.append(lbl)
-            mapping[lbl] = h.house_id
-        return mapping, labels
+            return [("", "All")]
+        return [("", "All")] + [(str(h.house_id), f"#{h.house_id} {h.name}")
+                                for h in houses]
 
     def _refresh_awards() -> None:
-        mapping, labels = _house_filter_map()
-        house_filter_box["values"] = labels
-        sel = house_filter_var.get()
-        hid: int | None = None
-        if sel != "All" and sel in mapping:
-            hid = mapping[sel]
+        if not atree.winfo_exists():
+            return
+        house_filter_box.set_choices(_house_filter_choices())
+        sel = house_filter_var.get().strip()
+        hid: int | None = int(sel) if sel.isdigit() else None
         try:
             rows = data.list_awards(
                 house_id=hid,
@@ -390,8 +389,9 @@ def open_house_points(host) -> None:
         side="left", padx=(8, 0))
     atree.bind("<Double-Button-1>", lambda _e: _a_edit())
 
-    ttk.Button(win, text="Close", command=win.destroy).pack(
-        anchor="e", padx=12, pady=(0, 10))
+    ttk.Button(parent, text="Close",
+               command=lambda: kit.close_page(host, parent)).pack(
+        anchor="e", padx=12, pady=(6, 10))
 
     def _refresh_all() -> None:
         _refresh_leaderboard()
@@ -440,8 +440,8 @@ def _open_house_dialog(parent, *, house_id: int | None,
         row=0, column=1, sticky="ew", pady=3)
     ttk.Label(frm, text="Colour").grid(row=1, column=0, sticky="w", pady=3)
     col_var = tk.StringVar(value=existing.colour or "" if existing else "")
-    ttk.Entry(frm, textvariable=col_var, width=18).grid(
-        row=1, column=1, sticky="w", pady=3)
+    kit.ChoiceField(frm, col_var, choices=_COLOURS, blank=True, editable=True,
+                    width=18).grid(row=1, column=1, sticky="w", pady=3)
     ttk.Label(frm, text="Motto").grid(row=2, column=0, sticky="w", pady=3)
     motto_var = tk.StringVar(value=existing.motto or "" if existing else "")
     ttk.Entry(frm, textvariable=motto_var, width=36).grid(
@@ -506,7 +506,7 @@ def _open_award_dialog(parent, *, award_id: int | None,
     dlg = tk.Toplevel(parent)
     dlg.title("Award" if existing else "Award points")
     dlg.transient(parent)
-    dlg.geometry("500x400")
+    dlg.geometry("640x400")
     try:
         dlg.wait_visibility()
         dlg.grab_set()
@@ -516,62 +516,36 @@ def _open_award_dialog(parent, *, award_id: int | None,
     frm = ttk.Frame(dlg, padding=12)
     frm.pack(fill="both", expand=True)
 
-    labels, mapping = _house_choices()
-    initial_label = ""
-    if existing is not None:
-        for lbl, hid in mapping.items():
-            if hid == existing.house_id:
-                initial_label = lbl
-                break
-
     ttk.Label(frm, text="House *").grid(row=0, column=0, sticky="w", pady=3)
-    house_var = tk.StringVar(value=initial_label)
-    ttk.Combobox(frm, textvariable=house_var, values=labels,
-                 state="readonly", width=36).grid(
+    house_var = tk.StringVar(
+        value=str(existing.house_id) if existing is not None else "")
+    kit.ChoiceField(frm, house_var, choices=_house_choices(), width=36).grid(
         row=0, column=1, columnspan=2, sticky="ew", pady=3)
 
-    ttk.Label(frm, text="Pupil ID (optional)").grid(
+    ttk.Label(frm, text="Pupil (optional)").grid(
         row=1, column=0, sticky="w", pady=3)
     pupil_var = tk.StringVar(value=existing.pupil_id or "" if existing else "")
-    ttk.Entry(frm, textvariable=pupil_var, width=14).grid(
-        row=1, column=1, sticky="w", pady=3)
-    pupil_label = tk.StringVar()
-    ttk.Label(frm, textvariable=pupil_label, foreground="#666").grid(
-        row=1, column=2, sticky="w", padx=(8, 0))
-
-    def _lookup_pupil(*_a) -> None:
-        pid = pupil_var.get().strip()
-        if not pid:
-            pupil_label.set("")
-            return
-        try:
-            p = pupils_data.get_pupil(pid)
-        except Exception:
-            pupil_label.set("(error)")
-            return
-        pupil_label.set(
-            f"{p.full_name} (year {p.year_group})" if p else "(unknown)")
-    pupil_var.trace_add("write", _lookup_pupil)
-    _lookup_pupil()
+    kit.PupilPicker(frm, pupil_var).grid(
+        row=1, column=1, columnspan=2, sticky="w", pady=3)
 
     ttk.Label(frm, text=f"Points ({POINTS_MIN} to {POINTS_MAX}, non-zero) *").grid(
         row=2, column=0, sticky="w", pady=3)
     pts_var = tk.StringVar(value=str(existing.points) if existing else "")
-    ttk.Entry(frm, textvariable=pts_var, width=8).grid(
-        row=2, column=1, sticky="w", pady=3)
+    kit.NumberField(frm, pts_var, from_=POINTS_MIN, to=POINTS_MAX,
+                    width=8).grid(row=2, column=1, sticky="w", pady=3)
 
-    ttk.Label(frm, text="Awarded on (YYYY-MM-DD)").grid(
+    ttk.Label(frm, text="Awarded on").grid(
         row=3, column=0, sticky="w", pady=3)
     date_var = tk.StringVar(value=existing.awarded_on if existing else "")
-    ttk.Entry(frm, textvariable=date_var, width=14).grid(
+    kit.DateField(frm, date_var).grid(
         row=3, column=1, sticky="w", pady=3)
     ttk.Label(frm, text="(blank = today)",
               foreground="#888").grid(row=3, column=2, sticky="w", padx=(8, 0))
 
     ttk.Label(frm, text="Awarded by").grid(row=4, column=0, sticky="w", pady=3)
     by_var = tk.StringVar(value=existing.awarded_by or "" if existing else "")
-    ttk.Entry(frm, textvariable=by_var, width=30).grid(
-        row=4, column=1, columnspan=2, sticky="ew", pady=3)
+    kit.StaffPicker(frm, by_var, by="name").grid(
+        row=4, column=1, columnspan=2, sticky="w", pady=3)
 
     ttk.Label(frm, text="Reason").grid(row=5, column=0, sticky="w", pady=3)
     reason_var = tk.StringVar(value=existing.reason or "" if existing else "")
@@ -586,13 +560,13 @@ def _open_award_dialog(parent, *, award_id: int | None,
     frm.columnconfigure(2, weight=1)
 
     def _save() -> None:
-        chosen = house_var.get()
-        if chosen not in mapping:
+        chosen = house_var.get().strip()
+        if not chosen.isdigit():
             messagebox.showerror("House Points",
                                  "Please choose a house.", parent=dlg)
             return
         payload = {
-            "house_id": mapping[chosen],
+            "house_id": int(chosen),
             "pupil_id": pupil_var.get(),
             "points": pts_var.get(),
             "awarded_on": date_var.get(),

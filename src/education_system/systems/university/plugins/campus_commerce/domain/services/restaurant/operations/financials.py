@@ -1,4 +1,5 @@
 from __future__ import annotations
+from education_system.systems.university.plugins.campus_commerce.domain.services.restaurant.operations.user_access import can as restaurant_can
 
 import logging
 import random
@@ -133,7 +134,7 @@ def add_expense():
         print("You must be logged in to add expenses.")
         return
 
-    if not ctx.auth.check_permission('manage_finances'):
+    if not restaurant_can(ctx.auth, 'manage_finances'):
         print("You don't have permission to add expenses.")
         return
 
@@ -440,7 +441,7 @@ def create_budget():
         print("You must be logged in to create budgets.")
         return
 
-    if not ctx.auth.check_permission('manage_finances'):
+    if not restaurant_can(ctx.auth, 'manage_finances'):
         print("You don't have permission to create budgets.")
         return
 
@@ -545,7 +546,7 @@ def update_budget():
         print("You must be logged in to update budgets.")
         return
 
-    if not ctx.auth.check_permission('manage_finances'):
+    if not restaurant_can(ctx.auth, 'manage_finances'):
         print("You don't have permission to update budgets.")
         return
 

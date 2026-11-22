@@ -6,7 +6,9 @@ from education_system.systems.sixth_form.interfaces.gui._ui import grab_when_vie
 import datetime as _dt
 import logging
 import tkinter as tk
-from tkinter import messagebox, ttk
+from tkinter import ttk
+from education_system.systems.sixth_form.interfaces.gui._sidebar import SidebarBook
+from education_system.platform.delivery.gui.parented_dialogs import messagebox
 from education_system.platform import branding
 from education_system.systems.sixth_form.domain.staff.cpd import (
     cpd as data,
@@ -60,12 +62,71 @@ def open_cpd_window(parent=None) -> None:
     win.geometry(WIN_GEOMETRY)
     win.minsize(*WIN_MINSIZE)
 
-    nb = ttk.Notebook(win)
+    nb = SidebarBook(win)
     nb.pack(fill="both", expand=True, padx=10, pady=10)
 
     ActivitiesTab(nb)
     RecordsTab(nb)
     SummaryTab(nb)
+    _mandatory_training_tab(nb)
+
+
+def _mandatory_training_tab(nb: ttk.Notebook) -> None:
+    """CPD activities that count towards the mandatory-training matrix.
+
+    Linking and the matrix itself are HR actions; the list is shown to
+    everyone who can open CPD.
+    """
+    from education_system.systems.sixth_form.domain.staff.mandatory_training import (
+        mandatory_training as _mt,
+    )
+    from education_system.systems.sixth_form.interfaces.gui.progression import (
+        _record_tabs as rt,
+    )
+
+    def build(parent: ttk.Frame) -> None:
+        def link(table):
+            acts = [f"{a.activity_id} — {a.title} ({a.activity_date})"
+                    for a in data.list_activities()]
+            types = [f"{t.type_id} — {t.name}"
+                     for t in _mt.list_types(active_only=True)]
+            rt.form_dialog(table.parent, "Count a CPD activity as training",
+                           (("activity", "CPD activity", "choice", acts),
+                            ("type", "Counts as", "choice", types)),
+                           {}, lambda v: _mt.link_cpd_activity(
+                               int(v["activity"].split(" — ")[0]),
+                               int(v["type"].split(" — ")[0])),
+                           table.refresh)
+
+        def unlink(table):
+            row = table.require()
+            if rt.confirm(table.parent, "Unlink",
+                          f"Stop counting '{row['activity']}' as "
+                          f"{row['type']}?"):
+                _mt.unlink_cpd_activity(row["activity_id"], row["type_id"])
+                table.refresh()
+
+        def open_matrix(_table):
+            from education_system.systems.sixth_form.interfaces.gui.staff.mandatory_training import (
+                mandatory_training_views,
+            )
+            mandatory_training_views.open_mandatory_training_window(
+                parent.winfo_toplevel())
+
+        rt.RecordTable(
+            parent,
+            [("activity", "CPD activity", 340), ("date", "Date", 100),
+             ("type", "Counts as mandatory training", 320)],
+            lambda _f: [{**r, "id": f"{r['activity_id']}:{r['type_id']}"}
+                        for r in _mt.list_cpd_links()],
+            key="id",
+            actions=(("Link activity", link), ("Unlink", unlink),
+                     ("Open training matrix", open_matrix)),
+            note="When a staff record on a linked activity is Attended or "
+                 "Completed, the mandatory-training matrix counts it. "
+                 "Linking needs HR access.")
+
+    rt.notebook_tab(nb, "Mandatory Training", build)
 
 
 def _staff_options() -> list[tuple[str, str]]:

@@ -79,7 +79,7 @@ class CommitteeManager:
         """
         with get_connection() as conn:
             row = conn.execute('''
-                SELECT * FROM committees WHERE id = ?
+                SELECT *, committee_id AS id FROM committees WHERE committee_id = ?
             ''', (committee_id,)).fetchone()
             return dict(row) if row else None
 
@@ -96,7 +96,7 @@ class CommitteeManager:
             A list of committee dicts ordered by name.
         """
         with get_connection() as conn:
-            query = 'SELECT * FROM committees WHERE 1=1'
+            query = 'SELECT *, committee_id AS id FROM committees WHERE 1=1'
             params: list = []
 
             if department:
@@ -141,7 +141,7 @@ class CommitteeManager:
 
         with transaction() as conn:
             conn.execute(
-                'UPDATE committees SET ' + ', '.join(fields) + ' WHERE id = ?',
+                'UPDATE committees SET ' + ', '.join(fields) + ' WHERE committee_id = ?',
                 values)
             log_activity('update', 'committee', details={
                 'committee_id': committee_id,
@@ -517,12 +517,24 @@ class CommitteeManager:
             The ID of the newly created minutes record.
         """
         with transaction() as conn:
+            # meeting_title and meeting_date are required on the row; they
+            # come from the meeting the minutes belong to.
+            meeting = conn.execute('''
+                SELECT m.committee_id, m.title, m.meeting_date, m.location, c.name
+                FROM %s m LEFT JOIN committees c ON c.committee_id = m.committee_id
+                WHERE m.id = ?
+            ''' % COMMITTEE_MEETINGS_SRC, (meeting_id,)).fetchone()
+            if not meeting:
+                raise ValueError(f"Meeting {meeting_id} not found")
             cursor = conn.execute('''
                 INSERT INTO meeting_minutes (
-                    meeting_id, content, recorded_by, status, created_at
-                ) VALUES (?, ?, ?, 'draft', ?)
+                    meeting_id, committee_id, committee_name, meeting_title,
+                    meeting_date, location, content, minutes_content,
+                    recorded_by, status, created_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'draft', ?)
             ''', (
-                meeting_id, content, recorded_by,
+                meeting_id, meeting[0], meeting[4], meeting[1],
+                meeting[2], meeting[3], content, content, recorded_by,
                 datetime.now().isoformat(),
             ))
             minute_id = cursor.lastrowid
@@ -544,7 +556,7 @@ class CommitteeManager:
         """
         with get_connection() as conn:
             rows = conn.execute('''
-                SELECT * FROM meeting_minutes
+                SELECT *, minutes_id AS id FROM meeting_minutes
                 WHERE meeting_id = ?
             ''', (meeting_id,)).fetchall()
             return [dict(row) for row in rows]
@@ -561,7 +573,7 @@ class CommitteeManager:
             conn.execute('''
                 UPDATE meeting_minutes
                 SET status = 'approved', approved_by = ?, approved_at = ?
-                WHERE id = ?
+                WHERE minutes_id = ?
             ''', (approved_by, datetime.now().isoformat(), minute_id))
             log_activity('update', 'meeting_minutes', details={
                 'minute_id': minute_id, 'action': 'approved',
@@ -628,7 +640,7 @@ class CommitteeManager:
         with transaction() as conn:
             # Check for existing ballot (UNIQUE constraint)
             existing = conn.execute('''
-                SELECT id FROM committee_ballots
+                SELECT ballot_id FROM committee_ballots
                 WHERE vote_id = ? AND voter_id = ?
             ''', (vote_id, voter_id)).fetchone()
 
@@ -678,7 +690,7 @@ class CommitteeManager:
         with transaction() as conn:
             # Get the vote record
             vote_row = conn.execute('''
-                SELECT * FROM committee_votes WHERE id = ?
+                SELECT *, vote_id AS id FROM committee_votes WHERE vote_id = ?
             ''', (vote_id,)).fetchone()
 
             if not vote_row:
@@ -724,7 +736,7 @@ class CommitteeManager:
                 UPDATE committee_votes
                 SET votes_for = ?, votes_against = ?, votes_abstain = ?,
                     result = ?, status = 'closed', closed_at = ?
-                WHERE id = ?
+                WHERE vote_id = ?
             ''', (
                 votes_for, votes_against, votes_abstain,
                 result, datetime.now().isoformat(), vote_id,
@@ -763,7 +775,7 @@ class CommitteeManager:
         """
         with get_connection() as conn:
             row = conn.execute('''
-                SELECT * FROM committee_votes WHERE id = ?
+                SELECT *, vote_id AS id FROM committee_votes WHERE vote_id = ?
             ''', (vote_id,)).fetchone()
 
             if not row:
@@ -792,7 +804,7 @@ class CommitteeManager:
         """
         with get_connection() as conn:
             rows = conn.execute('''
-                SELECT * FROM committee_votes
+                SELECT *, vote_id AS id FROM committee_votes
                 WHERE meeting_id = ?
             ''', (meeting_id,)).fetchall()
             return [dict(row) for row in rows]

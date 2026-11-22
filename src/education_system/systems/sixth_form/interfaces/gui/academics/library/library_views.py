@@ -6,7 +6,10 @@ from education_system.systems.sixth_form.interfaces.gui._ui import grab_when_vie
 import datetime as _dt
 import logging
 import tkinter as tk
-from tkinter import messagebox, simpledialog, ttk
+from tkinter import ttk
+from education_system.systems.sixth_form.interfaces.gui._sidebar import SidebarBook
+from education_system.platform.delivery.gui import window_sizing
+from education_system.platform.delivery.gui.parented_dialogs import messagebox, simpledialog
 from typing import Callable
 from education_system.platform import branding
 from education_system.systems.sixth_form.domain.academics.library import (
@@ -46,15 +49,27 @@ WIN_GEOMETRY = "1400x900"
 WIN_MINSIZE = (1200, 800)
 
 
+# Sidebar headings for the window's sections, keyed by tab text.
+_SECTIONS = {
+    "Dashboard": "Overview", "Summary": "Overview",
+    "Books": "Catalogue", "Copies": "Catalogue", "E-resources": "Catalogue",
+    "Acquisitions": "Catalogue", "Reading lists": "Catalogue",
+    "Loans": "Circulation", "Reservations": "Circulation",
+    "Fines": "Circulation", "Kiosk": "Circulation",
+    "Study rooms": "Circulation",
+    "Reports": "Management", "Admin": "Management",
+}
+
+
 def open_library_window(parent=None) -> None:
     data.init_db()
     master = getattr(parent, "root", parent)
     win = tk.Toplevel(master) if master is not None else tk.Tk()
     win.title(f"Library — {branding.SYSTEM_NAME}")
-    win.geometry(WIN_GEOMETRY)
-    win.minsize(*WIN_MINSIZE)
+    window_sizing.fit(win, WIN_GEOMETRY, WIN_MINSIZE)
 
-    nb = ttk.Notebook(win)
+    # Sections down a sidebar, grouped, instead of a row of tabs.
+    nb = SidebarBook(win, groups=_SECTIONS, title="Library")
     nb.pack(fill="both", expand=True, padx=10, pady=10)
 
     DashboardTab(nb)
@@ -307,11 +322,23 @@ class BooksTab:
             return
         if not messagebox.askyesno(
                 "Delete",
-                f"Delete book #{b.book_id} ({b.title})? "
-                "Cascade-deletes loans."):
+                f"Delete book #{b.book_id} ({b.title})?\n\n"
+                "Only books that have never been lent can be deleted; "
+                "books on loan or with loan history are kept."):
             return
         try:
             data.delete_book(b.book_id)
+        except data.BookHasLoanHistory as e:
+            if messagebox.askyesno(
+                    "Withdraw instead?",
+                    f"{e}\n\nWithdraw book #{b.book_id} now?"):
+                try:
+                    data.withdraw_book(b.book_id)
+                except Exception as e2:
+                    messagebox.showerror("Withdraw failed", str(e2))
+                    return
+            self.refresh()
+            return
         except Exception as e:
             messagebox.showerror("Delete failed", str(e))
             return
@@ -2027,7 +2054,7 @@ class ReportsTab:
         if not self._rows:
             messagebox.showinfo("Export", "Run a report first.")
             return
-        from tkinter import filedialog
+        from education_system.platform.delivery.gui.parented_dialogs import filedialog
         path = filedialog.asksaveasfilename(
             defaultextension=".csv",
             filetypes=[("CSV", "*.csv")])

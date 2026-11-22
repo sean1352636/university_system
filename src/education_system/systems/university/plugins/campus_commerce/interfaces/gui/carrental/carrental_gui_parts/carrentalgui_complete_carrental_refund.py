@@ -5,44 +5,25 @@ globals().update({name: value for name, value in _shared.__dict__.items() if not
 
 
 class CarRentalGUI:
+    def _processed_by(self):
+        if self.current_user:
+            return self.current_user.get('username') or self.current_user.get('user_id', '')
+        return None
+
     def _complete_carrental_refund(self, transaction_id, amount, refund_method, customer_id):
-        """Complete the refund process (for cash/card)"""
+        """Complete the refund process (for cash/card). Finance posting is done by the domain service."""
         try:
-            # Generate refund reference
-            refund_ref = f"CARRENTAL-REFUND-{datetime.now().strftime('%Y%m%d%H%M%S')}"
-
-            with transaction() as conn:
-                cursor = conn.cursor()
-
-                # Update transaction status
-                cursor.execute("""
-                    UPDATE transactions
-                    SET status = 'refunded',
-                        reference_number = ?
-                    WHERE transaction_id = ? AND source_type = 'car_rental'
-                """, (refund_ref, transaction_id))
-
-                # Create refund record in unified_refunds table
-                # Get processed_by
-                processed_by = None
-                if self.current_user:
-                    processed_by = self.current_user.get('username') or self.current_user.get('user_id', '')
-
-                cursor.execute("""
-                    INSERT INTO unified_refunds
-                    (source_type, reference_id, reference_type, student_id, amount,
-                     refund_method, refund_reference, refund_date, processed_by, status)
-                    VALUES ('car_rental', ?, 'transaction', ?, ?, ?, ?, CURRENT_TIMESTAMP, ?, 'processed')
-                """, (str(transaction_id), customer_id, amount, refund_method, refund_ref, processed_by))
-                refund_row_id = cursor.lastrowid
-
-            # Auto-post to GL (cash has moved). Never raises.
-            try:
-                from education_system.systems.university.domains.finance.domain.ledger import notify_ledger
-                notify_ledger('refund', refund_row_id, posted_by=processed_by or 'car_rental')
-            except Exception as _e:
-                import logging
-                logging.getLogger(__name__).warning("ledger hook failed: %s", _e)
+            result = TransactionManager.refund_transaction(
+                transaction_id=transaction_id,
+                amount=amount,
+                refund_method=refund_method,
+                customer_id=customer_id,
+                processed_by=self._processed_by(),
+            )
+            if not result:
+                messagebox.showerror(_t("common.error", default="Error"), _t("carrental.errors.refund_failed", default="Failed to complete refund"))
+                return
+            refund_ref = result['refund_ref']
 
             # Send receipt
             self.send_carrental_refund_receipt(customer_id, amount, refund_method, refund_ref)
@@ -61,72 +42,23 @@ class CarRentalGUI:
             messagebox.showerror(_t("common.error", default="Error"), f"Failed to complete refund: {str(e)}")
 
     def add_carrental_refund_to_student_account(self, transaction_id, amount, customer_id):
-        """Add refund amount to student finance account"""
+        """Refund to the student finance account. Finance posting and the credit are done by the domain service."""
         try:
-            from education_system.systems.university.domains.finance.infrastructure.finance_integration import ensure_student_finance_account_exists
-
-            # Ensure student account exists
-            ensure_student_finance_account_exists(customer_id)
-
-            # Generate refund reference
-            refund_ref = f"CARRENTAL-REFUND-{datetime.now().strftime('%Y%m%d%H%M%S')}"
-
-            with transaction() as conn:
-                cursor = conn.cursor()
-
-                # Update transaction status
-                cursor.execute("""
-                    UPDATE transactions
-                    SET status = 'refunded',
-                        reference_number = ?
-                    WHERE transaction_id = ? AND source_type = 'car_rental'
-                """, (refund_ref, transaction_id))
-
-                # Create refund record in unified_refunds table
-                # Get processed_by
-                processed_by = None
-                if self.current_user:
-                    processed_by = self.current_user.get('username') or self.current_user.get('user_id', '')
-
-                cursor.execute("""
-                    INSERT INTO unified_refunds
-                    (source_type, reference_id, reference_type, student_id, amount,
-                     refund_method, refund_reference, refund_date, processed_by, status)
-                    VALUES ('car_rental', ?, 'transaction', ?, ?, ?, ?, CURRENT_TIMESTAMP, ?, 'processed')
-                """, (str(transaction_id), customer_id, amount, 'student_account', refund_ref, processed_by))
-                refund_row_id = cursor.lastrowid
-
-                # Add to student finance account
-                cursor.execute("""
-                    UPDATE student_finance_accounts
-                    SET balance = balance + ?
-                    WHERE student_id = ?
-                """, (amount, customer_id))
-
-                # Get new balance and account_id after update
-                cursor.execute("SELECT account_id, balance FROM student_finance_accounts WHERE student_id = ?", (customer_id,))
-                result = cursor.fetchone()
-                if result:
-                    account_id, new_balance = result
-                else:
-                    account_id, new_balance = None, amount
-
-                # Log transaction in transactions table
-                cursor.execute("""
-                    INSERT INTO transactions
-                    (source_type, account_id, student_id, transaction_type, amount, balance_after, description,
-                     reference_id, processed_by, created_at)
-                    VALUES ('student_finance', ?, ?, 'credit', ?, ?, ?, ?, ?, ?)
-                """, (account_id, customer_id, amount, new_balance, f'Car rental refund - {refund_ref}',
-                      refund_ref, processed_by, datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
-
-            # Auto-post to GL (cash has moved to student account). Never raises.
-            try:
-                from education_system.systems.university.domains.finance.domain.ledger import notify_ledger
-                notify_ledger('refund', refund_row_id, posted_by=processed_by or 'car_rental')
-            except Exception as _e:
-                import logging
-                logging.getLogger(__name__).warning("ledger hook failed: %s", _e)
+            result = TransactionManager.refund_transaction(
+                transaction_id=transaction_id,
+                amount=amount,
+                refund_method='student_account',
+                customer_id=customer_id,
+                processed_by=self._processed_by(),
+            )
+            if not result:
+                messagebox.showerror(_t("common.error", default="Error"), _t("carrental.errors.refund_failed", default="Failed to add refund to account"))
+                return
+            refund_ref = result['refund_ref']
+            new_balance = result.get('new_balance')
+            if new_balance is None:
+                messagebox.showwarning(_t("common.warning", default="Warning"),
+                                       "Refund recorded but the student account could not be credited. Please credit manually.")
 
             # Send receipt
             self.send_carrental_refund_receipt(customer_id, amount, 'student_account', refund_ref, new_balance)
@@ -137,10 +69,10 @@ class CarRentalGUI:
             # Refresh list
             self.refresh_refunds_list()
 
+            balance_line = f"\nNew Balance: \u00a3{new_balance:.2f}" if new_balance is not None else ""
             messagebox.showinfo(_t("common.success", default="Success"),
                               f"Refund added to student account!\n"
-                              f"Reference: {refund_ref}\n"
-                              f"New Balance: £{new_balance:.2f}")
+                              f"Reference: {refund_ref}{balance_line}")
 
         except Exception as e:
             logger.error(f"Error adding car rental refund to student account: {e}")
@@ -198,7 +130,7 @@ class CarRentalGUI:
 
             # Use JSON template for email
             from education_system.systems.university.infrastructure.email.template_utils import render_template
-            subject, body = render_template('commerce/carrental/refund_receipt', {
+            subject, body = render_template('finance_commerce/commerce/carrental/refund_receipt', {
                 'customer_name': customer_name,
                 'refund_ref': refund_ref,
                 'rental_number': 'N/A',
@@ -263,8 +195,8 @@ class CarRentalGUI:
                         t.created_at,
                         t.processed_by,
                         t.reference_id as rental_id,
-                        r.start_date,
-                        r.end_date,
+                        r.pickup_date,
+                        r.return_date,
                         r.vehicle_id,
                         v.make,
                         v.model,

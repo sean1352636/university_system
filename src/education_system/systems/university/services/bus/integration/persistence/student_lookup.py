@@ -40,8 +40,12 @@ def resolve_student_id(*, ucas_id: str | None = None,
     try:
         with get_connection() as conn:
             if ucas_id:
+                # Students carry no UCAS id: the clearing application holds it,
+                # and its e-mail address finds the student record.
                 row = conn.execute(
-                    "SELECT student_id FROM students WHERE ucas_id = ? LIMIT 1",
+                    "SELECT s.student_id FROM clearing_applications c "
+                    "JOIN students s ON LOWER(s.email_address) = LOWER(c.email) "
+                    "WHERE c.ucas_id = ? AND TRIM(COALESCE(c.email, '')) <> '' LIMIT 1",
                     (str(ucas_id),),
                 ).fetchone()
                 if row and row[0]:

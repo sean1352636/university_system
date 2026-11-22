@@ -705,7 +705,8 @@ class CinemaCLI:
         print(f"\n{'ID':<6}{'Username':<15}{'Name':<25}{'Role':<15}{'Status'}")
         print("-" * 70)
         for s in staff:
-            print(f"{s[0]:<6}{s[1]:<15}{s[4]:<25}{s[6]:<15}{s[8] if len(s) > 8 else ''}")
+            print(f"{s['id']:<6}{s['username']:<15}{(s['name'] or ''):<25}"
+                  f"{(s['role'] or ''):<15}{s['status'] or ''}")
 
     def _verify_staff(self):
         """Verify staff login."""
@@ -713,7 +714,7 @@ class CinemaCLI:
         password = input("Password: ").strip()
         staff = self.service.verify_staff_password(username, password)
         if staff:
-            print(f"\nLogin successful - {staff[4]} ({staff[6]})")
+            print(f"\nLogin successful - {staff['name']} ({staff['role']})")
         else:
             print("\nLogin failed.")
 

@@ -49,14 +49,6 @@ def pupil_management_search_pupils():
     return feature_pending("Search Pupils", _SYSTEM, category=_CATEGORY)
 
 
-@pupil_management_menu_bp.route("/advanced-search", methods=["GET"])
-@token_required
-@staff_required
-def pupil_management_advanced_search():
-    """Advanced Search"""
-    return feature_pending("Advanced Search", _SYSTEM, category=_CATEGORY)
-
-
 @pupil_management_menu_bp.route("/pupil-profile", methods=["GET"])
 @token_required
 @staff_required
@@ -65,42 +57,42 @@ def pupil_management_pupil_profile():
     return feature_pending("Pupil Profile", _SYSTEM, category=_CATEGORY)
 
 
-@pupil_management_menu_bp.route("/open-admissions", methods=["GET"])
+@pupil_management_menu_bp.route("/admissions", methods=["GET"])
 @token_required
 @staff_required
-def pupil_management_open_admissions():
-    """open_admissions"""
-    return feature_pending("open_admissions", _SYSTEM, category=_CATEGORY)
+def pupil_management_admissions():
+    """Admissions"""
+    return feature_pending("Admissions", _SYSTEM, category=_CATEGORY)
 
 
-@pupil_management_menu_bp.route("/year-group-enrolment", methods=["GET"])
+@pupil_management_menu_bp.route("/year-6-transition", methods=["GET"])
 @token_required
 @staff_required
-def pupil_management_year_group_enrolment():
-    """Year Group Enrolment"""
-    return feature_pending("Year Group Enrolment", _SYSTEM, category=_CATEGORY)
+def pupil_management_year_6_transition():
+    """Year 6 Transition"""
+    return feature_pending("Year 6 Transition", _SYSTEM, category=_CATEGORY)
 
 
-@pupil_management_menu_bp.route("/open-onboarding", methods=["GET"])
+@pupil_management_menu_bp.route("/enrolment-leavers", methods=["GET"])
 @token_required
 @staff_required
-def pupil_management_open_onboarding():
-    """open_onboarding"""
-    return feature_pending("open_onboarding", _SYSTEM, category=_CATEGORY)
+def pupil_management_enrolment_leavers():
+    """Enrolment & Leavers"""
+    return feature_pending("Enrolment & Leavers", _SYSTEM, category=_CATEGORY)
 
 
-@pupil_management_menu_bp.route("/bulk-operations", methods=["GET"])
+@pupil_management_menu_bp.route("/bulk-import", methods=["GET"])
 @token_required
 @staff_required
-def pupil_management_bulk_operations():
-    """Bulk Operations"""
-    return feature_pending("Bulk Operations", _SYSTEM, category=_CATEGORY)
+def pupil_management_bulk_import():
+    """Bulk Import"""
+    return feature_pending("Bulk Import", _SYSTEM, category=_CATEGORY)
 
 
-@pupil_management_menu_bp.route("/open-alumni", methods=["GET"])
+@pupil_management_menu_bp.route("/alumni", methods=["GET"])
 @token_required
 @staff_required
-def pupil_management_open_alumni():
-    """open_alumni"""
-    return feature_pending("open_alumni", _SYSTEM, category=_CATEGORY)
+def pupil_management_alumni():
+    """Alumni"""
+    return feature_pending("Alumni", _SYSTEM, category=_CATEGORY)
 

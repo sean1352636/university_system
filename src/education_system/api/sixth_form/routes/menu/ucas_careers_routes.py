@@ -41,12 +41,12 @@ def ucas_careers_university_visits():
     return feature_pending("University Visits", _SYSTEM, category=_CATEGORY)
 
 
-@ucas_careers_menu_bp.route("/open-apprenticeships", methods=["GET"])
+@ucas_careers_menu_bp.route("/apprenticeships", methods=["GET"])
 @token_required
 @staff_required
-def ucas_careers_open_apprenticeships():
-    """open_apprenticeships"""
-    return feature_pending("open_apprenticeships", _SYSTEM, category=_CATEGORY)
+def ucas_careers_apprenticeships():
+    """Apprenticeships"""
+    return feature_pending("Apprenticeships", _SYSTEM, category=_CATEGORY)
 
 
 @ucas_careers_menu_bp.route("/careers-guidance", methods=["GET"])
@@ -57,10 +57,10 @@ def ucas_careers_careers_guidance():
     return feature_pending("Careers Guidance", _SYSTEM, category=_CATEGORY)
 
 
-@ucas_careers_menu_bp.route("/open-destinations", methods=["GET"])
+@ucas_careers_menu_bp.route("/destinations", methods=["GET"])
 @token_required
 @staff_required
-def ucas_careers_open_destinations():
-    """open_destinations"""
-    return feature_pending("open_destinations", _SYSTEM, category=_CATEGORY)
+def ucas_careers_destinations():
+    """Destinations"""
+    return feature_pending("Destinations", _SYSTEM, category=_CATEGORY)
 

@@ -1,4 +1,4 @@
-"""Tkinter views for Sixth Form Equality & Diversity."""
+"""Tkinter views for Primary School Equality & Diversity."""
 
 from __future__ import annotations
 
@@ -24,6 +24,7 @@ from education_system.systems.primary.domain.pastoral.equality_diversity.equalit
     ValidationError,
     severity_label,
 )
+from education_system.systems.primary.interfaces.gui import kit
 
 logger = logging.getLogger(__name__)
 
@@ -43,14 +44,26 @@ _STATUS_TAGS = {
 
 def open_equality_diversity_window(parent=None) -> None:
     data.init_db()
-    master = getattr(parent, "root", parent)
-    win = tk.Toplevel(master) if master is not None else tk.Tk()
-    win.title(f"Equality & Diversity — {branding.SYSTEM_NAME}")
-    win.geometry(WIN_GEOMETRY)
-    win.minsize(*WIN_MINSIZE)
+    if parent is None:
+        # Run on its own (no main window): a window of its own, as before.
+        win = tk.Tk()
+        win.title(f"Equality & Diversity — {branding.SYSTEM_NAME}")
+        win.geometry(WIN_GEOMETRY)
+        win.minsize(*WIN_MINSIZE)
+        frame = ttk.Frame(win, padding=10)
+        frame.pack(fill="both", expand=True)
+        _draw_equality_diversity(frame, None)
+        return
+    kit.show_page(parent, "Equality & Diversity",
+                  lambda page: _draw_equality_diversity(page, parent))
 
-    nb = ttk.Notebook(win)
-    nb.pack(fill="both", expand=True, padx=10, pady=10)
+
+def _draw_equality_diversity(parent, host) -> None:
+    kit.page_heading(parent, "Equality & Diversity",
+                     "Incidents involving a protected characteristic: "
+                     "investigation, outcome and actions.")
+    nb = ttk.Notebook(parent)
+    nb.pack(fill="both", expand=True)
 
     EDTab(nb, scope="open",          label="Open")
     EDTab(nb, scope="substantiated", label="Substantiated")
@@ -72,32 +85,23 @@ class EDTab:
         bar = ttk.Frame(self.frame)
         bar.pack(fill="x", padx=8, pady=(8, 4))
         ttk.Label(bar, text="Type:").pack(side="left")
-        self.f_type = ttk.Combobox(bar,
-                                     values=("",) + INCIDENT_TYPES,
-                                     state="readonly", width=22)
-        self.f_type.current(0)
+        self.f_type = kit.ChoiceField(bar, choices=INCIDENT_TYPES,
+                                      blank=True, width=22)
         self.f_type.pack(side="left", padx=(2, 8))
         ttk.Label(bar, text="Characteristic:").pack(side="left")
-        self.f_char = ttk.Combobox(bar,
-                                     values=("",) + PROTECTED_CHARACTERISTICS,
-                                     state="readonly", width=24)
-        self.f_char.current(0)
+        self.f_char = kit.ChoiceField(bar, choices=PROTECTED_CHARACTERISTICS,
+                                      blank=True, width=24)
         self.f_char.pack(side="left", padx=(2, 8))
         if self.scope == "all":
             ttk.Label(bar, text="Status:").pack(side="left")
-            self.f_status = ttk.Combobox(bar,
-                                           values=("",) + STATUSES,
-                                           state="readonly", width=18)
-            self.f_status.current(0)
+            self.f_status = kit.ChoiceField(bar, choices=STATUSES,
+                                            blank=True, width=18)
             self.f_status.pack(side="left", padx=(2, 8))
         else:
             self.f_status = None
         ttk.Label(bar, text="Min sev:").pack(side="left")
-        self.f_sev = ttk.Combobox(bar,
-                                     values=("",) + tuple(str(s)
-                                                            for s in SEVERITIES),
-                                     state="readonly", width=4)
-        self.f_sev.current(0)
+        self.f_sev = kit.ChoiceField(bar, choices=[str(s) for s in SEVERITIES],
+                                     blank=True, width=4)
         self.f_sev.pack(side="left", padx=(2, 8))
         ttk.Label(bar, text="Reporter:").pack(side="left")
         self.f_rep = ttk.Entry(bar, width=12)
@@ -159,12 +163,12 @@ class EDTab:
         self.count.pack(side="right")
 
     def _clear(self) -> None:
-        self.f_type.current(0)
-        self.f_char.current(0)
-        self.f_sev.current(0)
+        self.f_type.set("")
+        self.f_char.set("")
+        self.f_sev.set("")
         self.f_rep.delete(0, "end")
         if self.f_status is not None:
-            self.f_status.current(0)
+            self.f_status.set("")
         self.refresh()
 
     def _filters(self) -> dict:
@@ -243,8 +247,8 @@ class EDTab:
         i = self._selected()
         if not i:
             return
-        by = _prompt_text(self.frame, "Investigator",
-                            initial=i.investigated_by or "")
+        by = _prompt_staff(self.frame, "Investigator",
+                             initial=i.investigated_by or "")
         if not by:
             return
         try:
@@ -385,7 +389,7 @@ class EDEditor:
         self.win = tk.Toplevel(parent)
         self.win.title(f"Edit incident #{incident.incident_id}"
                           if incident else "New E&D incident")
-        self.win.geometry("860x880")
+        self.win.geometry("860x700")
         self.win.transient(parent); self.win.after_idle(self.win.grab_set)
         self._build()
         if incident:
@@ -393,34 +397,49 @@ class EDEditor:
         self.win.wait_window()
 
     def _build(self) -> None:
-        body = ttk.Frame(self.win)
-        body.pack(fill="both", expand=True, padx=12, pady=10)
+        body, footer = kit.scrolled_form(self.win)
         body.grid_columnconfigure(1, weight=1)
         body.grid_columnconfigure(3, weight=1)
         self.vars: dict[str, tk.Variable] = {}
         self.texts: dict[str, tk.Text] = {}
         self.bools: dict[str, tk.BooleanVar] = {}
 
-        def entry(row, col, label, key, width=22):
+        def entry(row, col, label, key, width=22, kind=None):
             ttk.Label(body, text=label).grid(
                 row=row, column=col, sticky="w", padx=4, pady=2)
             v = tk.StringVar()
             self.vars[key] = v
-            ttk.Entry(body, textvariable=v, width=width).grid(
-                row=row, column=col + 1, sticky="ew", padx=4, pady=2)
+            if kind == "date":
+                w = kit.DateField(body, v)
+            elif kind == "time":
+                w = kit.TimeField(body, v, hours=range(24))
+            elif kind == "staff_name":
+                w = kit.StaffPicker(body, v, by="name", width=30)
+            else:
+                w = ttk.Entry(body, textvariable=v, width=width)
+            w.grid(row=row, column=col + 1, sticky="ew" if kind is None
+                   else "w", padx=4, pady=2)
 
         def combo(row, col, label, key, values, width=22):
             ttk.Label(body, text=label).grid(
                 row=row, column=col, sticky="w", padx=4, pady=2)
             v = tk.StringVar()
             self.vars[key] = v
-            ttk.Combobox(body, textvariable=v, values=values,
-                          state="readonly", width=width).grid(
+            kit.ChoiceField(body, v, choices=values, width=width).grid(
                 row=row, column=col + 1, sticky="ew", padx=4, pady=2)
 
-        entry(0, 0, "Date*", "incident_date")
-        entry(0, 2, "Time (HH:MM)", "incident_time")
-        entry(1, 0, "Reported on", "reported_on")
+        def severity_choices():
+            out = []
+            for n in SEVERITIES:
+                try:
+                    out.append((str(n), f"{n} — {severity_label(n)}"))
+                except Exception:  # noqa: BLE001 - the number is enough
+                    out.append((str(n), str(n)))
+            return out
+
+        entry(0, 0, "Date*", "incident_date", kind="date")
+        entry(0, 2, "Time", "incident_time", kind="time")
+        entry(1, 0, "Reported on", "reported_on", kind="date")
         entry(1, 2, "Reporter*", "reporter")
         combo(2, 0, "Reporter role*", "reporter_role",
                  SUBJECT_ROLES)
@@ -433,12 +452,11 @@ class EDEditor:
                  INCIDENT_TYPES)
         combo(5, 0, "Characteristic*", "protected_characteristic",
                  PROTECTED_CHARACTERISTICS)
-        combo(5, 2, "Severity*", "severity",
-                 ("1", "2", "3", "4", "5"))
+        combo(5, 2, "Severity*", "severity", severity_choices())
         entry(6, 0, "Location", "location")
         combo(6, 2, "Status*", "status", STATUSES)
-        entry(7, 0, "Investigated by", "investigated_by")
-        entry(7, 2, "Closed on", "closed_on")
+        entry(7, 0, "Investigated by", "investigated_by", kind="staff_name")
+        entry(7, 2, "Closed on", "closed_on", kind="date")
 
         flags = ttk.LabelFrame(body, text="Flags")
         flags.grid(row=8, column=0, columnspan=4,
@@ -482,11 +500,9 @@ class EDEditor:
             self.texts[key] = t
             row += 1
 
-        bar = ttk.Frame(self.win)
-        bar.pack(fill="x", padx=12, pady=(0, 10))
-        ttk.Button(bar, text="Save",
+        ttk.Button(footer, text="Save",
                     command=self._save).pack(side="right", padx=4)
-        ttk.Button(bar, text="Cancel",
+        ttk.Button(footer, text="Cancel",
                     command=self.win.destroy).pack(side="right")
 
         now = _dt.datetime.now()
@@ -645,14 +661,15 @@ class ActionsDialog:
 
 # ── Helpers ────────────────────────────────────────────────────────
 
-def _prompt_text(parent, title: str, *,
+def _prompt_staff(parent, title: str, *,
                   initial: str = "") -> str | None:
+    """Pick a member of staff (their name is what is stored)."""
     win = tk.Toplevel(parent)
-    win.title(title); win.geometry("360x140")
+    win.title(title); win.geometry("460x140")
     win.transient(parent); win.after_idle(win.grab_set)
     ttk.Label(win, text=title).pack(anchor="w", padx=8, pady=8)
     var = tk.StringVar(value=initial)
-    ttk.Entry(win, textvariable=var).pack(fill="x", padx=8)
+    kit.StaffPicker(win, var, by="name").pack(fill="x", padx=8)
     result: dict = {"value": None}
 
     def ok() -> None:
@@ -675,8 +692,7 @@ def _prompt_choice(parent, title: str, options: list[str], *,
     win.transient(parent); win.after_idle(win.grab_set)
     ttk.Label(win, text=title).pack(anchor="w", padx=8, pady=8)
     var = tk.StringVar(value=default or (options[0] if options else ""))
-    ttk.Combobox(win, textvariable=var, values=options,
-                  state="readonly").pack(fill="x", padx=8)
+    kit.ChoiceField(win, var, choices=options).pack(fill="x", padx=8)
     result: dict = {"value": None}
 
     def ok() -> None:

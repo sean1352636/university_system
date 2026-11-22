@@ -10,6 +10,10 @@ from education_system.systems.university.plugins.campus_commerce.interfaces.cli.
     LOYALTY_POINTS_PER_POUND,
     ACTIVITY_LOGGER_AVAILABLE, log_activity, log_create,
 )
+from education_system.systems.university.plugins.campus_commerce.domain.charity_shop.services.charity_shop_service import (
+    record_refund,
+    record_sale_revenue,
+)
 
 
 def create_promotional_event(name: str, discount_type: str, discount_value: float,
@@ -70,8 +74,9 @@ def get_active_promotions() -> List[Dict]:
     return promos
 
 
-def process_refund(sale_id: int, reason: str) -> bool:
-    """Handle returns and refunds."""
+def process_refund(sale_id: int, reason: str, refund_method: str = 'cash',
+                   processed_by: str = 'System') -> bool:
+    """Handle returns and refunds. The refund is posted to Finance by the domain service."""
     try:
         conn = get_connection()
         cursor = conn.cursor()
@@ -118,8 +123,19 @@ def process_refund(sale_id: int, reason: str) -> bool:
         conn.commit()
         conn.close()
 
+        # Post the refund to Finance (never raises; local refund stands regardless)
+        record_refund(
+            amount=amount,
+            refund_method=refund_method,
+            refund_ref=f"CHARITY-REFUND-SALE-{sale_id}-{datetime.now().strftime('%Y%m%d%H%M%S')}",
+            student_id=None,
+            processed_by=processed_by,
+            reason=reason,
+            notes=f"Sale {sale_id}",
+        )
+
         if ACTIVITY_LOGGER_AVAILABLE:
-            log_activity('refund', 'charity_shop_sale', sale_id=sale_id, amount=amount, reason=reason)
+            log_activity('refund', 'charity_shop_sale', details={'sale_id': sale_id, 'amount': amount, 'reason': reason})
 
         return True
     except sqlite3.Error as e:
@@ -127,8 +143,9 @@ def process_refund(sale_id: int, reason: str) -> bool:
         return False
 
 
-def layaway_system(item_id: int, customer_id: int, deposit: float, due_days: int = 30) -> Optional[int]:
-    """Hold items for customers with deposits."""
+def layaway_system(item_id: int, customer_id: int, deposit: float, due_days: int = 30,
+                   payment_method: str = 'Cash', processed_by: str = 'System') -> Optional[int]:
+    """Hold items for customers with deposits. The deposit is posted to Finance by the domain service."""
     try:
         conn = get_connection()
         cursor = conn.cursor()
@@ -162,6 +179,13 @@ def layaway_system(item_id: int, customer_id: int, deposit: float, due_days: int
 
         conn.commit()
         conn.close()
+
+        if deposit and deposit > 0:
+            record_sale_revenue(
+                amount=deposit, revenue_category="Layaway Deposit",
+                transaction_ref=f"CS-LAYAWAY-{layaway_id}", payment_method=payment_method,
+                notes=f"Layaway {layaway_id} deposit for item {item_id} (customer {customer_id}) by {processed_by}",
+            )
         return layaway_id
     except sqlite3.Error as e:
         logger.error(f"Error creating layaway: {e}")
@@ -230,6 +254,13 @@ def gift_card_management(action: str, **kwargs) -> Any:
 
         conn.commit()
         conn.close()
+
+        if amount and amount > 0:
+            record_sale_revenue(
+                amount=amount, revenue_category="Gift Card",
+                transaction_ref=f"CS-GIFTCARD-{code}", payment_method=kwargs.get('payment_method', 'Cash'),
+                notes=f"Gift card issued to customer {customer_id} by {kwargs.get('processed_by', 'System')}",
+            )
         return {'code': code, 'balance': amount, 'expiry': expiry_date}
 
     elif action == 'check_balance':

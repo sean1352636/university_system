@@ -40,7 +40,7 @@ class TestHomeCourses:
     def test_maps_the_university_catalogue(self, monkeypatch):
         rows = [{"code": "CS", "name": "Computer Science",
                  "min_tariff": 112, "duration": "3 years"}]
-        import education_system.systems.university.domains.academics.domain.services.admissions_selection as sel
+        import education_system.systems.university.domains.admissions.domain.services.admissions_selection as sel
         monkeypatch.setattr(sel, "list_active_courses", lambda: rows)
 
         out = dc.home_courses()
@@ -50,7 +50,7 @@ class TestHomeCourses:
         assert out[0].duration == "3 years"
 
     def test_rows_without_a_code_are_dropped(self, monkeypatch):
-        import education_system.systems.university.domains.academics.domain.services.admissions_selection as sel
+        import education_system.systems.university.domains.admissions.domain.services.admissions_selection as sel
         monkeypatch.setattr(sel, "list_active_courses",
                             lambda: [{"code": "", "name": "Nameless"},
                                      {"code": "CS", "name": "Computer Science"}])
@@ -59,7 +59,7 @@ class TestHomeCourses:
     def test_a_missing_university_degrades_to_an_empty_list(self, monkeypatch):
         """A sixth form running without the university installed keeps its
         plain text fields; it does not get a traceback opening a dialog."""
-        import education_system.systems.university.domains.academics.domain.services.admissions_selection as sel
+        import education_system.systems.university.domains.admissions.domain.services.admissions_selection as sel
 
         def _boom():
             raise RuntimeError("university not installed")
@@ -114,7 +114,9 @@ class TestCliPicker:
 
     @pytest.fixture(autouse=True)
     def _catalogue(self, monkeypatch):
-        from education_system.systems.sixth_form.domain.progression.university.cli import ucas as ucas_cli
+        from education_system.systems.sixth_form.interfaces.cli.progression.university import (
+            ucas as ucas_cli,
+        )
         monkeypatch.setattr(ucas_cli.destination_courses, "home_courses",
                             lambda: _CATALOGUE)
         monkeypatch.setattr(ucas_cli.destination_courses,

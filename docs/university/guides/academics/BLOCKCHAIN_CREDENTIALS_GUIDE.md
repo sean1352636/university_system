@@ -414,5 +414,5 @@ The credential wallet is your personal digital repository for storing and managi
 ---
 
 **Last Updated**: February 2026
-**Module**: `university_system/modules/domain/blockchain/gui/blockchain_credentials_gui.py`
+**Module**: `src/education_system/systems/university/domains/progression/interfaces/gui/blockchain_credentials_gui.py`
 **Support**: credentials@university.edu | (555) 123-BLKC

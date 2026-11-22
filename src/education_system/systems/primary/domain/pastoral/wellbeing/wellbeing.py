@@ -112,13 +112,15 @@ def init_db() -> None:
     global _DB_READY
     if _DB_READY:
         return
+    from education_system.systems.primary.domain.learners.pupils import pupils as _pupils
+    _pupils.init_db()  # reads join pupils; a fresh database has no pupils table yet
     try:
         with _connect() as conn:
             conn.executescript(_SCHEMA)
     except sqlite3.Error:
         logger.exception("Failed to initialise wellbeing table")
         raise
-    logger.info("Secondary wellbeing table ready")
+    logger.info("Primary wellbeing table ready")
     _DB_READY = True
 
 

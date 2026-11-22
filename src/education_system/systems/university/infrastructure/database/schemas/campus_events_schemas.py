@@ -20,7 +20,7 @@ def init_campus_events_system_db():
         CREATE TABLE IF NOT EXISTS unified_events (
             event_id INTEGER PRIMARY KEY AUTOINCREMENT,
             source_type TEXT NOT NULL,
-            source_event_id INTEGER,
+            source_event_id TEXT,
             title TEXT NOT NULL,
             description TEXT,
             event_type TEXT,

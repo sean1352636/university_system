@@ -27,26 +27,24 @@ ID_DIGITS = 7
 EMAIL_DOMAIN = "primary.sch.uk"
 
 ROLES: tuple[str, ...] = (
-    "Principal", "Vice Principal", "Head of Key Stage 3", "Head of Key Stage 4", 
-    "Head of Year", "Head of Department", "Subject Lead",
-    "Teacher", "Tutor", "Cover Teacher", "Teaching Assistant",
-    "Librarian", "Exams Officer", "Careers Adviser",
-    "Counsellor", "Pastoral Manager", "Safeguarding Lead (DSL)",
-    "Deputy DSL", "SENCO", "Administrator", "Receptionist",
-    "Finance Officer", "IT Support", "Caretaker", "Other",
+    "Headteacher", "Deputy Headteacher", "Assistant Headteacher",
+    "EYFS Lead", "KS1 Lead", "KS2 Lead", "Subject Lead",
+    "Teacher", "Cover Teacher", "Higher Level Teaching Assistant",
+    "Teaching Assistant", "Learning Mentor", "Pastoral Lead",
+    "Safeguarding Lead (DSL)", "Deputy DSL", "SENCO",
+    "School Business Manager", "Administrator", "Receptionist",
+    "Finance Officer", "IT Support", "Midday Supervisor",
+    "Breakfast / After-School Club", "Cook", "Caretaker", "Other",
 )
 DEFAULT_ROLE: str = "Teacher"
 
 DEPARTMENTS: tuple[str, ...] = (
-    "English", "Mathematics", "Sciences", "Biology", "Chemistry",
-    "Physics", "Computer Science", "Economics", "Business Studies",
-    "Geography", "History", "Politics", "Psychology", "Sociology",
-    "Religious Studies", "Philosophy", "Modern Languages",
-    "Classics", "Art & Design", "Photography", "Music",
-    "Drama", "Media Studies", "Physical Education",
-    "School Office", "Pastoral", "Safeguarding",
-    "Careers", "Library", "Exams", "Admin", "Finance",
-    "IT", "Estates", "Other",
+    "EYFS", "KS1", "KS2", "English", "Phonics & Reading",
+    "Mathematics", "Science", "Computing", "History", "Geography",
+    "Religious Education", "PSHE / RSHE", "Languages", "Art & Design",
+    "Design & Technology", "Music", "Physical Education", "SEND",
+    "School Office", "Pastoral", "Safeguarding", "Library",
+    "Admin", "Finance", "IT", "Catering", "Estates", "Other",
 )
 DEFAULT_DEPARTMENT: str = "Other"
 
@@ -553,7 +551,7 @@ class Summary:
 
 
 _CRITICAL_ROLES: tuple[str, ...] = (
-    "Principal", "Safeguarding Lead (DSL)", "Exams Officer", "SENCO",
+    "Headteacher", "Safeguarding Lead (DSL)", "SENCO",
 )
 
 

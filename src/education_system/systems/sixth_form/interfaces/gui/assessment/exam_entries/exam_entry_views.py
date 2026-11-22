@@ -8,6 +8,11 @@ Tabbed Notebook:
   per row in one go.
 * Per-student — pick a student, see all their entries.
 * Series     — counts and total fees for a board/season/year.
+* Entry codes — the component catalogue per entry (qualification) code,
+  and entering a candidate for a whole option.
+* Deadlines & fees — board deadlines per series, the deadline calendar
+  and the late-fee calculator.
+* Amendments — every entry, change, withdrawal and deletion.
 """
 
 from __future__ import annotations
@@ -16,7 +21,9 @@ from education_system.systems.sixth_form.interfaces.gui._ui import grab_when_vie
 import logging
 import tkinter as tk
 from datetime import date as _date
-from tkinter import messagebox, ttk
+from tkinter import ttk
+from education_system.systems.sixth_form.interfaces.gui._sidebar import SidebarBook
+from education_system.platform.delivery.gui.parented_dialogs import messagebox
 from typing import Any, Callable
 from education_system.systems.sixth_form.domain.assessment.exam_entries import exam_entries
 from education_system.systems.sixth_form.domain.assessment.exam_entries import exam_entries as data
@@ -33,7 +40,8 @@ from education_system.systems.sixth_form.domain.assessment.exam_entries.exam_ent
     ValidationError,
 )
 from education_system.systems.sixth_form.domain.learners.students.students import A_LEVEL_SUBJECTS
-from education_system.systems.sixth_form.domain.academics.subjects.subjects import EXAM_BOARDS
+# Boards come from exam_entries (Pearson, AQA, OCR, WJEC/Eduqas, CCEA + legacy).
+from education_system.systems.sixth_form.domain.assessment.exam_entries.exam_entries import EXAM_BOARDS
 
 logger = logging.getLogger(__name__)
 
@@ -68,9 +76,20 @@ def _default_year() -> int:
 
 def open_directory(gui) -> None:
     frame = _clear(gui)
-    _heading(frame, "Exam Entries")
+    head = ttk.Frame(frame)
+    head.pack(fill="x")
+    _heading(head, "Exam Entries")
 
-    nb = ttk.Notebook(frame)
+    def _exams_office() -> None:
+        from education_system.systems.sixth_form.interfaces.gui.assessment.exams_office import (
+            exams_office_views,
+        )
+        exams_office_views.open_exams_office(gui)
+
+    ttk.Button(head, text="Exams Office →", command=_exams_office
+               ).place(relx=1.0, x=-4, y=4, anchor="ne")
+
+    nb = SidebarBook(frame)
     nb.pack(fill="both", expand=True)
 
     dir_tab = ttk.Frame(nb, padding=8)
@@ -86,6 +105,24 @@ def open_directory(gui) -> None:
     _build_bulk_tab(gui, bulk_tab)
     _build_student_tab(gui, student_tab)
     _build_series_tab(gui, series_tab)
+
+    # Exams-office additions (entry codes, deadlines/fees, amendments).
+    from education_system.systems.sixth_form.interfaces.gui.assessment.exams_office import (
+        entry_admin_views,
+    )
+    for label, builder in (
+        ("Entry codes", entry_admin_views.build_components_tab),
+        ("Deadlines & fees", entry_admin_views.build_deadlines_tab),
+        ("Amendments", entry_admin_views.build_amendments_tab),
+    ):
+        tab = ttk.Frame(nb, padding=8)
+        nb.add(tab, text=label)
+        try:
+            builder(gui, tab)
+        except Exception as e:
+            logger.exception("Exam entries tab %s failed", label)
+            ttk.Label(tab, text=f"Could not load: {e}",
+                      foreground="#a33").pack(anchor="w")
 
 
 # ─── Directory tab ──────────────────────────────────────────────────
@@ -299,6 +336,8 @@ def _entry_dialog(gui, *, title: str,
     board_var = tk.StringVar(value=existing.exam_board if is_edit
                               else (EXAM_BOARDS[0]))
     paper_var = tk.StringVar(value=existing.paper_code if is_edit else "")
+    entry_code_var = tk.StringVar(
+        value=(existing.entry_code or "") if is_edit else "")
     title_var = tk.StringVar(
         value=(existing.paper_title or "") if is_edit else "")
     season_var = tk.StringVar(value=existing.season if is_edit
@@ -358,6 +397,9 @@ def _entry_dialog(gui, *, title: str,
                                     state="readonly", width=12))
     row(10, "Fee (£):", ttk.Entry(frm, textvariable=fee_var, width=10))
     row(11, "Notes:", ttk.Entry(frm, textvariable=notes_var, width=42))
+    row(12, "Entry code:", ttk.Entry(frm, textvariable=entry_code_var, width=14))
+    ttk.Label(frm, text="(blank = worked out from the paper code)",
+              foreground="#555").grid(row=13, column=1, sticky="w")
 
     def save() -> None:
         if is_edit:
@@ -381,6 +423,7 @@ def _entry_dialog(gui, *, title: str,
             "status":       status_var.get(),
             "fee":          fee_var.get(),
             "notes":        notes_var.get(),
+            "entry_code":   entry_code_var.get(),
         }
         try:
             if is_edit:
@@ -399,7 +442,7 @@ def _entry_dialog(gui, *, title: str,
             on_saved()
 
     bar = ttk.Frame(frm)
-    bar.grid(row=12, column=0, columnspan=2, pady=(10, 0), sticky="e")
+    bar.grid(row=14, column=0, columnspan=2, pady=(10, 0), sticky="e")
     ttk.Button(bar, text="Save", command=save).pack(side="left", padx=(0, 6))
     ttk.Button(bar, text="Cancel", command=win.destroy).pack(side="left")
 

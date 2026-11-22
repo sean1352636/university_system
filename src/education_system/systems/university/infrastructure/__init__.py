@@ -90,7 +90,7 @@ def __getattr__(name):
 
     if name == 'ML_AVAILABLE':
         try:
-            from education_system.systems.university.infrastructure import ml
+            from education_system.systems.university.shared.ai import ml
             return True
         except ImportError:
             return False
@@ -126,7 +126,7 @@ def __getattr__(name):
 
     if name in _LAZY_ML_EXPORTS:
         try:
-            from education_system.systems.university.infrastructure import ml
+            from education_system.systems.university.shared.ai import ml
             return getattr(ml, name)
         except ImportError:
             return None
@@ -181,9 +181,9 @@ _LAZY_SHARED_CONTEXT_EXPORTS = {'get_auth', 'set_auth'}
 
 _LAZY_ML_EXPORTS = {
     'CourseRecommender', 'RecommendationEngine', 'EssayGrader', 'GradingRubric',
-    'EssayFeedback', 'AdvancedPlagiarismDetector', 'CodePlagiarismDetector',
+    'EssayFeedback',
     'StudentSuccessPredictor', 'CoursePerformancePredictor', 'LearningPathOptimizer',
-    'get_course_recommender', 'get_essay_grader', 'get_plagiarism_detector',
+    'get_course_recommender', 'get_essay_grader',
     'get_success_predictor', 'get_path_optimizer'
 }
 
@@ -321,7 +321,6 @@ __all__ = [
     'LearningPathOptimizer',
     'get_course_recommender',
     'get_essay_grader',
-    'get_plagiarism_detector',
     'get_success_predictor',
     'get_path_optimizer',
     # Workflow Automation

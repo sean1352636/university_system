@@ -27,11 +27,20 @@ import datetime as _dt
 import logging
 import statistics
 from dataclasses import dataclass, field
+from functools import lru_cache
 from typing import Any
 
+from education_system.systems.sixth_form.domain.academics.qualifications import (
+    grade_scales as _gs,
+)
+
 from education_system.systems.sixth_form.domain.academics.assignments import (
-    assignments as core,
     assignments_marking as marking,
+)
+from education_system.systems.sixth_form.domain.academics.assignments import (
+    models as assignments_models,
+    store as assignments_store,
+    submissions as assignments_submissions,
 )
 
 logger = logging.getLogger(__name__)
@@ -41,7 +50,7 @@ logger = logging.getLogger(__name__)
 # through ``core`` and ``marking``, so pointing those at a database
 # points this at the same one.
 
-ValidationError = core.ValidationError
+ValidationError = assignments_models.ValidationError
 
 
 # ── Vocabularies ──────────────────────────────────────────────────
@@ -77,8 +86,8 @@ REFERRAL_THRESHOLD: int = 4
 class HistoryEntry:
     """One piece of coursework in a student's timeline."""
 
-    assignment: core.Assignment
-    submission: core.Submission
+    assignment: assignments_models.Assignment
+    submission: assignments_models.Submission
 
     @property
     def percent(self) -> float | None:
@@ -90,7 +99,7 @@ class HistoryEntry:
 
     @property
     def due_date(self) -> str | None:
-        return core.effective_due_date(self.submission, self.assignment)
+        return assignments_submissions.effective_due_date(self.submission, self.assignment)
 
     @property
     def is_missing(self) -> bool:
@@ -156,14 +165,19 @@ class TargetComparison:
     actual_grade: str | None = None
     actual_percent: float | None = None
     pieces: int = 0
+    qualification_type: str | None = None
 
     @property
     def grades_below_target(self) -> int | None:
-        """How many grades short of target, or None if not comparable."""
+        """How many grades short of target, or None if not comparable.
+
+        Counted on the subject's own scale (a BTEC Merit target against
+        a Pass is one grade), A*-U when the type is unknown.
+        """
         if not self.target_grade or not self.actual_grade:
             return None
-        target = _GRADE_POINTS.get(self.target_grade)
-        actual = _GRADE_POINTS.get(self.actual_grade)
+        target = grade_points(self.target_grade, self.qualification_type)
+        actual = grade_points(self.actual_grade, self.qualification_type)
         if target is None or actual is None:
             return None
         return max(0, target - actual)
@@ -239,6 +253,8 @@ class Distribution:
     highest: float | None = None
     spread: float | None = None
     by_grade: dict[str, int] = field(default_factory=dict)
+    # Scale the grade buckets are on (None = the college's A*-U letters).
+    qualification_type: str | None = None
 
     @property
     def message(self) -> str:
@@ -315,6 +331,7 @@ class WeightedGrade:
     pieces: int = 0
     contributions: list[tuple[str, float, float]] = field(
         default_factory=list)
+    qualification_type: str | None = None
 
     @property
     def is_complete(self) -> bool:
@@ -347,9 +364,61 @@ def _student_names() -> dict[str, str]:
         return {}
 
 
-def percent_to_grade(percent: float | None) -> str | None:
-    """Letter grade for a percentage, using the college defaults."""
-    return marking.pct_to_letter(percent)
+def percent_to_grade(percent: float | None,
+                     qualification_type: str | None = None) -> str | None:
+    """Working grade for a percentage on the subject's scale.
+
+    A*-E letter scales use the college's own boundaries (marking
+    defaults); BTEC, T Level, GCSE … use their grade_scales boundaries.
+    """
+    if _uses_letter_boundaries(qualification_type):
+        return marking.pct_to_letter(percent)
+    return _gs.percent_to_grade(percent, qualification_type)
+
+
+def _uses_letter_boundaries(qualification_type: str | None) -> bool:
+    try:
+        return (_gs.scale_for(qualification_type).key
+                in _gs.LETTER_BOUNDARY_SCALES)
+    except ValueError:
+        return True
+
+
+def grade_points(grade: str | None,
+                 qualification_type: str | None = None) -> int | None:
+    """Points on the scale (A level = the old A*6..U0); None if off-scale."""
+    if not grade:
+        return None
+    try:
+        points = _gs.grade_points(grade, qualification_type)
+    except ValueError:
+        points = None
+    return points if points is not None else _GRADE_POINTS.get(grade)
+
+
+def grade_order(qualification_type: str | None = None) -> tuple[str, ...]:
+    """Grade buckets best first for a scale (A*-U when unknown)."""
+    if _uses_letter_boundaries(qualification_type):
+        return GRADE_ORDER
+    return _gs.grades_for(qualification_type)
+
+
+@lru_cache(maxsize=2048)
+def qualification_type_of(student_id: str | None,
+                          subject_name: str | None) -> str | None:
+    """Type a learner takes the subject as; with no learner, the
+    subject catalogue's qualification. None = unknown (A*-U)."""
+    if not subject_name:
+        return None
+    try:
+        from education_system.systems.sixth_form.domain.academics.qualifications import (
+            learning_aims,
+        )
+        return learning_aims.qualification_type_for(student_id, subject_name)
+    except Exception:
+        logger.debug("Qualification type unavailable for %s / %s",
+                     student_id, subject_name, exc_info=True)
+        return None
 
 
 def _sorted_history(entries: list[HistoryEntry]) -> list[HistoryEntry]:
@@ -373,13 +442,13 @@ def student_history(student_id: str, *,
     each seeing one weak piece looks very different from one subject
     seeing three.
     """
-    core.init_db()
+    assignments_store.init_db()
     sid = str(student_id).strip()
     names = _student_names()
     out = StudentHistory(student_id=sid,
                           student_name=names.get(sid, sid))
-    for sub in core.list_submissions(student_id=sid):
-        a = core.get_assignment(sub.assignment_id)
+    for sub in assignments_store.list_submissions(student_id=sid):
+        a = assignments_store.get_assignment(sub.assignment_id)
         if a is None:
             continue
         if subject_name and a.subject_name != subject_name:
@@ -446,7 +515,7 @@ def target_comparison(student_id: str,
     holding its own targets — a second copy of a student's target is a
     second thing to be wrong.
     """
-    core.init_db()
+    assignments_store.init_db()
     sid = str(student_id).strip()
     history = student_history(sid, subject_name=subject_name)
     marked = history.marked
@@ -454,10 +523,12 @@ def target_comparison(student_id: str,
         student_id=sid, subject_name=subject_name,
         target_grade=_target_grade(sid, subject_name),
         predicted_grade=_predicted_grade(sid, subject_name),
-        pieces=len(marked))
+        pieces=len(marked),
+        qualification_type=qualification_type_of(sid, subject_name))
     if marked:
         out.actual_percent = history.average_percent
-        out.actual_grade = percent_to_grade(out.actual_percent)
+        out.actual_grade = percent_to_grade(out.actual_percent,
+                                            out.qualification_type)
     return out
 
 
@@ -475,10 +546,10 @@ def underperformers(*, subject_name: str | None = None,
     Ranked by the size of the gap, so intervention starts with the
     students furthest behind rather than the first alphabetically.
     """
-    core.init_db()
+    assignments_store.init_db()
     students: set[str] = set()
-    for a in core.list_assignments(subject_name=subject_name):
-        for sub in core.list_submissions(assignment_id=a.assignment_id):
+    for a in assignments_store.list_assignments(subject_name=subject_name):
+        for sub in assignments_store.list_submissions(assignment_id=a.assignment_id):
             students.add(sub.student_id)
     out: list[TargetComparison] = []
     for sid in sorted(students):
@@ -526,10 +597,10 @@ def declining_students(*, subject_name: str | None = None,
                         window: int = TREND_WINDOW
                         ) -> list[Trend]:
     """Everyone whose recent coursework is going the wrong way."""
-    core.init_db()
+    assignments_store.init_db()
     students: set[str] = set()
-    for a in core.list_assignments(subject_name=subject_name):
-        for sub in core.list_submissions(assignment_id=a.assignment_id):
+    for a in assignments_store.list_assignments(subject_name=subject_name):
+        for sub in assignments_store.list_submissions(assignment_id=a.assignment_id):
             students.add(sub.student_id)
     out = [student_trend(sid, subject_name=subject_name, window=window)
            for sid in sorted(students)]
@@ -539,12 +610,13 @@ def declining_students(*, subject_name: str | None = None,
 
 # ── Cohort analytics (item 45) ────────────────────────────────────
 
-def _distribution(percents: list[float]) -> Distribution:
+def _distribution(percents: list[float],
+                  qualification_type: str | None = None) -> Distribution:
     if not percents:
-        return Distribution()
-    grades: dict[str, int] = {g: 0 for g in GRADE_ORDER}
+        return Distribution(qualification_type=qualification_type)
+    grades: dict[str, int] = {g: 0 for g in grade_order(qualification_type)}
     for p in percents:
-        grade = percent_to_grade(p)
+        grade = percent_to_grade(p, qualification_type)
         if grade:
             grades[grade] = grades.get(grade, 0) + 1
     return Distribution(
@@ -555,40 +627,43 @@ def _distribution(percents: list[float]) -> Distribution:
         highest=round(max(percents), 1),
         spread=round(max(percents) - min(percents), 1),
         by_grade={g: n for g, n in grades.items() if n},
+        qualification_type=qualification_type,
     )
 
 
 def assignment_distribution(assignment_id: int) -> Distribution:
     """Mark distribution for one assignment."""
-    core.init_db()
-    a = core.get_assignment(assignment_id)
+    assignments_store.init_db()
+    a = assignments_store.get_assignment(assignment_id)
     if a is None:
         raise ValidationError(f"No assignment #{assignment_id}")
     if not a.max_marks:
         return Distribution()
     percents = [round(100.0 * s.marks / a.max_marks, 1)
-                for s in core.list_submissions(
+                for s in assignments_store.list_submissions(
                     assignment_id=assignment_id)
                 if s.marks is not None]
-    return _distribution(percents)
+    return _distribution(percents, qualification_type_of(None, a.subject_name))
 
 
 def cohort_distribution(*, subject_name: str | None = None,
                          year_group: str | None = None,
                          teacher: str | None = None) -> Distribution:
     """Mark distribution across many assignments."""
-    core.init_db()
+    assignments_store.init_db()
     percents: list[float] = []
-    for a in core.list_assignments(subject_name=subject_name,
+    for a in assignments_store.list_assignments(subject_name=subject_name,
                                     year_group=year_group,
                                     teacher_like=teacher):
         if not a.max_marks:
             continue
-        for sub in core.list_submissions(assignment_id=a.assignment_id):
+        for sub in assignments_store.list_submissions(assignment_id=a.assignment_id):
             if sub.marks is not None:
                 percents.append(round(100.0 * sub.marks
                                        / a.max_marks, 1))
-    return _distribution(percents)
+    # One subject has one scale; across subjects the A*-U letters stand.
+    return _distribution(percents, qualification_type_of(None, subject_name)
+                         if subject_name else None)
 
 
 def criterion_weaknesses(assignment_id: int
@@ -598,11 +673,11 @@ def criterion_weaknesses(assignment_id: int
     A cohort that scores well overall but collapses on one assessment
     objective has a teaching gap the total mark hides.
     """
-    core.init_db()
+    assignments_store.init_db()
     out: list[CriterionWeakness] = []
     for criterion in marking.list_criteria(assignment_id):
         scores: list[float] = []
-        for sub in core.list_submissions(assignment_id=assignment_id):
+        for sub in assignments_store.list_submissions(assignment_id=assignment_id):
             for mark in marking.list_criterion_marks(sub.submission_id):
                 if (mark.criterion_id == criterion.criterion_id
                         and mark.marks is not None):
@@ -621,9 +696,9 @@ def criterion_weaknesses(assignment_id: int
 def compare_subjects(*, year_group: str | None = None
                       ) -> dict[str, Distribution]:
     """Mark distribution per subject, weakest mean first."""
-    core.init_db()
+    assignments_store.init_db()
     subjects = sorted({a.subject_name for a in
-                       core.list_assignments(year_group=year_group)})
+                       assignments_store.list_assignments(year_group=year_group)})
     out = {s: cohort_distribution(subject_name=s,
                                    year_group=year_group)
            for s in subjects}
@@ -640,17 +715,18 @@ def compare_teachers(*, subject_name: str | None = None
     distributions has many innocent explanations (different sets,
     different pieces) and is a question to ask, not an answer.
     """
-    core.init_db()
+    assignments_store.init_db()
     buckets: dict[str, list[float]] = {}
-    for a in core.list_assignments(subject_name=subject_name):
+    for a in assignments_store.list_assignments(subject_name=subject_name):
         if not a.max_marks:
             continue
         who = a.teacher or "(unassigned)"
-        for sub in core.list_submissions(assignment_id=a.assignment_id):
+        for sub in assignments_store.list_submissions(assignment_id=a.assignment_id):
             if sub.marks is not None:
                 buckets.setdefault(who, []).append(
                     round(100.0 * sub.marks / a.max_marks, 1))
-    out = {who: _distribution(values)
+    qtype = qualification_type_of(None, subject_name) if subject_name else None
+    out = {who: _distribution(values, qtype)
            for who, values in buckets.items()}
     return dict(sorted(out.items(),
                         key=lambda kv: -(kv[1].mean or 0)))
@@ -659,12 +735,12 @@ def compare_teachers(*, subject_name: str | None = None
 def cohort_summary(*, subject_name: str | None = None,
                     year_group: str | None = None) -> dict[str, Any]:
     """The headline numbers a head of department opens with."""
-    core.init_db()
-    assignments = core.list_assignments(subject_name=subject_name,
+    assignments_store.init_db()
+    assignments = assignments_store.list_assignments(subject_name=subject_name,
                                          year_group=year_group)
     total = marked = missing = 0
     for a in assignments:
-        for sub in core.list_submissions(assignment_id=a.assignment_id):
+        for sub in assignments_store.list_submissions(assignment_id=a.assignment_id):
             total += 1
             if sub.marks is not None:
                 marked += 1
@@ -695,12 +771,12 @@ def non_submitters(*, subject_name: str | None = None,
     and reports the rate as well as the raw number — two missing out of
     three is a very different conversation from two out of twenty.
     """
-    core.init_db()
+    assignments_store.init_db()
     names = _student_names()
     buckets: dict[str, NonSubmitter] = {}
-    for a in core.list_assignments(subject_name=subject_name,
+    for a in assignments_store.list_assignments(subject_name=subject_name,
                                     year_group=year_group):
-        for sub in core.list_submissions(assignment_id=a.assignment_id):
+        for sub in assignments_store.list_submissions(assignment_id=a.assignment_id):
             entry = buckets.setdefault(sub.student_id, NonSubmitter(
                 student_id=sub.student_id,
                 student_name=names.get(sub.student_id,
@@ -710,7 +786,7 @@ def non_submitters(*, subject_name: str | None = None,
                 entry.missing += 1
                 if a.subject_name not in entry.subjects:
                     entry.subjects.append(a.subject_name)
-                due = core.effective_due_date(sub, a)
+                due = assignments_submissions.effective_due_date(sub, a)
                 if due and (entry.latest is None or due > entry.latest):
                     entry.latest = due
     out = [e for e in buckets.values() if e.missing >= minimum]
@@ -726,13 +802,13 @@ def referral_candidates(**kwargs: Any) -> list[NonSubmitter]:
 
 def student_non_submission(student_id: str) -> NonSubmitter:
     """One student's missing-work record."""
-    core.init_db()
+    assignments_store.init_db()
     sid = str(student_id).strip()
     names = _student_names()
     entry = NonSubmitter(student_id=sid,
                           student_name=names.get(sid, sid))
-    for sub in core.list_submissions(student_id=sid):
-        a = core.get_assignment(sub.assignment_id)
+    for sub in assignments_store.list_submissions(student_id=sid):
+        a = assignments_store.get_assignment(sub.assignment_id)
         if a is None:
             continue
         entry.total += 1
@@ -740,7 +816,7 @@ def student_non_submission(student_id: str) -> NonSubmitter:
             entry.missing += 1
             if a.subject_name not in entry.subjects:
                 entry.subjects.append(a.subject_name)
-            due = core.effective_due_date(sub, a)
+            due = assignments_submissions.effective_due_date(sub, a)
             if due and (entry.latest is None or due > entry.latest):
                 entry.latest = due
     return entry
@@ -760,7 +836,7 @@ def weighted_grade(student_id: str, subject_name: str, *,
     halfway through the year sees where they stand rather than a figure
     dragged down by work not yet done.
     """
-    core.init_db()
+    assignments_store.init_db()
     sid = str(student_id).strip()
     out = WeightedGrade(student_id=sid, subject_name=subject_name)
 
@@ -770,7 +846,7 @@ def weighted_grade(student_id: str, subject_name: str, *,
     # simply because the other three were never assigned to them.
     out.weight_total = round(sum(
         a.weight_percent or 0
-        for a in core.list_assignments(subject_name=subject_name)
+        for a in assignments_store.list_assignments(subject_name=subject_name)
         if a.weight_percent), 4)
 
     history = student_history(sid, subject_name=subject_name)
@@ -795,7 +871,9 @@ def weighted_grade(student_id: str, subject_name: str, *,
                         else out.weight_counted)
         if denominator:
             out.percent = round(scored / denominator, 1)
-            out.grade = percent_to_grade(out.percent)
+            out.qualification_type = qualification_type_of(sid, subject_name)
+            out.grade = percent_to_grade(out.percent,
+                                         out.qualification_type)
     return out
 
 
@@ -809,11 +887,11 @@ def subject_weighted_grades(subject_name: str, *,
                              year_group: str | None = None
                              ) -> list[WeightedGrade]:
     """The whole set's running grades, highest first."""
-    core.init_db()
+    assignments_store.init_db()
     students: set[str] = set()
-    for a in core.list_assignments(subject_name=subject_name,
+    for a in assignments_store.list_assignments(subject_name=subject_name,
                                     year_group=year_group):
-        for sub in core.list_submissions(assignment_id=a.assignment_id):
+        for sub in assignments_store.list_submissions(assignment_id=a.assignment_id):
             students.add(sub.student_id)
     out = [weighted_grade(sid, subject_name) for sid in sorted(students)]
     return sorted((g for g in out if g.percent is not None),
@@ -828,8 +906,8 @@ def weight_audit(subject_name: str, *,
     grade is rescaled — but it usually means a planned piece was never
     written, which is worth knowing before results day.
     """
-    core.init_db()
-    weighted = [a for a in core.list_assignments(
+    assignments_store.init_db()
+    weighted = [a for a in assignments_store.list_assignments(
         subject_name=subject_name, year_group=year_group)
         if a.weight_percent]
     total = round(sum(a.weight_percent or 0 for a in weighted), 4)

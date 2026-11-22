@@ -3,7 +3,7 @@ from education_system.systems.university.domains.operations.domain.campus.housin
     get_text, log_menu_navigation,
 )
 from education_system.systems.university.domains.operations.domain.campus.housing.services.housing_accommodation.database import init_housing_db
-from education_system.systems.university.domains.operations.domain.campus.housing.services.housing_accommodation.buildings import create_building, create_rooms_for_building, view_building, update_building, delete_building, delete_room
+from education_system.systems.university.domains.operations.domain.campus.housing.services.housing_accommodation.buildings import create_building, create_rooms_for_building, view_building, update_building, delete_building, delete_room, update_room, import_rooms_from_csv
 from education_system.systems.university.domains.operations.domain.campus.housing.services.housing_accommodation.applications import create_application, view_application, process_application
 from education_system.systems.university.domains.operations.domain.campus.housing.services.housing_accommodation.assignments import view_assignment, update_assignment_status, create_assignment
 from education_system.systems.university.domains.operations.domain.campus.housing.services.housing_accommodation.maintenance import create_maintenance_request, view_maintenance_requests, update_maintenance_request
@@ -40,6 +40,24 @@ def display_housing_accommodation_menu(auth_instance=None):
 
     # First, initialize the housing database if not already done
     init_housing_db()
+
+    # An empty system is a real state, not something to paper over with
+    # sample halls: point staff at the set-up screens instead.
+    if auth and auth.check_permission('manage_accommodations'):
+        try:
+            from education_system.systems.university.domains.operations.domain.campus.housing.services.housing_accommodation.common import get_connection
+            from education_system.systems.university.domains.operations.domain.campus.housing.services.housing_accommodation.room_setup import building_count
+            _conn = get_connection()
+            try:
+                _empty = building_count(_conn.cursor()) == 0
+            finally:
+                _conn.close()
+            if _empty:
+                print("\nNo residences are set up yet.")
+                print("Use 1. Building Management > 2. Add New Building, then "
+                      "4. Add Rooms or 9. Import Rooms from CSV.")
+        except Exception:
+            pass
 
     while True:
         print(f"\n{get_text('housing.title', default='Housing Accommodation Management')}")
@@ -211,8 +229,10 @@ def display_building_menu():
         print("5. Delete Room")
         print("6. Delete Building")
         print("7. Back to Housing Menu")
+        print("8. Edit Room")
+        print("9. Import Rooms from CSV")
 
-        choice = input("\nEnter your choice (1-7): ")
+        choice = input("\nEnter your choice (1-9): ")
 
         if choice == '1':
             view_building()
@@ -228,6 +248,10 @@ def display_building_menu():
             delete_building()
         elif choice == '7':
             return
+        elif choice == '8':
+            update_room()
+        elif choice == '9':
+            import_rooms_from_csv()
         else:
             print("Invalid choice. Please try again.")
 

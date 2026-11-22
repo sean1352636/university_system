@@ -25,14 +25,6 @@ _SYSTEM = "secondary"
 _CATEGORY = "Cross-System"
 
 
-@cross_system_menu_bp.route("/post-16-destinations", methods=["GET"])
-@token_required
-@staff_required
-def cross_system_post_16_destinations():
-    """Post-16 Destinations"""
-    return feature_pending("Post-16 Destinations", _SYSTEM, category=_CATEGORY)
-
-
 @cross_system_menu_bp.route("/student-journey", methods=["GET"])
 @token_required
 @staff_required
@@ -41,58 +33,18 @@ def cross_system_student_journey():
     return feature_pending("Student Journey", _SYSTEM, category=_CATEGORY)
 
 
-@cross_system_menu_bp.route("/analytics-dashboard", methods=["GET"])
+@cross_system_menu_bp.route("/move-to-sixth-form", methods=["GET"])
 @token_required
 @staff_required
-def cross_system_analytics_dashboard():
-    """Analytics Dashboard"""
-    return feature_pending("Analytics Dashboard", _SYSTEM, category=_CATEGORY)
+def cross_system_move_to_sixth_form():
+    """Move to Sixth Form"""
+    return feature_pending("Move to Sixth Form", _SYSTEM, category=_CATEGORY)
 
 
-@cross_system_menu_bp.route("/cross-system-calendar", methods=["GET"])
+@cross_system_menu_bp.route("/incoming-from-primary", methods=["GET"])
 @token_required
 @staff_required
-def cross_system_cross_system_calendar():
-    """Cross-System Calendar"""
-    return feature_pending("Cross-System Calendar", _SYSTEM, category=_CATEGORY)
-
-
-@cross_system_menu_bp.route("/central-admin-portal", methods=["GET"])
-@token_required
-@staff_required
-def cross_system_central_admin_portal():
-    """Central Admin Portal"""
-    return feature_pending("Central Admin Portal", _SYSTEM, category=_CATEGORY)
-
-
-@cross_system_menu_bp.route("/gdpr-compliance", methods=["GET"])
-@token_required
-@staff_required
-def cross_system_gdpr_compliance():
-    """GDPR Compliance"""
-    return feature_pending("GDPR Compliance", _SYSTEM, category=_CATEGORY)
-
-
-@cross_system_menu_bp.route("/shared-documents", methods=["GET"])
-@token_required
-@staff_required
-def cross_system_shared_documents():
-    """Shared Documents"""
-    return feature_pending("Shared Documents", _SYSTEM, category=_CATEGORY)
-
-
-@cross_system_menu_bp.route("/pupil-self-service", methods=["GET"])
-@token_required
-@staff_required
-def cross_system_pupil_self_service():
-    """Pupil Self-Service"""
-    return feature_pending("Pupil Self-Service", _SYSTEM, category=_CATEGORY)
-
-
-@cross_system_menu_bp.route("/open-certificates", methods=["GET"])
-@token_required
-@staff_required
-def cross_system_open_certificates():
-    """open_certificates"""
-    return feature_pending("open_certificates", _SYSTEM, category=_CATEGORY)
+def cross_system_incoming_from_primary():
+    """Incoming from Primary"""
+    return feature_pending("Incoming from Primary", _SYSTEM, category=_CATEGORY)
 

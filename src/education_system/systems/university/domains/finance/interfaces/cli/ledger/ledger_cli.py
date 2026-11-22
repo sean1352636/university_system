@@ -27,6 +27,7 @@ from education_system.systems.university.domains.finance.domain.ledger import (
     close_period,
     lock_period,
     reopen_period,
+    open_fiscal_year,
 )
 from education_system.systems.university.domains.finance.domain.ledger.reports import (
     journals_list,
@@ -290,6 +291,19 @@ def _lock_period(auth) -> None:
         print(f"\n✗ {e}")
 
 
+def _open_fiscal_year(auth) -> None:
+    print("\nFiscal years run 1 August – 31 July and are named by the year they end in.")
+    print("The current and next year open on their own when something is posted.")
+    fy = _prompt_int("Fiscal year to open (e.g. 2027)", allow_blank=False)
+    try:
+        created = open_fiscal_year(fy, _current_username(auth))
+    except Exception as e:
+        print(f"\n✗ {e}")
+        return
+    print(f"\n✓ Fiscal year {fy}: {created} period(s) opened" if created
+          else f"\nFiscal year {fy} already has its periods; nothing changed.")
+
+
 def _periods_menu(auth) -> None:
     while True:
         _header("Period Management")
@@ -297,6 +311,7 @@ def _periods_menu(auth) -> None:
         print("[2] Close period")
         print("[3] Reopen period")
         print("[4] Lock period")
+        print("[5] Open a fiscal year")
         print("[0] Back")
         choice = input("\nChoice: ").strip()
         if choice == "1":
@@ -307,6 +322,8 @@ def _periods_menu(auth) -> None:
             _reopen_period()
         elif choice == "4":
             _lock_period(auth)
+        elif choice == "5":
+            _open_fiscal_year(auth)
         elif choice == "0":
             return
         else:

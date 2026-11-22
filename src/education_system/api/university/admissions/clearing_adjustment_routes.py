@@ -7,7 +7,14 @@ from datetime import datetime
 
 from flask import Blueprint, g, jsonify, request
 
-from education_system.platform.delivery.api.university.auth import token_required
+from education_system.platform.delivery.api.university.auth import (
+    authorize_object,
+    current_subject_id,
+    is_staff,
+    require_staff,
+    staff_required,
+    token_required,
+)
 from education_system.platform.delivery.api.university.pagination import get_pagination_params, paginated_response
 from education_system.systems.university.infrastructure.exceptions import ValidationError
 from education_system.systems.university.infrastructure.sql_safety import escape_like
@@ -17,6 +24,17 @@ from education_system.systems.university.infrastructure.activity_logger import l
 logger = logging.getLogger(__name__)
 
 clearing_adjustment_bp = Blueprint("clearing_adjustment", __name__, url_prefix="/api/clearing-adjustment")
+
+# Vacancies are the public clearing catalogue: any signed-in user may read
+# them. Clearing applications carry applicant PII with no signed-in owner, so
+# they are staff-only; adjustment requests belong to a student (student_id is
+# TEXT, so ownership keys on JWT ``sub``).
+#: Read clearing applications / adjustment requests and statistics. Held by
+#: ``admin``, ``staff`` and ``instructor``.
+ADMISSIONS_VIEW_PERMISSION = "view_all_applications"
+#: Change vacancies, decide applications / adjustments, act for a student.
+#: Held by ``admin`` and ``staff``.
+ADMISSIONS_DECIDE_PERMISSION = "approve_applications"
 
 
 def _row_to_dict(row) -> dict:
@@ -87,6 +105,7 @@ def get_vacancy(vacancy_id: int):
 
 @clearing_adjustment_bp.route("/vacancies", methods=["POST"])
 @token_required
+@staff_required(permission=ADMISSIONS_DECIDE_PERMISSION)
 def create_vacancy():
     data = request.get_json(silent=True) or {}
     for field in ["course_code", "course_name"]:
@@ -116,6 +135,7 @@ def create_vacancy():
 
 @clearing_adjustment_bp.route("/vacancies/<int:vacancy_id>", methods=["PUT"])
 @token_required
+@staff_required(permission=ADMISSIONS_DECIDE_PERMISSION)
 def update_vacancy(vacancy_id: int):
     with get_connection() as conn:
         existing = conn.execute(
@@ -155,6 +175,7 @@ def update_vacancy(vacancy_id: int):
 
 @clearing_adjustment_bp.route("/applications", methods=["GET"])
 @token_required
+@staff_required(permission=ADMISSIONS_VIEW_PERMISSION)
 def list_applications():
     status = request.args.get("status")
 
@@ -187,6 +208,7 @@ def list_applications():
 
 @clearing_adjustment_bp.route("/applications/<int:app_id>", methods=["GET"])
 @token_required
+@staff_required(permission=ADMISSIONS_VIEW_PERMISSION)
 def get_application(app_id: int):
     with get_connection() as conn:
         row = conn.execute(
@@ -200,6 +222,7 @@ def get_application(app_id: int):
 
 @clearing_adjustment_bp.route("/applications", methods=["POST"])
 @token_required
+@staff_required(permission=ADMISSIONS_DECIDE_PERMISSION)
 def create_application():
     data = request.get_json(silent=True) or {}
     if "applicant_name" not in data:
@@ -229,6 +252,7 @@ def create_application():
 
 @clearing_adjustment_bp.route("/applications/<int:app_id>/status", methods=["PUT"])
 @token_required
+@staff_required(permission=ADMISSIONS_DECIDE_PERMISSION)
 def update_application_status(app_id: int):
     with get_connection() as conn:
         existing = conn.execute(
@@ -245,7 +269,7 @@ def update_application_status(app_id: int):
     with transaction() as conn:
         conn.execute(
             "UPDATE clearing_applications SET status = ?, processed_by = ?, processed_at = ? WHERE id = ?",
-            (data["status"], data.get("processed_by", ""), now, app_id),
+            (data["status"], g.current_user.get("sub") or "", now, app_id),
         )
 
     with get_connection() as conn:
@@ -264,6 +288,15 @@ def update_application_status(app_id: int):
 def list_adjustments():
     status = request.args.get("status")
     student_id = request.args.get("student_id")
+    if is_staff():
+        denial = require_staff(permission=ADMISSIONS_VIEW_PERMISSION)
+        if denial is not None:
+            return denial
+    else:
+        # Pinned to the caller, whatever student_id they sent.
+        student_id = current_subject_id()
+        if not student_id:
+            return jsonify({"error": "Forbidden", "status": 403}), 403
 
     with get_connection() as conn:
         conditions = []
@@ -304,6 +337,9 @@ def get_adjustment(request_id: int):
         ).fetchone()
     if not row:
         raise ValidationError(f"Adjustment request {request_id} not found")
+    denial = authorize_object(row["student_id"], permission=ADMISSIONS_VIEW_PERMISSION)
+    if denial is not None:
+        return denial
     log_activity("view", "adjustment_request", user=g.current_user.get("sub"))
     return jsonify(_row_to_dict(row))
 
@@ -315,6 +351,9 @@ def create_adjustment():
     for field in ["student_id", "original_course", "requested_course"]:
         if field not in data:
             raise ValidationError(f"Missing required field: {field}")
+    denial = authorize_object(data["student_id"], permission=ADMISSIONS_DECIDE_PERMISSION)
+    if denial is not None:
+        return denial
 
     with transaction() as conn:
         conn.execute(
@@ -337,6 +376,7 @@ def create_adjustment():
 
 @clearing_adjustment_bp.route("/adjustments/<int:request_id>/status", methods=["PUT"])
 @token_required
+@staff_required(permission=ADMISSIONS_DECIDE_PERMISSION)
 def process_adjustment(request_id: int):
     with get_connection() as conn:
         existing = conn.execute(
@@ -353,7 +393,7 @@ def process_adjustment(request_id: int):
     with transaction() as conn:
         conn.execute(
             "UPDATE adjustment_requests SET status = ?, decided_by = ?, decided_at = ? WHERE id = ?",
-            (data["status"], data.get("decided_by", ""), now, request_id),
+            (data["status"], g.current_user.get("sub") or "", now, request_id),
         )
 
     with get_connection() as conn:
@@ -369,6 +409,7 @@ def process_adjustment(request_id: int):
 
 @clearing_adjustment_bp.route("/statistics", methods=["GET"])
 @token_required
+@staff_required(permission=ADMISSIONS_VIEW_PERMISSION)
 def get_statistics():
     with get_connection() as conn:
         total_vacancies = conn.execute("SELECT COUNT(*) FROM clearing_vacancies").fetchone()[0]
@@ -407,6 +448,7 @@ def get_available_courses():
 
 @clearing_adjustment_bp.route("/auto-shortlist", methods=["POST"])
 @token_required
+@staff_required(permission=ADMISSIONS_DECIDE_PERMISSION)
 def auto_shortlist():
     shortlisted = []
     with transaction() as conn:

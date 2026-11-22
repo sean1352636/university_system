@@ -2,7 +2,8 @@
 
 Mirrors the categorized structure of `gui_main.py`: a top-level list of
 categories; selecting a category opens a sub-menu of feature actions.
-Stubs print a placeholder; real domain wiring goes in later.
+Each user sees only the categories and entries their role allows
+(see ``domain/governance/user_management/access.py``).
 """
 
 from __future__ import annotations
@@ -17,7 +18,7 @@ CATEGORIES: list[tuple[str, list[str]]] = [
     ("Student Management", [
         "Student Directory", "Add Student", "Search Students",
         "Advanced Search", "Student Profile", "Admissions",
-        "Enrolment", "Onboarding", "Bulk Operations", "Alumni",
+        "Enrolment", "Onboarding", "Bulk Operations", "Alumni", "Student Exit Interviews",
         "Parent Portal",
     ]),
     ("Academic Management", [
@@ -28,13 +29,14 @@ CATEGORIES: list[tuple[str, list[str]]] = [
         "Lesson Plans", "Cover", "Cover Agency",
         "Homework & Coursework", "Assignments",
         "Enrichment", "Library", "Study Planner",
-        "EPQ", "Work Experience", "Room Booking",
+        "EPQ", "Work Experience", "Room Booking", "Online Learning Space",
     ]),
     ("Assessment & Grades", [
         "Gradebook", "Predicted Grades", "Baseline Assessment",
         "Target Setting", "ILP", "Intervention Tracking",
         "Early Warning", "Risk Analytics", "Value Added",
         "Mock Exams", "Exam Entries", "Results Day",
+        "Exams Office", "Report Cards", "Study Programme",
         "Observations", "Self Assessment",
         "Quality Assurance", "SEF Builder",
     ]),
@@ -47,8 +49,9 @@ CATEGORIES: list[tuple[str, list[str]]] = [
         "Destinations",
     ]),
     ("Pastoral & Wellbeing", [
-        "Tutor Groups", "Behaviour Log", "Disciplinary",
-        "Safeguarding", "SEND", "Accessibility",
+        "Tutor Groups", "Tutorial & PSHE Programme", "Contact Log", "Behaviour Log", "Disciplinary",
+        "Safeguarding", "Looked-After & Care Leavers", "Young Carers", "Report a Safeguarding Concern", "LADO Allegations",
+        "SEND", "Accessibility",
         "Wellbeing", "Student Wellbeing", "Student Support",
         "Peer Mentoring", "Attendance Concerns", "Absence Requests",
         "First Aid", "Medical Records", "Emergency", "Prevent Duty",
@@ -56,9 +59,9 @@ CATEGORIES: list[tuple[str, list[str]]] = [
         "Surveys", "Student Council", "Transport",
     ]),
     ("Staff & Communication", [
-        "Staff Directory", "Departments", "Staff HR",
-        "Staff Absence", "Staff Wellbeing", "Recruitment",
-        "Appraisals", "CPD", "DBS Checks", "Visitors",
+        "Staff Directory", "My Area", "Departments", "Staff HR",
+        "Staff Absence", "Staff Timetables & Directed Time", "Staff Wellbeing", "Recruitment", "Staff Exit Interviews",
+        "Appraisals", "CPD", "Mandatory Training", "DBS Checks", "Single Central Record", "Visitors",
         "Parent Contacts", "Parents' Evenings",
         "Notices & Bulletins", "Announcements", "Notifications",
         "Activity Feed", "Email / Messaging",
@@ -66,7 +69,10 @@ CATEGORIES: list[tuple[str, list[str]]] = [
     ]),
     ("Finance & Bursaries", [
         "Fees", "Bursary Applications", "Trips & Payments",
-        "Receipts", "Expense Claims", "Funding", "Census ILR",
+        "Receipts", "Online Payments", "Expense Claims", "Funding", "Census ILR",
+    ]),
+    ("Operations", [
+        "Lockers", "Parking Permits", "Catering", "Cashless Catering", "ID Cards", "Site & IT Helpdesk", "Device Loans", "Fire Drills & Premises Checks",
     ]),
     ("Reports & Analytics", [
         "Attendance Report", "Grades Report", "Progress Tracking",
@@ -80,8 +86,8 @@ CATEGORIES: list[tuple[str, list[str]]] = [
     ("System", [
         "Change Password", "Multi-Factor Authentication",
         "User Accounts", "User Management",
-        "Settings", "Compliance", "Governance", "Policies",
-        "GDPR", "Risk Management", "Automation Rules", "Health & Safety", "Assets",
+        "Settings", "Integrations & Backups", "Compliance", "Governance", "Policies",
+        "GDPR", "Risk Management", "Automation Rules", "Scheduled Jobs", "Health & Safety", "Assets",
         "Multi-Language", "To-Do", "About",
     ]),
 ]
@@ -100,7 +106,388 @@ def _prompt(msg: str) -> str:
         return "0"
 
 
+# Each menu label is handled by the first dispatcher below whose
+# ``dispatch(label)`` returns True. They are imported one at a time, on
+# first use, so opening a menu no longer imports ~130 modules and one
+# module that fails to import only breaks its own entries.
+_JOURNEY_DISPATCHER = ("education_system.platform.cross_system", "journey_cli")
+
+# Called as ``dispatch(label, auth=auth)``.
+_AUTH_DISPATCHERS: tuple[tuple[str, str], ...] = (
+    ("education_system.systems.sixth_form.interfaces.cli",
+     "change_password_cli"),
+    ("education_system.systems.sixth_form.interfaces.cli",
+     "mfa_cli"),
+    ("education_system.systems.sixth_form.interfaces.cli",
+     "user_accounts_cli"),
+    ("education_system.systems.sixth_form.interfaces.cli",
+     "settings_cli"),
+    ("education_system.systems.sixth_form.interfaces.cli",
+     "about_cli"),
+    ("education_system.systems.sixth_form.interfaces.cli.governance.user_management",
+     "user_management_cli"),
+)
+
+# Called as ``dispatch(label)``, in this order.
+_DISPATCHERS: tuple[tuple[str, str], ...] = (
+    ("education_system.systems.sixth_form.interfaces.cli.staff.staff_hr",
+     "single_central_record_cli"),
+    ("education_system.systems.sixth_form.interfaces.cli.operations.integrations",
+     "integrations_cli"),
+    ("education_system.systems.sixth_form.interfaces.cli.assessment.exams_office",
+     "exams_office_cli"),
+    ("education_system.systems.sixth_form.interfaces.cli.assessment.report_cards",
+     "report_cards_cli"),
+    ("education_system.systems.sixth_form.interfaces.cli.academics.qualifications",
+     "study_programme_cli"),
+    ("education_system.systems.sixth_form.interfaces.cli.learners.students",
+     "student_cli"),
+    ("education_system.systems.sixth_form.interfaces.cli.admissions.enrolments",
+     "enrolment_cli"),
+    ("education_system.systems.sixth_form.interfaces.cli.academics.courses",
+     "course_cli"),
+    ("education_system.systems.sixth_form.interfaces.cli.academics.subjects",
+     "subject_cli"),
+    ("education_system.systems.sixth_form.interfaces.cli.academics.class_groups",
+     "class_group_cli"),
+    ("education_system.systems.sixth_form.interfaces.cli.academics.timetable",
+     "timetable_cli"),
+    ("education_system.systems.sixth_form.interfaces.cli.academics.timetable_optimiser",
+     "timetable_optimiser_cli"),
+    ("education_system.systems.sixth_form.interfaces.cli.academics.attendance",
+     "attendance_cli"),
+    ("education_system.systems.sixth_form.interfaces.cli.academics.homework",
+     "homework_cli"),
+    ("education_system.systems.sixth_form.interfaces.cli.assessment.gradebook",
+     "gradebook_cli"),
+    ("education_system.systems.sixth_form.interfaces.cli.assessment.predicted_grades",
+     "predicted_grades_cli"),
+    ("education_system.systems.sixth_form.interfaces.cli.assessment.mock_exams",
+     "mock_exam_cli"),
+    ("education_system.systems.sixth_form.interfaces.cli.assessment.exam_entries",
+     "exam_entry_cli"),
+    ("education_system.systems.sixth_form.interfaces.cli.assessment.exam_results",
+     "exam_result_cli"),
+    ("education_system.systems.sixth_form.interfaces.cli.progression.university",
+     "window"),
+    ("education_system.systems.sixth_form.interfaces.cli.progression.apprenticeships",
+     "apprenticeship_cli"),
+    ("education_system.systems.sixth_form.interfaces.cli.progression.careers",
+     "careers_cli"),
+    ("education_system.systems.sixth_form.interfaces.cli.progression.university_visits",
+     "university_visits_cli"),
+    ("education_system.systems.sixth_form.interfaces.cli.progression.destinations",
+     "destinations_cli"),
+    ("education_system.systems.sixth_form.interfaces.cli.academics.epq",
+     "epq_cli"),
+    ("education_system.systems.sixth_form.interfaces.cli.progression.work_experience",
+     "work_experience_cli"),
+    ("education_system.systems.sixth_form.interfaces.cli.academics.room_booking",
+     "room_booking_cli"),
+    ("education_system.systems.sixth_form.interfaces.cli.pastoral.health.medical_records",
+     "medical_records_cli"),
+    ("education_system.systems.sixth_form.interfaces.cli.pastoral.tutor_groups",
+     "tutor_group_cli"),
+    ("education_system.systems.sixth_form.interfaces.cli.pastoral.behaviour",
+     "behaviour_cli"),
+    ("education_system.systems.sixth_form.interfaces.cli.safeguarding",
+     "safeguarding_cli"),
+    ("education_system.systems.sixth_form.interfaces.cli.pastoral.wellbeing",
+     "wellbeing_cli"),
+    ("education_system.systems.sixth_form.interfaces.cli.pastoral.student_wellbeing",
+     "student_wellbeing_cli"),
+    ("education_system.systems.sixth_form.interfaces.cli.safeguarding.prevent_duty",
+     "prevent_duty_cli"),
+    ("education_system.systems.sixth_form.interfaces.cli.pastoral.attendance_concerns",
+     "attendance_concerns_cli"),
+    ("education_system.systems.sixth_form.interfaces.cli.pastoral.absence_requests",
+     "absence_requests_cli"),
+    ("education_system.systems.sixth_form.interfaces.cli.academics.academic_year",
+     "academic_year_cli"),
+    ("education_system.systems.sixth_form.interfaces.cli.pastoral.accessibility",
+     "accessibility_cli"),
+    ("education_system.systems.sixth_form.domains.communications.interfaces.cli.activity_feed",
+     "activity_feed_cli"),
+    ("education_system.systems.sixth_form.interfaces.cli.learners.advanced_search",
+     "advanced_search_cli"),
+    ("education_system.systems.sixth_form.interfaces.cli.admissions",
+     "admissions_cli"),
+    ("education_system.systems.sixth_form.interfaces.cli.admissions.onboarding",
+     "onboarding_cli"),
+    ("education_system.systems.sixth_form.interfaces.cli.learners.bulk_operations",
+     "bulk_operations_cli"),
+    ("education_system.systems.sixth_form.interfaces.cli.learners.alumni",
+     "alumni_menu"),
+    ("education_system.systems.sixth_form.interfaces.cli.operations.communications.parent_portal",
+     "parent_portal_cli"),
+    ("education_system.systems.sixth_form.interfaces.cli.academics.calendar",
+     "calendar_cli"),
+    ("education_system.systems.sixth_form.interfaces.cli.academics.lesson_plans",
+     "lesson_plans_cli"),
+    ("education_system.systems.sixth_form.interfaces.cli.academics.cover",
+     "cover_cli"),
+    ("education_system.systems.sixth_form.interfaces.cli.academics.cover_agency",
+     "cover_agency_cli"),
+    ("education_system.systems.sixth_form.interfaces.cli.academics.assignments",
+     "assignments_cli"),
+    ("education_system.systems.sixth_form.interfaces.cli.academics.enrichment",
+     "enrichment_cli"),
+    ("education_system.systems.sixth_form.interfaces.cli.academics.library",
+     "library_cli"),
+    ("education_system.systems.sixth_form.interfaces.cli.academics.study_planner",
+     "study_planner_cli"),
+    ("education_system.systems.sixth_form.interfaces.cli.assessment.baseline_assessment",
+     "baseline_assessment_cli"),
+    ("education_system.systems.sixth_form.interfaces.cli.assessment.target_setting",
+     "target_setting_cli"),
+    ("education_system.systems.sixth_form.interfaces.cli.assessment.ilp",
+     "ilp_cli"),
+    ("education_system.systems.sixth_form.interfaces.cli.assessment.intervention_tracking",
+     "intervention_tracking_cli"),
+    ("education_system.systems.sixth_form.interfaces.cli.assessment.value_added",
+     "value_added_cli"),
+    ("education_system.systems.sixth_form.interfaces.cli.assessment.early_warning",
+     "early_warning_cli"),
+    ("education_system.systems.sixth_form.interfaces.cli.assessment.risk_analytics",
+     "risk_analytics_cli"),
+    ("education_system.systems.sixth_form.interfaces.cli.assessment.observations",
+     "observations_cli"),
+    ("education_system.systems.sixth_form.interfaces.cli.assessment.self_assessment",
+     "self_assessment_cli"),
+    ("education_system.systems.sixth_form.interfaces.cli.assessment.quality_assurance",
+     "quality_assurance_cli"),
+    ("education_system.systems.sixth_form.interfaces.cli.assessment.sef_builder",
+     "sef_builder_cli"),
+    ("education_system.systems.sixth_form.interfaces.cli.pastoral.send",
+     "send_cli"),
+    ("education_system.systems.sixth_form.interfaces.cli.pastoral.disciplinary",
+     "disciplinary_cli"),
+    ("education_system.systems.sixth_form.interfaces.cli.pastoral.student_support",
+     "student_support_cli"),
+    ("education_system.systems.sixth_form.interfaces.cli.pastoral.peer_mentoring",
+     "peer_mentoring_cli"),
+    ("education_system.systems.sixth_form.interfaces.cli.pastoral.health.first_aid",
+     "first_aid_cli"),
+    ("education_system.systems.sixth_form.interfaces.cli.pastoral.emergency",
+     "emergency_cli"),
+    ("education_system.systems.sixth_form.interfaces.cli.pastoral.equality_diversity",
+     "equality_diversity_cli"),
+    ("education_system.systems.sixth_form.interfaces.cli.pastoral.complaints",
+     "complaints_cli"),
+    ("education_system.systems.sixth_form.interfaces.cli.pastoral.feedback",
+     "feedback_cli"),
+    ("education_system.systems.sixth_form.interfaces.cli.pastoral.surveys",
+     "surveys_cli"),
+    ("education_system.systems.sixth_form.interfaces.cli.pastoral.student_council",
+     "student_council_cli"),
+    ("education_system.systems.sixth_form.domains.operations.interfaces.cli.transport",
+     "transport_cli"),
+    ("education_system.systems.sixth_form.interfaces.cli.staff.staff_hr",
+     "staff_hr_cli"),
+    ("education_system.systems.sixth_form.interfaces.cli.staff.departments",
+     "departments_cli"),
+    ("education_system.systems.sixth_form.interfaces.cli.staff.staff_absence",
+     "staff_absence_cli"),
+    ("education_system.systems.sixth_form.interfaces.cli.staff.staff_wellbeing",
+     "staff_wellbeing_cli"),
+    ("education_system.systems.sixth_form.interfaces.cli.staff.recruitment",
+     "recruitment_cli"),
+    ("education_system.systems.sixth_form.interfaces.cli.staff.appraisals",
+     "appraisals_cli"),
+    ("education_system.systems.sixth_form.interfaces.cli.staff.cpd",
+     "cpd_cli"),
+    ("education_system.systems.sixth_form.interfaces.cli.staff.dbs_checks",
+     "dbs_checks_cli"),
+    ("education_system.systems.sixth_form.domains.operations.interfaces.cli.visitors",
+     "visitors_cli"),
+    ("education_system.systems.sixth_form.domains.communications.interfaces.cli.announcements",
+     "announcements_cli"),
+    ("education_system.systems.sixth_form.domains.communications.interfaces.cli.notifications",
+     "notifications_cli"),
+    ("education_system.systems.sixth_form.domains.communications.interfaces.cli.letter_templates",
+     "letter_templates_cli"),
+    ("education_system.systems.sixth_form.domains.communications.interfaces.cli.document_hub",
+     "document_hub_cli"),
+    ("education_system.systems.sixth_form.domains.communications.interfaces.cli.attachments",
+     "attachments_cli"),
+    ("education_system.systems.sixth_form.domains.finance.interfaces.cli.census_ilr",
+     "census_ilr_cli"),
+    ("education_system.systems.sixth_form.domains.finance.interfaces.cli.expense_claims",
+     "expense_claims_cli"),
+    ("education_system.systems.sixth_form.domains.finance.interfaces.cli.funding",
+     "funding_cli"),
+    ("education_system.systems.sixth_form.interfaces.cli.staff",
+     "staff_cli"),
+    ("education_system.systems.sixth_form.domains.communications.interfaces.cli.parent_contacts",
+     "parent_contacts_cli"),
+    ("education_system.systems.sixth_form.domains.communications.interfaces.cli.parents_evenings",
+     "parents_evenings_cli"),
+    ("education_system.systems.sixth_form.domains.communications.interfaces.cli.notices",
+     "notices_cli"),
+    ("education_system.systems.sixth_form.domains.communications.interfaces.cli.messages",
+     "messages_cli"),
+    ("education_system.systems.sixth_form.domains.finance.interfaces.cli.fees",
+     "fees_cli"),
+    ("education_system.systems.sixth_form.domains.finance.interfaces.cli.bursaries",
+     "bursaries_cli"),
+    ("education_system.systems.sixth_form.domains.finance.interfaces.cli.trips",
+     "trips_cli"),
+    ("education_system.systems.sixth_form.domains.finance.interfaces.cli.receipts",
+     "receipts_cli"),
+    ("education_system.systems.sixth_form.interfaces.cli.operations.reporting.attendance_report",
+     "attendance_report_cli"),
+    ("education_system.systems.sixth_form.interfaces.cli.operations.reporting.grades_report",
+     "grades_report_cli"),
+    ("education_system.systems.sixth_form.interfaces.cli.operations.reporting.progress",
+     "progress_cli"),
+    ("education_system.systems.sixth_form.interfaces.cli.operations.reporting.custom_export",
+     "custom_export_cli"),
+    ("education_system.systems.sixth_form.interfaces.cli.operations.reporting.kpi_dashboard",
+     "kpi_dashboard_cli"),
+    ("education_system.systems.sixth_form.interfaces.cli.operations.reporting.data_dashboard",
+     "data_dashboard_cli"),
+    ("education_system.systems.sixth_form.interfaces.cli.operations.reporting.progress_dashboard",
+     "progress_dashboard_cli"),
+    ("education_system.systems.sixth_form.interfaces.cli.operations.reporting.mobile_dashboard",
+     "mobile_dashboard_cli"),
+    ("education_system.systems.sixth_form.interfaces.cli.governance.audit.audit_reports",
+     "audit_reports_cli"),
+    ("education_system.systems.sixth_form.interfaces.cli.operations.reporting.data_export",
+     "data_export_cli"),
+    ("education_system.systems.sixth_form.interfaces.cli.governance.compliance",
+     "compliance_cli"),
+    ("education_system.systems.sixth_form.interfaces.cli.governance",
+     "governance_cli"),
+    ("education_system.systems.sixth_form.interfaces.cli.governance.policies",
+     "policies_cli"),
+    ("education_system.systems.sixth_form.domains.operations.interfaces.cli.health_safety",
+     "health_safety_cli"),
+    ("education_system.systems.sixth_form.domains.operations.interfaces.cli.assets",
+     "assets_cli"),
+    ("education_system.systems.sixth_form.interfaces.cli.governance.todo",
+     "todo_cli"),
+    ("education_system.systems.sixth_form.interfaces.cli.governance.gdpr",
+     "gdpr_cli"),
+    ("education_system.systems.sixth_form.interfaces.cli.governance.risk_management",
+     "risk_management_cli"),
+    ("education_system.systems.sixth_form.interfaces.cli.governance.automation_rules",
+     "automation_rules_cli"),
+    ("education_system.systems.sixth_form.interfaces.cli.governance.scheduler",
+     "scheduler_cli"),
+)
+
+# Entries whose module offers a menu function rather than
+# ``dispatch(label)``: label -> (module, function), called with no args.
+_MENU_FUNCTIONS: dict[str, tuple[str, str]] = {
+    "Student Exit Interviews": ("education_system.systems.sixth_form.interfaces.cli.learners.exit_interviews.exit_interviews_cli",
+                              "exit_interviews_menu"),
+    "Contact Log": ("education_system.systems.sixth_form.interfaces.cli.pastoral.contact_log.contact_log_cli",
+                  "contact_log_menu"),
+    "Tutorial & PSHE Programme": ("education_system.systems.sixth_form.interfaces.cli.pastoral.tutorial.tutorial_cli",
+                                "tutorial_menu"),
+    "Young Carers": ("education_system.systems.sixth_form.interfaces.cli.pastoral.young_carers.young_carers_cli",
+                   "young_carers_menu"),
+    "Looked-After & Care Leavers": ("education_system.systems.sixth_form.interfaces.cli.pastoral.looked_after.looked_after_cli",
+                                  "looked_after_menu"),
+    "Cashless Catering": ("education_system.systems.sixth_form.domains.operations.interfaces.cli.catering.cashless_cli",
+                        "cashless_catering_menu"),
+    "Online Payments": ("education_system.systems.sixth_form.domains.finance.interfaces.cli.online_payments.online_payments_cli",
+                      "online_payments_menu"),
+    "Fire Drills & Premises Checks": ("education_system.systems.sixth_form.domains.operations.interfaces.cli.health_safety.premises_checks_cli",
+                                    "premises_checks_menu"),
+    "Device Loans": ("education_system.systems.sixth_form.domains.operations.interfaces.cli.device_loans.device_loans_cli",
+                   "device_loans_menu"),
+    "Site & IT Helpdesk": ("education_system.systems.sixth_form.domains.operations.interfaces.cli.helpdesk.helpdesk_cli",
+                         "helpdesk_menu"),
+    "My Area": ("education_system.systems.sixth_form.interfaces.cli.staff.my_area.my_area_cli",
+              "my_area_menu"),
+    "Staff Exit Interviews": ("education_system.systems.sixth_form.interfaces.cli.staff.staff_hr.exit_interviews_cli",
+                      "exit_interviews_menu"),
+    "Mandatory Training": ("education_system.systems.sixth_form.interfaces.cli.staff.mandatory_training.mandatory_training_cli",
+                         "mandatory_training_menu"),
+    "Staff Timetables & Directed Time": ("education_system.systems.sixth_form.interfaces.cli.staff.directed_time.directed_time_cli",
+                                       "directed_time_menu"),
+    "Online Learning Space": ("education_system.systems.sixth_form.interfaces.cli.academics.class_resources.class_resources_cli",
+                            "class_resources_menu"),
+    "Lockers": ("education_system.systems.sixth_form.domains.operations.interfaces.cli.lockers.lockers_cli",
+                "lockers_menu"),
+    "Parking Permits": ("education_system.systems.sixth_form.domains.operations.interfaces.cli.parking.parking_cli",
+                        "parking_menu"),
+    "Catering": ("education_system.systems.sixth_form.domains.operations.interfaces.cli.catering.catering_cli",
+                 "catering_menu"),
+    "ID Cards": ("education_system.systems.sixth_form.domains.operations.interfaces.cli.id_cards.id_cards_cli",
+                 "id_cards_menu"),
+}
+
+_LANGUAGE_SELECTOR = ("education_system.platform.features.i18n.selector_cli", "show_language_selector_cli")
+
+_loaded: dict[tuple[str, str], object] = {}
+_broken: set[tuple[str, str]] = set()
+
+
+def _load(spec: tuple[str, str]):
+    """Import ``module.attr`` once; None (logged) if it fails to import."""
+    if spec in _loaded:
+        return _loaded[spec]
+    if spec in _broken:
+        return None
+    import importlib
+    try:
+        # Most entries name a submodule; a few name a function.
+        name = f"{spec[0]}.{spec[1]}"
+        try:
+            obj = importlib.import_module(name)
+        except ModuleNotFoundError as e:
+            if e.name != name:
+                raise
+            obj = getattr(importlib.import_module(spec[0]), spec[1])
+    except Exception:
+        logger.exception("Sixth-form CLI module failed to load: %s.%s", *spec)
+        _broken.add(spec)
+        return None
+    _loaded[spec] = obj
+    return obj
+
+
+def _dispatch(label: str, *, auth=None) -> bool:
+    if label in _MENU_FUNCTIONS:
+        menu = _load(_MENU_FUNCTIONS[label])
+        if menu is None:
+            return False
+        menu()
+        return True
+    journey = _load(_JOURNEY_DISPATCHER)
+    if journey is not None and journey.dispatch(label, "sixth_form", auth=auth):
+        return True
+    for spec in _AUTH_DISPATCHERS:
+        mod = _load(spec)
+        if mod is not None and mod.dispatch(label, auth=auth):
+            return True
+    if label == "Multi-Language":
+        selector = _load(_LANGUAGE_SELECTOR)
+        if selector is not None:
+            selector()
+            return True
+    for spec in _DISPATCHERS:
+        mod = _load(spec)
+        if mod is not None and mod.dispatch(label):
+            return True
+    return False
+
+
+def _visible_categories(principal) -> list[tuple[str, list[str]]]:
+    out = []
+    for cat, items in CATEGORIES:
+        allowed = [lbl for lbl in items if principal.can_open(lbl)]
+        if allowed:
+            out.append((cat, allowed))
+    return out
+
+
 def _submenu(category: str, items: list[str], *, auth=None) -> None:
+    from education_system.systems.sixth_form.domain.governance.user_management import (
+        access,
+    )
     while True:
         print(f"\n── {category} ──")
         for i, label in enumerate(items, 1):
@@ -116,262 +503,13 @@ def _submenu(category: str, items: list[str], *, auth=None) -> None:
             print("Invalid selection.")
             continue
         label = items[int(choice) - 1]
+        if not access.current().can_open(label):
+            print(f"\n  Your account doesn't have access to {label}.")
+            continue
         logger.debug("Sixth-form CLI dispatch: %s / %s", category, label)
-        from education_system.systems.sixth_form.interfaces.cli.learners.students import student_cli
-        from education_system.systems.sixth_form.interfaces.cli.admissions.enrolments import enrolment_cli
-        from education_system.systems.sixth_form.interfaces.cli.academics.courses import course_cli
-        from education_system.systems.sixth_form.interfaces.cli.academics.subjects import subject_cli
-        from education_system.systems.sixth_form.interfaces.cli.academics.class_groups import class_group_cli
-        from education_system.systems.sixth_form.interfaces.cli.academics.timetable import timetable_cli
-        from education_system.systems.sixth_form.interfaces.cli.academics.timetable_optimiser import timetable_optimiser_cli
-        from education_system.systems.sixth_form.interfaces.cli.academics.attendance import attendance_cli
-        from education_system.systems.sixth_form.interfaces.cli.academics.homework import homework_cli
-        from education_system.systems.sixth_form.interfaces.cli.assessment.gradebook import gradebook_cli
-        from education_system.systems.sixth_form.interfaces.cli.assessment.predicted_grades import predicted_grades_cli
-        from education_system.systems.sixth_form.interfaces.cli.assessment.mock_exams import mock_exam_cli
-        from education_system.systems.sixth_form.interfaces.cli.assessment.exam_entries import exam_entry_cli
-        from education_system.systems.sixth_form.interfaces.cli.assessment.exam_results import exam_result_cli
-        from education_system.systems.sixth_form.domain.progression.university.cli import window as university_cli
-        from education_system.systems.sixth_form.interfaces.cli.progression.apprenticeships import apprenticeship_cli
-        from education_system.systems.sixth_form.interfaces.cli.progression.careers import careers_cli
-        from education_system.systems.sixth_form.interfaces.cli.progression.university_visits import university_visits_cli
-        from education_system.systems.sixth_form.interfaces.cli.progression.destinations import destinations_cli
-        from education_system.systems.sixth_form.interfaces.cli.academics.epq import epq_cli
-        from education_system.systems.sixth_form.interfaces.cli.progression.work_experience import work_experience_cli
-        from education_system.systems.sixth_form.interfaces.cli.academics.room_booking import room_booking_cli
-        from education_system.systems.sixth_form.interfaces.cli.pastoral.health.medical_records import medical_records_cli
-        from education_system.systems.sixth_form.interfaces.cli.pastoral.tutor_groups import tutor_group_cli
-        from education_system.systems.sixth_form.interfaces.cli.pastoral.behaviour import behaviour_cli
-        from education_system.systems.sixth_form.interfaces.cli.safeguarding import safeguarding_cli
-        from education_system.systems.sixth_form.interfaces.cli.pastoral.wellbeing import wellbeing_cli
-        from education_system.systems.sixth_form.interfaces.cli.pastoral.student_wellbeing import student_wellbeing_cli
-        from education_system.systems.sixth_form.interfaces.cli.safeguarding.prevent_duty import prevent_duty_cli
-        from education_system.systems.sixth_form.interfaces.cli.pastoral.attendance_concerns import attendance_concerns_cli
-        from education_system.systems.sixth_form.interfaces.cli.pastoral.absence_requests import absence_requests_cli
-        from education_system.systems.sixth_form.interfaces.cli.academics.academic_year import academic_year_cli
-        from education_system.systems.sixth_form.interfaces.cli.pastoral.accessibility import accessibility_cli
-        from education_system.systems.sixth_form.interfaces.cli.operations.communications.activity_feed import activity_feed_cli
-        from education_system.systems.sixth_form.interfaces.cli.learners.advanced_search import advanced_search_cli
-        from education_system.systems.sixth_form.interfaces.cli.admissions import admissions_cli
-        from education_system.systems.sixth_form.interfaces.cli.admissions.onboarding import onboarding_cli
-        from education_system.systems.sixth_form.interfaces.cli.learners.bulk_operations import bulk_operations_cli
-        from education_system.systems.sixth_form.interfaces.cli.learners.alumni import alumni_cli
-        from education_system.systems.sixth_form.interfaces.cli.operations.communications.parent_portal import parent_portal_cli
-        from education_system.systems.sixth_form.interfaces.cli.academics.calendar import calendar_cli
-        from education_system.systems.sixth_form.interfaces.cli.academics.lesson_plans import lesson_plans_cli
-        from education_system.systems.sixth_form.interfaces.cli.academics.cover import cover_cli
-        from education_system.systems.sixth_form.interfaces.cli.academics.cover_agency import cover_agency_cli
-        from education_system.systems.sixth_form.interfaces.cli.academics.assignments import assignments_cli
-        from education_system.systems.sixth_form.interfaces.cli.academics.enrichment import enrichment_cli
-        from education_system.systems.sixth_form.interfaces.cli.academics.library import library_cli
-        from education_system.systems.sixth_form.interfaces.cli.academics.study_planner import study_planner_cli
-        from education_system.systems.sixth_form.interfaces.cli.assessment.baseline_assessment import baseline_assessment_cli
-        from education_system.systems.sixth_form.interfaces.cli.assessment.target_setting import target_setting_cli
-        from education_system.systems.sixth_form.interfaces.cli.assessment.ilp import ilp_cli
-        from education_system.systems.sixth_form.interfaces.cli.assessment.intervention_tracking import intervention_tracking_cli
-        from education_system.systems.sixth_form.interfaces.cli.assessment.value_added import value_added_cli
-        from education_system.systems.sixth_form.interfaces.cli.assessment.early_warning import early_warning_cli
-        from education_system.systems.sixth_form.interfaces.cli.assessment.risk_analytics import risk_analytics_cli
-        from education_system.systems.sixth_form.interfaces.cli.assessment.observations import observations_cli
-        from education_system.systems.sixth_form.interfaces.cli.assessment.self_assessment import self_assessment_cli
-        from education_system.systems.sixth_form.interfaces.cli.assessment.quality_assurance import quality_assurance_cli
-        from education_system.systems.sixth_form.interfaces.cli.assessment.sef_builder import sef_builder_cli
-        from education_system.systems.sixth_form.interfaces.cli.pastoral.send import send_cli
-        from education_system.systems.sixth_form.interfaces.cli.pastoral.disciplinary import disciplinary_cli
-        from education_system.systems.sixth_form.interfaces.cli.pastoral.student_support import student_support_cli
-        from education_system.systems.sixth_form.interfaces.cli.pastoral.peer_mentoring import peer_mentoring_cli
-        from education_system.systems.sixth_form.interfaces.cli.pastoral.health.first_aid import first_aid_cli
-        from education_system.systems.sixth_form.interfaces.cli.pastoral.emergency import emergency_cli
-        from education_system.systems.sixth_form.interfaces.cli.pastoral.equality_diversity import equality_diversity_cli
-        from education_system.systems.sixth_form.interfaces.cli.pastoral.complaints import complaints_cli
-        from education_system.systems.sixth_form.interfaces.cli.pastoral.feedback import feedback_cli
-        from education_system.systems.sixth_form.interfaces.cli.pastoral.surveys import surveys_cli
-        from education_system.systems.sixth_form.interfaces.cli.pastoral.student_council import student_council_cli
-        from education_system.systems.sixth_form.interfaces.cli.pastoral.transport import transport_cli
-        from education_system.systems.sixth_form.interfaces.cli.staff.staff_hr import staff_hr_cli
-        from education_system.systems.sixth_form.interfaces.cli.staff.departments import departments_cli
-        from education_system.systems.sixth_form.interfaces.cli.staff.staff_absence import staff_absence_cli
-        from education_system.systems.sixth_form.interfaces.cli.staff.staff_wellbeing import staff_wellbeing_cli
-        from education_system.systems.sixth_form.interfaces.cli.staff.recruitment import recruitment_cli
-        from education_system.systems.sixth_form.interfaces.cli.staff.appraisals import appraisals_cli
-        from education_system.systems.sixth_form.interfaces.cli.staff.cpd import cpd_cli
-        from education_system.systems.sixth_form.interfaces.cli.staff.dbs_checks import dbs_checks_cli
-        from education_system.systems.sixth_form.interfaces.cli.operations.visitors import visitors_cli
-        from education_system.systems.sixth_form.interfaces.cli.operations.communications.announcements import announcements_cli
-        from education_system.systems.sixth_form.interfaces.cli.operations.communications.notifications import notifications_cli
-        from education_system.systems.sixth_form.interfaces.cli.operations.communications.letter_templates import letter_templates_cli
-        from education_system.systems.sixth_form.interfaces.cli.operations.document_hub import document_hub_cli
-        from education_system.systems.sixth_form.interfaces.cli.operations.attachments import attachments_cli
-        from education_system.systems.sixth_form.interfaces.cli.governance.compliance.census_ilr import census_ilr_cli
-        from education_system.systems.sixth_form.interfaces.cli.finance.expense_claims import expense_claims_cli
-        from education_system.systems.sixth_form.interfaces.cli.finance.funding import funding_cli
-        from education_system.systems.sixth_form.interfaces.cli.staff import staff_cli
-        from education_system.systems.sixth_form.interfaces.cli.operations.communications.parent_contacts import parent_contacts_cli
-        from education_system.systems.sixth_form.interfaces.cli.operations.communications.parents_evenings import parents_evenings_cli
-        from education_system.systems.sixth_form.interfaces.cli.operations.communications.notices import notices_cli
-        from education_system.systems.sixth_form.interfaces.cli.operations.communications.messages import messages_cli
-        from education_system.systems.sixth_form.interfaces.cli.finance.fees import fees_cli
-        from education_system.systems.sixth_form.interfaces.cli.finance.bursaries import bursaries_cli
-        from education_system.systems.sixth_form.interfaces.cli.finance.trips import trips_cli
-        from education_system.systems.sixth_form.interfaces.cli.finance.receipts import receipts_cli
-        from education_system.systems.sixth_form.interfaces.cli.operations.reporting.attendance_report import attendance_report_cli
-        from education_system.systems.sixth_form.interfaces.cli.operations.reporting.grades_report import grades_report_cli
-        from education_system.systems.sixth_form.interfaces.cli.operations.reporting.progress import progress_cli
-        from education_system.systems.sixth_form.interfaces.cli.operations.reporting.custom_export import custom_export_cli
-        from education_system.systems.sixth_form.interfaces.cli.operations.reporting.kpi_dashboard import kpi_dashboard_cli
-        from education_system.systems.sixth_form.interfaces.cli.operations.reporting.data_dashboard import data_dashboard_cli
-        from education_system.systems.sixth_form.interfaces.cli.operations.reporting.progress_dashboard import progress_dashboard_cli
-        from education_system.systems.sixth_form.interfaces.cli.operations.reporting.mobile_dashboard import mobile_dashboard_cli
-        from education_system.systems.sixth_form.interfaces.cli.governance.audit.audit_reports import audit_reports_cli
-        from education_system.systems.sixth_form.interfaces.cli.operations.reporting.data_export import data_export_cli
-        from education_system.systems.sixth_form.interfaces.cli.governance.compliance import compliance_cli
-        from education_system.systems.sixth_form.interfaces.cli.governance import governance_cli
-        from education_system.systems.sixth_form.interfaces.cli.governance.policies import policies_cli
-        from education_system.systems.sixth_form.interfaces.cli.governance.health_safety import health_safety_cli
-        from education_system.systems.sixth_form.interfaces.cli.governance.assets import assets_cli
-        from education_system.platform.features.i18n.selector_cli import show_language_selector_cli
-        from education_system.systems.sixth_form.interfaces.cli.governance.todo import todo_cli
-        from education_system.systems.sixth_form.interfaces.cli.governance.user_management import user_management_cli
-        from education_system.systems.sixth_form.interfaces.cli.governance.gdpr import gdpr_cli
-        from education_system.systems.sixth_form.interfaces.cli.governance.risk_management import risk_management_cli
-        from education_system.systems.sixth_form.interfaces.cli.governance.automation_rules import automation_rules_cli
-        from education_system.systems.sixth_form.interfaces.cli import (
-            change_password_cli, mfa_cli, user_accounts_cli, settings_cli, about_cli,
-        )
-        from education_system.platform.cross_system import journey_cli
-        if journey_cli.dispatch(label, "sixth_form", auth=auth):
+        if _dispatch(label, auth=auth):
             continue
-        if change_password_cli.dispatch(label, auth=auth):
-            continue
-        if mfa_cli.dispatch(label, auth=auth):
-            continue
-        if user_accounts_cli.dispatch(label, auth=auth):
-            continue
-        if settings_cli.dispatch(label, auth=auth):
-            continue
-        if about_cli.dispatch(label, auth=auth):
-            continue
-        if user_management_cli.dispatch(label, auth=auth):
-            continue
-        if (student_cli.dispatch(label)
-                or enrolment_cli.dispatch(label)
-                or course_cli.dispatch(label)
-                or subject_cli.dispatch(label)
-                or class_group_cli.dispatch(label)
-                or timetable_cli.dispatch(label)
-                or timetable_optimiser_cli.dispatch(label)
-                or attendance_cli.dispatch(label)
-                or homework_cli.dispatch(label)
-                or gradebook_cli.dispatch(label)
-                or predicted_grades_cli.dispatch(label)
-                or mock_exam_cli.dispatch(label)
-                or exam_entry_cli.dispatch(label)
-                or exam_result_cli.dispatch(label)
-                or university_cli.dispatch(label)
-                or apprenticeship_cli.dispatch(label)
-                or careers_cli.dispatch(label)
-                or university_visits_cli.dispatch(label)
-                or destinations_cli.dispatch(label)
-                or epq_cli.dispatch(label)
-                or work_experience_cli.dispatch(label)
-                or room_booking_cli.dispatch(label)
-                or medical_records_cli.dispatch(label)
-                or tutor_group_cli.dispatch(label)
-                or behaviour_cli.dispatch(label)
-                or safeguarding_cli.dispatch(label)
-                or wellbeing_cli.dispatch(label)
-                or student_wellbeing_cli.dispatch(label)
-                or prevent_duty_cli.dispatch(label)
-                or attendance_concerns_cli.dispatch(label)
-                or absence_requests_cli.dispatch(label)
-                or academic_year_cli.dispatch(label)
-                or accessibility_cli.dispatch(label)
-                or activity_feed_cli.dispatch(label)
-                or advanced_search_cli.dispatch(label)
-                or admissions_cli.dispatch(label)
-                or onboarding_cli.dispatch(label)
-                or bulk_operations_cli.dispatch(label)
-                or alumni_cli.dispatch(label)
-                or parent_portal_cli.dispatch(label)
-                or calendar_cli.dispatch(label)
-                or lesson_plans_cli.dispatch(label)
-                or cover_cli.dispatch(label)
-                or cover_agency_cli.dispatch(label)
-                or assignments_cli.dispatch(label)
-                or enrichment_cli.dispatch(label)
-                or library_cli.dispatch(label)
-                or study_planner_cli.dispatch(label)
-                or baseline_assessment_cli.dispatch(label)
-                or target_setting_cli.dispatch(label)
-                or ilp_cli.dispatch(label)
-                or intervention_tracking_cli.dispatch(label)
-                or value_added_cli.dispatch(label)
-                or early_warning_cli.dispatch(label)
-                or risk_analytics_cli.dispatch(label)
-                or observations_cli.dispatch(label)
-                or self_assessment_cli.dispatch(label)
-                or quality_assurance_cli.dispatch(label)
-                or sef_builder_cli.dispatch(label)
-                or send_cli.dispatch(label)
-                or disciplinary_cli.dispatch(label)
-                or student_support_cli.dispatch(label)
-                or peer_mentoring_cli.dispatch(label)
-                or first_aid_cli.dispatch(label)
-                or emergency_cli.dispatch(label)
-                or equality_diversity_cli.dispatch(label)
-                or complaints_cli.dispatch(label)
-                or feedback_cli.dispatch(label)
-                or surveys_cli.dispatch(label)
-                or student_council_cli.dispatch(label)
-                or transport_cli.dispatch(label)
-                or staff_hr_cli.dispatch(label)
-                or departments_cli.dispatch(label)
-                or staff_absence_cli.dispatch(label)
-                or staff_wellbeing_cli.dispatch(label)
-                or recruitment_cli.dispatch(label)
-                or appraisals_cli.dispatch(label)
-                or cpd_cli.dispatch(label)
-                or dbs_checks_cli.dispatch(label)
-                or visitors_cli.dispatch(label)
-                or announcements_cli.dispatch(label)
-                or notifications_cli.dispatch(label)
-                or letter_templates_cli.dispatch(label)
-                or document_hub_cli.dispatch(label)
-                or attachments_cli.dispatch(label)
-                or census_ilr_cli.dispatch(label)
-                or expense_claims_cli.dispatch(label)
-                or funding_cli.dispatch(label)
-                or staff_cli.dispatch(label)
-                or parent_contacts_cli.dispatch(label)
-                or parents_evenings_cli.dispatch(label)
-                or notices_cli.dispatch(label)
-                or messages_cli.dispatch(label)
-                or fees_cli.dispatch(label)
-                or bursaries_cli.dispatch(label)
-                or trips_cli.dispatch(label)
-                or receipts_cli.dispatch(label)
-                or attendance_report_cli.dispatch(label)
-                or grades_report_cli.dispatch(label)
-                or progress_cli.dispatch(label)
-                or custom_export_cli.dispatch(label)
-                or kpi_dashboard_cli.dispatch(label)
-                or data_dashboard_cli.dispatch(label)
-                or progress_dashboard_cli.dispatch(label)
-                or mobile_dashboard_cli.dispatch(label)
-                or audit_reports_cli.dispatch(label)
-                or data_export_cli.dispatch(label)
-                or compliance_cli.dispatch(label)
-                or governance_cli.dispatch(label)
-                or policies_cli.dispatch(label)
-                or health_safety_cli.dispatch(label)
-                or assets_cli.dispatch(label)
-                or (label == "Multi-Language" and (show_language_selector_cli() or True))
-                or todo_cli.dispatch(label)
-                or gdpr_cli.dispatch(label)
-                or risk_management_cli.dispatch(label)
-                or automation_rules_cli.dispatch(label)):
-            continue
-        print(f"\n[stub] {label} — not yet implemented.")
+        print(f"\n  {label} could not be opened (see the log for details).")
         _prompt("Press Enter to continue...")
 
 
@@ -382,12 +520,25 @@ def _main_menu(auth) -> None:
     from education_system.systems.sixth_form.interfaces.cli.idle_timeout import (
         SessionTimeoutError, timeout_minutes,
     )
+    from education_system.systems.sixth_form.domain.governance.user_management import (
+        access,
+    )
     user = auth.current_user or {}
     show_system_switch = is_superadmin(user)
+    principal = access.current()
+    if principal.username != user.get("username"):
+        principal = access.from_auth(auth)
+        access.set_current(principal)
+    if not principal.is_staff:
+        # Reached by a GUI -> CLI switch; the entry point already
+        # routed parents and students to their own menus.
+        print(f"\n  The {SYSTEM_NAME} staff menu is only for college staff.\n")
+        return
+    categories = _visible_categories(principal)
     while True:
         print(f"\n=== {SYSTEM_NAME} ===")
         print(f"Signed in: {user.get('username', '?')}")
-        for i, (cat, _items) in enumerate(CATEGORIES, 1):
+        for i, (cat, _items) in enumerate(categories, 1):
             print(f"  {i:2d}) {cat}")
         print("   G) Switch to GUI")
         if show_system_switch:
@@ -435,10 +586,10 @@ def _main_menu(auth) -> None:
                 pass
             _switch.request_exit()
             return
-        if not choice.isdigit() or not (1 <= int(choice) <= len(CATEGORIES)):
+        if not choice.isdigit() or not (1 <= int(choice) <= len(categories)):
             print("Invalid selection.")
             continue
-        cat, items = CATEGORIES[int(choice) - 1]
+        cat, items = categories[int(choice) - 1]
         _submenu(cat, items, auth=auth)
 
 
@@ -470,18 +621,51 @@ def run(user_info=None, role=None, shared_auth=None) -> int:
     logger.info("Sixth-form CLI starting for user=%s role=%s",
                 cu.get("username"), role)
 
-    # The staff menu reaches the whole college. Parents get their own
-    # read-only menu covering just their linked children.
-    if str(role or "").lower() == "parent":
+    # The staff menu reaches the whole college, so only staff get it,
+    # filtered to the areas their job needs. Parents and students get
+    # their own menus covering only their own records.
+    from education_system.systems.sixth_form.domain.governance.user_management import (
+        access,
+    )
+    principal = access.from_auth(shared_auth, role)
+    access.set_current(principal)
+    if principal.is_parent:
         return _run_parent_portal(shared_auth, cu)
+    if principal.is_student:
+        return _run_student_portal(shared_auth, principal)
+    if not principal.is_staff:
+        logger.warning("Refusing sixth-form staff CLI for user=%s role=%s",
+                       cu.get("username"), role)
+        print(f"\n  The {SYSTEM_NAME} staff menu is only for college staff.")
+        print(f"  Your account is signed in as '{role or 'no role'}'.\n")
+        return 0
 
     return run_authenticated(shared_auth)
+
+
+def _run_student_portal(shared_auth, principal) -> int:
+    """Run the student's own menu — never the staff menu."""
+    if not principal.student_id:
+        logger.warning("No student record for signed-in student '%s'",
+                       principal.username)
+        print(f"\n  There is no sixth form student record for "
+              f"'{principal.username}'.")
+        print("  Please contact the college office.\n")
+        return 0
+    from education_system.systems.sixth_form.interfaces.cli.portals import (
+        student_portal_cli,
+    )
+    logger.info("Student portal (CLI) starting for %s", principal.student_id)
+    return student_portal_cli.run(shared_auth, principal)
 
 
 def _run_parent_portal(shared_auth, current_user: dict) -> int:
     """Run the parent-facing menu, or explain why it can't run."""
     from education_system.systems.sixth_form.domain.operations.communications.parent_portal import (
-        parent_home_cli, parent_portal,
+        parent_portal,
+    )
+    from education_system.systems.sixth_form.interfaces.cli.operations.communications.parent_portal import (
+        parent_home_cli,
     )
 
     username = current_user.get("username", "")

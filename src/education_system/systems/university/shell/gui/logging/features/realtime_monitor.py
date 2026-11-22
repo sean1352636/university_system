@@ -3,8 +3,11 @@ from education_system.systems.university.infrastructure.i18n import get_text as 
 import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext
 import threading
+import time
 import logging
 from datetime import datetime, timedelta
+
+from education_system.platform.delivery.gui.tk_threads import start_thread, ui
 
 from education_system.systems.university.shell.gui.logging.helpers import _t
 
@@ -50,6 +53,13 @@ class RealtimeMonitorMixin:
         self.monitor_running = False
         self.monitor_event_count = 0
 
+        def on_destroy(event):
+            # Closing the window ends the monitor thread (and its subscription).
+            if event.widget is monitor_window:
+                self.monitor_running = False
+
+        monitor_window.bind("<Destroy>", on_destroy, add="+")
+
         def start_monitoring():
             if not self.log_manager:
                 messagebox.showerror(_t('gui.shell.logging.features.realtime_monitor.dialogs.error', default="Error"), _t('gui.shell.logging.features.realtime_monitor.dialogs.log_manager_not_available', default="Log manager not available"))
@@ -60,10 +70,14 @@ class RealtimeMonitorMixin:
             start_btn.config(state=tk.DISABLED)
             stop_btn.config(state=tk.NORMAL)
 
-            # Start monitoring in background thread
+            # Start monitoring in background thread. A fresh token per start
+            # so a quick Stop/Start retires the previous thread.
+            session = object()
+            self._monitor_session = session
+
             def monitor_thread():
                 def log_callback(log_entry):
-                    if self.monitor_running:
+                    if self.monitor_running and self._monitor_session is session:
                         timestamp = log_entry.get('timestamp', '')[:19]
                         user = log_entry.get('username', '')
                         action = log_entry.get('action', '')
@@ -74,7 +88,7 @@ class RealtimeMonitorMixin:
                         log_line = f"{timestamp} | {status_symbol} {user} - {action} on {module}\n"
 
                         # Update UI in main thread
-                        monitor_window.after(0, lambda: self.update_monitor_display(log_line))
+                        ui(monitor_window, self.update_monitor_display, log_line)
 
                 # Subscribe to real-time updates
                 self.log_manager.monitor.subscribe(log_callback)
@@ -93,7 +107,15 @@ class RealtimeMonitorMixin:
                 except Exception as e:
                     print(f"Error loading recent logs: {e}")
 
-            threading.Thread(target=monitor_thread, daemon=True).start()
+                # Stay alive while monitoring so ui() hand-offs from the log
+                # monitor's subscriber calls keep being delivered.
+                try:
+                    while self.monitor_running and self._monitor_session is session:
+                        time.sleep(0.25)
+                finally:
+                    self.log_manager.monitor.unsubscribe(log_callback)
+
+            start_thread(monitor_window, monitor_thread)
 
         def stop_monitoring():
             self.monitor_running = False

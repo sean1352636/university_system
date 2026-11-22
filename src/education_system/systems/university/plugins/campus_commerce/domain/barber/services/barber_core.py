@@ -10,6 +10,9 @@ from datetime import datetime, timedelta
 from typing import Optional, List, Dict, Any, Tuple
 
 from education_system.systems.university.infrastructure.database.db import get_db_connection, transaction
+from education_system.systems.university.plugins.campus_commerce.domain import finance_posting
+
+FINANCE_SOURCE = 'Barber'
 
 logger = logging.getLogger(__name__)
 
@@ -411,10 +414,48 @@ class TransactionManager:
     """Manages financial transactions"""
 
     @staticmethod
+    def post_payment_to_finance(customer_id: str, amount: float, payment_method: str,
+                                transaction_ref: str, description: str = None,
+                                processed_by: str = None, notes: str = None) -> Dict[str, Any]:
+        """Post a barber payment to Finance (the only place the barber shop
+        does so). Student-account methods debit the account; cash/card are
+        recorded as payments. See ``finance_posting.post_sale``."""
+        return finance_posting.post_sale(
+            student_id=customer_id,
+            amount=amount,
+            payment_method=payment_method,
+            transaction_source=FINANCE_SOURCE,
+            transaction_ref=transaction_ref,
+            description=description or 'Barber Shop Service',
+            processed_by=processed_by,
+            notes=notes,
+        )
+
+    @staticmethod
     def process_payment(appointment_id: int, amount: float, payment_method: str,
                        customer_id: str, tip_amount: float = 0,
-                       reference_number: str = None, processed_by: str = None) -> int:
-        """Process payment for an appointment"""
+                       reference_number: str = None, processed_by: str = None,
+                       description: str = None) -> int:
+        """Process payment for an appointment and post it to Finance.
+
+        Shared by the GUI and CLIs. A student-account payment is debited
+        first and raises ``ValueError`` when declined (nothing recorded);
+        for cash/card the local rows are written and a finance posting
+        failure is only logged.
+        """
+        total = float(amount) + float(tip_amount or 0)
+        reference_number = reference_number or f"BARBER-{appointment_id}-{datetime.now().strftime('%Y%m%d%H%M%S')}"
+        tip_note = f"Tip: £{tip_amount:.2f}" if tip_amount else None
+
+        finance = None
+        if finance_posting.is_student_account(payment_method):
+            finance = TransactionManager.post_payment_to_finance(
+                customer_id, total, payment_method, reference_number,
+                description=description, processed_by=processed_by, notes=tip_note,
+            )
+            if not finance['success']:
+                raise ValueError(finance['message'] or 'Student account payment declined')
+
         with transaction() as conn:
             # Record transaction
             cursor = conn.execute('''
@@ -434,31 +475,13 @@ class TransactionManager:
                 WHERE appointment_id = ?
             ''', (payment_method, datetime.now().isoformat(), appointment_id))
 
-            # 8.117.104: route through unified record_payment() with
-            # source_type='barber' so cross-domain reports can isolate
-            # barber-shop revenue.
-            try:
-                from education_system.systems.university.domains.finance.domain.core.unified_payments import (
-                    record_payment as _record_payment,
-                )
-                _record_payment(
-                    student_id=customer_id,
-                    amount=amount + tip_amount,
-                    payment_method=payment_method,
-                    source_type='barber',
-                    source_payment_id=str(appointment_id),
-                    payment_type='service',
-                    reference_type='barber_appointment',
-                    reference_id=str(appointment_id),
-                    department='barber',
-                    description='Barber Shop Service',
-                    notes=(f'tip {tip_amount}' if tip_amount else None),
-                    created_by=processed_by,
-                )
-            except Exception as e:
-                logger.warning(f"Could not record to main finance system: {e}")
+        if finance is None:
+            TransactionManager.post_payment_to_finance(
+                customer_id, total, payment_method, reference_number,
+                description=description, processed_by=processed_by, notes=tip_note,
+            )
 
-            return transaction_id
+        return transaction_id
 
     @staticmethod
     def get_transaction(transaction_id: int) -> Optional[Dict]:
@@ -1244,40 +1267,50 @@ class RefundManager:
 
     @staticmethod
     def issue_refund(transaction_id: int, amount: float, reason: str,
-                     refund_type: str, processed_by: str) -> int:
-        """Issue refund"""
-        with transaction() as conn:
+                     refund_type: str, processed_by: str,
+                     refund_method: str = None) -> int:
+        """Issue a refund for a barber transaction and post it to Finance.
+
+        Shared by the GUI and CLIs. ``refund_type`` is how the money goes
+        back (cash / card / student_account) unless ``refund_method`` is
+        given separately; a student-account refund credits the account.
+        Returns the finance refund id (``unified_refunds.refund_id``).
+        """
+        with get_db_connection() as conn:
             trans = conn.execute(
                 'SELECT * FROM transactions WHERE transaction_id = ? AND source_type = ?',
                 (transaction_id, 'barber')
             ).fetchone()
+        if not trans:
+            raise ValueError("Transaction not found")
+        trans = dict(trans)
+        if (trans.get('status') or '').lower() == 'refunded':
+            raise ValueError("Transaction already refunded")
 
-            if not trans:
-                raise ValueError("Transaction not found")
+        refund_method = refund_method or refund_type or trans.get('payment_method') or 'cash'
+        refund_ref = f"REFUND-{datetime.now().strftime('%Y%m%d%H%M%S')}-{transaction_id}"
 
-            cursor = conn.execute('''
-                INSERT INTO unified_refunds
-                (source_type, reference_id, reference_type, original_amount, amount,
-                 refund_type, reason, processed_by, refund_date, notes, status)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, ?, 'processed')
-            ''', ('barber', str(trans['reference_id']), 'appointment',
-                  trans['amount'], amount, refund_type, reason, processed_by,
-                  f'barber_transaction_{transaction_id}'))
-            refund_row_id = cursor.lastrowid
-
+        with transaction() as conn:
             conn.execute('''
                 UPDATE transactions SET status = 'refunded' WHERE transaction_id = ? AND source_type = 'barber'
             ''', (transaction_id,))
 
-        # Auto-post to GL (cash has moved). Never raises.
-        try:
-            from education_system.systems.university.domains.finance.domain.ledger import notify_ledger
-            notify_ledger('refund', refund_row_id, posted_by=processed_by or 'barber')
-        except Exception as _e:
-            import logging
-            logging.getLogger(__name__).warning("ledger hook failed: %s", _e)
-
-        return refund_row_id
+        finance = finance_posting.post_refund(
+            student_id=trans.get('customer_id'),
+            amount=amount,
+            transaction_source=FINANCE_SOURCE,
+            transaction_ref=refund_ref,
+            refund_method=refund_method,
+            reason=reason,
+            refund_type=refund_type,
+            processed_by=processed_by or 'barber',
+            notes=f"barber_transaction_{transaction_id}; appointment {trans.get('reference_id')}; "
+                  f"original £{float(trans.get('amount') or 0):.2f}",
+        )
+        if finance.get('refund_id') is None:
+            logger.warning("Barber refund %s was not posted to Finance: %s",
+                           refund_ref, finance.get('message'))
+        return finance.get('refund_id')
 
 class CashDrawerManager:
     """Manages cash drawer"""

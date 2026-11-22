@@ -44,20 +44,15 @@ except ImportError:
 
 # Import finance integration
 try:
+    # Balance lookup only — payments are posted by the mail domain service.
     from education_system.systems.university.domains.finance.domain.core.finance_db_operations import (
-        record_payment_to_finance,
         get_student_finance_account_balance,
-        process_student_finance_account_payment
     )
     FINANCE_AVAILABLE = True
 except ImportError:
     FINANCE_AVAILABLE = False
-    def record_payment_to_finance(*args, **kwargs):
-        return None
     def get_student_finance_account_balance(*args, **kwargs):
         return 0.0
-    def process_student_finance_account_payment(*args, **kwargs):
-        return False
 
 import logging
 logger = logging.getLogger(__name__)
@@ -893,24 +888,14 @@ Payment Status: {pkg.get('payment_status', 'N/A').upper()}
             rental_fee = box['monthly_fee'] * months
             payment_method = payment_method_var.get()
 
-            # Handle Student Account payment
+            # Balance pre-check for the student account option; the service
+            # performs the draw-down / Finance posting itself.
             if payment_method == "Student Account":
-                if student_balance < rental_fee:
+                if (student_balance or 0) < rental_fee:
                     messagebox.showerror(
                         _t("common.error", default="Error"),
-                        f"Insufficient balance. Current balance: £{student_balance:.2f}, Fee: £{rental_fee:.2f}"
+                        f"Insufficient balance. Current balance: £{(student_balance or 0):.2f}, Fee: £{rental_fee:.2f}"
                     )
-                    return
-                payment_result = process_student_finance_account_payment(
-                    student_id=student_id,
-                    amount=rental_fee,
-                    description=f"PO Box {box['box_number']} rental",
-                    transaction_source="MailPost",
-                    transaction_ref=f"pobox_{box['box_id']}",
-                    processed_by=self.current_user.get('username', 'System')
-                )
-                if not payment_result.get('success'):
-                    messagebox.showerror(_t("common.error", default="Error"), payment_result.get('message', "Failed to process student account payment"))
                     return
 
             result = POBoxManager.rent_box(
@@ -918,22 +903,13 @@ Payment Status: {pkg.get('payment_status', 'N/A').upper()}
                 holder_id=self.user_id,
                 holder_name=user_name,
                 holder_email=user_email,
-                months=months
+                months=months,
+                payment_method=payment_method,
+                payer_id=student_id,
+                processed_by=self.current_user.get('username'),
             )
 
             if result:
-                # Record revenue in central finance system
-                record_payment_to_finance(
-                    student_id=student_id,
-                    amount=rental_fee,
-                    payment_method=payment_method,
-                    transaction_source='MailServices',
-                    transaction_ref=f"POBOX-{result['box_number']}",
-                    notes=f"PO Box {result['box_number']} rental - {months} month(s)",
-                    created_by=self.current_user.get('username')
-                )
-                logger.info(f"Revenue recorded: £{rental_fee:.2f} for PO Box rental")
-
                 # Send receipt email
                 self.send_rental_receipt(result['box_number'], rental_fee, months, payment_method, user_email, user_name)
 
@@ -1037,24 +1013,14 @@ Payment Status: {pkg.get('payment_status', 'N/A').upper()}
         def confirm_setup():
             payment_method = payment_method_var.get()
 
-            # Handle Student Account payment
+            # Balance pre-check for the student account option; the service
+            # performs the draw-down / Finance posting itself.
             if payment_method == "Student Account":
-                if student_balance < forwarding_fee:
+                if (student_balance or 0) < forwarding_fee:
                     messagebox.showerror(
                         _t("common.error", default="Error"),
-                        f"Insufficient balance. Current balance: £{student_balance:.2f}"
+                        f"Insufficient balance. Current balance: £{(student_balance or 0):.2f}"
                     )
-                    return
-                payment_result = process_student_finance_account_payment(
-                    student_id=student_id,
-                    amount=forwarding_fee,
-                    description=f"Mail forwarding - {forward_type}",
-                    transaction_source="MailPost",
-                    transaction_ref=f"forwarding_{self.user_id}",
-                    processed_by=self.current_user.get('username', 'System')
-                )
-                if not payment_result.get('success'):
-                    messagebox.showerror(_t("common.error", default="Error"), payment_result.get('message', "Failed to process student account payment"))
                     return
 
             result = ForwardingManager.setup_forwarding(
@@ -1063,22 +1029,13 @@ Payment Status: {pkg.get('payment_status', 'N/A').upper()}
                 forward_address=address,
                 forward_type=forward_type,
                 start_date=self.forward_start_entry.get().strip() or None,
-                end_date=self.forward_end_entry.get().strip() or None
+                end_date=self.forward_end_entry.get().strip() or None,
+                payment_method=payment_method,
+                payer_id=student_id,
+                processed_by=self.current_user.get('username'),
             )
 
             if result:
-                # Record revenue in central finance system
-                record_payment_to_finance(
-                    student_id=student_id,
-                    amount=forwarding_fee,
-                    payment_method=payment_method,
-                    transaction_source='MailServices',
-                    transaction_ref=f"FWD-{result.get('forwarding_id', 'NEW')}",
-                    notes=f"Mail forwarding setup - {forward_type}",
-                    created_by=self.current_user.get('username')
-                )
-                logger.info(f"Revenue recorded: £{forwarding_fee:.2f} for mail forwarding")
-
                 # Send receipt email
                 self.send_forwarding_receipt(address, forward_type, forwarding_fee, payment_method, user_email, user_name)
 

@@ -470,13 +470,40 @@ def departments_delete() -> None:
     except _UserAbort:
         print("\n  Cancelled.")
         return
-    if _input(f"Delete department #{d.department_id} "
-              "(and all memberships)? Type 'yes'",
+    linked = data.linked_record_counts(d.department_id)
+    if linked:
+        from education_system.systems.sixth_form.infrastructure.record_links import (
+            describe,
+        )
+        print(f"\n  #{d.department_id} has linked records that deleting would "
+              f"destroy:\n    {describe(linked)}")
+        if d.status in ("Archived", "Disbanded"):
+            print(f"  It is already {d.status}; nothing to do.")
+            _pause()
+            return
+        if _input("Set its status to Archived instead? Type 'yes'",
+                  default="no").lower() != "yes":
+            print("\n  Cancelled.")
+            return
+        try:
+            data.set_status(d.department_id, "Archived")
+        except ValidationError as e:
+            print(f"\n  ✗ {e}")
+            _pause()
+            return
+        print(f"\n  ✓ #{d.department_id} archived — history kept.")
+        _pause()
+        return
+    if _input(f"Delete department #{d.department_id}? It has no budget "
+              "lines, receipts, members or staff. Type 'yes'",
               default="no").lower() != "yes":
         print("\n  Cancelled.")
         return
-    if data.delete_department(d.department_id):
-        print(f"\n  ✓ Deleted #{d.department_id}")
+    try:
+        if data.delete_department(d.department_id):
+            print(f"\n  ✓ Deleted #{d.department_id}")
+    except (PermissionError, ValidationError) as e:
+        print(f"\n  ✗ {e}")
     _pause()
 
 
@@ -671,6 +698,16 @@ _MENU: list[tuple[str, Callable[[], None]]] = [
     ("──",                  lambda: None),
     ("Summary",             summary_flow),
 ]
+
+
+def _budget_menu() -> list[tuple[str, Callable[[], None]]]:
+    from education_system.systems.sixth_form.interfaces.cli.staff.departments import (
+        department_budgets_cli,
+    )
+    return department_budgets_cli.MENU
+
+
+_MENU.extend(_budget_menu())
 
 
 def run() -> None:

@@ -284,6 +284,9 @@ def form(title: str, fields: Sequence[tuple], initial: dict | None = None) -> An
         options = spec[3] if len(spec) > 3 else None
         current = initial.get(key)
 
+        if kind == "section":
+            section(label)
+            continue
         if kind == "choice":
             value = choose(label, list(options or []), allow_blank=True)
         elif kind == "int":

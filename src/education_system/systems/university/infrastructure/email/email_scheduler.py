@@ -39,7 +39,6 @@ from education_system.systems.university.infrastructure.email.email_service impo
     send_book_return_reminder,
     send_overdue_notification,
 )
-from education_system.systems.university.infrastructure.email.email_manager import send_sla_alert
 from education_system.systems.university.infrastructure.logs import log_event
 
 # Configure logging
@@ -63,13 +62,13 @@ def check_book_return_reminders():
             reminder_date = (datetime.now() + timedelta(days=3)).strftime('%Y-%m-%d')
 
             cursor.execute('''
-                SELECT co.checkout_id, co.user_id, co.book_id, co.due_date,
+                SELECT co.loan_id, co.user_id, co.book_id, co.due_date,
                        b.title
-                FROM checkouts co
+                FROM book_loans co
                 JOIN books b ON co.book_id = b.book_id
                 WHERE DATE(co.due_date) = ?
-                  AND co.returned = 0
-                  AND co.checkout_id NOT IN (
+                  AND co.status IN ('active', 'overdue')
+                  AND co.loan_id NOT IN (
                       SELECT DISTINCT CAST(SUBSTR(related_to,
                           INSTR(related_to, 'Book ID: ') + 9
                       ) AS INTEGER)
@@ -109,14 +108,14 @@ def check_overdue_books():
             current_date = datetime.now().strftime('%Y-%m-%d')
 
             cursor.execute('''
-                SELECT co.checkout_id, co.user_id, co.book_id, co.due_date,
+                SELECT co.loan_id, co.user_id, co.book_id, co.due_date,
                        b.title,
                        JULIANDAY('now') - JULIANDAY(co.due_date) as days_overdue
-                FROM checkouts co
+                FROM book_loans co
                 JOIN books b ON co.book_id = b.book_id
                 WHERE DATE(co.due_date) < DATE('now')
-                  AND co.returned = 0
-                  AND co.checkout_id NOT IN (
+                  AND co.status IN ('active', 'overdue')
+                  AND co.loan_id NOT IN (
                       SELECT DISTINCT CAST(SUBSTR(related_to,
                           INSTR(related_to, 'Book ID: ') + 9
                       ) AS INTEGER)
@@ -145,45 +144,20 @@ def check_overdue_books():
 
 
 def check_sla_breaches():
-    """Check for SLA breaches on support tickets and send alerts"""
+    """SLA warnings and breaches on support tickets.
+
+    The Student Support SLA job (``services/bus/jobs/support_jobs`` — the
+    escalation rules' ``_process_sla_breaches``) owns these: it works from
+    each ticket's team / priority targets on the business-hours clock, alerts
+    the assignee, the team and its leads once per ticket and target, and
+    keeps confidential tickets' titles out of the e-mails. This runs it.
+    """
     try:
         logger.info("Running SLA breach check...")
-
-        with get_connection() as conn:
-            cursor = conn.cursor()
-
-            # Find tickets that are overdue
-            current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-
-            cursor.execute('''
-                SELECT ticket_id, due_date, status, priority
-                FROM support_tickets
-                WHERE due_date IS NOT NULL
-                  AND due_date < ?
-                  AND status NOT IN ('resolved', 'closed')
-                  AND ticket_id NOT IN (
-                      SELECT DISTINCT CAST(SUBSTR(related_to,
-                          INSTR(related_to, 'Ticket #') + 8
-                      ) AS INTEGER)
-                      FROM email_log
-                      WHERE related_to LIKE 'SLA Alert - Ticket #%'
-                        AND sent_at >= datetime('now', '-1 hour')
-                  )
-            ''', (current_time,))
-
-            breached_tickets = cursor.fetchall()
-
-            alert_count = 0
-            for ticket_id, due_date, status, priority in breached_tickets:
-                try:
-                    send_sla_alert(ticket_id, alert_type='overdue')
-                    alert_count += 1
-                except Exception as e:
-                    logger.error(f"Failed to send SLA alert for ticket {ticket_id}: {e}")
-
-            logger.info(f"Sent {alert_count} SLA breach alerts")
-            log_event('info', f'Email Scheduler: Sent {alert_count} SLA breach alerts')
-
+        from education_system.systems.university.services.bus.jobs import support_jobs
+        outcome = dict(support_jobs.FREQUENT).get('sla', lambda: None)()
+        logger.info(f"SLA breach check: {outcome}")
+        log_event('info', f'Email Scheduler: SLA breach check ran ({outcome})')
     except Exception as e:
         logger.error(f"Error in SLA breach check: {e}")
         log_event('error', f'Email Scheduler: SLA breach check failed: {e}')
@@ -260,8 +234,8 @@ def setup_schedules():
     schedule.every().day.at("06:30").do(refresh_sponsor_compliance_kpis)
     schedule.every().day.at("06:35").do(refresh_external_qa_kpis)
 
-    # Periodic tasks
-    schedule.every(30).minutes.do(check_sla_breaches)
+    # Support-ticket SLA alerts are not scheduled here: the support jobs
+    # worker (services/bus/jobs/support_jobs) runs them every five minutes.
 
     logger.info("Email scheduler configured:")
     logger.info("  - Satisfaction surveys: Daily at 09:00")
@@ -270,7 +244,6 @@ def setup_schedules():
     logger.info("  - Visa-expiry alerts: Daily at 07:00")
     logger.info("  - Sponsor-compliance KPI refresh: Daily at 06:30")
     logger.info("  - External-QA KPI refresh: Daily at 06:35")
-    logger.info("  - SLA breach alerts: Every 30 minutes")
 
 
 def _run_scheduler_loop():

@@ -219,7 +219,7 @@ def create_rooms_for_building(building_id=None, building_name=None):
 
                 while True:
                     try:
-                        monthly_rent = float(input(get_text("housing.room.rent_prompt") + " $"))
+                        monthly_rent = float(input(get_text("housing.room.rent_prompt") + " £"))
                         if monthly_rent <= 0:
                             print(get_text("housing.room.error_rent_positive"))
                             continue
@@ -836,3 +836,238 @@ def delete_room():
         print(get_text("housing.common.database_error", error=str(e)))
     except Exception as e:
         print(housing_text("housing.room.error_deleting", default="Error deleting room: {error}", error=str(e)))
+
+
+def _pick_building(cursor):
+    """Prompt for a building; returns ``(building_id, building_name)`` or ``None``."""
+    cursor.execute('SELECT building_id, building_name FROM housing_buildings ORDER BY building_name')
+    buildings = cursor.fetchall()
+    if not buildings:
+        print(get_text("housing.building.no_buildings"))
+        print(housing_text("housing.building.setup_hint",
+                           default="Add a building first (Building Management > Add New Building)."))
+        return None
+    print("\n" + get_text("housing.building.select") + ":")
+    print("=" * 24)
+    for i, (bid, bname) in enumerate(buildings, 1):
+        print(f"{i}. {bname} ({bid})")
+    while True:
+        raw = input("\n" + get_text("housing.common.select_prompt", default="Select: ") + " ").strip()
+        if not raw:
+            return None
+        try:
+            choice = int(raw)
+        except ValueError:
+            print(get_text("housing.common.error_valid_number"))
+            continue
+        if 1 <= choice <= len(buildings):
+            return buildings[choice - 1][0], buildings[choice - 1][1]
+        print(get_text("housing.common.error_range", min=1, max=len(buildings)))
+
+
+@log_update(module="housing", description="Updating room")
+def update_room():
+    """Edit one room's number, floor, type, capacity, status, rent and access.
+
+    Occupancy is not editable here: it is derived from the room's Active and
+    Pending assignments.
+    """
+    from education_system.systems.university.domains.operations.domain.campus.housing.services.housing_accommodation.room_setup import (
+        ROOM_STATUSES, ROOM_TYPES, normalise_room_status, normalise_room_type,
+        recount_building,
+    )
+    auth = _common.auth
+    if not auth or not auth.current_user:
+        print(get_text("housing.auth.login_required", action="edit a room"))
+        return
+    if not auth.check_permission('manage_accommodations'):
+        print(get_text("housing.auth.permission_denied", action="edit a room"))
+        return
+
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
+        picked = _pick_building(cursor)
+        if not picked:
+            conn.close()
+            return
+        building_id, building_name = picked
+
+        cursor.execute('''
+        SELECT room_id, room_number, floor_number, room_type, max_occupants,
+               current_occupants, status, monthly_rent, is_accessible
+        FROM housing_rooms WHERE building_id = ?
+        ORDER BY floor_number, room_number
+        ''', (building_id,))
+        rooms = cursor.fetchall()
+        if not rooms:
+            print(get_text("housing.room.no_rooms", default="This building has no rooms."))
+            conn.close()
+            return
+        for i, room in enumerate(rooms, 1):
+            print(f"{i}. Room {room[1]} (floor {room[2]}, {room[3]}, "
+                  f"{room[5]}/{room[4]} occupied, {room[6]}, £{room[7]:.2f})")
+        while True:
+            try:
+                choice = int(input("\n" + get_text("housing.common.select_prompt", default="Select: ") + " "))
+                if 1 <= choice <= len(rooms):
+                    room = rooms[choice - 1]
+                    break
+                print(get_text("housing.common.error_range", min=1, max=len(rooms)))
+            except ValueError:
+                print(get_text("housing.common.error_valid_number"))
+
+        room_id, number, floor, rtype, max_occ, occupants, status, rent, accessible = room
+        print("\nPress Enter to keep the current value.")
+
+        new_number = input(f"Room number [{number}]: ").strip() or number
+        if new_number != number:
+            cursor.execute('SELECT 1 FROM housing_rooms WHERE building_id = ? AND room_number = ? AND room_id != ?',
+                           (building_id, new_number, room_id))
+            if cursor.fetchone():
+                print(f"Room {new_number} already exists in {building_name}.")
+                conn.close()
+                return
+
+        while True:
+            raw = input(f"Floor [{floor}]: ").strip()
+            if not raw:
+                new_floor = floor
+                break
+            try:
+                new_floor = int(raw)
+                if new_floor >= 0:
+                    break
+            except ValueError:
+                pass
+            print("Enter a whole number, 0 or more.")
+
+        while True:
+            raw = input(f"Room type ({'/'.join(ROOM_TYPES)}) [{rtype}]: ").strip()
+            new_type = normalise_room_type(raw) if raw else rtype
+            if new_type:
+                break
+            print(f"Choose one of: {', '.join(ROOM_TYPES)}")
+
+        while True:
+            raw = input(f"Max occupants [{max_occ}]: ").strip()
+            if not raw:
+                new_max = max_occ
+                break
+            try:
+                new_max = int(raw)
+            except ValueError:
+                print(get_text("housing.common.error_valid_number"))
+                continue
+            if new_max < max(1, occupants or 0):
+                print(f"Max occupants must be at least {max(1, occupants or 0)} "
+                      f"({occupants} resident(s) currently assigned).")
+                continue
+            break
+
+        while True:
+            raw = input(f"Status ({'/'.join(ROOM_STATUSES)}) [{status}]: ").strip()
+            new_status = normalise_room_status(raw) if raw else status
+            if new_status:
+                break
+            print(f"Choose one of: {', '.join(ROOM_STATUSES)}")
+
+        while True:
+            raw = input(f"Monthly rent £ [{rent:.2f}]: ").strip()
+            if not raw:
+                new_rent = rent
+                break
+            try:
+                new_rent = float(raw)
+                if new_rent > 0:
+                    break
+            except ValueError:
+                pass
+            print(get_text("housing.room.error_rent_positive"))
+
+        raw = input(f"Accessible (y/n) [{'y' if accessible else 'n'}]: ").strip().lower()
+        new_accessible = (1 if raw == 'y' else 0) if raw else (1 if accessible else 0)
+
+        timestamp = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        cursor.execute('''
+        UPDATE housing_rooms
+        SET room_number = ?, floor_number = ?, room_type = ?, max_occupants = ?,
+            status = ?, monthly_rent = ?, is_accessible = ?, updated_at = ?
+        WHERE room_id = ?
+        ''', (new_number, new_floor, new_type, new_max, new_status, new_rent,
+              new_accessible, timestamp, room_id))
+        recount_building(cursor, building_id, timestamp)
+        conn.commit()
+        conn.close()
+        print(f"\nRoom {new_number} in {building_name} updated.")
+
+    except sqlite3.Error as e:
+        print(get_text("housing.common.database_error", error=str(e)))
+    except Exception as e:
+        print(f"Error updating room: {e}")
+
+
+@log_create(module="housing", description="Importing rooms from CSV")
+def import_rooms_from_csv():
+    """Import rooms from a CSV file, all-or-nothing, after validating every row."""
+    from education_system.systems.university.domains.operations.domain.campus.housing.services.housing_accommodation.room_setup import (
+        CSV_OPTIONAL_COLUMNS, CSV_REQUIRED_COLUMNS, import_rooms, parse_rooms_csv,
+        rooms_csv_template,
+    )
+    auth = _common.auth
+    if not auth or not auth.current_user:
+        print(get_text("housing.auth.login_required", action="import rooms"))
+        return
+    if not auth.check_permission('manage_accommodations'):
+        print(get_text("housing.auth.permission_denied", action="import rooms"))
+        return
+
+    print("\nImport Rooms from CSV")
+    print("=====================")
+    print("Required columns: " + ", ".join(CSV_REQUIRED_COLUMNS))
+    print("Optional columns: " + ", ".join(CSV_OPTIONAL_COLUMNS)
+          + " (is_accessible yes/no, status defaults to Available)")
+    print("Example:\n" + rooms_csv_template())
+    path = input("Path to CSV file (Enter to cancel): ").strip().strip('"').strip("'")
+    if not path:
+        return
+
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
+        try:
+            rows, errors = parse_rooms_csv(cursor, path)
+        except OSError as e:
+            print(f"Cannot read {path}: {e}")
+            conn.close()
+            return
+        if errors:
+            print(f"\nNothing imported - {len(errors)} problem(s) found:")
+            for err in errors[:50]:
+                print("  - " + err)
+            if len(errors) > 50:
+                print(f"  ... and {len(errors) - 50} more")
+            conn.close()
+            return
+
+        print(f"\n{len(rows)} room(s) are valid and ready to import.")
+        if input("Import them now? (y/n): ").strip().lower() != 'y':
+            print(housing_text("housing.common.operation_cancelled", default="Operation cancelled."))
+            conn.close()
+            return
+        try:
+            added = import_rooms(cursor, rows)
+            conn.commit()
+        except sqlite3.Error:
+            conn.rollback()
+            raise
+        cursor.execute('SELECT building_id, building_name FROM housing_buildings')
+        names = dict(cursor.fetchall())
+        conn.close()
+        print("\nImported:")
+        for bid, count in added.items():
+            print(f"  {names.get(bid, bid)}: {count} room(s)")
+    except sqlite3.Error as e:
+        print(get_text("housing.common.database_error", error=str(e)))
+    except Exception as e:
+        print(f"Error importing rooms: {e}")

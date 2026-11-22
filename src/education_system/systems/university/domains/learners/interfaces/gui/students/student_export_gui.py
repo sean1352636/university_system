@@ -475,11 +475,11 @@ def export_individual_student_data(self, student_id, first_name, last_name):
             # 8. Financial Aid & Scholarships
             try:
                 cursor.execute("""
-                    SELECT s.scholarship_name, ss.amount, ss.academic_year, ss.status
+                    SELECT s.scholarship_name, ss.amount, s.academic_year, ss.status
                     FROM student_scholarships ss
                     JOIN scholarships s ON ss.scholarship_id = s.scholarship_id
                     WHERE ss.student_id = ?
-                    ORDER BY ss.academic_year DESC
+                    ORDER BY s.academic_year DESC
                 """, (student_id,))
                 data_sections['scholarships'] = cursor.fetchall()
 
@@ -505,12 +505,17 @@ def export_individual_student_data(self, student_id, first_name, last_name):
                 data_sections['activities'] = cursor.fetchall()
 
                 cursor.execute("""
-                    SELECT c.club_name, cm.role, cm.join_date, cm.status
+                    SELECT c.club_name, cm.role, cm.join_date, c.status
                     FROM club_members cm
-                    JOIN clubs c ON cm.club_id = c.club_id
+                    JOIN student_clubs c ON cm.club_id = c.club_id
                     WHERE cm.student_id = ?
-                    ORDER BY cm.join_date DESC
-                """, (student_id,))
+                    UNION ALL
+                    SELECT c.name, 'member', m.join_date, m.status
+                    FROM club_memberships m
+                    JOIN student_union_clubs c ON c.id = m.club_id
+                    WHERE m.student_id = ?
+                    ORDER BY 3 DESC
+                """, (student_id, student_id))
                 data_sections['clubs'] = cursor.fetchall()
             except Exception:
                 data_sections['activities'] = []
@@ -552,11 +557,12 @@ def export_individual_student_data(self, student_id, first_name, last_name):
             # 12. Internships & Career
             try:
                 cursor.execute("""
-                    SELECT i.company_name, i.position_title, ia.status,
+                    SELECT i.company, i.title, ia.status,
                            ia.application_date, ip.start_date, ip.end_date
                     FROM internship_applications ia
                     JOIN internships i ON ia.internship_id = i.internship_id
-                    LEFT JOIN internship_placements ip ON ia.application_id = ip.application_id
+                    LEFT JOIN internship_placements ip ON ia.internship_id = ip.internship_id
+                        AND ia.student_id = ip.student_id
                     WHERE ia.student_id = ?
                     ORDER BY ia.application_date DESC
                 """, (student_id,))
@@ -570,33 +576,35 @@ def export_individual_student_data(self, student_id, first_name, last_name):
                     SELECT b.title, bl.checkout_date, bl.due_date, bl.return_date, bl.status
                     FROM book_loans bl
                     JOIN books b ON bl.book_id = b.book_id
-                    WHERE bl.student_id = ?
+                    WHERE bl.user_id = ?
+                       OR bl.user_id = (SELECT u.username FROM users u WHERE u.student_id = ?)
                     ORDER BY bl.checkout_date DESC
-                """, (student_id,))
+                """, (student_id, student_id))
                 data_sections['library'] = cursor.fetchall()
             except Exception:
                 data_sections['library'] = []
 
-            # 14. Support Tickets
+            # 14. Support Tickets — through the support-tickets port: only
+            # the tickets the signed-in user may see, no ticket text.
             try:
-                cursor.execute("""
-                    SELECT ticket_id, subject, category, status, created_at, resolved_at
-                    FROM support_tickets
-                    WHERE user_id = ?
-                    ORDER BY created_at DESC
-                """, (student_id,))
-                data_sections['support_tickets'] = cursor.fetchall()
+                from education_system.systems.university.services.bus import support_tickets_bus
+                data_sections['support_tickets'] = [
+                    (t['ticket_id'], t['subject'], t['category'], t['status'],
+                     t['created_at'], t['resolved_at'])
+                    for t in support_tickets_bus.tickets_for_student(
+                        getattr(self, 'auth', None), student_id)]
             except Exception:
+                logger.warning("Support tickets left out of the export", exc_info=True)
                 data_sections['support_tickets'] = []
 
             # 15. Badges & Achievements
             try:
                 cursor.execute("""
-                    SELECT ab.badge_name, bi.date_earned, bi.description
+                    SELECT ab.badge_name, bi.issued_date, COALESCE(ab.badge_description, ab.description)
                     FROM badge_issuances bi
                     JOIN achievement_badges ab ON bi.badge_id = ab.badge_id
                     WHERE bi.student_id = ?
-                    ORDER BY bi.date_earned DESC
+                    ORDER BY bi.issued_date DESC
                 """, (student_id,))
                 data_sections['badges'] = cursor.fetchall()
             except Exception:
@@ -673,7 +681,7 @@ def export_individual_student_data(self, student_id, first_name, last_name):
         messagebox.showerror(_t("common.error"), _t("student_export.errors.export_failed", error=str(e)))
 def export_data_dialog(self):
     """Create export data dialog"""
-    dialog = self.create_themed_toplevel(_t("student_export.dialog.title"), "450x300")
+    dialog = self.create_themed_toplevel(_t("student_export.dialog.title"), "450x340")
     dialog.grab_set()
 
     main_frame = ttk.Frame(dialog, padding=20)
@@ -682,7 +690,7 @@ def export_data_dialog(self):
     ttk.Label(main_frame, text=_t("student_export.dialog.export_format")).grid(row=0, column=0, sticky=tk.W, pady=10)
     format_var = tk.StringVar(value=_t('gui.learners.students.student_export.values.csv', default="CSV"))
 
-    formats = [(_t("student_export.formats.csv_short"), "CSV"), (_t("student_export.formats.excel_short"), "Excel"), (_t("student_export.formats.pdf_short"), "PDF"), (_t("student_export.formats.text_short"), "Text")]
+    formats = [(_t("student_export.formats.csv_short"), "CSV"), (_t("student_export.formats.excel_short"), "Excel"), (_t("student_export.formats.pdf_short"), "PDF"), (_t("student_export.formats.text_short"), "Text"), (_t("student_export.formats.google_sheet_short", default="Google Sheet"), "Google Sheet")]
     for i, (text, value) in enumerate(formats):
         ttk.Radiobutton(main_frame, text=text, variable=format_var, value=value).grid(row=i+1, column=0, sticky=tk.W)
 
@@ -705,13 +713,16 @@ def export_data_dialog(self):
                 "Text": ".txt"
             }
 
-            filename = filedialog.asksaveasfilename(
-                defaultextension=extensions[export_format],
-                filetypes=filetypes[export_format]
-            )
+            # A Google Sheet is created in the user's Drive, not saved locally.
+            filename = None
+            if export_format != "Google Sheet":
+                filename = filedialog.asksaveasfilename(
+                    defaultextension=extensions[export_format],
+                    filetypes=filetypes[export_format]
+                )
 
-            if not filename:
-                return
+                if not filename:
+                    return
 
             conn = None
             try:
@@ -883,6 +894,32 @@ def export_data_dialog(self):
 
                     processed_rows.append(row_data)
 
+                if export_format == "Google Sheet":
+                    from education_system.platform.integrations.external import google_sheets_export
+                    try:
+                        dialog.config(cursor="watch")
+                        dialog.update_idletasks()
+                        url = google_sheets_export.export_table(
+                            f"All Students {datetime.now():%Y-%m-%d %H:%M}",
+                            headers, processed_rows, wrap_columns=(MODULES_IDX,))
+                    except google_sheets_export.GoogleSheetsNotConfigured as e:
+                        messagebox.showinfo(
+                            _t("student_export.formats.google_sheet_short", default="Google Sheet"),
+                            str(e))
+                        return
+                    finally:
+                        if dialog.winfo_exists():
+                            dialog.config(cursor="")
+                    import webbrowser
+                    webbrowser.open(url)
+                    messagebox.showinfo(
+                        _t("common.success"),
+                        _t("student_export.messages.google_sheet_success",
+                           default="Exported {count} students to a new Google Sheet:\n{url}",
+                           count=len(processed_rows), url=url))
+                    dialog.destroy()
+                    return
+
                 if export_format == "CSV":
                     with open(filename, 'w', newline='', encoding='utf-8') as csvfile:
                         writer = csv.writer(csvfile)  # nosemgrep: python.lang.security.audit.csv-writer-injection
@@ -941,7 +978,7 @@ def export_data_dialog(self):
                         from reportlab.lib import colors
                         from reportlab.lib.pagesizes import letter, landscape, A4
                         from reportlab.lib.styles import getSampleStyleSheet
-                        from reportlab.platypus import Paragraph, SimpleDocTemplate, Table, TableStyle
+                        from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
                         from reportlab.lib.units import inch
                     except ImportError:
                         messagebox.showerror(
@@ -950,72 +987,94 @@ def export_data_dialog(self):
                         )
                         return
 
-                    # Use landscape orientation for better column visibility
+                    from reportlab.pdfbase.pdfmetrics import stringWidth
+
+                    # Landscape A4. The four name parts share one "Name" column
+                    # and every width is sized from the data, then scaled so the
+                    # table fits exactly between the margins — nothing is clipped.
+                    pagesize = landscape(A4)
+                    margin = 0.35 * inch
                     doc = SimpleDocTemplate(
                         filename,
-                        pagesize=landscape(letter),
-                        leftMargin=0.4*inch,
-                        rightMargin=0.4*inch,
+                        pagesize=pagesize,
+                        leftMargin=margin,
+                        rightMargin=margin,
                         topMargin=0.5*inch,
-                        bottomMargin=0.5*inch
+                        bottomMargin=0.5*inch,
+                        title="All Students",
                     )
                     styles = getSampleStyleSheet()
-                    body_style = styles['BodyText']
-                    body_style.wordWrap = 'CJK'
-                    body_style.fontSize = 8
 
-                    # Create a style for wrapping cell text
                     cell_style = styles['Normal'].clone('CellStyle')
                     cell_style.fontSize = 7
-                    cell_style.leading = 8
-                    cell_style.wordWrap = 'CJK'
+                    cell_style.leading = 8.5
+                    cell_style.wordWrap = 'CJK'  # break long e-mails anywhere
 
                     header_style = styles['Normal'].clone('HeaderStyle')
                     header_style.fontSize = 7
-                    header_style.leading = 8
+                    header_style.leading = 8.5
                     header_style.fontName = 'Helvetica-Bold'
 
-                    table_data = [[Paragraph(str(h), header_style) for h in headers]]
+                    NAME_PARTS = (1, 2, 3, 4)  # Title, First, Middle, Last
+                    pdf_headers = [headers[0], _t("student_export.text_labels.name")] + \
+                        [h for i, h in enumerate(headers) if i > 4]
+                    pdf_modules_idx = MODULES_IDX - 3
+
+                    pdf_rows = []
                     for row in processed_rows:
+                        name = " ".join(str(row[i]) for i in NAME_PARTS if row[i])
+                        pdf_rows.append([row[0], name] + [row[i] for i in range(5, len(row))])
+
+                    def as_text(value):
+                        return "" if value in (None, "") else str(value)
+
+                    pad = 6  # LEFTPADDING + RIGHTPADDING below
+
+                    def text_width(text, bold=False):
+                        font = 'Helvetica-Bold' if bold else 'Helvetica'
+                        return stringWidth(text, font, 7)
+
+                    # natural: widest line in the column; minimum: widest single
+                    # header word, so headings never break mid-word.
+                    natural, minimum = [], []
+                    for c, header in enumerate(pdf_headers):
+                        lines = [header] + [
+                            line for r in pdf_rows for line in as_text(r[c]).split("\n")]
+                        natural.append(max(text_width(l, l is header) for l in lines) + pad)
+                        minimum.append(min(max(text_width(w, True) for w in header.split()),
+                                           0.8 * inch) + pad)
+
+                    avail = pagesize[0] - 2 * margin
+                    if sum(minimum) > avail:
+                        minimum = [m * avail / sum(minimum) for m in minimum]
+                    widths = list(natural)
+                    if sum(widths) > avail:
+                        # Shrink the widest columns first, never below their minimum.
+                        lo, hi = 0.0, max(widths)
+                        for _ in range(40):
+                            cap = (lo + hi) / 2
+                            if sum(max(min(n, cap), m) for n, m in zip(natural, minimum)) > avail:
+                                hi = cap
+                            else:
+                                lo = cap
+                        widths = [max(min(n, lo), m) for n, m in zip(natural, minimum)]
+                    # Hand any spare width to the modules list.
+                    widths[pdf_modules_idx] += max(avail - sum(widths), 0)
+
+                    table_data = [[Paragraph(h, header_style) for h in pdf_headers]]
+                    for row in pdf_rows:
                         pdf_row = []
                         for idx, value in enumerate(row):
-                            val_str = str(value) if value not in (None, "") else ""
+                            val_str = as_text(value).replace("&", "&amp;").replace(
+                                "<", "&lt;").replace(">", "&gt;")
                             # The modules cell holds newline-separated entries;
                             # render each on its own line within the cell.
-                            if idx == MODULES_IDX:
+                            if idx == pdf_modules_idx:
                                 val_str = val_str.replace("\n", "<br/>")
                             pdf_row.append(Paragraph(val_str, cell_style))
                         table_data.append(pdf_row)
 
-                    # Calculate available width
-                    page_width = landscape(letter)[0] - (0.8 * inch)  # Subtract margins (0.4 * 2)
-
-                    # Calculate column widths dynamically based on number of columns
-                    num_cols = len(headers)
-                    # Fixed columns: Student ID, Title, First Name, Middle Name, Last Name,
-                    #                Gender, DOB, Age, Email, Course, Status, Reg Date
-                    fixed_widths = [
-                        0.5*inch,   # Student ID
-                        0.35*inch,  # Title
-                        0.6*inch,   # First Name
-                        0.55*inch,  # Middle Name
-                        0.6*inch,   # Last Name
-                        0.45*inch,  # Gender
-                        0.6*inch,   # DOB
-                        0.3*inch,   # Age
-                        1.0*inch,   # Email
-                        0.55*inch,  # Course
-                        0.45*inch,  # Status
-                        0.65*inch,  # Registration Date
-                    ]
-                    # Trailing columns: "# Modules" (narrow) + "Enrolled
-                    # Modules" (takes all remaining width so the list is legible).
-                    count_width = 0.55 * inch
-                    fixed_total = sum(fixed_widths) + count_width
-                    modules_width = max(page_width - fixed_total, 1.5 * inch)
-                    col_widths = fixed_widths + [count_width, modules_width]
-
-                    table = Table(table_data, colWidths=col_widths, repeatRows=1)
+                    table = Table(table_data, colWidths=widths, repeatRows=1)
                     table.setStyle(TableStyle([
                         ('BACKGROUND', (0, 0), (-1, 0), colors.lightgrey),
                         ('TEXTCOLOR', (0, 0), (-1, 0), colors.black),
@@ -1026,9 +1085,17 @@ def export_data_dialog(self):
                         ('RIGHTPADDING', (0, 0), (-1, -1), 3),
                         ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
                         ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+                        ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor('#f4f6f8')]),
                     ]))
 
-                    doc.build([table])
+                    title_style = styles['Title'].clone('ExportTitle')
+                    title_style.fontSize = 14
+                    subtitle = (f"Generated {datetime.now():%Y-%m-%d %H:%M} \u2014 "
+                                f"{len(pdf_rows)} students")
+                    doc.build([Paragraph("All Students", title_style),
+                               Paragraph(subtitle, styles['Normal']),
+                               Spacer(1, 0.15 * inch),
+                               table])
 
                 else:  # Text export
                     with open(filename, 'w', encoding='utf-8') as txtfile:
@@ -1042,7 +1109,9 @@ def export_data_dialog(self):
                             txtfile.write(f"{_t('student_export.text_labels.email')}: {row[8]}\n")
                             txtfile.write(f"{_t('student_export.text_labels.course')}: {row[9]}\n")
                             txtfile.write(f"Status: {row[10]}\n")
-                            txtfile.write(f"{_t('student_export.text_labels.registration_date')}: {row[11]}\n")
+                            txtfile.write(f"Pronouns: {row[11]}\n")
+                            txtfile.write(f"Emergency Contact: {row[12]}\n")
+                            txtfile.write(f"{_t('student_export.text_labels.registration_date')}: {row[13]}\n")
                             module_count = row[MODULE_COUNT_IDX]
                             txtfile.write(f"{_t('student_export.text_labels.modules')} ({module_count}):\n")
                             # Modules are newline-separated in the consolidated cell.
@@ -1066,7 +1135,7 @@ def export_data_dialog(self):
 
     # Buttons
     button_frame = ttk.Frame(main_frame)
-    button_frame.grid(row=5, column=0, pady=20)
+    button_frame.grid(row=len(formats) + 1, column=0, pady=20)
 
     ttk.Button(button_frame, text=_t("common.export"), command=export_data).pack(side=tk.LEFT, padx=5)
     ttk.Button(button_frame, text=_t("common.cancel"), command=dialog.destroy).pack(side=tk.LEFT, padx=5)

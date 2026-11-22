@@ -227,6 +227,12 @@ def _on_table_double_click(event, parent_frame):
     _show_table_data(parent_frame.winfo_toplevel(), str(table_name))
 
 
+#: Columns the drill-down never shows, per table.
+_WITHHELD_COLUMNS = {
+    'support_tickets': ('description', 'resolution', 'satisfaction_feedback'),
+}
+
+
 def _show_table_data(parent, table_name):
     """Open a Toplevel window showing all rows from the selected table."""
     from education_system.systems.university.infrastructure.database.db import get_connection
@@ -260,6 +266,14 @@ def _show_table_data(parent, table_name):
             rows = conn.execute(
                 "SELECT * FROM [" + safe_table + "] LIMIT 500"
             ).fetchall()
+
+        # Free text that may be confidential (sealed support-ticket text is
+        # read through the ticket service, never here): left out.
+        hidden = _WITHHELD_COLUMNS.get(safe_table, ())
+        if hidden:
+            keep = [i for i, c in enumerate(col_names) if c not in hidden]
+            col_names = [col_names[i] for i in keep]
+            rows = [tuple(row[i] for i in keep) for row in rows]
 
         if not col_names:
             ttk.Label(win, text=f"Table '{table_name}' has no columns.").pack(padx=20, pady=20)

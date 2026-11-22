@@ -96,8 +96,14 @@ class AuditLogsWindow:
 
         self.logs_tree.pack(fill='both', expand=True)
 
-        # Load sample data
-        self.load_sample_logs()
+        self.status_var = tk.StringVar(value="")
+        ttk.Label(self.window, textvariable=self.status_var, foreground='#555555').pack(
+            fill='x', padx=20)
+
+        # Real entries from the university and platform audit stores
+        self.entries = []
+        self.custom_range = (None, None)
+        self.load_logs()
 
         # Bind double-click to view details
         self.logs_tree.bind('<Double-1>', self.view_log_details)
@@ -105,85 +111,168 @@ class AuditLogsWindow:
         # Close button
         ttk.Button(self.window, text=_("common.close"), command=self.window.destroy).pack(pady=10)
 
-    def load_sample_logs(self):
-        """Load sample audit log data"""
-        # Clear existing items
+    # ── data ──────────────────────────────────────────────────────────────
+    def _filter_values(self):
+        """Translate the combobox choices into reader arguments."""
+        from education_system.systems.university.infrastructure.security.audit_log_reader import (
+            CATEGORIES, since_for,
+        )
+        date_choice = self.date_range_var.get()
+        ranges = {
+            _("admin_windows.audit.date_options.last_24_hours"): "24h",
+            _("admin_windows.audit.date_options.last_7_days"): "7d",
+            _("admin_windows.audit.date_options.last_30_days"): "30d",
+        }
+        since, until = None, None
+        if date_choice == _("admin_windows.audit.date_options.custom"):
+            since, until = self.custom_range
+        else:
+            since = since_for(ranges.get(date_choice, "7d"))
+
+        level = self.level_var.get()
+        level = None if level == _("admin_windows.audit.level_options.all") else level
+
+        category_labels = {
+            _("admin_windows.audit.category_options.authentication"): CATEGORIES[0],
+            _("admin_windows.audit.category_options.database"): CATEGORIES[1],
+            _("admin_windows.audit.category_options.api"): CATEGORIES[2],
+            _("admin_windows.audit.category_options.user_actions"): CATEGORIES[3],
+            _("admin_windows.audit.category_options.system"): CATEGORIES[4],
+        }
+        category = category_labels.get(self.category_var.get())
+        return since, until, level, category, self.search_var.get().strip() or None
+
+    def load_logs(self):
+        """Load real audit entries matching the current filters."""
+        from education_system.systems.university.infrastructure.security.audit_log_reader import (
+            read_audit_entries,
+        )
         for item in self.logs_tree.get_children():
             self.logs_tree.delete(item)
 
-        # Sample log entries
-        import random
-        from datetime import datetime
+        since, until, level, category, search = self._filter_values()
+        errors = []
+        try:
+            self.entries = read_audit_entries(since=since, until=until, level=level,
+                                              category=category, search=search,
+                                              errors=errors)
+        except Exception as exc:
+            self.entries = []
+            errors.append(str(exc))
 
-        categories = ["Authentication", "Database", "API", "User Actions", "System"]
-        levels = ["INFO", "WARNING", "ERROR"]
-        users = ["admin", "john.doe", "jane.smith", "system", "api_user"]
-        actions = [
-            "User login successful",
-            "Database backup completed",
-            "API key generated",
-            "Student record updated",
-            "System maintenance started",
-            "Failed login attempt",
-            "Database query executed",
-            "File uploaded",
-            "Report generated",
-            "Configuration changed"
-        ]
-        ips = ["192.168.1.100", "10.0.0.50", "172.16.0.25", "203.0.113.10", "198.51.100.5"]
+        for entry in self.entries:
+            details = entry["details"]
+            if entry["resource"]:
+                details = f"[{entry['resource']}] {details}".strip()
+            self.logs_tree.insert('', 'end', values=(
+                entry["timestamp"], entry["level"], entry["category"], entry["user"],
+                entry["action"], entry["ip"] or "-", f"{details}  ({entry['source']})"))
 
-        # Generate sample logs for the last 7 days
-        base_time = datetime.now()
-        for i in range(100):
-            timestamp = (base_time - timedelta(minutes=random.randint(0, 10080))).strftime('%Y-%m-%d %H:%M:%S')
-            level = random.choice(levels)
-            category = random.choice(categories)
-            user = random.choice(users)
-            action = random.choice(actions)
-            ip = random.choice(ips)
-            details = f"Additional context for {action.lower()}"
+        if self.entries:
+            status = f"{len(self.entries)} entr{'y' if len(self.entries) == 1 else 'ies'} shown"
+            if since:
+                status += f" since {since}"
+        else:
+            status = "No audit entries match these filters."
+        if errors:
+            status += " - some stores could not be read: " + "; ".join(errors)
+        self.status_var.set(status)
 
-            # Add some realistic error patterns
-            if level == "ERROR":
-                action = random.choice([
-                    "Database connection failed",
-                    "Authentication timeout",
-                    "API rate limit exceeded",
-                    "File not found",
-                    "Permission denied"
-                ])
-
-            self.logs_tree.insert('', 'end', values=(timestamp, level, category, user, action, ip, details))
+    # Older callers used this name.
+    load_sample_logs = load_logs
 
     def apply_filters(self):
-        """Apply filters to log display"""
-        messagebox.showinfo(_("admin_windows.audit.messages.filters_applied_title"),
-                           _("admin_windows.audit.messages.filters_applied_body",
-                             date_range=self.date_range_var.get(),
-                             log_level=self.level_var.get(),
-                             category=self.category_var.get(),
-                             search=self.search_var.get()))
-
-        # Reload logs with filters (in real implementation)
-        self.load_sample_logs()
+        """Re-read the audit stores with the chosen filters."""
+        if self.date_range_var.get() == _("admin_windows.audit.date_options.custom"):
+            from tkinter import simpledialog
+            start = simpledialog.askstring(_("admin_windows.audit.date_range"),
+                                           "From date (YYYY-MM-DD):", parent=self.window)
+            if start is None:
+                return
+            end = simpledialog.askstring(_("admin_windows.audit.date_range"),
+                                         "To date (YYYY-MM-DD, blank for today):",
+                                         parent=self.window)
+            try:
+                since = datetime.strptime(start.strip(), "%Y-%m-%d").strftime("%Y-%m-%d 00:00:00")
+                until = (datetime.strptime(end.strip(), "%Y-%m-%d").strftime("%Y-%m-%d 23:59:59")
+                         if end and end.strip() else None)
+            except ValueError:
+                messagebox.showerror(_("admin_windows.audit.date_range"),
+                                     "Dates must be in YYYY-MM-DD form.", parent=self.window)
+                return
+            self.custom_range = (since, until)
+        self.load_logs()
 
     def export_logs(self):
-        """Export filtered logs"""
+        """Export the entries currently shown to CSV or JSON."""
+        if not self.entries:
+            messagebox.showinfo(_("admin_windows.audit.messages.export_title"),
+                                "There are no entries to export with these filters.",
+                                parent=self.window)
+            return
         filename = filedialog.asksaveasfilename(
+            parent=self.window,
             title=_("admin_windows.audit.messages.export_title"),
             defaultextension=".csv",
             filetypes=[(_("admin_windows.filetypes.csv"), "*.csv"), (_("admin_windows.filetypes.json"), "*.json"), (_("admin_windows.filetypes.all"), "*.*")]
         )
-
-        if filename:
-            messagebox.showinfo(_("admin_windows.messages.export_complete"), _("admin_windows.audit.messages.logs_exported", filename=filename))
+        if not filename:
+            return
+        fields = ("timestamp", "level", "category", "user", "action", "resource", "ip",
+                  "details", "source")
+        try:
+            if filename.lower().endswith(".json"):
+                with open(filename, "w", encoding="utf-8") as handle:
+                    json.dump([{k: e[k] for k in fields} for e in self.entries], handle, indent=2)
+            else:
+                import csv
+                with open(filename, "w", newline="", encoding="utf-8") as handle:
+                    writer = csv.DictWriter(handle, fieldnames=fields, extrasaction="ignore")
+                    writer.writeheader()
+                    writer.writerows(self.entries)
+        except OSError as exc:
+            messagebox.showerror(_("admin_windows.audit.messages.export_title"),
+                                 f"Could not write {filename}: {exc}", parent=self.window)
+            return
+        messagebox.showinfo(_("admin_windows.messages.export_complete"),
+                            _("admin_windows.audit.messages.logs_exported", filename=filename),
+                            parent=self.window)
 
     def clear_logs(self):
-        """Clear old log entries"""
-        result = messagebox.askyesno(_("admin_windows.audit.messages.confirm_clear_title"),
-                                   _("admin_windows.audit.messages.confirm_clear_body"))
-        if result:
-            messagebox.showinfo(_("admin_windows.audit.messages.logs_cleared_title"), _("admin_windows.audit.messages.logs_cleared_body"))
+        """Purge old rows from the operational activity log.
+
+        Only ``activity_log`` is purged, through the activity logger's own
+        retention call. The security audit trail, the hash-chained immutable
+        log and the platform audit store are never cleared from here.
+        """
+        from tkinter import simpledialog
+        days = simpledialog.askinteger(
+            _("admin_windows.audit.messages.confirm_clear_title"),
+            "Delete activity-log entries older than how many days?\n"
+            "(minimum 90; the security audit trail and the immutable audit "
+            "log are kept regardless)",
+            parent=self.window, initialvalue=365, minvalue=90)
+        if not days:
+            return
+        if not messagebox.askyesno(_("admin_windows.audit.messages.confirm_clear_title"),
+                                   _("admin_windows.audit.messages.confirm_clear_body")
+                                   + f"\n\nActivity-log entries older than {days} days will be deleted.",
+                                   parent=self.window):
+            return
+        try:
+            from education_system.systems.university.infrastructure.utils.activity_logger import get_logger_instance
+            db_logger = getattr(get_logger_instance(), "db_logger", None)
+            if db_logger is None:
+                raise RuntimeError("the activity log database is not available")
+            removed = db_logger.delete_old_logs(days)
+        except Exception as exc:
+            messagebox.showerror(_("admin_windows.audit.messages.logs_cleared_title"),
+                                 f"Nothing was deleted: {exc}", parent=self.window)
+            return
+        messagebox.showinfo(_("admin_windows.audit.messages.logs_cleared_title"),
+                            f"{removed or 0} activity-log entr{'y' if removed == 1 else 'ies'} "
+                            f"older than {days} days deleted.", parent=self.window)
+        self.load_logs()
 
     def view_log_details(self, event):
         """View detailed information about selected log entry"""

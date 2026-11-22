@@ -18,11 +18,9 @@ from tkinter import messagebox
 from typing import Any
 
 from education_system.systems.apprenticeships.interfaces.gui import widgets
-from education_system.systems.apprenticeships.services import (
-    admissions_service,
-    employer_service,
-    programme_service,
-)
+from education_system.systems.apprenticeships.application.apprentices import admissions_service
+from education_system.systems.apprenticeships.application.employers import employer_service
+from education_system.systems.apprenticeships.application.programmes import programme_service
 
 logger = logging.getLogger(__name__)
 

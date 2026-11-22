@@ -55,6 +55,8 @@ from education_system.systems.sixth_form.domain.academics.attendance import (
     attendance_rollcall as rollcall,
     attendance_safeguarding as safeguarding,
     attendance_sessions as sessions,
+    attendance_signout as signout,
+    attendance_signout_requests as signout_requests,
     attendance_thresholds as thresholds,
     attendance_weeks as weeks,
     attendance_window as window,
@@ -90,7 +92,7 @@ _MODULES = (
     thresholds, att_calendar, absence_reports, leave, evidence, appeals,
     calling, notifications, nudges, letters, escalation, punctuality,
     cohorts, safeguarding, bursary, rewards, analytics, anomalies,
-    governor_report, census, integration,
+    governor_report, census, integration, signout, signout_requests,
     # Neighbouring modules the package reads from.
     tt, cg, courses_mod, students_mod, ay, work_experience, exam_entries,
 )

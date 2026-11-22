@@ -357,20 +357,70 @@ def allocate_flow() -> None:
             payload["agency_id"] = _pick_agency()
             payload["agency_teacher"] = _input("Agency teacher name")
         elif ctype == "Internal":
-            payload["cover_staff"] = _input(
-                "Cover staff",
+            suggestions = _print_suggestions(r.cover_id)
+            raw = _input(
+                "Cover staff (name, or # from the free list)",
                 default=r.cover_staff or "",
                 allow_empty=False)
+            if raw.isdigit() and 1 <= int(raw) <= len(suggestions):
+                raw = suggestions[int(raw) - 1].name
+            payload["cover_staff"] = raw
     except _UserAbort:
         print("\n  Cancelled.")
         return
     try:
-        data.allocate(r.cover_id, **payload)
+        data.allocate(r.cover_id, check_free=True, **payload)
     except ValidationError as e:
         print(f"\n  ✗ {e}")
-        _pause()
-        return
+        if "is not free" not in str(e):
+            _pause()
+            return
+        try:
+            if _input("Allocate anyway? (y/n)", default="n").lower() \
+                    not in ("y", "yes"):
+                return
+            data.allocate(r.cover_id, **payload)
+        except (_UserAbort, ValidationError) as e2:
+            print(f"\n  ✗ {e2}")
+            _pause()
+            return
     print(f"\n  ✓ Allocated #{r.cover_id}")
+    _pause()
+
+
+def _print_suggestions(cover_id: int) -> list:
+    try:
+        rows = data.suggest_cover_staff(cover_id)
+    except ValidationError as e:
+        print(f"    ✗ {e}")
+        return []
+    if not rows:
+        print("\n  Nobody is free on the timetable at that time.")
+        return []
+    print("\n  Free staff (best first):")
+    for i, sg in enumerate(rows, 1):
+        print(f"    {i:>2}) {sg.label}")
+    return rows
+
+
+def suggest_flow() -> None:
+    print("\n═══ Free Staff for a Cover ═══")
+    try:
+        r = _pick_request()
+    except _UserAbort:
+        return
+    _print_suggestions(r.cover_id)
+    _pause()
+
+
+def sync_absences_flow() -> None:
+    print("\n═══ Sync Cover from Staff Absences ═══")
+    results = data.sync_open_absences()
+    for res in results:
+        print(f"    Absence #{res.absence_id}: {res.created} added, "
+              f"{res.reopened} reopened, {res.cancelled} stood down"
+              + (f" — {res.note}" if res.note else ""))
+    print(f"\n  {len(results)} open absence(s) checked.")
     _pause()
 
 
@@ -517,6 +567,8 @@ _MENU: list[tuple[str, Callable[[], None]]] = [
     ("Change status",       set_status_flow),
     ("Delete",              delete_request_flow),
     ("Summary",             summary_flow),
+    ("Free staff for a cover", suggest_flow),
+    ("Sync from staff absences", sync_absences_flow),
 ]
 
 

@@ -1038,6 +1038,23 @@ try:
         UniversityShopGUI.show_textbooks_orders = textbook_manager.show_textbooks_orders
     if hasattr(textbook_manager, '_tb_do_search'):
         UniversityShopGUI._tb_do_search = textbook_manager._tb_do_search
+
+    # Bind methods the dashboard, inventory, product, order and report screens call
+    UniversityShopGUI.get_low_stock_items = dashboard_manager.get_low_stock_items
+    UniversityShopGUI.update_product_status = dashboard_manager.update_product_status
+    UniversityShopGUI.show_sales_summary_report = dashboard_manager.show_sales_summary_report
+    UniversityShopGUI.bulk_price_update = bulk_operations.bulk_price_update
+    UniversityShopGUI.view_order_details_by_id = order_manager.view_order_details_by_id
+    UniversityShopGUI.update_product_stock = product_manager.update_product_stock
+    UniversityShopGUI.show_product_performance_report = report_manager.show_product_performance_report
+    UniversityShopGUI.show_category_analysis_report = report_manager.show_category_analysis_report
+    UniversityShopGUI.show_customer_analysis_report = report_manager.show_customer_analysis_report
+    UniversityShopGUI.get_sales_summary_data = dashboard_manager.get_sales_summary_data
+    UniversityShopGUI.get_product_performance_data = report_manager.get_product_performance_data
+    UniversityShopGUI.get_category_analysis_data = report_manager.get_category_analysis_data
+    UniversityShopGUI.get_customer_analysis_data = report_manager.get_customer_analysis_data
+    UniversityShopGUI.generate_quick_report = report_manager.generate_quick_report
+    UniversityShopGUI.show_daily_report = report_manager.show_daily_report
     if hasattr(textbook_manager, '_tb_load_exchange'):
         UniversityShopGUI._tb_load_exchange = textbook_manager._tb_load_exchange
     if hasattr(textbook_manager, '_tb_load_orders'):

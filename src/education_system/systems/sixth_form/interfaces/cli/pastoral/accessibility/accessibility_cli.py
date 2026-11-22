@@ -670,7 +670,15 @@ _MENU: list[tuple[str, Callable[[], None]]] = [
     ("Delete Accommodation",     delete_accomm),
     ("─" * 6,                    lambda: None),
     ("Summary",                  summary),
+    ("SEND Register Check",      lambda: _send_sync()),
 ]
+
+
+def _send_sync() -> None:
+    from education_system.systems.sixth_form.interfaces.cli.pastoral.accessibility import (
+        send_sync_cli,
+    )
+    send_sync_cli.run()
 
 
 def run() -> None:

@@ -10,15 +10,16 @@ from education_system.systems.university.infrastructure.database.db import trans
 
 from .constants import NAIL_TREATMENTS as _FALLBACK_TREATMENTS
 
+NAIL_TREATMENTS = _FALLBACK_TREATMENTS
+
 # Import nailbar core services
 try:
     from education_system.systems.university.plugins.campus_commerce.domain.nailbar.services.nailbar_core import (
-        init_nailbar_db, NAIL_TREATMENTS
+        init_nailbar_db
     )
     NAILBAR_CORE_AVAILABLE = True
 except ImportError:
     NAILBAR_CORE_AVAILABLE = False
-    NAIL_TREATMENTS = _FALLBACK_TREATMENTS
 
     def init_nailbar_db():
         """Fallback database initialization"""

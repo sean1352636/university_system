@@ -12,6 +12,7 @@ from __future__ import annotations
 
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 
+from education_system.systems.university.domains.staff.interfaces.gui.staff_hr import _access as _hr
 import tkinter as tk
 from tkinter import ttk, messagebox
 from datetime import datetime
@@ -45,7 +46,7 @@ class CoverGUI:
             self.create_main_window()
 
     def _get_user_id(self):
-        return self.current_user.get('id') or self.current_user.get('username')
+        return _hr.user_key(self)
 
     def create_as_tab(self, notebook: ttk.Notebook):
         self.tab_frame = ttk.Frame(notebook)
@@ -55,7 +56,8 @@ class CoverGUI:
     def create_main_window(self):
         self.window = tk.Toplevel(self.root)
         self.window.title(_t('gui.staff.staff_hr.cover.windows.substitute_cover_arrangements', default="Substitute/Cover Arrangements"))
-        self.window.geometry("1200x700")
+        self.window.geometry("1400x900")
+        self.window.minsize(1200, 800)
         self.window.minsize(1000, 600)
         bottom_frame = ttk.Frame(self.window)
         bottom_frame.pack(side=tk.BOTTOM, fill=tk.X, padx=10, pady=5)
@@ -74,8 +76,9 @@ class CoverGUI:
         self._create_find_cover_tab()
         self._create_my_assignments_tab()
 
-        if self.current_user.get('role') in ['admin', 'Admin', 'administrator', 'staff']:
+        if _hr.can(self, 'manager'):
             self._create_cover_pool_tab()
+        if _hr.can(self, 'manager'):
             self._create_reports_tab()
 
     # ================================================================

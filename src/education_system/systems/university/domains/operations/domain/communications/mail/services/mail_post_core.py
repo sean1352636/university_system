@@ -8,12 +8,16 @@ email and finance integration.
 
 from education_system.systems.university.infrastructure.database.db import sqlite3
 from education_system.systems.university.infrastructure.sql_safety import escape_like
+import logging
 import uuid
 from datetime import datetime, timedelta
 from typing import Optional, List, Dict, Any, Tuple
 
 from education_system.systems.university.infrastructure.database.db import get_connection, transaction
 from education_system.systems.university.infrastructure.activity_logger import log_activity
+from education_system.systems.university.services.bus import finance_bus
+
+logger = logging.getLogger(__name__)
 
 # Constants
 PACKAGE_STATUSES = ['received', 'stored', 'notified', 'collected', 'returned', 'forwarded']
@@ -142,6 +146,45 @@ def init_mail_db():
     except Exception as e:
         print(f"Error initializing mail database: {e}")
         return False
+
+def _settle_from_student_account(student_id: str, amount: float, description: str,
+                                 transaction_ref: str, processed_by: str = None) -> bool:
+    """Draw *amount* down from the student's finance account before a chargeable
+    mail write. Finance records its own ``payments`` row for this, so the caller
+    must not post again. Returns False (and logs) when the draw-down fails."""
+    result = finance_bus.pay_from_student_account(
+        student_id=student_id,
+        amount=amount,
+        description=description,
+        transaction_source="MailPost",
+        transaction_ref=transaction_ref,
+        processed_by=processed_by or 'System',
+    )
+    if not result.get('success'):
+        logger.error("Student-account payment failed for %s: %s", transaction_ref, result.get('message'))
+        return False
+    return True
+
+
+def _post_to_finance(student_id: str, amount: float, payment_method: str,
+                     transaction_ref: str, notes: str, created_by: str = None) -> Optional[int]:
+    """Post a completed cash/card mail payment to Finance (``MailServices``).
+    Never raises; a failure is logged and the local write stands."""
+    payment_id = finance_bus.record_payment(
+        student_id=student_id,
+        amount=amount,
+        payment_method=payment_method,
+        transaction_source='MailServices',
+        transaction_ref=transaction_ref,
+        notes=notes,
+        created_by=created_by,
+    )
+    if payment_id:
+        logger.info("Revenue recorded: £%.2f for %s", amount, transaction_ref)
+    else:
+        logger.error("Finance posting failed for %s (local record kept)", transaction_ref)
+    return payment_id
+
 
 class PackageManager:
     """Manages mail package operations."""
@@ -334,38 +377,65 @@ class POBoxManager:
 
     @staticmethod
     def rent_box(box_id: int, holder_id: str, holder_name: str, holder_email: str,
-                 months: int = 1) -> Optional[Dict]:
-        """Rent a PO box."""
+                 months: int = 1, payment_method: str = 'Cash', payer_id: str = None,
+                 processed_by: str = None) -> Optional[Dict]:
+        """Rent a PO box and post the rental fee to Finance.
+
+        ``payment_method`` is how the fee was taken (Cash / Card / Student
+        Account); ``payer_id`` is the finance identity charged (defaults to
+        ``holder_id``). A student-account payment is drawn down before the box
+        is assigned; cash/card is posted after the write succeeds. Both the
+        GUI and the CLI go through here so nothing posts twice.
+        """
         try:
-            with transaction() as conn:
-                # Get box details
+            payer_id = payer_id or holder_id
+            with get_connection() as conn:
                 cursor = conn.execute(
                     "SELECT * FROM mail_po_boxes WHERE box_id = ? AND status = 'available'",
                     (box_id,))
                 row = cursor.fetchone()
                 if not row:
                     return None
-
                 columns = [desc[0] for desc in cursor.description]
                 box = dict(zip(columns, row))
 
-                start_date = datetime.now().date()
-                end_date = start_date + timedelta(days=30 * months)
-                total_fee = box['monthly_fee'] * months
+            start_date = datetime.now().date()
+            end_date = start_date + timedelta(days=30 * months)
+            total_fee = box['monthly_fee'] * months
 
+            if finance_bus.is_student_account_method(payment_method):
+                if not _settle_from_student_account(
+                        payer_id, total_fee, f"PO Box {box['box_number']} rental",
+                        f"pobox_{box_id}", processed_by):
+                    return None
+
+            with transaction() as conn:
                 conn.execute('''
                     UPDATE mail_po_boxes
                     SET holder_id = ?, holder_name = ?, holder_email = ?,
                         status = 'rented', rental_start = ?, rental_end = ?
-                    WHERE box_id = ?
+                    WHERE box_id = ? AND status = 'available'
                 ''', (holder_id, holder_name, holder_email,
                       start_date.isoformat(), end_date.isoformat(), box_id))
+
+            finance_payment_id = None
+            if not finance_bus.is_student_account_method(payment_method):
+                finance_payment_id = _post_to_finance(
+                    student_id=payer_id,
+                    amount=total_fee,
+                    payment_method=payment_method,
+                    transaction_ref=f"POBOX-{box['box_number']}",
+                    notes=f"PO Box {box['box_number']} rental - {months} month(s)",
+                    created_by=processed_by,
+                )
 
             return {
                 'box_number': box['box_number'],
                 'rental_fee': total_fee,
                 'start_date': start_date.isoformat(),
-                'end_date': end_date.isoformat()
+                'end_date': end_date.isoformat(),
+                'payment_method': payment_method,
+                'finance_payment_id': finance_payment_id,
             }
         except Exception as e:
             print(f"Error renting PO box: {e}")
@@ -411,13 +481,25 @@ class ForwardingManager:
     @staticmethod
     def setup_forwarding(user_id: str, user_name: str, forward_address: str,
                         forward_type: str = 'domestic', start_date: str = None,
-                        end_date: str = None) -> Optional[Dict]:
-        """Set up mail forwarding."""
+                        end_date: str = None, payment_method: str = 'Cash',
+                        payer_id: str = None, processed_by: str = None) -> Optional[Dict]:
+        """Set up mail forwarding and post the forwarding fee to Finance.
+
+        Same payment contract as :meth:`POBoxManager.rent_box`: a student-account
+        payment is drawn down first, cash/card is posted after the row is written.
+        """
         try:
             if not start_date:
                 start_date = datetime.now().date().isoformat()
 
             fee = FORWARDING_FEES.get(forward_type, FORWARDING_FEES['domestic'])
+            payer_id = payer_id or user_id
+
+            if finance_bus.is_student_account_method(payment_method):
+                if not _settle_from_student_account(
+                        payer_id, fee, f"Mail forwarding - {forward_type}",
+                        f"forwarding_{user_id}", processed_by):
+                    return None
 
             with transaction() as conn:
                 conn.execute('''
@@ -428,9 +510,22 @@ class ForwardingManager:
 
                 forwarding_id = conn.execute("SELECT last_insert_rowid()").fetchone()[0]
 
+            finance_payment_id = None
+            if not finance_bus.is_student_account_method(payment_method):
+                finance_payment_id = _post_to_finance(
+                    student_id=payer_id,
+                    amount=fee,
+                    payment_method=payment_method,
+                    transaction_ref=f"FWD-{forwarding_id}",
+                    notes=f"Mail forwarding setup - {forward_type}",
+                    created_by=processed_by,
+                )
+
             return {
                 'forwarding_id': forwarding_id,
-                'fee': fee
+                'fee': fee,
+                'payment_method': payment_method,
+                'finance_payment_id': finance_payment_id,
             }
         except Exception as e:
             print(f"Error setting up forwarding: {e}")
@@ -474,7 +569,11 @@ class TransactionManager:
     def record_payment(user_id: str, transaction_type: str, amount: float,
                       payment_method: str, package_id: int = None,
                       processed_by: str = None) -> Optional[Dict]:
-        """Record a payment transaction."""
+        """Record a mail service payment and post it to Finance.
+
+        Shared by the GUI "Record Payment" dialog and the CLI; the Finance
+        posting lives here so neither interface posts directly.
+        """
         try:
             reference = generate_reference()
 
@@ -496,10 +595,24 @@ class TransactionManager:
                         UPDATE mail_packages SET payment_status = 'paid' WHERE package_id = ?
                     ''', (package_id,))
 
+            # Post to Finance after the local write — money has been taken.
+            notes = f"Mail {transaction_type.replace('_', ' ')}"
+            if package_id:
+                notes += f" - package {package_id}"
+            finance_payment_id = _post_to_finance(
+                student_id=user_id,
+                amount=amount,
+                payment_method=payment_method,
+                transaction_ref=reference,
+                notes=notes,
+                created_by=processed_by,
+            )
+
             return {
                 'transaction_id': transaction_id,
                 'reference': reference,
-                'amount': amount
+                'amount': amount,
+                'finance_payment_id': finance_payment_id,
             }
         except Exception as e:
             print(f"Error recording payment: {e}")

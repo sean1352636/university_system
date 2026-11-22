@@ -116,6 +116,7 @@ from education_system.systems.university.domains.safeguarding.application.servic
 from education_system.systems.university.domains.safeguarding.application.services.notifications import (
     _try_send_email,
     queue_notification,
+    retry_queued_emails,
     list_notifications,
     escalation_notify_dsl,
     notify_reporter_on_status_change,
@@ -293,6 +294,7 @@ __all__ = [
     "notify_tutor",
     "purge_due_records",
     "queue_notification",
+    "retry_queued_emails",
     "quick_exit",
     "record_training",
     "redact_for_tutor",

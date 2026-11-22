@@ -132,9 +132,18 @@ def purchase_credits():
         student_id = input("Student ID: ").strip()
         pages = input("Number of page credits to purchase: ").strip()
         price = input("Price (e.g. 4.50): ").strip()
+        print("Payment method: 1. Cash  2. Card  3. Student Finance Account")
+        method = {"1": "Cash", "2": "Card", "3": "student_finance"}.get(
+            input("Select payment method (1-3, default 1): ").strip(), "Cash")
 
-        printing_service.purchase_credits(student_id, int(pages), price)
-        print(f"Successfully purchased {pages} print credits.")
+        # The service takes the payment and posts it to Finance.
+        outcome = printing_service.purchase_credits(student_id, int(pages), price, payment_method=method)
+        print(f"Successfully purchased {pages} print credits via {outcome['method_label']}.")
+        print(f"Transaction: {outcome['transaction_id']}  New quota total: {outcome['new_total']} pages")
+        if outcome.get("new_balance") is not None:
+            print(f"Remaining finance account balance: £{outcome['new_balance']:.2f}")
+    except printing_service.PaymentDeclined as declined:
+        print(f"Payment declined: {declined}")
     except Exception as e:
         print(f"Error: {e}")
 

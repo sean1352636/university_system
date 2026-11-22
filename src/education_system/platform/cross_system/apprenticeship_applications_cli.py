@@ -20,7 +20,8 @@ def dashboard(source_system: str) -> None:
 
 def new_application(source_system: str) -> None:
     print("\n  Progress learner to apprenticeship")
-    student_id = input("  College learner ID: ").strip()
+    student_id = input("  Learner ref (e.g. TP000012): " if source_system == "training_provider"
+                       else "  College learner ID: ").strip()
     title = input("  Intended programme / standard: ").strip()
     level = input("  Level: ").strip()
     eligibility = input("  Eligibility evidence: ").strip()

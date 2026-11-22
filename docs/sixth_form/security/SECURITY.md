@@ -23,7 +23,7 @@ The college system implements a layered security architecture with the following
 
 - **Authentication layer** -- Password-based login with bcrypt hashing, account lockout, and optional TOTP-based multi-factor authentication.
 - **Session management** -- Cryptographically random session tokens for the GUI/CLI interface and JWT tokens for the REST API.
-- **Authorization layer** -- Role-Based Access Control (RBAC) with a hierarchical role model and granular resource-action permissions.
+- **Authorization layer** -- Role-Based Access Control (RBAC) with a hierarchical role model and sixth form capabilities.
 - **Input validation** -- Centralized validation utilities that enforce format constraints on all user-supplied data.
 - **Audit logging** -- Persistent audit trail of security-relevant events stored in the database.
 - **Data protection** -- Parameterized SQL queries throughout to prevent injection attacks; input sanitization on all entry points.
@@ -32,15 +32,17 @@ Key source files:
 
 | Component | Location |
 |---|---|
-| Core auth facade | `infrastructure/auth/core.py` |
-| Password hashing | `infrastructure/auth/password_manager.py` |
-| Session management | `infrastructure/auth/session_manager.py` |
-| Role management | `infrastructure/auth/role_manager.py` |
-| MFA service | `infrastructure/auth/mfa_service.py` |
-| API JWT auth | `api/auth.py` |
-| Audit logging | `infrastructure/security/audit.py` |
-| Input validation | `infrastructure/validation/validators.py` |
-| Default constants | `core/defaults.py` |
+| Core auth facade | `src/education_system/platform/identity/auth/core.py` |
+| Password hashing | `src/education_system/platform/identity/auth/password_manager.py` |
+| Session management | `src/education_system/platform/identity/auth/session_manager.py` |
+| Role management | `src/education_system/platform/identity/auth/role_manager.py` |
+| Sixth form capabilities | `src/education_system/systems/sixth_form/domain/governance/user_management/access.py` |
+| API route rules | `src/education_system/api/sixth_form/access_gate.py` |
+| MFA service | `src/education_system/platform/identity/auth/mfa_service.py` |
+| API JWT auth | `src/education_system/platform/delivery/api/security/authentication.py` |
+| Audit logging | `src/education_system/platform/governance/audit/logger.py` |
+| Input validation | `src/education_system/platform/kernel/validation/validators.py` |
+| Default constants | `src/education_system/platform/identity/auth/defaults.py` |
 
 ---
 
@@ -48,7 +50,7 @@ Key source files:
 
 ### Password Hashing
 
-Passwords are hashed using **bcrypt** via the `bcrypt` Python library. The implementation is in `infrastructure/auth/password_manager.py`.
+Passwords are hashed using **bcrypt** via the `bcrypt` Python library. The implementation is in `src/education_system/platform/identity/auth/password_manager.py`.
 
 - `hash_password(password)` -- Generates a bcrypt hash with an automatically generated salt (`bcrypt.gensalt()`).
 - `verify_password(password, password_hash)` -- Verifies a plaintext password against a stored bcrypt hash using `bcrypt.checkpw()`.
@@ -61,11 +63,12 @@ The `validate_password_strength()` function enforces the following rules before 
 
 | Requirement | Detail |
 |---|---|
-| Minimum length | 8 characters (configurable via `MIN_PASSWORD_LENGTH`) |
+| Minimum length | 12 characters (`MIN_PASSWORD_LENGTH`) |
 | Uppercase letter | At least one `A-Z` character |
 | Lowercase letter | At least one `a-z` character |
 | Digit | At least one `0-9` character |
 | Special character | At least one of `!@#$%^&*(),.?":{}|<>` |
+| Not common | Must not be on the common-passwords list |
 
 If any requirement is not met, an error message is returned describing the specific failure.
 
@@ -73,7 +76,7 @@ If any requirement is not met, an error message is returned describing the speci
 
 The system implements automatic account lockout to defend against brute-force attacks.
 
-- **Maximum attempts:** 5 failed login attempts (configurable via `MAX_LOGIN_ATTEMPTS` in `core/defaults.py`).
+- **Maximum attempts:** 3 failed login attempts (`MAX_LOGIN_ATTEMPTS` in `src/education_system/platform/identity/auth/defaults.py`).
 - **Lockout duration:** 15 minutes from the time the threshold is reached.
 - **Lockout check:** On every login attempt, the system checks the `locked_until` timestamp. If the current time is before that timestamp, the login is rejected with "Account locked due to too many failed attempts."
 - **Automatic reset:** Once the lockout period expires, the next login attempt resets the `failed_login_attempts` counter and clears the `locked_until` timestamp.
@@ -100,7 +103,7 @@ See [MFA_GUIDE.md](MFA_GUIDE.md) for detailed MFA documentation. Summary:
 - TOTP-based MFA using the `pyotp` library.
 - 10 single-use recovery codes generated at setup time (format: `XXXX-XXXX`).
 - TOTP verification allows a 1-step time window tolerance.
-- Recovery codes are stored as SHA-256 hashes and marked as used after consumption.
+- Recovery codes are stored as bcrypt hashes and marked as used after consumption.
 
 ---
 
@@ -108,11 +111,11 @@ See [MFA_GUIDE.md](MFA_GUIDE.md) for detailed MFA documentation. Summary:
 
 ### Role-Based Access Control (RBAC)
 
-Authorization is managed by the `RoleManager` class in `infrastructure/auth/role_manager.py`.
+Roles are managed by the `RoleManager` class in `src/education_system/platform/identity/auth/role_manager.py`, and sixth form capabilities by `src/education_system/systems/sixth_form/domain/governance/user_management/access.py`.
 
 #### Role Hierarchy
 
-Roles are organized in a numeric hierarchy. A higher level grants broader access:
+Roles are organized in a numeric hierarchy (`ROLE_HIERARCHY`). A higher level grants broader access. These are the levels the sixth form uses most:
 
 | Role | Level |
 |---|---|
@@ -120,40 +123,34 @@ Roles are organized in a numeric hierarchy. A higher level grants broader access
 | `staff` | 75 |
 | `instructor` | 50 |
 | `teacher` | 50 |
-| `parent` | 30 |
-| `student` | 25 |
 
 - `instructor` and `teacher` are treated at the same hierarchy level.
-- Unknown roles default to level 0.
+- A user's role is held per system, in the `user_systems` table.
 
 #### Permission Model
 
-Permissions are stored in the database using a `permissions` table linked to a `roles` table. Each permission is a `(resource, action)` pair.
+A `Principal` is resolved once per session or request and carries a set of capabilities, taken from the user's role, the linked staff record's job role and designations, and per-user overrides.
 
-- **Admin bypass:** The `admin` role always returns `True` for any permission check, bypassing the database lookup entirely.
-- **has_permission(role, resource, action):** Checks the database for a matching permission entry for the given role.
+- **Admin:** The `admin` role gets every capability.
+- **Safeguarding:** Role defaults never grant it. It comes only from admin, a DSL or deputy DSL designation, or an explicit per-user grant.
 - **has_minimum_role(user_role, required_role):** Compares hierarchy levels to determine if a user meets the minimum role requirement.
-- **get_permissions(role):** Returns all `(resource, action)` pairs assigned to a role.
 
 #### Enforcement Methods
 
-The `UserAuth` facade in `infrastructure/auth/core.py` provides two enforcement methods:
-
-- `check_permission(resource, action)` -- Returns `True`/`False` for the current user.
-- `require_permission(resource, action)` -- Raises `AuthError("Access denied. Insufficient permissions.")` if the check fails.
-- `require_role(required_role)` -- Raises `AuthError("Access denied. Insufficient role level.")` if the current user's role level is below the required role level.
+- **Menus:** `MENU_CAPABILITIES` in `access.py` maps each GUI and CLI menu label to a capability. A label missing from the map is admin-only.
+- **Routes:** `RULES` in `src/education_system/api/sixth_form/access_gate.py` gives each route a read and a write capability. A route without a rule is refused.
 
 #### API Decorators
 
-The API layer (`api/auth.py`) provides decorator-based authorization:
+The API layer (`src/education_system/platform/delivery/api/security/authentication.py`) provides decorator-based authorization:
 
-- `@token_required` -- Requires a valid JWT token in the `Authorization: Bearer <token>` header. Populates `g.current_user` with `user_id`, `username`, and `role`.
+- `@token_required` -- Requires a valid JWT token in the `Authorization: Bearer <token>` header. Populates `g.current_user` with `user_id`, `username`, `systems`, and `role`.
 - `@role_required(*roles)` -- Must be used after `@token_required`. Checks that `g.current_user["role"]` is in the specified set of roles. Returns HTTP 403 if the role does not match.
 
 Example usage:
 
 ```python
-@app.route("/api/admin/users")
+@app.route("/api/v1/admin/users")
 @token_required
 @role_required("admin", "staff")
 def list_users():
@@ -166,26 +163,26 @@ def list_users():
 
 ### JWT Tokens
 
-The REST API uses JSON Web Tokens (JWT) for stateless authentication, implemented in `api/auth.py`.
+The REST API uses JSON Web Tokens (JWT) for stateless authentication, implemented in `src/education_system/platform/delivery/api/security/authentication.py`.
 
 - **Algorithm:** HS256 (HMAC with SHA-256).
-- **Secret key:** Configured via `Config.JWT_SECRET_KEY` (sourced from environment or config).
-- **Token expiry:** 24 hours by default (`JWT_EXPIRY_HOURS`, configurable via `COLLEGE_JWT_EXPIRY` environment variable).
-- **Token payload:** Contains `user_id`, `username`, `role`, `exp` (expiration), and `iat` (issued at).
+- **Secret key:** Configured via the `JWT_SECRET_KEY` environment variable.
+- **Token expiry:** 24 hours by default (`JWT_EXPIRY_HOURS` environment variable).
+- **Token payload:** Contains `user_id`, `username`, `systems`, `type`, `exp` (expiration), and `iat` (issued at).
 - **Token transmission:** Sent in the `Authorization` header using the `Bearer` scheme.
 
 Token generation:
 
 ```python
-token = generate_token(user_id, username, role)
+token = generate_token(user_id, username, systems)
 ```
 
 Token validation handles two error cases:
 
 | Error | HTTP Status | Message |
 |---|---|---|
-| `jwt.ExpiredSignatureError` | 401 | "Token expired. Please log in again." |
-| `jwt.InvalidTokenError` | 401 | "Token is invalid." |
+| `jwt.ExpiredSignatureError` | 401 | "Token expired" |
+| `jwt.InvalidTokenError` | 401 | "Invalid token" |
 
 #### MFA Tokens
 
@@ -193,25 +190,19 @@ When MFA is required during login, a short-lived MFA token is issued:
 
 - **Purpose:** Carries the `user_id` and a `purpose: "mfa_verify"` claim.
 - **Expiry:** 5 minutes.
-- **Validation:** The `@mfa_token_required` decorator verifies the token and checks that the `purpose` field equals `"mfa_verify"`. This prevents regular session tokens from being used for MFA verification.
+- **Validation:** The MFA verification route verifies the token and checks that the `purpose` field equals `"mfa_verify"`. This prevents regular session tokens from being used for MFA verification.
 
 ### CORS
 
-Cross-Origin Resource Sharing is enabled using `flask-cors`. The `CORS(app)` call in `api/api_server.py` applies default permissive CORS settings. For production, this should be restricted to specific allowed origins.
+Cross-Origin Resource Sharing is enabled using `flask-cors`. The unified server (`src/education_system/platform/delivery/api/unified_server.py`) fails closed: production requires an explicit allow-list in `API_CORS_ORIGINS` and refuses a wildcard, and development allows only localhost origins.
 
 ### Input Validation
 
-The `infrastructure/validation/validators.py` module provides validation functions used across the system:
+The `src/education_system/platform/kernel/validation/validators.py` module provides shared validation functions, and each domain module validates its own payloads:
 
 | Validator | Purpose |
 |---|---|
 | `validate_email(email)` | Regex-based email format validation; normalizes to lowercase |
-| `validate_student_id(student_id)` | Enforces `SFC0001` format |
-| `validate_year_group(year_group)` | Validates against allowed year groups |
-| `validate_term(term)` | Validates against allowed terms (Autumn, Spring, Summer) |
-| `validate_qualification_type(qual_type)` | Validates against allowed qualification types |
-| `validate_alevel_grade(grade)` | Validates against the A-Level grade scale |
-| `validate_course_code(code)` | Enforces `CS101` / `MATH201` format |
 | `validate_date(date_str)` | Validates date format (default `YYYY-MM-DD`) |
 | `validate_grade_score(score)` | Ensures score is a float between 0 and 100 |
 | `validate_non_empty(value, field_name)` | Rejects empty or whitespace-only strings |
@@ -226,7 +217,7 @@ All validators raise `ValidationError` with descriptive messages on failure.
 
 ## Audit Logging
 
-The `AuditLogger` class in `infrastructure/security/audit.py` records security-relevant events to the `audit_log` database table.
+The `AuditLogger` class in `src/education_system/platform/governance/audit/logger.py` records security-relevant events to the shared `var/data/platform/db_files/audit.db`. Create one with the system key: `AuditLogger("sixth_form")`. Sixth form user management also keeps its own `user_audit_log` table.
 
 ### What Gets Logged
 
@@ -295,7 +286,7 @@ conn.execute(
 ### Sensitive Data Handling
 
 - **Passwords** are never stored in plaintext; only bcrypt hashes are persisted.
-- **MFA recovery codes** are stored as SHA-256 hashes, not in plaintext. The plaintext codes are shown to the user only once at setup time.
+- **MFA recovery codes** are stored as bcrypt hashes, not in plaintext. The plaintext codes are shown to the user only once at setup time.
 - **MFA TOTP secrets** are stored in the `mfa_secrets` table. In a production environment, these should be encrypted at rest.
 - **JWT secret keys** should be stored as environment variables, not in source code.
 - **Login error messages** are generic ("Invalid username or password.") to prevent username enumeration.
@@ -310,10 +301,10 @@ All write operations use explicit `conn.commit()` calls within `try/finally` blo
 
 ### GUI/CLI Sessions
 
-Managed by the `SessionManager` class in `infrastructure/auth/session_manager.py`.
+Managed by the `SessionManager` class in `src/education_system/platform/identity/auth/session_manager.py`.
 
 - **Token generation:** Uses `secrets.token_urlsafe(32)` to produce a cryptographically secure 32-byte URL-safe token.
-- **Expiry:** Sessions expire after 30 minutes by default (configurable via `SESSION_TIMEOUT_MINUTES` or the `COLLEGE_SESSION_TIMEOUT` environment variable).
+- **Expiry:** Sessions expire after 30 minutes by default (`SESSION_TIMEOUT_MINUTES`, set by the `EDU_SESSION_TIMEOUT` environment variable).
 - **Validation:** The `validate_session()` method joins the `sessions` and `users` tables to verify the token is active and not expired. Expired tokens are automatically invalidated on validation.
 - **Invalidation:** Individual sessions can be invalidated by token. All sessions for a user can be invalidated at once (used during password changes).
 - **Cleanup:** The `cleanup_expired()` method removes expired and inactive sessions from the database.
@@ -349,11 +340,11 @@ The following recommendations apply when deploying the college system in a produ
 
 ### 1. Change Default Passwords
 
-The system may ship with default user accounts for initial setup. Before going live:
+Demo accounts exist only where `EDU_DEV_SEED=true`. Never set it on a production deployment; use `EDU_INITIAL_ADMIN_USER` and `EDU_INITIAL_ADMIN_PASSWORD` to create the first admin. Before going live:
 
 - Change all default admin and staff passwords immediately.
-- Ensure all passwords meet the strength requirements (8+ characters, mixed case, digit, special character).
-- Consider increasing `MIN_PASSWORD_LENGTH` beyond the default of 8 for higher security.
+- Ensure all passwords meet the strength requirements (12+ characters, mixed case, digit, special character).
+- Consider increasing `MIN_PASSWORD_LENGTH` beyond the default of 12 for higher security.
 
 ### 2. Enable Multi-Factor Authentication
 
@@ -371,9 +362,9 @@ The system may ship with default user accounts for initial setup. Before going l
 
 ### 4. Restrict CORS
 
-The default CORS configuration (`CORS(app)`) allows all origins. For production:
+Production requires `API_CORS_ORIGINS`, and the server will not start without it. For production:
 
-- Restrict `CORS` to specific allowed domains.
+- List only the specific allowed domains.
 - Configure appropriate allowed methods and headers.
 
 ### 5. Secure the JWT Secret Key
@@ -397,13 +388,12 @@ The default CORS configuration (`CORS(app)`) allows all origins. For production:
 ### 8. Database Security
 
 - Restrict filesystem permissions on the SQLite database file.
-- Enable SQLite WAL mode for better concurrency handling.
 - Consider encrypting the database at rest using SQLCipher or filesystem-level encryption, particularly for TOTP secrets stored in the `mfa_secrets` table.
 - Perform regular database backups.
 
 ### 9. Logging and Monitoring
 
-- Configure Python logging to write to persistent log files with appropriate rotation.
+- Configure Python logging to write to persistent log files with appropriate rotation; the launcher logs only to the console by default.
 - Monitor for patterns indicating attack attempts (high volumes of failed logins, rapid API requests).
 - Ensure log output does not contain sensitive data (passwords, tokens, personal information).
 

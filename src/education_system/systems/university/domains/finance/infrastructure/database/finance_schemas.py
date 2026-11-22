@@ -6,6 +6,16 @@ from education_system.systems.university.infrastructure.i18n import get_text as 
 # Initialize i18n
 init_i18n()
 
+def ensure_budget_category_description(conn) -> None:
+    """Add the description column the budget category forms write.
+
+    The tables below predate it and CREATE TABLE IF NOT EXISTS cannot add it.
+    """
+    have = {r[1] for r in conn.execute("PRAGMA table_info(budget_categories)")}
+    if have and "description" not in have:
+        conn.execute("ALTER TABLE budget_categories ADD COLUMN description TEXT")
+
+
 def init_finance_system_db():
     """Initialize the enhanced finance database with all tables"""
     try:
@@ -134,7 +144,6 @@ def init_finance_system_db():
         ''')
 
         # Create indexes for student finance tables
-        cursor.execute('CREATE INDEX IF NOT EXISTS idx_student_finance_accounts_student ON student_finance_accounts(student_id)')
         cursor.execute('CREATE INDEX IF NOT EXISTS idx_student_finance_transactions_account ON student_finance_transactions(account_id)')
         cursor.execute('CREATE INDEX IF NOT EXISTS idx_student_finance_transactions_student ON student_finance_transactions(student_id)')
         cursor.execute('CREATE INDEX IF NOT EXISTS idx_student_finance_transactions_date ON student_finance_transactions(created_at)')

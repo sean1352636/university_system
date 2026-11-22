@@ -1,5 +1,5 @@
 from education_system.systems.university.services.events import in_process
-from education_system.systems.university.services.ai_features import nlp_engine
+from education_system.systems.university.shared.ai.features import nlp_engine
 
 
 def test_event_bus_isolates_consumer_crashes_and_unsubscribe_is_idempotent():

@@ -17,6 +17,7 @@ import csv
 from datetime import datetime, timedelta
 import json
 import threading
+from education_system.platform.delivery.gui.tk_threads import start_thread, ui
 import warnings
 from pathlib import Path
 from cryptography.fernet import Fernet
@@ -287,7 +288,7 @@ class FinanceGUI:
         def init_thread():
             try:
                 if hasattr(self, 'layout') and hasattr(self.layout, 'update_status'):
-                    self.layout.update_status(_("finance.status.initializing"))
+                    ui(self.root, self.layout.update_status, _("finance.status.initializing"))
 
                 # Initialize database connection
                 try:
@@ -322,22 +323,22 @@ class FinanceGUI:
                 auth = self.auth
 
                 if hasattr(self, 'layout') and hasattr(self.layout, 'update_status'):
-                    self.layout.update_status(_("finance.status.initialized_success"))
+                    ui(self.root, self.layout.update_status, _("finance.status.initialized_success"))
                 if hasattr(self, 'layout') and hasattr(self.layout, 'connection_label'):
-                    self.layout.connection_label.config(text=_("finance.status.connected"))
+                    ui(self.root, self.layout.connection_label.config, text=_("finance.status.connected"))
 
                 # Load initial data
                 if hasattr(self, 'load_initial_data'):
-                    self.root.after(1000, self.load_initial_data)
+                    ui(self.root, lambda: self.root.after(1000, self.load_initial_data))
 
             except Exception as e:
                 if hasattr(self, 'layout') and hasattr(self.layout, 'update_status'):
-                    self.layout.update_status(_("finance.status.init_failed").format(error=str(e)))
+                    ui(self.root, self.layout.update_status, _("finance.status.init_failed").format(error=str(e)))
                 if hasattr(self, 'layout') and hasattr(self.layout, 'connection_label'):
-                    self.layout.connection_label.config(text=_("finance.status.error"))
-                messagebox.showerror(_("finance.errors.init_error_title"), _("finance.errors.init_failed").format(error=str(e)))
+                    ui(self.root, self.layout.connection_label.config, text=_("finance.status.error"))
+                ui(self.root, messagebox.showerror, _("finance.errors.init_error_title"), _("finance.errors.init_failed").format(error=str(e)))
 
-        threading.Thread(target=init_thread, daemon=True).start()
+        start_thread(self.root, init_thread)
 
 
     def run(self):
@@ -514,12 +515,12 @@ class FinanceGUI:
                 students = cursor.fetchall()
                 conn.close()
 
-                self.root.after(0, lambda: self.update_students_table(students))
+                ui(self.root, self.update_students_table, students)
 
             except Exception as e:
                 print(f"Error searching students: {e}")
 
-        threading.Thread(target=search_thread, daemon=True).start()
+        start_thread(self.root, search_thread)
 
 
     def search_students(self):
@@ -537,7 +538,7 @@ class FinanceGUI:
         opening letters all hang off tuition standing — natural fit
         for the Bursar's toolbar."""
         try:
-            from education_system.systems.university.domains.pastoral.interfaces.gui.student_app.documentation.documentation_gui import DocumentationGUI
+            from education_system.systems.university.domains.student_life.interfaces.gui.student_app.documentation.documentation_gui import DocumentationGUI
             DocumentationGUI(parent=self.root, auth=self.auth)
         except Exception as exc:
             messagebox.showerror(_("common.error"), f"Status Letters not available: {exc}")

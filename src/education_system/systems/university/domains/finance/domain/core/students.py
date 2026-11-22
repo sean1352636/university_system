@@ -74,13 +74,13 @@ def create_sample_students():
     except Exception as e:
         print(f"Error creating sample students: {e}")
 
-def view_student_credits():
+def view_student_credits(student_id=None):
     """View credits for a specific student"""
     try:
         conn = get_connection()
         cursor = conn.cursor()
 
-        student_id = input("Enter student ID: ").strip()
+        student_id = student_id or input("Enter student ID: ").strip()
 
         if not student_exists(student_id):
             print(f"Student with ID {student_id} does not exist.")
@@ -213,13 +213,13 @@ def add_student_credit():
     except sqlite3.Error as e:
         print(f"Database error: {e}")
 
-def view_credit_history():
+def view_credit_history(student_id=None):
     """View credit history for a student"""
     try:
         conn = get_connection()
         cursor = conn.cursor()
 
-        student_id = input("Enter student ID: ").strip()
+        student_id = student_id or input("Enter student ID: ").strip()
 
         if not student_exists(student_id):
             print(f"Student with ID {student_id} does not exist.")
@@ -332,6 +332,139 @@ def api_get_student_financial_summary(student_id):
     except Exception as e:
         logger.error("Financial summary retrieval failed: %s", e)
         return jsonify({'error': 'Internal server error'}), 500
+
+def record_student_credit(student_id, amount, source='adjustment', description='',
+                          expiry_date=None, created_by=None):
+    """Add a credit without prompting (the GUI forms); returns its credit id.
+
+    Raises ValueError for an unknown student, a non-positive amount or a
+    badly formed expiry date.
+    """
+    student_id = str(student_id).strip()
+    amount = float(amount)
+    if not student_exists(student_id):
+        raise ValueError(f"Student with ID {student_id} does not exist")
+    if amount <= 0:
+        raise ValueError("Credit amount must be greater than zero")
+    if expiry_date:
+        datetime.strptime(expiry_date, '%Y-%m-%d')
+    if created_by is None:
+        user = get_current_user()
+        created_by = user['username'] if user else 'system'
+    now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    conn = get_connection()
+    try:
+        credit_id = conn.execute(
+            """INSERT INTO student_credits
+               (student_id, credit_amount, remaining_amount, credit_source, description,
+                expiry_date, created_by, created_at, updated_at)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+            (student_id, amount, amount, source or 'other', description or '',
+             expiry_date or None, created_by, now, now)).lastrowid
+        conn.commit()
+    finally:
+        conn.close()
+    from education_system.systems.university.domains.finance.domain.core.security_automation import log_audit_action
+    log_audit_action('add_credit', 'student_credits', str(credit_id),
+                     {'student_id': student_id, 'amount': amount, 'source': source})
+    return credit_id
+
+
+def apply_student_credit(student_id, credit_id=None, amount=None):
+    """Apply credit to the student's outstanding fees, oldest due first.
+
+    Same bookkeeping as :func:`apply_credit_to_fees` (a payment and allocation
+    per fee, fee status, credit balance, ledger post) without prompting.
+    ``credit_id`` limits it to one credit and ``amount`` caps the total; by
+    default every active credit is used up to what is owed. Returns the amount
+    applied. Raises ValueError when there is nothing to apply.
+    """
+    student_id = str(student_id).strip()
+    if not student_exists(student_id):
+        raise ValueError(f"Student with ID {student_id} does not exist")
+    conn = get_connection()
+    payment_ids = []
+    try:
+        query = ("SELECT credit_id, remaining_amount FROM student_credits "
+                 "WHERE student_id = ? AND status = 'active' AND remaining_amount > 0")
+        params = [student_id]
+        if credit_id is not None:
+            query += " AND credit_id = ?"
+            params.append(int(credit_id))
+        credits = conn.execute(query + " ORDER BY created_at", params).fetchall()
+        if not credits:
+            raise ValueError(f"No available credit found for student {student_id}")
+        fees = conn.execute(
+            """SELECT sf.student_fee_id, ft.fee_name, sf.amount,
+                      COALESCE(SUM(pa.amount), 0) AS paid_amount,
+                      sf.amount - COALESCE(SUM(pa.amount), 0) AS outstanding
+               FROM student_fees sf
+               JOIN fee_types ft ON sf.fee_type_id = ft.fee_type_id
+               LEFT JOIN payment_allocations pa ON sf.student_fee_id = pa.student_fee_id
+               WHERE sf.student_id = ? AND sf.status IN ('unpaid', 'partial')
+               GROUP BY sf.student_fee_id
+               HAVING outstanding > 0
+               ORDER BY sf.due_date""", (student_id,)).fetchall()
+        if not fees:
+            raise ValueError(f"No outstanding fees for student {student_id}")
+
+        available = sum(c[1] for c in credits)
+        owed = sum(f[4] for f in fees)
+        to_apply = min(available, owed)
+        if amount is not None:
+            if float(amount) <= 0:
+                raise ValueError("Amount to apply must be greater than zero")
+            if float(amount) > available:
+                raise ValueError(f"Only £{available:.2f} of credit is available")
+            to_apply = min(float(amount), owed)
+
+        user = get_current_user()
+        username = user['username'] if user else 'system'
+        now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        left = to_apply
+        for fee_id, fee_name, total_amt, paid_amt, outstanding in fees:
+            if left <= 0:
+                break
+            portion = min(left, outstanding)
+            payment_id = conn.execute(
+                """INSERT INTO payments
+                   (student_id, amount, payment_method, payment_date, notes, created_by, created_at)
+                   VALUES (?, ?, ?, ?, ?, ?, ?)""",
+                (student_id, portion, 'Credit Application',
+                 datetime.now().strftime('%Y-%m-%d'),
+                 f'Applied credit to {fee_name}', username, now)).lastrowid
+            payment_ids.append(payment_id)
+            conn.execute(
+                """INSERT INTO payment_allocations
+                   (payment_id, student_fee_id, amount, created_at) VALUES (?, ?, ?, ?)""",
+                (payment_id, fee_id, portion, now))
+            conn.execute(
+                "UPDATE student_fees SET status = ?, updated_at = ? WHERE student_fee_id = ?",
+                ('paid' if paid_amt + portion >= total_amt else 'partial', now, fee_id))
+            left -= portion
+
+        left = to_apply
+        for cid, remaining in credits:
+            if left <= 0:
+                break
+            used = min(left, remaining)
+            conn.execute(
+                """UPDATE student_credits SET remaining_amount = ?, status = ?, updated_at = ?
+                   WHERE credit_id = ?""",
+                (remaining - used, 'used' if remaining - used <= 0 else 'active', now, cid))
+            left -= used
+        conn.commit()
+    finally:
+        conn.close()
+
+    try:
+        from education_system.systems.university.domains.finance.domain.ledger import notify_ledger
+        for pid in payment_ids:
+            notify_ledger('payment', pid, posted_by='credit_application')
+    except Exception as e:
+        logging.getLogger(__name__).warning("ledger hook failed: %s", e)
+    return to_apply
+
 
 def apply_credit_to_fees():
     """Apply student credit to outstanding fees"""

@@ -27,8 +27,8 @@ from education_system.systems.apprenticeships.infrastructure.persistence.reposit
     learning_plan_repository,
     review_repository,
 )
-from education_system.systems.apprenticeships.services import welfare_service
-from education_system.systems.apprenticeships.services.access import Actor, PermissionDenied
+from education_system.systems.apprenticeships.application.support import welfare_service
+from education_system.systems.apprenticeships.application.security.access import Actor, PermissionDenied
 
 
 def _concern(**overrides) -> WelfareConcern:

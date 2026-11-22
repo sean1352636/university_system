@@ -1,13 +1,14 @@
 """Subjects catalogue for the Primary School System.
 
-One row per subject offered to pupils, with a unique short code, a
-display name, the key stage (KS3 / KS4 / Both), the qualification it
-leads to (KS3 / GCSE / BTEC / Other), the owning department, a
-``is_core`` flag (true for compulsory English/Maths/Sci/etc.) and an
-``is_active`` flag for soft-deletion.
+One row per subject taught, with a unique short code, a display name,
+the phase it is taught in (EYFS / KS1 / KS2 / All), where it sits in the
+curriculum (stored in the ``qualification`` column, kept from the
+original schema), the owning subject lead's area, an ``is_core`` flag
+(English, Maths, Science) and an ``is_active`` flag for soft-deletion.
 
-Hard delete is only allowed when the subject is not referenced by the
-GCSE options process — see ``is_in_use``.
+Hard delete is only allowed while nothing - timetable, lesson plans,
+homework, observations or behaviour logs - points at the subject; see
+``is_in_use``.
 """
 
 from __future__ import annotations
@@ -24,8 +25,16 @@ from education_system.systems.primary.domain.learners.pupils.pupils import (
 
 logger = logging.getLogger(__name__)
 
-KEY_STAGES: tuple[str, ...] = ("KS3", "KS4", "Both")
-QUALIFICATIONS: tuple[str, ...] = ("KS3", "GCSE", "BTEC", "Other")
+KEY_STAGES: tuple[str, ...] = ("EYFS", "KS1", "KS2", "All")
+DEFAULT_KEY_STAGE: str = "All"
+#: Where the subject sits in the curriculum. Held in the ``qualification``
+#: column (the name the original schema gave it); primary has no
+#: qualifications.
+QUALIFICATIONS: tuple[str, ...] = (
+    "National Curriculum", "EYFS Area of Learning", "RE / RSHE",
+    "Enrichment", "Other",
+)
+DEFAULT_QUALIFICATION: str = "National Curriculum"
 
 _CODE_RE = re.compile(r"^[A-Z0-9]{2,8}$")
 
@@ -34,8 +43,8 @@ CREATE TABLE IF NOT EXISTS subjects (
     subject_id     INTEGER PRIMARY KEY AUTOINCREMENT,
     code           TEXT NOT NULL UNIQUE,
     name           TEXT NOT NULL,
-    key_stage      TEXT NOT NULL DEFAULT 'Both',
-    qualification  TEXT NOT NULL DEFAULT 'GCSE',
+    key_stage      TEXT NOT NULL DEFAULT 'All',
+    qualification  TEXT NOT NULL DEFAULT 'National Curriculum',
     department     TEXT,
     is_core        INTEGER NOT NULL DEFAULT 0,
     is_active      INTEGER NOT NULL DEFAULT 1,
@@ -80,7 +89,7 @@ def init_db() -> None:
     except sqlite3.Error:
         logger.exception("Failed to initialise subjects table")
         raise
-    logger.info("Secondary subjects table ready")
+    logger.info("Primary subjects table ready")
     _DB_READY = True
 
 
@@ -115,12 +124,12 @@ def _validate(data: dict[str, Any]) -> dict[str, Any]:
     if len(name) > 64:
         raise ValidationError("Name must be 64 characters or fewer")
     out["name"] = name
-    ks = (data.get("key_stage") or "Both").strip()
+    ks = (data.get("key_stage") or DEFAULT_KEY_STAGE).strip()
     if ks not in KEY_STAGES:
         raise ValidationError(
             f"Key stage must be one of {', '.join(KEY_STAGES)}")
     out["key_stage"] = ks
-    qual = (data.get("qualification") or "GCSE").strip()
+    qual = (data.get("qualification") or DEFAULT_QUALIFICATION).strip()
     if qual not in QUALIFICATIONS:
         raise ValidationError(
             f"Qualification must be one of {', '.join(QUALIFICATIONS)}")
@@ -302,26 +311,28 @@ def toggle_active(subject_id: int) -> Subject:
     return rec
 
 
+#: Tables that point at a subject by ``subject_id``.
+_SUBJECT_USERS: tuple[str, ...] = (
+    "timetable_slots", "lesson_plans", "homework_assignments",
+    "observations", "behaviour_incidents",
+)
+
+
 def is_in_use(subject_id: int) -> bool:
-    """True if any options-process record references this subject."""
+    """True if the timetable, a lesson plan, homework, an observation or a
+    behaviour log references this subject."""
     init_db()
     try:
         with _connect() as conn:
             tables = {row[0] for row in conn.execute(
                 "SELECT name FROM sqlite_master WHERE type='table'"
             ).fetchall()}
-            count = 0
-            if "option_round_subjects" in tables:
-                count += conn.execute(
-                    "SELECT COUNT(*) FROM option_round_subjects "
-                    "WHERE subject_id = ?", (subject_id,)
-                ).fetchone()[0]
-            if "pupil_options" in tables:
-                count += conn.execute(
-                    "SELECT COUNT(*) FROM pupil_options "
-                    "WHERE subject_id = ?", (subject_id,)
-                ).fetchone()[0]
-            return count > 0
+            for table in _SUBJECT_USERS:
+                if table in tables and conn.execute(
+                        f"SELECT 1 FROM {table} WHERE subject_id = ? LIMIT 1",  # noqa: S608 - fixed table names
+                        (subject_id,)).fetchone():
+                    return True
+            return False
     except sqlite3.Error:
         logger.exception("is_in_use(%s) failed", subject_id)
         raise
@@ -334,8 +345,8 @@ def delete(subject_id: int) -> bool:
         return False
     if is_in_use(subject_id):
         raise ValidationError(
-            f"Subject {existing.code} is referenced by the options "
-            f"process — deactivate it instead of deleting")
+            f"Subject {existing.code} is used by the timetable, lesson "
+            f"plans, homework or records — deactivate it instead of deleting")
     try:
         with _connect() as conn:
             cur = conn.execute(

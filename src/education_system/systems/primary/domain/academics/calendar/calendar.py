@@ -1,4 +1,4 @@
-"""Calendar — school-wide events for the Sixth Form System.
+"""Calendar — school-wide events for the Primary School System.
 
 One row per event: meetings, trips, exams, INSET days, parents'
 evenings, sports fixtures, social events, deadlines, etc. Events can
@@ -30,11 +30,11 @@ DB_PATH = paths.PRIMARY_CALENDAR_DB
 EVENT_TYPES: tuple[str, ...] = (
     "Lesson Block",
     "Assembly",
-    "Tutor Time",
     "Meeting",
     "Trip",
-    "Exam",
-    "Mock Exam",
+    "SATs / Statutory Check",
+    "Sports Day",
+    "Performance / Nativity",
     "Deadline",
     "Parents' Evening",
     "Open Day",
@@ -51,9 +51,10 @@ DEFAULT_EVENT_TYPE: str = "Meeting"
 AUDIENCES: tuple[str, ...] = (
     "All",
     "Staff",
-    "Students",
-    "Year 12",
-    "Year 13",
+    "Pupils",
+    "EYFS / Reception",
+    "KS1",
+    "KS2",
     "Parents",
     "External",
 )

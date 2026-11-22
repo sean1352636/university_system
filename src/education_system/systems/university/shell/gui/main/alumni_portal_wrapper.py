@@ -99,7 +99,7 @@ class AlumniPortalWrapper:
         """Open the University Chatbot assistant in its own window."""
         from tkinter import messagebox
         try:
-            from education_system.systems.university.infrastructure.ai.university_chatbot import (
+            from education_system.systems.university.shared.ai.chatbot import (
                 UniversityChatbot,
             )
             from education_system.systems.university.shell.gui.ai.chatbot_gui import (

@@ -18,7 +18,7 @@ import sqlite3
 import pytest
 
 from education_system.systems.university.infrastructure.database import db as db_module
-from education_system.systems.university.domains.academics.domain.services.course_management.instructor_service import (
+from education_system.systems.university.domains.curriculum.domain.course_management.instructor_service import (
     create_instructor,
 )
 
@@ -204,3 +204,159 @@ class TestCreateInstructor:
         # staff CRUD owns these rows; the backfill must not add its own.
         assert len(_fetchall(instructor_db, "SELECT id FROM users")) == 0
         assert len(_fetchall(instructor_db, "SELECT id FROM user_accounts")) == 0
+
+
+# ---------------------------------------------------------------------------
+# Form choices, suitability, editing and deleting
+# ---------------------------------------------------------------------------
+
+from education_system.systems.university.domains.curriculum.domain.course_management import (  # noqa: E402
+    instructor_service as svc,
+)
+
+
+@pytest.fixture
+def catalogue_db(instructor_db):
+    conn = sqlite3.connect(instructor_db)
+    conn.executescript(
+        """
+        CREATE TABLE courses (
+            id TEXT PRIMARY KEY, code TEXT, name TEXT, course_code TEXT, course_name TEXT,
+            department TEXT, status TEXT DEFAULT 'active');
+        INSERT INTO courses (id, course_code, course_name, department, status) VALUES
+            ('AI', 'AI', 'Artificial Intelligence', 'School of Computing', 'active'),
+            ('DS', 'DS', 'Data Science', 'School of Computing', 'active'),
+            ('SE', 'SE', 'Software Engineering', 'School of Computing', 'inactive'),
+            ('DSB', 'DSB', 'Business Data Science', 'Business School', 'active'),
+            ('MKT', 'MKT', 'Marketing', 'Business School', 'active');
+        CREATE TABLE course_schedule (
+            id INTEGER PRIMARY KEY, course_id TEXT, semester TEXT, year INTEGER,
+            instructor_id INTEGER REFERENCES instructors(id));
+        CREATE TABLE exams (id INTEGER PRIMARY KEY, instructor_id INTEGER REFERENCES instructors(id));
+        INSERT INTO instructors (id, first_name, last_name, email, department, specialization,
+                                 status, is_active, created_at, updated_at)
+        VALUES (1, 'Ada', 'Byron', 'ada@university.edu', 'School of Computing', 'Data Science',
+                'Active', 1, 'x', 'x');
+        INSERT INTO users (id, username, first_name, last_name, email, role)
+        VALUES (5, 'ada', 'Ada', 'Byron', 'ada@university.edu', 'instructor');
+        INSERT INTO user_accounts (username, user_id, is_active) VALUES ('ada', 5, 1);
+        """
+    )
+    conn.commit()
+    conn.close()
+    return instructor_db
+
+
+@pytest.fixture
+def sent(monkeypatch):
+    """Record update e-mails rather than reach the outbox."""
+    calls = []
+
+    def fake(name, email, changes, updated_by):
+        calls.append((name, email, list(changes), updated_by))
+        return True
+
+    monkeypatch.setattr(svc, "_send_update_email", fake)
+    return calls
+
+
+class TestChoices:
+    def test_specialisms_come_from_each_departments_courses(self, catalogue_db):
+        catalogue = svc.department_specialisms()
+        assert sorted(catalogue) == ["Business School", "School of Computing"]
+        assert "Data Science" in catalogue["School of Computing"]
+        assert "Data Science" not in catalogue["Business School"]
+
+    def test_days_are_known_unique_and_capped(self):
+        assert svc.parse_preferred_days("mon, Monday;tue,Sunday") == ["Monday", "Tuesday"]
+        assert len(svc.parse_preferred_days("Mon,Tue,Wed,Thu,Fri")) == svc.MAX_PREFERRED_DAYS
+
+    def test_time_windows_round_trip_and_older_text_survives(self):
+        assert svc.time_value("9am-5pm") == "09:00-17:00"
+        assert svc.time_label("09:00-17:00") == "9am-5pm"
+        assert svc.time_value(svc.time_label("mornings")) == "mornings"
+
+
+class TestSuitableCourses:
+    def test_specialism_first_then_department_and_active_only(self, catalogue_db):
+        codes = [c["code"] for c in svc.suitable_courses("School of Computing", "Data Science")]
+        assert codes == ["DS", "DSB", "AI"]
+
+    def test_department_alone_lists_that_department(self, catalogue_db):
+        codes = {c["code"] for c in svc.suitable_courses("Business School", "")}
+        assert codes == {"DSB", "MKT"}
+
+    def test_nothing_set_offers_nothing(self, catalogue_db):
+        assert svc.suitable_courses("", "") == []
+
+
+class TestUpdateInstructor:
+    def test_reports_and_emails_only_what_changed(self, catalogue_db, sent):
+        result = svc.update_instructor(1, updated_by="admin", sync_login=False,
+                                       first_name="Ada", department="Business School",
+                                       preferred_days="Monday,Friday", preferred_times="09:00-17:00")
+        assert result.ok and result.email_sent is True
+        assert len(result.changes) == 3
+        assert "Department: School of Computing → Business School" in result.changes
+        assert "Preferred times: Not set → 9am-5pm" in result.changes
+        assert sent[0][:2] == ("Ada Byron", "ada@university.edu")
+        row = _fetchall(catalogue_db, "SELECT * FROM instructors WHERE id = 1")[0]
+        assert row["department"] == "Business School"
+        assert row["preferred_times"] == "09:00-17:00"
+
+    def test_no_change_sends_nothing(self, catalogue_db, sent):
+        result = svc.update_instructor(1, sync_login=False, department="School of Computing")
+        assert result.ok and result.changes == [] and result.email_sent is None
+        assert sent == []
+
+    @pytest.mark.parametrize("days", ["Monday,Monday", "Mon,Tue,Wed,Thu,Fri", "Sunday"])
+    def test_refuses_repeated_excess_or_unknown_days(self, catalogue_db, sent, days):
+        result = svc.update_instructor(1, sync_login=False, preferred_days=days)
+        assert not result.ok and sent == []
+
+    def test_leaving_active_also_clears_is_active(self, catalogue_db, sent):
+        svc.update_instructor(1, sync_login=False, status="On Leave")
+        row = _fetchall(catalogue_db, "SELECT status, is_active FROM instructors WHERE id = 1")[0]
+        assert row == {"status": "On Leave", "is_active": 0}
+
+    def test_failed_email_keeps_the_change_and_warns(self, catalogue_db, monkeypatch):
+        def boom(*_a):
+            raise RuntimeError("smtp down")
+
+        monkeypatch.setattr(svc, "_send_update_email", boom)
+        result = svc.update_instructor(1, sync_login=False, department="Business School")
+        assert result.ok and result.email_sent is False and result.warnings
+
+
+class TestDeleteInstructor:
+    def test_releases_assignments_and_closes_the_local_login(self, catalogue_db, monkeypatch):
+        from education_system.platform.identity.auth import core as auth_core
+
+        closed = []
+        monkeypatch.setattr(auth_core.UserAuth, "__init__", lambda self, *a, **k: None)
+        monkeypatch.setattr(auth_core.UserAuth, "revoke_system_access",
+                            lambda self, *a: closed.append(a) or True)
+        conn = sqlite3.connect(catalogue_db)
+        conn.execute("INSERT INTO course_schedule (course_id, semester, year, instructor_id) "
+                     "VALUES ('DS', 'Fall', 2026, 1)")
+        conn.commit()
+        conn.close()
+
+        result = svc.delete_instructor(1)
+
+        assert result.ok and result.released_assignments == 1 and result.login_disabled
+        assert closed == [("ada", "ada@university.edu", "university", "instructor")]
+        assert _fetchall(catalogue_db, "SELECT id FROM instructors") == []
+        assert _fetchall(catalogue_db, "SELECT instructor_id FROM course_schedule") == [{"instructor_id": None}]
+        assert _fetchall(catalogue_db, "SELECT is_active FROM user_accounts") == [{"is_active": 0}]
+
+    def test_teaching_records_refuse_the_delete(self, catalogue_db):
+        conn = sqlite3.connect(catalogue_db)
+        conn.execute("INSERT INTO exams (instructor_id) VALUES (1)")
+        conn.commit()
+        conn.close()
+
+        result = svc.delete_instructor(1, disable_login=False)
+
+        assert not result.ok and result.blockers == {"exams": 1}
+        assert len(_fetchall(catalogue_db, "SELECT id FROM instructors")) == 1

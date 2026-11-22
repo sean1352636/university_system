@@ -294,5 +294,5 @@ For student account payments, the system checks your balance before processing a
 ---
 
 **Last Updated**: February 2026
-**Module**: `university_system/modules/domain/musicshop/`
+**Module**: `src/education_system/systems/university/plugins/campus_commerce/domain/musicshop/`
 **Support**: musicshop@university.edu | (555) 123-MUSIC

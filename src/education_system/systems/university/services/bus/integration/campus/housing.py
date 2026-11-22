@@ -125,7 +125,7 @@ def _housing_inspector_user_id() -> str | None:
     try:
         with get_connection() as conn:
             row = conn.execute(
-                "SELECT user_id FROM users "
+                "SELECT id FROM users "
                 "WHERE LOWER(role) IN ('housing_inspector', 'inspector', "
                 "                      'housing_manager') "
                 "AND email IS NOT NULL LIMIT 1"

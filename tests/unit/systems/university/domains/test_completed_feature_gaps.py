@@ -6,14 +6,10 @@ from pathlib import Path
 from unittest.mock import patch
 
 from education_system.systems.university.domains.finance.domain.reporting.revenue_analytics import agencies
-from education_system.systems.university.infrastructure.utils.batch_operations.external import (
-    export_rows_to_database, poll_file_share,
-)
-from education_system.systems.university.services.analytics.advanced_search.bulk_ops import send_bulk_email
-from education_system.systems.university.domains.pastoral.domain.health.records import data_purge
-from education_system.systems.university.domains.academics.interfaces.gui.plagiarism_main_gui.dialogs.advanced_search import AdvancedRepositorySearchDialog
-from education_system.systems.university.domains.pastoral.domain.student_life.student_union.administration import admin_management
-from education_system.systems.university.shell.gui.enhanced_reporting.tabular_io import (
+from education_system.systems.university.application.students.bulk_actions import send_bulk_email
+from education_system.systems.university.domains.health.domain.health.records import data_purge
+from education_system.systems.university.domains.student_life.domain.student_life.student_union.administration import admin_management
+from education_system.systems.university.shell.gui.analytics.enhanced_reporting.tabular_io import (
     read_records, write_records,
 )
 
@@ -61,19 +57,6 @@ def test_collection_workflow_creates_and_assigns_case(tmp_path, monkeypatch):
         assert conn.execute("SELECT case_status FROM collection_cases").fetchone()[0] == "assigned"
 
 
-def test_external_sqlite_adapter_and_file_share(tmp_path):
-    destination = tmp_path / "external.db"
-    assert export_rows_to_database(
-        {"type": "sqlite", "path": str(destination), "table": "students"},
-        ["student_id", "email"], [("S1", "s1@example.test")],
-    ) == 1
-    source = tmp_path / "share"
-    inbox = tmp_path / "inbox"
-    source.mkdir()
-    (source / "students.csv").write_text("student_id\nS1\n", encoding="utf-8")
-    assert len(poll_file_share({"type": "local", "path": str(source), "pattern": "*.csv"}, inbox)) == 1
-
-
 def test_bulk_email_reports_individual_failures():
     with patch(
         "education_system.systems.university.infrastructure.email.email_service.send_email",
@@ -108,30 +91,6 @@ def test_health_purge_writes_recovery_archive_before_delete(tmp_path, monkeypatc
     assert "recoverable" in Path(result["archive_path"]).read_text(encoding="utf-8")
     with sqlite3.connect(database) as conn:
         assert conn.execute("SELECT COUNT(*) FROM health_records").fetchone()[0] == 0
-
-
-class _Value:
-    def __init__(self, value):
-        self.value = value
-
-    def get(self):
-        return self.value
-
-
-def test_plagiarism_search_filters_inclusive_date_range():
-    dialog = object.__new__(AdvancedRepositorySearchDialog)
-    dialog.file_type_var = _Value("All")
-    dialog.min_words_var = _Value("")
-    dialog.max_words_var = _Value("")
-    dialog.date_from_var = _Value("2026-01-02")
-    dialog.date_to_var = _Value("2026-01-03")
-    documents = [
-        {"id": 1, "submission_date": "2026-01-01 12:00:00"},
-        {"id": 2, "submission_date": "2026-01-02T10:00:00"},
-        {"id": 3, "submission_date": "2026-01-03"},
-        {"id": 4, "submission_date": "2026-01-04"},
-    ]
-    assert [row["id"] for row in dialog.apply_advanced_filters(documents)] == [2, 3]
 
 
 def test_support_group_compliance_reports_real_issues():

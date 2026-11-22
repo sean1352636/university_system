@@ -9,7 +9,7 @@ import pytest
 import sqlite3
 from unittest.mock import Mock, patch, call
 
-MODULE = "education_system.systems.university.domains.academics.interfaces.cli.accreditation_cli"
+MODULE = "education_system.systems.university.domains.quality.interfaces.cli.accreditation_cli"
 
 
 # ---------------------------------------------------------------------------
@@ -94,7 +94,7 @@ class TestEnsureTables:
         real_conn = sqlite3.connect(":memory:")
         mock_get_conn.return_value = _NoCloseConn(real_conn)
 
-        from education_system.systems.university.domains.academics.interfaces.cli.accreditation_cli import (
+        from education_system.systems.university.domains.quality.interfaces.cli.accreditation_cli import (
             _ensure_tables,
         )
 
@@ -116,7 +116,7 @@ class TestEnsureTables:
         conn = sqlite3.connect(":memory:")
         mock_get_conn.return_value = conn
 
-        from education_system.systems.university.domains.academics.interfaces.cli.accreditation_cli import (
+        from education_system.systems.university.domains.quality.interfaces.cli.accreditation_cli import (
             _ensure_tables,
         )
 
@@ -142,7 +142,7 @@ class TestUploadDocument:
         mock_get_conn.return_value = mem_conn
         mock_input.side_effect = ["Accreditation Report", "/docs/report.pdf", ""]
 
-        from education_system.systems.university.domains.academics.interfaces.cli.accreditation_cli import (
+        from education_system.systems.university.domains.quality.interfaces.cli.accreditation_cli import (
             _upload_document,
         )
 
@@ -165,7 +165,7 @@ class TestUploadDocument:
         mock_get_conn.return_value = mem_conn
         mock_input.side_effect = ["", ""]
 
-        from education_system.systems.university.domains.academics.interfaces.cli.accreditation_cli import (
+        from education_system.systems.university.domains.quality.interfaces.cli.accreditation_cli import (
             _upload_document,
         )
 
@@ -181,7 +181,7 @@ class TestUploadDocument:
         mock_get_conn.return_value = mem_conn
         mock_input.side_effect = ["Some Title", "", ""]
 
-        from education_system.systems.university.domains.academics.interfaces.cli.accreditation_cli import (
+        from education_system.systems.university.domains.quality.interfaces.cli.accreditation_cli import (
             _upload_document,
         )
 
@@ -200,7 +200,7 @@ class TestViewDocuments:
         """Should display a 'no documents' message when table is empty."""
         mock_get_conn.return_value = mem_conn
 
-        from education_system.systems.university.domains.academics.interfaces.cli.accreditation_cli import (
+        from education_system.systems.university.domains.quality.interfaces.cli.accreditation_cli import (
             _view_documents,
         )
 
@@ -221,7 +221,7 @@ class TestViewDocuments:
         mem_conn.commit()
         mock_get_conn.return_value = mem_conn
 
-        from education_system.systems.university.domains.academics.interfaces.cli.accreditation_cli import (
+        from education_system.systems.university.domains.quality.interfaces.cli.accreditation_cli import (
             _view_documents,
         )
 
@@ -246,7 +246,7 @@ class TestScheduleReview:
         mock_get_conn.return_value = mem_conn
         mock_input.side_effect = ["2026-06-15", "10:00", "Dr. Smith", ""]
 
-        from education_system.systems.university.domains.academics.interfaces.cli.accreditation_cli import (
+        from education_system.systems.university.domains.quality.interfaces.cli.accreditation_cli import (
             _schedule_review,
         )
 
@@ -267,7 +267,7 @@ class TestScheduleReview:
         mock_get_conn.return_value = mem_conn
         mock_input.side_effect = ["", ""]
 
-        from education_system.systems.university.domains.academics.interfaces.cli.accreditation_cli import (
+        from education_system.systems.university.domains.quality.interfaces.cli.accreditation_cli import (
             _schedule_review,
         )
 
@@ -283,7 +283,7 @@ class TestScheduleReview:
         mock_get_conn.return_value = mem_conn
         mock_input.side_effect = ["2026-06-15", "10:00", "", ""]
 
-        from education_system.systems.university.domains.academics.interfaces.cli.accreditation_cli import (
+        from education_system.systems.university.domains.quality.interfaces.cli.accreditation_cli import (
             _schedule_review,
         )
 
@@ -302,7 +302,7 @@ class TestViewReviews:
         """Should display a 'no reviews' message when table is empty."""
         mock_get_conn.return_value = mem_conn
 
-        from education_system.systems.university.domains.academics.interfaces.cli.accreditation_cli import (
+        from education_system.systems.university.domains.quality.interfaces.cli.accreditation_cli import (
             _view_reviews,
         )
 
@@ -324,7 +324,7 @@ class TestViewReviews:
         mem_conn.commit()
         mock_get_conn.return_value = mem_conn
 
-        from education_system.systems.university.domains.academics.interfaces.cli.accreditation_cli import (
+        from education_system.systems.university.domains.quality.interfaces.cli.accreditation_cli import (
             _view_reviews,
         )
 
@@ -349,7 +349,7 @@ class TestAddStandard:
         mock_get_conn.return_value = mem_conn
         mock_input.side_effect = ["ISO 9001", "Quality management", ""]
 
-        from education_system.systems.university.domains.academics.interfaces.cli.accreditation_cli import (
+        from education_system.systems.university.domains.quality.interfaces.cli.accreditation_cli import (
             _add_standard,
         )
 
@@ -371,7 +371,7 @@ class TestAddStandard:
         mock_get_conn.return_value = mem_conn
         mock_input.side_effect = ["", ""]
 
-        from education_system.systems.university.domains.academics.interfaces.cli.accreditation_cli import (
+        from education_system.systems.university.domains.quality.interfaces.cli.accreditation_cli import (
             _add_standard,
         )
 
@@ -390,7 +390,7 @@ class TestViewStandards:
         """Should display a 'no standards' message when table is empty."""
         mock_get_conn.return_value = mem_conn
 
-        from education_system.systems.university.domains.academics.interfaces.cli.accreditation_cli import (
+        from education_system.systems.university.domains.quality.interfaces.cli.accreditation_cli import (
             _view_standards,
         )
 
@@ -418,7 +418,7 @@ class TestUpdateStandard:
         # Choose standard 1, new name, blank description (keep), press enter
         mock_input.side_effect = ["1", "New Name", "", ""]
 
-        from education_system.systems.university.domains.academics.interfaces.cli.accreditation_cli import (
+        from education_system.systems.university.domains.quality.interfaces.cli.accreditation_cli import (
             _update_standard,
         )
 
@@ -444,7 +444,7 @@ class TestUpdateStandard:
         mock_get_conn.return_value = mem_conn
         mock_input.side_effect = ["0", ""]
 
-        from education_system.systems.university.domains.academics.interfaces.cli.accreditation_cli import (
+        from education_system.systems.university.domains.quality.interfaces.cli.accreditation_cli import (
             _update_standard,
         )
 
@@ -467,7 +467,7 @@ class TestUpdateStandard:
         mock_get_conn.return_value = mem_conn
         mock_input.side_effect = ["1", "", "", ""]
 
-        from education_system.systems.university.domains.academics.interfaces.cli.accreditation_cli import (
+        from education_system.systems.university.domains.quality.interfaces.cli.accreditation_cli import (
             _update_standard,
         )
 
@@ -483,7 +483,7 @@ class TestUpdateStandard:
         mock_get_conn.return_value = mem_conn
         mock_input.side_effect = [""]
 
-        from education_system.systems.university.domains.academics.interfaces.cli.accreditation_cli import (
+        from education_system.systems.university.domains.quality.interfaces.cli.accreditation_cli import (
             _update_standard,
         )
 
@@ -506,7 +506,7 @@ class TestMenuNavigation:
         """Option 6 should exit the menu loop."""
         mock_input.return_value = "6"
 
-        from education_system.systems.university.domains.academics.interfaces.cli.accreditation_cli import (
+        from education_system.systems.university.domains.quality.interfaces.cli.accreditation_cli import (
             display_accreditation_menu,
         )
 
@@ -522,7 +522,7 @@ class TestMenuNavigation:
         """Option 1 should dispatch to _upload_document."""
         mock_input.side_effect = ["1", "6"]
 
-        from education_system.systems.university.domains.academics.interfaces.cli.accreditation_cli import (
+        from education_system.systems.university.domains.quality.interfaces.cli.accreditation_cli import (
             display_accreditation_menu,
         )
 
@@ -536,7 +536,7 @@ class TestMenuNavigation:
         """Option 5 should dispatch to _manage_standards."""
         mock_input.side_effect = ["5", "6"]
 
-        from education_system.systems.university.domains.academics.interfaces.cli.accreditation_cli import (
+        from education_system.systems.university.domains.quality.interfaces.cli.accreditation_cli import (
             display_accreditation_menu,
         )
 
@@ -549,7 +549,7 @@ class TestMenuNavigation:
         """An invalid choice should print an error then loop."""
         mock_input.side_effect = ["99", "6"]
 
-        from education_system.systems.university.domains.academics.interfaces.cli.accreditation_cli import (
+        from education_system.systems.university.domains.quality.interfaces.cli.accreditation_cli import (
             display_accreditation_menu,
         )
 
@@ -564,7 +564,7 @@ class TestMenuNavigation:
         """Option 4 in the standards sub-menu should return to the main menu."""
         mock_input.side_effect = ["4"]
 
-        from education_system.systems.university.domains.academics.interfaces.cli.accreditation_cli import (
+        from education_system.systems.university.domains.quality.interfaces.cli.accreditation_cli import (
             _manage_standards,
         )
 

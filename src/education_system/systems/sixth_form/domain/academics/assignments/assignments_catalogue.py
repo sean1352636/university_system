@@ -30,7 +30,9 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from education_system.systems.sixth_form.domain.academics.assignments import (
-    assignments as core,
+    models as assignments_models,
+    store as assignments_store,
+    submissions as assignments_submissions,
 )
 from education_system import paths
 
@@ -38,7 +40,7 @@ logger = logging.getLogger(__name__)
 
 DB_PATH = paths.SIXTH_FORM_ASSIGNMENTS_DB
 
-ValidationError = core.ValidationError
+ValidationError = assignments_models.ValidationError
 
 
 # ── Vocabularies ──────────────────────────────────────────────────
@@ -48,9 +50,11 @@ QUALIFICATIONS: tuple[str, ...] = (
     "EPQ", "Core Maths", "GCSE Resit", "Other",
 )
 
-EXAM_BOARDS: tuple[str, ...] = (
-    "AQA", "Edexcel (Pearson)", "OCR", "WJEC/Eduqas",
-    "Cambridge International", "Other",
+# The system's one awarding-body list (exams_office/boards.py).
+from education_system.systems.sixth_form.domain.assessment.exams_office.boards import (  # noqa: E402
+    EXAM_BOARDS,
+    normalise_board,
+    stored_names,
 )
 
 # The common assessment objectives across A-Level specs. Free text is
@@ -122,7 +126,7 @@ class Variant:
 class CloneResult:
     """What a clone actually copied."""
 
-    assignment: core.Assignment
+    assignment: assignments_models.Assignment
     source_id: int
     criteria: int = 0
     questions: int = 0
@@ -147,7 +151,7 @@ class CloneResult:
 class LibraryEntry:
     """One reusable assignment in the department bank."""
 
-    assignment: core.Assignment
+    assignment: assignments_models.Assignment
     criteria: int = 0
     questions: int = 0
     variants: int = 0
@@ -241,7 +245,7 @@ def init_db() -> None:
     global _DB_READY
     if _DB_READY:
         return
-    core.init_db()
+    assignments_store.init_db()
     with _connect() as conn:
         conn.executescript(_SCHEMA)
         conn.commit()
@@ -265,8 +269,8 @@ def _today() -> str:
     return _dt.date.today().isoformat()
 
 
-def _require_assignment(assignment_id: int) -> core.Assignment:
-    a = core.get_assignment(assignment_id)
+def _require_assignment(assignment_id: int) -> assignments_models.Assignment:
+    a = assignments_store.get_assignment(assignment_id)
     if a is None:
         raise ValidationError(f"No assignment #{assignment_id}")
     return a
@@ -281,7 +285,7 @@ def set_specification(assignment_id: int, *,
                        unit_code: str | None = None,
                        component_code: str | None = None,
                        objectives: str | list[str] | None = None
-                       ) -> core.Assignment:
+                       ) -> assignments_models.Assignment:
     """Record what awarding-body requirement this work evidences."""
     init_db()
     _require_assignment(assignment_id)
@@ -289,7 +293,7 @@ def set_specification(assignment_id: int, *,
     if qualification is not None:
         payload["qualification"] = qualification
     if exam_board is not None:
-        payload["exam_board"] = exam_board
+        payload["exam_board"] = normalise_board(exam_board) or exam_board
     if spec_code is not None:
         payload["spec_code"] = spec_code
     if unit_code is not None:
@@ -304,7 +308,7 @@ def set_specification(assignment_id: int, *,
             joined = ",".join(o.strip() for o in str(objectives).split(",")
                                if o.strip())
         payload["assessment_objectives"] = joined or None
-    return core.update_assignment(assignment_id, payload)
+    return assignments_store.update_assignment(assignment_id, payload)
 
 
 def objective_coverage(*, subject_name: str | None = None,
@@ -317,7 +321,7 @@ def objective_coverage(*, subject_name: str | None = None,
     """
     init_db()
     counts: dict[str, int] = {}
-    for a in core.list_assignments(subject_name=subject_name):
+    for a in assignments_store.list_assignments(subject_name=subject_name):
         if qualification and a.qualification != qualification:
             continue
         for objective in a.objective_list:
@@ -329,12 +333,12 @@ def list_by_specification(*, exam_board: str | None = None,
                            spec_code: str | None = None,
                            unit_code: str | None = None,
                            objective: str | None = None
-                           ) -> list[core.Assignment]:
+                           ) -> list[assignments_models.Assignment]:
     """Every assignment matching an awarding-body reference."""
     init_db()
     out = []
-    for a in core.list_assignments():
-        if exam_board and a.exam_board != exam_board:
+    for a in assignments_store.list_assignments():
+        if exam_board and a.exam_board not in stored_names(exam_board):
             continue
         if spec_code and a.spec_code != spec_code:
             continue
@@ -359,7 +363,7 @@ def specification_gaps(subject_name: str,
 
 def save_as_template(assignment_id: int, *,
                       template_name: str | None = None,
-                      share: bool = True) -> core.Assignment:
+                      share: bool = True) -> assignments_models.Assignment:
     """Mark an assignment as a reusable template.
 
     The original keeps its students and marks — flagging it a template
@@ -367,26 +371,26 @@ def save_as_template(assignment_id: int, *,
     """
     init_db()
     a = _require_assignment(assignment_id)
-    return core.update_assignment(assignment_id, {
+    return assignments_store.update_assignment(assignment_id, {
         "is_template": True,
         "template_name": (template_name or a.title).strip(),
         "shared_with_department": share,
     })
 
 
-def unset_template(assignment_id: int) -> core.Assignment:
+def unset_template(assignment_id: int) -> assignments_models.Assignment:
     init_db()
     _require_assignment(assignment_id)
-    return core.update_assignment(assignment_id,
+    return assignments_store.update_assignment(assignment_id,
                                    {"is_template": False,
                                     "template_name": None})
 
 
 def share_with_department(assignment_id: int, *,
-                           shared: bool = True) -> core.Assignment:
+                           shared: bool = True) -> assignments_models.Assignment:
     init_db()
     _require_assignment(assignment_id)
-    return core.update_assignment(assignment_id,
+    return assignments_store.update_assignment(assignment_id,
                                    {"shared_with_department": shared})
 
 
@@ -405,7 +409,7 @@ def list_library(*, subject_name: str | None = None,
         assignments_marking as _marking,
     )
     out: list[LibraryEntry] = []
-    for a in core.list_assignments(subject_name=subject_name):
+    for a in assignments_store.list_assignments(subject_name=subject_name):
         if not (a.is_template or a.shared_with_department):
             continue
         if templates_only and not a.is_template:
@@ -512,7 +516,7 @@ def clone_assignment(assignment_id: int, *,
         raise ValidationError(
             "Due date cannot be before set date")
 
-    new_assignment = core.create_assignment(payload)
+    new_assignment = assignments_store.create_assignment(payload)
     result = CloneResult(assignment=new_assignment,
                           source_id=source.assignment_id)
 
@@ -609,14 +613,14 @@ def _clone_attachments(source_id: int, target_id: int, *,
                         uploaded_by: str | None) -> int:
     """Copy teaching material, re-reading the bytes into a new file."""
     n = 0
-    for att in core.list_attachments(assignment_id=source_id):
+    for att in assignments_submissions.list_attachments(assignment_id=source_id):
         if not att.exists:
             logger.warning(
                 "Skipping missing attachment %r while cloning #%d",
                 att.filename, source_id)
             continue
         try:
-            core.attach_file(source_path=att.path,
+            assignments_submissions.attach_file(source_path=att.path,
                               assignment_id=target_id,
                               filename=att.filename, kind=att.kind,
                               uploaded_by=uploaded_by or att.uploaded_by,
@@ -628,17 +632,17 @@ def _clone_attachments(source_id: int, target_id: int, *,
     return n
 
 
-def clone_lineage(assignment_id: int) -> list[core.Assignment]:
+def clone_lineage(assignment_id: int) -> list[assignments_models.Assignment]:
     """Walk back through the chain of assignments this was cloned from."""
     init_db()
-    out: list[core.Assignment] = []
+    out: list[assignments_models.Assignment] = []
     seen: set[int] = set()
-    current = core.get_assignment(assignment_id)
+    current = assignments_store.get_assignment(assignment_id)
     while current is not None and current.source_assignment_id:
         if current.source_assignment_id in seen:
             break        # defensive: a cycle should be impossible
         seen.add(current.source_assignment_id)
-        parent = core.get_assignment(current.source_assignment_id)
+        parent = assignments_store.get_assignment(current.source_assignment_id)
         if parent is None:
             break
         out.append(parent)
@@ -653,14 +657,14 @@ def add_variant(assignment_id: int,
     """Add a tiered or scaffolded version of the brief."""
     init_db()
     _require_assignment(assignment_id)
-    name = core._require(payload.get("name"), "Variant name").strip()
+    name = assignments_store._require(payload.get("name"), "Variant name").strip()
     tier = (payload.get("tier") or DEFAULT_VARIANT_TIER).strip()
     if tier not in VARIANT_TIERS:
         raise ValidationError(
             f"Variant tier must be one of: {', '.join(VARIANT_TIERS)}")
-    max_marks = core._validate_number(payload.get("max_marks"),
+    max_marks = assignments_store._validate_number(payload.get("max_marks"),
                                        "Variant max marks", min_val=0)
-    hours = core._validate_number(payload.get("estimated_hours"),
+    hours = assignments_store._validate_number(payload.get("estimated_hours"),
                                    "Estimated hours", min_val=0)
     default = payload.get("is_default", False)
     is_default = 0 if default in (False, 0, "0", "No", "no",
@@ -722,7 +726,7 @@ def update_variant(variant_id: int,
     existing = get_variant(variant_id)
     if existing is None:
         raise ValidationError(f"No variant #{variant_id}")
-    name = core._require(payload.get("name", existing.name),
+    name = assignments_store._require(payload.get("name", existing.name),
                           "Variant name").strip()
     tier = str(payload.get("tier", existing.tier)).strip()
     if tier not in VARIANT_TIERS:
@@ -741,10 +745,10 @@ def update_variant(variant_id: int,
                    updated_at = datetime('now')
                WHERE variant_id = ?""",
             (name, tier, _text("brief"), _text("resources"),
-             core._validate_number(
+             assignments_store._validate_number(
                  payload.get("max_marks", existing.max_marks),
                  "Variant max marks", min_val=0),
-             core._validate_number(
+             assignments_store._validate_number(
                  payload.get("estimated_hours",
                               existing.estimated_hours),
                  "Estimated hours", min_val=0),
@@ -774,10 +778,10 @@ def delete_variant(variant_id: int) -> bool:
 
 
 def assign_variant(submission_id: int,
-                    variant_id: int | None) -> core.Submission:
+                    variant_id: int | None) -> assignments_models.Submission:
     """Issue one student a particular version of the brief."""
     init_db()
-    sub = core.get_submission(submission_id)
+    sub = assignments_store.get_submission(submission_id)
     if sub is None:
         raise ValidationError(f"No submission #{submission_id}")
     if variant_id is not None:
@@ -794,7 +798,7 @@ def assign_variant(submission_id: int,
             "updated_at = datetime('now') WHERE submission_id = ?",
             (variant_id, submission_id))
         conn.commit()
-    out = core.get_submission(submission_id)
+    out = assignments_store.get_submission(submission_id)
     assert out is not None
     return out
 
@@ -807,7 +811,7 @@ def assign_default_variants(assignment_id: int) -> int:
     if default is None:
         return 0
     n = 0
-    for sub in core.list_submissions(assignment_id=assignment_id):
+    for sub in assignments_store.list_submissions(assignment_id=assignment_id):
         if sub.variant_id is None:
             assign_variant(sub.submission_id, default.variant_id)
             n += 1
@@ -821,10 +825,10 @@ def variant_brief(submission_id: int) -> str | None:
     variant, or the variant carries no brief of its own.
     """
     init_db()
-    sub = core.get_submission(submission_id)
+    sub = assignments_store.get_submission(submission_id)
     if sub is None:
         raise ValidationError(f"No submission #{submission_id}")
-    a = core.get_assignment(sub.assignment_id)
+    a = assignments_store.get_assignment(sub.assignment_id)
     if sub.variant_id is None:
         return a.brief if a else None
     variant = get_variant(sub.variant_id)
@@ -840,7 +844,7 @@ def variant_spread(assignment_id: int) -> dict[str, int]:
              for v in list_variants(assignment_id)}
     out: dict[str, int] = {label: 0 for label in names.values()}
     out["(base brief)"] = 0
-    for sub in core.list_submissions(assignment_id=assignment_id):
+    for sub in assignments_store.list_submissions(assignment_id=assignment_id):
         key = names.get(sub.variant_id or -1, "(base brief)")
         out[key] = out.get(key, 0) + 1
     return out
@@ -854,8 +858,8 @@ def _week_start(day: str) -> str:
     return (d - _dt.timedelta(days=d.weekday())).isoformat()
 
 
-def submission_hours(submission: core.Submission,
-                     assignment: core.Assignment) -> float | None:
+def submission_hours(submission: assignments_models.Submission,
+                     assignment: assignments_models.Assignment) -> float | None:
     """Expected hours for this student — variant overrides the base."""
     if submission.variant_id is not None:
         variant = get_variant(submission.variant_id)
@@ -875,8 +879,8 @@ def student_workload(student_id: str, *,
     init_db()
     report = WorkloadReport(student_id=str(student_id).strip())
     buckets: dict[str, WorkloadWeek] = {}
-    for sub in core.list_submissions(student_id=report.student_id):
-        a = core.get_assignment(sub.assignment_id)
+    for sub in assignments_store.list_submissions(student_id=report.student_id):
+        a = assignments_store.get_assignment(sub.assignment_id)
         if a is None or not a.due_date:
             continue
         if date_from and a.due_date < date_from:
@@ -886,7 +890,7 @@ def student_workload(student_id: str, *,
         hours = submission_hours(sub, a)
         if not hours:
             continue
-        due = core.effective_due_date(sub, a) or a.due_date
+        due = assignments_submissions.effective_due_date(sub, a) or a.due_date
         try:
             key = _week_start(due)
         except ValueError:
@@ -909,8 +913,8 @@ def cohort_workload(*, year_group: str | None = None,
     """
     init_db()
     students: set[str] = set()
-    for a in core.list_assignments(year_group=year_group):
-        for sub in core.list_submissions(assignment_id=a.assignment_id):
+    for a in assignments_store.list_assignments(year_group=year_group):
+        for sub in assignments_store.list_submissions(assignment_id=a.assignment_id):
             students.add(sub.student_id)
     reports = {sid: student_workload(sid, date_from=date_from,
                                       date_to=date_to)
@@ -938,7 +942,7 @@ def assignment_hours_summary(assignment_id: int) -> dict[str, Any]:
     """What this assignment is expected to cost the cohort."""
     init_db()
     a = _require_assignment(assignment_id)
-    subs = core.list_submissions(assignment_id=assignment_id)
+    subs = assignments_store.list_submissions(assignment_id=assignment_id)
     per_student = [submission_hours(s, a) for s in subs]
     known = [h for h in per_student if h]
     return {

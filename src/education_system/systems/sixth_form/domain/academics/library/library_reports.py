@@ -78,14 +78,17 @@ def overdue_aging() -> dict[str, dict]:
 
 def _latest_enrolment_map() -> dict[str, dict]:
     """student_id -> {year_group, tutor_group} for their most recent
-    enrolment (by academic_year)."""
+    enrolment (by academic_year; within a year a live one wins). Archived
+    rows (entered in error / undone) are left out."""
     _lib.init_db()
     with _lib._connect() as conn:
         try:
             rows = conn.execute(
                 "SELECT student_id, year_group, tutor_group, "
-                "academic_year FROM enrolments "
-                "ORDER BY student_id, academic_year").fetchall()
+                "academic_year FROM enrolments WHERE archived_at IS NULL "
+                "ORDER BY student_id, academic_year, "
+                "CASE WHEN status IN ('Enrolled', 'Pending') THEN 1 ELSE 0 END"
+            ).fetchall()
         except Exception:
             return {}
     latest: dict[str, dict] = {}

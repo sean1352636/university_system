@@ -25,9 +25,7 @@ from education_system.systems.primary.domain.staff.staff_hr.staff_hr import (
     SALARY_SCALES,
     ValidationError,
 )
-from education_system.systems.primary.domain.staff import (
-    staff as staff_data,
-)
+from education_system.systems.primary.interfaces.gui import kit
 
 logger = logging.getLogger(__name__)
 
@@ -55,14 +53,27 @@ _EVENT_TAGS = {
 
 def open_staff_hr_window(parent=None) -> None:
     data.init_db()
-    master = getattr(parent, "root", parent)
-    win = tk.Toplevel(master) if master is not None else tk.Tk()
-    win.title(f"Staff HR — {branding.SYSTEM_NAME}")
-    win.geometry(WIN_GEOMETRY)
-    win.minsize(*WIN_MINSIZE)
+    if parent is None:
+        # Run on its own (no main window): a root window of its own.
+        win = tk.Tk()
+        win.title(f"Staff HR — {branding.SYSTEM_NAME}")
+        win.geometry(WIN_GEOMETRY)
+        win.minsize(*WIN_MINSIZE)
+        frame = ttk.Frame(win, padding=10)
+        frame.pack(fill="both", expand=True)
+        _draw_staff_hr(frame, None)
+        return
+    kit.show_page(parent, "Staff HR",
+                  lambda page: _draw_staff_hr(page, parent))
 
-    nb = ttk.Notebook(win)
-    nb.pack(fill="both", expand=True, padx=10, pady=10)
+
+def _draw_staff_hr(parent, host) -> None:
+    kit.page_heading(
+        parent, "Staff HR",
+        "Employment records, contracts, DBS / safeguarding checks, "
+        "reviews and HR events (leave, sickness).")
+    nb = ttk.Notebook(parent)
+    nb.pack(fill="both", expand=True)
 
     RecordsTab(nb, scope="active",     label="Active")
     RecordsTab(nb, scope="probation",  label="Probation")
@@ -75,14 +86,15 @@ def open_staff_hr_window(parent=None) -> None:
     SummaryTab(nb)
 
 
-def _staff_options() -> list[tuple[str, str]]:
-    rows = sorted(staff_data.list_staff(),
-                   key=lambda s: s.staff_id)
-    return [(s.staff_id,
-             f"{s.staff_id} — "
-             f"{getattr(s, 'first_name', '')} "
-             f"{getattr(s, 'last_name', '')}".strip())
-            for s in rows]
+def _date_years(*, ahead: int = 6, back: int = 15) -> list[str]:
+    """Years for HR dates: expiries / contract ends run years ahead."""
+    y = _dt.date.today().year
+    return [str(v) for v in range(y + ahead, y - back - 1, -1)]
+
+
+def _grid_date(body, row, col, var, **kw):
+    kit.DateField(body, var, years=_date_years(), **kw).grid(
+        row=row, column=col, sticky="w", padx=4, pady=2)
 
 
 # ── Records tab ──────────────────────────────────────────
@@ -100,22 +112,19 @@ class RecordsTab:
         bar = ttk.Frame(self.frame)
         bar.pack(fill="x", padx=8, pady=(8, 4))
         ttk.Label(bar, text="Employment:").pack(side="left")
-        self.f_emp = ttk.Combobox(
-            bar, values=("",) + EMPLOYMENT_STATUSES,
-            state="readonly", width=14)
-        self.f_emp.current(0)
+        self.f_emp = kit.ChoiceField(
+            bar, tk.StringVar(), choices=EMPLOYMENT_STATUSES,
+            blank=True, width=14)
         self.f_emp.pack(side="left", padx=(2, 8))
         ttk.Label(bar, text="Contract:").pack(side="left")
-        self.f_contract = ttk.Combobox(
-            bar, values=("",) + CONTRACT_TYPES,
-            state="readonly", width=14)
-        self.f_contract.current(0)
+        self.f_contract = kit.ChoiceField(
+            bar, tk.StringVar(), choices=CONTRACT_TYPES,
+            blank=True, width=14)
         self.f_contract.pack(side="left", padx=(2, 8))
         ttk.Label(bar, text="Scale:").pack(side="left")
-        self.f_scale = ttk.Combobox(
-            bar, values=("",) + SALARY_SCALES,
-            state="readonly", width=14)
-        self.f_scale.current(0)
+        self.f_scale = kit.ChoiceField(
+            bar, tk.StringVar(), choices=SALARY_SCALES,
+            blank=True, width=14)
         self.f_scale.pack(side="left", padx=(2, 8))
         ttk.Button(bar, text="Apply",
                     command=self.refresh).pack(side="left", padx=4)
@@ -289,9 +298,9 @@ class RecordsTab:
         r = self._selected()
         if not r:
             return
-        when = _prompt_text(self.frame,
-                              "End date (YYYY-MM-DD)",
-                              initial=_dt.date.today().isoformat())
+        when = _prompt_text(self.frame, "End date",
+                              initial=_dt.date.today().isoformat(),
+                              kind="date")
         if not when:
             return
         try:
@@ -327,20 +336,20 @@ class EventsTab:
     def _build(self) -> None:
         bar = ttk.Frame(self.frame)
         bar.pack(fill="x", padx=8, pady=(8, 4))
-        ttk.Label(bar, text="Staff id:").pack(side="left")
-        self.f_staff = ttk.Entry(bar, width=12)
+        ttk.Label(bar, text="Staff:").pack(side="left")
+        self.f_staff = kit.StaffPicker(bar, tk.StringVar(),
+                                        active_only=False, width=30)
         self.f_staff.pack(side="left", padx=(2, 8))
+        self.f_staff.bind_change(lambda _v: self.refresh())
         ttk.Label(bar, text="Type:").pack(side="left")
-        self.f_type = ttk.Combobox(bar,
-                                     values=("",) + EVENT_TYPES,
-                                     state="readonly", width=18)
-        self.f_type.current(0)
+        self.f_type = kit.ChoiceField(bar, tk.StringVar(),
+                                       choices=EVENT_TYPES,
+                                       blank=True, width=18)
         self.f_type.pack(side="left", padx=(2, 8))
         ttk.Label(bar, text="Status:").pack(side="left")
-        self.f_status = ttk.Combobox(
-            bar, values=("",) + EVENT_STATUSES,
-            state="readonly", width=12)
-        self.f_status.current(0)
+        self.f_status = kit.ChoiceField(
+            bar, tk.StringVar(), choices=EVENT_STATUSES,
+            blank=True, width=12)
         self.f_status.pack(side="left", padx=(2, 8))
         ttk.Button(bar, text="Apply",
                     command=self.refresh).pack(side="left", padx=4)
@@ -443,7 +452,8 @@ class EventsTab:
         if not e:
             return
         by = _prompt_text(self.frame, "Approved by",
-                            initial=e.approved_by or "")
+                            initial=e.approved_by or "",
+                            kind="staff_name")
         if not by:
             return
         try:
@@ -557,7 +567,7 @@ class RecordEditor:
         self.win = tk.Toplevel(parent)
         self.win.title(f"Edit HR #{record.record_id}"
                           if record else "New HR record")
-        self.win.geometry("880x780")
+        self.win.geometry("1000x700")
         self.win.transient(parent); self.win.after_idle(self.win.grab_set)
         self._build()
         if record:
@@ -565,22 +575,16 @@ class RecordEditor:
         self.win.wait_window()
 
     def _build(self) -> None:
-        body = ttk.Frame(self.win)
-        body.pack(fill="both", expand=True, padx=12, pady=10)
-        body.grid_columnconfigure(1, weight=1)
-        body.grid_columnconfigure(3, weight=1)
+        body, bar = kit.scrolled_form(self.win)
         self.vars: dict[str, tk.Variable] = {}
         self.bools: dict[str, tk.BooleanVar] = {}
 
         ttk.Label(body, text="Staff*").grid(
             row=0, column=0, sticky="w", padx=4, pady=2)
-        self.staff_combo = ttk.Combobox(body, state="readonly",
-                                            width=42)
-        opts = _staff_options()
-        self._staff_opts = opts
-        self.staff_combo["values"] = [lbl for _, lbl in opts]
-        self.staff_combo.grid(row=0, column=1, columnspan=3,
-                                  sticky="ew", padx=4, pady=2)
+        self.staff_var = tk.StringVar()
+        kit.StaffPicker(body, self.staff_var, active_only=False,
+                        width=44).grid(row=0, column=1, columnspan=3,
+                                       sticky="w", padx=4, pady=2)
 
         def entry(row, col, label, key, width=22):
             ttk.Label(body, text=label).grid(
@@ -595,35 +599,50 @@ class RecordEditor:
                 row=row, column=col, sticky="w", padx=4, pady=2)
             v = tk.StringVar()
             self.vars[key] = v
-            ttk.Combobox(body, textvariable=v, values=values,
-                          state="readonly", width=width).grid(
-                row=row, column=col + 1, sticky="ew", padx=4, pady=2)
+            kit.ChoiceField(body, v, choices=values, width=width).grid(
+                row=row, column=col + 1, sticky="w", padx=4, pady=2)
+
+        def date(row, col, label, key):
+            ttk.Label(body, text=label).grid(
+                row=row, column=col, sticky="w", padx=4, pady=2)
+            v = tk.StringVar()
+            self.vars[key] = v
+            _grid_date(body, row, col + 1, v)
+
+        def number(row, col, label, key, **kw):
+            ttk.Label(body, text=label).grid(
+                row=row, column=col, sticky="w", padx=4, pady=2)
+            v = tk.StringVar()
+            self.vars[key] = v
+            kit.NumberField(body, v, **kw).grid(
+                row=row, column=col + 1, sticky="w", padx=4, pady=2)
 
         combo(1, 0, "Employment status*", "employment_status",
                  EMPLOYMENT_STATUSES)
         combo(1, 2, "Contract type*", "contract_type",
                  CONTRACT_TYPES)
-        entry(2, 0, "FTE percent (0-100)", "fte_percent")
+        number(2, 0, "FTE percent (0-100)", "fte_percent", to=100)
         combo(2, 2, "Salary scale*", "salary_scale",
                  SALARY_SCALES)
         entry(3, 0, "Spine point", "spine_point")
-        entry(3, 2, "Salary (£)", "salary_amount")
-        entry(4, 0, "Holiday entitle. (days)",
-                 "holiday_entitlement_days")
-        entry(4, 2, "Start date*", "start_date")
-        entry(5, 0, "Probation end", "probation_end")
-        entry(5, 2, "Contract end", "contract_end")
-        entry(6, 0, "End date", "end_date")
+        number(3, 2, "Salary (£)", "salary_amount",
+               increment=0.01, to=999999, width=12)
+        number(4, 0, "Holiday entitle. (days)",
+                 "holiday_entitlement_days", to=366)
+        date(4, 2, "Start date*", "start_date")
+        date(5, 0, "Probation end", "probation_end")
+        date(5, 2, "Contract end", "contract_end")
+        date(6, 0, "End date", "end_date")
         entry(6, 2, "DBS number", "dbs_number")
-        entry(7, 0, "DBS issued on", "dbs_issued_on")
-        entry(7, 2, "DBS expires on", "dbs_expires_on")
-        entry(8, 0, "RTW checked on", "right_to_work_checked_on")
-        entry(8, 2, "Safeguarding trained on",
+        date(7, 0, "DBS issued on", "dbs_issued_on")
+        date(7, 2, "DBS expires on", "dbs_expires_on")
+        date(8, 0, "RTW checked on", "right_to_work_checked_on")
+        date(8, 2, "Safeguarding trained on",
                  "safeguarding_training_on")
-        entry(9, 0, "Safeguarding expires on",
+        date(9, 0, "Safeguarding expires on",
                  "safeguarding_expires_on")
-        entry(9, 2, "Last review on", "last_review_on")
-        entry(10, 0, "Next review due", "next_review_due")
+        date(9, 2, "Last review on", "last_review_on")
+        date(10, 0, "Next review due", "next_review_due")
         entry(10, 2, "Union", "union_member")
 
         self.bools["right_to_work_checked"] = tk.BooleanVar()
@@ -643,8 +662,6 @@ class RecordEditor:
         self.notes.grid(row=12, column=1, columnspan=3,
                           sticky="ew", padx=4, pady=(6, 2))
 
-        bar = ttk.Frame(self.win)
-        bar.pack(fill="x", padx=12, pady=(0, 10))
         ttk.Button(bar, text="Save",
                     command=self._save).pack(side="right", padx=4)
         ttk.Button(bar, text="Cancel",
@@ -661,10 +678,7 @@ class RecordEditor:
     def _load(self) -> None:
         r = self.record
         assert r is not None
-        for i, (sid, _) in enumerate(self._staff_opts):
-            if sid == r.staff_id:
-                self.staff_combo.current(i)
-                break
+        self.staff_var.set(r.staff_id)
         for key in ("employment_status", "contract_type",
                      "salary_scale", "spine_point",
                      "start_date", "probation_end",
@@ -691,14 +705,14 @@ class RecordEditor:
         self.notes.insert("1.0", r.notes or "")
 
     def _save(self) -> None:
-        idx = self.staff_combo.current()
-        if idx < 0:
+        staff_id = self.staff_var.get().strip()
+        if not staff_id:
             messagebox.showerror("Staff HR",
                                     "Pick a staff member.",
                                     parent=self.win)
             return
         payload: dict = {
-            "staff_id": self._staff_opts[idx][0],
+            "staff_id": staff_id,
             "notes": self.notes.get("1.0", "end").rstrip() or None,
         }
         for k, v in self.vars.items():
@@ -724,7 +738,7 @@ class DBSDialog:
         self.result: HRRecord | None = None
         self.win = tk.Toplevel(parent)
         self.win.title(f"Renew DBS — #{record.record_id}")
-        self.win.geometry("420x220")
+        self.win.geometry("520x220")
         self.win.transient(parent); self.win.after_idle(self.win.grab_set)
         body = ttk.Frame(self.win)
         body.pack(fill="both", expand=True, padx=12, pady=10)
@@ -738,13 +752,11 @@ class DBSDialog:
             row=1, column=0, sticky="w", padx=4, pady=4)
         self.issued = tk.StringVar(
             value=_dt.date.today().isoformat())
-        ttk.Entry(body, textvariable=self.issued, width=14).grid(
-            row=1, column=1, sticky="w", padx=4, pady=4)
+        _grid_date(body, 1, 1, self.issued)
         ttk.Label(body, text="Expires on").grid(
             row=2, column=0, sticky="w", padx=4, pady=4)
         self.expires = tk.StringVar()
-        ttk.Entry(body, textvariable=self.expires, width=14).grid(
-            row=2, column=1, sticky="w", padx=4, pady=4)
+        _grid_date(body, 2, 1, self.expires)
         bar = ttk.Frame(self.win)
         bar.pack(fill="x", padx=12, pady=(0, 10))
         ttk.Button(bar, text="Save",
@@ -775,7 +787,7 @@ class SafeguardingDialog:
         self.win = tk.Toplevel(parent)
         self.win.title(
             f"Safeguarding — #{record.record_id}")
-        self.win.geometry("420x200")
+        self.win.geometry("520x200")
         self.win.transient(parent); self.win.after_idle(self.win.grab_set)
         body = ttk.Frame(self.win)
         body.pack(fill="both", expand=True, padx=12, pady=10)
@@ -784,15 +796,11 @@ class SafeguardingDialog:
             row=0, column=0, sticky="w", padx=4, pady=4)
         self.trained = tk.StringVar(
             value=_dt.date.today().isoformat())
-        ttk.Entry(body, textvariable=self.trained,
-                    width=14).grid(
-            row=0, column=1, sticky="w", padx=4, pady=4)
+        _grid_date(body, 0, 1, self.trained)
         ttk.Label(body, text="Expires on").grid(
             row=1, column=0, sticky="w", padx=4, pady=4)
         self.expires = tk.StringVar()
-        ttk.Entry(body, textvariable=self.expires,
-                    width=14).grid(
-            row=1, column=1, sticky="w", padx=4, pady=4)
+        _grid_date(body, 1, 1, self.expires)
         bar = ttk.Frame(self.win)
         bar.pack(fill="x", padx=12, pady=(0, 10))
         ttk.Button(bar, text="Save",
@@ -821,7 +829,7 @@ class ReviewDialog:
         self.result: HRRecord | None = None
         self.win = tk.Toplevel(parent)
         self.win.title(f"Record review — #{record.record_id}")
-        self.win.geometry("420x200")
+        self.win.geometry("520x200")
         self.win.transient(parent); self.win.after_idle(self.win.grab_set)
         body = ttk.Frame(self.win)
         body.pack(fill="both", expand=True, padx=12, pady=10)
@@ -830,15 +838,12 @@ class ReviewDialog:
             row=0, column=0, sticky="w", padx=4, pady=4)
         self.when = tk.StringVar(
             value=_dt.date.today().isoformat())
-        ttk.Entry(body, textvariable=self.when, width=14).grid(
-            row=0, column=1, sticky="w", padx=4, pady=4)
+        _grid_date(body, 0, 1, self.when)
         ttk.Label(body, text="Next review due").grid(
             row=1, column=0, sticky="w", padx=4, pady=4)
         self.next_due = tk.StringVar(
             value=record.next_review_due or "")
-        ttk.Entry(body, textvariable=self.next_due,
-                    width=14).grid(
-            row=1, column=1, sticky="w", padx=4, pady=4)
+        _grid_date(body, 1, 1, self.next_due)
         bar = ttk.Frame(self.win)
         bar.pack(fill="x", padx=12, pady=(0, 10))
         ttk.Button(bar, text="Save",
@@ -869,7 +874,7 @@ class EventEditor:
         self.win = tk.Toplevel(parent)
         self.win.title(f"Edit event #{event.event_id}"
                           if event else "New event")
-        self.win.geometry("620x600")
+        self.win.geometry("720x600")
         self.win.transient(parent); self.win.after_idle(self.win.grab_set)
         self._build()
         if event:
@@ -877,55 +882,63 @@ class EventEditor:
         self.win.wait_window()
 
     def _build(self) -> None:
-        body = ttk.Frame(self.win)
-        body.pack(fill="both", expand=True, padx=12, pady=10)
+        body, bar = kit.scrolled_form(self.win)
         body.grid_columnconfigure(1, weight=1)
         self.vars: dict[str, tk.Variable] = {}
 
         ttk.Label(body, text="Staff*").grid(
             row=0, column=0, sticky="w", padx=4, pady=2)
-        self.staff_combo = ttk.Combobox(body, state="readonly",
-                                            width=42)
-        opts = _staff_options()
-        self._staff_opts = opts
-        self.staff_combo["values"] = [lbl for _, lbl in opts]
-        self.staff_combo.grid(row=0, column=1, sticky="ew",
-                                  padx=4, pady=2)
+        self.staff_var = tk.StringVar()
+        kit.StaffPicker(body, self.staff_var, active_only=False,
+                        width=44).grid(row=0, column=1, sticky="w",
+                                       padx=4, pady=2)
 
-        def entry(row, label, key):
-            ttk.Label(body, text=label).grid(
+        def label(row, text):
+            ttk.Label(body, text=text).grid(
                 row=row, column=0, sticky="w", padx=4, pady=2)
+
+        def var(key):
             v = tk.StringVar()
             self.vars[key] = v
-            ttk.Entry(body, textvariable=v).grid(
-                row=row, column=1, sticky="ew", padx=4, pady=2)
+            return v
 
-        def combo(row, label, key, values):
-            ttk.Label(body, text=label).grid(
-                row=row, column=0, sticky="w", padx=4, pady=2)
-            v = tk.StringVar()
-            self.vars[key] = v
-            ttk.Combobox(body, textvariable=v, values=values,
-                          state="readonly").grid(
-                row=row, column=1, sticky="ew", padx=4, pady=2)
+        def place(row, widget, sticky="w"):
+            widget.grid(row=row, column=1, sticky=sticky, padx=4, pady=2)
+
+        def entry(row, text, key):
+            label(row, text)
+            place(row, ttk.Entry(body, textvariable=var(key)), "ew")
+
+        def combo(row, text, key, values):
+            label(row, text)
+            place(row, kit.ChoiceField(body, var(key), choices=values))
+
+        def date(row, text, key):
+            label(row, text)
+            place(row, kit.DateField(body, var(key), years=_date_years()))
+
+        def number(row, text, key):
+            label(row, text)
+            place(row, kit.NumberField(body, var(key), to=999,
+                                       increment=0.5, width=8))
 
         combo(1, "Event type*", "event_type", EVENT_TYPES)
         combo(2, "Event status*", "event_status", EVENT_STATUSES)
-        entry(3, "Start date*", "start_date")
-        entry(4, "End date", "end_date")
-        entry(5, "Days", "days")
-        entry(6, "Hours", "hours")
+        date(3, "Start date*", "start_date")
+        date(4, "End date", "end_date")
+        number(5, "Days", "days")
+        number(6, "Hours", "hours")
         entry(7, "Reason", "reason")
-        entry(8, "Approved by", "approved_by")
-        entry(9, "Approved on", "approved_on")
+        label(8, "Approved by")
+        place(8, kit.StaffPicker(body, var("approved_by"), by="name",
+                                 active_only=False, width=44))
+        date(9, "Approved on", "approved_on")
         ttk.Label(body, text="Notes").grid(
             row=10, column=0, sticky="nw", padx=4, pady=4)
         self.notes = tk.Text(body, height=4, wrap="word")
         self.notes.grid(row=10, column=1, sticky="ew",
                           padx=4, pady=4)
 
-        bar = ttk.Frame(self.win)
-        bar.pack(fill="x", padx=12, pady=(0, 10))
         ttk.Button(bar, text="Save",
                     command=self._save).pack(side="right", padx=4)
         ttk.Button(bar, text="Cancel",
@@ -939,10 +952,7 @@ class EventEditor:
     def _load(self) -> None:
         e = self.event
         assert e is not None
-        for i, (sid, _) in enumerate(self._staff_opts):
-            if sid == e.staff_id:
-                self.staff_combo.current(i)
-                break
+        self.staff_var.set(e.staff_id)
         for key in ("event_type", "event_status",
                      "start_date", "end_date", "reason",
                      "approved_by", "approved_on"):
@@ -955,14 +965,14 @@ class EventEditor:
         self.notes.insert("1.0", e.notes or "")
 
     def _save(self) -> None:
-        idx = self.staff_combo.current()
-        if idx < 0:
+        staff_id = self.staff_var.get().strip()
+        if not staff_id:
             messagebox.showerror("Staff HR",
                                     "Pick a staff member.",
                                     parent=self.win)
             return
         payload: dict = {
-            "staff_id": self._staff_opts[idx][0],
+            "staff_id": staff_id,
             "notes": self.notes.get("1.0", "end").rstrip() or None,
         }
         for k, v in self.vars.items():
@@ -981,13 +991,21 @@ class EventEditor:
 
 
 def _prompt_text(parent, title: str, *,
-                  initial: str = "") -> str | None:
+                  initial: str = "", kind: str = "text") -> str | None:
+    """Ask for one value: typed text, a date (``kind="date"``) or a
+    member of staff by name (``kind="staff_name"``)."""
     win = tk.Toplevel(parent)
-    win.title(title); win.geometry("360x140")
+    win.title(title); win.geometry("460x140")
     win.transient(parent); win.after_idle(win.grab_set)
     ttk.Label(win, text=title).pack(anchor="w", padx=8, pady=8)
     var = tk.StringVar(value=initial)
-    ttk.Entry(win, textvariable=var).pack(fill="x", padx=8)
+    if kind == "date":
+        kit.DateField(win, var, years=_date_years()).pack(anchor="w", padx=8)
+    elif kind == "staff_name":
+        kit.StaffPicker(win, var, by="name", active_only=False,
+                        width=44).pack(anchor="w", padx=8)
+    else:
+        ttk.Entry(win, textvariable=var).pack(fill="x", padx=8)
     result: dict = {"value": None}
 
     def ok() -> None:
@@ -1010,8 +1028,7 @@ def _prompt_choice(parent, title: str, options: list[str], *,
     win.transient(parent); win.after_idle(win.grab_set)
     ttk.Label(win, text=title).pack(anchor="w", padx=8, pady=8)
     var = tk.StringVar(value=default or (options[0] if options else ""))
-    ttk.Combobox(win, textvariable=var, values=options,
-                  state="readonly").pack(fill="x", padx=8)
+    kit.ChoiceField(win, var, choices=options).pack(fill="x", padx=8)
     result: dict = {"value": None}
 
     def ok() -> None:

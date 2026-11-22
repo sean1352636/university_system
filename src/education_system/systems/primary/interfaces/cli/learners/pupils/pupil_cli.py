@@ -49,44 +49,139 @@ def _print_table(rows: list[data.Pupil]) -> None:
 
 
 def _print_profile(p: data.Pupil) -> None:
+    sen = f"{p.sen_status} \u2013 {p.sen_label}" if p.sen_status else "Not recorded"
+    address = ", ".join(x for x in (p.address_line1, p.address_line2, p.town,
+                                    p.postcode) if x)
     print(f"\n  ── Pupil {p.pupil_id} ──")
+    print("  Identity")
     print(f"  Name:           {p.full_name}")
+    print(f"  Legal name:     {p.legal_name}")
+    print(f"  Preferred name: {p.preferred_name or '-'}")
+    print(f"  Date of birth:  {p.date_of_birth or '-'}")
+    print(f"  Gender:         {p.gender or '-'}")
+    print(f"  UPN:            {p.upn or 'Not recorded'}")
+    print(f"  Email:          {p.email}")
+    print("  School")
     print(f"  Year group:     {p.year_group}")
     print(f"  Class:          {p.class_name or '-'}")
-    print(f"  Date of birth:  {p.date_of_birth or '-'}")
-    print(f"  Email:          {p.email}")
-    print(f"  Parent:         {p.parent_name or '-'}")
-    print(f"  Parent phone:   {p.parent_phone or '-'}")
-    print(f"  Medical notes:  {p.medical_notes or '-'}")
+    print(f"  Admission date: {p.admission_date or '-'}")
+    print(f"  Roll status:    {p.roll_status_label}")
+    if p.roll_status == "left":
+        print(f"  Leaving date:   {p.left_date or '-'}")
+        print(f"  Leaving reason: {p.exit_reason or '-'}")
+    print("  Address")
+    print(f"  Address:        {address or '-'}")
+    print("  Needs")
+    print(f"  SEN:            {sen}")
     print(f"  SEND:           {p.send_status or '-'}")
+    print(f"  Free meals:     {'Eligible' if p.fsm_eligible else 'Not eligible'}")
+    print(f"  EAL:            {'Yes' if p.eal else 'No'}")
+    print(f"  Notes:          {p.notes or '-'}")
+    print("  Parent / carer")
+    print(f"  Parent:         {p.parent_name or '-'}")
+    print(f"  Relationship:   {p.parent_relationship or '-'}")
+    print(f"  Parent phone:   {p.parent_phone or '-'}")
+    print(f"  Parent e-mail:  {p.parent_email or '-'}")
+    print("  Medical")
+    print(f"  Medical notes:  {p.medical_notes or '-'}")
+
+
+def _choose(label: str, options: list[tuple[str, str]],
+            current: str | None = None, *, default: str = "") -> str:
+    """A numbered choice from a fixed list. Enter keeps *current* (or takes
+    *default*); '-' clears it. Returns the stored value."""
+    shown = dict(options).get(current or "", current or "")
+    print(f"  {label}:" + "".join(f"  {i}) {lbl}" for i, (_v, lbl) in
+                                   enumerate(options, 1)))
+    for _attempt in range(3):
+        suffix = f" [{shown}]" if current else ""
+        raw = _prompt(f"  Choose 1-{len(options)}{suffix}: ")
+        if raw == "":
+            return current or default
+        if raw == "-":
+            return ""
+        if raw.isdigit() and 1 <= int(raw) <= len(options):
+            return options[int(raw) - 1][0]
+        for value, lbl in options:
+            if raw.lower() in (value.lower(), lbl.lower()):
+                return value
+        print("  Pick a number from the list.")
+    return current or default
+
+
+def _yn(value: bool | None) -> str | None:
+    if value is None:
+        return None
+    return "y" if value else "n"
 
 
 def _collect_fields(existing: data.Pupil | None = None) -> dict[str, str]:
+    """The same questions as the GUI form (and the secondary school's Add
+    Pupil): identity, school, address, needs, parent/carer, medical."""
+    def cur(name: str) -> str | None:
+        if existing is None:
+            return None
+        v = getattr(existing, name, None)
+        if isinstance(v, bool):
+            return _yn(v)
+        return None if v is None else str(v)
+
     def ask(label: str, current: str | None = None) -> str:
         suffix = f" [{current}]" if current else ""
         v = _prompt(f"  {label}{suffix}: ")
+        if v == "-":
+            return ""
         return v if v else (current or "")
+
+    req = "" if existing else " *"
     fields: dict[str, str] = {}
-    fields["first_name"]    = ask("First name",
-                                   existing.first_name if existing else None)
-    fields["last_name"]     = ask("Last name",
-                                   existing.last_name if existing else None)
-    fields["year_group"]    = ask(
-        f"Year group ({'/'.join(YEAR_GROUPS)})",
-        existing.year_group if existing else None,
-    )
-    fields["class_name"]    = ask("Class",
-                                   existing.class_name if existing else None)
-    fields["date_of_birth"] = ask("Date of birth (YYYY-MM-DD)",
-                                   existing.date_of_birth if existing else None)
-    fields["parent_name"]   = ask("Parent name",
-                                   existing.parent_name if existing else None)
-    fields["parent_phone"]  = ask("Parent phone",
-                                   existing.parent_phone if existing else None)
-    fields["medical_notes"] = ask("Medical notes",
-                                   existing.medical_notes if existing else None)
-    fields["send_status"]   = ask("SEND (yes/no)",
-                                   existing.send_status if existing else None)
+    print("  Identity")
+    fields["first_name"]     = ask(f"Legal first name{req}", cur("first_name"))
+    fields["middle_names"]   = ask("Middle names", cur("middle_names"))
+    fields["last_name"]      = ask(f"Legal last name{req}", cur("last_name"))
+    fields["preferred_name"] = ask("Preferred name", cur("preferred_name"))
+    fields["date_of_birth"]  = ask(f"Date of birth (YYYY-MM-DD){req}",
+                                   cur("date_of_birth"))
+    fields["gender"]         = _choose(f"Gender{req}",
+                                       [(g, g) for g in data.GENDERS], cur("gender"))
+    fields["upn"]            = ask("UPN (13 characters)", cur("upn"))
+    print("  School")
+    fields["year_group"]     = ask(f"Year group ({'/'.join(YEAR_GROUPS)}){req}",
+                                   cur("year_group"))
+    fields["class_name"]     = ask("Class", cur("class_name"))
+    fields["admission_date"] = ask(
+        "Admission date (YYYY-MM-DD" + (", Enter = today)" if existing is None else ")"),
+        cur("admission_date"))
+    fields["roll_status"]    = _choose(
+        "Roll status", [(k, data.ROLL_STATUS_LABELS[k]) for k in data.ROLL_STATUSES],
+        cur("roll_status"), default=data.ON_ROLL)
+    if fields["roll_status"] == "left":
+        fields["left_date"]   = ask("Leaving date (YYYY-MM-DD)", cur("left_date"))
+        fields["exit_reason"] = _choose(
+            "Leaving reason", [(r, r) for r in data.LEAVING_REASONS], cur("exit_reason"))
+    print("  Address")
+    fields["address_line1"]  = ask("Address line 1", cur("address_line1"))
+    fields["address_line2"]  = ask("Address line 2", cur("address_line2"))
+    fields["town"]           = ask("Town", cur("town"))
+    fields["postcode"]       = ask("Postcode", cur("postcode"))
+    print("  Needs")
+    fields["sen_status"]     = _choose(
+        "SEN", [(k, f"{k} \u2013 {v}") for k, v in data.SEN_STATUSES.items()],
+        cur("sen_status"), default="N" if existing is None else "")
+    fields["fsm_eligible"]   = ask("Free school meals eligible (y/n)",
+                                   cur("fsm_eligible")) or "n"
+    fields["eal"]            = ask("English as an additional language (y/n)",
+                                   cur("eal")) or "n"
+    fields["notes"]          = ask("Notes", cur("notes"))
+    print("  Parent / carer")
+    fields["parent_name"]    = ask("Parent / carer name", cur("parent_name"))
+    fields["parent_relationship"] = _choose(
+        "Relationship", [(r, r) for r in data.PARENT_RELATIONSHIPS],
+        cur("parent_relationship"))
+    fields["parent_phone"]   = ask("Parent phone", cur("parent_phone"))
+    fields["parent_email"]   = ask("Parent e-mail", cur("parent_email"))
+    print("  Medical")
+    fields["medical_notes"]  = ask("Medical / care notes", cur("medical_notes"))
     return fields
 
 
@@ -129,8 +224,16 @@ def open_directory() -> None:
 def open_add_pupil() -> None:
     logger.debug("CLI: open_add_pupil")
     print("\n  ── Add Pupil ──")
+    print("  (* required; '-' leaves a field blank)")
     fields = _collect_fields()
-    p = data.create_pupil(fields)
+    try:
+        p = data.create_pupil(fields, complete=True, check_duplicate=True)
+    except data.DuplicatePupil as dup:
+        answer = _prompt(f"  {dup}\n  Add this as a different pupil anyway? (y/N): ")
+        if answer.lower() != "y":
+            print("  Not saved.")
+            return
+        p = data.create_pupil(fields, complete=True)
     print(f"\n  Created pupil {p.pupil_id} ({p.full_name}, year {p.year_group})")
     print(f"  Auto-generated school email: {p.email}")
 
@@ -147,7 +250,7 @@ def open_edit_pupil() -> None:
     if existing is None:
         print("  No pupil with that ID.")
         return
-    print("  Press Enter to keep existing value.")
+    print("  Press Enter to keep existing value, '-' to clear it.")
     fields = _collect_fields(existing)
     p = data.update_pupil(pid, fields)
     print(f"\n  Updated pupil {p.pupil_id} ({p.full_name})")

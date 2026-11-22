@@ -101,7 +101,7 @@ def _progress_snapshot() -> tuple[int, int, int] | None:
 
 def _announcement_feed(limit: int = 5) -> list[FeedItem]:
     def _():
-        from education_system.systems.sixth_form.domain.operations.communications.announcements import (
+        from education_system.systems.sixth_form.domains.communications.domain.announcements import (
             announcements,
         )
         rows = announcements.list_announcements(status="Published") \

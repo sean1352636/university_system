@@ -24,8 +24,8 @@ Passwords are **never** stored in plaintext or reversible encryption. The system
 
 ### Password Requirements
 
-- Minimum length enforced at account creation.
-- Default accounts use the pattern `<Role>@<System>123` (e.g., `Admin@Primary123`) and **must** be changed before production use.
+- Minimum length of 12 characters, enforced at account creation.
+- Default accounts (e.g., `admin3`) are seeded only when `EDU_DEV_SEED=true` and **must** be changed before production use.
 
 ### Legacy Hash Migration
 
@@ -57,7 +57,9 @@ The `infrastructure/validation/` module provides additional input sanitisation f
 
 ## Role-Based Access Control (RBAC)
 
-Access to system features and data is controlled by the user's assigned role. The Primary School defines four roles:
+Access to system features and data is controlled by the user's assigned role. Role filtering is enforced in the primary GUI and CLI by one rule, `systems/primary/domain/access.py`, checked both when a menu is drawn and when a screen opens. Domain modules still do not check roles. On the API, routes require a token (`token_required`), and the generated menu routes also require staff (`staff_required`).
+
+The Primary School uses these roles from the shared role vocabulary:
 
 | Role | Access Level |
 |---|---|
@@ -68,14 +70,32 @@ Access to system features and data is controlled by the user's assigned role. Th
 
 ### Enforcement Points
 
-RBAC is enforced at **two levels**:
+1. **GUI and CLI**: Menus are filtered by role, and each screen checks the same rule when it opens. An unknown or missing role sees no staff screens.
+2. **API**: Routes require a token, and the generated menu routes also require staff.
+3. **Domain modules**: These do not check roles.
 
-1. **GUI layer**: Menu items, buttons, and tabs are shown or hidden based on the user's role. This prevents accidental access but is not a security boundary.
-2. **Service layer**: Every service method checks the current user's role before executing. This is the authoritative access control point. Even if the GUI is bypassed (e.g., via CLI or API), the service layer rejects unauthorised requests.
+### What each role sees in the GUI and CLI
+
+| Role | Screens |
+|---|---|
+| **admin**, platform superadmin | Everything. |
+| **teacher**, **staff** | Everything except User Accounts, User Management, Central Admin Portal, Settings, the Finance category (including Expense Claims), Audit Reports, Data Export and Custom Export. A screen this document does not mention stays open to staff. |
+| **student**, **parent** | Change Password, Multi-Factor Authentication and Multi-Language, with a message saying the rest is not available yet. |
+| Any other role, or none | Nothing, with a message to contact the school office. |
+
+A student or parent does not yet get the records in the table above. Every existing screen is a whole-school screen that can edit records, and Pupil Self-Service finds records by a partial name match and lists all transfers, so none of them is safe to open to these accounts. Screens limited to the pupil's own records are still to be built.
+
+"Assigned classes" is not enforced: a teacher sees whole-school data on the screens they can open.
 
 ### Safeguarding Data
 
-Safeguarding records receive additional access restrictions beyond standard RBAC:
+Enforced in the GUI and CLI:
+
+- **Safeguarding** opens the full screen only for admins and for staff whose record has `is_dsl` set. Other teachers get the raise-a-concern form and no list of records.
+- **Prevent Duty** is hidden unless the same is true.
+- Staff records have no login column, so the flag is matched by staff id against the username, or by e-mail. No match means no access.
+
+The policy:
 
 - Only users with explicit safeguarding permissions (typically admin and designated safeguarding leads) can **view** safeguarding concern records.
 - Teachers can **raise** a safeguarding concern but cannot view concerns raised by others.
@@ -91,10 +111,10 @@ Sessions are database-backed and subject to strict lifecycle controls:
 |---|---|
 | Session storage | `sessions` table in `auth.db` |
 | Token generation | Cryptographically secure random tokens |
-| Timeout | 30 minutes of inactivity |
-| Logout | Session record deleted from database |
+| Timeout | 30 minutes after creation |
+| Logout | Session record marked inactive |
 
-Sessions cannot be forged because tokens are generated using `secrets.token_urlsafe()` or equivalent CSPRNG. Token length provides sufficient entropy to resist guessing attacks.
+Sessions cannot be forged because tokens are generated using `secrets.token_urlsafe()`. Token length provides sufficient entropy to resist guessing attacks.
 
 See [AUTHENTICATION.md](../infrastructure/AUTHENTICATION.md) for full session lifecycle details.
 
@@ -106,7 +126,7 @@ Brute-force login attempts are mitigated by automatic account lockout:
 
 | Parameter | Value |
 |---|---|
-| Maximum failed attempts | 5 |
+| Maximum failed attempts | 3 |
 | Lockout duration | 15 minutes |
 | Counter reset | On successful login |
 
@@ -204,7 +224,7 @@ The following measures are strongly recommended before deploying the Primary Sch
 ### Database
 
 - [ ] Encrypt the database file at rest (e.g., using filesystem-level encryption or SQLCipher).
-- [ ] Restrict filesystem permissions on `primary_school.db` and `auth.db` to the application user only.
+- [ ] Restrict filesystem permissions on `primary.db` and `auth.db` to the application user only.
 - [ ] Schedule automated daily backups with off-site storage.
 - [ ] Test restore procedures regularly.
 

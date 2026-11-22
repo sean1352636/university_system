@@ -32,6 +32,7 @@ MENUS: dict[str, list[tuple[str, list[tuple[str, str]]]]] = {
             ("Learner directory", "students.directory"),
             ("View a learner", "students.view"),
             ("Add a learner", "students.create"),
+            ("Create a learner login", "students.create_login"),
             ("Enrol onto a course", "students.enrol"),
             ("Withdraw from a course", "students.withdraw"),
             ("Learners at risk", "students.at_risk"),
@@ -39,6 +40,10 @@ MENUS: dict[str, list[tuple[str, list[tuple[str, str]]]]] = {
             ("Progress learner to apprenticeship", "apprenticeship_progression.create"),
             ("University applications", "university_progression.dashboard"),
             ("Create UCAS-linked application", "university_progression.create"),
+            ("Incoming referrals (Sixth Form / Apprenticeship / Adult Education / "
+             "Training Provider)", "fe_referrals.incoming"),
+            ("Referrals to Adult Education", "adult_education_referrals.board"),
+            ("Training Provider Requests", "training_provider_requests.board"),
             ("Learner journey (360)", "learner_journey.show"),
         ]),
         ("Staff", [

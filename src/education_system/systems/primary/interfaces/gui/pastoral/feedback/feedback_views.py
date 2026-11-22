@@ -1,4 +1,4 @@
-"""Tkinter views for Sixth Form Feedback."""
+"""Tkinter views for Primary School Feedback."""
 
 from __future__ import annotations
 
@@ -25,6 +25,7 @@ from education_system.systems.primary.domain.pastoral.feedback.feedback import (
     SUBMITTER_ROLES,
     ValidationError,
 )
+from education_system.systems.primary.interfaces.gui import kit
 
 logger = logging.getLogger(__name__)
 
@@ -43,14 +44,26 @@ _STATUS_TAGS = {
 
 def open_feedback_window(parent=None) -> None:
     data.init_db()
-    master = getattr(parent, "root", parent)
-    win = tk.Toplevel(master) if master is not None else tk.Tk()
-    win.title(f"Feedback — {branding.SYSTEM_NAME}")
-    win.geometry(WIN_GEOMETRY)
-    win.minsize(*WIN_MINSIZE)
+    if parent is None:
+        # Run on its own (no main window): a window of its own, as before.
+        win = tk.Tk()
+        win.title(f"Feedback — {branding.SYSTEM_NAME}")
+        win.geometry(WIN_GEOMETRY)
+        win.minsize(*WIN_MINSIZE)
+        frame = ttk.Frame(win, padding=10)
+        frame.pack(fill="both", expand=True)
+        _draw_feedback(frame, None)
+        return
+    kit.show_page(parent, "Feedback",
+                  lambda page: _draw_feedback(page, parent))
 
-    nb = ttk.Notebook(win)
-    nb.pack(fill="both", expand=True, padx=10, pady=10)
+
+def _draw_feedback(parent, host) -> None:
+    kit.page_heading(parent, "Feedback",
+                     "Compliments, suggestions and concerns from parents, "
+                     "pupils and visitors.")
+    nb = ttk.Notebook(parent)
+    nb.pack(fill="both", expand=True)
 
     FBTab(nb, scope="open",      label="Open")
     FBTab(nb, scope="awaiting",  label="Awaiting Response")
@@ -72,31 +85,23 @@ class FBTab:
         bar = ttk.Frame(self.frame)
         bar.pack(fill="x", padx=8, pady=(8, 4))
         ttk.Label(bar, text="Type:").pack(side="left")
-        self.f_type = ttk.Combobox(bar,
-                                     values=("",) + FEEDBACK_TYPES,
-                                     state="readonly", width=14)
-        self.f_type.current(0)
+        self.f_type = kit.ChoiceField(bar, choices=FEEDBACK_TYPES,
+                                      blank=True, width=14)
         self.f_type.pack(side="left", padx=(2, 8))
         ttk.Label(bar, text="Category:").pack(side="left")
-        self.f_cat = ttk.Combobox(bar, values=("",) + CATEGORIES,
-                                    state="readonly", width=22)
-        self.f_cat.current(0)
+        self.f_cat = kit.ChoiceField(bar, choices=CATEGORIES, blank=True,
+                                     width=22)
         self.f_cat.pack(side="left", padx=(2, 8))
         if self.scope == "all":
             ttk.Label(bar, text="Status:").pack(side="left")
-            self.f_status = ttk.Combobox(bar,
-                                           values=("",) + STATUSES,
-                                           state="readonly", width=12)
-            self.f_status.current(0)
+            self.f_status = kit.ChoiceField(bar, choices=STATUSES,
+                                            blank=True, width=12)
             self.f_status.pack(side="left", padx=(2, 8))
         else:
             self.f_status = None
         ttk.Label(bar, text="Min rating:").pack(side="left")
-        self.f_rate = ttk.Combobox(bar,
-                                      values=("",) + tuple(str(r)
-                                                            for r in RATINGS),
-                                      state="readonly", width=4)
-        self.f_rate.current(0)
+        self.f_rate = kit.ChoiceField(bar, choices=[str(r) for r in RATINGS],
+                                      blank=True, width=4)
         self.f_rate.pack(side="left", padx=(2, 8))
         ttk.Label(bar, text="Subject:").pack(side="left")
         self.f_subj = ttk.Entry(bar, width=14)
@@ -158,12 +163,12 @@ class FBTab:
         self.count.pack(side="right")
 
     def _clear(self) -> None:
-        self.f_type.current(0)
-        self.f_cat.current(0)
-        self.f_rate.current(0)
+        self.f_type.set("")
+        self.f_cat.set("")
+        self.f_rate.set("")
         self.f_subj.delete(0, "end")
         if self.f_status is not None:
-            self.f_status.current(0)
+            self.f_status.set("")
         self.refresh()
 
     def _filters(self) -> dict:
@@ -240,8 +245,8 @@ class FBTab:
         f = self._selected()
         if not f:
             return
-        to = _prompt_text(self.frame, "Assign to",
-                            initial=f.assigned_to or "")
+        to = _prompt_staff(self.frame, "Assign to",
+                             initial=f.assigned_to or "")
         if not to:
             return
         try:
@@ -397,7 +402,7 @@ class FeedbackEditor:
         self.win = tk.Toplevel(parent)
         self.win.title(f"Edit feedback #{feedback.feedback_id}"
                           if feedback else "New feedback")
-        self.win.geometry("820x780")
+        self.win.geometry("820x680")
         self.win.transient(parent); self.win.after_idle(self.win.grab_set)
         self._build()
         if feedback:
@@ -405,33 +410,38 @@ class FeedbackEditor:
         self.win.wait_window()
 
     def _build(self) -> None:
-        body = ttk.Frame(self.win)
-        body.pack(fill="both", expand=True, padx=12, pady=10)
+        body, footer = kit.scrolled_form(self.win)
         body.grid_columnconfigure(1, weight=1)
         body.grid_columnconfigure(3, weight=1)
         self.vars: dict[str, tk.Variable] = {}
         self.texts: dict[str, tk.Text] = {}
         self.bools: dict[str, tk.BooleanVar] = {}
 
-        def entry(row, col, label, key, width=22):
+        def entry(row, col, label, key, width=22, kind=None):
             ttk.Label(body, text=label).grid(
                 row=row, column=col, sticky="w", padx=4, pady=2)
             v = tk.StringVar()
             self.vars[key] = v
-            ttk.Entry(body, textvariable=v, width=width).grid(
-                row=row, column=col + 1, sticky="ew", padx=4, pady=2)
+            if kind == "date":
+                w = kit.DateField(body, v)
+            elif kind == "staff_name":
+                w = kit.StaffPicker(body, v, by="name", width=30)
+            else:
+                w = ttk.Entry(body, textvariable=v, width=width)
+            w.grid(row=row, column=col + 1, sticky="ew" if kind is None
+                   else "w", padx=4, pady=2)
 
-        def combo(row, col, label, key, values, width=22):
+        def combo(row, col, label, key, values, width=22, blank=False):
             ttk.Label(body, text=label).grid(
                 row=row, column=col, sticky="w", padx=4, pady=2)
             v = tk.StringVar()
             self.vars[key] = v
-            ttk.Combobox(body, textvariable=v, values=values,
-                          state="readonly", width=width).grid(
+            kit.ChoiceField(body, v, choices=values, blank=blank,
+                            width=width).grid(
                 row=row, column=col + 1, sticky="ew", padx=4, pady=2)
 
         entry(0, 0, "Subject*", "subject", width=48)
-        entry(1, 0, "Received on*", "received_on")
+        entry(1, 0, "Received on*", "received_on", kind="date")
         combo(1, 2, "Source*", "source", SOURCES)
         combo(2, 0, "Submitter role*", "submitter_role",
                  SUBMITTER_ROLES)
@@ -440,14 +450,14 @@ class FeedbackEditor:
         entry(3, 2, "Phone", "contact_phone")
         combo(4, 0, "Type*", "feedback_type", FEEDBACK_TYPES)
         combo(4, 2, "Category*", "category", CATEGORIES)
-        combo(5, 0, "Rating", "rating",
-                 ("", "1", "2", "3", "4", "5"))
+        combo(5, 0, "Rating", "rating", [str(r) for r in RATINGS],
+                 blank=True)
         combo(5, 2, "Status*", "status", STATUSES)
-        entry(6, 0, "Assigned to", "assigned_to")
+        entry(6, 0, "Assigned to", "assigned_to", kind="staff_name")
         entry(6, 2, "Linked to", "linked_to")
-        entry(7, 0, "Response by", "response_by")
-        entry(7, 2, "Response on", "response_on")
-        entry(8, 0, "Closed on", "closed_on")
+        entry(7, 0, "Response by", "response_by", kind="staff_name")
+        entry(7, 2, "Response on", "response_on", kind="date")
+        entry(8, 0, "Closed on", "closed_on", kind="date")
 
         flags = ttk.LabelFrame(body, text="Flags")
         flags.grid(row=9, column=0, columnspan=4,
@@ -476,11 +486,9 @@ class FeedbackEditor:
             self.texts[key] = t
             row += 1
 
-        bar = ttk.Frame(self.win)
-        bar.pack(fill="x", padx=12, pady=(0, 10))
-        ttk.Button(bar, text="Save",
+        ttk.Button(footer, text="Save",
                     command=self._save).pack(side="right", padx=4)
-        ttk.Button(bar, text="Cancel",
+        ttk.Button(footer, text="Cancel",
                     command=self.win.destroy).pack(side="right")
 
         self.vars["received_on"].set(_dt.date.today().isoformat())
@@ -535,7 +543,7 @@ class RespondDialog:
         self.result: Feedback | None = None
         self.win = tk.Toplevel(parent)
         self.win.title(f"Respond — #{feedback.feedback_id}")
-        self.win.geometry("520x420")
+        self.win.geometry("580x420")
         self.win.transient(parent); self.win.after_idle(self.win.grab_set)
         body = ttk.Frame(self.win)
         body.pack(fill="both", expand=True, padx=12, pady=10)
@@ -543,14 +551,14 @@ class RespondDialog:
         ttk.Label(body, text="Response by*").grid(
             row=0, column=0, sticky="w", padx=4, pady=4)
         self.by = tk.StringVar(value=feedback.response_by or "")
-        ttk.Entry(body, textvariable=self.by).grid(
+        kit.StaffPicker(body, self.by, by="name").grid(
             row=0, column=1, sticky="ew", padx=4, pady=4)
         ttk.Label(body, text="Response on").grid(
             row=1, column=0, sticky="w", padx=4, pady=4)
         self.when = tk.StringVar(
             value=feedback.response_on
             or _dt.date.today().isoformat())
-        ttk.Entry(body, textvariable=self.when, width=14).grid(
+        kit.DateField(body, self.when).grid(
             row=1, column=1, sticky="w", padx=4, pady=4)
         ttk.Label(body, text="Response*").grid(
             row=2, column=0, sticky="nw", padx=4, pady=4)
@@ -582,14 +590,15 @@ class RespondDialog:
         self.win.destroy()
 
 
-def _prompt_text(parent, title: str, *,
+def _prompt_staff(parent, title: str, *,
                   initial: str = "") -> str | None:
+    """Pick a member of staff (their name is what is stored)."""
     win = tk.Toplevel(parent)
-    win.title(title); win.geometry("360x140")
+    win.title(title); win.geometry("460x140")
     win.transient(parent); win.after_idle(win.grab_set)
     ttk.Label(win, text=title).pack(anchor="w", padx=8, pady=8)
     var = tk.StringVar(value=initial)
-    ttk.Entry(win, textvariable=var).pack(fill="x", padx=8)
+    kit.StaffPicker(win, var, by="name").pack(fill="x", padx=8)
     result: dict = {"value": None}
 
     def ok() -> None:
@@ -636,8 +645,7 @@ def _prompt_choice(parent, title: str, options: list[str], *,
     win.transient(parent); win.after_idle(win.grab_set)
     ttk.Label(win, text=title).pack(anchor="w", padx=8, pady=8)
     var = tk.StringVar(value=default or (options[0] if options else ""))
-    ttk.Combobox(win, textvariable=var, values=options,
-                  state="readonly").pack(fill="x", padx=8)
+    kit.ChoiceField(win, var, choices=options).pack(fill="x", padx=8)
     result: dict = {"value": None}
 
     def ok() -> None:

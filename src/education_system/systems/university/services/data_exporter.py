@@ -337,9 +337,11 @@ class DataExportService:
                        charge_type AS description
                   FROM student_charges WHERE student_id = ?
                 UNION ALL
-                SELECT 'payment', payment_id, currency, amount_minor, status,
-                       created_at, provider || ':' || provider_reference
-                  FROM student_payments WHERE student_id = ?
+                SELECT 'payment', payment_id, COALESCE(currency, 'GBP'),
+                       CAST(ROUND(ABS(amount) * 100) AS INTEGER), status,
+                       COALESCE(created_at, payment_date),
+                       COALESCE(description, payment_type, source_type, 'payment')
+                  FROM payments WHERE student_id = ?
                 ORDER BY created_at
             ''', (student_id, student_id))
             data.financial_records = [dict(row) for row in cursor.fetchall()]

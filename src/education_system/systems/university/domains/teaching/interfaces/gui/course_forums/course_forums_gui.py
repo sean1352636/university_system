@@ -1,0 +1,577 @@
+"""Module Discussion Forums GUI (Feature 39).
+
+Stores in ``module_forums`` / ``module_forum_posts``, keyed on
+``module_code``. These used to be ``lms_discussion_forums`` /
+``lms_discussion_posts``, whose foreign key pointed at ``lms_courses``
+— so opening a forum on a module with no LMS course silently created
+an LMS course row just to satisfy the constraint. The LMS is retired
+and the module is what a module forum was always about.
+
+Provides a forum interface for module discussions, including threaded posts,
+topic creation, replies, and likes. Organised by enrolled modules.
+"""
+
+from education_system.systems.university.application.teaching import forum_likes
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
+import logging
+import tkinter as tk
+from datetime import datetime
+from tkinter import messagebox, simpledialog, ttk
+
+from education_system.systems.university.infrastructure.database.db import get_connection, transaction
+from education_system.systems.university.infrastructure.utils.activity_logger import log_activity
+
+logger = logging.getLogger(__name__)
+
+
+class CourseForumsGUI:
+    """Toplevel window for module discussion forums."""
+
+    def __init__(self, parent, auth=None):
+        self.parent = parent
+        self.auth = auth
+        self.student_id = (
+            auth.current_user.get('username', '') if auth and auth.current_user else ''
+        )
+        self.selected_module_code = None
+        self.selected_forum_id = None
+        self.selected_post_id = None
+        self._post_widgets = {}
+
+        self.window = tk.Toplevel(parent)
+        self.window.title(_t('gui.academics.course_forums.course_forums.windows.module_discussion_forums', default="Module Discussion Forums"))
+        self.window.geometry("1000x700")
+        self.window.transient(parent)
+
+        self._ensure_tables()
+        self._setup_ui()
+        self._load_modules()
+
+    # ------------------------------------------------------------------
+    # Database setup
+    # ------------------------------------------------------------------
+
+    def _ensure_tables(self):
+        """Create forum tables if they do not exist."""
+        try:
+            with transaction() as conn:
+                conn.execute(
+                    """CREATE TABLE IF NOT EXISTS module_forums (
+                        forum_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        module_code TEXT NOT NULL,
+                        topic TEXT NOT NULL,
+                        description TEXT,
+                        created_by TEXT NOT NULL,
+                        is_pinned INTEGER DEFAULT 0,
+                        is_locked INTEGER DEFAULT 0,
+                        created_at TEXT NOT NULL DEFAULT (datetime('now')),
+                        FOREIGN KEY (module_code) REFERENCES modules(module_code)
+                    )"""
+                )
+                conn.execute(
+                    """CREATE TABLE IF NOT EXISTS module_forum_posts (
+                        post_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        forum_id INTEGER,
+                        user_id TEXT,
+                        content TEXT,
+                        parent_post_id INTEGER,
+                        attachments TEXT,
+                        likes_count INTEGER DEFAULT 0,
+                        is_instructor_post INTEGER DEFAULT 0,
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                    )"""
+                )
+                conn.execute(forum_likes.ENSURE_SQL)
+        except Exception as exc:
+            logger.error("Failed to create forum tables: %s", exc)
+
+    # ------------------------------------------------------------------
+    # UI construction
+    # ------------------------------------------------------------------
+
+    def _setup_ui(self):
+        """Build the forum interface."""
+        ttk.Label(
+            self.window,
+            text=_t('gui.academics.course_forums.course_forums.labels.module_discussion_forums', default="Module Discussion Forums"),
+            font=('Arial', 16, 'bold'),
+        ).pack(pady=(10, 5))
+
+        # ---- Top: Module selector ----
+        top_frame = ttk.Frame(self.window)
+        top_frame.pack(fill=tk.X, padx=15, pady=5)
+
+        ttk.Label(top_frame, text=_t('gui.academics.course_forums.course_forums.labels.module', default="Module:")).pack(side=tk.LEFT, padx=(0, 5))
+        self.module_var = tk.StringVar()
+        self.module_combo = ttk.Combobox(
+            top_frame, textvariable=self.module_var, state='readonly', width=50
+        )
+        self.module_combo.pack(side=tk.LEFT, padx=(0, 10))
+        self.module_combo.bind('<<ComboboxSelected>>', lambda e: self._on_module_selected())
+
+        # Says whose modules these are, so an empty or unexpected list
+        # explains itself instead of just looking broken.
+        self._module_scope_label = ttk.Label(top_frame, text="", foreground="#7f8c8d")
+        self._module_scope_label.pack(side=tk.LEFT, padx=(4, 0))
+
+        # Internal mapping: combo index -> module_code
+        self._module_codes = []
+
+        # ---- Middle section: forums list (left) + posts view (right) ----
+        middle_paned = ttk.PanedWindow(self.window, orient=tk.HORIZONTAL)
+        middle_paned.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
+
+        # -- Left: forum list --
+        forum_frame = ttk.LabelFrame(middle_paned, text=_t('gui.academics.course_forums.course_forums.labels.forums', default="Forums"))
+        middle_paned.add(forum_frame, weight=1)
+
+        forum_tree_frame = ttk.Frame(forum_frame)
+        forum_tree_frame.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
+
+        cols = ('title', 'posts_count', 'last_activity')
+        self.forum_tree = ttk.Treeview(
+            forum_tree_frame, columns=cols, show='headings', selectmode='browse'
+        )
+        self.forum_tree.heading('title', text=_t('gui.academics.course_forums.course_forums.headings.title', default='Title'))
+        self.forum_tree.heading('posts_count', text=_t('gui.academics.course_forums.course_forums.headings.posts', default='Posts'))
+        self.forum_tree.heading('last_activity', text=_t('gui.academics.course_forums.course_forums.headings.last_activity', default='Last Activity'))
+        self.forum_tree.column('title', width=200)
+        self.forum_tree.column('posts_count', width=60, anchor=tk.CENTER)
+        self.forum_tree.column('last_activity', width=140)
+
+        forum_scroll = ttk.Scrollbar(
+            forum_tree_frame, orient=tk.VERTICAL, command=self.forum_tree.yview
+        )
+        self.forum_tree.configure(yscrollcommand=forum_scroll.set)
+        self.forum_tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        forum_scroll.pack(side=tk.RIGHT, fill=tk.Y)
+        self.forum_tree.bind('<<TreeviewSelect>>', self._on_forum_selected)
+
+        # Internal mapping: tree item iid -> forum_id
+        self._forum_map = {}
+
+        # -- Right: posts view --
+        posts_frame = ttk.LabelFrame(middle_paned, text=_t('gui.academics.course_forums.course_forums.labels.posts', default="Posts"))
+        middle_paned.add(posts_frame, weight=2)
+
+        posts_container = ttk.Frame(posts_frame)
+        posts_container.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
+
+        # Scrollable canvas for threaded posts
+        self.posts_canvas = tk.Canvas(posts_container)
+        posts_vscroll = ttk.Scrollbar(
+            posts_container, orient=tk.VERTICAL, command=self.posts_canvas.yview
+        )
+        self.posts_canvas.configure(yscrollcommand=posts_vscroll.set)
+        posts_vscroll.pack(side=tk.RIGHT, fill=tk.Y)
+        self.posts_canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+
+        self.posts_inner_frame = ttk.Frame(self.posts_canvas)
+        self.posts_canvas_window = self.posts_canvas.create_window(
+            (0, 0), window=self.posts_inner_frame, anchor=tk.NW
+        )
+        self.posts_inner_frame.bind(
+            '<Configure>',
+            lambda e: self.posts_canvas.configure(
+                scrollregion=self.posts_canvas.bbox('all')
+            ),
+        )
+        self.posts_canvas.bind(
+            '<Configure>',
+            lambda e: self.posts_canvas.itemconfig(
+                self.posts_canvas_window, width=e.width
+            ),
+        )
+
+        # ---- Bottom: action buttons ----
+        btn_frame = ttk.Frame(self.window)
+        btn_frame.pack(fill=tk.X, padx=15, pady=(5, 10))
+
+        ttk.Button(
+            btn_frame, text=_t('gui.academics.course_forums.course_forums.buttons.new_topic', default="New Topic"), command=self._new_topic
+        ).pack(side=tk.LEFT, padx=5)
+        ttk.Button(
+            btn_frame, text=_t('gui.academics.course_forums.course_forums.buttons.reply', default="Reply"), command=self._reply_to_post
+        ).pack(side=tk.LEFT, padx=5)
+        ttk.Button(
+            btn_frame, text=_t('gui.academics.course_forums.course_forums.buttons.like', default="Like"), command=self._like_post
+        ).pack(side=tk.LEFT, padx=5)
+        ttk.Button(
+            btn_frame, text=_t('gui.academics.course_forums.course_forums.buttons.refresh', default="Refresh"), command=self._refresh_current
+        ).pack(side=tk.RIGHT, padx=5)
+
+    # ------------------------------------------------------------------
+    # Data loading
+    # ------------------------------------------------------------------
+
+    def _is_staff(self):
+        """True for a role that should see every module, not just enrolments."""
+        user = getattr(self.auth, "current_user", None) if self.auth else None
+        role = str((user or {}).get("role", "")).strip().lower()
+        return role in ("admin", "superadmin", "staff", "instructor",
+                        "teacher", "lecturer")
+
+    def _load_modules(self):
+        """Load the modules this user can hold a discussion on.
+
+        Previously this listed only ``student_modules`` rows for the signed-in
+        username, so anyone who is not a student — an admin, a lecturer —
+        matched nothing and the module dropdown came up empty, which made the
+        whole screen look broken. Staff now get the full module list; students
+        keep their enrolments.
+        """
+        self.module_combo.set('')
+        self._module_codes.clear()
+        values = []
+        scope = ""
+
+        try:
+            with get_connection() as conn:
+                rows = []
+                if not self._is_staff():
+                    rows = conn.execute(
+                        """SELECT m.module_code, m.module_name
+                           FROM student_modules sm
+                           JOIN modules m ON sm.module_code = m.module_code
+                           WHERE sm.student_id = ?
+                           ORDER BY m.module_name""",
+                        (self.student_id,),
+                    ).fetchall()
+                    scope = "Your enrolled modules"
+
+                if not rows:
+                    # Staff, or a student with no enrolments recorded: show the
+                    # full catalogue rather than an empty box with no
+                    # explanation for why.
+                    rows = conn.execute(
+                        """SELECT module_code, module_name
+                             FROM modules
+                            WHERE COALESCE(TRIM(module_code), '') <> ''
+                              AND COALESCE(is_active, 1) = 1
+                            ORDER BY module_name""").fetchall()
+                    scope = ("All modules" if self._is_staff()
+                             else "All modules (you have no enrolments recorded)")
+
+            for module_code, module_name in rows:
+                self._module_codes.append(module_code)
+                values.append(f"{module_code} - {module_name or module_code}")
+        except Exception as exc:
+            logger.error("Failed to load modules: %s", exc)
+
+        self.module_combo['values'] = values
+        label = getattr(self, "_module_scope_label", None)
+        if label is not None:
+            label.config(text=f"{scope} — {len(values)} module(s)")
+
+    def _on_module_selected(self):
+        """Handle module selection from the combo box."""
+        idx = self.module_combo.current()
+        if idx < 0 or idx >= len(self._module_codes):
+            return
+        self.selected_module_code = self._module_codes[idx]
+        self.selected_forum_id = None
+        self.selected_post_id = None
+        self._load_forums()
+        self._clear_posts()
+
+    def _load_forums(self):
+        """Load forums for the selected module."""
+        self.forum_tree.delete(*self.forum_tree.get_children())
+        self._forum_map.clear()
+
+        if not self.selected_module_code:
+            return
+
+        try:
+            with get_connection() as conn:
+                rows = conn.execute(
+                    """SELECT f.forum_id, f.topic,
+                              COUNT(p.post_id) AS posts,
+                              MAX(p.created_at) AS last_activity
+                       FROM module_forums f
+                       LEFT JOIN module_forum_posts p ON f.forum_id = p.forum_id
+                       WHERE f.module_code = ? AND f.is_locked = 0
+                       GROUP BY f.forum_id""",
+                    (self.selected_module_code,),
+                ).fetchall()
+
+            for forum_id, title, posts_count, last_activity in rows:
+                activity_str = last_activity[:19] if last_activity else 'No posts'
+                iid = self.forum_tree.insert(
+                    '', tk.END,
+                    values=(title, posts_count, activity_str),
+                )
+                self._forum_map[iid] = forum_id
+        except Exception as exc:
+            logger.error("Failed to load forums: %s", exc)
+
+    def _on_forum_selected(self, event):
+        """Handle forum selection from the treeview."""
+        selection = self.forum_tree.selection()
+        if not selection:
+            return
+        iid = selection[0]
+        self.selected_forum_id = self._forum_map.get(iid)
+        self.selected_post_id = None
+        self._load_posts()
+
+    def _clear_posts(self):
+        """Clear the posts view."""
+        for widget in self.posts_inner_frame.winfo_children():
+            widget.destroy()
+        self.selected_post_id = None
+        self._post_widgets = {}
+
+    def _load_posts(self):
+        """Load and display threaded posts for the selected forum.
+
+        The selected post survives a reload, so Like and Reply still apply to it
+        afterwards. A topic with only one post has it selected from the start.
+        """
+        keep = self.selected_post_id
+        self._clear_posts()
+
+        if self.selected_forum_id is None:
+            return
+
+        try:
+            with get_connection() as conn:
+                rows = conn.execute(
+                    """SELECT post_id, parent_post_id, user_id, content,
+                              created_at, likes_count
+                       FROM module_forum_posts
+                       WHERE forum_id = ?
+                       ORDER BY created_at ASC""",
+                    (self.selected_forum_id,),
+                ).fetchall()
+        except Exception as exc:
+            logger.error("Failed to load posts: %s", exc)
+            return
+
+        # Build a tree structure for threading
+        posts_by_id = {}
+        root_posts = []
+        for post_id, parent_id, author_id, content, created_at, likes in rows:
+            post = {
+                'id': post_id,
+                'parent_id': parent_id,
+                'author_id': author_id,
+                'content': content,
+                'created_at': created_at,
+                'likes': likes,
+                'children': [],
+            }
+            posts_by_id[post_id] = post
+            if parent_id is None or parent_id not in posts_by_id:
+                root_posts.append(post)
+            else:
+                posts_by_id[parent_id]['children'].append(post)
+
+        # Render posts recursively
+        for post in root_posts:
+            self._render_post(self.posts_inner_frame, post, indent=0)
+
+        if keep in posts_by_id:
+            self._select_post(keep)
+        elif len(posts_by_id) == 1:
+            self._select_post(next(iter(posts_by_id)))
+
+    def _render_post(self, parent_widget, post, indent=0):
+        """Render a single post with indentation for threading."""
+        frame = ttk.Frame(parent_widget)
+        frame.pack(fill=tk.X, padx=(indent * 20 + 5, 5), pady=3)
+
+        # Post header
+        timestamp = post['created_at'][:19] if post['created_at'] else ''
+        header_text = f"{post['author_id']}  |  {timestamp}  |  Likes: {post['likes']}"
+        header_label = ttk.Label(
+            frame, text=header_text, font=('Arial', 9, 'bold'), foreground='gray'
+        )
+        header_label.pack(anchor=tk.W)
+
+        # Post content
+        content_label = ttk.Label(
+            frame, text=post['content'], wraplength=500, justify=tk.LEFT
+        )
+        content_label.pack(anchor=tk.W, padx=(10, 0))
+
+        # Make the frame clickable to select the post
+        separator = ttk.Separator(frame, orient=tk.HORIZONTAL)
+        separator.pack(fill=tk.X, pady=(3, 0))
+        for widget in (frame, header_label, content_label, separator):
+            widget.bind('<Button-1>', lambda e, pid=post['id']: self._select_post(pid))
+        self._post_widgets[post['id']] = (frame, header_label, content_label)
+
+        # Render child posts
+        for child in post['children']:
+            self._render_post(parent_widget, child, indent=indent + 1)
+
+    def _select_post(self, post_id):
+        """Mark a post as selected and show which one it is."""
+        style = ttk.Style(self.window)
+        style.configure('SelectedPost.TFrame', background='#dbeafe')
+        style.configure('SelectedPost.TLabel', background='#dbeafe')
+        for pid, (frame, *labels) in self._post_widgets.items():
+            chosen = pid == post_id
+            frame.configure(style='SelectedPost.TFrame' if chosen else 'TFrame')
+            for label in labels:
+                label.configure(style='SelectedPost.TLabel' if chosen else 'TLabel')
+        self.selected_post_id = post_id
+        logger.debug("Selected post ID: %s", post_id)
+
+    # ------------------------------------------------------------------
+    # Actions
+    # ------------------------------------------------------------------
+
+    def _new_topic(self):
+        """Create a new forum topic for the selected module."""
+        if not self.selected_module_code:
+            messagebox.showwarning(
+                _t('gui.academics.course_forums.course_forums.dialogs.no_module', default="No Module"), _t('gui.academics.course_forums.course_forums.dialogs.please_select_a_module_first', default="Please select a module first."), parent=self.window
+            )
+            return
+
+        dialog = tk.Toplevel(self.window)
+        dialog.title(_t('gui.academics.course_forums.course_forums.windows.new_forum_topic', default="New Forum Topic"))
+        dialog.geometry("400x250")
+        dialog.transient(self.window)
+        dialog.grab_set()
+
+        ttk.Label(dialog, text=_t('gui.academics.course_forums.course_forums.labels.title', default="Title:")).pack(anchor=tk.W, padx=10, pady=(10, 2))
+        title_entry = ttk.Entry(dialog, width=50)
+        title_entry.pack(padx=10, pady=(0, 5))
+
+        ttk.Label(dialog, text=_t('gui.academics.course_forums.course_forums.labels.description', default="Description:")).pack(anchor=tk.W, padx=10, pady=(5, 2))
+        desc_text = tk.Text(dialog, height=5, width=50)
+        desc_text.pack(padx=10, pady=(0, 10))
+
+        def _create():
+            title = title_entry.get().strip()
+            description = desc_text.get('1.0', tk.END).strip()
+            if not title:
+                messagebox.showwarning(
+                    _t('gui.academics.course_forums.course_forums.dialogs.missing_title', default="Missing Title"), _t('gui.academics.course_forums.course_forums.dialogs.please_enter_a_topic_title', default="Please enter a topic title."), parent=dialog
+                )
+                return
+            try:
+                with transaction() as conn:
+                    conn.execute(
+                        """INSERT INTO module_forums
+                              (module_code, topic, description, created_by)
+                           VALUES (?, ?, ?, ?)""",
+                        (self.selected_module_code, title, description, self.student_id),
+                    )
+                log_activity(
+                    self.student_id, self.student_id, 'student',
+                    'create_forum_topic', 'course_forums',
+                    details=f"Created topic '{title}' in {self.selected_module_code}",
+                )
+                logger.info(
+                    "Forum topic '%s' created by %s in %s",
+                    title, self.student_id, self.selected_module_code,
+                )
+                dialog.destroy()
+                self._load_forums()
+            except Exception as exc:
+                logger.error("Failed to create topic: %s", exc)
+                messagebox.showerror(
+                    _t('gui.academics.course_forums.course_forums.dialogs.error', default="Error"), f"Failed to create topic: {exc}", parent=dialog
+                )
+
+        ttk.Button(dialog, text=_t('gui.academics.course_forums.course_forums.buttons.create_topic', default="Create Topic"), command=_create).pack(pady=10)
+
+    def _reply_to_post(self):
+        """Reply to the selected post or create a root post in the selected forum."""
+        if self.selected_forum_id is None:
+            messagebox.showwarning(
+                _t('gui.academics.course_forums.course_forums.dialogs.no_forum', default="No Forum"), _t('gui.academics.course_forums.course_forums.dialogs.please_select_a_forum_first', default="Please select a forum first."), parent=self.window
+            )
+            return
+
+        parent_post_id = self.selected_post_id  # May be None for root-level reply
+
+        dialog = tk.Toplevel(self.window)
+        dialog.title("Reply" if parent_post_id else "New Post")
+        dialog.geometry("400x200")
+        dialog.transient(self.window)
+        dialog.grab_set()
+
+        ttk.Label(dialog, text=_t('gui.academics.course_forums.course_forums.labels.your_reply', default="Your reply:")).pack(anchor=tk.W, padx=10, pady=(10, 2))
+        reply_text = tk.Text(dialog, height=5, width=50)
+        reply_text.pack(padx=10, pady=(0, 10))
+
+        def _submit():
+            content = reply_text.get('1.0', tk.END).strip()
+            if not content:
+                messagebox.showwarning(
+                    _t('gui.academics.course_forums.course_forums.dialogs.empty_reply', default="Empty Reply"), _t('gui.academics.course_forums.course_forums.dialogs.please_enter_your_reply', default="Please enter your reply."), parent=dialog
+                )
+                return
+            try:
+                with transaction() as conn:
+                    conn.execute(
+                        """INSERT INTO module_forum_posts
+                              (forum_id, parent_post_id, user_id, content)
+                           VALUES (?, ?, ?, ?)""",
+                        (self.selected_forum_id, parent_post_id, self.student_id, content),
+                    )
+                log_activity(
+                    self.student_id, self.student_id, 'student',
+                    'reply_forum_post', 'course_forums',
+                    details=f"Replied in forum {self.selected_forum_id}",
+                )
+                logger.info(
+                    "Post created by %s in forum %s",
+                    self.student_id, self.selected_forum_id,
+                )
+                dialog.destroy()
+                self._load_posts()
+                self._load_forums()
+            except Exception as exc:
+                logger.error("Failed to create reply: %s", exc)
+                messagebox.showerror(
+                    _t('gui.academics.course_forums.course_forums.dialogs.error', default="Error"), f"Failed to create reply: {exc}", parent=dialog
+                )
+
+        ttk.Button(dialog, text=_t('gui.academics.course_forums.course_forums.buttons.submit', default="Submit"), command=_submit).pack(pady=5)
+
+    def _like_post(self):
+        """Increment like count on the selected post."""
+        if self.selected_post_id is None:
+            if self.selected_forum_id is not None and not self._post_widgets:
+                message = _t('gui.academics.course_forums.course_forums.dialogs.topic_has_no_posts',
+                             default="This topic has no posts to like yet. Use Reply to add the first one.")
+            else:
+                message = _t('gui.academics.course_forums.course_forums.dialogs.please_click_on_a_post_to_select_it_before_liking', default="Please click on a post to select it before liking.")
+            messagebox.showwarning(
+                _t('gui.academics.course_forums.course_forums.dialogs.no_post_selected', default="No Post Selected"),
+                message,
+                parent=self.window,
+            )
+            return
+
+        try:
+            with transaction() as conn:
+                liked = forum_likes.like_post(conn, self.selected_post_id, self.student_id)
+            if not liked:
+                messagebox.showinfo(
+                    _t('gui.academics.course_forums.course_forums.dialogs.already_liked_title', default="Already Liked"),
+                    _t('gui.academics.course_forums.course_forums.dialogs.already_liked', default="You've already liked this post."),
+                    parent=self.window,
+                )
+                return
+            logger.info("Post %s liked by %s", self.selected_post_id, self.student_id)
+            self._load_posts()
+        except Exception as exc:
+            logger.error("Failed to like post: %s", exc)
+            messagebox.showerror(
+                _t('gui.academics.course_forums.course_forums.dialogs.error', default="Error"), f"Failed to like post: {exc}", parent=self.window
+            )
+
+    def _refresh_current(self):
+        """Refresh the current forum and posts view."""
+        if self.selected_module_code:
+            self._load_forums()
+        if self.selected_forum_id:
+            self._load_posts()

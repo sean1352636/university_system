@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import os
 from datetime import datetime
 
 from flask import Blueprint, g, jsonify, request
@@ -36,7 +37,7 @@ def _row_to_dict(row) -> dict:
 def _get_assignment_or_404(assignment_id: int) -> dict:
     with get_connection() as conn:
         row = conn.execute(
-            "SELECT * FROM assignments WHERE assignment_id = ?", (assignment_id,)
+            "SELECT * FROM assignments WHERE id = ?", (assignment_id,)
         ).fetchone()
     if not row:
         raise ValidationError(f"Assignment {assignment_id} not found")
@@ -142,7 +143,7 @@ def update_assignment(assignment_id: int):
     values.append(assignment_id)
     with transaction() as conn:
         conn.execute(
-            "UPDATE assignments SET " + ", ".join(set_clauses) + " WHERE assignment_id = ?",
+            "UPDATE assignments SET " + ", ".join(set_clauses) + " WHERE id = ?",
             values,
         )
 
@@ -177,17 +178,35 @@ def create_submission(assignment_id: int):
     if denial:
         return denial
 
+    from education_system.systems.university.domains.assessment.domain.assignments.assignment_rules import (
+        submitting as submission_rules,
+    )
+    if data.get("status", "submitted") == "submitted":
+        with get_connection() as conn:
+            try:
+                submission_rules.check_can_submit(conn, assignment_id, data["student_id"])
+            except ValueError as refused:
+                return jsonify({"error": str(refused)}), 409
+
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     with transaction() as conn:
+        if data.get("status", "submitted") == "submitted":
+            conn.execute(
+                "UPDATE assignment_submissions SET is_final_submission = 0 WHERE assignment_id = ? AND student_id = ?",
+                (assignment_id, data["student_id"]),
+            )
         conn.execute(
             """INSERT INTO assignment_submissions
-               (assignment_id, student_id, content, file_path, submitted_at, status)
-               VALUES (?, ?, ?, ?, ?, ?)""",
+               (assignment_id, student_id, content, file_path, file_name, submission_date,
+                submitted_at, status)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
             (
                 assignment_id,
                 data["student_id"],
                 data.get("content", ""),
                 data.get("file_path", ""),
+                os.path.basename(data.get("file_path") or "") or "typed submission",
+                now,
                 now,
                 data.get("status", "submitted"),
             ),
@@ -196,8 +215,13 @@ def create_submission(assignment_id: int):
 
     with get_connection() as conn:
         row = conn.execute(
-            "SELECT * FROM assignment_submissions WHERE submission_id = ?", (submission_id,)
+            "SELECT * FROM assignment_submissions WHERE id = ?", (submission_id,)
         ).fetchone()
+
+    # Only the submitted text: file_path comes from the client, so it is not read.
+    if str(data.get("content") or "").strip():
+        from education_system.systems.university.infrastructure.integrity import submission_hook
+        submission_hook.after_submission(submission_id, text=data["content"])
 
     log_activity("create", "assignment_submission", user=g.current_user.get("sub"))
     return jsonify(_row_to_dict(row)), 201

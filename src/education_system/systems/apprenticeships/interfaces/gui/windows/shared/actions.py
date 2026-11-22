@@ -24,7 +24,7 @@ from education_system.systems.apprenticeships import config
 from education_system.systems.apprenticeships.domain.reviews.action_plans import CARRIED_FORWARD
 from education_system.systems.apprenticeships.domain.reviews.progress_reviews import ReviewTarget
 from education_system.systems.apprenticeships.interfaces.gui import widgets
-from education_system.systems.apprenticeships.services import (
+from education_system.systems.apprenticeships.application.learning import (
     action_plan_service,
     review_service,
 )

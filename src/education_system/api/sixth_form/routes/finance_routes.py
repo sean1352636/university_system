@@ -19,12 +19,15 @@ import os
 
 from flask import Blueprint, g, jsonify, request
 
+from education_system.api.sixth_form import access_gate
+
 logger = logging.getLogger(__name__)
 
 finance_bp = Blueprint("sf_finance", __name__, url_prefix="/api/finance")
 
 
 def _token_required(view):
+    view = access_gate.gate(view)
     try:
         from education_system.platform.delivery.api.auth import token_required
         return token_required(view)
@@ -54,7 +57,7 @@ def _dump(obj):
 @finance_bp.route("/fees", methods=["GET"])
 @_token_required
 def list_fee_items():
-    from education_system.systems.sixth_form.domain.finance.fees import fees as data
+    from education_system.systems.sixth_form.domains.finance.domain.fees import fees as data
     kwargs = {}
     for key in ("student_id", "category", "academic_year", "stored_status"):
         val = request.args.get(key)
@@ -70,7 +73,7 @@ def list_fee_items():
 @finance_bp.route("/fees/<int:fee_id>", methods=["GET"])
 @_token_required
 def get_fee_item(fee_id: int):
-    from education_system.systems.sixth_form.domain.finance.fees import fees as data
+    from education_system.systems.sixth_form.domains.finance.domain.fees import fees as data
     item = data.get_item(fee_id)
     if item is None:
         return jsonify({"error": f"No fee with id {fee_id}"}), 404
@@ -80,7 +83,7 @@ def get_fee_item(fee_id: int):
 @finance_bp.route("/fees", methods=["POST"])
 @_token_required
 def create_fee_item():
-    from education_system.systems.sixth_form.domain.finance.fees import fees as data
+    from education_system.systems.sixth_form.domains.finance.domain.fees import fees as data
     try:
         item = data.create_item(request.get_json(force=True, silent=True) or {})
     except data.ValidationError as e:
@@ -91,7 +94,7 @@ def create_fee_item():
 @finance_bp.route("/fees/<int:fee_id>", methods=["PUT"])
 @_token_required
 def update_fee_item(fee_id: int):
-    from education_system.systems.sixth_form.domain.finance.fees import fees as data
+    from education_system.systems.sixth_form.domains.finance.domain.fees import fees as data
     if data.get_item(fee_id) is None:
         return jsonify({"error": f"No fee with id {fee_id}"}), 404
     try:
@@ -104,7 +107,7 @@ def update_fee_item(fee_id: int):
 @finance_bp.route("/fees/<int:fee_id>", methods=["DELETE"])
 @_token_required
 def delete_fee_item(fee_id: int):
-    from education_system.systems.sixth_form.domain.finance.fees import fees as data
+    from education_system.systems.sixth_form.domains.finance.domain.fees import fees as data
     if not data.delete_item(fee_id):
         return jsonify({"error": f"No fee with id {fee_id}"}), 404
     return jsonify({"deleted": fee_id})
@@ -113,7 +116,7 @@ def delete_fee_item(fee_id: int):
 @finance_bp.route("/fees/<int:fee_id>/payments", methods=["GET"])
 @_token_required
 def list_fee_payments(fee_id: int):
-    from education_system.systems.sixth_form.domain.finance.fees import fees as data
+    from education_system.systems.sixth_form.domains.finance.domain.fees import fees as data
     try:
         rows = data.list_payments(fee_id=fee_id)
     except data.ValidationError as e:
@@ -124,7 +127,7 @@ def list_fee_payments(fee_id: int):
 @finance_bp.route("/fees/<int:fee_id>/payments", methods=["POST"])
 @_token_required
 def create_fee_payment(fee_id: int):
-    from education_system.systems.sixth_form.domain.finance.fees import fees as data
+    from education_system.systems.sixth_form.domains.finance.domain.fees import fees as data
     try:
         pay = data.create_payment(fee_id, request.get_json(force=True, silent=True) or {})
     except data.ValidationError as e:
@@ -137,7 +140,7 @@ def create_fee_payment(fee_id: int):
 @finance_bp.route("/bursaries", methods=["GET"])
 @_token_required
 def list_bursary_applications():
-    from education_system.systems.sixth_form.domain.finance.bursaries import (
+    from education_system.systems.sixth_form.domains.finance.domain.bursaries import (
         bursaries as data,
     )
     kwargs = {}
@@ -156,7 +159,7 @@ def list_bursary_applications():
 @finance_bp.route("/bursaries/<int:application_id>", methods=["GET"])
 @_token_required
 def get_bursary_application(application_id: int):
-    from education_system.systems.sixth_form.domain.finance.bursaries import (
+    from education_system.systems.sixth_form.domains.finance.domain.bursaries import (
         bursaries as data,
     )
     app = data.get_application(application_id)
@@ -168,7 +171,7 @@ def get_bursary_application(application_id: int):
 @finance_bp.route("/bursaries", methods=["POST"])
 @_token_required
 def create_bursary_application():
-    from education_system.systems.sixth_form.domain.finance.bursaries import (
+    from education_system.systems.sixth_form.domains.finance.domain.bursaries import (
         bursaries as data,
     )
     try:
@@ -181,7 +184,7 @@ def create_bursary_application():
 @finance_bp.route("/bursaries/<int:application_id>", methods=["PUT"])
 @_token_required
 def update_bursary_application(application_id: int):
-    from education_system.systems.sixth_form.domain.finance.bursaries import (
+    from education_system.systems.sixth_form.domains.finance.domain.bursaries import (
         bursaries as data,
     )
     if data.get_application(application_id) is None:
@@ -197,7 +200,7 @@ def update_bursary_application(application_id: int):
 @finance_bp.route("/bursaries/<int:application_id>", methods=["DELETE"])
 @_token_required
 def delete_bursary_application(application_id: int):
-    from education_system.systems.sixth_form.domain.finance.bursaries import (
+    from education_system.systems.sixth_form.domains.finance.domain.bursaries import (
         bursaries as data,
     )
     if not data.delete_application(application_id):
@@ -209,7 +212,7 @@ def delete_bursary_application(application_id: int):
                   methods=["GET"])
 @_token_required
 def list_bursary_disbursements(application_id: int):
-    from education_system.systems.sixth_form.domain.finance.bursaries import (
+    from education_system.systems.sixth_form.domains.finance.domain.bursaries import (
         bursaries as data,
     )
     try:

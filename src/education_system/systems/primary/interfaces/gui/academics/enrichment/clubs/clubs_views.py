@@ -17,6 +17,8 @@ from education_system.systems.primary.domain.academics.enrichment.clubs.clubs im
 from education_system.systems.primary.domain.learners.pupils.pupils import (
     ValidationError, YEAR_GROUPS,
 )
+from education_system.platform.delivery.gui.parented_dialogs import make_toplevel
+from education_system.systems.primary.interfaces.gui import kit
 
 logger = logging.getLogger(__name__)
 
@@ -50,11 +52,11 @@ FORM_FIELDS: list[tuple[str, str]] = [
     ("name", "Name *"),
     ("description", "Description"),
     ("day_of_week", "Day of week"),
-    ("start_time", "Start time (HH:MM)"),
-    ("end_time", "End time (HH:MM)"),
+    ("start_time", "Start time"),
+    ("end_time", "End time"),
     ("location", "Location"),
     ("lead_staff", "Lead staff"),
-    ("year_groups", "Year groups (comma-sep)"),
+    ("year_groups", "Year groups (none = any)"),
     ("max_members", "Max members"),
     ("notes", "Notes"),
 ]
@@ -63,32 +65,35 @@ FORM_FIELDS: list[tuple[str, str]] = [
 @_safe_view
 def open_clubs(host) -> None:
     logger.debug("GUI: open_clubs")
+    kit.show_page(host, "Clubs & Activities", lambda parent: _draw_clubs(parent, host))
 
-    win = tk.Toplevel(host.root)
-    win.title("Clubs & Activities")
-    win.transient(host.root)
-    win.geometry("1080x600")
 
-    top = ttk.Frame(win, padding=10)
+def _draw_clubs(parent, host) -> None:
+    kit.page_heading(parent, "Clubs & Activities",
+                     "Clubs, when they meet, who leads them and who belongs.")
+    win = parent.winfo_toplevel()
+
+    top = ttk.Frame(parent, padding=(0, 0, 0, 6))
     top.pack(fill="x")
     summary_var = tk.StringVar()
     ttk.Label(top, textvariable=summary_var,
               font=("Segoe UI", 10, "bold")).pack(side="left")
 
-    filt = ttk.Frame(win, padding=(10, 0, 10, 6))
+    filt = ttk.Frame(parent, padding=(0, 0, 0, 6))
     filt.pack(fill="x")
     ttk.Label(filt, text="Day:").pack(side="left")
     day_var = tk.StringVar(value="All")
-    ttk.Combobox(filt, textvariable=day_var,
-                 values=["All"] + list(DAYS_OF_WEEK),
-                 state="readonly", width=10).pack(side="left", padx=(4, 12))
+    kit.ChoiceField(filt, day_var, choices=["All", *DAYS_OF_WEEK],
+                    width=12).pack(side="left", padx=(4, 12))
     active_var = tk.BooleanVar(value=False)
     ttk.Checkbutton(filt, text="Active only",
                     variable=active_var).pack(side="left")
 
     cols = ("club_id", "name", "day", "time", "years", "lead",
             "active_members", "capacity", "active")
-    tree = ttk.Treeview(win, columns=cols, show="headings", height=14)
+    tree_box = ttk.Frame(parent)
+    tree_box.pack(fill="both", expand=True, pady=(0, 6))
+    tree = ttk.Treeview(tree_box, columns=cols, show="headings", height=14)
     for col, label, width, anchor in [
         ("club_id", "ID", 50, "center"),
         ("name", "Name", 180, "w"),
@@ -102,9 +107,12 @@ def open_clubs(host) -> None:
     ]:
         tree.heading(col, text=label)
         tree.column(col, width=width, anchor=anchor)
-    tree.pack(fill="both", expand=True, padx=10, pady=(0, 6))
+    sb = ttk.Scrollbar(tree_box, orient="vertical", command=tree.yview)
+    tree.configure(yscrollcommand=sb.set)
+    tree.pack(side="left", fill="both", expand=True)
+    sb.pack(side="right", fill="y")
 
-    btns = ttk.Frame(win, padding=10)
+    btns = ttk.Frame(parent, padding=(0, 4))
     btns.pack(fill="x")
 
     def _refresh() -> None:
@@ -210,7 +218,8 @@ def open_clubs(host) -> None:
         side="left", padx=(8, 0))
     ttk.Button(btns, text="Refresh", command=_refresh).pack(
         side="left", padx=(8, 0))
-    ttk.Button(btns, text="Close", command=win.destroy).pack(side="right")
+    ttk.Button(btns, text="Close",
+               command=lambda: kit.close_page(host, parent)).pack(side="right")
 
     tree.bind("<Double-Button-1>", lambda _e: _members())
     day_var.trace_add("write", lambda *_: _refresh())
@@ -234,18 +243,17 @@ def _open_form_dialog(parent, *, club_id: int | None,
             messagebox.showerror("Clubs", f"No club #{club_id}", parent=parent)
             return
 
-    dlg = tk.Toplevel(parent)
+    dlg = make_toplevel(parent)
     dlg.title("Club" if existing else "New club")
-    dlg.transient(parent)
-    dlg.geometry("520x520")
+    dlg.geometry("600x620")
     try:
         dlg.wait_visibility()
         dlg.grab_set()
     except tk.TclError:
         logger.debug("grab_set skipped", exc_info=True)
 
-    frm = ttk.Frame(dlg, padding=12)
-    frm.pack(fill="both", expand=True)
+    frm, footer = kit.scrolled_form(dlg)
+    years_pick: kit.MultiPicker | None = None
 
     vars_: dict[str, tk.StringVar] = {}
     for i, (key, label) in enumerate(FORM_FIELDS):
@@ -259,9 +267,22 @@ def _open_form_dialog(parent, *, club_id: int | None,
                 v.set(val or "")
         vars_[key] = v
         if key == "day_of_week":
-            ttk.Combobox(frm, textvariable=v, values=[""] + list(DAYS_OF_WEEK),
-                         state="readonly", width=28).grid(
+            kit.ChoiceField(frm, v, choices=DAYS_OF_WEEK, blank=True,
+                            width=28).grid(row=i, column=1, sticky="ew", pady=3)
+        elif key in ("start_time", "end_time"):
+            kit.TimeField(frm, v).grid(row=i, column=1, sticky="w", pady=3)
+        elif key == "lead_staff":
+            kit.StaffPicker(frm, v, by="name", width=34).grid(
                 row=i, column=1, sticky="ew", pady=3)
+        elif key == "year_groups":
+            chosen = [y.strip() for y in v.get().split(",") if y.strip()]
+            years_pick = kit.MultiPicker(
+                frm, [(y, kit.YEAR_GROUP_LABELS.get(y, y)) for y in YEAR_GROUPS],
+                selected=chosen, height=len(YEAR_GROUPS), width=20)
+            years_pick.grid(row=i, column=1, sticky="w", pady=3)
+        elif key == "max_members":
+            kit.NumberField(frm, v, from_=1, to=200).grid(
+                row=i, column=1, sticky="w", pady=3)
         else:
             ttk.Entry(frm, textvariable=v, width=30).grid(
                 row=i, column=1, sticky="ew", pady=3)
@@ -272,6 +293,8 @@ def _open_form_dialog(parent, *, club_id: int | None,
         row=len(FORM_FIELDS), column=1, sticky="w", pady=(6, 0))
 
     def _save() -> None:
+        if years_pick is not None:
+            vars_["year_groups"].set(",".join(years_pick.get()))
         payload = {k: v.get() for k, v in vars_.items()}
         payload["is_active"] = active_var.get()
         try:
@@ -290,11 +313,8 @@ def _open_form_dialog(parent, *, club_id: int | None,
         on_saved()
         dlg.destroy()
 
-    btn_row = ttk.Frame(frm)
-    btn_row.grid(row=len(FORM_FIELDS) + 1, column=0, columnspan=2,
-                 sticky="ew", pady=(12, 0))
-    ttk.Button(btn_row, text="Save", command=_save).pack(side="right")
-    ttk.Button(btn_row, text="Cancel",
+    ttk.Button(footer, text="Save", command=_save).pack(side="right")
+    ttk.Button(footer, text="Cancel",
                command=dlg.destroy).pack(side="right", padx=(0, 8))
 
 
@@ -311,10 +331,9 @@ def _open_members_dialog(parent, club_id: int,
         messagebox.showerror("Clubs", f"No club #{club_id}", parent=parent)
         return
 
-    dlg = tk.Toplevel(parent)
+    dlg = make_toplevel(parent)
     dlg.title(f"Members — {club.name}")
-    dlg.transient(parent)
-    dlg.geometry("760x520")
+    dlg.geometry("900x560")
     try:
         dlg.wait_visibility()
         dlg.grab_set()
@@ -344,13 +363,13 @@ def _open_members_dialog(parent, club_id: int,
 
     add_row = ttk.LabelFrame(frm, text="Add member", padding=8)
     add_row.pack(fill="x", pady=(6, 6))
-    ttk.Label(add_row, text="Pupil ID:").grid(row=0, column=0, sticky="w")
+    ttk.Label(add_row, text="Pupil:").grid(row=0, column=0, sticky="w")
     pid_var = tk.StringVar()
-    ttk.Entry(add_row, textvariable=pid_var, width=14).grid(
+    kit.PupilPicker(add_row, pid_var, width=40).grid(
         row=0, column=1, padx=(4, 12))
-    ttk.Label(add_row, text="Joined (YYYY-MM-DD):").grid(row=0, column=2, sticky="w")
+    ttk.Label(add_row, text="Joined:").grid(row=0, column=2, sticky="w")
     joined_var = tk.StringVar()
-    ttk.Entry(add_row, textvariable=joined_var, width=14).grid(
+    kit.DateField(add_row, joined_var).grid(
         row=0, column=3, padx=(4, 12))
 
     def _refresh() -> None:
@@ -381,7 +400,7 @@ def _open_members_dialog(parent, club_id: int,
     def _add() -> None:
         pid = pid_var.get().strip()
         if not pid:
-            messagebox.showinfo("Clubs", "Enter a pupil ID.", parent=dlg)
+            messagebox.showinfo("Clubs", "Choose a pupil.", parent=dlg)
             return
         try:
             data.add_member(club_id, pid,

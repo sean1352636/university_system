@@ -17,12 +17,18 @@ from education_system.systems.sixth_form.domain.academics.academic_year import (
     academic_year as ay,
 )
 from education_system.systems.sixth_form.domain.academics.assignments import (
-    assignments as cw,
     assignments_assessment as assess,
     assignments_catalogue as cat,
     assignments_feedback as fb,
     assignments_marking as mk,
     assignments_scheduling as sched,
+)
+from education_system.systems.sixth_form.domain.academics.assignments import (
+    crud as assignments_crud,
+    integrity as assignments_integrity,
+    models as assignments_models,
+    store as assignments_store,
+    submissions as assignments_submissions,
 )
 from education_system.systems.sixth_form.domain.academics.subjects import (
     subjects as subjects_mod,
@@ -64,7 +70,7 @@ def _seed_students(db_path: str, *first_names: str) -> list[str]:
 def plan_db(tmp_path, monkeypatch):
     """Every coursework module plus the academic year on one temp DB."""
     db_path = str(tmp_path / "sixthform.db")
-    for mod in (cw, mk, fb, assess, cat, sched, students_mod,
+    for mod in (assignments_store, mk, fb, assess, cat, sched, students_mod,
                  subjects_mod, ay):
         monkeypatch.setattr(mod, "DB_PATH", db_path)
         monkeypatch.setattr(mod, "_DB_READY", False)
@@ -89,7 +95,7 @@ def _assignment(**over):
                "set_date": _day(-10), "due_date": _day(5),
                "max_marks": 60, "status": "Set"}
     payload.update(over)
-    return cw.create_assignment(payload)
+    return assignments_store.create_assignment(payload)
 
 
 # ── Specification metadata (item 30) ───────────────────────────────
@@ -160,7 +166,7 @@ def test_find_by_specification(plan_db):
 
 def test_saving_a_template_keeps_the_original_intact(plan_db):
     a = _assignment()
-    sub = cw.add_student(a.assignment_id, plan_db.s1)
+    sub = assignments_crud.add_student(a.assignment_id, plan_db.s1)
 
     out = cat.save_as_template(a.assignment_id,
                                 template_name="House style essay")
@@ -170,7 +176,7 @@ def test_saving_a_template_keeps_the_original_intact(plan_db):
     assert out.shared_with_department is True
     # The original still has its cohort.
     assert [s.submission_id for s in
-            cw.list_submissions(assignment_id=a.assignment_id)] \
+            assignments_store.list_submissions(assignment_id=a.assignment_id)] \
         == [sub.submission_id]
 
 
@@ -250,12 +256,12 @@ def test_clone_copies_the_design(plan_db):
 def test_clone_never_copies_students_or_marks(plan_db):
     """A new run of an assignment starts empty."""
     source = _assignment()
-    sub = cw.add_student(source.assignment_id, plan_db.s1)
-    cw.mark_submission(sub.submission_id, marks=50)
+    sub = assignments_crud.add_student(source.assignment_id, plan_db.s1)
+    assignments_crud.mark_submission(sub.submission_id, marks=50)
 
     result = cat.clone_assignment(source.assignment_id)
 
-    assert cw.list_submissions(
+    assert assignments_store.list_submissions(
         assignment_id=result.assignment.assignment_id) == []
 
 
@@ -276,7 +282,7 @@ def test_clone_records_its_source_and_bumps_reuse(plan_db):
     clone = cat.clone_assignment(source.assignment_id).assignment
 
     assert clone.source_assignment_id == source.assignment_id
-    assert cw.get_assignment(source.assignment_id).times_reused == 1
+    assert assignments_store.get_assignment(source.assignment_id).times_reused == 1
 
 
 def test_clone_lineage_walks_back(plan_db):
@@ -295,16 +301,16 @@ def test_clone_copies_teaching_material_not_submitted_work(plan_db):
     source = _assignment()
     brief = plan_db.tmp / "brief.pdf"
     brief.write_bytes(b"brief bytes")
-    cw.attach_file(source_path=brief,
+    assignments_submissions.attach_file(source_path=brief,
                     assignment_id=source.assignment_id, kind="Brief")
-    sub = cw.add_student(source.assignment_id, plan_db.s1)
+    sub = assignments_crud.add_student(source.assignment_id, plan_db.s1)
     work = plan_db.tmp / "essay.docx"
     work.write_bytes(b"student work")
-    cw.submit_work(sub.submission_id, files=[work])
+    assignments_submissions.submit_work(sub.submission_id, files=[work])
 
     result = cat.clone_assignment(source.assignment_id)
 
-    copied = cw.list_attachments(
+    copied = assignments_submissions.list_attachments(
         assignment_id=result.assignment.assignment_id)
     assert [a.filename for a in copied] == ["brief.pdf"]
     assert result.attachments == 1
@@ -312,7 +318,7 @@ def test_clone_copies_teaching_material_not_submitted_work(plan_db):
 
 def test_clone_refuses_an_impossible_date_range(plan_db):
     source = _assignment()
-    with pytest.raises(cw.ValidationError, match="before set date"):
+    with pytest.raises(assignments_models.ValidationError, match="before set date"):
         cat.clone_assignment(source.assignment_id, set_date=_day(10),
                               due_date=_day(1))
 
@@ -323,13 +329,13 @@ def test_variants_are_named_per_assignment(plan_db):
     a = _assignment()
     cat.add_variant(a.assignment_id, {"name": "Higher",
                                        "tier": "Higher"})
-    with pytest.raises(cw.ValidationError, match="already has a variant"):
+    with pytest.raises(assignments_models.ValidationError, match="already has a variant"):
         cat.add_variant(a.assignment_id, {"name": "Higher"})
 
 
 def test_variant_tier_is_validated(plan_db):
     a = _assignment()
-    with pytest.raises(cw.ValidationError, match="Variant tier"):
+    with pytest.raises(assignments_models.ValidationError, match="Variant tier"):
         cat.add_variant(a.assignment_id, {"name": "X", "tier": "Middle"})
 
 
@@ -349,7 +355,7 @@ def test_issuing_a_variant_changes_the_brief_a_student_sees(plan_db):
     variant = cat.add_variant(a.assignment_id, {
         "name": "Scaffolded", "tier": "Scaffolded",
         "brief": "Use the writing frame"})
-    sub = cw.add_student(a.assignment_id, plan_db.s1)
+    sub = assignments_crud.add_student(a.assignment_id, plan_db.s1)
 
     assert cat.variant_brief(sub.submission_id) == "Standard brief"
 
@@ -363,7 +369,7 @@ def test_a_variant_without_a_brief_falls_back(plan_db):
     a = _assignment(brief="Standard brief")
     variant = cat.add_variant(a.assignment_id, {"name": "Higher",
                                                  "tier": "Higher"})
-    sub = cw.add_student(a.assignment_id, plan_db.s1)
+    sub = assignments_crud.add_student(a.assignment_id, plan_db.s1)
     cat.assign_variant(sub.submission_id, variant.variant_id)
 
     assert cat.variant_brief(sub.submission_id) == "Standard brief"
@@ -373,9 +379,9 @@ def test_a_variant_must_belong_to_the_same_assignment(plan_db):
     a1 = _assignment(title="One")
     a2 = _assignment(title="Two")
     other = cat.add_variant(a2.assignment_id, {"name": "X"})
-    sub = cw.add_student(a1.assignment_id, plan_db.s1)
+    sub = assignments_crud.add_student(a1.assignment_id, plan_db.s1)
 
-    with pytest.raises(cw.ValidationError, match="belongs to assignment"):
+    with pytest.raises(assignments_models.ValidationError, match="belongs to assignment"):
         cat.assign_variant(sub.submission_id, other.variant_id)
 
 
@@ -383,12 +389,12 @@ def test_default_variants_are_applied_in_bulk(plan_db):
     a = _assignment()
     variant = cat.add_variant(a.assignment_id, {"name": "Core",
                                                  "is_default": True})
-    subs = [cw.add_student(a.assignment_id, s)
+    subs = [assignments_crud.add_student(a.assignment_id, s)
             for s in plan_db.students]
     cat.assign_variant(subs[0].submission_id, variant.variant_id)
 
     assert cat.assign_default_variants(a.assignment_id) == 2
-    assert all(cw.get_submission(s.submission_id).variant_id
+    assert all(assignments_store.get_submission(s.submission_id).variant_id
                == variant.variant_id for s in subs)
 
 
@@ -396,12 +402,12 @@ def test_deleting_a_variant_returns_students_to_the_base(plan_db):
     a = _assignment(brief="Standard brief")
     variant = cat.add_variant(a.assignment_id, {"name": "Scaffolded",
                                                  "brief": "Frame"})
-    sub = cw.add_student(a.assignment_id, plan_db.s1)
+    sub = assignments_crud.add_student(a.assignment_id, plan_db.s1)
     cat.assign_variant(sub.submission_id, variant.variant_id)
 
     assert cat.delete_variant(variant.variant_id) is True
 
-    assert cw.get_submission(sub.submission_id).variant_id is None
+    assert assignments_store.get_submission(sub.submission_id).variant_id is None
     assert cat.variant_brief(sub.submission_id) == "Standard brief"
 
 
@@ -409,7 +415,7 @@ def test_variant_spread(plan_db):
     a = _assignment()
     variant = cat.add_variant(a.assignment_id, {"name": "Higher",
                                                  "tier": "Higher"})
-    subs = [cw.add_student(a.assignment_id, s)
+    subs = [assignments_crud.add_student(a.assignment_id, s)
             for s in plan_db.students]
     cat.assign_variant(subs[0].submission_id, variant.variant_id)
 
@@ -423,7 +429,7 @@ def test_variant_spread(plan_db):
 
 def test_workload_buckets_hours_into_the_due_week(plan_db):
     a = _assignment(due_date=_day(5), estimated_hours=6)
-    cw.add_student(a.assignment_id, plan_db.s1)
+    assignments_crud.add_student(a.assignment_id, plan_db.s1)
 
     report = cat.student_workload(plan_db.s1)
 
@@ -436,11 +442,11 @@ def test_a_variant_overrides_the_base_hours(plan_db):
     a = _assignment(estimated_hours=6)
     variant = cat.add_variant(a.assignment_id, {
         "name": "Scaffolded", "estimated_hours": 10})
-    sub = cw.add_student(a.assignment_id, plan_db.s1)
+    sub = assignments_crud.add_student(a.assignment_id, plan_db.s1)
     cat.assign_variant(sub.submission_id, variant.variant_id)
 
     assert cat.submission_hours(
-        cw.get_submission(sub.submission_id), a) == 10
+        assignments_store.get_submission(sub.submission_id), a) == 10
     assert cat.student_workload(plan_db.s1).total_hours == 10.0
 
 
@@ -451,7 +457,7 @@ def test_workload_sums_across_subjects_in_one_week(plan_db):
                                    ("Project", "History", 4)):
         a = _assignment(title=title, subject_name=subject,
                          due_date=_day(3), estimated_hours=hours)
-        cw.add_student(a.assignment_id, plan_db.s1)
+        assignments_crud.add_student(a.assignment_id, plan_db.s1)
 
     report = cat.student_workload(plan_db.s1)
 
@@ -462,7 +468,7 @@ def test_workload_sums_across_subjects_in_one_week(plan_db):
 
 def test_assignments_without_estimates_are_skipped(plan_db):
     a = _assignment(estimated_hours=None)
-    cw.add_student(a.assignment_id, plan_db.s1)
+    assignments_crud.add_student(a.assignment_id, plan_db.s1)
 
     report = cat.student_workload(plan_db.s1)
 
@@ -472,10 +478,10 @@ def test_assignments_without_estimates_are_skipped(plan_db):
 
 def test_extension_moves_the_hours_to_the_new_week(plan_db):
     a = _assignment(due_date=_day(1), estimated_hours=8)
-    sub = cw.add_student(a.assignment_id, plan_db.s1)
+    sub = assignments_crud.add_student(a.assignment_id, plan_db.s1)
     before = cat.student_workload(plan_db.s1).weeks[0].week_start
 
-    cw.grant_extension(sub.submission_id, _day(15), reason="Illness")
+    assignments_submissions.grant_extension(sub.submission_id, _day(15), reason="Illness")
     after = cat.student_workload(plan_db.s1).weeks[0].week_start
 
     assert after != before
@@ -485,9 +491,9 @@ def test_heavy_weeks_reports_the_overloaded(plan_db):
     for title, hours in (("A", 8), ("B", 8)):
         a = _assignment(title=title, due_date=_day(3),
                          estimated_hours=hours)
-        cw.add_student(a.assignment_id, plan_db.s1)
+        assignments_crud.add_student(a.assignment_id, plan_db.s1)
     light = _assignment(title="C", due_date=_day(3), estimated_hours=2)
-    cw.add_student(light.assignment_id, plan_db.s2)
+    assignments_crud.add_student(light.assignment_id, plan_db.s2)
 
     rows = cat.heavy_weeks()
 
@@ -497,7 +503,7 @@ def test_heavy_weeks_reports_the_overloaded(plan_db):
 def test_assignment_hours_summary(plan_db):
     a = _assignment(estimated_hours=5)
     for student in plan_db.students:
-        cw.add_student(a.assignment_id, student)
+        assignments_crud.add_student(a.assignment_id, student)
 
     summary = cat.assignment_hours_summary(a.assignment_id)
 
@@ -539,9 +545,9 @@ def test_auto_publish_fires_on_the_set_date(plan_db):
     result = sched.publish_due(notify=False)
 
     assert result.actioned == 1
-    assert cw.get_assignment(due.assignment_id).status == "Set"
-    assert cw.get_assignment(later.assignment_id).status == "Draft"
-    assert cw.get_assignment(manual.assignment_id).status == "Draft"
+    assert assignments_store.get_assignment(due.assignment_id).status == "Set"
+    assert assignments_store.get_assignment(later.assignment_id).status == "Draft"
+    assert assignments_store.get_assignment(manual.assignment_id).status == "Draft"
 
 
 def test_publish_sweep_is_idempotent(plan_db):
@@ -576,32 +582,32 @@ def test_reminders_use_the_assignment_offsets(plan_db):
 
 def test_a_reminder_fires_once_per_offset(plan_db):
     a = _assignment(due_date=_day(5), reminder_days="7,3,1")
-    sub = cw.add_student(a.assignment_id, plan_db.s1)
+    sub = assignments_crud.add_student(a.assignment_id, plan_db.s1)
 
     first = sched.sweep_reminders(notify=False)
     repeat = sched.sweep_reminders(notify=False)
 
     assert first.actioned == 1
     assert repeat.actioned == 0
-    assert cw.get_submission(sub.submission_id).reminders_sent_list \
+    assert assignments_store.get_submission(sub.submission_id).reminders_sent_list \
         == [7]
 
 
 def test_a_closer_offset_fires_later(plan_db):
     a = _assignment(due_date=_day(5), reminder_days="7,3,1")
-    sub = cw.add_student(a.assignment_id, plan_db.s1)
+    sub = assignments_crud.add_student(a.assignment_id, plan_db.s1)
     sched.sweep_reminders(notify=False)
 
     sched.sweep_reminders(today=_day(3), notify=False)
 
-    assert cw.get_submission(sub.submission_id).reminders_sent_list \
+    assert assignments_store.get_submission(sub.submission_id).reminders_sent_list \
         == [7, 3]
 
 
 def test_a_catch_up_run_sends_one_reminder_not_three(plan_db):
     """A job that did not run for a week must not fire three emails."""
     a = _assignment(due_date=_day(1), reminder_days="7,3,1")
-    sub = cw.add_student(a.assignment_id, plan_db.s1)
+    sub = assignments_crud.add_student(a.assignment_id, plan_db.s1)
 
     result = sched.sweep_reminders(notify=False)
 
@@ -610,73 +616,73 @@ def test_a_catch_up_run_sends_one_reminder_not_three(plan_db):
     assert len(notices) == 1
     assert notices[0].offset_days == 1
     # The wider offsets are marked spent so they cannot fire late.
-    assert cw.get_submission(sub.submission_id).reminders_sent_list \
+    assert assignments_store.get_submission(sub.submission_id).reminders_sent_list \
         == [7, 3, 1]
 
 
 def test_submitted_work_is_not_reminded(plan_db):
     a = _assignment(due_date=_day(3), reminder_days="7")
-    sub = cw.add_student(a.assignment_id, plan_db.s1)
-    cw.submit_work(sub.submission_id, submitted_on=_day(0))
+    sub = assignments_crud.add_student(a.assignment_id, plan_db.s1)
+    assignments_submissions.submit_work(sub.submission_id, submitted_on=_day(0))
 
     assert sched.sweep_reminders(notify=False).actioned == 0
 
 
 def test_reminders_stop_after_the_deadline(plan_db):
     a = _assignment(due_date=_day(-2), reminder_days="7,3,1")
-    cw.add_student(a.assignment_id, plan_db.s1)
+    assignments_crud.add_student(a.assignment_id, plan_db.s1)
 
     assert sched.sweep_reminders(notify=False).actioned == 0
 
 
 def test_reminders_honour_an_extension(plan_db):
     a = _assignment(due_date=_day(-2), reminder_days="7")
-    sub = cw.add_student(a.assignment_id, plan_db.s1)
-    cw.grant_extension(sub.submission_id, _day(4), reason="Illness")
+    sub = assignments_crud.add_student(a.assignment_id, plan_db.s1)
+    assignments_submissions.grant_extension(sub.submission_id, _day(4), reason="Illness")
 
     assert sched.sweep_reminders(notify=False).actioned == 1
 
 
 def test_reminder_dry_run_sends_nothing(plan_db):
     a = _assignment(due_date=_day(5), reminder_days="7")
-    sub = cw.add_student(a.assignment_id, plan_db.s1)
+    sub = assignments_crud.add_student(a.assignment_id, plan_db.s1)
 
     result = sched.sweep_reminders(dry_run=True)
 
     assert result.scanned == 1
     assert result.actioned == 0
-    assert cw.get_submission(sub.submission_id).reminders_sent is None
+    assert assignments_store.get_submission(sub.submission_id).reminders_sent is None
 
 
 # ── Missing-work chasers (item 37) ─────────────────────────────────
 
 def test_chasing_escalates_one_step_at_a_time(plan_db):
     a = _assignment(due_date=_day(-5))
-    sub = cw.add_student(a.assignment_id, plan_db.s1)
+    sub = assignments_crud.add_student(a.assignment_id, plan_db.s1)
 
     first = sched.chase_submission(sub.submission_id, notify=False)
 
     assert first is not None
     assert first.level == 1
     assert first.recipient == "Student"
-    assert cw.get_submission(sub.submission_id).chase_level == 1
+    assert assignments_store.get_submission(sub.submission_id).chase_level == 1
 
 
 def test_chasing_stops_at_the_top_of_the_ladder(plan_db):
     a = _assignment(set_date=_day(-40), due_date=_day(-20))
-    sub = cw.add_student(a.assignment_id, plan_db.s1)
+    sub = assignments_crud.add_student(a.assignment_id, plan_db.s1)
     for offset in (0, 4, 8):
         sched.chase_submission(sub.submission_id, notify=False,
                                 today=_day(offset))
 
-    assert cw.get_submission(sub.submission_id).chase_level == 3
+    assert assignments_store.get_submission(sub.submission_id).chase_level == 3
     assert sched.chase_submission(sub.submission_id,
                                    notify=False) is None
 
 
 def test_the_chase_interval_prevents_same_day_repeats(plan_db):
     a = _assignment(due_date=_day(-5))
-    cw.add_student(a.assignment_id, plan_db.s1)
+    assignments_crud.add_student(a.assignment_id, plan_db.s1)
     sched.sweep_chasers(notify=False)
 
     again = sched.sweep_chasers(notify=False)
@@ -687,43 +693,43 @@ def test_the_chase_interval_prevents_same_day_repeats(plan_db):
 
 def test_the_chase_interval_expires(plan_db):
     a = _assignment(due_date=_day(-10))
-    sub = cw.add_student(a.assignment_id, plan_db.s1)
+    sub = assignments_crud.add_student(a.assignment_id, plan_db.s1)
     sched.sweep_chasers(notify=False)
 
     later = sched.sweep_chasers(
         today=_day(sched.CHASE_INTERVAL_DAYS), notify=False)
 
     assert later.actioned == 1
-    assert cw.get_submission(sub.submission_id).chase_level == 2
+    assert assignments_store.get_submission(sub.submission_id).chase_level == 2
 
 
 def test_chasing_can_be_switched_off(plan_db):
     a = _assignment(due_date=_day(-5), chase_enabled=False)
-    cw.add_student(a.assignment_id, plan_db.s1)
+    assignments_crud.add_student(a.assignment_id, plan_db.s1)
 
     assert sched.sweep_chasers(notify=False).actioned == 0
 
 
 def test_submitted_work_is_not_chased(plan_db):
     a = _assignment(due_date=_day(-5))
-    sub = cw.add_student(a.assignment_id, plan_db.s1)
-    cw.submit_work(sub.submission_id, submitted_on=_day(-6))
+    sub = assignments_crud.add_student(a.assignment_id, plan_db.s1)
+    assignments_submissions.submit_work(sub.submission_id, submitted_on=_day(-6))
 
     assert sched.sweep_chasers(notify=False).actioned == 0
 
 
 def test_work_already_marked_missing_is_still_chased(plan_db):
     a = _assignment(due_date=_day(-5))
-    sub = cw.add_student(a.assignment_id, plan_db.s1)
-    cw.sweep_late_submissions()
-    assert cw.get_submission(sub.submission_id).status == "Missing"
+    sub = assignments_crud.add_student(a.assignment_id, plan_db.s1)
+    assignments_integrity.sweep_late_submissions()
+    assert assignments_store.get_submission(sub.submission_id).status == "Missing"
 
     assert sched.sweep_chasers(notify=False).actioned == 1
 
 
 def test_resetting_a_chase_clears_the_ladder(plan_db):
     a = _assignment(due_date=_day(-5))
-    sub = cw.add_student(a.assignment_id, plan_db.s1)
+    sub = assignments_crud.add_student(a.assignment_id, plan_db.s1)
     sched.chase_submission(sub.submission_id, notify=False)
 
     out = sched.reset_chase(sub.submission_id)
@@ -734,8 +740,8 @@ def test_resetting_a_chase_clears_the_ladder(plan_db):
 
 def test_escalation_report(plan_db):
     a = _assignment(due_date=_day(-10))
-    chased = cw.add_student(a.assignment_id, plan_db.s1)
-    cw.add_student(a.assignment_id, plan_db.s2)
+    chased = assignments_crud.add_student(a.assignment_id, plan_db.s1)
+    assignments_crud.add_student(a.assignment_id, plan_db.s2)
     sched.chase_submission(chased.submission_id, notify=False)
 
     rows = sched.escalation_report()
@@ -747,7 +753,7 @@ def test_escalation_report(plan_db):
 
 def test_notices_are_logged(plan_db):
     a = _assignment(due_date=_day(-5))
-    sub = cw.add_student(a.assignment_id, plan_db.s1)
+    sub = assignments_crud.add_student(a.assignment_id, plan_db.s1)
     sched.chase_submission(sub.submission_id, notify=False)
 
     notices = sched.list_notices(assignment_id=a.assignment_id,
@@ -761,9 +767,9 @@ def test_notices_are_logged(plan_db):
 
 def test_parent_view_shows_state_without_marks_until_released(plan_db):
     a = _assignment(due_date=_day(-2), release_policy="Manual")
-    sub = cw.add_student(a.assignment_id, plan_db.s1)
-    cw.submit_work(sub.submission_id, submitted_on=_day(-3))
-    cw.mark_submission(sub.submission_id, marks=45)
+    sub = assignments_crud.add_student(a.assignment_id, plan_db.s1)
+    assignments_submissions.submit_work(sub.submission_id, submitted_on=_day(-3))
+    assignments_crud.mark_submission(sub.submission_id, marks=45)
 
     held = sched.parent_view(plan_db.s1)[0]
     assert held.submitted is True
@@ -780,7 +786,7 @@ def test_parent_view_respects_the_visibility_flag(plan_db):
     visible = _assignment(title="Visible")
     hidden = _assignment(title="Hidden", parent_visible=False)
     for a in (visible, hidden):
-        cw.add_student(a.assignment_id, plan_db.s1)
+        assignments_crud.add_student(a.assignment_id, plan_db.s1)
 
     titles = {v.title for v in sched.parent_view(plan_db.s1)}
 
@@ -789,7 +795,7 @@ def test_parent_view_respects_the_visibility_flag(plan_db):
 
 def test_unpublished_drafts_are_hidden_from_parents(plan_db):
     draft = _assignment(title="Draft", status="Draft")
-    cw.add_student(draft.assignment_id, plan_db.s1)
+    assignments_crud.add_student(draft.assignment_id, plan_db.s1)
 
     assert sched.parent_view(plan_db.s1) == []
 
@@ -799,7 +805,7 @@ def test_unpublished_drafts_are_hidden_from_parents(plan_db):
 
 def test_parent_view_flags_missing_work(plan_db):
     a = _assignment(due_date=_day(-3))
-    cw.add_student(a.assignment_id, plan_db.s1)
+    assignments_crud.add_student(a.assignment_id, plan_db.s1)
 
     view = sched.parent_view(plan_db.s1)[0]
 
@@ -810,9 +816,9 @@ def test_parent_view_flags_missing_work(plan_db):
 def test_parent_summary_counts(plan_db):
     handed = _assignment(title="In", due_date=_day(-3))
     missing = _assignment(title="Out", due_date=_day(-3))
-    sub = cw.add_student(handed.assignment_id, plan_db.s1)
-    cw.submit_work(sub.submission_id, submitted_on=_day(-4))
-    cw.add_student(missing.assignment_id, plan_db.s1)
+    sub = assignments_crud.add_student(handed.assignment_id, plan_db.s1)
+    assignments_submissions.submit_work(sub.submission_id, submitted_on=_day(-4))
+    assignments_crud.add_student(missing.assignment_id, plan_db.s1)
 
     summary = sched.parent_summary(plan_db.s1)
 
@@ -823,7 +829,7 @@ def test_parent_summary_counts(plan_db):
 
 def test_visibility_can_be_toggled(plan_db):
     a = _assignment()
-    cw.add_student(a.assignment_id, plan_db.s1)
+    assignments_crud.add_student(a.assignment_id, plan_db.s1)
 
     sched.set_parent_visibility(a.assignment_id, visible=False)
     assert sched.parent_view(plan_db.s1) == []
@@ -848,7 +854,7 @@ def test_pushing_to_the_calendar_creates_an_event(plan_db,
     event_id = sched.push_to_calendar(a.assignment_id)
 
     assert event_id is not None
-    assert cw.get_assignment(a.assignment_id).calendar_event_id \
+    assert assignments_store.get_assignment(a.assignment_id).calendar_event_id \
         == event_id
     event = next(e for e in ay.list_events(year_id=academic_year.year_id)
                  if e.event_id == event_id)
@@ -886,7 +892,7 @@ def test_removing_from_the_calendar(plan_db, academic_year):
     sched.push_to_calendar(a.assignment_id)
 
     assert sched.remove_from_calendar(a.assignment_id) is True
-    assert cw.get_assignment(a.assignment_id).calendar_event_id is None
+    assert assignments_store.get_assignment(a.assignment_id).calendar_event_id is None
 
 
 def test_calendar_sync_is_idempotent(plan_db, academic_year):
@@ -918,8 +924,8 @@ def test_daily_job_runs_every_sweep(plan_db, academic_year):
                              auto_publish=True, set_date=_day(-1),
                              due_date=_day(5), reminder_days="7")
     overdue = _assignment(title="Overdue", due_date=_day(-5))
-    cw.add_student(scheduled.assignment_id, plan_db.s1)
-    cw.add_student(overdue.assignment_id, plan_db.s2)
+    assignments_crud.add_student(scheduled.assignment_id, plan_db.s1)
+    assignments_crud.add_student(overdue.assignment_id, plan_db.s2)
 
     results = sched.run_daily(notify=False)
 
@@ -934,7 +940,7 @@ def test_daily_job_is_safe_to_run_twice(plan_db, academic_year):
     a = _assignment(status="Draft", auto_publish=True,
                      set_date=_day(-1), due_date=_day(5),
                      reminder_days="7")
-    cw.add_student(a.assignment_id, plan_db.s1)
+    assignments_crud.add_student(a.assignment_id, plan_db.s1)
     sched.run_daily(notify=False)
 
     second = sched.run_daily(notify=False)

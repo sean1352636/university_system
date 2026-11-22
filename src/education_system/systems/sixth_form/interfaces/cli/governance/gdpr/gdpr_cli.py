@@ -951,6 +951,17 @@ _MENU: list[tuple[str, Callable[[], None]]] = [
 ]
 
 
+def _sar_retention_menu() -> list[tuple[str, Callable[[], None]]]:
+    from education_system.systems.sixth_form.interfaces.cli.governance.gdpr import (
+        gdpr_retention_cli,
+        gdpr_sar_cli,
+    )
+    return [*gdpr_sar_cli.MENU, *gdpr_retention_cli.MENU]
+
+
+_MENU.extend(_sar_retention_menu())
+
+
 def run() -> None:
     while True:
         print("\n── GDPR ──")

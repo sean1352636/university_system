@@ -114,7 +114,7 @@ def _clear() -> None:
         print(f"  No configuration stored for Year {yg}.")
 
 
-_DISPATCH = {"Year Groups": open_year_groups}
+_DISPATCH = {"Year Groups": open_year_groups, "Year Groups (R–6)": open_year_groups}
 
 
 def dispatch(label: str) -> bool:

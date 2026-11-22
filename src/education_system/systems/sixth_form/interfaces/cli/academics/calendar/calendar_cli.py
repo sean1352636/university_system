@@ -429,7 +429,7 @@ def planning_tools() -> None:
     """Series, clash checks, term calendar and slot suggestions
     (imported late — that module borrows this one's prompt
     helpers)."""
-    from education_system.systems.sixth_form.domain.academics.calendar import (
+    from education_system.systems.sixth_form.interfaces.cli.academics.calendar import (
         calendar_planning_cli,
     )
     calendar_planning_cli.run()
@@ -437,7 +437,7 @@ def planning_tools() -> None:
 
 def comms_tools() -> None:
     """Reminders, RSVP messages, digests and the send queue."""
-    from education_system.systems.sixth_form.domain.academics.calendar import (
+    from education_system.systems.sixth_form.interfaces.cli.academics.calendar import (
         calendar_comms_cli,
     )
     calendar_comms_cli.run()
@@ -445,7 +445,7 @@ def comms_tools() -> None:
 
 def admin_tools() -> None:
     """Bookings, trips, files in/out, audit and the archive."""
-    from education_system.systems.sixth_form.domain.academics.calendar import (
+    from education_system.systems.sixth_form.interfaces.cli.academics.calendar import (
         calendar_insight_cli,
     )
     calendar_insight_cli.run()

@@ -4,6 +4,8 @@ import logging
 import re
 from datetime import datetime
 
+from education_system.systems.university.domains.operations.domain.campus.printing.services import printing_service
+
 logger = logging.getLogger(__name__)
 
 # Module level, because this file calls ``_t(...)`` directly from its methods.
@@ -497,79 +499,25 @@ class PrintingServicesGUI:
             return False
 
         student_id = self._get_user_id()
-        transaction_id = None
-        new_balance = None
 
         try:
-            if method == "student_finance":
-                from education_system.systems.university.domains.finance.infrastructure.finance_integration import (
-                    process_student_finance_account_payment,
+            # The printing service takes the payment, credits the quota and
+            # posts to Finance; the GUI only renders the outcome.
+            try:
+                outcome = printing_service.purchase_credits(
+                    student_id, pages, price, payment_method=method, processed_by=student_id,
                 )
-                result = process_student_finance_account_payment(
-                    student_id=student_id,
-                    amount=price_f,
-                    description=f"Print credits top-up ({pages} pages)",
-                    transaction_source="Printing",
-                    transaction_ref=f"CREDITS-{pages}",
-                    processed_by=student_id,
+            except printing_service.PaymentDeclined as declined:
+                messagebox.showerror(
+                    _t('gui.operations.campus.printing.printing.dialogs.payment_failed', default="Payment Failed"),
+                    str(declined) or _t('gui.operations.campus.printing.printing.dialogs.could_not_record_payment_in_the_finance_system', default="Could not record payment in the finance system."),
+                    parent=parent,
                 )
-                if not result.get("success"):
-                    messagebox.showerror(
-                        _t('gui.operations.campus.printing.printing.dialogs.payment_failed', default="Payment Failed"),
-                        result.get("message", "Payment could not be processed."),
-                        parent=parent,
-                    )
-                    return False
-                transaction_id = result.get("transaction_id")
-                new_balance = result.get("new_balance")
-                method_label = "Student Finance Account"
-            else:
-                from education_system.systems.university.domains.finance.infrastructure.finance_integration import (
-                    record_payment_to_finance,
-                )
-                ref = f"CREDITS-{pages}-{datetime.now().strftime('%Y%m%d%H%M%S')}"
-                method_label = "Cash" if method == "cash" else "Card"
-                payment_id = record_payment_to_finance(
-                    student_id=student_id,
-                    amount=price_f,
-                    payment_method=method_label,
-                    transaction_source="Printing",
-                    transaction_ref=ref,
-                    notes=f"Print credits top-up ({pages} pages)",
-                    created_by=student_id,
-                )
-                if not payment_id:
-                    messagebox.showerror(
-                        _t('gui.operations.campus.printing.printing.dialogs.payment_failed', default="Payment Failed"),
-                        _t('gui.operations.campus.printing.printing.dialogs.could_not_record_payment_in_the_finance_system', default="Could not record payment in the finance system."),
-                        parent=parent,
-                    )
-                    return False
-                transaction_id = f"Printing-{ref}"
-
-            from education_system.systems.university.infrastructure.database.db import get_connection
-            with get_connection() as conn:
-                self._ensure_quota(conn, student_id)
-                conn.execute(
-                    "UPDATE print_quotas SET total_pages = total_pages + ? WHERE student_id = ?",
-                    (pages, student_id),
-                )
-                conn.execute(
-                    """INSERT INTO print_credit_transactions
-                       (student_id, amount, transaction_type, description)
-                       VALUES (?, ?, 'credit', ?)""",
-                    (
-                        student_id,
-                        pages,
-                        f"Purchased {pages} pages (\u00a3{price}) via {method_label} [{transaction_id}]",
-                    ),
-                )
-                row = conn.execute(
-                    "SELECT total_pages FROM print_quotas WHERE student_id = ?",
-                    (student_id,),
-                ).fetchone()
-                new_total = row["total_pages"] if row else pages
-                conn.commit()
+                return False
+            transaction_id = outcome["transaction_id"]
+            new_balance = outcome["new_balance"]
+            method_label = outcome["method_label"]
+            new_total = outcome["new_total"]
 
             email_sent = self._send_credits_receipt_email(
                 student_id=student_id,

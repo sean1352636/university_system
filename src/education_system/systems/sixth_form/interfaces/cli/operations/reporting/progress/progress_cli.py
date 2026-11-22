@@ -252,6 +252,14 @@ def view_review(review_id: int | None = None) -> None:
     print(f"\n  Targets ({len(rv.targets)} — "
           f"{rv.open_targets} open, {rv.met_targets} met):")
     _print_targets(rv.targets)
+    print(f"\n  Subject grade targets — Target Setting "
+          f"({len(rv.academic_targets)}):")
+    if not rv.academic_targets:
+        print("    (none set)")
+    for g in rv.academic_targets:
+        print(f"    {g.subject_name:<28} min {g.mte_grade:<3} "
+              f"asp {g.aspirational_grade or '—':<3} "
+              f"now {g.current_grade or '—':<3} {g.status}")
     _pause()
 
 

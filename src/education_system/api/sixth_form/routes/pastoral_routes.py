@@ -20,12 +20,15 @@ import os
 
 from flask import Blueprint, g, jsonify, request
 
+from education_system.api.sixth_form import access_gate
+
 logger = logging.getLogger(__name__)
 
 pastoral_bp = Blueprint("sf_pastoral", __name__, url_prefix="/api/pastoral")
 
 
 def _token_required(view):
+    view = access_gate.gate(view)
     try:
         from education_system.platform.delivery.api.auth import token_required
         return token_required(view)
@@ -39,6 +42,13 @@ def _token_required(view):
                 return view(*args, **kwargs)
             return jsonify({"error": "Unauthorized"}), 401
         return wrapper
+
+
+@pastoral_bp.errorhandler(PermissionError)
+def _access_denied(exc):
+    # access.AccessDenied subclasses PermissionError; the domain raises it
+    # when a route's caller lacks the safeguarding capability.
+    return jsonify({"error": "Forbidden", "status": 403}), 403
 
 
 def _dump(obj):
@@ -55,7 +65,7 @@ def _dump(obj):
 @pastoral_bp.route("/safeguarding/concerns", methods=["GET"])
 @_token_required
 def list_concerns_route():
-    from education_system.systems.sixth_form.domain.safeguarding.safeguarding import (
+    from education_system.systems.sixth_form.domain.safeguarding import (
         safeguarding as data,
     )
     q = request.args
@@ -80,7 +90,7 @@ def list_concerns_route():
 @pastoral_bp.route("/safeguarding/concerns/<int:concern_id>", methods=["GET"])
 @_token_required
 def get_concern_route(concern_id: int):
-    from education_system.systems.sixth_form.domain.safeguarding.safeguarding import (
+    from education_system.systems.sixth_form.domain.safeguarding import (
         safeguarding as data,
     )
     c = data.get_concern(concern_id)
@@ -92,20 +102,25 @@ def get_concern_route(concern_id: int):
 @pastoral_bp.route("/safeguarding/concerns", methods=["POST"])
 @_token_required
 def create_concern_route():
-    from education_system.systems.sixth_form.domain.safeguarding.safeguarding import (
+    from education_system.systems.sixth_form.domain.safeguarding import (
         safeguarding as data,
     )
     try:
         c = data.create_concern(request.get_json(force=True, silent=True) or {})
     except data.ValidationError as e:
         return jsonify({"error": str(e)}), 400
+    # Anyone on the staff may report; only the safeguarding team gets
+    # the stored record back, everyone else a receipt.
+    if not data.can_read():
+        return jsonify({"concern_id": c.concern_id,
+                        "status": "Reported to the safeguarding team"}), 201
     return jsonify(_dump(c)), 201
 
 
 @pastoral_bp.route("/safeguarding/concerns/<int:concern_id>", methods=["PUT"])
 @_token_required
 def update_concern_route(concern_id: int):
-    from education_system.systems.sixth_form.domain.safeguarding.safeguarding import (
+    from education_system.systems.sixth_form.domain.safeguarding import (
         safeguarding as data,
     )
     if data.get_concern(concern_id) is None:
@@ -121,12 +136,21 @@ def update_concern_route(concern_id: int):
 @pastoral_bp.route("/safeguarding/concerns/<int:concern_id>", methods=["DELETE"])
 @_token_required
 def delete_concern_route(concern_id: int):
-    from education_system.systems.sixth_form.domain.safeguarding.safeguarding import (
+    from education_system.systems.sixth_form.domain.safeguarding import (
         safeguarding as data,
     )
-    if not data.delete_concern(concern_id):
-        return jsonify({"error": f"No concern {concern_id}"}), 404
-    return jsonify({"deleted": concern_id})
+    # Safeguarding records are never deleted: this closes the concern
+    # and keeps it ("Closed — Retained").
+    body = request.get_json(force=True, silent=True) or {}
+    reason = (body.get("reason") or request.args.get("reason") or "").strip()
+    if not reason:
+        return jsonify({"error": "A reason is required to close a concern"}), 400
+    try:
+        if not data.delete_concern(concern_id, reason=reason):
+            return jsonify({"error": f"No concern {concern_id}"}), 404
+    except data.ValidationError as e:
+        return jsonify({"error": str(e)}), 400
+    return jsonify({"closed_and_retained": concern_id})
 
 
 # ── Safeguarding: chronological updates on a concern ───────────────
@@ -135,7 +159,7 @@ def delete_concern_route(concern_id: int):
                    methods=["GET"])
 @_token_required
 def list_updates_route(concern_id: int):
-    from education_system.systems.sixth_form.domain.safeguarding.safeguarding import (
+    from education_system.systems.sixth_form.domain.safeguarding import (
         safeguarding as data,
     )
     if data.get_concern(concern_id) is None:
@@ -148,7 +172,7 @@ def list_updates_route(concern_id: int):
                    methods=["POST"])
 @_token_required
 def add_update_route(concern_id: int):
-    from education_system.systems.sixth_form.domain.safeguarding.safeguarding import (
+    from education_system.systems.sixth_form.domain.safeguarding import (
         safeguarding as data,
     )
     try:
@@ -164,7 +188,7 @@ def add_update_route(concern_id: int):
 @pastoral_bp.route("/safeguarding/summary", methods=["GET"])
 @_token_required
 def safeguarding_summary_route():
-    from education_system.systems.sixth_form.domain.safeguarding.safeguarding import (
+    from education_system.systems.sixth_form.domain.safeguarding import (
         safeguarding as data,
     )
     return jsonify(_dump(data.summary()))

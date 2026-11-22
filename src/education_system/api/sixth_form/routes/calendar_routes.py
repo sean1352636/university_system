@@ -30,9 +30,12 @@ from __future__ import annotations
 import dataclasses
 import functools
 import logging
+import hmac
 import os
 
 from flask import Blueprint, Response, g, jsonify, request
+
+from education_system.api.sixth_form import access_gate
 
 logger = logging.getLogger(__name__)
 
@@ -41,6 +44,7 @@ calendar_bp = Blueprint("sf_calendar", __name__,
 
 
 def _token_required(view):
+    view = access_gate.gate(view)
     try:
         from education_system.platform.delivery.api.auth import token_required
         return token_required(view)
@@ -327,7 +331,8 @@ def ics_feed():
     Confidential events regardless of the viewer parameter.
     """
     expected = os.environ.get("SIXTHFORM_CALENDAR_FEED_TOKEN")
-    if not expected or request.args.get("token") != expected:
+    if not expected or not hmac.compare_digest(
+            request.args.get("token") or "", expected):
         return jsonify({"error": "Unauthorized"}), 401
     data = _data()
     ics = _ics()

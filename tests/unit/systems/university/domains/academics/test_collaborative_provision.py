@@ -13,12 +13,12 @@ from datetime import date, timedelta
 
 import pytest
 
-from education_system.systems.university.domains.academics.domain.collaborative_provision._db_init import (
+from education_system.systems.university.domains.curriculum.domain.collaborative_provision._db_init import (
     AGREEMENT_STATUSES,
     DELIVERY_MODELS,
     ensure_collaborative_provision_schema,
 )
-from education_system.systems.university.domains.academics.domain.collaborative_provision.services.collaborative_provision_service import (
+from education_system.systems.university.domains.curriculum.domain.collaborative_provision.services.collaborative_provision_service import (
     CollaborativeProvisionService,
 )
 

@@ -80,9 +80,10 @@ def _pick_from(label: str, options: list[str],
 
 
 def _pick_grade(label: str, *, default: str | None = None,
-                 allow_empty: bool = False) -> str | None:
-    opts = list(A_LEVEL_GRADES) if not allow_empty \
-        else [""] + list(A_LEVEL_GRADES)
+                 allow_empty: bool = False,
+                 scale: tuple[str, ...] | list[str] | None = None) -> str | None:
+    grades = list(scale) if scale else list(A_LEVEL_GRADES)
+    opts = grades if not allow_empty else [""] + grades
     res = _pick_from(label, opts, default=default or "")
     return res or None
 
@@ -295,6 +296,17 @@ def _collect_form(existing: VARecord | None) -> dict[str, Any]:
         payload["exam_session"] = _input(
             "Exam session (e.g. 'Summer 2026')",
             allow_empty=False)
+    if is_edit and existing.qualification_type:
+        scale = tuple(data.grades_for(existing.qualification_type))
+    else:
+        from education_system.systems.sixth_form.domain.academics.qualifications import (
+            learning_aims as _aims,
+        )
+        try:
+            scale = tuple(_aims.grade_options(payload["student_id"],
+                                              payload["subject_name"]))
+        except Exception:  # noqa: BLE001 - fall back to A*-U
+            scale = tuple(A_LEVEL_GRADES)
     payload["year_group"] = _pick_from(
         "Year group", [""] + list(YEAR_GROUPS),
         default=(existing.year_group if is_edit else ""))
@@ -306,19 +318,19 @@ def _collect_form(existing: VARecord | None) -> dict[str, Any]:
     payload["expected_grade"] = _pick_grade(
         "Expected grade",
         default=(existing.expected_grade if is_edit else None),
-        allow_empty=True)
+        allow_empty=True, scale=scale)
     payload["target_grade"] = _pick_grade(
         "Target grade (MTE)",
         default=(existing.target_grade if is_edit else None),
-        allow_empty=True)
+        allow_empty=True, scale=scale)
     payload["predicted_grade"] = _pick_grade(
         "Predicted grade",
         default=(existing.predicted_grade if is_edit else None),
-        allow_empty=True)
+        allow_empty=True, scale=scale)
     payload["actual_grade"] = _pick_grade(
         "Actual grade (if known)",
         default=(existing.actual_grade if is_edit else None),
-        allow_empty=True)
+        allow_empty=True, scale=scale)
     payload["alps_indicator"] = _input(
         "ALPS indicator (1-9)",
         default=(str(existing.alps_indicator)
@@ -377,7 +389,8 @@ def set_actual_flow() -> None:
         r = _pick_record()
         grade = _pick_grade("Actual grade",
                               default=r.actual_grade,
-                              allow_empty=False)
+                              allow_empty=False,
+                              scale=data.grades_for(r.qualification_type))
     except _UserAbort:
         print("\n  Cancelled.")
         return
@@ -398,7 +411,8 @@ def set_predicted_flow() -> None:
         r = _pick_record()
         grade = _pick_grade("Predicted grade",
                               default=r.predicted_grade,
-                              allow_empty=True)
+                              allow_empty=True,
+                              scale=data.grades_for(r.qualification_type))
     except _UserAbort:
         print("\n  Cancelled.")
         return
@@ -489,6 +503,27 @@ _MENU: list[tuple[str, Callable[[], None]]] = [
     ("Change status",      set_status_flow),
     ("Delete record",      delete_flow),
     ("Summary",            summary_flow),
+]
+
+
+def _lazy(module: str, name: str) -> Callable[[], None]:
+    def _go() -> None:
+        import importlib
+        getattr(importlib.import_module(module), name)()
+    return _go
+
+
+# Gap build: benchmark table, derived VA, minimum expected grades.
+_DERIV = "education_system.systems.sixth_form.interfaces.cli.assessment.value_added.derivation_cli"
+_MEG = "education_system.systems.sixth_form.interfaces.cli.assessment.target_setting.meg_cli"
+_MENU += [
+    ("Benchmark bands",           _lazy(_DERIV, "list_bands_flow")),
+    ("Add benchmark band",        _lazy(_DERIV, "add_band_flow")),
+    ("Edit benchmark band",       _lazy(_DERIV, "edit_band_flow")),
+    ("Delete benchmark band",     _lazy(_DERIV, "delete_band_flow")),
+    ("Restore placeholder bands", _lazy(_DERIV, "restore_placeholder_flow")),
+    ("Derived VA (from GCSEs)",   _lazy(_DERIV, "derived_va_flow")),
+    ("Minimum expected grades",   _lazy(_MEG, "meg_flow")),
 ]
 
 

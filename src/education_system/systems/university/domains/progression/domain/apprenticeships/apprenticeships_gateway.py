@@ -15,7 +15,9 @@ convention that says it shouldn't.
 from __future__ import annotations
 
 import logging
-import sqlite3
+from education_system.systems.university.domains.progression.infrastructure import (
+    apprenticeships_db,
+)
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -59,14 +61,12 @@ class ApprenticeshipsGateway:
         self.db_path = Path(db_path or paths.APPRENTICESHIPS_DB)
 
     # -- connection ------------------------------------------------------
-    def _connect(self) -> sqlite3.Connection:
+    def _connect(self):
         if not self.db_path.exists():
             raise ApprenticeshipsGatewayError(
                 f"Apprenticeships database not found at {self.db_path}"
             )
-        conn = sqlite3.connect(f"file:{self.db_path.resolve()}?mode=ro", uri=True)
-        conn.row_factory = sqlite3.Row
-        return conn
+        return apprenticeships_db.open_readonly(self.db_path)
 
     def available(self) -> bool:
         """True when the apprenticeships system's data can be read."""

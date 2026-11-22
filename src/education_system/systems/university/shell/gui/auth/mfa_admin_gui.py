@@ -10,6 +10,7 @@ import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext
 from education_system.systems.university.infrastructure.database.db import sqlite3
 from datetime import datetime
+import json
 from typing import Dict, List
 from education_system.systems.university.infrastructure.auth.mfa_service import MFAService
 from education_system.systems.university.infrastructure.i18n import get_text as _, init_i18n
@@ -870,7 +871,8 @@ class MFAAdminPanel(tk.Toplevel):
         roles_frame.pack(fill='x', padx=10, pady=5)
 
         role_vars = {}
-        current_roles = str(values[1]).split(', ') if len(values) > 1 else []
+        # The tree lists one role per row: (role, required, methods, ...).
+        current_roles = [str(values[0])] if values else []
         for role in ['admin', 'instructor', 'student', 'staff']:
             var = tk.BooleanVar(value=role in current_roles)
             role_vars[role] = var
@@ -895,7 +897,10 @@ class MFAAdminPanel(tk.Toplevel):
 
         # Enforcement level
         ttk.Label(dialog, text=_("mfa_admin.dialogs.enforcement_level")).pack(anchor='w', padx=10, pady=(10, 0))
-        enforcement_var = tk.StringVar(value=_t('gui.shell.auth.mfa_admin.values.required', default="required"))
+        # Start from what the policy says now, so saving another field cannot
+        # turn enforcement on by itself.
+        currently_required = len(values) > 1 and values[1] == _("common.yes")
+        enforcement_var = tk.StringVar(value="required" if currently_required else "optional")
         enforcement_combo = ttk.Combobox(dialog, textvariable=enforcement_var,
                                          values=['required', 'optional', 'recommended'], state='readonly')
         enforcement_combo.pack(anchor='w', padx=10, pady=5)
@@ -916,13 +921,20 @@ class MFAAdminPanel(tk.Toplevel):
                 try:
                     cursor = conn.cursor()
 
-                    # Update or insert policy
-                    cursor.execute("""
-                        INSERT OR REPLACE INTO mfa_policies
-                        (policy_id, policy_name, roles, allowed_methods, timeout_minutes, enforcement)
-                        VALUES (?, ?, ?, ?, ?, ?)
-                    """, (policy_id, name_var.get(), ','.join(selected_roles),
-                          ','.join(selected_methods), int(timeout_var.get()), enforcement_var.get()))
+                    # One policy row per role; the session timeout has no column
+                    # on the policy table.
+                    methods_json = json.dumps(selected_methods)
+                    required = 1 if enforcement_var.get() == 'required' else 0
+                    for role in selected_roles:
+                        cursor.execute("""
+                            INSERT INTO mfa_enforcement_policies
+                            (role_name, mfa_required, allowed_methods, updated_at)
+                            VALUES (?, ?, ?, datetime('now'))
+                            ON CONFLICT(role_name) DO UPDATE SET
+                                mfa_required = excluded.mfa_required,
+                                allowed_methods = excluded.allowed_methods,
+                                updated_at = excluded.updated_at
+                        """, (role, required, methods_json))
 
                     conn.commit()
                 finally:
@@ -1003,7 +1015,7 @@ class MFAAdminPanel(tk.Toplevel):
 
             cursor.execute("""
                 SELECT device_name, created_at, expires_at, ip_address
-                FROM mfa_trusted_devices WHERE user_id = ? AND is_revoked = 0
+                FROM mfa_trusted_devices WHERE user_id = ? AND revoked_at IS NULL
             """, (user_id,))
 
             for row in cursor.fetchall():
@@ -1134,21 +1146,29 @@ class MFAAdminPanel(tk.Toplevel):
                 try:
                     cursor = conn.cursor()
 
-                    # Create or update MFA enforcement record
+                    # The deadline lives on the user's MFA settings row
                     cursor.execute("""
-                        INSERT OR REPLACE INTO mfa_enforcement
-                        (user_id, required_method, deadline, created_at, notified)
-                        VALUES (?, ?, ?, ?, ?)
-                    """, (user_id, method_var.get(), deadline.isoformat(),
-                          datetime.now().isoformat(), notify_var.get()))
+                        INSERT INTO mfa_user_settings (user_id, enforcement_deadline, updated_at)
+                        VALUES (?, ?, datetime('now'))
+                        ON CONFLICT(user_id) DO UPDATE SET
+                            enforcement_deadline = excluded.enforcement_deadline,
+                            updated_at = excluded.updated_at
+                    """, (user_id, deadline.isoformat()))
 
                     conn.commit()
                 finally:
                     conn.close()
 
                 if notify_var.get():
-                    # Log notification (actual email would be sent by email service)
-                    pass
+                    from education_system.systems.university.infrastructure.email.messages_inbox import (
+                        deliver_inbox_message,
+                    )
+                    method = method_var.get()
+                    deliver_inbox_message(
+                        username, "Multi-factor authentication required",
+                        "You need to set up multi-factor authentication"
+                        + ("" if method == "any" else f" using {method}")
+                        + f" by {deadline.strftime('%Y-%m-%d')}.")
 
                 messagebox.showinfo(_("common.success"),
                     _("mfa_admin.messages.mfa_enforced", username=username, deadline=deadline.strftime('%Y-%m-%d'), grace=grace_var.get()))

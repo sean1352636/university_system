@@ -25,7 +25,7 @@ def generate_alumni_report():
         print("\n--- Alumni Report ---")
 
         # Total alumni count
-        cursor.execute('SELECT COUNT(*) FROM user_accounts WHERE role = "alumni"')
+        cursor.execute('SELECT COUNT(*) FROM alumni')
         total_alumni = cursor.fetchone()[0]
         print(f"Total Alumni: {total_alumni}")
 
@@ -41,7 +41,7 @@ def generate_alumni_report():
         print(f"Total Amount Donated: £{donation_stats[1] or 0:.2f}")
 
         # Mentorships
-        cursor.execute('SELECT COUNT(*) FROM alumni_mentorships WHERE status = "active"')
+        cursor.execute("SELECT COUNT(*) FROM mentorships WHERE status = 'active'")
         active_mentors = cursor.fetchone()[0]
         print(f"Active Mentors: {active_mentors}")
 
@@ -67,12 +67,9 @@ def get_engagement_dashboard():
         total_alumni = cursor.execute('SELECT COUNT(*) FROM alumni').fetchone()[0]
         active_mentors = 0
         try:
-            active_mentors = cursor.execute('SELECT COUNT(*) FROM alumni_mentorships WHERE status = "active"').fetchone()[0]
+            active_mentors = cursor.execute("SELECT COUNT(*) FROM mentorships WHERE status = 'active'").fetchone()[0]
         except Exception:
-            try:
-                active_mentors = cursor.execute('SELECT COUNT(*) FROM mentorships WHERE status = "active"').fetchone()[0]
-            except Exception:
-                logger.debug("Suppressed exception", exc_info=True)
+            logger.debug("Suppressed exception", exc_info=True)
         total_donated = cursor.execute('SELECT COALESCE(SUM(amount), 0) FROM donations').fetchone()[0]
         upcoming_events = 0
         try:

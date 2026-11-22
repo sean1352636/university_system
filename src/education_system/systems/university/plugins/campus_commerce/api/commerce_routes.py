@@ -25,6 +25,14 @@ def _row_to_dict(row) -> dict:
     return {k: row[k] for k in row.keys()}
 
 
+def _order_to_dict(row) -> dict:
+    """Order row for the API: ``status`` reads the unified ``order_status``."""
+    item = _row_to_dict(row)
+    if item:
+        item["status"] = item.get("order_status") or item.get("status")
+    return item
+
+
 # ---- menu ----
 
 @commerce_bp.route("/menu", methods=["GET"])
@@ -59,7 +67,7 @@ def list_menu():
         params.extend([per_page, offset])
 
         rows = conn.execute(
-            "SELECT * FROM menu_items" + where + " ORDER BY id DESC LIMIT ? OFFSET ?",
+            "SELECT * FROM menu_items" + where + " ORDER BY item_id DESC LIMIT ? OFFSET ?",
             params,
         ).fetchall()
         total_row = conn.execute(
@@ -78,7 +86,7 @@ def list_menu():
 def get_menu(id: int):
     with get_connection() as conn:
         row = conn.execute(
-            "SELECT * FROM menu_items WHERE id = ?", (id,)
+            "SELECT * FROM menu_items WHERE item_id = ?", (id,)
         ).fetchone()
     if not row:
         raise ValidationError(f"menu {id} not found")
@@ -105,7 +113,7 @@ def create_menu():
 
     with get_connection() as conn:
         row = conn.execute(
-            "SELECT * FROM menu_items WHERE id = ?", (new_id,)
+            "SELECT * FROM menu_items WHERE item_id = ?", (new_id,)
         ).fetchone()
 
     log_activity("create", "menu_items", user=g.current_user.get("sub"))
@@ -120,32 +128,32 @@ def list_orders():
     status = request.args.get("status")
 
     with get_connection() as conn:
-        conditions = []
-        params: list = []
+        conditions = ["source_type = ?"]
+        params: list = ["restaurant"]
         if customer_id:
             conditions.append("customer_id = ?")
             params.append(customer_id)
         if status:
-            conditions.append("status = ?")
+            conditions.append("order_status = ?")
             params.append(status)
 
-        where = (" WHERE " + " AND ".join(conditions)) if conditions else ""
+        where = " WHERE " + " AND ".join(conditions)
         page, per_page, offset = get_pagination_params()
         params_count = list(params)
         params.extend([per_page, offset])
 
         rows = conn.execute(
-            "SELECT * FROM restaurant_orders" + where + " ORDER BY id DESC LIMIT ? OFFSET ?",
+            "SELECT * FROM orders" + where + " ORDER BY order_id DESC LIMIT ? OFFSET ?",
             params,
         ).fetchall()
         total_row = conn.execute(
-            "SELECT COUNT(*) FROM restaurant_orders" + where, params_count
+            "SELECT COUNT(*) FROM orders" + where, params_count
         ).fetchone()
         total = total_row[0] if total_row else 0
 
     log_activity("view", "restaurant_orders", user=g.current_user.get("sub"))
     return jsonify(paginated_response(
-        [_row_to_dict(r) for r in rows], total, page, per_page
+        [_order_to_dict(r) for r in rows], total, page, per_page
     ))
 
 
@@ -154,12 +162,12 @@ def list_orders():
 def get_order(id: int):
     with get_connection() as conn:
         row = conn.execute(
-            "SELECT * FROM restaurant_orders WHERE id = ?", (id,)
+            "SELECT * FROM orders WHERE source_type = 'restaurant' AND order_id = ?", (id,)
         ).fetchone()
     if not row:
         raise ValidationError(f"orders {id} not found")
     log_activity("view", "restaurant_orders", user=g.current_user.get("sub"))
-    return jsonify(_row_to_dict(row))
+    return jsonify(_order_to_dict(row))
 
 @commerce_bp.route("/orders", methods=["POST"])
 @token_required
@@ -172,17 +180,17 @@ def create_order():
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     with transaction() as conn:
         conn.execute(
-            """INSERT INTO restaurant_orders
-               (customer_id, items, total_amount, delivery_address, special_instructions, payment_method, created_at)
-               VALUES (?, ?, ?, ?, ?, ?, ?)""",
+            """INSERT INTO orders
+               (source_type, customer_id, items, total_amount, delivery_address, special_instructions, payment_method, created_at)
+               VALUES ('restaurant', ?, ?, ?, ?, ?, ?, ?)""",
             (data["customer_id"], data["items"], data["total_amount"], data.get("delivery_address", ""), data.get("special_instructions", ""), data.get("payment_method", ""), now,),
         )
         new_id = conn.execute("SELECT last_insert_rowid()").fetchone()[0]
 
     with get_connection() as conn:
         row = conn.execute(
-            "SELECT * FROM restaurant_orders WHERE id = ?", (new_id,)
+            "SELECT * FROM orders WHERE source_type = 'restaurant' AND order_id = ?", (new_id,)
         ).fetchone()
 
     log_activity("create", "restaurant_orders", user=g.current_user.get("sub"))
-    return jsonify(_row_to_dict(row)), 201
+    return jsonify(_order_to_dict(row)), 201

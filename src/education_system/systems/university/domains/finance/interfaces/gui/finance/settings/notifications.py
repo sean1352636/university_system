@@ -7,6 +7,7 @@ import sys
 import io
 import os
 import threading
+from education_system.platform.delivery.gui.tk_threads import start_thread, ui
 import tkinter as tk
 from tkinter import ttk, messagebox
 from tkinter.scrolledtext import ScrolledText
@@ -54,12 +55,12 @@ class NotificationsMixin:
                 templates = cursor.fetchall()
                 conn.close()
 
-                self.root.after(0, lambda: self.update_notification_templates(templates))
+                ui(self.root, self.update_notification_templates, templates)
 
             except Exception as e:
                 print(f"Error loading notification templates: {e}")
 
-        threading.Thread(target=load_thread, daemon=True).start()
+        start_thread(self.root, load_thread)
 
 
     def update_notification_templates(self, templates):
@@ -408,14 +409,12 @@ class NotificationsMixin:
                     except Exception as e:
                         print(f"Error in notification sending: {e}")
 
-                    messagebox.showinfo(_("finance_gui.settings.notifications_sent_title"),
-                                       _("finance_gui.settings.notifications_sent_message", count=notifications_sent))
+                    ui(self.root, messagebox.showinfo, _("finance_gui.settings.notifications_sent_title"),
+                       _("finance_gui.settings.notifications_sent_message", count=notifications_sent))
 
-                    self.update_status(_("finance_gui.settings.sent_notifications_status", count=notifications_sent))
+                    ui(self.root, self.update_status, _("finance_gui.settings.sent_notifications_status", count=notifications_sent))
 
-                thread = threading.Thread(target=send_notifications)
-                thread.daemon = True
-                thread.start()
+                start_thread(self.root, send_notifications)
 
             except Exception as e:
                 messagebox.showerror(_("finance_gui.settings.error_title"), _("finance_gui.settings.failed_send_notifications", error=str(e)))

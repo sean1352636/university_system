@@ -18,6 +18,7 @@ import sqlite3
 from dataclasses import dataclass
 from typing import Any
 from education_system import paths
+from education_system.systems.sixth_form.infrastructure import record_links as _links
 
 logger = logging.getLogger(__name__)
 
@@ -512,9 +513,46 @@ def mark_left(staff_id: str, end_date: str | None = None) -> Staff:
                                      "end_date": end})
 
 
-def delete_staff(staff_id: str) -> bool:
+class StaffHasRecords(ValidationError):
+    """Refused: deleting this person would destroy or orphan their records."""
+
+    def __init__(self, staff_id: str, counts: dict[str, int]):
+        self.staff_id = staff_id
+        self.counts = counts
+        super().__init__(
+            f"{staff_id} has {sum(counts.values())} linked record(s) "
+            f"({_links.describe(counts)}). Deleting the staff record would "
+            f"delete or orphan them — mark the person as Left instead.")
+
+
+def linked_record_counts(staff_id: str) -> dict[str, int]:
+    """``{table: rows}`` a delete would remove (appraisals, absences,
+    wellbeing, parents'-evening bookings — CASCADE) or orphan (DBS, SCR,
+    HR, department memberships, training … — any ``staff_id`` column
+    without a foreign key). ``SET NULL`` references survive, so they do
+    not count."""
     init_db()
     sid = staff_id.strip().upper()
+    with _connect() as conn:
+        hard = _links.cascade_counts(conn, "staff", "staff_id", sid)
+        soft = _links.soft_counts(
+            conn, _links.tables_with_column(conn, "staff_id", exclude=("staff",)),
+            sid)
+    return _links.merge(hard, soft)
+
+
+def delete_staff(staff_id: str) -> bool:
+    """Delete a staff record created by mistake.
+
+    Refused with :class:`StaffHasRecords` once anything is recorded
+    against the person — use :func:`mark_left` (status "Left") then.
+    """
+    init_db()
+    sid = staff_id.strip().upper()
+    linked = linked_record_counts(sid)
+    if linked:
+        logger.warning("delete_staff(%s) refused: %s", sid, linked)
+        raise StaffHasRecords(sid, linked)
     with _connect() as conn:
         cur = conn.execute("DELETE FROM staff WHERE staff_id = ?", (sid,))
         conn.commit()
@@ -522,6 +560,18 @@ def delete_staff(staff_id: str) -> bool:
             logger.info("Deleted staff %s", sid)
             return True
         return False
+
+
+def login_username(staff_id: str) -> str | None:
+    """The shared-auth login linked to a staff record, if any."""
+    init_db()
+    with _connect() as conn:
+        cols = {r[1] for r in conn.execute("PRAGMA table_info(staff)")}
+        if "username" not in cols:
+            return None
+        row = conn.execute("SELECT username FROM staff WHERE staff_id = ?",
+                           (staff_id,)).fetchone()
+    return row["username"] if row else None
 
 
 def reports_to(staff_id: str) -> list[Staff]:

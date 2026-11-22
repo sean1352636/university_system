@@ -397,7 +397,8 @@ def _send_password_reset_email(email: str, username: str, token: str, expires_at
         use_tls = cfg.get("use_tls", True)
         sender = cfg.get("sender_email", smtp_user)
 
-        if not all([smtp_server, smtp_user, smtp_pass]):
+        from education_system.platform.integrations.email import delivery_mode as _mode
+        if _mode.delivery_mode() == "live" and not all([smtp_server, smtp_user, smtp_pass]):
             logger.debug("Email not configured — skipping password reset email")
             return False
 
@@ -413,19 +414,26 @@ def _send_password_reset_email(email: str, username: str, token: str, expires_at
             f"If you did not request this, you can safely ignore this email.\n"
         )
 
-        msg = MIMEText(body)
-        msg["Subject"] = "Education System — Password Reset"
-        msg["From"] = sender
-        msg["To"] = email
+        subject = "Education System — Password Reset"
 
-        server = smtplib.SMTP(smtp_server, smtp_port, timeout=10)
-        if use_tls:
-            server.starttls()
-        server.login(smtp_user, smtp_pass)
-        server.sendmail(sender, [email], msg.as_string())
-        server.quit()
-        logger.info("Password reset email sent to %s", email)
-        return True
+        def send_live():
+            msg = MIMEText(body)
+            msg["Subject"] = subject
+            msg["From"] = sender
+            msg["To"] = email
+            server = smtplib.SMTP(smtp_server, smtp_port, timeout=10)
+            if use_tls:
+                server.starttls()
+            server.login(smtp_user, smtp_pass)
+            server.sendmail(sender, [email], msg.as_string())
+            server.quit()
+            logger.info("Password reset email sent to %s", email)
+            return True
+
+        # Follow the shared delivery mode: only "live" opens SMTP; "sandbox"
+        # writes the message (with its link) to the sandbox folder.
+        from education_system.platform.integrations.email import delivery_mode
+        return delivery_mode.deliver(email, subject, body, send_live)
     except Exception as exc:
         logger.debug("Could not send password reset email: %s", exc)
         return False

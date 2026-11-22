@@ -200,6 +200,53 @@ def _preview() -> None:
     _pause()
 
 
+def _who() -> str:
+    try:
+        from education_system.systems.sixth_form.domain.governance.user_management import (
+            access,
+        )
+        return access.current().username or "staff"
+    except Exception:
+        return "staff"
+
+
+def _contact_requests() -> None:
+    """Work through parents' contact-detail change requests."""
+    while True:
+        reqs = data.list_contact_requests()
+        print(f"\n  Contact change requests — {len(reqs)} pending")
+        if not reqs:
+            return
+        for i, r in enumerate(reqs, 1):
+            changes = ", ".join(f"{data.CONTACT_REQUEST_FIELDS.get(k, k)}: {v}"
+                                for k, v in r["changes"].items())
+            print(f"  {i:>3}) #{r['request_id']} {r['parent_name']} "
+                  f"({r.get('student_name') or r.get('student_id') or '—'}) "
+                  f"{r['created_at'] or ''}")
+            print(f"        {changes}")
+            if r.get("note"):
+                print(f"        Note: {r['note']}")
+            if not r.get("contact_id"):
+                print("        (no contact record linked — apply by hand)")
+        pick = _input("Request number (Enter to go back)")
+        if not pick:
+            return
+        if not pick.isdigit() or not 1 <= int(pick) <= len(reqs):
+            print("  Invalid selection.")
+            continue
+        req = reqs[int(pick) - 1]
+        action = _input("A)pply or R)eject", default="").lower()
+        if action not in ("a", "r"):
+            continue
+        note = _input("Note (optional)")
+        try:
+            data.resolve_contact_request(req["request_id"], apply=action == "a",
+                                         by=_who(), note=note)
+            print("  ✓ Done.")
+        except data.ValidationError as e:
+            print(f"  ✗ {e}")
+
+
 _MENU: list[tuple[str, Callable[[], None]]] = [
     ("List accounts", _list),
     ("Create account", _create),
@@ -210,6 +257,7 @@ _MENU: list[tuple[str, Callable[[], None]]] = [
     ("Enable / disable account", _toggle),
     ("Delete account", _delete),
     ("Preview child snapshot", _preview),
+    ("Contact change requests", _contact_requests),
 ]
 
 

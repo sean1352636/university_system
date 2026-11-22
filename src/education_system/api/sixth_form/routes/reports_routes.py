@@ -15,12 +15,15 @@ import os
 
 from flask import Blueprint, g, jsonify, request
 
+from education_system.api.sixth_form import access_gate
+
 logger = logging.getLogger(__name__)
 
 reports_bp = Blueprint("sf_reports", __name__, url_prefix="/api/reports")
 
 
 def _token_required(view):
+    view = access_gate.gate(view)
     try:
         from education_system.platform.delivery.api.auth import token_required
         return token_required(view)

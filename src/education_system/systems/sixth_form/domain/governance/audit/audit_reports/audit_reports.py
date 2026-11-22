@@ -29,7 +29,7 @@ from pathlib import Path
 from typing import Any, Callable
 
 from education_system import paths
-from education_system.systems.sixth_form.domain.operations.communications.activity_feed import (
+from education_system.systems.sixth_form.domains.communications.domain.activity_feed import (
     activity_feed as _af,
 )
 

@@ -10,7 +10,7 @@ Tests the database schema initialization for degree audit system including:
 
 import pytest
 from education_system.systems.university.infrastructure.database.db import sqlite3
-from education_system.systems.university.domains.academics.domain.services.degree_audit.db_schema import (
+from education_system.systems.university.domains.progression.domain.degree_audit.db_schema import (
     initialize_degree_audit_database
 )
 from education_system.systems.university.infrastructure.database.db import get_connection

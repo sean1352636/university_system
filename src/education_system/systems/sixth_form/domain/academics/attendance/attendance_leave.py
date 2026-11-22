@@ -25,11 +25,23 @@ Approving writes the marks across every timetabled lesson in the span,
 with the code the leave kind implies — `C` for an open day, `H` for an
 agreed holiday, `B` for anything the college itself arranged.
 
-**Relationship to :mod:`pastoral.absence_requests`.** That module is the
-pastoral team's record that a request was made and answered; it does not
-touch the register. This one is the attendance engine — notice, clashes,
-allowance, and the marks themselves. :func:`adopt_pastoral_request`
-pulls one across so nobody types the same holiday twice.
+**One absence store.** ``attendance_leave_requests`` is the single
+table behind every kind of absence somebody tells the college about:
+
+* planned leave asked for here (``origin = 'leave'``),
+* requests logged by the pastoral team through
+  :mod:`pastoral.absence_requests` (``origin = 'pastoral'``), and
+* inbound reports and self-certifications taken by
+  :mod:`attendance_absence_reports` (``origin = 'report'``).
+
+It was chosen because its lifecycle is the superset of the other two —
+requested, decided, marks written, and on cancellation the marks voided —
+and because it sits next to the register it writes. The two older
+modules keep their public functions and their vocabularies, and read and
+write through the ``store_*`` helpers below. Their original tables
+(``absence_requests`` and ``attendance_absence_reports``) are left in
+place; :func:`migrate_legacy_stores` copies their rows across once, keyed
+on ``legacy_ref`` so that running it again copies nothing twice.
 """
 
 from __future__ import annotations
@@ -83,6 +95,10 @@ LEAVE_KINDS: tuple[tuple[str, str, bool, str], ...] = (
      "Compassionate leave."),
     ("College activity", "B", False,
      "Something the college itself arranged — a trip, a competition."),
+    ("Illness", "I", False,
+     "Unwell — usually reported on the day, or self-certified."),
+    ("Study leave", "S", False,
+     "Exam-season study leave the college grants, usually to a cohort."),
     ("Other", "C", True, "Anything else, decided case by case."),
 )
 KIND_INDEX: dict[str, tuple[str, str, bool, str]] = {
@@ -96,8 +112,24 @@ APPROVED: str = "Approved"
 DECLINED: str = "Declined"
 WITHDRAWN: str = "Withdrawn"
 CANCELLED: str = "Cancelled"
+# A report replaced by a later one covering the same absence.
+SUPERSEDED: str = "Superseded"
 STATES: tuple[str, ...] = (REQUESTED, APPROVED, DECLINED, WITHDRAWN,
-                           CANCELLED)
+                           CANCELLED, SUPERSEDED)
+
+# Where a row in the one absence store came from.
+ORIGIN_LEAVE: str = "leave"          # planned leave asked for here
+ORIGIN_PASTORAL: str = "pastoral"    # logged via pastoral absence requests
+ORIGIN_REPORT: str = "report"        # an inbound report / self-cert
+ORIGINS: tuple[str, ...] = (ORIGIN_LEAVE, ORIGIN_PASTORAL, ORIGIN_REPORT)
+# Planned absence — what the leave workflow (notice, allowance, overlap
+# checks, the pastoral request log) is about. Reports are claims about
+# absence already happening and have their own queue.
+PLANNED_ORIGINS: tuple[str, ...] = (ORIGIN_LEAVE, ORIGIN_PASTORAL)
+
+# legacy_ref prefixes for rows copied from the older stores.
+LEGACY_PASTORAL: str = "absence_requests"
+LEGACY_REPORTS: str = "attendance_absence_reports"
 
 # Working days of notice the college asks for.
 NOTICE_DAYS: int = 10
@@ -135,6 +167,39 @@ CREATE INDEX IF NOT EXISTS idx_att_leave_dates
     ON attendance_leave_requests(date_from, date_to);
 """
 
+# Columns added when the three absence stores were unified. Added with
+# ALTER TABLE so an existing database keeps every row it has.
+_EXTRA_COLUMNS: tuple[tuple[str, str], ...] = (
+    ("origin",         "TEXT NOT NULL DEFAULT 'leave'"),
+    ("channel",        "TEXT"),
+    ("reporter_type",  "TEXT"),
+    ("reporter_name",  "TEXT"),
+    ("reason_id",      "INTEGER"),
+    ("reason_text",    "TEXT"),
+    ("message",        "TEXT"),
+    ("self_certified", "INTEGER NOT NULL DEFAULT 0"),
+    ("contact_phone",  "TEXT"),
+    ("supporting_doc", "TEXT"),
+    ("notes",          "TEXT"),
+    ("request_date",   "TEXT"),
+    ("updated_at",     "TEXT"),
+    ("legacy_ref",     "TEXT"),
+)
+_EXTRA_INDEXES = """
+CREATE INDEX IF NOT EXISTS idx_att_leave_origin
+    ON attendance_leave_requests(origin, state);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_att_leave_legacy
+    ON attendance_leave_requests(legacy_ref) WHERE legacy_ref IS NOT NULL;
+"""
+
+# Columns the store helpers may write. Anything else is refused, so a
+# caller's payload can never name a column into the SQL.
+_WRITABLE: frozenset[str] = frozenset({
+    "student_id", "date_from", "date_to", "kind", "detail", "destination",
+    "requested_by", "requested_at", "notice_days", "state", "code",
+    "decided_by", "decided_at", "decision_note", "marks_written",
+} | {name for name, _decl in _EXTRA_COLUMNS})
+
 
 # ── Shapes ──────────────────────────────────────────────────────────
 
@@ -159,11 +224,39 @@ class LeaveRequest:
     decision_note: str | None
     marks_written: int
     student_name: str | None = None
+    # Unified-store columns (see the module docstring).
+    origin: str = ORIGIN_LEAVE
+    channel: str | None = None
+    reporter_type: str | None = None
+    reporter_name: str | None = None
+    reason_id: int | None = None
+    reason_text: str | None = None
+    message: str | None = None
+    self_certified: bool = False
+    contact_phone: str | None = None
+    supporting_doc: str | None = None
+    notes: str | None = None
+    request_date: str | None = None
+    updated_at: str | None = None
+    legacy_ref: str | None = None
 
     @property
     def days(self) -> int:
         return (_dt.date.fromisoformat(self.date_to)
                 - _dt.date.fromisoformat(self.date_from)).days + 1
+
+    @property
+    def is_planned(self) -> bool:
+        return self.origin in PLANNED_ORIGINS
+
+    @property
+    def needs_marks(self) -> bool:
+        """Approved, but nothing has been written to the register.
+
+        A pastoral approval records the decision only; this is the list
+        of those still waiting for somebody to code the register.
+        """
+        return self.state == APPROVED and not self.marks_written
 
     @property
     def is_pending(self) -> bool:
@@ -255,12 +348,35 @@ def init_db() -> None:
     reg.init_db()
     with _connect() as conn:
         conn.executescript(_SCHEMA)
+        _ensure_columns(conn)
+        conn.executescript(_EXTRA_INDEXES)
         conn.commit()
+        _DB_READY = True
+        try:
+            migrate_legacy_stores(conn=conn)
+        except sqlite3.Error:
+            # A copy that fails leaves the old rows where they were and
+            # is tried again on the next start; it must not stop the
+            # register from opening.
+            logger.exception("Absence-store migration failed; will retry")
     logger.debug("Leave-request schema ready at %s", DB_PATH)
-    _DB_READY = True
+
+
+def _ensure_columns(conn: sqlite3.Connection) -> None:
+    have = {r["name"] for r in conn.execute(
+        "PRAGMA table_info(attendance_leave_requests)").fetchall()}
+    for name, decl in _EXTRA_COLUMNS:
+        if name not in have:
+            conn.execute(
+                f"ALTER TABLE attendance_leave_requests ADD COLUMN {name} {decl}")
 
 
 def _row(r: sqlite3.Row) -> LeaveRequest:
+    keys = set(r.keys())
+
+    def opt(name: str, default: Any = None) -> Any:
+        return r[name] if name in keys else default
+
     return LeaveRequest(
         request_id=r["request_id"], student_id=r["student_id"],
         date_from=r["date_from"], date_to=r["date_to"], kind=r["kind"],
@@ -268,7 +384,16 @@ def _row(r: sqlite3.Row) -> LeaveRequest:
         requested_by=r["requested_by"], requested_at=r["requested_at"],
         notice_days=r["notice_days"], state=r["state"], code=r["code"],
         decided_by=r["decided_by"], decided_at=r["decided_at"],
-        decision_note=r["decision_note"], marks_written=r["marks_written"])
+        decision_note=r["decision_note"], marks_written=r["marks_written"],
+        origin=opt("origin") or ORIGIN_LEAVE,
+        channel=opt("channel"), reporter_type=opt("reporter_type"),
+        reporter_name=opt("reporter_name"), reason_id=opt("reason_id"),
+        reason_text=opt("reason_text"), message=opt("message"),
+        self_certified=bool(opt("self_certified", 0)),
+        contact_phone=opt("contact_phone"),
+        supporting_doc=opt("supporting_doc"), notes=opt("notes"),
+        request_date=opt("request_date"), updated_at=opt("updated_at"),
+        legacy_ref=opt("legacy_ref"))
 
 
 # ── Validation ──────────────────────────────────────────────────────
@@ -439,7 +564,7 @@ def approve(
         raise ValidationError(f"No leave request with id {request_id}")
     if request.state == APPROVED:
         raise ValidationError(f"Request #{request_id} is already approved")
-    if request.state in (WITHDRAWN, CANCELLED):
+    if request.state in (WITHDRAWN, CANCELLED, SUPERSEDED):
         raise ValidationError(
             f"Request #{request_id} was {request.state.lower()}")
     if not (decided_by or "").strip():
@@ -454,9 +579,32 @@ def approve(
             "again with ignore_clashes if that is genuinely intended")
 
     code = codes.validate_code(code) if code else code_for_kind(request.kind)
+    written, used, skipped = _write_marks(request, code, actor=decided_by)
+
+    with _connect() as conn:
+        conn.execute(
+            """UPDATE attendance_leave_requests
+                  SET state = ?, code = ?, decided_by = ?,
+                      decided_at = datetime('now'), decision_note = ?,
+                      marks_written = ?, updated_at = datetime('now')
+                WHERE request_id = ?""",
+            (APPROVED, code, decided_by.strip(),
+             (note or "").strip() or None, written, request_id))
+        conn.commit()
+    logger.info("Leave #%d approved as %s: %d mark(s)", request_id, code,
+                written)
+    return ApplyResult(request_id=request_id, marks_written=written,
+                       dates=used, skipped=skipped)
+
+
+def _write_marks(request: LeaveRequest, code: str, *,
+                 actor: str | None) -> tuple[int, list[str], list[str]]:
+    """Code every timetabled lesson in the span; skip closed days and
+    submitted registers. Returns (marks written, dates used, skipped)."""
     written = 0
     used: list[str] = []
     skipped: list[str] = []
+    decided_by = actor
     cursor = _dt.date.fromisoformat(request.date_from)
     end = _dt.date.fromisoformat(request.date_to)
     while cursor <= end:
@@ -492,19 +640,44 @@ def approve(
                              slot.slot_id, date, e)
         written += marked
         (used if marked else skipped).append(date)
+    return written, used, skipped
 
+
+def apply_marks(request_id: int, *, actor: str,
+                code: str | None = None,
+                ignore_clashes: bool = False) -> ApplyResult:
+    """Code the register for leave that was approved without marks.
+
+    Pastoral approvals (and rows copied from the old request log) record
+    the decision but write nothing; this finishes the job, with the same
+    exam-clash guard :func:`approve` applies.
+    """
+    init_db()
+    request = get_request(request_id)
+    if request is None:
+        raise ValidationError(f"No leave request with id {request_id}")
+    if request.state != APPROVED:
+        raise ValidationError(
+            f"Request #{request_id} is {request.state.lower()}, not approved")
+    if not (actor or "").strip():
+        raise ValidationError("Marks have to be written by somebody named")
+    exam_clashes = [c for c in clashes(request_id)
+                    if c.what == "Exam sitting"]
+    if exam_clashes and not ignore_clashes:
+        raise ValidationError(
+            f"{request.student_id} is sitting {exam_clashes[0].detail} on "
+            f"{exam_clashes[0].date} — confirm before writing leave over it")
+    code = (codes.validate_code(code) if code
+            else request.code or code_for_kind(request.kind))
+    written, used, skipped = _write_marks(request, code, actor=actor)
     with _connect() as conn:
         conn.execute(
-            """UPDATE attendance_leave_requests
-                  SET state = ?, code = ?, decided_by = ?,
-                      decided_at = datetime('now'), decision_note = ?,
-                      marks_written = ?
-                WHERE request_id = ?""",
-            (APPROVED, code, decided_by.strip(),
-             (note or "").strip() or None, written, request_id))
+            "UPDATE attendance_leave_requests SET code = ?, "
+            "marks_written = marks_written + ?, updated_at = datetime('now') "
+            "WHERE request_id = ?", (code, written, request_id))
         conn.commit()
-    logger.info("Leave #%d approved as %s: %d mark(s)", request_id, code,
-                written)
+    logger.info("Leave #%d marks applied as %s: %d mark(s)", request_id,
+                code, written)
     return ApplyResult(request_id=request_id, marks_written=written,
                        dates=used, skipped=skipped)
 
@@ -523,7 +696,7 @@ def decline(request_id: int, *, reason: str,
         conn.execute(
             """UPDATE attendance_leave_requests
                   SET state = ?, decided_by = ?, decided_at = datetime('now'),
-                      decision_note = ?
+                      decision_note = ?, updated_at = datetime('now')
                 WHERE request_id = ?""",
             (DECLINED, (decided_by or "").strip() or None, note, request_id))
         conn.commit()
@@ -545,7 +718,8 @@ def withdraw(request_id: int, *, reason: str | None = None) -> LeaveRequest:
     with _connect() as conn:
         conn.execute(
             "UPDATE attendance_leave_requests SET state = ?, "
-            "decision_note = COALESCE(?, decision_note) WHERE request_id = ?",
+            "decision_note = COALESCE(?, decision_note), "
+            "updated_at = datetime('now') WHERE request_id = ?",
             (WITHDRAWN, (reason or "").strip() or None, request_id))
         conn.commit()
     out = get_request(request_id)
@@ -592,7 +766,7 @@ def cancel(request_id: int, *, reason: str,
         conn.execute(
             """UPDATE attendance_leave_requests
                   SET state = ?, decision_note = ?, decided_by = ?,
-                      decided_at = datetime('now')
+                      decided_at = datetime('now'), updated_at = datetime('now')
                 WHERE request_id = ?""",
             (CANCELLED, note, (actor or "").strip() or None, request_id))
         conn.commit()
@@ -616,10 +790,29 @@ def get_request(request_id: int) -> LeaveRequest | None:
 def list_requests(*, student_id: str | None = None, state: str | None = None,
                   kind: str | None = None, date_from: str | None = None,
                   date_to: str | None = None,
-                  limit: int = 200) -> list[LeaveRequest]:
+                  limit: int = 200,
+                  origins: tuple[str, ...] | None = PLANNED_ORIGINS,
+                  channel: str | None = None,
+                  self_certified: bool | None = None,
+                  newest_first: bool = False) -> list[LeaveRequest]:
+    """Rows from the absence store.
+
+    ``origins`` defaults to planned absence (leave and pastoral
+    requests), which is what every leave screen has always shown; pass
+    ``(ORIGIN_REPORT,)`` for reports or ``None`` for everything.
+    """
     init_db()
     clauses: list[str] = []
     args: list[Any] = []
+    if origins:
+        clauses.append(f"origin IN ({','.join('?' * len(origins))})")
+        args.extend(origins)
+    if channel:
+        clauses.append("channel = ?")
+        args.append(channel)
+    if self_certified is not None:
+        clauses.append("self_certified = ?")
+        args.append(1 if self_certified else 0)
     if student_id:
         clauses.append("student_id = ?")
         args.append(student_id.strip())
@@ -642,7 +835,9 @@ def list_requests(*, student_id: str | None = None, state: str | None = None,
     with _connect() as conn:
         rows = conn.execute(
             f"SELECT * FROM attendance_leave_requests {where} "
-            "ORDER BY date_from, request_id LIMIT ?", args).fetchall()
+            + ("ORDER BY date_from DESC, request_id DESC LIMIT ?"
+               if newest_first else "ORDER BY date_from, request_id LIMIT ?"),
+            args).fetchall()
     return [_row(r) for r in rows]
 
 
@@ -695,50 +890,417 @@ def short_notice_report(*, date_from: str | None = None,
                                      limit=5000) if r.short_notice]
 
 
+# ── Study leave for a cohort ────────────────────────────────────────
+
+@dataclass
+class StudyLeaveResult:
+    granted: list[ApplyResult] = field(default_factory=list)
+    skipped: dict[str, str] = field(default_factory=dict)
+
+    @property
+    def summary(self) -> str:
+        marks = sum(r.marks_written for r in self.granted)
+        return (f"Study leave granted to {len(self.granted)} learner(s) "
+                f"({marks} mark(s)); {len(self.skipped)} skipped")
+
+
+def grant_study_leave(
+    date_from: str,
+    date_to: str,
+    *,
+    decided_by: str,
+    student_ids: list[str] | None = None,
+    group_id: int | None = None,
+    detail: str | None = None,
+    ignore_clashes: bool = True,
+) -> StudyLeaveResult:
+    """Grant study leave to a group of learners in one go.
+
+    Study leave is decided by the college for a cohort (a year group's
+    exam season), not asked for one learner at a time, so each learner
+    gets a request that is approved at once and coded ``S``. Exam
+    sittings inside the span are expected — the learner comes in for
+    them — so clashes are ignored by default. Learners with leave
+    already covering the dates are skipped and listed, not overwritten.
+    """
+    init_db()
+    ids = [str(s).strip() for s in (student_ids or []) if str(s).strip()]
+    if group_id is not None:
+        from education_system.systems.sixth_form.domain.academics.class_groups import (  # noqa: E501
+            class_groups as _cg,
+        )
+        ids.extend(m for m in _cg.list_members(group_id) if m not in ids)
+    if not ids:
+        raise ValidationError("Choose the learners (or a group) to grant "
+                              "study leave to")
+    if not (decided_by or "").strip():
+        raise ValidationError("Study leave has to be granted by somebody named")
+    result = StudyLeaveResult()
+    for sid in ids:
+        try:
+            request = request_leave(
+                sid, date_from, date_to=date_to, kind="Study leave",
+                detail=detail or "Study leave", requested_by=decided_by)
+            result.granted.append(approve(
+                request.request_id, decided_by=decided_by,
+                note="Cohort study leave", ignore_clashes=ignore_clashes))
+        except ValidationError as e:
+            result.skipped[sid] = str(e)
+    logger.info("Study leave %s → %s: %s", date_from, date_to,
+                result.summary)
+    return result
+
+
 # ── Bridge to the pastoral request log ──────────────────────────────
 
 def adopt_pastoral_request(pastoral_request_id: int, *,
                            kind: str | None = None) -> LeaveRequest:
-    """Pull a request from :mod:`pastoral.absence_requests` into here.
+    """Bring a pastoral request into the leave workflow.
 
-    The pastoral team takes the request; this module does the attendance
-    work. Adopting rather than re-keying means the dates and the reason
-    cannot drift apart between the two records.
+    Since the stores were unified a pastoral request *is* a row here
+    (``origin = 'pastoral'``), so there is nothing to copy: adopting it
+    settles its leave kind — guessed from the pastoral reason unless one
+    is given — so the right code is written when it is approved. The id
+    is the one the pastoral window shows. A pre-unification id is
+    followed through ``legacy_ref``.
     """
     init_db()
-    from education_system.systems.sixth_form.domain.pastoral.absence_requests import (  # noqa: E501
-        absence_requests as _pastoral,
-    )
-    source = _pastoral.get_request(pastoral_request_id)
-    if source is None:
+    request = get_request(pastoral_request_id)
+    if request is None or request.origin == ORIGIN_REPORT:
+        request = by_legacy_ref(LEGACY_PASTORAL, pastoral_request_id)
+    if request is None:
         raise ValidationError(
             f"No pastoral absence request with id {pastoral_request_id}")
     guessed = kind
     if guessed is None:
-        reason = (source.reason or "").lower()
-        guessed = next((k for k in KINDS if k.lower() in reason), DEFAULT_KIND)
-    return request_leave(
-        source.student_id, source.start_date, date_to=source.end_date,
-        kind=guessed, detail=source.description or source.reason,
-        requested_by=source.submitted_by,
-        on=source.request_date)
+        reason = (request.reason_text or request.detail or "").lower()
+        guessed = (kind_for_pastoral_reason(request.reason_text)
+                   if request.reason_text else
+                   next((k for k in KINDS if k.lower() in reason),
+                        DEFAULT_KIND))
+    store_update(request.request_id, kind=validate_kind(guessed))
+    out = get_request(request.request_id)
+    assert out is not None
+    return out
 
 
 def adopt_pending_pastoral(*, limit: int = 50) -> list[LeaveRequest]:
-    """Adopt every pastoral request that has no leave record yet."""
-    from education_system.systems.sixth_form.domain.pastoral.absence_requests import (  # noqa: E501
-        absence_requests as _pastoral,
-    )
+    """Settle the leave kind on every pastoral request still at the default."""
     out: list[LeaveRequest] = []
-    for source in _pastoral.list_requests()[:max(1, limit)]:
-        overlapping = [r for r in list_requests(student_id=source.student_id)
-                       if r.is_live and not (r.date_to < source.start_date
-                                             or r.date_from > source.end_date)]
-        if overlapping:
+    for request in list_requests(origins=(ORIGIN_PASTORAL,),
+                                 limit=max(1, limit) * 4):
+        if len(out) >= max(1, limit):
+            break
+        if request.kind != DEFAULT_KIND or not request.is_live:
             continue
         try:
-            out.append(adopt_pastoral_request(source.request_id))
+            out.append(adopt_pastoral_request(request.request_id))
         except ValidationError as e:
             logger.debug("Could not adopt pastoral request #%d: %s",
-                         source.request_id, e)
+                         request.request_id, e)
     return out
+
+
+# ── The one absence store ───────────────────────────────────────────
+
+# Pastoral reasons → leave kinds, so a request logged by the pastoral
+# team earns the right code when it is approved.
+_PASTORAL_REASON_KIND: dict[str, str] = {
+    "Medical Appointment": "Medical appointment",
+    "Illness": "Illness",
+    "University Open Day": "University open day",
+    "University Interview": "Interview",
+    "Apprenticeship Interview": "Interview",
+    "Work Experience": "College activity",
+    "Family Bereavement": "Bereavement",
+    "Family Emergency": "Family event",
+    "Religious Observance": "Religious observance",
+    "Sports / Competition": "Audition or trial",
+    "Driving Test": "Driving test",
+    "DBS / Passport Appointment": "Other",
+    "Other": "Other",
+}
+
+
+def kind_for_pastoral_reason(reason: str | None) -> str:
+    return _PASTORAL_REASON_KIND.get((reason or "").strip(), DEFAULT_KIND)
+
+
+def _clean(value: Any) -> Any:
+    if isinstance(value, str):
+        return value.strip() or None
+    return value
+
+
+def store_insert(student_id: str, date_from: str, date_to: str, *,
+                 origin: str, **fields: Any) -> int:
+    """Insert one row into the absence store. Returns its id.
+
+    The low-level write the pastoral and report modules use; each keeps
+    its own validation and calls this once it is satisfied. Only known
+    columns are accepted.
+    """
+    init_db()
+    if origin not in ORIGINS:
+        raise ValidationError(f"Origin must be one of: {', '.join(ORIGINS)}")
+    unknown = set(fields) - _WRITABLE
+    if unknown:
+        raise ValidationError(f"Unknown absence-store field(s): {sorted(unknown)}")
+    row = {"student_id": student_id, "date_from": date_from,
+           "date_to": date_to, "origin": origin,
+           "kind": fields.pop("kind", None) or DEFAULT_KIND,
+           "state": fields.pop("state", None) or REQUESTED}
+    row.update({k: _clean(v) for k, v in fields.items()})
+    cols = list(row)
+    with _connect() as conn:
+        cur = conn.execute(
+            f"INSERT INTO attendance_leave_requests ({', '.join(cols)}, "
+            "updated_at) VALUES ("
+            + ", ".join("?" * len(cols)) + ", datetime('now'))",
+            [row[c] for c in cols])
+        conn.commit()
+        return int(cur.lastrowid or 0)
+
+
+def store_update(request_id: int, **fields: Any) -> None:
+    """Change named columns on one row of the absence store."""
+    init_db()
+    if not fields:
+        return
+    unknown = set(fields) - _WRITABLE
+    if unknown:
+        raise ValidationError(f"Unknown absence-store field(s): {sorted(unknown)}")
+    sets = ", ".join(f"{k} = ?" for k in fields)
+    with _connect() as conn:
+        cur = conn.execute(
+            f"UPDATE attendance_leave_requests SET {sets}, "
+            "updated_at = datetime('now') WHERE request_id = ?",
+            [_clean(v) for v in fields.values()] + [request_id])
+        conn.commit()
+    if not cur.rowcount:
+        raise ValidationError(f"No absence record with id {request_id}")
+
+
+def store_delete(request_id: int) -> bool:
+    """Delete one row, and the old-store row it was copied from.
+
+    The original is deleted too because :func:`migrate_legacy_stores`
+    would otherwise copy it straight back on the next start.
+    """
+    init_db()
+    request = get_request(request_id)
+    if request is None:
+        return False
+    with _connect() as conn:
+        conn.execute("DELETE FROM attendance_leave_requests "
+                     "WHERE request_id = ?", (request_id,))
+        _delete_legacy_source(conn, request.legacy_ref)
+        conn.commit()
+    logger.info("Deleted absence record #%d (%s)", request_id, request.origin)
+    return True
+
+
+def _delete_legacy_source(conn: sqlite3.Connection,
+                          legacy_ref: str | None) -> None:
+    if not legacy_ref or ":" not in legacy_ref:
+        return
+    table, _sep, raw_id = legacy_ref.partition(":")
+    key = {LEGACY_PASTORAL: "request_id",
+           LEGACY_REPORTS: "report_id"}.get(table)
+    if key is None or not raw_id.isdigit() or not _table_exists(conn, table):
+        return
+    conn.execute(f"DELETE FROM {table} WHERE {key} = ?", (int(raw_id),))
+
+
+def by_legacy_ref(table: str, legacy_id: int) -> LeaveRequest | None:
+    """The store row copied from one row of an old table, if any."""
+    init_db()
+    with _connect() as conn:
+        r = conn.execute(
+            "SELECT * FROM attendance_leave_requests WHERE legacy_ref = ?",
+            (f"{table}:{int(legacy_id)}",)).fetchone()
+    return _row(r) if r else None
+
+
+def all_absence(*, student_id: str | None = None, state: str | None = None,
+                date_from: str | None = None, date_to: str | None = None,
+                origin: str | None = None,
+                limit: int = 500) -> list[LeaveRequest]:
+    """Every absence anybody has told the college about, newest first.
+
+    Leave, pastoral requests and reports together — the one list the
+    stores were unified to make possible.
+    """
+    rows = list_requests(student_id=student_id, state=state,
+                         date_from=date_from, date_to=date_to, limit=limit,
+                         origins=(origin,) if origin else None,
+                         newest_first=True)
+    if rows:
+        from education_system.systems.sixth_form.domain.learners.students import (
+            students as _students,
+        )
+        index = {s.student_id: s.full_name for s in _students.list_students()}
+        for request in rows:
+            request.student_name = index.get(request.student_id)
+    return rows
+
+
+def awaiting_marks(*, limit: int = 200) -> list[LeaveRequest]:
+    """Approved planned absence that has not reached the register."""
+    return [r for r in list_requests(state=APPROVED, limit=5000)
+            if r.needs_marks][:max(1, limit)]
+
+
+def origin_counts() -> dict[str, int]:
+    """How many rows the store holds from each source."""
+    init_db()
+    with _connect() as conn:
+        rows = conn.execute(
+            "SELECT origin, COUNT(*) AS n FROM attendance_leave_requests "
+            "GROUP BY origin").fetchall()
+    return {r["origin"]: r["n"] for r in rows}
+
+
+# ── Copying the old stores in ───────────────────────────────────────
+
+_PASTORAL_STATE: dict[str, str] = {
+    "Pending": REQUESTED, "Approved": APPROVED, "Denied": DECLINED,
+    "Cancelled": CANCELLED, "Withdrawn": WITHDRAWN,
+}
+_REPORT_STATE: dict[str, str] = {
+    "Pending": REQUESTED, "Accepted": APPROVED, "Rejected": DECLINED,
+    "Superseded": SUPERSEDED,
+}
+
+
+@dataclass
+class MigrationResult:
+    pastoral_copied: int = 0
+    pastoral_linked: int = 0
+    reports_copied: int = 0
+    skipped: int = 0
+
+    @property
+    def summary(self) -> str:
+        return (f"{self.pastoral_copied} pastoral request(s) copied, "
+                f"{self.pastoral_linked} linked to existing leave, "
+                f"{self.reports_copied} report(s) copied, "
+                f"{self.skipped} skipped")
+
+
+def _table_exists(conn: sqlite3.Connection, table: str) -> bool:
+    return conn.execute(
+        "SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = ?",
+        (table,)).fetchone() is not None
+
+
+def _notice(request_date: str | None, date_from: str) -> int | None:
+    try:
+        return (_dt.date.fromisoformat(date_from)
+                - _dt.date.fromisoformat((request_date or "")[:10])).days
+    except ValueError:
+        return None
+
+
+def migrate_legacy_stores(*, conn: sqlite3.Connection | None = None
+                          ) -> MigrationResult:
+    """Copy rows from the two older absence tables into this one.
+
+    Idempotent: each copied row carries ``legacy_ref`` ("<table>:<id>"),
+    which has a unique index, so a second run copies nothing. A pastoral
+    request that was already adopted under the old manual bridge (same
+    learner, same dates, no legacy link yet) is *linked* to that leave
+    row rather than copied, so it does not appear twice. The old tables
+    are left exactly as they were.
+    """
+    if conn is None:
+        init_db()       # init_db runs this itself on first use
+        with _connect() as own:
+            return migrate_legacy_stores(conn=own)
+
+    result = MigrationResult()
+    if not _table_exists(conn, "students"):
+        return result
+    students = {r[0] for r in conn.execute(
+        "SELECT student_id FROM students").fetchall()}
+    done = {r[0] for r in conn.execute(
+        "SELECT legacy_ref FROM attendance_leave_requests "
+        "WHERE legacy_ref IS NOT NULL").fetchall()}
+    cols = ("student_id, date_from, date_to, kind, detail, requested_by, "
+            "requested_at, notice_days, state, code, decided_by, decided_at, "
+            "decision_note, marks_written, origin, channel, reporter_type, "
+            "reporter_name, reason_id, reason_text, message, self_certified, "
+            "contact_phone, supporting_doc, notes, request_date, updated_at, "
+            "legacy_ref")
+    insert = (f"INSERT INTO attendance_leave_requests ({cols}) VALUES ("
+              + ", ".join("?" * len(cols.split(", "))) + ")")
+
+    if _table_exists(conn, LEGACY_PASTORAL):
+        for r in conn.execute(
+                f"SELECT * FROM {LEGACY_PASTORAL} ORDER BY request_id"):
+            ref = f"{LEGACY_PASTORAL}:{r['request_id']}"
+            if ref in done:
+                continue
+            if r["student_id"] not in students:
+                result.skipped += 1
+                continue
+            adopted = conn.execute(
+                "SELECT request_id FROM attendance_leave_requests "
+                "WHERE origin = ? AND legacy_ref IS NULL AND student_id = ? "
+                "AND date_from = ? AND date_to = ? LIMIT 1",
+                (ORIGIN_LEAVE, r["student_id"], r["start_date"],
+                 r["end_date"])).fetchone()
+            if adopted is not None:
+                conn.execute(
+                    """UPDATE attendance_leave_requests
+                          SET legacy_ref = ?, reason_text = COALESCE(reason_text, ?),
+                              reporter_type = COALESCE(reporter_type, ?),
+                              contact_phone = COALESCE(contact_phone, ?),
+                              supporting_doc = COALESCE(supporting_doc, ?),
+                              notes = COALESCE(notes, ?),
+                              request_date = COALESCE(request_date, ?)
+                        WHERE request_id = ?""",
+                    (ref, r["reason"], r["submitter_type"], r["contact_phone"],
+                     r["supporting_doc"], r["notes"], r["request_date"],
+                     adopted["request_id"]))
+                result.pastoral_linked += 1
+                continue
+            conn.execute(insert, (
+                r["student_id"], r["start_date"], r["end_date"],
+                kind_for_pastoral_reason(r["reason"]), r["description"],
+                r["submitted_by"], r["created_at"],
+                _notice(r["request_date"], r["start_date"]),
+                _PASTORAL_STATE.get(r["status"], REQUESTED), None,
+                r["decided_by"], r["decision_date"], r["decision_notes"], 0,
+                ORIGIN_PASTORAL, None, r["submitter_type"], None, None,
+                r["reason"], None, 0, r["contact_phone"], r["supporting_doc"],
+                r["notes"], r["request_date"], r["updated_at"], ref))
+            result.pastoral_copied += 1
+
+    if _table_exists(conn, LEGACY_REPORTS):
+        for r in conn.execute(
+                f"SELECT * FROM {LEGACY_REPORTS} ORDER BY report_id"):
+            ref = f"{LEGACY_REPORTS}:{r['report_id']}"
+            if ref in done:
+                continue
+            if r["student_id"] not in students:
+                result.skipped += 1
+                continue
+            conn.execute(insert, (
+                r["student_id"], r["date_from"], r["date_to"],
+                "Illness" if r["self_certified"] else DEFAULT_KIND,
+                r["reason_text"], r["reporter_name"], r["received_at"], None,
+                _REPORT_STATE.get(r["state"], REQUESTED), r["code"],
+                r["decided_by"], r["decided_at"], r["decision_note"],
+                r["marks_written"] or 0, ORIGIN_REPORT, r["channel"],
+                r["reported_by"], r["reporter_name"], r["reason_id"],
+                r["reason_text"], r["message"], r["self_certified"] or 0,
+                None, None, None, (r["received_at"] or "")[:10] or None,
+                r["decided_at"] or r["received_at"], ref))
+            result.reports_copied += 1
+
+    conn.commit()
+    if result.pastoral_copied or result.pastoral_linked \
+            or result.reports_copied:
+        logger.info("Absence stores unified: %s", result.summary)
+    return result

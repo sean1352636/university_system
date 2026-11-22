@@ -245,11 +245,15 @@ class TestSixthFormMainGUI:
         monkeypatch.setattr(
             switch, "request_logout",
             lambda iface: called.setdefault("iface", iface))
-        # Suppress the messagebox so the test doesn't open a dialog.
-        monkeypatch.setattr(
-            "tkinter.messagebox.showinfo", lambda *a, **kw: None)
+        # The notice comes after logout, so an unattended session can't sit
+        # signed in behind it.
+        from education_system.platform.delivery.gui import idle_timeout as platform_idle
+        def notice(*a, **kw):
+            called["logged_out_before_notice"] = app.auth.logout.called
+        monkeypatch.setattr(platform_idle, "notify_signed_out", notice)
         app._idle_logout()
         assert called["iface"] == "gui"
+        assert called["logged_out_before_notice"] is True
         app.auth.logout.assert_called_once()
 
     def test_switch_to_cli_cancelled(self, app, monkeypatch):
@@ -286,7 +290,7 @@ class TestSixthFormMainGUI:
             # mocking of every domain — we settle for verifying the
             # surface area instead.
             "open_student_directory", "open_add_student",
-            "open_search_students", "open_student_profile",
+            "open_search_students",
             "open_courses", "open_subjects", "open_class_groups",
             "open_timetable", "open_attendance", "open_homework",
             "open_gradebook", "open_predicted_grades",

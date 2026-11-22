@@ -25,12 +25,20 @@ _SYSTEM = "secondary"
 _CATEGORY = "Assessment & Grades"
 
 
-@assessment_grades_menu_bp.route("/open-gradebook", methods=["GET"])
+@assessment_grades_menu_bp.route("/gradebook", methods=["GET"])
 @token_required
 @staff_required
-def assessment_grades_open_gradebook():
-    """open_gradebook"""
-    return feature_pending("open_gradebook", _SYSTEM, category=_CATEGORY)
+def assessment_grades_gradebook():
+    """Gradebook"""
+    return feature_pending("Gradebook", _SYSTEM, category=_CATEGORY)
+
+
+@assessment_grades_menu_bp.route("/assessment-points", methods=["GET"])
+@token_required
+@staff_required
+def assessment_grades_assessment_points():
+    """Assessment Points"""
+    return feature_pending("Assessment Points", _SYSTEM, category=_CATEGORY)
 
 
 @assessment_grades_menu_bp.route("/target-grades", methods=["GET"])
@@ -41,30 +49,6 @@ def assessment_grades_target_grades():
     return feature_pending("Target Grades", _SYSTEM, category=_CATEGORY)
 
 
-@assessment_grades_menu_bp.route("/baseline-assessment", methods=["GET"])
-@token_required
-@staff_required
-def assessment_grades_baseline_assessment():
-    """Baseline Assessment"""
-    return feature_pending("Baseline Assessment", _SYSTEM, category=_CATEGORY)
-
-
-@assessment_grades_menu_bp.route("/progress-8", methods=["GET"])
-@token_required
-@staff_required
-def assessment_grades_progress_8():
-    """Progress 8"""
-    return feature_pending("Progress 8", _SYSTEM, category=_CATEGORY)
-
-
-@assessment_grades_menu_bp.route("/attainment-8", methods=["GET"])
-@token_required
-@staff_required
-def assessment_grades_attainment_8():
-    """Attainment 8"""
-    return feature_pending("Attainment 8", _SYSTEM, category=_CATEGORY)
-
-
 @assessment_grades_menu_bp.route("/mock-exams", methods=["GET"])
 @token_required
 @staff_required
@@ -73,66 +57,42 @@ def assessment_grades_mock_exams():
     return feature_pending("Mock Exams", _SYSTEM, category=_CATEGORY)
 
 
-@assessment_grades_menu_bp.route("/gcse-exam-entries", methods=["GET"])
+@assessment_grades_menu_bp.route("/exam-entries", methods=["GET"])
 @token_required
 @staff_required
-def assessment_grades_gcse_exam_entries():
-    """GCSE Exam Entries"""
-    return feature_pending("GCSE Exam Entries", _SYSTEM, category=_CATEGORY)
+def assessment_grades_exam_entries():
+    """Exam Entries"""
+    return feature_pending("Exam Entries", _SYSTEM, category=_CATEGORY)
 
 
-@assessment_grades_menu_bp.route("/results-day", methods=["GET"])
+@assessment_grades_menu_bp.route("/exam-results", methods=["GET"])
 @token_required
 @staff_required
-def assessment_grades_results_day():
-    """Results Day"""
-    return feature_pending("Results Day", _SYSTEM, category=_CATEGORY)
+def assessment_grades_exam_results():
+    """Exam Results"""
+    return feature_pending("Exam Results", _SYSTEM, category=_CATEGORY)
 
 
-@assessment_grades_menu_bp.route("/intervention-tracking", methods=["GET"])
+@assessment_grades_menu_bp.route("/attainment-8-progress-8", methods=["GET"])
 @token_required
 @staff_required
-def assessment_grades_intervention_tracking():
-    """Intervention Tracking"""
-    return feature_pending("Intervention Tracking", _SYSTEM, category=_CATEGORY)
+def assessment_grades_attainment_8_progress_8():
+    """Attainment 8 & Progress 8"""
+    return feature_pending("Attainment 8 & Progress 8", _SYSTEM, category=_CATEGORY)
 
 
-@assessment_grades_menu_bp.route("/early-warning", methods=["GET"])
+@assessment_grades_menu_bp.route("/interventions", methods=["GET"])
 @token_required
 @staff_required
-def assessment_grades_early_warning():
-    """Early Warning"""
-    return feature_pending("Early Warning", _SYSTEM, category=_CATEGORY)
+def assessment_grades_interventions():
+    """Interventions"""
+    return feature_pending("Interventions", _SYSTEM, category=_CATEGORY)
 
 
-@assessment_grades_menu_bp.route("/open-observations", methods=["GET"])
+@assessment_grades_menu_bp.route("/reports-to-parents", methods=["GET"])
 @token_required
 @staff_required
-def assessment_grades_open_observations():
-    """open_observations"""
-    return feature_pending("open_observations", _SYSTEM, category=_CATEGORY)
-
-
-@assessment_grades_menu_bp.route("/self-assessment", methods=["GET"])
-@token_required
-@staff_required
-def assessment_grades_self_assessment():
-    """Self Assessment"""
-    return feature_pending("Self Assessment", _SYSTEM, category=_CATEGORY)
-
-
-@assessment_grades_menu_bp.route("/quality-assurance", methods=["GET"])
-@token_required
-@staff_required
-def assessment_grades_quality_assurance():
-    """Quality Assurance"""
-    return feature_pending("Quality Assurance", _SYSTEM, category=_CATEGORY)
-
-
-@assessment_grades_menu_bp.route("/sef-builder", methods=["GET"])
-@token_required
-@staff_required
-def assessment_grades_sef_builder():
-    """SEF Builder"""
-    return feature_pending("SEF Builder", _SYSTEM, category=_CATEGORY)
+def assessment_grades_reports_to_parents():
+    """Reports to Parents"""
+    return feature_pending("Reports to Parents", _SYSTEM, category=_CATEGORY)
 

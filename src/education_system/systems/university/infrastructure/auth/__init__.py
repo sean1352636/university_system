@@ -179,12 +179,6 @@ except ImportError:
     MFA_AVAILABLE = False
 
 try:
-    from education_system.systems.university.infrastructure.auth.mfa_integration import integrate_mfa_with_auth
-    MFA_INTEGRATION_AVAILABLE = True
-except ImportError:
-    MFA_INTEGRATION_AVAILABLE = False
-
-try:
     from education_system.systems.university.infrastructure.auth.email_otp_service import EmailOTPService
     EMAIL_OTP_AVAILABLE = True
 except ImportError:
@@ -335,7 +329,6 @@ __all__ = [
     # MFA (optional)
     'MFAService',
     'MFA_AVAILABLE',
-    'MFA_INTEGRATION_AVAILABLE',
     'EMAIL_OTP_AVAILABLE',
     'SMS_PROVIDER_AVAILABLE',
 

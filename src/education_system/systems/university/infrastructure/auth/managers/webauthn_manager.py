@@ -243,7 +243,7 @@ class WebAuthnManager:
                 # Store the credential
                 cursor.execute(
                     '''INSERT INTO webauthn_credentials
-                       (user_id, credential_id, public_key, device_name, sign_count,
+                       (user_id, credential_id, public_key, credential_name, sign_count,
                         created_at, last_used_at)
                        VALUES (?, ?, ?, ?, 0, ?, ?)''',
                     (user_id, credential_id, public_key, credential_name, timestamp, timestamp),
@@ -543,7 +543,7 @@ class WebAuthnManager:
                 cursor = conn.cursor()
 
                 cursor.execute(
-                    '''SELECT credential_id, device_name, created_at, last_used_at, sign_count
+                    '''SELECT credential_id, credential_name, created_at, last_used_at, sign_count
                        FROM webauthn_credentials
                        WHERE user_id = ?
                        ORDER BY created_at DESC''',
@@ -592,7 +592,7 @@ class WebAuthnManager:
 
                 # Get credential info and verify ownership
                 cursor.execute(
-                    'SELECT user_id, device_name FROM webauthn_credentials WHERE credential_id = ?',
+                    'SELECT user_id, credential_name FROM webauthn_credentials WHERE credential_id = ?',
                     (credential_id,),
                 )
                 cred_data = cursor.fetchone()
@@ -668,7 +668,7 @@ class WebAuthnManager:
 
                 # Get credential info and verify ownership
                 cursor.execute(
-                    'SELECT user_id, device_name FROM webauthn_credentials WHERE credential_id = ?',
+                    'SELECT user_id, credential_name FROM webauthn_credentials WHERE credential_id = ?',
                     (credential_id,),
                 )
                 cred_data = cursor.fetchone()
@@ -688,7 +688,7 @@ class WebAuthnManager:
                         }
 
                 cursor.execute(
-                    'UPDATE webauthn_credentials SET device_name = ? WHERE credential_id = ?',
+                    'UPDATE webauthn_credentials SET credential_name = ? WHERE credential_id = ?',
                     (new_name, credential_id),
                 )
                 conn.commit()

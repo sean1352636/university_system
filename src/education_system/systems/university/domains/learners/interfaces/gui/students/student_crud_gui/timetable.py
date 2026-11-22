@@ -88,7 +88,7 @@ def view_student_timetable(self, student_id, first_name, last_name):
         # maps the student's enrolled modules to their courses. Best-effort —
         # never let this break the module timetable.
         try:
-            from education_system.systems.university.domains.academics.domain.services.timetable_bridge import (
+            from education_system.systems.university.domains.teaching.domain.timetable_bridge import (
                 get_student_section_meetings,
             )
             for m in get_student_section_meetings(student_id):

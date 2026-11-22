@@ -14,18 +14,20 @@ import pytest
 
 from education_system.systems.apprenticeships import config
 from education_system.systems.apprenticeships.domain.apprentices.models import ValidationError
-from education_system.systems.apprenticeships.services import (
-    apprentice_service,
-    compliance_service,
+from education_system.systems.apprenticeships.application.apprentices import apprentice_service
+from education_system.systems.apprenticeships.application.assessments import (
     epa_service,
-    funding_service,
     gateway_service,
     portfolio_service,
-    reporting_service,
+)
+from education_system.systems.apprenticeships.application.compliance import compliance_service
+from education_system.systems.apprenticeships.application.funding import funding_service
+from education_system.systems.apprenticeships.application.learning import (
     review_service,
     training_service,
 )
-from education_system.systems.apprenticeships.services.access import PermissionDenied
+from education_system.systems.apprenticeships.application.workspace import reporting_service
+from education_system.systems.apprenticeships.application.security.access import PermissionDenied
 
 
 # ═════════════════════════════════════════════════════════════════════
@@ -52,7 +54,7 @@ class TestScoping:
         The failure mode this guards against is the scope falling back to
         "no filter" and quietly exposing the whole cohort.
         """
-        from education_system.systems.apprenticeships.services.access import Actor
+        from education_system.systems.apprenticeships.application.security.access import Actor
 
         unlinked = Actor(username="nobody", role="employer", employer_id=None)
         assert apprentice_service.list_apprentices(unlinked) == []
@@ -154,7 +156,9 @@ class TestOffTheJobHours:
 
 class TestPortfolio:
     def test_an_apprentice_cannot_mark_themselves_competent(self, cohort):
-        from education_system.systems.apprenticeships.services import programme_service
+        from education_system.systems.apprenticeships.application.programmes import (
+            programme_service,
+        )
 
         evidence = portfolio_service.add_evidence(cohort["learner"], {
             "title": "Payment service", "evidence_type": "Work product",
@@ -178,7 +182,9 @@ class TestPortfolio:
             )
 
     def test_coverage_rolls_up_only_from_accepted_evidence(self, cohort, admin):
-        from education_system.systems.apprenticeships.services import programme_service
+        from education_system.systems.apprenticeships.application.programmes import (
+            programme_service,
+        )
 
         evidence = portfolio_service.add_evidence(cohort["learner"], {
             "title": "Project", "evidence_type": "Work product",
@@ -243,7 +249,7 @@ class TestReviews:
 
 def _make_ready(cohort, admin):
     """Satisfy every gateway requirement for the cohort apprentice."""
-    from education_system.systems.apprenticeships.services import programme_service
+    from education_system.systems.apprenticeships.application.programmes import programme_service
 
     apprentice_id = cohort["apprentice_id"]
 
@@ -416,7 +422,7 @@ class TestDashboards:
             assert "kpis" in data
 
     def test_an_unlinked_login_is_told_so_rather_than_crashing(self, db):
-        from education_system.systems.apprenticeships.services.access import Actor
+        from education_system.systems.apprenticeships.application.security.access import Actor
 
         data = reporting_service.dashboard(
             Actor(username="ghost", role="apprentice", apprentice_id=None)

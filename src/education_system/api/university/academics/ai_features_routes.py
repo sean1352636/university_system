@@ -7,11 +7,11 @@ from dataclasses import asdict
 from flask import Blueprint, jsonify, request
 
 from education_system.platform.delivery.api.university.auth import token_required
-from education_system.systems.university.domains.academics.domain.services.ai_grading.auto_grader import (
+from education_system.systems.university.domains.assessment.domain.ai_grading.auto_grader import (
     score_submission,
 )
 from education_system.systems.university.infrastructure.exceptions import ValidationError
-from education_system.systems.university.services.ai_features.nlp_engine import (
+from education_system.systems.university.shared.ai.features.nlp_engine import (
     generate_chatbot_reply,
 )
 

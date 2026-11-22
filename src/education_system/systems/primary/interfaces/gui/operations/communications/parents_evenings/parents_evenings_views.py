@@ -5,14 +5,15 @@ from __future__ import annotations
 import logging
 import tkinter as tk
 from datetime import date as _date
-from tkinter import messagebox, ttk
+from tkinter import ttk
 from typing import Callable
 from education_system.systems.primary.domain.operations.communications.parents_evenings import parents_evenings
 from education_system.systems.primary.domain.staff import staff
 from education_system.systems.primary.domain.operations.communications.parents_evenings import parents_evenings as data
 from education_system.systems.primary.domain.staff import staff as staff_data
 from education_system.systems.primary.domain import _pupils_bridge as student_data
-from education_system.platform import branding
+from education_system.platform.delivery.gui.parented_dialogs import make_toplevel, messagebox
+from education_system.systems.primary.interfaces.gui import kit
 from education_system.systems.primary.domain.operations.communications.parents_evenings.parents_evenings import (
     BOOKING_STATUSES,
     Booking,
@@ -33,13 +34,16 @@ WIN_MINSIZE = (1200, 800)
 
 def open_parents_evenings_window(parent=None) -> None:
     data.init_db()
-    master = getattr(parent, "root", parent)
-    win = tk.Toplevel(master) if master is not None else tk.Tk()
-    win.title(f"Parents' Evenings — {branding.SYSTEM_NAME}")
-    win.geometry(WIN_GEOMETRY)
-    win.minsize(*WIN_MINSIZE)
-    nb = ttk.Notebook(win)
-    nb.pack(fill="both", expand=True, padx=10, pady=10)
+    kit.show_page(parent, "Parents' Evenings",
+                  lambda frame: _draw_parents_evenings(frame, parent))
+
+
+def _draw_parents_evenings(parent: ttk.Frame, host=None) -> None:
+    kit.page_heading(parent, "Parents' Evenings",
+                     "Set up evenings, book pupils' parents into staff slots and see "
+                     "each teacher's or pupil's schedule.")
+    nb = ttk.Notebook(parent)
+    nb.pack(fill="both", expand=True)
     events_tab = EventsTab(nb)
     bookings_tab = BookingsTab(nb, events_tab)
     ScheduleTab(nb)
@@ -60,6 +64,27 @@ def _staff_options(active_only: bool = True) -> list[tuple[str, str]]:
     return [(t.staff_id,
               f"{t.staff_id} — {t.full_name} ({t.role})")
             for t in rows]
+
+
+# An event's year group ("Year 3") → the pupil year group ("3"), so a
+# booking for a one-year evening lists that year's pupils first.
+_EVENT_YEAR_TO_PUPIL = {label: code for code, label in kit.YEAR_GROUP_LABELS.items()}
+
+_EVENING_HOURS = range(7, 22)
+
+
+def _parent_name_choices(student_id: str) -> list[str]:
+    """The pupil's parent contacts' names (primary contact first)."""
+    if not student_id:
+        return []
+    try:
+        from education_system.systems.primary.domain.operations.communications.parent_contacts import (
+            parent_contacts as pc,
+        )
+        return [c.full_name for c in pc.contacts_for_student(student_id)]
+    except Exception:  # noqa: BLE001 - the name can still be typed
+        logger.debug("parent contacts lookup failed", exc_info=True)
+        return []
 
 
 def _student_names() -> dict[str, str]:
@@ -84,14 +109,12 @@ class EventsTab:
         bar = ttk.Frame(self.frame)
         bar.pack(fill="x", padx=8, pady=(8, 4))
         ttk.Label(bar, text="Year:").pack(side="left")
-        self.f_year = ttk.Combobox(bar, values=("",) + YEAR_GROUPS,
-                                      state="readonly", width=10)
-        self.f_year.current(0)
+        self.f_year = kit.ChoiceField(bar, tk.StringVar(), choices=YEAR_GROUPS, blank=True,
+                                      width=12)
         self.f_year.pack(side="left", padx=(2, 10))
         ttk.Label(bar, text="Status:").pack(side="left")
-        self.f_status = ttk.Combobox(bar, values=("",) + EVENT_STATUSES,
-                                        state="readonly", width=20)
-        self.f_status.current(0)
+        self.f_status = kit.ChoiceField(bar, tk.StringVar(), choices=EVENT_STATUSES,
+                                        blank=True, width=20)
         self.f_status.pack(side="left", padx=(2, 10))
         self.f_open = tk.BooleanVar(value=False)
         ttk.Checkbutton(bar, text="Open only", variable=self.f_open,
@@ -147,8 +170,8 @@ class EventsTab:
                     command=self.refresh).pack(side="right")
 
     def _clear(self) -> None:
-        self.f_year.current(0)
-        self.f_status.current(0)
+        self.f_year.set("")
+        self.f_status.set("")
         self.f_open.set(False)
         self.refresh()
 
@@ -282,15 +305,13 @@ class EventDialog:
                  on_save: Callable[[], None]) -> None:
         self.existing = existing
         self.on_save = on_save
-        self.win = tk.Toplevel(parent)
+        self.win = make_toplevel(parent.winfo_toplevel())
         self.win.title("Edit Event" if existing else "New Event")
-        self.win.transient(parent)
         self.win.after_idle(self.win.grab_set)
         self._build()
 
     def _build(self) -> None:
-        form = ttk.Frame(self.win)
-        form.pack(fill="both", expand=True, padx=12, pady=12)
+        form, footer = kit.scrolled_form(self.win)
         r = 0
         ttk.Label(form, text="Name:").grid(row=r, column=0,
                                               sticky="e", pady=3)
@@ -302,18 +323,18 @@ class EventDialog:
 
         ttk.Label(form, text="Date:").grid(row=r, column=0,
                                               sticky="e", pady=3)
-        self.date_e = ttk.Entry(form, width=14)
-        self.date_e.insert(0, self.existing.event_date if self.existing
-                                else _date.today().isoformat())
+        self.date_e = kit.DateField(
+            form, tk.StringVar(value=self.existing.event_date if self.existing
+                               else _date.today().isoformat()))
         self.date_e.grid(row=r, column=1, sticky="w", padx=6)
         r += 1
 
         ttk.Label(form, text="Year group:").grid(row=r, column=0,
                                                     sticky="e", pady=3)
-        self.year_cb = ttk.Combobox(form, values=YEAR_GROUPS,
-                                       state="readonly", width=12)
-        self.year_cb.set(self.existing.year_group if self.existing
-                            else DEFAULT_YEAR_GROUP)
+        self.year_cb = kit.ChoiceField(
+            form, tk.StringVar(value=self.existing.year_group if self.existing
+                               else DEFAULT_YEAR_GROUP),
+            choices=YEAR_GROUPS, width=14)
         self.year_cb.grid(row=r, column=1, sticky="w", padx=6)
         r += 1
 
@@ -325,36 +346,37 @@ class EventDialog:
         self.loc_e.grid(row=r, column=1, sticky="w", padx=6)
         r += 1
 
-        ttk.Label(form, text="Start time (HH:MM):").grid(row=r, column=0,
-                                                            sticky="e", pady=3)
-        self.start_e = ttk.Entry(form, width=10)
-        self.start_e.insert(0, self.existing.start_time
-                                if self.existing else "17:00")
+        ttk.Label(form, text="Start time:").grid(row=r, column=0,
+                                                 sticky="e", pady=3)
+        self.start_e = kit.TimeField(
+            form, tk.StringVar(value=self.existing.start_time if self.existing
+                               else "17:00"), hours=_EVENING_HOURS)
         self.start_e.grid(row=r, column=1, sticky="w", padx=6)
         r += 1
 
-        ttk.Label(form, text="End time (HH:MM):").grid(row=r, column=0,
-                                                          sticky="e", pady=3)
-        self.end_e = ttk.Entry(form, width=10)
-        self.end_e.insert(0, self.existing.end_time
-                              if self.existing else "20:00")
+        ttk.Label(form, text="End time:").grid(row=r, column=0,
+                                               sticky="e", pady=3)
+        self.end_e = kit.TimeField(
+            form, tk.StringVar(value=self.existing.end_time if self.existing
+                               else "20:00"), hours=_EVENING_HOURS)
         self.end_e.grid(row=r, column=1, sticky="w", padx=6)
         r += 1
 
         ttk.Label(form, text="Slot length (min):").grid(row=r, column=0,
                                                           sticky="e", pady=3)
-        self.slot_e = ttk.Entry(form, width=6)
-        self.slot_e.insert(0, str(self.existing.slot_minutes
-                                    if self.existing else 10))
+        self.slot_e = kit.NumberField(
+            form, tk.StringVar(value=str(self.existing.slot_minutes
+                                         if self.existing else 10)),
+            from_=5, to=60, increment=5, width=6)
         self.slot_e.grid(row=r, column=1, sticky="w", padx=6)
         r += 1
 
         ttk.Label(form, text="Status:").grid(row=r, column=0,
                                                 sticky="e", pady=3)
-        self.status_cb = ttk.Combobox(form, values=EVENT_STATUSES,
-                                          state="readonly", width=22)
-        self.status_cb.set(self.existing.status if self.existing
-                              else DEFAULT_EVENT_STATUS)
+        self.status_cb = kit.ChoiceField(
+            form, tk.StringVar(value=self.existing.status if self.existing
+                               else DEFAULT_EVENT_STATUS),
+            choices=EVENT_STATUSES, width=22)
         self.status_cb.grid(row=r, column=1, sticky="w", padx=6)
         r += 1
 
@@ -366,11 +388,9 @@ class EventDialog:
         self.notes_text.grid(row=r, column=1, sticky="w", padx=6)
         r += 1
 
-        bar = ttk.Frame(form)
-        bar.grid(row=r, column=0, columnspan=2, pady=(12, 0))
-        ttk.Button(bar, text="Save", command=self._save).pack(side="left")
-        ttk.Button(bar, text="Cancel",
-                    command=self.win.destroy).pack(side="left", padx=8)
+        ttk.Button(footer, text="Cancel",
+                    command=self.win.destroy).pack(side="right", padx=(6, 0))
+        ttk.Button(footer, text="Save", command=self._save).pack(side="right")
 
     def _save(self) -> None:
         payload = {
@@ -390,11 +410,11 @@ class EventDialog:
             else:
                 data.create_event(payload)
         except ValidationError as e:
-            messagebox.showerror("Validation", str(e))
+            messagebox.showerror("Validation", str(e), parent=self.win)
             return
         except Exception as e:
             logger.exception("save event failed")
-            messagebox.showerror("Save failed", str(e))
+            messagebox.showerror("Save failed", str(e), parent=self.win)
             return
         self.win.destroy()
         self.on_save()
@@ -405,17 +425,15 @@ class StatusDialog:
                  title: str, current: str, options: list[str],
                  on_save: Callable[[str], None]) -> None:
         self.on_save = on_save
-        self.win = tk.Toplevel(parent)
+        self.win = make_toplevel(parent.winfo_toplevel())
         self.win.title(title)
-        self.win.transient(parent)
         self.win.after_idle(self.win.grab_set)
         form = ttk.Frame(self.win)
         form.pack(fill="both", expand=True, padx=12, pady=12)
         ttk.Label(form, text="New status:").grid(row=0, column=0,
                                                     sticky="e", pady=4)
-        self.cb = ttk.Combobox(form, values=options, state="readonly",
+        self.cb = kit.ChoiceField(form, tk.StringVar(value=current), choices=options,
                                   width=22)
-        self.cb.set(current)
         self.cb.grid(row=0, column=1, sticky="w", padx=6)
         bar = ttk.Frame(form)
         bar.grid(row=1, column=0, columnspan=2, pady=(12, 0))
@@ -448,9 +466,9 @@ class BookingsTab:
         self.event_cb.bind("<<ComboboxSelected>>",
                               lambda _e: self.refresh())
         ttk.Label(bar, text="Status:").pack(side="left")
-        self.f_status = ttk.Combobox(bar, values=("",) + BOOKING_STATUSES,
-                                        state="readonly", width=14)
-        self.f_status.current(0)
+        self.f_status = kit.ChoiceField(bar, tk.StringVar(), choices=BOOKING_STATUSES,
+                                        blank=True, width=14,
+                                        on_change=lambda _v: self.refresh())
         self.f_status.pack(side="left", padx=(2, 10))
         ttk.Button(bar, text="Apply",
                     command=self.refresh).pack(side="left")
@@ -627,15 +645,13 @@ class BookingDialog:
         self.event = event
         self.existing = existing
         self.on_save = on_save
-        self.win = tk.Toplevel(parent)
+        self.win = make_toplevel(parent.winfo_toplevel())
         self.win.title("Edit Booking" if existing else "New Booking")
-        self.win.transient(parent)
         self.win.after_idle(self.win.grab_set)
         self._build()
 
     def _build(self) -> None:
-        form = ttk.Frame(self.win)
-        form.pack(fill="both", expand=True, padx=12, pady=12)
+        form, footer = kit.scrolled_form(self.win)
         r = 0
         ttk.Label(form,
                    text=f"Event #{self.event.event_id}  {self.event.name}  "
@@ -656,13 +672,11 @@ class BookingDialog:
                             f"{names.get(self._student_id, '?')}"
                        ).grid(row=r, column=1, sticky="w", padx=6)
         else:
-            opts = _student_options()
-            self._student_ids = [s for s, _ in opts]
-            self.student_cb = ttk.Combobox(form,
-                                              values=[l for _, l in opts],
-                                              state="readonly", width=40)
-            if opts:
-                self.student_cb.current(0)
+            self.student_var = tk.StringVar()
+            self.student_cb = kit.PupilPicker(
+                form, self.student_var,
+                year_group=_EVENT_YEAR_TO_PUPIL.get(self.event.year_group))
+            self.student_cb.bind_change(lambda _v: self._refresh_parents())
             self.student_cb.grid(row=r, column=1, sticky="w", padx=6)
         r += 1
 
@@ -677,39 +691,40 @@ class BookingDialog:
                             f"{tnames.get(self._staff_id, '?')}"
                        ).grid(row=r, column=1, sticky="w", padx=6)
         else:
-            opts = _staff_options(active_only=True)
-            self._staff_ids = [s for s, _ in opts]
-            self.staff_cb = ttk.Combobox(form,
-                                            values=[l for _, l in opts],
-                                            state="readonly", width=50)
-            if opts:
-                self.staff_cb.current(0)
-            self.staff_cb.bind("<<ComboboxSelected>>",
-                                 lambda _e: self._refresh_slots())
+            self.staff_var = tk.StringVar()
+            self.staff_cb = kit.StaffPicker(form, self.staff_var)
+            self.staff_cb.bind_change(lambda _v: self._refresh_slots())
             self.staff_cb.grid(row=r, column=1, sticky="w", padx=6)
         r += 1
 
         ttk.Label(form, text="Slot:").grid(row=r, column=0,
                                              sticky="e", pady=3)
-        self.slot_cb = ttk.Combobox(form, state="readonly", width=10)
+        self.slot_var = tk.StringVar()
+        self.slot_cb = kit.ChoiceField(form, self.slot_var, width=10)
         self.slot_cb.grid(row=r, column=1, sticky="w", padx=6)
+        self.slot_note = ttk.Label(form, text="", foreground="#888")
+        self.slot_note.grid(row=r, column=2, sticky="w")
         r += 1
         self._refresh_slots()
 
         ttk.Label(form, text="Status:").grid(row=r, column=0,
                                                 sticky="e", pady=3)
-        self.status_cb = ttk.Combobox(form, values=BOOKING_STATUSES,
-                                          state="readonly", width=14)
-        self.status_cb.set(self.existing.status if self.existing
-                              else DEFAULT_BOOKING_STATUS)
+        self.status_cb = kit.ChoiceField(
+            form, tk.StringVar(value=self.existing.status if self.existing
+                               else DEFAULT_BOOKING_STATUS),
+            choices=BOOKING_STATUSES, width=14)
         self.status_cb.grid(row=r, column=1, sticky="w", padx=6)
         r += 1
 
         ttk.Label(form, text="Parent name:").grid(row=r, column=0,
                                                     sticky="e", pady=3)
-        self.parent_e = ttk.Entry(form, width=40)
-        if self.existing and self.existing.parent_name:
-            self.parent_e.insert(0, self.existing.parent_name)
+        # The pupil's parent contacts to pick from; still typeable.
+        self.parent_e = kit.ChoiceField(
+            form, tk.StringVar(value=(self.existing.parent_name or "")
+                               if self.existing else ""),
+            choices=_parent_name_choices(self.existing.student_id
+                                         if self.existing else ""),
+            blank=True, editable=True, width=40)
         self.parent_e.grid(row=r, column=1, sticky="w", padx=6)
         r += 1
 
@@ -721,53 +736,55 @@ class BookingDialog:
         self.notes_text.grid(row=r, column=1, sticky="w", padx=6)
         r += 1
 
-        bar = ttk.Frame(form)
-        bar.grid(row=r, column=0, columnspan=2, pady=(12, 0))
-        ttk.Button(bar, text="Save", command=self._save).pack(side="left")
-        ttk.Button(bar, text="Cancel",
-                    command=self.win.destroy).pack(side="left", padx=8)
+        ttk.Button(footer, text="Cancel",
+                    command=self.win.destroy).pack(side="right", padx=(6, 0))
+        ttk.Button(footer, text="Save", command=self._save).pack(side="right")
+
+    def _refresh_parents(self) -> None:
+        names = _parent_name_choices(self.student_var.get())
+        self.parent_e.set_choices(names)
+        if names and not self.parent_e.get():
+            self.parent_e.set(names[0])
 
     def _refresh_slots(self) -> None:
         if self.existing:
             slots = data.event_slots(self.event)
-            self.slot_cb["values"] = slots
+            self.slot_cb.set_choices(slots)
             if self.existing.slot_time in slots:
                 self.slot_cb.set(self.existing.slot_time)
             elif slots:
-                self.slot_cb.current(0)
+                self.slot_cb.set(slots[0])
             return
-        idx = self.staff_cb.current() if self.staff_cb else -1
-        if idx < 0:
-            self.slot_cb["values"] = []
-            return
-        stid = self._staff_ids[idx]
-        free = data.free_slots_for_staff(self.event.event_id, stid)
-        self.slot_cb["values"] = free
-        if free:
-            self.slot_cb.current(0)
-        else:
+        stid = self.staff_var.get() if self.staff_cb else ""
+        if not stid:
+            self.slot_cb.set_choices([])
             self.slot_cb.set("")
+            self.slot_note.configure(text="pick a member of staff first")
+            return
+        free = data.free_slots_for_staff(self.event.event_id, stid)
+        self.slot_cb.set_choices(free)
+        self.slot_cb.set(free[0] if free else "")
+        self.slot_note.configure(
+            text=f"{len(free)} free slot(s)" if free else "no free slots for this teacher")
 
     def _save(self) -> None:
         if self.student_cb is not None:
-            i = self.student_cb.current()
-            if i < 0:
-                messagebox.showerror("Validation", "Pick a student.")
+            sid = self.student_var.get()
+            if not sid:
+                messagebox.showerror("Validation", "Pick a student.", parent=self.win)
                 return
-            sid = self._student_ids[i]
         else:
             sid = self._student_id
         if self.staff_cb is not None:
-            i = self.staff_cb.current()
-            if i < 0:
-                messagebox.showerror("Validation", "Pick a staff member.")
+            stid = self.staff_var.get()
+            if not stid:
+                messagebox.showerror("Validation", "Pick a staff member.", parent=self.win)
                 return
-            stid = self._staff_ids[i]
         else:
             stid = self._staff_id
         slot = self.slot_cb.get().strip()
         if not slot:
-            messagebox.showerror("Validation", "Pick a slot.")
+            messagebox.showerror("Validation", "Pick a slot.", parent=self.win)
             return
         payload = {
             "student_id":  sid,
@@ -783,11 +800,11 @@ class BookingDialog:
             else:
                 data.create_booking(self.event.event_id, payload)
         except ValidationError as e:
-            messagebox.showerror("Validation", str(e))
+            messagebox.showerror("Validation", str(e), parent=self.win)
             return
         except Exception as e:
             logger.exception("save booking failed")
-            messagebox.showerror("Save failed", str(e))
+            messagebox.showerror("Save failed", str(e), parent=self.win)
             return
         self.win.destroy()
         self.on_save()

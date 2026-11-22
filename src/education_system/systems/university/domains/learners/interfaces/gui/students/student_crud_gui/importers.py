@@ -29,7 +29,7 @@ except ImportError:
 
 from .widgets import _DOBPicker, _safe_set_combobox, _safe_entry_insert
 
-from education_system.systems.university.domains.academics.domain.services.admissions_selection import (
+from education_system.systems.university.domains.admissions.domain.services.admissions_selection import (
     normalise_grade as _normalise_grade,
     enrol_student_in_curriculum as _enrol_student_in_curriculum,
     ensure_module_chat_rooms_and_join,
@@ -100,6 +100,36 @@ def _import_title():
         default="Admit from UCAS")
 
 
+def _sixth_form_adapter():
+    """The sixth form, reached through the platform adapter registry —
+    the university never imports it."""
+    from education_system.platform.cross_system.adapters import registry
+    return registry.require("sixth_form")
+
+
+def _learner_view(summary):
+    """Attribute access over the sixth form's ``learner_summary`` dict, in
+    the shape this picker used to read off the sixth form's Student."""
+    if not summary:
+        return None
+    from types import SimpleNamespace
+    return SimpleNamespace(
+        student_id=summary.get("student_id") or summary.get("id"),
+        title=summary.get("title"),
+        first_name=summary.get("first_name"),
+        middle_name=summary.get("middle_name"),
+        last_name=summary.get("last_name"),
+        full_name=summary.get("full_name") or " ".join(
+            p for p in (summary.get("first_name"), summary.get("last_name")) if p),
+        gender=summary.get("gender"),
+        date_of_birth=summary.get("date_of_birth") or summary.get("dob"),
+        email=summary.get("email"),
+        status=summary.get("status"),
+        journey_id=summary.get("journey_id"),
+        subjects=list(summary.get("subjects") or []),
+    )
+
+
 def _ucas_applicants():
     """Everyone applying to this university, from every source system.
 
@@ -109,10 +139,8 @@ def _ucas_applicants():
     cross-system handover transitions and returns one normalised shape,
     already ordered with the actionable people first.
     """
-    from education_system.systems.university.domains.admissions.domain.ucas import (
-        applicants,
-    )
-    return applicants.list_all_applicants()
+    from education_system.systems.university.services.bus import admissions_bus
+    return admissions_bus.list_applicants()
 
 
 def _admission_application_for(journey_id):
@@ -120,10 +148,8 @@ def _admission_application_for(journey_id):
     if not journey_id:
         return None
     try:
-        from education_system.systems.university.domains.admissions.domain import (
-            sixthform_intake,
-        )
-        return sixthform_intake.find_application_for_journey(journey_id)
+        from education_system.systems.university.services.bus import admissions_bus
+        return admissions_bus.application_for_journey(journey_id)
     except Exception:
         logger.debug("Could not look up the admission application",
                      exc_info=True)
@@ -188,7 +214,7 @@ def _report_ucas_clear(summary, parent):
         messagebox.showwarning(_import_title(),
                                f"UCAS clear-down finished with problems:\n\n{detail}",
                                parent=parent)
-    elif summary.get("choices_removed"):
+    elif summary.get("choices_removed") or summary.get("choices_placed"):
         messagebox.showinfo(_import_title(), detail, parent=parent)
 
 
@@ -231,11 +257,9 @@ def _convert_via_admissions(application_id, parent):
 
     Returns the new student id, or ``None`` if it could not run.
     """
-    from education_system.systems.university.domains.admissions.domain.services import (
-        admissions_lifecycle,
-    )
+    from education_system.systems.university.services.bus import admissions_bus
     try:
-        issues = admissions_lifecycle.readiness_issues(application_id)
+        issues = admissions_bus.readiness_issues(application_id)
     except Exception as exc:
         logger.exception("Readiness check failed for application %s",
                          application_id)
@@ -253,7 +277,7 @@ def _convert_via_admissions(application_id, parent):
             parent=parent)
         return None
     try:
-        student_id = admissions_lifecycle.convert_to_student(application_id)
+        student_id = admissions_bus.convert_to_student(application_id)
     except Exception as exc:
         logger.exception("convert_to_student failed for %s", application_id)
         messagebox.showerror(_import_title(),
@@ -322,10 +346,8 @@ def _existing_university_applications(sf_student_ids):
     if not by_journey:
         return out
 
-    from education_system.systems.university.domains.admissions.domain import (
-        sixthform_intake,
-    )
-    applications = sixthform_intake.find_applications_for_journeys(
+    from education_system.systems.university.services.bus import admissions_bus
+    applications = admissions_bus.applications_for_journeys(
         by_journey.keys())
     for journey_id, application in applications.items():
         for sid in by_journey.get(journey_id, ()):
@@ -378,12 +400,10 @@ def _open_sixth_form_import_dialog(parent_dialog, fields):
     is left untouched if anything goes wrong.
     """
     try:
-        from education_system.systems.sixth_form.domain.progression import (
-            handover_eligibility,
-            university_handover,
-        )
+        sixth_form = _sixth_form_adapter()
+        right_to_study_note = sixth_form.right_to_study_note()
     except Exception:
-        logger.exception("Sixth-form progression modules not importable")
+        logger.exception("Sixth-form adapter not available")
         messagebox.showerror(
             _import_title(),
             _t('gui.learners.students.student_crud_gui.importers.dialogs.could_not_load_the_sixth_form_student_module_make_sure_the_sixth', default="Could not load the sixth-form student module. "
@@ -429,17 +449,15 @@ def _open_sixth_form_import_dialog(parent_dialog, fields):
         # sixth-form verdict about somebody who was never there.
         if applicant.source_system == "sixth_form":
             try:
-                readiness = handover_eligibility.assess_id(applicant.student_id)
+                readiness = sixth_form.handover_readiness(applicant.student_id)
             except Exception:
                 logger.debug("Readiness lookup failed for %s",
                              applicant.student_id, exc_info=True)
         student = None
         if applicant.source_system == "sixth_form":
             try:
-                from education_system.systems.sixth_form.domain.learners.students import (
-                    students as _sf_students,
-                )
-                student = _sf_students.get_student(applicant.student_id)
+                student = _learner_view(
+                    sixth_form.learner_summary(applicant.student_id))
             except Exception:
                 logger.debug("No sixth-form record for %s",
                              applicant.student_id, exc_info=True)
@@ -630,7 +648,7 @@ def _open_sixth_form_import_dialog(parent_dialog, fields):
     tree.bind("<<TreeviewSelect>>", _show_detail)
 
     # Right to study is the one required condition the sixth form cannot
-    # answer — see handover_eligibility.RIGHT_TO_STUDY_NOTE. Rather than
+    # answer — see the sixth form's right_to_study_note(). Rather than
     # carry it as a check that fails for everybody, it is an explicit
     # acknowledgement the operator must give before Import will run. The
     # supported route records it as an admissions requirement and gates
@@ -641,7 +659,7 @@ def _open_sixth_form_import_dialog(parent_dialog, fields):
     rts_ack = tk.BooleanVar(value=False)
     ttk.Checkbutton(
         ack_frame, variable=rts_ack,
-        text=(handover_eligibility.RIGHT_TO_STUDY_NOTE
+        text=(right_to_study_note
               + " I will complete it for this student."),
     ).pack(side=tk.LEFT)
 
@@ -673,7 +691,7 @@ def _open_sixth_form_import_dialog(parent_dialog, fields):
                 application["application_id"], picker)
             if new_id:
                 # They are a student here now, so their application to us
-                # is over: take it out of UCAS rather than leaving them in
+                # is over: mark the UCAS choice placed rather than leaving them in
                 # this picker as a permanent "Enrolled" row.
                 _clear_ucas_application(sid, new_id,
                                         actor=_actor_name(parent_dialog))
@@ -712,8 +730,9 @@ def _open_sixth_form_import_dialog(parent_dialog, fields):
                     _import_title(),
                     f"{applicant.student_name} is already enrolled as "
                     f"{enrolled_as}.\n\n"
-                    "Remove their UCAS application to this university so "
-                    "they stop appearing here?",
+                    "Mark their UCAS choice for this university as placed "
+                    "so they stop appearing here? (The sixth form keeps "
+                    "the application as its record of where they went.)",
                     parent=picker):
                 summary = _clear_ucas_application(
                     sid, enrolled_as, actor=_actor_name(parent_dialog))
@@ -773,7 +792,7 @@ def _open_sixth_form_import_dialog(parent_dialog, fields):
         # restricted-field rules apply to the manual route too.
         released = None
         try:
-            released = university_handover.build(student)
+            released = sixth_form.build_handover(student.student_id)
         except Exception:
             logger.exception(
                 "Could not build the handover payload for %s", sid)
@@ -807,7 +826,10 @@ def _open_sixth_form_import_dialog(parent_dialog, fields):
                     fields[key].delete(0, tk.END)
                     _safe_entry_insert(fields[key], value or "")
             if student.gender and 'gender' in fields:
-                _safe_set_combobox(fields['gender'], student.gender)
+                from education_system.systems.university.application.students.lifecycle import (
+                    gender_label,
+                )
+                _safe_set_combobox(fields['gender'], gender_label(student.gender))
             dob = identity.get("date_of_birth") or student.date_of_birth
             if dob and 'dob' in fields:
                 # The DOB widget is now a _DOBPicker; use its set()
@@ -818,6 +840,37 @@ def _open_sixth_form_import_dialog(parent_dialog, fields):
                     # Fallback for the legacy Entry just in case.
                     fields['dob'].delete(0, tk.END)
                     _safe_entry_insert(fields['dob'], dob)
+            # The add form's other details, when the sixth form holds them.
+            # Medical information is not copied here: it has its own
+            # consented import after the student is created.
+            # Address lines, split from the one address when the sixth-form
+            # record predates its separate lines.
+            from education_system.systems.university.application.students import (
+                record_rules as _rr,
+            )
+            lines = tuple(getattr(student, k, None) for k in _rr.ADDRESS_LINE_FIELDS)
+            if not any(lines) and getattr(student, 'address', None):
+                lines = _rr.split_address(student.address)
+            for key, value in zip(_rr.ADDRESS_LINE_FIELDS, lines):
+                if key in fields:
+                    fields[key].delete(0, tk.END)
+                    _safe_entry_insert(fields[key], value or "")
+            for key, attr in (('preferred_name', 'preferred_name'),
+                              ('postcode', 'postcode'),
+                              ('emergency_contact_name', 'emergency_contact_name'),
+                              ('emergency_contact_phone', 'emergency_contact_phone')):
+                value = getattr(student, attr, None)
+                if value and key in fields:
+                    fields[key].delete(0, tk.END)
+                    _safe_entry_insert(fields[key], value)
+            relation = getattr(student, 'emergency_contact_relation', None)
+            if relation and 'emergency_contact_relationship' in fields:
+                from education_system.systems.university.application.students import (
+                    record_rules,
+                )
+                choice = record_rules.relationship_choice(relation)
+                if choice in record_rules.EMERGENCY_RELATIONSHIPS:
+                    fields['emergency_contact_relationship'].set(choice)
         except Exception as e:
             logger.exception(
                 "Pre-filling form from sixth-form student %s failed", sid)
@@ -838,7 +891,16 @@ def _open_sixth_form_import_dialog(parent_dialog, fields):
         sf_subjects = list(getattr(student, "subjects", []) or [])
         try:
             norm_grades = _qualification_grades(record)
-            for i in range(1, 4):
+            # The form starts with three rows; add one per extra A level so a
+            # student who took four or more keeps every result.
+            add_row = getattr(parent_dialog, '_add_qual_row', None)
+            while callable(add_row) and f"alevel_subj_{len(sf_subjects)}" not in fields \
+                    and len(sf_subjects) > 3:
+                add_row()
+            for i in range(1, max(4, len(sf_subjects) + 1)):
+                if f"alevel_type_{i}" in fields:
+                    fields[f"alevel_type_{i}"].set("A level")
+                    fields[f"alevel_type_{i}"].event_generate("<<ComboboxSelected>>")
                 subj = sf_subjects[i - 1] if i - 1 < len(sf_subjects) else ""
                 if f"alevel_subj_{i}" in fields:
                     fields[f"alevel_subj_{i}"].delete(0, tk.END)
@@ -851,9 +913,9 @@ def _open_sixth_form_import_dialog(parent_dialog, fields):
                         filled_grades += 1
             # ``.set()`` doesn't fire <<ComboboxSelected>>, so nudge the tariff
             # label to recompute from the freshly filled grades.
-            if "alevel_grade_3" in fields:
+            if "alevel_grade_1" in fields:
                 try:
-                    fields["alevel_grade_3"].event_generate(
+                    fields["alevel_grade_1"].event_generate(
                         "<<ComboboxSelected>>")
                 except Exception:
                     logger.debug("Suppressed exception", exc_info=True)
@@ -1112,11 +1174,16 @@ def _open_bulk_csv_import_dialog(self, parent_dialog):
                 if not first_name or not last_name:
                     raise ValueError(
                         "first_name and last_name are required")
+                from education_system.systems.university.application.students.lifecycle import (
+                    GENDER_OPTIONS,
+                )
+                codes = [g.lower() for g in GENDER_OPTIONS]
                 if not gender_raw:
-                    gender_raw = "other"
-                elif gender_raw not in ("male", "female", "other"):
+                    gender_raw = "prefer not to say"
+                elif gender_raw not in codes:
                     raise ValueError(
-                        "gender must be male / female / other")
+                        "gender must be one of: " + ", ".join(GENDER_OPTIONS))
+                dob_given = bool(dob_text)
                 if not dob_text:
                     dob_text = "2000-01-01"
                 try:
@@ -1135,7 +1202,7 @@ def _open_bulk_csv_import_dialog(self, parent_dialog):
                 else:
                     course = random.choice(['CS', 'DS'])
                 if not title:
-                    title = "Mr" if gender_raw == "male" else "Ms"
+                    title = {"male": "Mr", "female": "Ms"}.get(gender_raw, "")
 
                 student_id = csv_student_id or str(
                     secrets.randbelow(9000000) + 1000000).zfill(7)
@@ -1181,6 +1248,18 @@ def _open_bulk_csv_import_dialog(self, parent_dialog):
                     if cur.fetchone():
                         raise ValueError(
                             f"email {email_address} already in use")
+                    # Same likely-duplicate rule as single create (name +
+                    # date of birth); skipped when the CSV gave no DOB.
+                    from education_system.systems.university.application.students import (
+                        record_rules as student_record_rules,
+                    )
+                    if dob_given:
+                        matches = student_record_rules.find_duplicates(
+                            conn, first_name, last_name, dob.strftime("%Y-%m-%d"))
+                        if matches:
+                            raise ValueError(
+                                "possible duplicate of "
+                                + ", ".join(m["student_id"] for m in matches))
                     # FK checks off so module rows can be written before their
                     # catalog entries; the context manager restores enforcement
                     # even if the body raises.
@@ -1221,6 +1300,12 @@ def _open_bulk_csv_import_dialog(self, parent_dialog):
                             "WHERE course_code = ? AND LOWER(COALESCE(status, 'active')) = 'active'",
                             (course,),
                         )
+                        importer = (getattr(getattr(self, "auth", None),
+                                            "current_user", None) or {})
+                        student_record_rules.record_changes(
+                            conn, student_id, {}, {"record": "created"},
+                            "Bulk CSV import",
+                            str(importer.get("username") or "csv import"))
                     conn.commit()
                 finally:
                     conn.close()

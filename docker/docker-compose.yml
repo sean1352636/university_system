@@ -18,16 +18,27 @@ services:
       context: ..
       dockerfile: docker/Dockerfile
     container_name: education-system
+    # nginx proxies to app:5000, so this runs the API, not the image's default
+    # CLI. For the CLI: docker compose run --rm app python -m education_system --cli
+    command:
+      - gunicorn
+      - --bind=0.0.0.0:5000
+      - --workers=2
+      - --threads=4
+      - education_system.platform.delivery.api.unified_server:create_unified_app()
     environment:
       - APP_ENV=${APP_ENV:-development}
       - DEBUG=${DEBUG:-False}
+      # Passed through from the host or .env when set. Required when APP_ENV=production.
+      - API_SECRET_KEY
+      - JWT_SECRET_KEY
+      - CREDENTIAL_SIGNING_KEY
+      - API_CORS_ORIGINS
     volumes:
-      - app-data:/app/data
-      - app-logs:/app/logs
+      # Databases, logs, uploads and backups all live under var/.
+      - app-var:/app/var
     expose:
       - "5000"
-    stdin_open: true
-    tty: true
     restart: unless-stopped
     deploy:
       resources:
@@ -42,5 +53,4 @@ services:
       retries: 3
 
 volumes:
-  app-data:
-  app-logs:
+  app-var:

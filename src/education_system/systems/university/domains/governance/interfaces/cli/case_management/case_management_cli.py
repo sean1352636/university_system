@@ -111,6 +111,14 @@ def _transition_case() -> None:
         print(f"Error: {exc}")
 
 
+def _appeals() -> None:
+    from education_system.systems.university.domains.governance.interfaces.cli.case_management import (  # noqa: E501
+        appeals_cli,
+    )
+    appeals_cli.set_auth(auth)
+    appeals_cli.display_appeals_menu()
+
+
 def display_case_management_menu() -> None:
     """Top-level case register menu."""
     if not _require_staff():
@@ -120,6 +128,7 @@ def display_case_management_menu() -> None:
         "2": (get_text("cli.case_management.view", default="View Case"), _view_case),
         "3": (get_text("cli.case_management.open", default="Open Case"), _open_case),
         "4": (get_text("cli.case_management.transition", default="Change Status"), _transition_case),
+        "5": (get_text("cli.case_management.appeals", default="Academic Appeals"), _appeals),
     }
     while True:
         print("\n" + get_text("cli.case_management.title", default="Case Management"))

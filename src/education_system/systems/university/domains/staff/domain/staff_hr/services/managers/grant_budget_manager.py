@@ -13,9 +13,71 @@ Provides functionality for:
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 
+from education_system.systems.university.domains.staff.domain.staff_hr import access
+from education_system.systems.university.domains.staff.domain.staff_hr.services.managers import _people as people
 from education_system.systems.university.infrastructure.database.db import get_connection, transaction
 from education_system.systems.university.infrastructure.activity_logger import log_activity
 from education_system.systems.university.infrastructure.sql_safety import validate_identifier  # nosec B608
+
+
+def _research_office(who: dict, conn) -> bool:
+    """An administrator, or a holder of the Research Portal's research office
+    role (``research_office_roles``). Fails closed if that table is missing."""
+    if access.is_admin(who):
+        return True
+    try:
+        return conn.execute(
+            "SELECT 1 FROM research_office_roles WHERE username = ? "
+            "AND role = 'research_office' LIMIT 1", (who['username'],)).fetchone() is not None
+    except Exception:
+        return False
+
+
+def _principal_investigator(conn, grant_application_id: int) -> Optional[str]:
+    row = conn.execute(
+        "SELECT principal_investigator_id FROM grant_applications WHERE application_id = ?",
+        (grant_application_id,)).fetchone()
+    return people.key(row[0], conn) if row and row[0] else None
+
+
+def _decide_expense(conn, expense_id: int, approved_by: Any, actor: Any, verb: str):
+    """The submitted expense and who is deciding it: the grant's principal
+    investigator or the research office, never the person who submitted it."""
+    row = conn.execute('SELECT * FROM grant_expense_items WHERE expense_id = ?',
+                       (expense_id,)).fetchone()
+    if not row:
+        raise ValueError(f"Expense {expense_id} not found")
+    expense = dict(row)
+    if expense.get('status') != 'submitted':
+        raise ValueError(f"Expense {expense_id} is {expense.get('status')}, not awaiting a decision")
+    who = people.decider(actor, approved_by, conn)
+    submitter = people.key(expense.get('submitted_by'), conn)
+    if submitter and submitter == who['username']:
+        raise PermissionError(f"You cannot {verb} your own expense")
+    pi = _principal_investigator(conn, expense['grant_application_id'])
+    if not (who['username'] == pi or _research_office(who, conn)):
+        raise PermissionError(
+            f"Only the grant's principal investigator or the research office can {verb} expenses")
+    return expense, who, submitter
+
+
+def _decide_transfer(conn, transfer_id: int, approved_by: Any, actor: Any, verb: str):
+    """The pending transfer and who is deciding it: the research office,
+    never the person who asked for it (a PI cannot move their own budget)."""
+    row = conn.execute('SELECT * FROM grant_budget_transfers WHERE transfer_id = ?',
+                       (transfer_id,)).fetchone()
+    if not row:
+        raise ValueError(f"Transfer {transfer_id} not found")
+    transfer = dict(row)
+    if transfer.get('status') != 'pending':
+        raise ValueError(f"Transfer {transfer_id} is {transfer.get('status')}, not pending")
+    who = people.decider(actor, approved_by, conn)
+    requester = people.key(transfer.get('requested_by'), conn)
+    if requester and requester == who['username']:
+        raise PermissionError(f"You cannot {verb} your own budget transfer")
+    if not _research_office(who, conn):
+        raise PermissionError(f"Only the research office can {verb} budget transfers")
+    return transfer, who, requester
 
 
 class GrantBudgetManager:
@@ -381,7 +443,8 @@ class GrantBudgetManager:
             })
 
     @staticmethod
-    def approve_expense(expense_id: int, approved_by: str) -> None:
+    def approve_expense(expense_id: int, approved_by: Any = None,
+                        actor: Any = None) -> None:
         """Approve a submitted expense item.
 
         Sets the status to 'approved', records the approver and
@@ -389,28 +452,27 @@ class GrantBudgetManager:
         spent_amount, recalculates the allocation's remaining_amount,
         and checks whether any threshold alerts should be created.
 
+        Only the grant's principal investigator or the research office may
+        approve, never the submitter (PermissionError); only a submitted
+        expense can be decided (ValueError).
+
         Args:
             expense_id: The expense item to approve.
-            approved_by: User ID of the approver.
+            approved_by: User ID of the approver (older callers; ignored
+                when ``actor`` is given).
+            actor: The signed-in user making the decision.
         """
         with transaction() as conn:
-            row = conn.execute('''
-                SELECT * FROM grant_expense_items
-                WHERE expense_id = ?
-            ''', (expense_id,)).fetchone()
-
-            if not row:
-                raise ValueError(f"Expense {expense_id} not found")
-
-            expense = dict(row)
+            expense, who, submitter = _decide_expense(
+                conn, expense_id, approved_by, actor, 'approve')
 
             conn.execute('''
                 UPDATE grant_expense_items
-                SET status = 'approved', approved_by = ?, approved_at = ?,
+                SET status = 'approved', approved_by = ?, approved_date = ?,
                     updated_at = ?
                 WHERE expense_id = ?
             ''', (
-                approved_by, datetime.now().isoformat(),
+                who['username'], datetime.now().isoformat(),
                 datetime.now().isoformat(), expense_id,
             ))
 
@@ -429,37 +491,62 @@ class GrantBudgetManager:
 
             log_activity('update', 'grant_expense_item', details={
                 'expense_id': expense_id, 'action': 'approved',
-                'approved_by': approved_by,
+                'approved_by': who['username'],
                 'amount': expense['amount'],
             })
+            access.audit(conn, who, 'grant_expense_approved', submitter,
+                         'grant_expense_items', expense_id, {'amount': expense['amount']})
 
         GrantBudgetManager.check_threshold_alerts(
             expense['grant_application_id'])
 
     @staticmethod
-    def reject_expense(expense_id: int, approved_by: str) -> None:
+    def reject_expense(expense_id: int, approved_by: Any = None,
+                       actor: Any = None) -> None:
         """Reject a submitted expense item.
 
-        Sets the status to 'rejected' and records who rejected it.
+        Sets the status to 'rejected' and records who rejected it. The same
+        people may reject as may approve (see :meth:`approve_expense`).
 
         Args:
             expense_id: The expense item to reject.
-            approved_by: User ID of the person rejecting the expense.
+            approved_by: User ID of the person rejecting the expense (older
+                callers; ignored when ``actor`` is given).
+            actor: The signed-in user making the decision.
         """
         with transaction() as conn:
+            _expense, who, submitter = _decide_expense(
+                conn, expense_id, approved_by, actor, 'reject')
             conn.execute('''
                 UPDATE grant_expense_items
-                SET status = 'rejected', approved_by = ?, approved_at = ?,
+                SET status = 'rejected', approved_by = ?, approved_date = ?,
                     updated_at = ?
                 WHERE expense_id = ?
             ''', (
-                approved_by, datetime.now().isoformat(),
+                who['username'], datetime.now().isoformat(),
                 datetime.now().isoformat(), expense_id,
             ))
             log_activity('update', 'grant_expense_item', details={
                 'expense_id': expense_id, 'action': 'rejected',
-                'approved_by': approved_by,
+                'approved_by': who['username'],
             })
+            access.audit(conn, who, 'grant_expense_rejected', submitter,
+                         'grant_expense_items', expense_id)
+
+    @staticmethod
+    def can_decide(actor: Any) -> bool:
+        """May ``actor`` decide anything here: the research office (or an
+        administrator), or the principal investigator of some grant? Screens
+        use this to show the approval actions; each decision checks again."""
+        if not access.username_of(actor):
+            return False
+        who = access.require_user(actor)
+        with get_connection() as conn:
+            if _research_office(who, conn):
+                return True
+            return conn.execute(
+                "SELECT 1 FROM grant_applications WHERE principal_investigator_id = ? LIMIT 1",
+                (who['username'],)).fetchone() is not None
 
     # ==================== ALERT MANAGEMENT ====================
 
@@ -671,35 +758,35 @@ class GrantBudgetManager:
             return transfer_id
 
     @staticmethod
-    def approve_transfer(transfer_id: int, approved_by: str) -> None:
+    def approve_transfer(transfer_id: int, approved_by: Any = None,
+                         actor: Any = None) -> None:
         """Approve a pending budget transfer.
 
         Subtracts the transfer amount from the source allocation's
         allocated_amount, adds it to the destination allocation's
         allocated_amount, and recalculates remaining_amount for both.
 
+        Only the research office may approve, never the requester
+        (PermissionError); only a pending transfer can be decided
+        (ValueError).
+
         Args:
             transfer_id: The transfer to approve.
-            approved_by: User ID of the approver.
+            approved_by: User ID of the approver (older callers; ignored
+                when ``actor`` is given).
+            actor: The signed-in user making the decision.
         """
         with transaction() as conn:
-            row = conn.execute('''
-                SELECT * FROM grant_budget_transfers
-                WHERE transfer_id = ?
-            ''', (transfer_id,)).fetchone()
-
-            if not row:
-                raise ValueError(f"Transfer {transfer_id} not found")
-
-            transfer = dict(row)
+            transfer, who, requester = _decide_transfer(
+                conn, transfer_id, approved_by, actor, 'approve')
 
             conn.execute('''
                 UPDATE grant_budget_transfers
-                SET status = 'approved', approved_by = ?, approved_at = ?,
+                SET status = 'approved', approved_by = ?, approved_date = ?,
                     updated_at = ?
                 WHERE transfer_id = ?
             ''', (
-                approved_by, datetime.now().isoformat(),
+                who['username'], datetime.now().isoformat(),
                 datetime.now().isoformat(), transfer_id,
             ))
 
@@ -730,32 +817,42 @@ class GrantBudgetManager:
 
             log_activity('update', 'grant_budget_transfer', details={
                 'transfer_id': transfer_id, 'action': 'approved',
-                'approved_by': approved_by,
+                'approved_by': who['username'],
                 'amount': transfer['amount'],
             })
+            access.audit(conn, who, 'grant_transfer_approved', requester,
+                         'grant_budget_transfers', transfer_id, {'amount': transfer['amount']})
 
     @staticmethod
-    def reject_transfer(transfer_id: int, approved_by: str) -> None:
-        """Reject a pending budget transfer.
+    def reject_transfer(transfer_id: int, approved_by: Any = None,
+                        actor: Any = None) -> None:
+        """Reject a pending budget transfer (research office only, never the
+        requester; see :meth:`approve_transfer`).
 
         Args:
             transfer_id: The transfer to reject.
-            approved_by: User ID of the person rejecting the transfer.
+            approved_by: User ID of the person rejecting the transfer (older
+                callers; ignored when ``actor`` is given).
+            actor: The signed-in user making the decision.
         """
         with transaction() as conn:
+            _transfer, who, requester = _decide_transfer(
+                conn, transfer_id, approved_by, actor, 'reject')
             conn.execute('''
                 UPDATE grant_budget_transfers
-                SET status = 'rejected', approved_by = ?, approved_at = ?,
+                SET status = 'rejected', approved_by = ?, approved_date = ?,
                     updated_at = ?
                 WHERE transfer_id = ?
             ''', (
-                approved_by, datetime.now().isoformat(),
+                who['username'], datetime.now().isoformat(),
                 datetime.now().isoformat(), transfer_id,
             ))
             log_activity('update', 'grant_budget_transfer', details={
                 'transfer_id': transfer_id, 'action': 'rejected',
-                'approved_by': approved_by,
+                'approved_by': who['username'],
             })
+            access.audit(conn, who, 'grant_transfer_rejected', requester,
+                         'grant_budget_transfers', transfer_id)
 
     @staticmethod
     def get_transfers(grant_application_id: int = None,

@@ -72,7 +72,7 @@ def publish_grant_decision(application_id: int, *, status: str,
                            grant_period_end: str | None = None) -> None:
     """Publish a grant decision so finance can ledger the award.
 
-    Origin: ``GrantApplicationManager.update_decision``. The PI
+    Origin: ``research_grants.accept_award``. The PI
     becomes the budget owner; subscribers ledger the awarded
     amount via ``finance_bus.raise_charge`` with
     ``reference_id='grant:<id>'`` so ``finance_bus.grant_balance``

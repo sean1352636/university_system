@@ -17,9 +17,9 @@ This guide covers the roommate compatibility matching, social interest matching,
 The University Management System provides three matching services designed to connect students with compatible partners for housing, social activities, and academic collaboration. Each service uses profile-based compatibility algorithms to suggest matches based on preferences, interests, and study habits.
 
 **Key files:**
-- Roommate Finder: `modules/domain/roommate_finder/services/roommate_service.py`
-- Social Matching: `modules/domain/social_matching/services/social_matching_service.py`
-- Study Matching: `modules/domain/study_matching/services/study_matching_service.py`
+- Roommate Finder: `src/education_system/systems/university/domains/operations/domain/campus/housing/services/roommate_finder/roommate_service.py`
+- Social Matching: `src/education_system/systems/university/domains/student_life/domain/social_matching/services/social_matching_service.py`
+- Study Matching: `src/education_system/systems/university/domains/student_life/domain/study_hub/services/matching.py`
 
 ---
 
@@ -30,7 +30,7 @@ The University Management System provides three matching services designed to co
 Students create profiles with their housing preferences:
 
 ```python
-from university_system.modules.domain.roommate_finder.services.roommate_service import (
+from education_system.systems.university.domains.operations.domain.campus.housing.services.roommate_finder.roommate_service import (
     RoommateService
 )
 
@@ -149,7 +149,7 @@ stats = service.get_profile_stats(student_id='S-12345')
 Students build interest profiles across 10 categories:
 
 ```python
-from university_system.modules.domain.social_matching.services.social_matching_service import (
+from education_system.systems.university.domains.student_life.domain.social_matching.services.social_matching_service import (
     SocialMatchingService
 )
 
@@ -301,10 +301,12 @@ service.join_activity(
 
 ## Study Matching
 
+Study Matching is part of the Study Hub window, on its **Study Partners** tab. The CLI equivalent is under **Study Hub**.
+
 ### Creating a Study Profile
 
 ```python
-from university_system.modules.domain.study_matching.services.study_matching_service import (
+from education_system.systems.university.domains.student_life.domain.study_hub.services.matching import (
     StudyMatchingService
 )
 

@@ -10,7 +10,8 @@ from __future__ import annotations
 
 import logging
 import tkinter as tk
-from tkinter import messagebox, ttk
+from tkinter import ttk
+from education_system.platform.delivery.gui.parented_dialogs import messagebox
 
 from education_system.platform import branding
 from education_system.systems.sixth_form.domain.operations.reporting.mobile_dashboard import (

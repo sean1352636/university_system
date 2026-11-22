@@ -13,12 +13,15 @@ import os
 
 from flask import Blueprint, g, jsonify, request
 
+from education_system.api.sixth_form import access_gate
+
 logger = logging.getLogger(__name__)
 
 staff_comms_bp = Blueprint("sf_staff_comms", __name__, url_prefix="/api/staff-comms")
 
 
 def _token_required(view):
+    view = access_gate.gate(view)
     try:
         from education_system.platform.delivery.api.auth import token_required
         return token_required(view)
@@ -122,7 +125,7 @@ def delete_staff(staff_id):
 @staff_comms_bp.route("/announcements", methods=["GET"])
 @_token_required
 def list_announcements():
-    from education_system.systems.sixth_form.domain.operations.communications.announcements import (
+    from education_system.systems.sixth_form.domains.communications.domain.announcements import (
         announcements as data,
     )
     kwargs = {}
@@ -151,7 +154,7 @@ def list_announcements():
 @staff_comms_bp.route("/announcements/<int:announcement_id>", methods=["GET"])
 @_token_required
 def get_announcement(announcement_id):
-    from education_system.systems.sixth_form.domain.operations.communications.announcements import (
+    from education_system.systems.sixth_form.domains.communications.domain.announcements import (
         announcements as data,
     )
     row = data.get_announcement(announcement_id)
@@ -163,7 +166,7 @@ def get_announcement(announcement_id):
 @staff_comms_bp.route("/announcements", methods=["POST"])
 @_token_required
 def create_announcement():
-    from education_system.systems.sixth_form.domain.operations.communications.announcements import (
+    from education_system.systems.sixth_form.domains.communications.domain.announcements import (
         announcements as data,
     )
     try:
@@ -176,7 +179,7 @@ def create_announcement():
 @staff_comms_bp.route("/announcements/<int:announcement_id>", methods=["PUT"])
 @_token_required
 def update_announcement(announcement_id):
-    from education_system.systems.sixth_form.domain.operations.communications.announcements import (
+    from education_system.systems.sixth_form.domains.communications.domain.announcements import (
         announcements as data,
     )
     try:
@@ -193,7 +196,7 @@ def update_announcement(announcement_id):
 @staff_comms_bp.route("/announcements/<int:announcement_id>", methods=["DELETE"])
 @_token_required
 def delete_announcement(announcement_id):
-    from education_system.systems.sixth_form.domain.operations.communications.announcements import (
+    from education_system.systems.sixth_form.domains.communications.domain.announcements import (
         announcements as data,
     )
     if not data.delete_announcement(announcement_id):

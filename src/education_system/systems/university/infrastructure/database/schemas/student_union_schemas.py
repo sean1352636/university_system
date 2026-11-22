@@ -2,6 +2,10 @@ from __future__ import annotations
 from datetime import datetime
 from education_system.systems.university.infrastructure.database.db import get_connection, sqlite3
 from education_system.systems.university.infrastructure.i18n import get_text as _t, init_i18n
+from education_system.systems.university.infrastructure.database.schemas.student_union_elections_schema import (
+    ensure_election_tables,
+    fold_legacy_union_elections,
+)
 
 # Initialize i18n
 init_i18n()
@@ -226,32 +230,10 @@ def init_student_affairs_tables():
                         )
         ''')
 
-        # Create election_candidates table
-        cursor.execute('''
-        CREATE TABLE IF NOT EXISTS election_candidates (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    election_id INTEGER,
-                    student_id TEXT,
-                    manifesto TEXT,
-                    votes INTEGER DEFAULT 0,
-                    FOREIGN KEY (election_id) REFERENCES union_elections (election_id),
-                    FOREIGN KEY (student_id) REFERENCES students (student_id)
-                )
-        ''')
-
-        # Create election_votes table
-        cursor.execute('''
-        CREATE TABLE IF NOT EXISTS election_votes (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    election_id INTEGER,
-                    voter_id TEXT,
-                    candidate_id INTEGER,
-                    vote_time TEXT,
-                    FOREIGN KEY (election_id) REFERENCES union_elections (election_id),
-                    FOREIGN KEY (voter_id) REFERENCES students (student_id),
-                    FOREIGN KEY (candidate_id) REFERENCES election_candidates (id)
-                )
-        ''')
+        # Election tables: `elections` is canonical and the candidate/ballot
+        # tables key to elections(id) (see student_union_elections_schema).
+        ensure_election_tables(cursor)
+        fold_legacy_union_elections(cursor)
 
         # Create event_categories table
         cursor.execute('''
@@ -379,7 +361,7 @@ def init_student_affairs_tables():
         CREATE TABLE IF NOT EXISTS unified_events (
             event_id INTEGER PRIMARY KEY AUTOINCREMENT,
             source_type TEXT NOT NULL,
-            source_event_id INTEGER,
+            source_event_id TEXT,
             title TEXT NOT NULL,
             description TEXT,
             event_type TEXT,
@@ -460,20 +442,6 @@ def init_student_affairs_tables():
                             date_added TEXT NOT NULL,
                             FOREIGN KEY (base_event_id) REFERENCES events (id) ON DELETE CASCADE
                         )
-        ''')
-
-        # Create union_elections table
-        cursor.execute('''
-        CREATE TABLE IF NOT EXISTS union_elections (
-                    election_id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    position TEXT,
-                    department TEXT,
-                    nomination_start TEXT,
-                    nomination_end TEXT,
-                    voting_start TEXT,
-                    voting_end TEXT,
-                    status TEXT DEFAULT 'upcoming'
-                )
         ''')
 
         # Create union_equipment table

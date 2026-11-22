@@ -25,6 +25,7 @@ from education_system.systems.primary.domain.finance.funding.funding import (
     STREAM_TYPES,
     ValidationError,
 )
+from education_system.systems.primary.interfaces.gui import kit
 
 logger = logging.getLogger(__name__)
 
@@ -54,14 +55,23 @@ _ALLOC_TAGS = {
 
 def open_funding_window(parent=None) -> None:
     data.init_db()
-    master = getattr(parent, "root", parent)
-    win = tk.Toplevel(master) if master is not None else tk.Tk()
-    win.title(f"Funding — {branding.SYSTEM_NAME}")
-    win.geometry(WIN_GEOMETRY)
-    win.minsize(*WIN_MINSIZE)
+    if parent is None:
+        win = tk.Tk()
+        win.title(f"Funding — {branding.SYSTEM_NAME}")
+        win.geometry(WIN_GEOMETRY)
+        win.minsize(*WIN_MINSIZE)
+        frame = ttk.Frame(win, padding=10)
+        frame.pack(fill="both", expand=True)
+        _draw_funding(frame)
+        return
+    kit.show_page(parent, "Funding", _draw_funding)
 
-    nb = ttk.Notebook(win)
-    nb.pack(fill="both", expand=True, padx=10, pady=10)
+
+def _draw_funding(parent) -> None:
+    kit.page_heading(parent, "Funding",
+                     "Funding streams and the learner allocations drawn against them.")
+    nb = ttk.Notebook(parent)
+    nb.pack(fill="both", expand=True)
 
     StreamsTab(nb, scope="all",            label="All Streams")
     StreamsTab(nb, scope="active",         label="Active")
@@ -95,7 +105,7 @@ class StreamsTab:
         self.f_funder.current(0)
         self.f_funder.pack(side="left", padx=(2, 8))
         ttk.Label(bar, text="Year:").pack(side="left")
-        self.f_year = ttk.Entry(bar, width=10)
+        self.f_year = kit.AcademicYearPicker(bar, blank=True)
         self.f_year.pack(side="left", padx=(2, 8))
         if self.scope == "all":
             ttk.Label(bar, text="Status:").pack(side="left")
@@ -304,10 +314,12 @@ class AllocationsTab:
         bar = ttk.Frame(self.frame)
         bar.pack(fill="x", padx=8, pady=(8, 4))
         ttk.Label(bar, text="Stream id:").pack(side="left")
-        self.f_sid = ttk.Entry(bar, width=8)
+        self.f_sid = kit.ChoiceField(bar, choices=_stream_choices(),
+                                     blank=True, width=26)
         self.f_sid.pack(side="left", padx=(2, 8))
         ttk.Label(bar, text="Learner:").pack(side="left")
-        self.f_ref = ttk.Entry(bar, width=12)
+        self.f_ref = kit.PupilPicker(bar, include_off_roll=True,
+                                     width=30)
         self.f_ref.pack(side="left", padx=(2, 8))
         ttk.Label(bar, text="Band:").pack(side="left")
         self.f_band = ttk.Combobox(
@@ -453,7 +465,7 @@ class AllocationsTab:
         a = self._selected()
         if not a:
             return
-        by = _prompt_text(self.frame, "Approved by",
+        by = _prompt_staff(self.frame, "Approved by",
                             initial=a.approved_by or "")
         try:
             data.approve_allocation(
@@ -481,9 +493,8 @@ class AllocationsTab:
         a = self._selected()
         if not a:
             return
-        amt = _prompt_text(self.frame,
-                             "Drawdown amount (£)",
-                             initial="")
+        amt = _prompt_amount(self.frame,
+                               "Drawdown amount (£)")
         if not amt:
             return
         try:
@@ -598,7 +609,7 @@ class StreamEditor:
         self.win.title(
             f"Edit stream #{stream.stream_id}"
             if stream else "New stream")
-        self.win.geometry("820x680")
+        self.win.geometry("900x560")
         self.win.transient(parent); self.win.after_idle(self.win.grab_set)
         self._build()
         if stream:
@@ -606,8 +617,7 @@ class StreamEditor:
         self.win.wait_window()
 
     def _build(self) -> None:
-        body = ttk.Frame(self.win)
-        body.pack(fill="both", expand=True, padx=12, pady=10)
+        body, footer = kit.scrolled_form(self.win)
         body.grid_columnconfigure(1, weight=1)
         body.grid_columnconfigure(3, weight=1)
         self.vars: dict[str, tk.Variable] = {}
@@ -634,17 +644,31 @@ class StreamEditor:
                 row=row, column=col + 1, sticky="ew",
                 padx=4, pady=2)
 
+        def field(row, col, label, key, make):
+            ttk.Label(body, text=label).grid(
+                row=row, column=col, sticky="w",
+                padx=4, pady=2)
+            v = tk.StringVar()
+            self.vars[key] = v
+            make(v).grid(row=row, column=col + 1, sticky="w",
+                         padx=4, pady=2)
+
         entry(0, 0, "Name*", "name", width=48)
         combo(1, 0, "Type*", "stream_type", STREAM_TYPES)
         combo(1, 2, "Funder*", "funder", FUNDERS)
-        entry(2, 0, "Academic year*", "academic_year")
+        field(2, 0, "Academic year*", "academic_year",
+              lambda v: kit.AcademicYearPicker(body, v))
         entry(2, 2, "Reference", "reference")
-        entry(3, 0, "Allocated amount (£)*",
-                 "allocated_amount")
+        field(3, 0, "Allocated amount (£)*", "allocated_amount",
+              lambda v: kit.NumberField(body, v, increment=0.01,
+                                        to=99999999, width=14))
         combo(3, 2, "Status*", "status", STREAM_STATUSES)
-        entry(4, 0, "Starts on", "starts_on")
-        entry(4, 2, "Ends on", "ends_on")
-        entry(5, 0, "Owner", "owner", width=48)
+        field(4, 0, "Starts on", "starts_on",
+              lambda v: kit.DateField(body, v))
+        field(4, 2, "Ends on", "ends_on",
+              lambda v: kit.DateField(body, v))
+        field(5, 0, "Owner", "owner",
+              lambda v: kit.StaffPicker(body, v, by="name"))
 
         ttk.Label(body, text="Notes").grid(
             row=6, column=0, sticky="nw",
@@ -654,8 +678,7 @@ class StreamEditor:
                   padx=4, pady=(6, 2))
         self.texts["notes"] = t
 
-        bar = ttk.Frame(self.win)
-        bar.pack(fill="x", padx=12, pady=(0, 10))
+        bar = footer
         ttk.Button(bar, text="Save",
                     command=self._save).pack(side="right",
                                                padx=4)
@@ -714,7 +737,7 @@ class AllocationEditor:
         self.win.title(
             f"Edit allocation #{allocation.allocation_id}"
             if allocation else "New allocation")
-        self.win.geometry("840x720")
+        self.win.geometry("1000x600")
         self.win.transient(parent); self.win.after_idle(self.win.grab_set)
         self._build()
         if allocation:
@@ -722,8 +745,7 @@ class AllocationEditor:
         self.win.wait_window()
 
     def _build(self) -> None:
-        body = ttk.Frame(self.win)
-        body.pack(fill="both", expand=True, padx=12, pady=10)
+        body, footer = kit.scrolled_form(self.win)
         body.grid_columnconfigure(1, weight=1)
         body.grid_columnconfigure(3, weight=1)
         self.vars: dict[str, tk.Variable] = {}
@@ -750,20 +772,41 @@ class AllocationEditor:
                 row=row, column=col + 1, sticky="ew",
                 padx=4, pady=2)
 
-        entry(0, 0, "Stream id", "stream_id")
+        def field(row, col, label, key, make):
+            ttk.Label(body, text=label).grid(
+                row=row, column=col, sticky="w",
+                padx=4, pady=2)
+            v = tk.StringVar()
+            self.vars[key] = v
+            make(v).grid(row=row, column=col + 1, sticky="w",
+                         padx=4, pady=2)
+
+        def money(v):
+            return kit.NumberField(body, v, increment=0.01,
+                                   to=9999999, width=12)
+
+        field(0, 0, "Stream id", "stream_id",
+              lambda v: kit.ChoiceField(body, v,
+                                        choices=_stream_choices(),
+                                        blank=True, width=30))
         combo(0, 2, "Status*", "status",
                  ALLOCATION_STATUSES)
-        entry(1, 0, "Learner ref*", "learner_ref")
+        field(1, 0, "Learner ref*", "learner_ref",
+              lambda v: kit.PupilPicker(
+                  body, v, include_off_roll=True, width=34,
+                  on_change=self._learner_picked))
         entry(1, 2, "Learner name", "learner_name")
         combo(2, 0, "Band*", "funding_band", FUNDING_BANDS)
-        entry(2, 2, "Band value (£)", "band_value")
-        entry(3, 0, "Committed (£)", "committed_amount")
-        entry(3, 2, "Drawn down (£)", "drawn_down_amount")
-        entry(4, 0, "Starts on*", "starts_on")
-        entry(4, 2, "Ends on", "ends_on")
+        field(2, 2, "Band value (£)", "band_value", money)
+        field(3, 0, "Committed (£)", "committed_amount", money)
+        field(3, 2, "Drawn down (£)", "drawn_down_amount", money)
+        field(4, 0, "Starts on*", "starts_on",
+              lambda v: kit.DateField(body, v))
+        field(4, 2, "Ends on", "ends_on",
+              lambda v: kit.DateField(body, v))
         entry(5, 0, "Purpose", "purpose", width=48)
-        entry(6, 0, "Approved by", "approved_by",
-                 width=48)
+        field(6, 0, "Approved by", "approved_by",
+              lambda v: kit.StaffPicker(body, v, by="name"))
 
         ttk.Label(body, text="Notes").grid(
             row=7, column=0, sticky="nw",
@@ -773,8 +816,7 @@ class AllocationEditor:
                   padx=4, pady=(6, 2))
         self.texts["notes"] = t
 
-        bar = ttk.Frame(self.win)
-        bar.pack(fill="x", padx=12, pady=(0, 10))
+        bar = footer
         ttk.Button(bar, text="Save",
                     command=self._save).pack(side="right",
                                                padx=4)
@@ -786,6 +828,21 @@ class AllocationEditor:
         for k in ("band_value", "committed_amount",
                    "drawn_down_amount"):
             self.vars[k].set("0")
+
+    def _learner_picked(self, pupil_id: str) -> None:
+        # Fill the learner name from the picked pupil when it is empty.
+        if not pupil_id or self.vars["learner_name"].get().strip():
+            return
+        try:
+            from education_system.systems.primary.domain.learners.pupils import (
+                pupils,
+            )
+            p = pupils.get_pupil(pupil_id)
+        except Exception:  # noqa: BLE001 - the name is optional
+            logger.debug("pupil lookup failed", exc_info=True)
+            return
+        if p is not None:
+            self.vars["learner_name"].set(p.full_name)
 
     def _load(self) -> None:
         a = self.allocation
@@ -844,6 +901,56 @@ def _prompt_text(parent, title: str, *,
                 command=win.destroy).pack(side="right")
     win.wait_window()
     return result["value"]
+
+
+def _prompt_staff(parent, title: str, *,
+                   initial: str = "") -> str | None:
+    """Pick a member of staff by name (the field stores the name)."""
+    return _prompt_widget(
+        parent, title, initial,
+        lambda win, var: kit.StaffPicker(win, var, by="name"))
+
+
+def _prompt_amount(parent, title: str, *,
+                    initial: str = "") -> str | None:
+    """Ask for a pound amount (spinbox in 1p steps)."""
+    return _prompt_widget(
+        parent, title, initial,
+        lambda win, var: kit.NumberField(win, var, increment=0.01,
+                                         to=9999999, width=14))
+
+
+def _prompt_widget(parent, title: str, initial: str, make) -> str | None:
+    win = tk.Toplevel(parent)
+    win.title(title); win.geometry("480x140")
+    win.transient(parent); win.after_idle(win.grab_set)
+    ttk.Label(win, text=title).pack(anchor="w", padx=8, pady=8)
+    var = tk.StringVar(value=initial)
+    make(win, var).pack(fill="x", padx=8)
+    result: dict = {"value": None}
+
+    def ok() -> None:
+        result["value"] = var.get().strip()
+        win.destroy()
+
+    bar = ttk.Frame(win)
+    bar.pack(fill="x", padx=8, pady=12)
+    ttk.Button(bar, text="OK", command=ok).pack(side="right",
+                                                    padx=4)
+    ttk.Button(bar, text="Cancel",
+                command=win.destroy).pack(side="right")
+    win.wait_window()
+    return result["value"]
+
+
+def _stream_choices() -> list[tuple[str, str]]:
+    """``(stream id, "name (year)")`` for the stream drop-downs."""
+    try:
+        return [(str(s.stream_id), f"#{s.stream_id} {s.name} ({s.academic_year})")
+                for s in data.list_streams()]
+    except Exception:  # noqa: BLE001 - an empty list beats a broken form
+        logger.exception("stream list failed")
+        return []
 
 
 def _prompt_choice(parent, title: str, options: list[str], *,

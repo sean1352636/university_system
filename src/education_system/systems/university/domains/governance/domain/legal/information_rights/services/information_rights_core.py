@@ -754,6 +754,39 @@ class InformationRightsService:
             )
 
     # ------------------------------------------------------------ readers
+    def health_disclosure(self, request_id: str, student_id: str,
+                          actor: str = "") -> Dict[str, Any]:
+        """The health section for a SAR (``pastoral/application/health/
+        subject_access``): sealed fields readable, internal notes and
+        third-party data withheld and counted. Only for a SAR whose
+        requester's identity has been verified; recorded in the request's
+        audit and the immutable audit log."""
+        from education_system.systems.university.services.bus import subject_access_bus
+        with self._conn() as conn:
+            row = conn.execute("SELECT * FROM ir_requests WHERE request_id = ?",
+                               (request_id,)).fetchone()
+            if row is None:
+                raise InformationRightsError(f"No request {request_id}")
+            if row["request_type"] != "SAR":
+                raise InformationRightsError("Health records are disclosed only for a SAR")
+            if row["identity_status"] != "verified":
+                raise InformationRightsError(
+                    "Verify the requester's identity before disclosing health records")
+            section = subject_access_bus.health_section(conn, student_id)
+            counts = {t: len(rows) for t, rows in section["records"].items()}
+            self._audit(conn, request_id, "health_disclosure",
+                        f"student {student_id}: {counts}; withheld {section['withheld']}",
+                        actor)
+            from education_system.systems.university.infrastructure.security.immutable_audit_log import (
+                log_security_event,
+            )
+            log_security_event(user_id=str(actor or "unknown"), action="SAR_HEALTH_DISCLOSURE",
+                               resource_type="health_record", resource_id=str(student_id),
+                               details={"request_id": request_id, "tables": counts,
+                                        "withheld": section["withheld"]},
+                               conn=conn)
+        return section
+
     def get_request(self, request_id: str) -> Dict[str, Any]:
         with self._conn() as c:
             row = c.execute(

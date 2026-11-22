@@ -1,0 +1,1 @@
+"""Finance dashboard terminal view."""

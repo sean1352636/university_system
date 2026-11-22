@@ -24,7 +24,7 @@ def send_email(*args, **kwargs):
 
 # Dynamic activity logger
 try:
-    from education_system.systems.university.infrastructure.activity_logger import log_dynamic_activity
+    from education_system.systems.university.infrastructure.activity_logger import log_activity as log_dynamic_activity
 except ImportError:
     def log_dynamic_activity(*args, **kwargs):
         pass

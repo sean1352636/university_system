@@ -15,12 +15,12 @@ from education_system.systems.apprenticeships.infrastructure.persistence import 
 from education_system.systems.apprenticeships.infrastructure.persistence.repositories import (
     review_repository,
 )
-from education_system.systems.apprenticeships.services import (
+from education_system.systems.apprenticeships.application.employers import (
     employer_contact_service,
     employer_risk_service,
     employer_service,
 )
-from education_system.systems.apprenticeships.services.access import PermissionDenied
+from education_system.systems.apprenticeships.application.security.access import PermissionDenied
 
 
 def _metrics(**overrides) -> EmployerRiskMetrics:

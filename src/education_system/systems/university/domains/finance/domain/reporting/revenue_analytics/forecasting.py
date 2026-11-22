@@ -329,6 +329,34 @@ def generate_revenue_forecast():
     except Exception as e:
         print(f"Error generating revenue forecast: {e}")
 
+def build_revenue_forecast(periods=12):
+    """The figures behind the forecast report, without prompting.
+
+    Returns ``(historical_data, forecasts, total_forecast)`` from completed
+    payments over the last 24 months. Raises ValueError when there are fewer
+    than six months of data, the same floor the interactive forecast uses.
+    """
+    from education_system.systems.university.domains.finance.domain.core.analytics import calculate_growth_rate, calculate_seasonal_factors
+    conn = get_connection()
+    try:
+        historical_data = [tuple(r) for r in conn.execute('''
+        SELECT strftime('%Y-%m', payment_date) as month, SUM(amount) as monthly_revenue
+        FROM payments
+        WHERE status = 'completed'
+        AND payment_date >= date('now', '-24 months')
+        GROUP BY month
+        ORDER BY month
+        ''').fetchall()]
+    finally:
+        conn.close()
+    if len(historical_data) < 6:
+        raise ValueError("Need at least 6 months of payment data to forecast revenue.")
+    revenues = [row[1] for row in historical_data]
+    forecasts = generate_forecast_values(revenues, periods, calculate_growth_rate(revenues),
+                                         calculate_seasonal_factors(historical_data))
+    return historical_data, forecasts, sum(forecasts)
+
+
 def generate_forecast_values(historical_revenues, periods, growth_rate, seasonal_factors):
     """Generate forecast values using trend and seasonal adjustments"""
     forecasts = []

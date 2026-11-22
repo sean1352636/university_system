@@ -31,23 +31,18 @@ from education_system.systems.primary.domain.governance.governance import (
     ValidationError,
 )
 
+from education_system.systems.primary.interfaces.gui import kit
+
 logger = logging.getLogger(__name__)
 
 
-def _clear(gui) -> ttk.Frame:
-    for w in gui.content_frame.winfo_children():
-        w.destroy()
-    return gui.content_frame
-
-
-def _heading(parent, text: str) -> None:
-    ttk.Label(parent, text=text, font=("", 16, "bold")).pack(
-        anchor="w", pady=(0, 8))
-
-
 def open_governance_window(gui) -> None:
-    frame = _clear(gui)
-    _heading(frame, "Governance")
+    kit.show_page(gui, "Governance", lambda parent: _draw_governance(parent, gui))
+
+
+def _draw_governance(frame, gui) -> None:
+    kit.page_heading(frame, "Governance",
+                     "Governing body register, meetings and a summary.")
 
     nb = ttk.Notebook(frame)
     nb.pack(fill="both", expand=True)
@@ -73,6 +68,17 @@ def open_governance_window(gui) -> None:
     _build_governors_tab(gui, governors_tab, state, refresh_all)
     _build_meetings_tab(gui, meetings_tab, state, refresh_all)
     _build_summary_tab(gui, summary_tab, state)
+
+
+def _governor_names() -> list[str]:
+    """Serving governors' names, for the meeting "Chair" box (still
+    editable: a chair from outside the register can be typed)."""
+    try:
+        rows = data.list_governors(status="Active")
+    except Exception:  # noqa: BLE001 - an empty list beats a broken form
+        logger.exception("governor names for chair picker failed")
+        return []
+    return sorted({g.full_name for g in rows})
 
 
 # ── Governors tab ──────────────────────────────────────────────────
@@ -135,11 +141,11 @@ def _build_governors_tab(gui, parent: ttk.Frame, state: dict,
     ttk.Entry(row2, textvariable=n_email, width=26
               ).pack(side="left", padx=(4, 12))
     ttk.Label(row2, text="Term start:").pack(side="left")
-    ttk.Entry(row2, textvariable=n_term_start, width=12
-              ).pack(side="left", padx=(4, 12))
+    kit.DateField(row2, n_term_start, years=kit.recent_years(ahead=5, back=15)
+                  ).pack(side="left", padx=(4, 12))
     ttk.Label(row2, text="Term end:").pack(side="left")
-    ttk.Entry(row2, textvariable=n_term_end, width=12
-              ).pack(side="left", padx=(4, 12))
+    kit.DateField(row2, n_term_end, years=kit.recent_years(ahead=8, back=10)
+                  ).pack(side="left", padx=(4, 12))
 
     def _create_governor() -> None:
         try:
@@ -152,11 +158,11 @@ def _build_governors_tab(gui, parent: ttk.Frame, state: dict,
                 "status": n_status.get(),
             })
         except ValidationError as e:
-            messagebox.showerror("Cannot save", str(e), parent=gui.root)
+            messagebox.showerror("Cannot save", str(e), parent=parent.winfo_toplevel())
             return
         except Exception as e:
             logger.exception("create_governor crashed")
-            messagebox.showerror("Error", str(e), parent=gui.root)
+            messagebox.showerror("Error", str(e), parent=parent.winfo_toplevel())
             return
         n_name.set("")
         n_email.set("")
@@ -218,15 +224,15 @@ def _build_governors_tab(gui, parent: ttk.Frame, state: dict,
             gid = _sel()
             if gid is None:
                 messagebox.showinfo("No selection", "Pick a governor first.",
-                                      parent=gui.root)
+                                      parent=parent.winfo_toplevel())
                 return
-            _edit_governor_dialog(gui, gid, refresh_all)
+            _edit_governor_dialog(parent, gid, refresh_all)
 
         def _delete() -> None:
             gid = _sel()
             if gid is None:
                 messagebox.showinfo("No selection", "Pick a governor first.",
-                                      parent=gui.root)
+                                      parent=parent.winfo_toplevel())
                 return
             existing = data.get_governor(gid)
             if existing is None:
@@ -235,13 +241,13 @@ def _build_governors_tab(gui, parent: ttk.Frame, state: dict,
             if not messagebox.askyesno(
                     "Delete governor",
                     f"Delete '#{gid} — {existing.full_name}'?",
-                    parent=gui.root):
+                    parent=parent.winfo_toplevel()):
                 return
             try:
                 data.delete_governor(gid)
             except Exception as e:
                 logger.exception("delete_governor crashed")
-                messagebox.showerror("Error", str(e), parent=gui.root)
+                messagebox.showerror("Error", str(e), parent=parent.winfo_toplevel())
                 return
             refresh_all()
 
@@ -264,13 +270,14 @@ def _build_governors_tab(gui, parent: ttk.Frame, state: dict,
     refresh()
 
 
-def _edit_governor_dialog(gui, gid: int, refresh_all) -> None:
+def _edit_governor_dialog(owner, gid: int, refresh_all) -> None:
     existing = data.get_governor(gid)
     if existing is None:
         return
-    win = tk.Toplevel(gui.root)
+    top = owner.winfo_toplevel()
+    win = tk.Toplevel(top)
     win.title(f"Edit governor #{gid}")
-    win.transient(gui.root)
+    win.transient(top)
     win.after_idle(win.grab_set)
     frm = ttk.Frame(win, padding=12)
     frm.grid()
@@ -302,8 +309,8 @@ def _edit_governor_dialog(gui, gid: int, refresh_all) -> None:
                           state="readonly", width=22
                           ).grid(row=i, column=1, sticky="w", pady=2)
         elif kind == "date":
-            ttk.Entry(frm, textvariable=var, width=18
-                      ).grid(row=i, column=1, sticky="w", pady=2)
+            kit.DateField(frm, var, years=kit.recent_years(ahead=8, back=15)
+                          ).grid(row=i, column=1, sticky="w", pady=2)
         else:
             ttk.Entry(frm, textvariable=var, width=38
                       ).grid(row=i, column=1, sticky="w", pady=2)
@@ -374,8 +381,7 @@ def _build_meetings_tab(gui, parent: ttk.Frame, state: dict,
     row1 = ttk.Frame(new_form)
     row1.pack(fill="x", pady=2)
     ttk.Label(row1, text="Date:").pack(side="left")
-    ttk.Entry(row1, textvariable=m_date, width=14
-              ).pack(side="left", padx=(4, 12))
+    kit.DateField(row1, m_date).pack(side="left", padx=(4, 12))
     ttk.Label(row1, text="Kind:").pack(side="left")
     ttk.Combobox(row1, textvariable=m_kind, values=list(MEETING_KINDS),
                   state="readonly", width=14
@@ -391,8 +397,8 @@ def _build_meetings_tab(gui, parent: ttk.Frame, state: dict,
     ttk.Entry(row2, textvariable=m_title, width=40
               ).pack(side="left", padx=(4, 12))
     ttk.Label(row2, text="Chair:").pack(side="left")
-    ttk.Entry(row2, textvariable=m_chair, width=22
-              ).pack(side="left", padx=(4, 0))
+    kit.ChoiceField(row2, m_chair, choices=_governor_names(), blank=True,
+                    editable=True, width=22).pack(side="left", padx=(4, 0))
 
     def _create_meeting() -> None:
         try:
@@ -402,11 +408,11 @@ def _build_meetings_tab(gui, parent: ttk.Frame, state: dict,
                 "status": m_status.get(),
             })
         except ValidationError as e:
-            messagebox.showerror("Cannot save", str(e), parent=gui.root)
+            messagebox.showerror("Cannot save", str(e), parent=parent.winfo_toplevel())
             return
         except Exception as e:
             logger.exception("create_meeting crashed")
-            messagebox.showerror("Error", str(e), parent=gui.root)
+            messagebox.showerror("Error", str(e), parent=parent.winfo_toplevel())
             return
         m_date.set("")
         m_title.set("")
@@ -469,23 +475,23 @@ def _build_meetings_tab(gui, parent: ttk.Frame, state: dict,
             mid = _sel()
             if mid is None:
                 messagebox.showinfo("No selection", "Pick a meeting first.",
-                                      parent=gui.root)
+                                      parent=parent.winfo_toplevel())
                 return
-            _edit_meeting_dialog(gui, mid, refresh_all)
+            _edit_meeting_dialog(parent, mid, refresh_all)
 
         def _held() -> None:
             mid = _sel()
             if mid is None:
                 messagebox.showinfo("No selection", "Pick a meeting first.",
-                                      parent=gui.root)
+                                      parent=parent.winfo_toplevel())
                 return
-            _mark_held_dialog(gui, mid, refresh_all)
+            _mark_held_dialog(parent, mid, refresh_all)
 
         def _delete() -> None:
             mid = _sel()
             if mid is None:
                 messagebox.showinfo("No selection", "Pick a meeting first.",
-                                      parent=gui.root)
+                                      parent=parent.winfo_toplevel())
                 return
             existing = data.get_meeting(mid)
             if existing is None:
@@ -494,13 +500,13 @@ def _build_meetings_tab(gui, parent: ttk.Frame, state: dict,
             if not messagebox.askyesno(
                     "Delete meeting",
                     f"Delete '#{mid} — {existing.title}'?",
-                    parent=gui.root):
+                    parent=parent.winfo_toplevel()):
                 return
             try:
                 data.delete_meeting(mid)
             except Exception as e:
                 logger.exception("delete_meeting crashed")
-                messagebox.showerror("Error", str(e), parent=gui.root)
+                messagebox.showerror("Error", str(e), parent=parent.winfo_toplevel())
                 return
             refresh_all()
 
@@ -525,13 +531,14 @@ def _build_meetings_tab(gui, parent: ttk.Frame, state: dict,
     refresh()
 
 
-def _edit_meeting_dialog(gui, mid: int, refresh_all) -> None:
+def _edit_meeting_dialog(owner, mid: int, refresh_all) -> None:
     existing = data.get_meeting(mid)
     if existing is None:
         return
-    win = tk.Toplevel(gui.root)
+    top = owner.winfo_toplevel()
+    win = tk.Toplevel(top)
     win.title(f"Edit meeting #{mid}")
-    win.transient(gui.root)
+    win.transient(top)
     win.after_idle(win.grab_set)
     frm = ttk.Frame(win, padding=12)
     frm.grid()
@@ -549,8 +556,8 @@ def _edit_meeting_dialog(gui, mid: int, refresh_all) -> None:
         ("Date:", date_v, "date", None),
         ("Kind:", kind_v, "combo", list(MEETING_KINDS)),
         ("Title:", title_v, "entry", None),
-        ("Chair:", chair_v, "entry", None),
-        ("Attendees:", att_v, "date", None),
+        ("Chair:", chair_v, "chair", None),
+        ("Attendees:", att_v, "number", None),
         ("Minutes ref:", minutes_v, "entry", None),
         ("Decisions:", decisions_v, "entry", None),
         ("Status:", status_v, "combo", list(MEETING_STATUSES)),
@@ -563,8 +570,13 @@ def _edit_meeting_dialog(gui, mid: int, refresh_all) -> None:
                           state="readonly", width=22
                           ).grid(row=i, column=1, sticky="w", pady=2)
         elif kind == "date":
-            ttk.Entry(frm, textvariable=var, width=18
-                      ).grid(row=i, column=1, sticky="w", pady=2)
+            kit.DateField(frm, var).grid(row=i, column=1, sticky="w", pady=2)
+        elif kind == "number":
+            kit.NumberField(frm, var, to=999).grid(row=i, column=1, sticky="w", pady=2)
+        elif kind == "chair":
+            kit.ChoiceField(frm, var, choices=_governor_names(), blank=True,
+                            editable=True, width=40
+                            ).grid(row=i, column=1, sticky="w", pady=2)
         else:
             ttk.Entry(frm, textvariable=var, width=42
                       ).grid(row=i, column=1, sticky="w", pady=2)
@@ -596,13 +608,14 @@ def _edit_meeting_dialog(gui, mid: int, refresh_all) -> None:
     ttk.Button(bar, text="Cancel", command=win.destroy).pack(side="left")
 
 
-def _mark_held_dialog(gui, mid: int, refresh_all) -> None:
+def _mark_held_dialog(owner, mid: int, refresh_all) -> None:
     existing = data.get_meeting(mid)
     if existing is None:
         return
-    win = tk.Toplevel(gui.root)
+    top = owner.winfo_toplevel()
+    win = tk.Toplevel(top)
     win.title(f"Mark meeting held — #{mid}")
-    win.transient(gui.root)
+    win.transient(top)
     win.after_idle(win.grab_set)
     frm = ttk.Frame(win, padding=12)
     frm.grid()
@@ -615,8 +628,7 @@ def _mark_held_dialog(gui, mid: int, refresh_all) -> None:
 
     ttk.Label(frm, text="Attendees:").grid(row=1, column=0, sticky="e",
                                              padx=(0, 6), pady=2)
-    ttk.Entry(frm, textvariable=att, width=10
-              ).grid(row=1, column=1, sticky="w", pady=2)
+    kit.NumberField(frm, att, to=999).grid(row=1, column=1, sticky="w", pady=2)
     ttk.Label(frm, text="Minutes ref:").grid(row=2, column=0, sticky="e",
                                                padx=(0, 6), pady=2)
     ttk.Entry(frm, textvariable=minutes, width=38
@@ -721,7 +733,7 @@ def _build_summary_tab(gui, parent: ttk.Frame, state: dict) -> None:
             s = data.summary()
         except Exception as e:
             logger.exception("governance summary failed")
-            messagebox.showerror("Error", str(e), parent=gui.root)
+            messagebox.showerror("Error", str(e), parent=parent.winfo_toplevel())
             return
         gov_var.set(str(s.governors_total))
         active_var.set(str(s.governors_active))

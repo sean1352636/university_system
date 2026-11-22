@@ -3,6 +3,8 @@
 from .. import taxi_booking_gui_shared as _shared
 globals().update({name: value for name, value in _shared.__dict__.items() if not name.startswith("__")})
 
+from education_system.systems.university.domains.operations.domain.campus.mobility.services import taxi_booking_service
+
 
 class Database:
     """Handle all database operations using university system database"""
@@ -91,26 +93,16 @@ class Database:
         conn.close()
         return service
 
-    def create_ticket(self, service_id, customer_name, pickup, dropoff, distance, total_fare, payment_method):
-        """Create a new ticket"""
-        conn = self.get_connection()
-        cursor = conn.cursor()
-
-        ticket_number = self.generate_ticket_number()
-        now = datetime.now()
-
-        cursor.execute('''
-            INSERT INTO taxi_booking_tickets (ticket_number, service_id, customer_name, pickup_location,
-                               dropoff_location, distance_km, total_fare, payment_method,
-                               booking_date, booking_time)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        ''', (ticket_number, service_id, customer_name, pickup, dropoff, distance,
-              total_fare, payment_method, now.strftime("%Y-%m-%d"), now.strftime("%H:%M:%S")))
-
-        ticket_id = cursor.lastrowid
-        conn.commit()
-        conn.close()
-
+    def create_ticket(self, service_id, customer_name, pickup, dropoff, distance, total_fare,
+                      payment_method, student_id=None, processed_by=None):
+        """Book via the taxi domain service (which takes the fare and posts it
+        to Finance). Returns (ticket_id, ticket_number)."""
+        ticket_id, ticket_number = taxi_booking_service.create_ticket(
+            service_id, customer_name, pickup, dropoff, distance, total_fare, payment_method,
+            student_id=student_id, processed_by=processed_by,
+        )
+        if not ticket_id:
+            raise RuntimeError("Taxi booking failed (payment declined or database error)")
         return ticket_id, ticket_number
 
     def get_all_tickets(self):

@@ -392,5 +392,5 @@ The Early Warning System uses a **weighted multi-factor model** to generate an o
 ---
 
 **Last Updated**: February 2026
-**Module**: `university_system/modules/domain/student_affairs/services/early_warning/early_warning_core.py`
+**Module**: `src/education_system/systems/university/domains/student_support/domain/early_warning/early_warning_core.py`
 **Support**: advising@university.edu | (555) 123-ADVS

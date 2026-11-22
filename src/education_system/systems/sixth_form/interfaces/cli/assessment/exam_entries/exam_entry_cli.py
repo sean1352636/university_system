@@ -19,7 +19,7 @@ from education_system.systems.sixth_form.domain.assessment.exam_entries.exam_ent
     ValidationError,
 )
 from education_system.systems.sixth_form.domain.learners.students.students import A_LEVEL_SUBJECTS
-from education_system.systems.sixth_form.domain.academics.subjects.subjects import EXAM_BOARDS
+from education_system.systems.sixth_form.domain.assessment.exam_entries.exam_entries import EXAM_BOARDS
 
 logger = logging.getLogger(__name__)
 
@@ -538,6 +538,41 @@ _MENU: list[tuple[str, Callable[[], None]]] = [
     ("Edit Entry",          edit_entry),
     ("Delete Entry",        delete_entry_flow),
 ]
+
+
+# Exams-office additions, appended so existing option numbers stay put.
+def _exams_office() -> None:
+    from education_system.systems.sixth_form.interfaces.cli.assessment.exams_office import (
+        exams_office_cli,
+    )
+    exams_office_cli.run()
+
+
+def _extend_menu() -> None:
+    from education_system.systems.sixth_form.interfaces.cli.assessment.exams_office import (
+        entry_admin_cli as _extra,
+    )
+    from education_system.systems.sixth_form.interfaces.cli.assessment.exams_office.exams_cli_helpers import (
+        UserAbort as _Abort,
+    )
+
+    def _wrap(handler):
+        def run_one() -> None:
+            try:
+                handler()
+            except _Abort:
+                print("\n  Cancelled.")
+            except ValueError as e:
+                print(f"\n  ✗ {e}")
+                _pause()
+        return run_one
+
+    for label, handler in _extra.MENU:
+        _MENU.append((label, _wrap(handler)))
+    _MENU.append(("Exams Office…", _exams_office))
+
+
+_extend_menu()
 
 
 def run() -> None:

@@ -21,6 +21,26 @@ from education_system.systems.university.domains.operations.domain.communication
 )
 
 
+_PAYMENT_METHODS = {'1': 'Cash', '2': 'Card', '3': 'Student Account'}
+
+
+def _ask_payment_method() -> str:
+    """Prompt for how the fee was taken; the service posts it to Finance."""
+    print("Payment method: 1. Cash  2. Card  3. Student Account")
+    choice = input("Select payment method (1-3, default 1): ").strip()
+    return _PAYMENT_METHODS.get(choice, 'Cash')
+
+
+def _current_username():
+    """Username of the logged-in operator, if any (recorded as processed_by)."""
+    try:
+        from education_system.systems.university.infrastructure.shared_context import get_current_user
+        user = get_current_user()
+        return user.get('username') if user else None
+    except Exception:
+        return None
+
+
 def display_menu():
     """Display the mail/post system menu and handle user input."""
     init_mail_db()
@@ -309,12 +329,16 @@ def _rent_po_box():
     holder_email = input("Holder email: ").strip()
     months_str = input("Number of months (default 1): ").strip()
     months = int(months_str) if months_str else 1
+    payment_method = _ask_payment_method()
 
-    result = POBoxManager.rent_box(box_id, holder_id, holder_name, holder_email, months)
+    result = POBoxManager.rent_box(
+        box_id, holder_id, holder_name, holder_email, months,
+        payment_method=payment_method, processed_by=_current_username(),
+    )
     if result:
         print("\nPO box rented successfully!")
         print(f"  Box Number:  {result['box_number']}")
-        print(f"  Rental Fee:  £{result['rental_fee']:.2f}")
+        print(f"  Rental Fee:  £{result['rental_fee']:.2f} ({payment_method})")
         print(f"  Start Date:  {result['start_date']}")
         print(f"  End Date:    {result['end_date']}")
     else:
@@ -370,15 +394,17 @@ def _setup_forwarding():
 
     start_date = input("Start date (YYYY-MM-DD, Enter for today): ").strip() or None
     end_date = input("End date (YYYY-MM-DD, optional): ").strip() or None
+    payment_method = _ask_payment_method()
 
     result = ForwardingManager.setup_forwarding(
         user_id, user_name, forward_address, forward_type,
         start_date, end_date,
+        payment_method=payment_method, processed_by=_current_username(),
     )
     if result:
         print("\nForwarding set up successfully!")
         print(f"  Forwarding ID: {result['forwarding_id']}")
-        print(f"  Fee:           £{result['fee']:.2f}")
+        print(f"  Fee:           £{result['fee']:.2f} ({payment_method})")
     else:
         print("Failed to set up forwarding.")
 
@@ -431,6 +457,7 @@ def _record_payment():
 
     result = TransactionManager.record_payment(
         user_id, transaction_type, amount, payment_method, package_id,
+        processed_by=_current_username(),
     )
     if result:
         print("\nPayment recorded!")

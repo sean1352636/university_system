@@ -2,7 +2,7 @@ import tkinter as tk
 from tkinter import messagebox
 import logging
 
-from education_system.systems.university.infrastructure.ai.university_chatbot import LIBRARIES_AVAILABLE
+from education_system.systems.university.shared.ai.chatbot import LIBRARIES_AVAILABLE
 from education_system.systems.university.infrastructure.shared_context import get_auth
 from education_system.systems.university.infrastructure.activity_logger import log_activity
 
@@ -38,6 +38,7 @@ from education_system.systems.university.shell.gui.ai.features.booking import Bo
 from education_system.systems.university.shell.gui.ai.features.conversations import ConversationsMixin
 from education_system.systems.university.shell.gui.ai.features.attachments import AttachmentsMixin
 from education_system.systems.university.shell.gui.ai.features.hardening import HardeningMixin
+from education_system.systems.university.shell.gui.ai.features.care import CareMixin
 from education_system.systems.university.shell.gui.ai.chatbot_security import ChatbotSecurityPolicy
 
 # Configure logging
@@ -64,6 +65,7 @@ class ChatbotGUI(
     ConversationsMixin,
     AttachmentsMixin,
     HardeningMixin,
+    CareMixin,
 ):
     """Modern GUI interface for the University Chatbot"""
 
@@ -131,6 +133,7 @@ class ChatbotGUI(
         # Check if user is already authenticated and use current user
         self.setup_current_user()
         self.initialize_conversation_management()
+        self.initialize_care()
         self.initialize_attachments()
         self.initialize_hardening()
         self.security_policy = ChatbotSecurityPolicy(self.current_user.get('username','unknown'), self.current_user.get('role','student'))
@@ -153,6 +156,7 @@ class ChatbotGUI(
 
         # Show chat screen (user is already authenticated)
         self.show_chat_screen()
+        self.show_privacy_notice_once()
 
     def _install_dialog_parenting(self):
         """Make every messagebox / filedialog default its ``parent`` to this

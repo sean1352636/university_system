@@ -3,6 +3,8 @@
 from .. import taxi_booking_gui_shared as _shared
 globals().update({name: value for name, value in _shared.__dict__.items() if not name.startswith("__")})
 
+from education_system.systems.university.domains.operations.domain.campus.mobility.services import taxi_booking_service
+
 
 class TaxiBookingApp:
     def process_taxi_refund(self):
@@ -144,43 +146,14 @@ class TaxiBookingApp:
     def _complete_taxi_refund(self, ticket_id, ticket_number, amount, refund_method, student_id):
         """Complete cash or card refund"""
         try:
-            # Generate refund reference
-            refund_ref = f"TAXI-REFUND-{datetime.now().strftime('%Y%m%d%H%M%S')}"
-
-            # Update ticket status in database
-            conn = self.db.get_connection()
-            cursor = conn.cursor()
-
-            # Update payment_status to indicate refund
-            cursor.execute('''
-                UPDATE taxi_booking_tickets
-                SET payment_status = ?
-                WHERE id = ?
-            ''', ('Refunded', ticket_id))
-
-            # Record refund in unified_refunds table
-            now = datetime.now()
             processed_by = self.current_user.get('username', 'System') if self.current_user else 'System'
 
-            cursor.execute('''
-                INSERT INTO unified_refunds
-                (source_type, reference_id, reference_type, refund_reference, amount,
-                 refund_method, refund_date, processed_by, student_id, status)
-                VALUES ('taxi', ?, 'ticket', ?, ?, ?, ?, ?, ?, 'processed')
-            ''', (ticket_number, refund_ref, amount, refund_method,
-                  now.strftime("%Y-%m-%d %H:%M:%S"), processed_by, student_id))
-            refund_row_id = cursor.lastrowid
-
-            conn.commit()
-            conn.close()
-
-            # Auto-post to GL (cash has moved). Never raises.
-            try:
-                from education_system.systems.university.domains.finance.domain.ledger import notify_ledger
-                notify_ledger('refund', refund_row_id, posted_by=processed_by)
-            except Exception as _e:
-                import logging
-                logging.getLogger(__name__).warning("ledger hook failed: %s", _e)
+            # The service writes the refund once and posts it to Finance.
+            outcome = taxi_booking_service.process_refund(
+                ticket_id, ticket_number, amount, refund_method, student_id=student_id,
+                processed_by=processed_by,
+            )
+            refund_ref = outcome['refund_ref']
 
             # Send refund receipt email
             self.send_taxi_refund_receipt(ticket_number, refund_ref, amount, refund_method, None, None)
@@ -213,85 +186,17 @@ class TaxiBookingApp:
             return
 
         try:
-            # Generate refund reference
-            refund_ref = f"TAXI-REFUND-{datetime.now().strftime('%Y%m%d%H%M%S')}"
-
-            # Get current balance
-            old_balance = get_student_finance_account_balance(student_id)
-            if old_balance is None:
-                old_balance = 0.0
-
-            new_balance = old_balance + amount
-
-            # Import finance integration functions
-            from education_system.systems.university.domains.finance.infrastructure.finance_integration import ensure_student_finance_account_exists
-
-            # Ensure account exists
-            ensure_student_finance_account_exists(student_id)
-
-            # Add refund to student account
-            conn = self.db.get_connection()
-            cursor = conn.cursor()
-
-            # Update student account balance
-            cursor.execute('''
-                UPDATE student_finance_accounts
-                SET balance = balance + ?
-                WHERE student_id = ?
-            ''', (amount, student_id))
-
-            # Get account_id and new balance
-            cursor.execute('''
-                SELECT account_id, balance FROM student_finance_accounts WHERE student_id = ?
-            ''', (student_id,))
-            result = cursor.fetchone()
-            if result:
-                account_id, new_balance = result
-            else:
-                account_id, new_balance = None, amount
-
-            # Log transaction
-            cursor.execute('''
-                INSERT INTO transactions
-                (source_type, account_id, student_id, transaction_type, amount, balance_after, description,
-                 reference_id, processed_by, created_at)
-                VALUES ('student_finance', ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            ''', (account_id, student_id, 'credit', amount, new_balance,
-                  f'Taxi booking refund - {refund_ref}',
-                  refund_ref,
-                  self.current_user.get('username', 'System') if self.current_user else 'System',
-                  datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
-
-            # Update ticket status
-            cursor.execute('''
-                UPDATE taxi_booking_tickets
-                SET payment_status = ?
-                WHERE id = ?
-            ''', ('Refunded', ticket_id))
-
-            # Record refund in unified_refunds table
-            now = datetime.now()
             processed_by = self.current_user.get('username', 'System') if self.current_user else 'System'
 
-            cursor.execute('''
-                INSERT INTO unified_refunds
-                (source_type, reference_id, reference_type, refund_reference, amount,
-                 refund_method, refund_date, processed_by, student_id, status)
-                VALUES ('taxi', ?, 'ticket', ?, ?, 'Student Account', ?, ?, ?, 'processed')
-            ''', (ticket_number, refund_ref, amount,
-                  now.strftime("%Y-%m-%d %H:%M:%S"), processed_by, student_id))
-            refund_row_id = cursor.lastrowid
-
-            conn.commit()
-            conn.close()
-
-            # Auto-post to GL (cash has moved to student account). Never raises.
-            try:
-                from education_system.systems.university.domains.finance.domain.ledger import notify_ledger
-                notify_ledger('refund', refund_row_id, posted_by=processed_by)
-            except Exception as _e:
-                import logging
-                logging.getLogger(__name__).warning("ledger hook failed: %s", _e)
+            # The service credits the student account, writes the refund once
+            # and posts it to Finance.
+            outcome = taxi_booking_service.process_refund(
+                ticket_id, ticket_number, amount, 'Student Account', student_id=student_id,
+                processed_by=processed_by,
+            )
+            refund_ref = outcome['refund_ref']
+            old_balance = outcome['old_balance'] or 0.0
+            new_balance = outcome['new_balance'] or 0.0
 
             # Send refund receipt email
             self.send_taxi_refund_receipt(ticket_number, refund_ref, amount, 'Student Account',

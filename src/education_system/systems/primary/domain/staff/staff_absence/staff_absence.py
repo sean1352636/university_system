@@ -568,9 +568,14 @@ def confirm_absence(absence_id: int) -> Absence:
     a = get_absence(absence_id)
     if a is None:
         raise ValidationError(f"No absence with id {absence_id}")
+    # Confirming only moves forward: Reported/Confirmed → Active.
+    if a.status == "Active":
+        return a
+    if a.status not in ("Reported", "Confirmed"):
+        raise ValidationError(
+            f"Absence #{absence_id} is {a.status} and cannot be confirmed")
     data = _to_dict(a)
-    data["status"] = "Active" if a.status == "Reported" \
-        else "Confirmed"
+    data["status"] = "Active"
     return update_absence(absence_id, data)
 
 

@@ -7,7 +7,7 @@ from datetime import datetime
 
 from flask import Blueprint, g, jsonify, request
 
-from education_system.platform.delivery.api.university.auth import token_required
+from education_system.platform.delivery.api.university.auth import staff_required, token_required
 from education_system.platform.delivery.api.university.pagination import get_pagination_params, paginated_response
 from education_system.systems.university.infrastructure.exceptions import ValidationError
 from education_system.systems.university.infrastructure.sql_safety import escape_like
@@ -17,6 +17,13 @@ from education_system.systems.university.infrastructure.activity_logger import l
 logger = logging.getLogger(__name__)
 
 admissions_crm_bp = Blueprint("admissions_crm", __name__, url_prefix="/api/admissions-crm")
+
+#: Prospects are enquirers' personal details: reading them needs
+#: ``view_all_applications`` (admin, instructor, staff). Adding prospects or
+#: scheduling tours needs ``approve_applications`` (admin, staff). The tour
+#: timetable itself is public information and stays readable by anyone.
+CRM_READ = "view_all_applications"
+CRM_MANAGE = "approve_applications"
 
 
 def _row_to_dict(row) -> dict:
@@ -29,6 +36,7 @@ def _row_to_dict(row) -> dict:
 
 @admissions_crm_bp.route("/prospects", methods=["GET"])
 @token_required
+@staff_required(permission=CRM_READ)
 def list_prospects():
     search = request.args.get("search")
     status = request.args.get("status")
@@ -75,6 +83,7 @@ def list_prospects():
 
 @admissions_crm_bp.route("/prospects/<int:prospect_id>", methods=["GET"])
 @token_required
+@staff_required(permission=CRM_READ)
 def get_prospect(prospect_id: int):
     with get_connection() as conn:
         row = conn.execute(
@@ -87,6 +96,7 @@ def get_prospect(prospect_id: int):
 
 @admissions_crm_bp.route("/prospects", methods=["POST"])
 @token_required
+@staff_required(permission=CRM_MANAGE)
 def create_prospect():
     data = request.get_json(silent=True) or {}
     for field in ["first_name", "last_name", "email"]:
@@ -159,6 +169,7 @@ def get_tour(tour_id: int):
 
 @admissions_crm_bp.route("/tours", methods=["POST"])
 @token_required
+@staff_required(permission=CRM_MANAGE)
 def create_tour():
     data = request.get_json(silent=True) or {}
     for field in ["tour_date", "tour_time", "tour_guide", "max_attendees"]:

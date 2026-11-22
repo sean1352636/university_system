@@ -13,7 +13,7 @@ from tkinter import ttk
 from typing import Any
 
 from education_system.systems.apprenticeships.interfaces.gui import widgets
-from education_system.systems.apprenticeships.services import search_service
+from education_system.systems.apprenticeships.application.workspace import search_service
 
 logger = logging.getLogger(__name__)
 

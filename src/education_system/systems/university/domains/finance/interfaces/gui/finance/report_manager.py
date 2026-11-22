@@ -15,6 +15,8 @@ import csv
 from datetime import datetime, timedelta
 import json
 import threading
+from education_system.platform.delivery.gui.tk_threads import start_thread, ui
+from ._stdout_capture import capture_stdout
 import warnings
 from pathlib import Path
 from cryptography.fernet import Fernet
@@ -67,6 +69,14 @@ from education_system.systems.university.domains.finance.interfaces.gui.finance.
     # Forecasting and audit
     export_forecast_report,
     generate_audit_report,
+)
+
+from education_system.systems.university.domains.finance.domain.reporting.revenue_analytics.forecasting import (
+    build_revenue_forecast,
+)
+from education_system.systems.university.domains.finance.domain.reporting.revenue_analytics.reports import (
+    fetch_audit_entries,
+    format_audit_report,
 )
 
 # Configure logging
@@ -212,171 +222,149 @@ class ReportManager:
         """Generate revenue report"""
         def generate_thread():
             try:
-                self.update_status("Generating revenue report...")
+                ui(self.root, self.update_status, "Generating revenue report...")
 
-                # Redirect stdout to capture report output
-                old_stdout = sys.stdout
-                sys.stdout = mystdout = io.StringIO()
-
-                # Call original function
-                generate_revenue_summary()
-
-                # Get the output
+                with capture_stdout() as mystdout:
+                    generate_revenue_summary()
                 report_output = mystdout.getvalue()
-                sys.stdout = old_stdout
 
                 # Display in GUI
-                self.root.after(0, lambda: self.display_report_output("Revenue Report", report_output))
+                ui(self.root, self.display_report_output, "Revenue Report", report_output)
 
             except Exception as e:
-                sys.stdout = old_stdout
-                self.root.after(0, lambda _e=e: messagebox.showerror(_t('gui.finance.finance.report_manager.dialogs.report_error', default="Report Error"), f"Failed to generate revenue report: {str(_e)}"))
+                ui(self.root, lambda _e=e: messagebox.showerror(_t('gui.finance.finance.report_manager.dialogs.report_error', default="Report Error"), f"Failed to generate revenue report: {str(_e)}"))
 
-        threading.Thread(target=generate_thread, daemon=True).start()
+        start_thread(self.root, generate_thread)
 
 
     def generate_student_summary(self):
         """Generate student financial summary"""
         def generate_thread():
             try:
-                self.update_status("Generating student summary...")
+                ui(self.root, self.update_status, "Generating student summary...")
 
-                old_stdout = sys.stdout
-                sys.stdout = mystdout = io.StringIO()
-
-                generate_student_financial_summary()
-
+                with capture_stdout() as mystdout:
+                    generate_student_financial_summary()
                 report_output = mystdout.getvalue()
-                sys.stdout = old_stdout
 
-                self.root.after(0, lambda: self.display_report_output("Student Financial Summary", report_output))
+                ui(self.root, self.display_report_output, "Student Financial Summary", report_output)
 
             except Exception as e:
-                sys.stdout = old_stdout
-                self.root.after(0, lambda _e=e: messagebox.showerror(_t('gui.finance.finance.report_manager.dialogs.report_error', default="Report Error"), f"Failed to generate student summary: {str(_e)}"))
+                ui(self.root, lambda _e=e: messagebox.showerror(_t('gui.finance.finance.report_manager.dialogs.report_error', default="Report Error"), f"Failed to generate student summary: {str(_e)}"))
 
-        threading.Thread(target=generate_thread, daemon=True).start()
+        start_thread(self.root, generate_thread)
 
 
     def generate_overdue_report(self):
         """Generate overdue accounts report"""
         def generate_thread():
             try:
-                self.update_status("Generating overdue report...")
+                ui(self.root, self.update_status, "Generating overdue report...")
 
-                old_stdout = sys.stdout
-                sys.stdout = mystdout = io.StringIO()
-
-                view_overdue_accounts()
-
+                with capture_stdout() as mystdout:
+                    view_overdue_accounts()
                 report_output = mystdout.getvalue()
-                sys.stdout = old_stdout
 
-                self.root.after(0, lambda: self.display_report_output("Overdue Accounts Report", report_output))
+                ui(self.root, self.display_report_output, "Overdue Accounts Report", report_output)
 
             except Exception as e:
-                sys.stdout = old_stdout
-                self.root.after(0, lambda _e=e: messagebox.showerror(_t('gui.finance.finance.report_manager.dialogs.report_error', default="Report Error"), f"Failed to generate overdue report: {str(_e)}"))
+                ui(self.root, lambda _e=e: messagebox.showerror(_t('gui.finance.finance.report_manager.dialogs.report_error', default="Report Error"), f"Failed to generate overdue report: {str(_e)}"))
 
-        threading.Thread(target=generate_thread, daemon=True).start()
+        start_thread(self.root, generate_thread)
 
 
     def generate_payment_analytics(self):
         """Generate payment analytics report"""
-        self.show_payment_analytics()
+        self.gui.transactions.show_payment_analytics()
 
 
     def generate_collection_report(self):
         """Generate collection report"""
         def generate_thread():
             try:
-                self.update_status("Generating collection report...")
+                ui(self.root, self.update_status, "Generating collection report...")
 
-                old_stdout = sys.stdout
-                sys.stdout = mystdout = io.StringIO()
-
-                collection_performance_summary()
-
+                with capture_stdout() as mystdout:
+                    collection_performance_summary()
                 report_output = mystdout.getvalue()
-                sys.stdout = old_stdout
 
-                self.root.after(0, lambda: self.display_report_output("Collection Report", report_output))
+                ui(self.root, self.display_report_output, "Collection Report", report_output)
 
             except Exception as e:
-                sys.stdout = old_stdout
-                self.root.after(0, lambda _e=e: messagebox.showerror(_t('gui.finance.finance.report_manager.dialogs.report_error', default="Report Error"), f"Failed to generate collection report: {str(_e)}"))
+                ui(self.root, lambda _e=e: messagebox.showerror(_t('gui.finance.finance.report_manager.dialogs.report_error', default="Report Error"), f"Failed to generate collection report: {str(_e)}"))
 
-        threading.Thread(target=generate_thread, daemon=True).start()
+        start_thread(self.root, generate_thread)
 
 
     def generate_aid_report(self):
         """Generate financial aid report"""
         def generate_thread():
             try:
-                self.update_status("Generating financial aid report...")
+                ui(self.root, self.update_status, "Generating financial aid report...")
 
-                old_stdout = sys.stdout
-                sys.stdout = mystdout = io.StringIO()
-
-                aid_distribution_summary()
-
+                with capture_stdout() as mystdout:
+                    aid_distribution_summary()
                 report_output = mystdout.getvalue()
-                sys.stdout = old_stdout
 
-                self.root.after(0, lambda: self.display_report_output("Financial Aid Report", report_output))
+                ui(self.root, self.display_report_output, "Financial Aid Report", report_output)
 
             except Exception as e:
-                sys.stdout = old_stdout
-                self.root.after(0, lambda _e=e: messagebox.showerror(_t('gui.finance.finance.report_manager.dialogs.report_error', default="Report Error"), f"Failed to generate aid report: {str(_e)}"))
+                ui(self.root, lambda _e=e: messagebox.showerror(_t('gui.finance.finance.report_manager.dialogs.report_error', default="Report Error"), f"Failed to generate aid report: {str(_e)}"))
 
-        threading.Thread(target=generate_thread, daemon=True).start()
+        start_thread(self.root, generate_thread)
 
 
     def generate_budget_analysis(self):
         """Generate budget analysis report"""
         def generate_thread():
             try:
-                self.update_status("Generating budget analysis...")
+                ui(self.root, self.update_status, "Generating budget analysis...")
 
-                old_stdout = sys.stdout
-                sys.stdout = mystdout = io.StringIO()
-
-                budget_summary_report()
-
+                with capture_stdout() as mystdout:
+                    budget_summary_report()
                 report_output = mystdout.getvalue()
-                sys.stdout = old_stdout
 
-                self.root.after(0, lambda: self.display_report_output("Budget Analysis", report_output))
+                ui(self.root, self.display_report_output, "Budget Analysis", report_output)
 
             except Exception as e:
-                sys.stdout = old_stdout
-                self.root.after(0, lambda _e=e: messagebox.showerror(_t('gui.finance.finance.report_manager.dialogs.report_error', default="Report Error"), f"Failed to generate budget analysis: {str(_e)}"))
+                ui(self.root, lambda _e=e: messagebox.showerror(_t('gui.finance.finance.report_manager.dialogs.report_error', default="Report Error"), f"Failed to generate budget analysis: {str(_e)}"))
 
-        threading.Thread(target=generate_thread, daemon=True).start()
+        start_thread(self.root, generate_thread)
 
 
     def generate_forecast_report(self):
         """Generate forecast report"""
         def generate_thread():
             try:
-                self.update_status("Generating forecast report...")
+                ui(self.root, self.update_status, "Generating forecast report...")
 
-                old_stdout = sys.stdout
-                sys.stdout = mystdout = io.StringIO()
-
-                generate_comprehensive_forecast_report()
-
+                with capture_stdout() as mystdout:
+                    generate_comprehensive_forecast_report()
                 report_output = mystdout.getvalue()
-                sys.stdout = old_stdout
 
-                self.root.after(0, lambda: self.display_report_output("Forecast Report", report_output))
+                ui(self.root, self.display_report_output, "Forecast Report", report_output)
 
             except Exception as e:
-                sys.stdout = old_stdout
-                self.root.after(0, lambda _e=e: messagebox.showerror(_t('gui.finance.finance.report_manager.dialogs.report_error', default="Report Error"), f"Failed to generate forecast report: {str(_e)}"))
+                ui(self.root, lambda _e=e: messagebox.showerror(_t('gui.finance.finance.report_manager.dialogs.report_error', default="Report Error"), f"Failed to generate forecast report: {str(_e)}"))
 
-        threading.Thread(target=generate_thread, daemon=True).start()
+        start_thread(self.root, generate_thread)
 
+
+    def update_status(self, message):
+        """Update status bar via the main GUI's layout"""
+        layout = getattr(self.gui, 'layout', None)
+        if hasattr(self.gui, 'update_status'):
+            self.gui.update_status(message)
+        elif layout is not None and hasattr(layout, 'update_status'):
+            layout.update_status(message)
+        else:
+            print(f"Status: {message}")
+
+    def show_tab(self, tab_name):
+        """Switch the main finance window to ``tab_name``"""
+        layout = getattr(self.gui, 'layout', None)
+        if layout is not None and hasattr(layout, 'show_tab'):
+            layout.show_tab(tab_name)
 
     def display_report_output(self, title, output):
         """Display report output in the text widget"""
@@ -454,15 +442,14 @@ class ReportManager:
     """
 
                     # Update the forecast output in the main thread
-                    self.root.after(0, lambda: self.update_forecast_output(forecast_content))
+                    ui(self.root, self.update_forecast_output, forecast_content)
 
                 except Exception as e:
                     error_msg = f"Error generating revenue forecast: {str(e)}"
-                    self.root.after(0, lambda: self.update_forecast_output(error_msg))
+                    ui(self.root, self.update_forecast_output, error_msg)
 
             # Run in thread to avoid blocking UI
-            thread = threading.Thread(target=generate_forecast, daemon=True)
-            thread.start()
+            start_thread(self.root, generate_forecast)
 
             # Switch to forecasting tab if it exists
             try:
@@ -505,13 +492,14 @@ class ReportManager:
         """GUI wrapper for export_forecast_report"""
         try:
             filename = filedialog.asksaveasfilename(
-                defaultextension=".pdf",
-                filetypes=[("PDF files", "*.pdf"), ("Excel files", "*.xlsx"), ("All files", "*.*")],
+                defaultextension=".csv",
+                filetypes=[("CSV files", "*.csv"), ("All files", "*.*")],
                 title=_t('gui.finance.finance.report_manager.dialogs.export_forecast_report', default="Export Forecast Report")
             )
 
             if filename:
-                export_forecast_report(filename)
+                historical_data, forecasts, total_forecast = build_revenue_forecast()
+                export_forecast_report(historical_data, forecasts, total_forecast, filename=filename)
                 messagebox.showinfo(_t('gui.finance.finance.report_manager.dialogs.success', default="Success"), f"Forecast report exported to {filename}")
                 self.update_status(f"Forecast report exported to {filename}")
 
@@ -522,13 +510,27 @@ class ReportManager:
     def gui_generate_audit_report(self):
         """GUI wrapper for generate_audit_report"""
         try:
-            old_stdout = sys.stdout
-            sys.stdout = mystdout = io.StringIO()
+            auth = getattr(self.gui, 'auth', None)
+            if auth is None or not auth.check_permission('view_audit_logs'):
+                messagebox.showerror(_t('gui.finance.finance.report_manager.dialogs.error', default="Error"), "You don't have permission to view audit logs.")
+                return
 
-            generate_audit_report()
+            today = datetime.now()
+            start_date = simpledialog.askstring("Audit Report", "Start date (YYYY-MM-DD):", parent=self.root,
+                                                initialvalue=(today - timedelta(days=30)).strftime('%Y-%m-%d'))
+            if not start_date:
+                return
+            end_date = simpledialog.askstring("Audit Report", "End date (YYYY-MM-DD):", parent=self.root,
+                                              initialvalue=today.strftime('%Y-%m-%d'))
+            if not end_date:
+                return
+            datetime.strptime(start_date.strip(), '%Y-%m-%d')
+            datetime.strptime(end_date.strip(), '%Y-%m-%d')
 
-            output = mystdout.getvalue()
-            sys.stdout = old_stdout
+            # generate_audit_report is the CLI menu (it prompts on stdin); these
+            # are the same two steps without the prompt.
+            output = format_audit_report(start_date.strip(), end_date.strip(),
+                                         fetch_audit_entries(start_date.strip(), end_date.strip()))
 
             self.show_tab('reports')  # Reports tab
             self.report_text.delete('1.0', tk.END)

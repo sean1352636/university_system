@@ -18,8 +18,8 @@ def inventory_valuation_report():
             cursor = conn.execute('''
                 SELECT category,
                        COUNT(*) as product_count,
-                       SUM(stock_kg) as total_stock,
-                       SUM(stock_kg * price_per_kg) as total_value
+                       COALESCE(SUM(stock_quantity), 0) as total_stock,
+                       COALESCE(SUM(stock_quantity * price_per_unit), 0) as total_value
                 FROM products
                 WHERE source_type = 'butcher'
                 GROUP BY category
@@ -30,7 +30,7 @@ def inventory_valuation_report():
 
             # Overall totals
             total_cursor = conn.execute('''
-                SELECT COUNT(*), SUM(stock_kg), SUM(stock_kg * price_per_kg)
+                SELECT COUNT(*), COALESCE(SUM(stock_quantity), 0), COALESCE(SUM(stock_quantity * price_per_unit), 0)
                 FROM products
                 WHERE source_type = 'butcher'
             ''')
@@ -57,7 +57,7 @@ def inventory_valuation_report():
             # Low stock warning
             low_stock_cursor = conn.execute('''
                 SELECT COUNT(*) FROM products
-                WHERE source_type = 'butcher' AND stock_kg <= reorder_point
+                WHERE source_type = 'butcher' AND stock_quantity <= min_stock_level
             ''')
             low_stock_count = low_stock_cursor.fetchone()[0]
 

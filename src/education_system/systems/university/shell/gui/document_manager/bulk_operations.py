@@ -396,15 +396,17 @@ class BulkOperationsManager:
         try:
             conn = get_connection()
             cursor = conn.cursor()
-            cursor.execute('SELECT type_name FROM document_types WHERE is_active = 1 ORDER BY type_name')
-            types = [row[0] for row in cursor.fetchall()]
+            cursor.execute('SELECT type_id, type_name FROM document_types WHERE is_active = 1 ORDER BY type_name')
+            type_ids = {name: tid for tid, name in cursor.fetchall()}
             conn.close()
+            types = list(type_ids)
             doc_type_combo['values'] = types
             if types:
                 doc_type_combo.current(0)
-        except Exception:
-            doc_type_combo['values'] = ['General Document', 'ID Card', 'Transcript', 'Certificate']
-            doc_type_combo.current(0)
+        except Exception as e:
+            logger.warning("Could not load document types: %s", e)
+            type_ids = {}
+            doc_type_combo['values'] = []
 
         ttk.Label(settings_frame, text=_t('gui.shell.document_manager.bulk_operations.labels.student_id', default="Student ID:")).grid(row=1, column=0, sticky='w', pady=5)
         student_id_var = tk.StringVar()
@@ -416,31 +418,59 @@ class BulkOperationsManager:
                 messagebox.showerror(_t('gui.shell.document_manager.bulk_operations.dialogs.error', default="Error"), _t('gui.shell.document_manager.bulk_operations.dialogs.please_select_files_to_import', default="Please select files to import"))
                 return
 
-            if not student_id_var.get():
-                messagebox.showerror(_t('gui.shell.document_manager.bulk_operations.dialogs.error', default="Error"), _t('gui.shell.document_manager.bulk_operations.dialogs.please_enter_student_id', default="Please enter student ID"))
+            student_id = student_id_var.get().strip()
+            if not student_id:
+                messagebox.showerror(_t('gui.shell.document_manager.bulk_operations.dialogs.error', default="Error"), _t('gui.shell.document_manager.bulk_operations.dialogs.please_enter_student_id', default="Please enter student ID"),
+                                     parent=dialog)
+                return
+
+            type_id = type_ids.get(doc_type_var.get())
+            if type_id is None:
+                messagebox.showerror(_t('gui.shell.document_manager.bulk_operations.dialogs.error', default="Error"),
+                                     _t('gui.shell.document_manager.bulk_operations.dialogs.choose_document_type', default="Choose a document type (none are active - add one under Document Types)."),
+                                     parent=dialog)
                 return
 
             try:
+                with get_connection() as conn:
+                    known = conn.execute('SELECT 1 FROM students WHERE student_id = ?', (student_id,)).fetchone()
+                if not known:
+                    messagebox.showerror(_t('gui.shell.document_manager.bulk_operations.dialogs.error', default="Error"),
+                                         f"No student with ID {student_id}.", parent=dialog)
+                    return
+
                 imported = 0
-                failed = 0
+                failed = []
                 for file_path in selected_files:
                     try:
-                        # Import each file
-                        # In a real implementation, you would call your document upload function
-                        # For now, we'll simulate it
-                        imported += 1
+                        # Same path as Upload Document: validation, secure copy,
+                        # hashing, versioning and the student e-mail.
+                        if self.gui.upload_document_to_db(student_id, type_id, file_path, None, None, None):
+                            imported += 1
+                        else:
+                            failed.append(os.path.basename(file_path))
                     except Exception as e:
-                        failed += 1
-                        print(f"Failed to import {file_path}: {e}")
+                        failed.append(f"{os.path.basename(file_path)}: {e}")
+                        logger.warning("Failed to import %s: %s", file_path, e)
 
+                self.gui.log_event('import', 'bulk_documents', details={
+                    'student_id': student_id, 'type_id': type_id,
+                    'imported': imported, 'failed': len(failed)})
+                result = f"Import completed!\n\nImported: {imported}\nFailed: {len(failed)}"
+                if failed:
+                    result += "\n\n" + "\n".join(failed[:10])
                 messagebox.showinfo(_t('gui.shell.document_manager.bulk_operations.dialogs.import_complete', default="Import Complete"),
-                                  f"Import completed!\n\n"
-                                  f"Imported: {imported}\n"
-                                  f"Failed: {failed}")
+                                    result, parent=dialog)
+                if hasattr(self.gui, 'refresh_documents'):
+                    try:
+                        self.gui.refresh_documents()
+                    except Exception:
+                        logger.debug("Suppressed exception", exc_info=True)
                 dialog.destroy()
 
             except Exception as e:
-                messagebox.showerror(_t('gui.shell.document_manager.bulk_operations.dialogs.error', default="Error"), f"Import failed: {e}")
+                messagebox.showerror(_t('gui.shell.document_manager.bulk_operations.dialogs.error', default="Error"), f"Import failed: {e}",
+                                     parent=dialog)
 
         buttons_frame = ttk.Frame(main_frame)
         buttons_frame.pack(pady=10)

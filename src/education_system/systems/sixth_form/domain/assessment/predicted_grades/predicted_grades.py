@@ -7,7 +7,9 @@ notes / predicted-by.
 The UNIQUE constraint on ``(student_id, subject)`` lets ``save`` upsert:
 re-saving for the same pair updates the existing row rather than
 inserting a duplicate. Subjects are validated against the live
-``subjects`` table; grades against the gradebook's ``LETTER_GRADES``.
+``subjects`` table; grades against the scale of the learner's learning
+aim in that subject (``qualifications.grade_scales``), A*-U when no aim
+or type is known.
 """
 
 from __future__ import annotations
@@ -18,6 +20,9 @@ from dataclasses import dataclass
 from typing import Any
 from education_system import paths
 from education_system.systems.sixth_form.domain.assessment.gradebook.gradebook import LETTER_GRADES
+from education_system.systems.sixth_form.domain.academics.qualifications import (
+    grade_scales as _gs,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -46,6 +51,19 @@ CREATE INDEX IF NOT EXISTS idx_pred_subject ON predicted_grades(subject);
 CREATE INDEX IF NOT EXISTS idx_pred_grade   ON predicted_grades(grade);
 """
 
+#: Columns added after the table first shipped, by a guarded ``ALTER``.
+#:
+#: ``updated_at`` moves on *any* edit — a corrected note or a confidence
+#: change — so it cannot tell a university whether the grade it is reading
+#: is the October prediction or a January revision. These two record when
+#: the *grade itself* last changed and who changed it. NULL on rows that
+#: predate the columns: that is "not recorded", and readers fall back to
+#: ``predicted_at`` / ``updated_at`` and say so rather than guess.
+_GRADE_CHANGE_COLUMNS: tuple[tuple[str, str], ...] = (
+    ("grade_changed_at", "TEXT"),
+    ("grade_changed_by", "TEXT"),
+)
+
 
 @dataclass
 class Prediction:
@@ -58,6 +76,10 @@ class Prediction:
     predicted_by: str | None
     predicted_at: str
     updated_at: str
+    #: When the grade last changed, and by whom. ``None`` on rows written
+    #: before this was recorded — see ``_GRADE_CHANGE_COLUMNS``.
+    grade_changed_at: str | None = None
+    grade_changed_by: str | None = None
 
 
 @dataclass
@@ -89,6 +111,14 @@ def init_db() -> None:
     _students.init_db()
     with _connect() as conn:
         conn.executescript(_SCHEMA)
+        have = {r["name"] for r in conn.execute(
+            "PRAGMA table_info(predicted_grades)")}
+        for name, decl in _GRADE_CHANGE_COLUMNS:
+            if name not in have:
+                # db-audit: ignore[DBW001] - names/decls from a module constant
+                conn.execute(
+                    f"ALTER TABLE predicted_grades ADD COLUMN {name} {decl}")
+        conn.commit()
     logger.debug("Predicted-grades schema ready at %s", DB_PATH)
 
     _DB_READY = True
@@ -105,6 +135,10 @@ def _row(r: sqlite3.Row) -> Prediction:
         predicted_by=r["predicted_by"],
         predicted_at=r["predicted_at"],
         updated_at=r["updated_at"],
+        grade_changed_at=(r["grade_changed_at"]
+                          if "grade_changed_at" in r.keys() else None),
+        grade_changed_by=(r["grade_changed_by"]
+                          if "grade_changed_by" in r.keys() else None),
     )
 
 
@@ -133,15 +167,27 @@ def _validate_payload(data: dict[str, Any]) -> dict[str, Any]:
     try:
         from education_system.systems.sixth_form.domain.academics.subjects import subjects as _subjects
         if not _subjects.is_valid_subject(subject):
-            raise ValidationError(f"Unknown subject: {subject}")
+            # A vocational / resit aim need not be in the catalogue; the
+            # learner's own learning aim in it is enough.
+            from education_system.systems.sixth_form.domain.academics.qualifications import (
+                learning_aims as _aims_chk,
+            )
+            if not any(a.subject == subject for a in _aims_chk.list_aims(sid)):
+                raise ValidationError(f"Unknown subject: {subject}")
     except ImportError:
         pass  # fall through — subjects module not initialised
     out["subject"] = subject
 
     grade = _require(data.get("grade"), "Grade").strip()
-    if grade not in LETTER_GRADES:
-        raise ValidationError(
-            f"Grade must be one of: {', '.join(LETTER_GRADES)}")
+    from education_system.systems.sixth_form.domain.academics.qualifications import (
+        learning_aims as _aims,
+    )
+    qtype = (data.get("qualification_type")
+             or _aims.qualification_type_for(sid, subject))
+    try:
+        grade = _gs.validate_grade(grade, qtype)
+    except ValueError as e:
+        raise ValidationError(str(e)) from None
     out["grade"] = grade
 
     confidence = (data.get("confidence") or DEFAULT_CONFIDENCE).strip()
@@ -170,16 +216,26 @@ def save_prediction(data: dict[str, Any]) -> Prediction:
         conn.execute(
             """INSERT INTO predicted_grades
                    (student_id, subject, grade, confidence, notes,
-                    predicted_by, predicted_at, updated_at)
-               VALUES (?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))
+                    predicted_by, predicted_at, updated_at,
+                    grade_changed_at, grade_changed_by)
+               VALUES (?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'),
+                       datetime('now'), ?)
                ON CONFLICT(student_id, subject) DO UPDATE SET
+                   grade_changed_at = CASE
+                       WHEN predicted_grades.grade IS NOT excluded.grade
+                       THEN datetime('now')
+                       ELSE predicted_grades.grade_changed_at END,
+                   grade_changed_by = CASE
+                       WHEN predicted_grades.grade IS NOT excluded.grade
+                       THEN excluded.grade_changed_by
+                       ELSE predicted_grades.grade_changed_by END,
                    grade        = excluded.grade,
                    confidence   = excluded.confidence,
                    notes        = excluded.notes,
                    predicted_by = excluded.predicted_by,
                    updated_at   = datetime('now')""",
             (p["student_id"], p["subject"], p["grade"], p["confidence"],
-             p["notes"], p["predicted_by"]),
+             p["notes"], p["predicted_by"], p["predicted_by"]),
         )
         conn.commit()
 
@@ -230,9 +286,9 @@ def list_predictions(
         clauses.append("subject = ?")
         args.append(subject.strip())
     if grade:
-        if grade not in LETTER_GRADES:
+        if grade not in _gs.ALL_GRADES:
             raise ValidationError(
-                f"Grade must be one of: {', '.join(LETTER_GRADES)}")
+                f"Unknown grade {grade!r} — not on any qualification's scale")
         clauses.append("grade = ?")
         args.append(grade)
     if confidence:
@@ -278,10 +334,15 @@ def update_prediction(prediction_id: int, data: dict[str, Any]) -> Prediction:
     with _connect() as conn:
         conn.execute(
             """UPDATE predicted_grades SET
+                   grade_changed_at = CASE WHEN grade IS NOT ?
+                       THEN datetime('now') ELSE grade_changed_at END,
+                   grade_changed_by = CASE WHEN grade IS NOT ?
+                       THEN ? ELSE grade_changed_by END,
                    grade = ?, confidence = ?, notes = ?,
                    predicted_by = ?, updated_at = datetime('now')
                WHERE prediction_id = ?""",
-            (payload["grade"], payload["confidence"], payload["notes"],
+            (payload["grade"], payload["grade"], payload["predicted_by"],
+             payload["grade"], payload["confidence"], payload["notes"],
              payload["predicted_by"], prediction_id),
         )
         conn.commit()

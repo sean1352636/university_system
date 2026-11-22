@@ -671,15 +671,6 @@ The Student Union Management System is a comprehensive platform for managing stu
 
 ---
 
-## Additional Resources
-
-- **Student Union Handbook**: `docs/student_union_handbook.pdf`
-- **Club Constitution Template**: `docs/templates/club_constitution.docx`
-- **Event Planning Guide**: `docs/guides/event_planning.pdf`
-- **Budget Template**: `docs/templates/club_budget.xlsx`
-
----
-
 **Last Updated**: January 2026
-**Module**: `university_system/modules/domain/student_affairs/gui/student_union_gui/`
+**Module**: `src/education_system/systems/university/domains/student_life/interfaces/gui/student_union_gui/`
 **Support**: union@university.edu | (555) 123-4567

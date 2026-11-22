@@ -187,6 +187,15 @@ class BrandingConfigGUI(tk.Toplevel):
                             "VALUES (?, ?, ?, 'admin')",
                             (setting_name, str(value), now)
                         )
+            # get_institution_name() caches the branding name for the
+            # process; drop it so a rename shows without a restart.
+            try:
+                from education_system.systems.university.infrastructure.institution_settings import (
+                    reset_settings,
+                )
+                reset_settings()
+            except Exception:
+                logger.debug("Could not refresh institution settings", exc_info=True)
             messagebox.showinfo(_t('gui.shell.admin.branding_config.dialogs.saved', default="Saved"), _t('gui.shell.admin.branding_config.dialogs.branding_settings_saved_successfully', default="Branding settings saved successfully."))
         except Exception as e:
             messagebox.showerror(_t('gui.shell.admin.branding_config.dialogs.error', default="Error"), f"Failed to save settings: {e}")

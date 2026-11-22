@@ -13,6 +13,10 @@ from education_system.platform.governance.security.fail_closed import (
 )
 from education_system.platform.identity.auth.exceptions import AuthError
 from education_system.platform.identity.auth.defaults import MAX_LOGIN_ATTEMPTS, LOCKOUT_DURATION_MINUTES
+from education_system.platform.identity.auth.policy import (
+    DEFAULT_PASSWORD_MAX_AGE_DAYS,
+    policy_int,
+)
 from education_system.platform.identity.auth.db import connect
 from education_system.platform.identity.auth.password_manager import (
     hash_password,
@@ -163,8 +167,21 @@ class UserAuth:
                 raise AuthError("Invalid username or password.")
 
             if not user["is_active"]:
-                # Same reasoning — don't leak account existence via timing.
-                constant_time_dummy_verify(password)
+                notice = (user["deactivation_message"]
+                          if "deactivation_message" in user.keys() else None)
+                if notice:
+                    # A real bcrypt check costs the same as the dummy one, so
+                    # timing still doesn't reveal the account. The notice is
+                    # shown only to someone who knows the password; a wrong
+                    # password gets the generic error like any other.
+                    legacy = user["legacy_salt"] if "legacy_salt" in user.keys() else None
+                    if verify_password(password, user["password_hash"], legacy_salt=legacy):
+                        logger.warning("Login on deactivated account '%s': notice shown",
+                                       username)
+                        raise AuthError(str(notice))
+                else:
+                    # Same reasoning — don't leak account existence via timing.
+                    constant_time_dummy_verify(password)
                 logger.warning("Login attempt on deactivated account: '%s'", username)
                 raise AuthError("Invalid username or password.")
 
@@ -204,10 +221,13 @@ class UserAuth:
                     )
 
             if not password_ok:
+                # The administrator's sign-in policy (auth_settings), else the defaults.
+                max_attempts = policy_int(conn, "max_login_attempts", MAX_LOGIN_ATTEMPTS)
                 attempts = user["failed_login_attempts"] + 1
                 updates = {"failed_login_attempts": attempts}
-                if attempts >= MAX_LOGIN_ATTEMPTS:
-                    lockout = datetime.utcnow() + timedelta(minutes=LOCKOUT_DURATION_MINUTES)
+                if attempts >= max_attempts:
+                    lockout = datetime.utcnow() + timedelta(minutes=policy_int(
+                        conn, "lockout_minutes", LOCKOUT_DURATION_MINUTES))
                     updates["locked_until"] = lockout.isoformat()
                     logger.critical(
                         "SECURITY ALERT: Account '%s' locked after %d failed login attempts. "
@@ -234,7 +254,7 @@ class UserAuth:
                 )
                 conn.commit()
                 logger.warning("Login failed: bad auth for '%s' (attempt %d)", username, attempts)  # nosemgrep: python-logger-credential-disclosure
-                if attempts >= MAX_LOGIN_ATTEMPTS:
+                if attempts >= max_attempts:
                     raise AuthError("Account locked due to too many failed attempts.")
                 raise AuthError("Invalid username or password.")
 
@@ -612,6 +632,101 @@ class UserAuth:
         self._current_user = None
         self._current_token = None
 
+    def set_display_name(self, username: str, email: str, display_name: str) -> bool:
+        """Rename the account with this username and e-mail. Returns False if none."""
+        conn = self._conn()
+        try:
+            cursor = conn.execute(
+                "UPDATE users SET display_name = ?, updated_at = datetime('now') "
+                "WHERE username = ? AND email = ?",
+                (display_name, username, email),
+            )
+            conn.commit()
+            return bool(cursor.rowcount)
+        finally:
+            conn.close()
+
+    def set_deactivation_message(self, username: str, email: str,
+                                 message: str | None) -> bool:
+        """Set (or clear, with ``None``) the message a deactivated account's owner
+        sees when they sign in with the right password. Matches on username and
+        e-mail together, like :meth:`revoke_system_access`. False if no match."""
+        conn = self._conn()
+        try:
+            cursor = conn.execute(
+                "UPDATE users SET deactivation_message = ?, updated_at = datetime('now') "
+                "WHERE username = ? AND email = ?",
+                ((message or "").strip()[:500] or None, username, email),
+            )
+            conn.commit()
+            return bool(cursor.rowcount)
+        finally:
+            conn.close()
+
+    def restore_system_access(self, username: str, email: str, system_key: str,
+                              role: str) -> bool:
+        """Give one role back to an account (the reverse of
+        :meth:`revoke_system_access`): reactivates it and clears any
+        deactivation message. Matches on username and e-mail together, so a
+        name collision can't reopen somebody else's account. False if no match."""
+        conn = self._conn()
+        try:
+            row = conn.execute(
+                "SELECT id FROM users WHERE username = ? AND email = ?", (username, email)
+            ).fetchone()
+            if row is None:
+                return False
+            conn.execute(
+                "INSERT OR IGNORE INTO user_systems (user_id, system_key, role) VALUES (?, ?, ?)",
+                (row[0], system_key, role),
+            )
+            conn.execute(
+                "UPDATE users SET is_active = 1, deactivation_message = NULL, "
+                "updated_at = datetime('now') WHERE id = ?", (row[0],),
+            )
+            conn.commit()
+        finally:
+            conn.close()
+        logger.info("Restored %s/%s to '%s'", system_key, role, username)
+        return True
+
+    def revoke_system_access(self, username: str, email: str, system_key: str, role: str) -> bool:
+        """Remove one role from an account and end its sessions; an account with no
+        system left is deactivated. An account in other systems keeps them.
+
+        Returns False, changing nothing, unless the username, e-mail and role all
+        match, so a name collision cannot lock out somebody else.
+        """
+        conn = self._conn()
+        try:
+            row = conn.execute(
+                "SELECT id FROM users WHERE username = ? AND email = ?", (username, email)
+            ).fetchone()
+            if row is None:
+                return False
+            user_id = row[0]
+            cursor = conn.execute(
+                "DELETE FROM user_systems WHERE user_id = ? AND system_key = ? AND role = ?",
+                (user_id, system_key, role),
+            )
+            if not cursor.rowcount:
+                conn.rollback()
+                return False
+            left = conn.execute(
+                "SELECT COUNT(*) FROM user_systems WHERE user_id = ?", (user_id,)
+            ).fetchone()[0]
+            if not left:
+                conn.execute(
+                    "UPDATE users SET is_active = 0, updated_at = datetime('now') WHERE id = ?",
+                    (user_id,),
+                )
+            conn.commit()
+        finally:
+            conn.close()
+        self.session_manager.invalidate_user_sessions(user_id)
+        logger.info("Revoked %s/%s from '%s'", system_key, role, username)
+        return True
+
     def create_user(
         self, username: str, password: str, display_name: str | None = None,
         email: str | None = None, systems: list[tuple[str, str]] | None = None,
@@ -836,7 +951,7 @@ class UserAuth:
         secrets.SystemRandom().shuffle(chars)
         return "".join(chars)
 
-    def check_password_expiry(self, user_id: int, max_age_days: int = 90) -> bool:
+    def check_password_expiry(self, user_id: int, max_age_days: int | None = None) -> bool:
         """Check if a user's password must be reset. Returns True if it must.
 
         The policy is evaluated **per system**: each education system
@@ -848,6 +963,9 @@ class UserAuth:
         """
         conn = self._conn()
         try:
+            if max_age_days is None:   # the administrator's policy, else 90 days
+                max_age_days = policy_int(conn, "password_max_age_days",
+                                          DEFAULT_PASSWORD_MAX_AGE_DAYS)
             row = conn.execute(
                 "SELECT password_changed_at FROM users WHERE id = ?", (user_id,)
             ).fetchone()
@@ -1113,13 +1231,19 @@ class UserAuth:
 
     @staticmethod
     def _send_account_email(recipient: str, subject: str, body: str) -> bool:
+        # Honour the shared delivery mode: nothing is sent over SMTP unless
+        # e-mail delivery is live (sandbox writes the message to a file).
         try:
+            from education_system.platform.integrations.email import delivery_mode
             from education_system.platform.integrations.email.email_service import EmailService
-            service = EmailService()
-            if not service.is_configured:
-                return False
-            result = service.send_email(recipient, subject, body)
-            return bool(result.get("success"))
+
+            def send_live():
+                service = EmailService()
+                if not service.is_configured:
+                    return False
+                return bool(service.send_email(recipient, subject, body).get("success"))
+
+            return delivery_mode.deliver(recipient, subject, body, send_live)
         except Exception as exc:
             logger.debug("Account-security email to %s failed: %s", recipient, exc)
             return False

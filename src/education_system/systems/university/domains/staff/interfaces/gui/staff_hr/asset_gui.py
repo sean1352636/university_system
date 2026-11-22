@@ -15,6 +15,7 @@ from __future__ import annotations
 
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 
+from education_system.systems.university.domains.staff.interfaces.gui.staff_hr import _access as _hr
 import tkinter as tk
 from tkinter import ttk, messagebox
 from typing import Optional
@@ -41,7 +42,7 @@ class AssetsGUI:
             messagebox.showerror(_t('gui.staff.staff_hr.asset.dialogs.error', default="Error"), _t('gui.staff.staff_hr.asset.dialogs.login_required_to_access_assets', default="Login required to access Assets"))
             return
 
-        self.user_id = self.current_user.get('id') or self.current_user.get('username')
+        self.user_id = _hr.user_key(self)
 
         if parent_notebook:
             self.create_as_tab(parent_notebook)
@@ -57,7 +58,8 @@ class AssetsGUI:
     def create_main_window(self):
         self.window = tk.Toplevel(self.root)
         self.window.title(_t('gui.staff.staff_hr.asset.windows.asset_management', default="Asset Management"))
-        self.window.geometry("1200x700")
+        self.window.geometry("1400x900")
+        self.window.minsize(1200, 800)
         self.window.minsize(1000, 600)
         ttk.Button(self.window, text=_t('gui.staff.staff_hr.asset.buttons.close', default="Close"), command=self.window.destroy).pack(
             side=tk.BOTTOM, anchor=tk.E, padx=10, pady=5)

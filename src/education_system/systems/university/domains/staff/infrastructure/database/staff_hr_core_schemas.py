@@ -505,7 +505,6 @@ def _init_core_schemas() -> None:
             ''')
 
             # ---- staff_profiles ----
-            cursor.execute('CREATE INDEX IF NOT EXISTS idx_staff_profiles_user ON staff_profiles(user_id)')
 
             cursor.execute('CREATE INDEX IF NOT EXISTS idx_staff_profiles_dept ON staff_profiles(department)')
 

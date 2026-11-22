@@ -199,15 +199,15 @@ class GymGUI:
         emergency_contact = simpledialog.askstring(_t("gym.window_title"), _t("gym.prompts.emergency_contact"))
         emergency_phone = simpledialog.askstring(_t("gym.window_title"), _t("gym.prompts.emergency_phone"))
 
-        # Handle student account payment
-        if payment_method == 'Student Account':
-            if not self._deduct_from_student_account(total_fee):
-                messagebox.showerror(_t("gym.window_title"), _t('gui.operations.commerce.gym.gym.dialogs.payment_failed_please_try_another_payment_method', default="Payment failed. Please try another payment method."))
-                return
-
-        result = MembershipManager.create_membership(user_id=self.user_id, user_name=self.user_id, user_email=self.user_email, membership_type=membership_type, months=months, emergency_contact=emergency_contact, emergency_phone=emergency_phone, created_by=self.user_id)
+        # The service takes the payment (student account / cash / card) and
+        # posts it to Finance; a declined student-account payment returns None.
+        result = MembershipManager.create_membership(user_id=self.user_id, user_name=self.user_id, user_email=self.user_email, membership_type=membership_type, months=months, emergency_contact=emergency_contact, emergency_phone=emergency_phone, created_by=self.user_id, payment_method=payment_method)
+        if not result:
+            messagebox.showerror(_t("gym.window_title"), _t('gui.operations.commerce.gym.gym.dialogs.payment_failed_please_try_another_payment_method', default="Payment failed. Please try another payment method."))
+            return
         if result:
-            self.process_payment('membership', total_fee, f"Gym membership - {type_name}")
+            total_fee = result.get('total_fee', total_fee)
+            self.process_payment('membership', total_fee, f"Gym membership - {type_name}", payment_method, payment=result.get('payment'))
             messagebox.showinfo(_t("gym.window_title"), _t("gym.messages.membership_created").format(member_number=result['member_number']))
             self._load_membership()
             self._refresh_membership_info()
@@ -276,15 +276,12 @@ University Gym & Fitness Center"""
         if not payment_method:
             return  # User cancelled payment selection
 
-        # Handle student account payment
-        if payment_method == 'Student Account':
-            if not self._deduct_from_student_account(total_fee):
-                messagebox.showerror(_t("gym.window_title"), _t('gui.operations.commerce.gym.gym.dialogs.payment_failed_please_try_another_payment_method', default="Payment failed. Please try another payment method."))
-                return
-
-        result = MembershipManager.renew_membership(self.membership['membership_id'], months)
+        result = MembershipManager.renew_membership(self.membership['membership_id'], months, payment_method=payment_method, processed_by=self.user_id)
+        if not result:
+            messagebox.showerror(_t("gym.window_title"), _t('gui.operations.commerce.gym.gym.dialogs.payment_failed_please_try_another_payment_method', default="Payment failed. Please try another payment method."))
+            return
         if result:
-            self.process_payment('membership_renewal', total_fee, "Gym membership renewal")
+            self.process_payment('membership_renewal', total_fee, "Gym membership renewal", payment_method, payment=result.get('payment'))
             messagebox.showinfo(_t("gym.window_title"), _t("gym.messages.membership_renewed").format(end_date=result['new_end_date']))
             self._load_membership()
             self._refresh_membership_info()
@@ -638,15 +635,12 @@ University Gym & Fitness Center"""
         if not payment_method:
             return  # User cancelled
 
-        # Handle student account payment
-        if payment_method == 'Student Account':
-            if not self._deduct_from_student_account(fee):
-                messagebox.showerror(_t("gym.window_title"), _t('gui.operations.commerce.gym.gym.dialogs.payment_failed_please_try_another_payment_method', default="Payment failed. Please try another payment method."))
-                return
-
-        result = PTSessionManager.book_session(member_id=self.membership['membership_id'], trainer_name=trainer_name, session_date=session_date, session_time=session_time, session_type=session_type)
+        result = PTSessionManager.book_session(member_id=self.membership['membership_id'], trainer_name=trainer_name, session_date=session_date, session_time=session_time, session_type=session_type, payment_method=payment_method, processed_by=self.user_id)
+        if not result:
+            messagebox.showerror(_t("gym.window_title"), _t('gui.operations.commerce.gym.gym.dialogs.payment_failed_please_try_another_payment_method', default="Payment failed. Please try another payment method."))
+            return
         if result:
-            self.process_payment('pt_session', fee, f"Personal training - {session_type}")
+            self.process_payment('pt_session', fee, f"Personal training - {session_type}", payment_method, payment=result.get('payment'))
             messagebox.showinfo(_t("gym.window_title"), _t("gym.messages.pt_booked").format(booking_ref=result['booking_ref']))
             self._refresh_pt_sessions()
 
@@ -997,42 +991,6 @@ University Gym & Fitness Center"""
             print(f"Error getting student balance: {e}")
             return None
 
-    def _deduct_from_student_account(self, amount: float) -> bool:
-        """Deduct amount from student's finance account."""
-        try:
-            from education_system.systems.university.infrastructure.database.db import transaction as db_transaction
-            with db_transaction() as conn:
-                # Get account_id and balance
-                cursor = conn.execute('''
-                    SELECT account_id, balance FROM student_finance_accounts
-                    WHERE student_id = ? AND account_status = 'active'
-                ''', (self.user_id,))
-                row = cursor.fetchone()
-                if not row or float(row[1]) < amount:
-                    return False
-
-                account_id = row[0]
-                balance_before = float(row[1])
-                balance_after = balance_before - amount
-
-                # Deduct from balance
-                conn.execute('''
-                    UPDATE student_finance_accounts
-                    SET balance = ?, updated_at = CURRENT_TIMESTAMP
-                    WHERE account_id = ?
-                ''', (balance_after, account_id))
-
-                # Record transaction with account_id
-                conn.execute('''
-                    INSERT INTO transactions
-                    (source_type, account_id, student_id, transaction_type, amount, balance_before, balance_after, description, created_at)
-                    VALUES ('student_finance', ?, ?, 'debit', ?, ?, ?, 'Gym Payment', CURRENT_TIMESTAMP)
-                ''', (account_id, self.user_id, amount, balance_before, balance_after))
-            return True
-        except Exception as e:
-            print(f"Error deducting from student account: {e}")
-            return False
-
     def _refresh_payments_list(self):
         """Refresh the payments list - ONLY BOOKINGS (membership, membership_renewal, pt_session)."""
         for item in self.payments_tree.get_children():
@@ -1179,59 +1137,38 @@ Status: {values[7]}
         if not refund_method:
             return
 
-        # Process based on method
-        success = False
-        if refund_method == 'Student Account':
-            success = self._add_to_student_account(user_id, amount, reference)
-        else:
-            # For cash/card, just record the refund
-            success = True
+        # The service marks the payment refunded, logs the refund row and
+        # posts it to Finance (crediting the student account when chosen).
+        try:
+            from education_system.systems.university.plugins.campus_commerce.domain.gym.services.gym_core import TransactionManager
+            refund = TransactionManager.record_refund(
+                transaction_id=transaction_id, amount=amount,
+                refund_method=refund_method, processed_by=self.user_id,
+            )
+            if not refund:
+                raise RuntimeError("payment not found or already refunded")
+            refund_ref = refund['refund_ref']
 
-        if success:
-            # Update transaction status to refunded
-            try:
-                from education_system.systems.university.infrastructure.database.db import transaction as db_transaction
-                with db_transaction() as conn:
-                    conn.execute('''
-                        UPDATE transactions
-                        SET status = 'refunded'
-                        WHERE source_type = 'gym' AND transaction_id = ?
-                    ''', (transaction_id,))
+            # Send refund receipt email
+            self._send_refund_receipt(user_id, amount, refund_method, reference, refund_ref)
 
-                    # Record refund transaction
-                    refund_ref = f"REFUND-{generate_reference()}"
-                    conn.execute('''
-                        INSERT INTO transactions
-                        (source_type, reference_number, student_id, transaction_type, amount, payment_method, status, processed_by)
-                        VALUES ('gym', ?, ?, ?, ?, ?, 'completed', ?)
-                    ''', (refund_ref, user_id, f'refund_{transaction_type}', amount,
-                          refund_method.lower().replace(' ', '_'), self.user_id))
+            messagebox.showinfo(_t("gym.msg_titles.refund_processed"),
+                              f"Refund of GBP {amount:.2f} processed successfully\n\n"
+                              f"Method: {refund_method}\n"
+                              f"Refund Reference: {refund_ref}")
 
-                # Send refund receipt email
-                self._send_refund_receipt(user_id, amount, refund_method, reference, refund_ref)
+            log_activity('refund', 'gym_payment', details={
+                'original_ref': reference,
+                'refund_ref': refund_ref,
+                'amount': amount,
+                'method': refund_method,
+                'user_id': user_id,
+                'processed_by': self.user_id
+            })
 
-                # Notify finance GUI
-                self._notify_finance_gui(user_id, amount, refund_method, refund_ref)
-
-                messagebox.showinfo(_t("gym.msg_titles.refund_processed"),
-                                  f"Refund of GBP {amount:.2f} processed successfully\n\n"
-                                  f"Method: {refund_method}\n"
-                                  f"Refund Reference: {refund_ref}")
-
-                log_activity('refund', 'gym_payment', details={
-                    'original_ref': reference,
-                    'refund_ref': refund_ref,
-                    'amount': amount,
-                    'method': refund_method,
-                    'user_id': user_id,
-                    'processed_by': self.user_id
-                })
-
-                self._refresh_payments_list()
-            except Exception as e:
-                messagebox.showerror(_t("gym.msg_titles.refund_error"), f"Failed to process refund: {e}")
-        else:
-            messagebox.showerror(_t("gym.msg_titles.refund_failed"), _t('gui.operations.commerce.gym.gym.dialogs.failed_to_process_student_account_refund', default="Failed to process student account refund"))
+            self._refresh_payments_list()
+        except Exception as e:
+            messagebox.showerror(_t("gym.msg_titles.refund_error"), f"Failed to process refund: {e}")
 
     def _show_refund_method_dialog(self, amount: float, user_id: str) -> Optional[str]:
         """Show refund method selection dialog."""
@@ -1300,54 +1237,6 @@ Status: {values[7]}
             print(f"Error getting student balance: {e}")
             return None
 
-    def _add_to_student_account(self, user_id: str, amount: float, original_ref: str) -> bool:
-        """Add refund amount to student's finance account."""
-        try:
-            from education_system.systems.university.infrastructure.database.db import transaction as db_transaction
-            with db_transaction() as conn:
-                # Get account_id and balance
-                cursor = conn.execute('''
-                    SELECT account_id, balance FROM student_finance_accounts
-                    WHERE student_id = ? AND account_status = 'active'
-                ''', (user_id,))
-                row = cursor.fetchone()
-
-                if not row:
-                    # Try to create account if it doesn't exist
-                    cursor = conn.execute('''
-                        INSERT INTO student_finance_accounts
-                        (student_id, account_type, balance, account_status, created_at)
-                        VALUES (?, 'standard', ?, 'active', CURRENT_TIMESTAMP)
-                    ''', (user_id, amount))
-                    account_id = cursor.lastrowid
-                    balance_before = 0
-                    balance_after = amount
-                else:
-                    account_id = row[0]
-                    balance_before = float(row[1])
-                    balance_after = balance_before + amount
-
-                    # Add to balance
-                    conn.execute('''
-                        UPDATE student_finance_accounts
-                        SET balance = ?, updated_at = CURRENT_TIMESTAMP
-                        WHERE account_id = ?
-                    ''', (balance_after, account_id))
-
-                # Record transaction
-                conn.execute('''
-                    INSERT INTO transactions
-                    (source_type, account_id, student_id, transaction_type, amount, balance_before,
-                     balance_after, description, created_at)
-                    VALUES ('student_finance', ?, ?, 'credit', ?, ?, ?, ?, CURRENT_TIMESTAMP)
-                ''', (account_id, user_id, amount, balance_before, balance_after,
-                      f'Gym Refund - Ref: {original_ref}'))
-
-            return True
-        except Exception as e:
-            print(f"Error adding to student account: {e}")
-            return False
-
     def _send_refund_receipt(self, user_id: str, amount: float, method: str,
                             original_ref: str, refund_ref: str):
         """Send refund receipt email to user."""
@@ -1368,7 +1257,7 @@ Status: {values[7]}
                         balance_text = f"Your new Student Finance Account balance: GBP {balance:.2f}"
 
                 # Render email from template
-                subject, body = render_template('commerce/gym/refund_receipt', {
+                subject, body = render_template('finance_commerce/commerce/gym/refund_receipt', {
                     'member_name': user_id,
                     'refund_ref': refund_ref,
                     'original_ref': original_ref,
@@ -1409,49 +1298,6 @@ University Gym & Fitness Center"""
                 print(f"[Gym] No email found for user {user_id}")
         except Exception as e:
             print(f"Error sending refund receipt: {e}")
-
-    def _notify_finance_gui(self, user_id: str, amount: float, method: str, refund_ref: str):
-        """Record refund in finance system for integration."""
-        refund_row_id = None
-        try:
-            from education_system.systems.university.infrastructure.database.db import transaction as db_transaction
-            from datetime import datetime
-            with db_transaction() as conn:
-                # Insert into unified refunds table
-                try:
-                    cur = conn.execute('''
-                        INSERT INTO unified_refunds
-                        (student_id, refund_reference, source_type, reference_type,
-                         amount, refund_method, refund_date, processed_by, notes, status)
-                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'processed')
-                    ''', (
-                        user_id,
-                        refund_ref,
-                        'gym',
-                        'gym_service',
-                        amount,
-                        method.lower().replace(' ', '_'),
-                        datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
-                        self.user_id,
-                        'Gym Service Refund'
-                    ))
-                    refund_row_id = cur.lastrowid
-                    print(f"[Gym] Refund recorded in finance system: {refund_ref}")
-                except Exception as e:
-                    print(f"[Gym] Error recording refund in finance system: {e}")
-                    import traceback
-                    traceback.print_exc()
-        except Exception as e:
-            print(f"Error notifying finance GUI: {e}")
-
-        # Auto-post to GL (cash has moved). Never raises.
-        if refund_row_id is not None:
-            try:
-                from education_system.systems.university.domains.finance.domain.ledger import notify_ledger
-                notify_ledger('refund', refund_row_id, posted_by=self.user_id or 'gym')
-            except Exception as _e:
-                import logging
-                logging.getLogger(__name__).warning("ledger hook failed: %s", _e)
 
     def _show_payment_dialog(self, amount: float, description: str) -> Optional[str]:
         """Show payment method selection dialog. Returns payment method or None if cancelled."""
@@ -1514,62 +1360,40 @@ University Gym & Fitness Center"""
         dialog.wait_window()
         return result['method']
 
-    def process_payment(self, transaction_type: str, amount: float, description: str):
-        """Function 25: Process payment with finance integration."""
+    def process_payment(self, transaction_type: str, amount: float, description: str,
+                        payment_method: str = 'Cash', payment: Optional[dict] = None):
+        """Function 25: Record a gym payment and email the receipt.
+
+        The posting to Finance happens inside
+        ``TransactionManager.record_payment`` (the service shared with the
+        CLI). When the caller already took the payment through a service
+        call (membership/renewal/PT), pass its ``payment`` dict so nothing
+        is recorded twice.
+        """
         try:
-            result = TransactionManager.record_payment(
+            result = payment or TransactionManager.record_payment(
                 user_id=self.user_id,
                 transaction_type=transaction_type,
                 amount=amount,
-                payment_method='account',
+                payment_method=payment_method,
                 member_id=self.membership['membership_id'] if self.membership else None,
-                processed_by=self.user_id
+                processed_by=self.user_id,
+                description=description,
             )
             if result:
-                # 8.117.104: unified record_payment() with source_type='gym'.
-                try:
-                    from education_system.systems.university.domains.finance.domain.core.unified_payments import (
-                        record_payment as _record_payment,
-                    )
-                    _record_payment(
-                        student_id=self.user_id,
-                        amount=amount,
-                        payment_method='gym_service',
-                        source_type='gym',
-                        source_payment_id=result.get('reference'),
-                        payment_type='service',
-                        department='gym',
-                        description=f"Gym: {description}",
-                        created_by=self.user_id,
-                    )
-                    from education_system.systems.university.infrastructure.database.db import transaction as db_transaction
-                    with db_transaction() as conn:
-
-                        # Try to record revenue for finance reporting
-                        try:
-                            conn.execute('''
-                                INSERT INTO service_payments
-                                (service_type, user_id, amount, reference, description, payment_date)
-                                VALUES (?, ?, ?, ?, ?, date("now"))
-                            ''', ('gym_fitness', self.user_id, amount, result['reference'], description))
-                        except Exception:
-                            logger.debug("Suppressed exception", exc_info=True)
-                except Exception as e:
-                    print(f"Finance integration error: {e}")
-
                 # Send detailed receipt email
                 user_email = self.user_email or self._get_user_email()
                 if user_email:
                     member_number = self.membership.get('member_number', 'N/A') if self.membership else 'N/A'
                     receipt_subject = "Gym Payment Receipt"
                     # Render email from template
-                    receipt_subject, receipt_body = render_template('commerce/gym/payment_receipt', {
+                    receipt_subject, receipt_body = render_template('finance_commerce/commerce/gym/payment_receipt', {
                         'member_name': self.user_id,
                         'reference': result['reference'],
                         'payment_date': datetime.now().strftime('%Y-%m-%d %H:%M'),
                         'description': description,
                         'amount': f"GBP {amount:.2f}",
-                        'payment_method': 'Account',
+                        'payment_method': payment_method,
                         'member_number': member_number
                     })
 
@@ -1587,7 +1411,7 @@ Date: {datetime.now().strftime('%Y-%m-%d %H:%M')}
 
 Description: {description}
 Amount Paid: GBP {amount:.2f}
-Payment Method: Account
+Payment Method: {payment_method}
 Status: Completed
 
 Member Number: {member_number}

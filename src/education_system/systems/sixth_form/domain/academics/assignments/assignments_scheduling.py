@@ -28,7 +28,10 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from education_system.systems.sixth_form.domain.academics.assignments import (
-    assignments as core,
+    integrity as assignments_integrity,
+    models as assignments_models,
+    store as assignments_store,
+    submissions as assignments_submissions,
 )
 from education_system import paths
 
@@ -36,7 +39,7 @@ logger = logging.getLogger(__name__)
 
 DB_PATH = paths.SIXTH_FORM_ASSIGNMENTS_DB
 
-ValidationError = core.ValidationError
+ValidationError = assignments_models.ValidationError
 
 
 # ── Vocabularies ──────────────────────────────────────────────────
@@ -184,7 +187,7 @@ def init_db() -> None:
     global _DB_READY
     if _DB_READY:
         return
-    core.init_db()
+    assignments_store.init_db()
     with _connect() as conn:
         conn.executescript(_SCHEMA)
         conn.commit()
@@ -244,7 +247,7 @@ def record_notice(submission_id: int, *, kind: str,
     if kind not in NOTICE_KINDS:
         raise ValidationError(
             f"Notice kind must be one of: {', '.join(NOTICE_KINDS)}")
-    when = core._validate_date(sent_on, "Sent on") or _today()
+    when = assignments_store._validate_date(sent_on, "Sent on") or _today()
     with _connect() as conn:
         cur = conn.execute(
             """INSERT INTO coursework_notices
@@ -290,26 +293,26 @@ def list_notices(*, submission_id: int | None = None,
 def publish_assignment(assignment_id: int, *,
                         notify: bool = True,
                         published_on: str | None = None
-                        ) -> core.Assignment:
+                        ) -> assignments_models.Assignment:
     """Move a Draft assignment to Set and tell the students.
 
     Publishing is what makes an assignment real to a student, so it is
     a distinct action from saving one.
     """
     init_db()
-    a = core.get_assignment(assignment_id)
+    a = assignments_store.get_assignment(assignment_id)
     if a is None:
         raise ValidationError(f"No assignment #{assignment_id}")
     if a.published_on:
         return a
-    when = core._validate_date(published_on, "Published on") or _today()
-    out = core.update_assignment(assignment_id, {
+    when = assignments_store._validate_date(published_on, "Published on") or _today()
+    out = assignments_store.update_assignment(assignment_id, {
         "status": "Set" if a.status == "Draft" else a.status,
         "published_on": when,
     })
     if notify:
         try:
-            core._notify_students_assignment_created(out)
+            assignments_store._notify_students_assignment_created(out)
         except Exception:
             logger.exception(
                 "Could not notify students on publishing #%d",
@@ -326,9 +329,9 @@ def publish_due(*, today: str | None = None,
     same day publishes nothing again.
     """
     init_db()
-    day = core._validate_date(today, "today") or _today()
+    day = assignments_store._validate_date(today, "today") or _today()
     result = SweepResult()
-    for a in core.list_assignments(status="Draft"):
+    for a in assignments_store.list_assignments(status="Draft"):
         if not a.auto_publish:
             continue
         result.scanned += 1
@@ -351,18 +354,18 @@ def publish_due(*, today: str | None = None,
 
 
 def list_scheduled(*, today: str | None = None
-                    ) -> list[core.Assignment]:
+                    ) -> list[assignments_models.Assignment]:
     """Drafts waiting for their set date to arrive."""
     init_db()
-    day = core._validate_date(today, "today") or _today()
-    return [a for a in core.list_assignments(status="Draft")
+    day = assignments_store._validate_date(today, "today") or _today()
+    return [a for a in assignments_store.list_assignments(status="Draft")
             if a.auto_publish and not a.published_on
             and a.set_date and a.set_date > day]
 
 
 # ── Due-date reminders (item 36) ──────────────────────────────────
 
-def reminder_offsets(assignment: core.Assignment) -> list[int]:
+def reminder_offsets(assignment: assignments_models.Assignment) -> list[int]:
     """The offsets this assignment nudges at, largest first."""
     if assignment.reminder_days:
         return [int(d) for d in assignment.reminder_days.split(",")
@@ -371,7 +374,7 @@ def reminder_offsets(assignment: core.Assignment) -> list[int]:
 
 
 def _mark_reminder_sent(submission_id: int, offset: int) -> None:
-    sub = core.get_submission(submission_id)
+    sub = assignments_store.get_submission(submission_id)
     if sub is None:
         return
     sent = set(sub.reminders_sent_list)
@@ -389,13 +392,13 @@ def send_reminder(submission_id: int, *, offset_days: int,
                    notify: bool = True) -> Notice:
     """Nudge one student that a deadline is coming."""
     init_db()
-    sub = core.get_submission(submission_id)
+    sub = assignments_store.get_submission(submission_id)
     if sub is None:
         raise ValidationError(f"No submission #{submission_id}")
-    a = core.get_assignment(sub.assignment_id)
+    a = assignments_store.get_assignment(sub.assignment_id)
     if a is None:
         raise ValidationError(f"No assignment #{sub.assignment_id}")
-    due = core.effective_due_date(sub, a)
+    due = assignments_submissions.effective_due_date(sub, a)
     delivered = True
     if notify:
         delivered = _email_reminder(sub, a, offset_days=offset_days,
@@ -418,21 +421,21 @@ def sweep_reminders(*, today: str | None = None,
     run for two days still catches up rather than silently skipping.
     """
     init_db()
-    day = core._validate_date(today, "today") or _today()
+    day = assignments_store._validate_date(today, "today") or _today()
     result = SweepResult()
-    assignments = ([core.get_assignment(assignment_id)]
+    assignments = ([assignments_store.get_assignment(assignment_id)]
                    if assignment_id is not None
-                   else core.list_assignments(open_only=True))
+                   else assignments_store.list_assignments(open_only=True))
     for a in assignments:
         if a is None or not a.due_date:
             continue
         offsets = reminder_offsets(a)
         if not offsets:
             continue
-        for sub in core.list_submissions(assignment_id=a.assignment_id):
+        for sub in assignments_store.list_submissions(assignment_id=a.assignment_id):
             if sub.is_done or sub.status == "Excused":
                 continue
-            due = core.effective_due_date(sub, a)
+            due = assignments_submissions.effective_due_date(sub, a)
             remaining = _days_until(due, day)
             if remaining is None or remaining < 0:
                 continue
@@ -467,13 +470,13 @@ def sweep_reminders(*, today: str | None = None,
     return result
 
 
-def _email_reminder(submission: core.Submission,
-                     assignment: core.Assignment, *,
+def _email_reminder(submission: assignments_models.Submission,
+                     assignment: assignments_models.Assignment, *,
                      offset_days: int, due: str | None) -> bool:
     """Best-effort reminder email. Never blocks the sweep."""
     try:
         from education_system.systems.sixth_form import SYSTEM_NAME
-        from education_system.systems.sixth_form.domain.operations.communications.messages import (
+        from education_system.systems.sixth_form.domains.communications.domain.messages import (
             email_templates,
         )
         student = _student(submission.student_id)
@@ -523,13 +526,13 @@ def chase_submission(submission_id: int, *,
     human decides what happens next.
     """
     init_db()
-    sub = core.get_submission(submission_id)
+    sub = assignments_store.get_submission(submission_id)
     if sub is None:
         raise ValidationError(f"No submission #{submission_id}")
-    a = core.get_assignment(sub.assignment_id)
+    a = assignments_store.get_assignment(sub.assignment_id)
     if a is None:
         raise ValidationError(f"No assignment #{sub.assignment_id}")
-    day = core._validate_date(today, "today") or _today()
+    day = assignments_store._validate_date(today, "today") or _today()
 
     next_level = (sub.chase_level or 0) + 1
     if next_level > MAX_CHASE_LEVEL:
@@ -565,20 +568,20 @@ def sweep_chasers(*, today: str | None = None,
     up the chain.
     """
     init_db()
-    day = core._validate_date(today, "today") or _today()
+    day = assignments_store._validate_date(today, "today") or _today()
     result = SweepResult()
-    overdue = core.list_overdue_submissions(
+    overdue = assignments_integrity.list_overdue_submissions(
         today=day, assignment_id=assignment_id)
     # The sweep also picks up work already written off as Missing —
     # that is precisely the work that needs chasing.
-    missing = [s for s in core.list_submissions(
+    missing = [s for s in assignments_store.list_submissions(
         assignment_id=assignment_id, status="Missing")]
     seen: set[int] = set()
     for sub in [*overdue, *missing]:
         if sub.submission_id in seen:
             continue
         seen.add(sub.submission_id)
-        a = core.get_assignment(sub.assignment_id)
+        a = assignments_store.get_assignment(sub.assignment_id)
         if a is None or not a.chase_enabled:
             continue
         result.scanned += 1
@@ -615,7 +618,7 @@ def sweep_chasers(*, today: str | None = None,
     return result
 
 
-def reset_chase(submission_id: int) -> core.Submission:
+def reset_chase(submission_id: int) -> assignments_models.Submission:
     """Clear the escalation state, e.g. after the work comes in."""
     init_db()
     with _connect() as conn:
@@ -624,30 +627,30 @@ def reset_chase(submission_id: int) -> core.Submission:
             "last_chased_on = NULL, updated_at = datetime('now') "
             "WHERE submission_id = ?", (submission_id,))
         conn.commit()
-    out = core.get_submission(submission_id)
+    out = assignments_store.get_submission(submission_id)
     if out is None:
         raise ValidationError(f"No submission #{submission_id}")
     return out
 
 
 def escalation_report(*, assignment_id: int | None = None
-                       ) -> list[tuple[core.Submission, str]]:
+                       ) -> list[tuple[assignments_models.Submission, str]]:
     """Everyone currently somewhere up the chasing ladder."""
     init_db()
     out = []
-    for sub in core.list_submissions(assignment_id=assignment_id):
+    for sub in assignments_store.list_submissions(assignment_id=assignment_id):
         if not sub.chase_level:
             continue
         out.append((sub, chase_level_name(sub.chase_level)))
     return sorted(out, key=lambda pair: -pair[0].chase_level)
 
 
-def _email_chase(submission: core.Submission,
-                  assignment: core.Assignment, *, level: int) -> bool:
+def _email_chase(submission: assignments_models.Submission,
+                  assignment: assignments_models.Assignment, *, level: int) -> bool:
     """Best-effort chaser email to whoever this level targets."""
     try:
         from education_system.systems.sixth_form import SYSTEM_NAME
-        from education_system.systems.sixth_form.domain.operations.communications.messages import (
+        from education_system.systems.sixth_form.domains.communications.domain.messages import (
             email_templates,
         )
         student = _student(submission.student_id)
@@ -669,7 +672,7 @@ def _email_chase(submission: core.Submission,
                 "title":        assignment.title,
                 "subject_name": assignment.subject_name,
                 "teacher":      assignment.teacher or "the teacher",
-                "due_date":     (core.effective_due_date(
+                "due_date":     (assignments_submissions.effective_due_date(
                     submission, assignment) or "—"),
                 "level":        str(level),
                 "level_name":   chase_level_name(level),
@@ -693,7 +696,7 @@ def _guardian_contact(student_id: str) -> tuple[str, str] | None:
     already agreed to contact rather than the first row in the table.
     """
     try:
-        from education_system.systems.sixth_form.domain.operations.communications.parent_contacts import (
+        from education_system.systems.sixth_form.domains.communications.domain.parent_contacts import (
             parent_contacts as _contacts,
         )
         candidates = _contacts.list_contacts(student_id=student_id)
@@ -729,15 +732,15 @@ def parent_view(student_id: str, *,
     appears at all.
     """
     init_db()
-    day = core._validate_date(today, "today") or _today()
+    day = assignments_store._validate_date(today, "today") or _today()
     out: list[ParentAssignmentView] = []
-    for sub in core.list_submissions(student_id=str(student_id).strip()):
-        a = core.get_assignment(sub.assignment_id)
+    for sub in assignments_store.list_submissions(student_id=str(student_id).strip()):
+        a = assignments_store.get_assignment(sub.assignment_id)
         if a is None or not a.parent_visible:
             continue
         if a.status == "Draft" and not a.published_on:
             continue        # not yet issued to anyone
-        due = core.effective_due_date(sub, a)
+        due = assignments_submissions.effective_due_date(sub, a)
         overdue = bool(due and due < day)
         view = ParentAssignmentView(
             assignment_id=a.assignment_id, title=a.title,
@@ -782,12 +785,12 @@ def parent_summary(student_id: str, *,
 
 
 def set_parent_visibility(assignment_id: int, *,
-                           visible: bool) -> core.Assignment:
+                           visible: bool) -> assignments_models.Assignment:
     """Hide or show one assignment from guardians."""
     init_db()
-    if core.get_assignment(assignment_id) is None:
+    if assignments_store.get_assignment(assignment_id) is None:
         raise ValidationError(f"No assignment #{assignment_id}")
-    return core.update_assignment(assignment_id,
+    return assignments_store.update_assignment(assignment_id,
                                    {"parent_visible": visible})
 
 
@@ -802,7 +805,7 @@ def push_to_calendar(assignment_id: int, *,
     an assignment already on the calendar is left alone.
     """
     init_db()
-    a = core.get_assignment(assignment_id)
+    a = assignments_store.get_assignment(assignment_id)
     if a is None:
         raise ValidationError(f"No assignment #{assignment_id}")
     if not a.due_date:
@@ -835,7 +838,7 @@ def push_to_calendar(assignment_id: int, *,
                       f"#{assignment_id}"
                       + (f" ({a.teacher})" if a.teacher else "")),
         })
-        core.update_assignment(assignment_id,
+        assignments_store.update_assignment(assignment_id,
                                 {"calendar_event_id": event.event_id})
         logger.info("Assignment #%d added to the calendar as event #%d",
                     assignment_id, event.event_id)
@@ -850,7 +853,7 @@ def push_to_calendar(assignment_id: int, *,
 def remove_from_calendar(assignment_id: int) -> bool:
     """Take an assignment's deadline back off the calendar."""
     init_db()
-    a = core.get_assignment(assignment_id)
+    a = assignments_store.get_assignment(assignment_id)
     if a is None or not a.calendar_event_id:
         return False
     try:
@@ -861,7 +864,7 @@ def remove_from_calendar(assignment_id: int) -> bool:
     except Exception:
         logger.exception("Could not delete calendar event #%s",
                           a.calendar_event_id)
-    core.update_assignment(assignment_id, {"calendar_event_id": None})
+    assignments_store.update_assignment(assignment_id, {"calendar_event_id": None})
     return True
 
 
@@ -870,9 +873,9 @@ def sync_calendar(*, assignment_id: int | None = None,
     """Put every dated assignment on the calendar."""
     init_db()
     result = SweepResult()
-    assignments = ([core.get_assignment(assignment_id)]
+    assignments = ([assignments_store.get_assignment(assignment_id)]
                    if assignment_id is not None
-                   else core.list_assignments(open_only=open_only))
+                   else assignments_store.list_assignments(open_only=open_only))
     for a in assignments:
         if a is None or not a.due_date:
             continue
@@ -904,8 +907,8 @@ def deadline_clashes(*, year_group: str | None = None,
     year should be able to see it before the students do.
     """
     init_db()
-    buckets: dict[str, list[core.Assignment]] = {}
-    for a in core.list_assignments(year_group=year_group,
+    buckets: dict[str, list[assignments_models.Assignment]] = {}
+    for a in assignments_store.list_assignments(year_group=year_group,
                                     open_only=True):
         if not a.due_date:
             continue
@@ -941,11 +944,11 @@ def run_daily(*, today: str | None = None,
     about.
     """
     init_db()
-    day = core._validate_date(today, "today") or _today()
+    day = assignments_store._validate_date(today, "today") or _today()
     results: dict[str, SweepResult] = {}
     results["published"] = publish_due(today=day, notify=notify)
 
-    late = core.sweep_late_submissions(today=day)
+    late = assignments_integrity.sweep_late_submissions(today=day)
     results["marked_missing"] = SweepResult(
         scanned=late["overdue"], actioned=late["marked_missing"])
 

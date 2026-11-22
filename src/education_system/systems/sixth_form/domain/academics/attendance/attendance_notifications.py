@@ -260,7 +260,7 @@ def recipients_for(student_id: str, *, audience: str = GUARDIAN,
         return out
 
     try:
-        from education_system.systems.sixth_form.domain.operations.communications.parent_contacts import (  # noqa: E501
+        from education_system.systems.sixth_form.domains.communications.domain.parent_contacts import (  # noqa: E501
             parent_contacts as _contacts,
         )
         for contact in _contacts.contacts_for_student(student_id):
@@ -625,7 +625,8 @@ def _send_email(notification: Notification) -> None:
     if not notification.recipient:
         raise RuntimeError("No email address on this notification")
     service = EmailService()
-    if not service.is_configured():
+    # is_configured is a property; calling it raised 'bool is not callable'.
+    if not service.is_configured:
         raise RuntimeError(
             "Email is not configured on this installation — pass a sender")
     service.send_email(

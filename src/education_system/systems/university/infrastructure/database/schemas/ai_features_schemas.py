@@ -202,35 +202,9 @@ def init_ai_tables():
                     )
         ''')
 
-        # Create ai_analysis_history table (used by AI detector GUI analytics views)
-        cursor.execute('''
-        CREATE TABLE IF NOT EXISTS ai_analysis_history (
-                        id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        submission_id INTEGER,
-                        student_id TEXT,
-                        student_name TEXT,
-                        ai_probability REAL,
-                        analysis_date TEXT,
-                        course_name TEXT,
-                        text_content TEXT,
-                        fingerprint_data TEXT,
-                        FOREIGN KEY (submission_id) REFERENCES ai_detector_submissions (id)
-                    )
-        ''')
-
-        # Create ai_student_flags table (used by AI detector student analytics)
-        cursor.execute('''
-        CREATE TABLE IF NOT EXISTS ai_student_flags (
-                        id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        student_id TEXT,
-                        flag_reason TEXT,
-                        flagged_by TEXT,
-                        flagged_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                        status TEXT DEFAULT 'active',
-                        resolved_at TIMESTAMP,
-                        resolution_notes TEXT
-                    )
-        ''')
+        # (ai_analysis_history / ai_student_flags duplicated the detector's own
+        # ai_detector_results / student_review_flags; dropped by migration
+        # 6f8b0d2e4a7c and no longer created.)
 
         # Create campaign_expenses table
         cursor.execute('''

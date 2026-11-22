@@ -11,7 +11,7 @@ import logging
 from typing import Any
 
 from education_system.systems.apprenticeships.interfaces.gui import widgets
-from education_system.systems.apprenticeships.services import employer_risk_service
+from education_system.systems.apprenticeships.application.employers import employer_risk_service
 
 logger = logging.getLogger(__name__)
 

@@ -10,7 +10,7 @@ import sqlite3
 
 import pytest
 
-from education_system.systems.sixth_form.domain.operations.communications.parent_portal import (
+from education_system.systems.sixth_form.interfaces.cli.operations.communications.parent_portal import (
     parent_home_cli,
 )
 
@@ -160,7 +160,7 @@ def test_cli_overview_explains_an_empty_account(feature_db, capsys):
 
 def test_parent_role_is_routed_away_from_the_staff_cli(feature_db, parent,
                                                        monkeypatch):
-    from education_system.systems.sixth_form.domain.operations.communications.parent_portal import (
+    from education_system.systems.sixth_form.interfaces.cli.operations.communications.parent_portal import (
         parent_home_cli as home,
     )
     from education_system.systems.sixth_form.interfaces.cli import cli_main

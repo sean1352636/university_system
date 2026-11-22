@@ -719,6 +719,76 @@ class DocumentManager:
             print(f"Error updating document: {e}")
             return False
 
+def _is_student_account(payment_method: Optional[str]) -> bool:
+    """True when a payment/refund method names the student finance account."""
+    return (payment_method or '').strip().lower().replace(' ', '_') == 'student_account'
+
+
+def _debit_student_account(cursor, student_id: str, amount: float,
+                           description: str, processed_by: Optional[str]) -> bool:
+    """Take ``amount`` from the student's finance account on ``cursor``.
+
+    Mirrors Finance's ``process_student_finance_account_payment`` minus the
+    second ``payments`` row that helper writes — the legal payment row is the
+    Finance record here. Returns False (writing nothing) if the account is
+    missing or short.
+    """
+    cursor.execute(
+        "SELECT account_id, balance FROM student_finance_accounts WHERE student_id = ?",
+        (student_id,),
+    )
+    row = cursor.fetchone()
+    if not row:
+        return False
+    account_id, balance_before = row[0], float(row[1] or 0)
+    if balance_before < amount:
+        return False
+    balance_after = balance_before - amount
+    cursor.execute(
+        "UPDATE student_finance_accounts SET balance = ?, updated_at = datetime('now') "
+        "WHERE account_id = ?",
+        (balance_after, account_id),
+    )
+    cursor.execute('''
+        INSERT INTO transactions
+        (source_type, account_id, student_id, transaction_type, amount,
+         balance_before, balance_after, description, processed_by)
+        VALUES ('student_finance', ?, ?, 'payment', ?, ?, ?, ?, ?)
+    ''', (account_id, student_id, amount, balance_before, balance_after,
+          description, processed_by or 'legal_services'))
+    return True
+
+
+def _credit_student_account(cursor, student_id: str, amount: float,
+                            description: str, reference: str,
+                            processed_by: Optional[str]) -> float:
+    """Credit ``amount`` to the student's finance account, creating it if needed."""
+    cursor.execute(
+        "INSERT OR IGNORE INTO student_finance_accounts (student_id, balance) VALUES (?, 0.00)",
+        (student_id,),
+    )
+    cursor.execute(
+        "SELECT account_id, balance FROM student_finance_accounts WHERE student_id = ?",
+        (student_id,),
+    )
+    account_id, balance_before = cursor.fetchone()
+    balance_before = float(balance_before or 0)
+    balance_after = balance_before + amount
+    cursor.execute(
+        "UPDATE student_finance_accounts SET balance = ?, updated_at = datetime('now') "
+        "WHERE account_id = ?",
+        (balance_after, account_id),
+    )
+    cursor.execute('''
+        INSERT INTO transactions
+        (source_type, account_id, student_id, transaction_type, amount,
+         balance_before, balance_after, description, reference_id, processed_by, created_at)
+        VALUES ('student_finance', ?, ?, 'credit', ?, ?, ?, ?, ?, ?, ?)
+    ''', (account_id, student_id, amount, balance_before, balance_after, description,
+          reference, processed_by, datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
+    return balance_after
+
+
 class PaymentManager:
     """Manager for legal payment operations"""
 
@@ -726,8 +796,19 @@ class PaymentManager:
     def record_payment(client_id: str, client_email: str, amount: float,
                        payment_type: str, payment_method: str,
                        case_id: int = None, consultation_id: int = None,
-                       processed_by: str = None) -> Optional[int]:
-        """Record a payment for legal services"""
+                       processed_by: str = None,
+                       description: str = None) -> Optional[int]:
+        """Record a payment for legal services and post it to Finance.
+
+        The ``payments`` row written here *is* the Finance record (source_type
+        'legal'); the GL is posted straight after via ``notify_ledger``. Both
+        the CLI and the GUI take money through this function, so nothing else
+        should post. A ``payment_method`` of "Student Account" /
+        "student_account" is settled from the student's finance account
+        balance; ``description`` labels that account transaction.
+        Returns the payment id, or None if the payment could not be taken
+        (including an insufficient account balance).
+        """
         try:
             transaction_ref = f"LEG-{datetime.now().strftime('%Y%m%d%H%M%S')}-{uuid.uuid4().hex[:6].upper()}"
 
@@ -739,6 +820,17 @@ class PaymentManager:
 
             with transaction() as conn:
                 cursor = conn.cursor()
+
+                # Paying from the student finance account debits the balance in
+                # the same transaction as the payment row, so an insufficient
+                # balance leaves nothing behind.
+                if _is_student_account(payment_method):
+                    if not _debit_student_account(
+                        cursor, client_id, amount,
+                        f"[LegalServices] {description or 'Legal services fee'}",
+                        processed_by,
+                    ):
+                        return None
 
                 # Insert into unified payments table with source_type = 'legal'
                 cursor.execute('''
@@ -889,22 +981,43 @@ class PaymentManager:
             return False
 
     @staticmethod
-    def process_refund(payment_id: int, reason: str = '', processed_by: str = None) -> bool:
-        """Process a refund for a payment"""
+    def process_refund(payment_id: int, reason: str = '', processed_by: str = None,
+                       refund_method: str = 'original_payment_method',
+                       refund_reference: str = None) -> Optional[Dict]:
+        """Refund a legal payment and post the refund to Finance.
+
+        Marks the payment refunded, unwinds the case / consultation balances,
+        writes the ``unified_refunds`` row Finance reports on and posts it to
+        the GL. ``refund_method`` 'student_account' credits the client's
+        finance account instead of handing cash back. Shared by the CLI and
+        the GUI, so this is the only place a legal refund posts.
+
+        Returns ``{'refund_id', 'refund_ref', 'amount', 'refund_method',
+        'new_balance'}`` (``new_balance`` only for account credits) or None.
+        """
         try:
             payment = PaymentManager.get_payment(payment_id)
             if not payment:
-                return False
+                return None
+
+            amount = float(payment['amount'] or 0)
+            client_id = payment.get('client_id')
+            client_email = payment.get('client_email')
+            refund_ref = refund_reference or f"LEGAL-REFUND-{datetime.now().strftime('%Y%m%d%H%M%S')}"
+            method = (refund_method or 'original_payment_method').strip().lower().replace(' ', '_')
+            to_account = method == 'student_account'
+            new_balance = None
 
             with transaction() as conn:
                 cursor = conn.cursor()
 
-                # Update payment status
+                # Update payment status (the refund reference is kept on the
+                # payment so receipts can find it)
                 cursor.execute('''
                     UPDATE payments
-                    SET status = 'refunded'
+                    SET status = 'refunded', payment_reference = ?
                     WHERE payment_id = ? AND source_type = 'legal'
-                ''', (payment_id,))
+                ''', (refund_ref, payment_id))
 
                 # Update case amount_paid if applicable
                 if payment['case_id']:
@@ -912,7 +1025,7 @@ class PaymentManager:
                         UPDATE legal_cases
                         SET amount_paid = amount_paid - ?, updated_at = ?
                         WHERE case_id = ?
-                    ''', (payment['amount'], datetime.now().isoformat(), payment['case_id']))
+                    ''', (amount, datetime.now().isoformat(), payment['case_id']))
 
                 # Update consultation payment status if applicable
                 if payment['consultation_id']:
@@ -922,18 +1035,53 @@ class PaymentManager:
                         WHERE consultation_id = ?
                     ''', (payment['consultation_id'],))
 
+                # Finance refund record
+                cursor.execute('''
+                    INSERT INTO unified_refunds
+                    (source_type, reference_id, reference_type, student_id, customer_email,
+                     amount, refund_method, refund_reference, reason, refund_date,
+                     processed_by, status)
+                    VALUES ('legal', ?, 'payment', ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, ?, 'processed')
+                ''', (str(payment_id), client_id, client_email, amount, method, refund_ref,
+                      reason or None, processed_by))
+                refund_row_id = cursor.lastrowid
+
+                if to_account:
+                    if not client_id:
+                        raise ValueError("payment has no client id to credit")
+                    new_balance = _credit_student_account(
+                        cursor, client_id, amount,
+                        f'Legal services refund - {refund_ref}', refund_ref, processed_by,
+                    )
+
             log_activity('refund', 'legal_payment', details={
                 'payment_id': payment_id,
-                'amount': payment['amount'],
+                'amount': amount,
                 'reason': reason,
+                'method': method,
+                'reference': refund_ref,
                 'processed_by': processed_by
             })
 
-            return True
+            # Auto-post to GL (cash has moved; row inserted as 'processed'). Never raises.
+            try:
+                from education_system.systems.university.domains.finance.domain.ledger import notify_ledger
+                notify_ledger('refund', refund_row_id, posted_by=processed_by or 'legal_services')
+            except Exception as _e:
+                import logging
+                logging.getLogger(__name__).warning("ledger hook failed: %s", _e)
 
-        except sqlite3.Error as e:
+            return {
+                'refund_id': refund_row_id,
+                'refund_ref': refund_ref,
+                'amount': amount,
+                'refund_method': method,
+                'new_balance': new_balance,
+            }
+
+        except (sqlite3.Error, ValueError) as e:
             print(f"Error processing refund: {e}")
-            return False
+            return None
 
     @staticmethod
     def get_revenue_statistics(start_date: str = None, end_date: str = None) -> Dict:

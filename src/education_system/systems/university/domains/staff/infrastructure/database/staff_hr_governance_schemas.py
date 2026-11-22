@@ -50,22 +50,10 @@ def _init_governance_schemas() -> None:
                 )
             ''')
 
-            # ---- announcement_reads ----
-            cursor.execute('''
-                CREATE TABLE IF NOT EXISTS announcement_reads (
-                    read_id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    announcement_id INTEGER NOT NULL,
-                    user_id TEXT NOT NULL,
-                    read_date TEXT DEFAULT CURRENT_TIMESTAMP,
-                    UNIQUE(announcement_id, user_id),
-                    FOREIGN KEY (announcement_id) REFERENCES staff_announcements(announcement_id)
-                )
-            ''')
-
             # ---- committees ----
             cursor.execute('''
                 CREATE TABLE IF NOT EXISTS committees (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    committee_id INTEGER PRIMARY KEY AUTOINCREMENT,
                     name TEXT NOT NULL,
                     description TEXT,
                     committee_type TEXT DEFAULT 'standing',
@@ -97,7 +85,7 @@ def _init_governance_schemas() -> None:
                     is_active INTEGER DEFAULT 1,
                     notes TEXT,
                     joined_at TEXT,
-                    FOREIGN KEY (committee_id) REFERENCES committees(id),
+                    FOREIGN KEY (committee_id) REFERENCES committees(committee_id),
                     UNIQUE(committee_id, user_id)
                 )
             ''')
@@ -126,7 +114,7 @@ def _init_governance_schemas() -> None:
                     status TEXT DEFAULT 'draft',
                     document_path TEXT,
                     created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-                    FOREIGN KEY (committee_id) REFERENCES committees(id)
+                    FOREIGN KEY (committee_id) REFERENCES committees(committee_id)
                 )
             ''')
 
@@ -506,7 +494,7 @@ def _init_governance_schemas() -> None:
                     closed_at TEXT,
                     created_by TEXT,
                     FOREIGN KEY (meeting_id) REFERENCES unified_events(event_id),
-                    FOREIGN KEY (committee_id) REFERENCES committees(id)
+                    FOREIGN KEY (committee_id) REFERENCES committees(committee_id)
                 )
             ''')
 

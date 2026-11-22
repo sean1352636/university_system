@@ -7,7 +7,12 @@ from datetime import datetime
 
 from flask import Blueprint, g, jsonify, request
 
-from education_system.platform.delivery.api.university.auth import token_required
+from education_system.platform.delivery.api.university.auth import (
+    current_subject_id,
+    deny_unless_owner_or_staff,
+    is_staff,
+    token_required,
+)
 from education_system.platform.delivery.api.university.pagination import get_pagination_params, paginated_response
 from education_system.systems.university.infrastructure.exceptions import ValidationError
 from education_system.systems.university.infrastructure.sql_safety import escape_like
@@ -25,6 +30,22 @@ def _row_to_dict(row) -> dict:
     return {k: row[k] for k in row.keys()}
 
 
+# Portfolios and skills belong to one student (``student_id`` is TEXT, the
+# JWT ``sub``); items belong to a portfolio. Staff may read and write any;
+# a learner only their own, whatever ids the request names.
+
+def _portfolio_owner(conn, portfolio_id):
+    row = conn.execute(
+        "SELECT student_id FROM portfolios WHERE portfolio_id = ?", (portfolio_id,)
+    ).fetchone()
+    return row["student_id"] if row else None
+
+
+def _own_student_id(requested):
+    """The student id to act for: the caller's own unless they are staff."""
+    return requested if is_staff() else current_subject_id()
+
+
 # ---- portfolios ----
 
 @portfolio_bp.route("/portfolios", methods=["GET"])
@@ -33,6 +54,12 @@ def list_portfolios():
     search = request.args.get("search")
     student_id = request.args.get("student_id")
     is_public = request.args.get("is_public")
+    if not is_staff():
+        # Pin to the caller first; the free-text search spans every
+        # student, so it is staff-only.
+        student_id, search = current_subject_id(), None
+        if student_id is None:
+            return jsonify({"error": "Forbidden", "status": 403}), 403
 
     with get_connection() as conn:
         if search:
@@ -82,6 +109,9 @@ def get_portfolio(portfolio_id: int):
         ).fetchone()
     if not row:
         raise ValidationError(f"portfolios {portfolio_id} not found")
+    denial = deny_unless_owner_or_staff(row["student_id"])
+    if denial is not None:
+        return denial
     log_activity("view", "portfolios", user=g.current_user.get("sub"))
     return jsonify(_row_to_dict(row))
 
@@ -89,9 +119,13 @@ def get_portfolio(portfolio_id: int):
 @token_required
 def create_portfolio():
     data = request.get_json(silent=True) or {}
+    data["student_id"] = _own_student_id(data.get("student_id"))
     for field in ["student_id", "title"]:
-        if field not in data:
+        if not data.get(field):
             raise ValidationError(f"Missing required field: {field}")
+    denial = deny_unless_owner_or_staff(data["student_id"])
+    if denial is not None:
+        return denial
 
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     with transaction() as conn:
@@ -119,6 +153,12 @@ def list_items():
     search = request.args.get("search")
     portfolio_id = request.args.get("portfolio_id")
     category = request.args.get("category")
+    owner = None
+    if not is_staff():
+        # Items reach a student through their portfolios only.
+        owner, search = current_subject_id(), None
+        if owner is None:
+            return jsonify({"error": "Forbidden", "status": 403}), 403
 
     with get_connection() as conn:
         if search:
@@ -132,6 +172,10 @@ def list_items():
 
         conditions = []
         params: list = []
+        if owner is not None:
+            conditions.append(
+                "portfolio_id IN (SELECT portfolio_id FROM portfolios WHERE student_id = ?)")
+            params.append(owner)
         if portfolio_id:
             conditions.append("portfolio_id = ?")
             params.append(portfolio_id)
@@ -166,8 +210,12 @@ def get_item(item_id: int):
         row = conn.execute(
             "SELECT * FROM portfolio_items WHERE item_id = ?", (item_id,)
         ).fetchone()
+        owner = _portfolio_owner(conn, row["portfolio_id"]) if row else None
     if not row:
         raise ValidationError(f"items {item_id} not found")
+    denial = deny_unless_owner_or_staff(owner)
+    if denial is not None:
+        return denial
     log_activity("view", "portfolio_items", user=g.current_user.get("sub"))
     return jsonify(_row_to_dict(row))
 
@@ -178,6 +226,12 @@ def create_item():
     for field in ["portfolio_id", "category", "title"]:
         if field not in data:
             raise ValidationError(f"Missing required field: {field}")
+    with get_connection() as conn:
+        owner = _portfolio_owner(conn, data["portfolio_id"])
+    # Adding to another student's portfolio is refused, as is an unknown one.
+    denial = deny_unless_owner_or_staff(owner)
+    if denial is not None:
+        return denial
 
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     with transaction() as conn:
@@ -205,6 +259,10 @@ def list_skills():
     search = request.args.get("search")
     student_id = request.args.get("student_id")
     skill_category = request.args.get("skill_category")
+    if not is_staff():
+        student_id, search = current_subject_id(), None
+        if student_id is None:
+            return jsonify({"error": "Forbidden", "status": 403}), 403
 
     with get_connection() as conn:
         if search:
@@ -254,6 +312,9 @@ def get_skill(skill_id: int):
         ).fetchone()
     if not row:
         raise ValidationError(f"skills {skill_id} not found")
+    denial = deny_unless_owner_or_staff(row["student_id"])
+    if denial is not None:
+        return denial
     log_activity("view", "student_skills", user=g.current_user.get("sub"))
     return jsonify(_row_to_dict(row))
 
@@ -261,9 +322,13 @@ def get_skill(skill_id: int):
 @token_required
 def create_skill():
     data = request.get_json(silent=True) or {}
+    data["student_id"] = _own_student_id(data.get("student_id"))
     for field in ["student_id", "skill_name"]:
-        if field not in data:
+        if not data.get(field):
             raise ValidationError(f"Missing required field: {field}")
+    denial = deny_unless_owner_or_staff(data["student_id"])
+    if denial is not None:
+        return denial
 
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     with transaction() as conn:

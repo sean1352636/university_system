@@ -85,18 +85,19 @@ check_and_reserve_slot()
 
 ## Transaction Helpers
 
-The system provides convenient transaction helpers in `infrastructure/database/db.py`.
+The system provides convenient transaction helpers in `src/education_system/systems/university/infrastructure/database/db.py`.
 
-### get_db_transaction()
+### transaction()
 
 Context manager for automatic transaction handling:
 
 ```python
-from infrastructure.database.db import get_db_transaction
+from education_system.systems.university.infrastructure.database.db import transaction
 
 def enroll_student(student_id: int, course_id: int):
     """Enroll student in course using transaction."""
-    with get_db_transaction() as (conn, cursor):
+    with transaction() as conn:
+        cursor = conn.cursor()
         # All operations within this block are in a transaction
         cursor.execute(
             "INSERT INTO enrollments (student_id, course_id) VALUES (?, ?)",
@@ -116,41 +117,19 @@ def enroll_student(student_id: int, course_id: int):
 - Automatic commit on success
 - Automatic rollback on exception
 - Proper connection cleanup
-- Returns both connection and cursor
-
-### execute_in_transaction()
-
-Helper function for single-operation transactions:
-
-```python
-from infrastructure.database.db import execute_in_transaction
-
-def update_student_email(student_id: int, new_email: str):
-    """Update student email in a transaction."""
-    result = execute_in_transaction(
-        "UPDATE users SET email = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
-        (new_email, student_id)
-    )
-    return result
-```
-
-**Features:**
-- Simple one-liner for single operations
-- Returns cursor for accessing results
-- Automatic commit/rollback
-- Proper error handling
+- Yields the connection; open a cursor from it, or call `conn.execute()` directly
+- Takes the write lock up front (`BEGIN IMMEDIATE`) and retries briefly if the database is locked
 
 ### Manual Transaction Control
 
 For complex scenarios requiring fine-grained control:
 
 ```python
-from infrastructure.database.db import DatabaseManager
+from education_system.systems.university.infrastructure.database.db import get_connection
 
 def complex_operation():
     """Example of manual transaction control."""
-    db = DatabaseManager()
-    conn = db.get_connection()
+    conn = get_connection()
 
     try:
         # Start transaction (implicit in SQLite)
@@ -170,7 +149,7 @@ def complex_operation():
 
     finally:
         # Clean up
-        db.close()
+        conn.close()
 ```
 
 ## Usage Examples
@@ -178,8 +157,8 @@ def complex_operation():
 ### Example 1: Student Enrollment
 
 ```python
-from infrastructure.database.db import get_db_transaction
-from infrastructure.exceptions import EnrollmentException, DatabaseException
+from education_system.systems.university.infrastructure.database.db import transaction
+from education_system.systems.university.infrastructure.exceptions import CourseNotFoundError, DatabaseError, EnrollmentError
 
 def enroll_student_in_course(student_id: int, course_id: int) -> dict:
     """
@@ -199,11 +178,12 @@ def enroll_student_in_course(student_id: int, course_id: int) -> dict:
         Enrollment record
 
     Raises:
-        EnrollmentException: If course is full
-        DatabaseException: If database operation fails
+        EnrollmentError: If course is full
+        DatabaseError: If database operation fails
     """
     try:
-        with get_db_transaction() as (conn, cursor):
+        with transaction() as conn:
+            cursor = conn.cursor()
             # Check current enrollment
             cursor.execute("""
                 SELECT capacity, enrolled_count
@@ -213,11 +193,11 @@ def enroll_student_in_course(student_id: int, course_id: int) -> dict:
 
             result = cursor.fetchone()
             if not result:
-                raise ResourceNotFoundException('Course', course_id)
+                raise CourseNotFoundError(course_id)
 
             capacity, enrolled = result
             if enrolled >= capacity:
-                raise EnrollmentException(
+                raise EnrollmentError(
                     f"Course {course_id} is full",
                     details={'capacity': capacity, 'enrolled': enrolled}
                 )
@@ -256,14 +236,14 @@ def enroll_student_in_course(student_id: int, course_id: int) -> dict:
 
             # Transaction commits automatically here
 
-    except EnrollmentException:
+    except EnrollmentError:
         # Re-raise business logic exceptions
         raise
 
     except Exception as e:
         # Log and wrap database errors
         logger.error(f"Database error during enrollment: {e}", exc_info=True)
-        raise DatabaseException("Failed to enroll student")
+        raise DatabaseError("Failed to enroll student")
 ```
 
 ### Example 2: Payment Processing
@@ -289,10 +269,11 @@ def process_payment(invoice_id: int, amount: float, payment_method: str) -> dict
         Payment record
 
     Raises:
-        ValidationException: If validation fails
-        DatabaseException: If database operation fails
+        ValidationError: If validation fails
+        DatabaseError: If database operation fails
     """
-    with get_db_transaction() as (conn, cursor):
+    with transaction() as conn:
+        cursor = conn.cursor()
         # Get invoice details
         cursor.execute("""
             SELECT id, student_id, amount, status
@@ -302,19 +283,19 @@ def process_payment(invoice_id: int, amount: float, payment_method: str) -> dict
 
         invoice = cursor.fetchone()
         if not invoice:
-            raise ResourceNotFoundException('Invoice', invoice_id)
+            raise InvalidInputError(f"Invoice not found: {invoice_id}", field='invoice_id')
 
         inv_id, student_id, invoice_amount, status = invoice
 
         # Validate amount
         if amount != invoice_amount:
-            raise ValidationException(
+            raise ValidationError(
                 f"Payment amount {amount} doesn't match invoice amount {invoice_amount}"
             )
 
         # Validate invoice status
         if status == 'paid':
-            raise BusinessLogicException("Invoice already paid")
+            raise UniversitySystemError("Invoice already paid")
 
         # Create payment record
         transaction_id = generate_transaction_id()
@@ -386,14 +367,15 @@ def submit_final_grades(course_id: int, grades: List[dict], submitted_by: int):
         submitted_by: Instructor ID
 
     Raises:
-        ValidationException: If validation fails
-        DatabaseException: If database operation fails
+        ValidationError: If validation fails
+        DatabaseError: If database operation fails
     """
-    with get_db_transaction() as (conn, cursor):
+    with transaction() as conn:
+        cursor = conn.cursor()
         # Validate course exists
         cursor.execute("SELECT id FROM courses WHERE id = ?", (course_id,))
         if not cursor.fetchone():
-            raise ResourceNotFoundException('Course', course_id)
+            raise CourseNotFoundError(course_id)
 
         submitted_grades = []
 
@@ -410,7 +392,7 @@ def submit_final_grades(course_id: int, grades: List[dict], submitted_by: int):
 
             enrollment = cursor.fetchone()
             if not enrollment:
-                raise EnrollmentException(
+                raise EnrollmentError(
                     f"Student {student_id} not enrolled in course {course_id}"
                 )
 
@@ -489,7 +471,8 @@ conn.execute("PRAGMA journal_mode = WAL")
 Within a transaction, reads see a consistent snapshot:
 
 ```python
-with get_db_transaction() as (conn, cursor):
+with transaction() as conn:
+    cursor = conn.cursor()
     # First read
     cursor.execute("SELECT balance FROM accounts WHERE id = ?", (account_id,))
     balance1 = cursor.fetchone()[0]
@@ -510,7 +493,8 @@ The transaction context manager automatically rolls back on exceptions:
 
 ```python
 try:
-    with get_db_transaction() as (conn, cursor):
+    with transaction() as conn:
+        cursor = conn.cursor()
         cursor.execute("INSERT INTO ...")  # Operation 1
         cursor.execute("UPDATE ...")       # Operation 2
         raise Exception("Something went wrong!")  # Trigger rollback
@@ -524,36 +508,37 @@ except Exception as e:
 ### Explicit Error Handling
 
 ```python
-from infrastructure.exceptions import DatabaseException, TransactionException
+from education_system.systems.university.infrastructure.exceptions import DatabaseError, IntegrityError, TransactionError
 
 def safe_transaction_example():
     """Example with explicit error handling."""
     try:
-        with get_db_transaction() as (conn, cursor):
+        with transaction() as conn:
+            cursor = conn.cursor()
             # Perform operations
             cursor.execute("INSERT INTO ...")
 
             # Validate result
             if cursor.rowcount == 0:
-                raise TransactionException("Insert failed")
+                raise TransactionError("Insert failed")
 
             cursor.execute("UPDATE ...")
 
             # Check for constraint violations
             if conn.execute("PRAGMA foreign_key_check").fetchone():
-                raise IntegrityException("Foreign key violation detected")
+                raise IntegrityError("Foreign key violation detected")
 
     except sqlite3.IntegrityError as e:
         logger.error(f"Integrity error: {e}", exc_info=True)
-        raise IntegrityException("Data integrity violation")
+        raise IntegrityError("Data integrity violation")
 
     except sqlite3.OperationalError as e:
         logger.error(f"Operational error: {e}", exc_info=True)
-        raise DatabaseException("Database operation failed")
+        raise DatabaseError("Database operation failed")
 
     except Exception as e:
         logger.error(f"Unexpected error: {e}", exc_info=True)
-        raise TransactionException("Transaction failed")
+        raise TransactionError("Transaction failed")
 ```
 
 ## Best Practices
@@ -562,7 +547,8 @@ def safe_transaction_example():
 
 **DO:**
 ```python
-with get_db_transaction() as (conn, cursor):
+with transaction() as conn:
+    cursor = conn.cursor()
     # Quick database operations only
     cursor.execute("INSERT ...")
     cursor.execute("UPDATE ...")
@@ -570,7 +556,8 @@ with get_db_transaction() as (conn, cursor):
 
 **DON'T:**
 ```python
-with get_db_transaction() as (conn, cursor):
+with transaction() as conn:
+    cursor = conn.cursor()
     cursor.execute("INSERT ...")
 
     # Long-running operations
@@ -590,7 +577,9 @@ Avoid deadlocks by always acquiring locks in the same order:
 # Always lock accounts in ascending ID order
 account_ids = sorted([account1_id, account2_id])
 
-with get_db_transaction() as (conn, cursor):
+with transaction() as conn:
+
+    cursor = conn.cursor()
     for account_id in account_ids:
         cursor.execute("SELECT * FROM accounts WHERE id = ? FOR UPDATE", (account_id,))
     # Perform operations
@@ -602,24 +591,25 @@ SQLite doesn't support nested transactions:
 
 **DON'T:**
 ```python
-with get_db_transaction() as (conn1, cursor1):
-    cursor1.execute("INSERT ...")
+with transaction() as conn1:
+    conn1.execute("INSERT ...")
 
-    with get_db_transaction() as (conn2, cursor2):  # This creates a NEW connection!
-        cursor2.execute("UPDATE ...")  # Won't see cursor1's changes
+    with transaction() as conn2:  # This creates a NEW connection!
+        conn2.execute("UPDATE ...")  # Won't see conn1's changes
 ```
 
 ### 4. Validate Before Write Operations
 
 **DO:**
 ```python
-with get_db_transaction() as (conn, cursor):
+with transaction() as conn:
+    cursor = conn.cursor()
     # Validate first
     cursor.execute("SELECT status FROM courses WHERE id = ?", (course_id,))
     status = cursor.fetchone()[0]
 
     if status != 'active':
-        raise ValidationException("Course is not active")
+        raise ValidationError("Course is not active")
 
     # Then write
     cursor.execute("INSERT INTO enrollments ...")
@@ -630,7 +620,8 @@ with get_db_transaction() as (conn, cursor):
 For complex operations needing partial rollback:
 
 ```python
-with get_db_transaction() as (conn, cursor):
+with transaction() as conn:
+    cursor = conn.cursor()
     # Main work
     cursor.execute("INSERT INTO courses ...")
 
@@ -655,7 +646,8 @@ with get_db_transaction() as (conn, cursor):
 ```python
 def check_and_enroll(student_id: int, course_id: int):
     """Check prerequisites then enroll."""
-    with get_db_transaction() as (conn, cursor):
+    with transaction() as conn:
+        cursor = conn.cursor()
         # Check prerequisites
         cursor.execute("""
             SELECT prerequisite_id FROM course_prerequisites
@@ -671,7 +663,7 @@ def check_and_enroll(student_id: int, course_id: int):
             """, (student_id, prereq_id))
 
             if not cursor.fetchone():
-                raise EnrollmentException(f"Prerequisite {prereq_id} not met")
+                raise EnrollmentError(f"Prerequisite {prereq_id} not met")
 
         # All checks passed, now enroll
         cursor.execute("""
@@ -685,7 +677,8 @@ def check_and_enroll(student_id: int, course_id: int):
 ```python
 def bulk_grade_update(grades: List[dict]):
     """Update multiple grades in one transaction."""
-    with get_db_transaction() as (conn, cursor):
+    with transaction() as conn:
+        cursor = conn.cursor()
         for grade in grades:
             cursor.execute("""
                 UPDATE enrollments
@@ -706,7 +699,8 @@ def bulk_grade_update(grades: List[dict]):
 ```python
 def conditional_enrollment(student_id: int, course_id: int, max_courses: int = 5):
     """Enroll only if student isn't overloaded."""
-    with get_db_transaction() as (conn, cursor):
+    with transaction() as conn:
+        cursor = conn.cursor()
         # Count current enrollments
         cursor.execute("""
             SELECT COUNT(*) FROM enrollments
@@ -716,7 +710,7 @@ def conditional_enrollment(student_id: int, course_id: int, max_courses: int = 5
         current_count = cursor.fetchone()[0]
 
         if current_count >= max_courses:
-            raise EnrollmentException(
+            raise EnrollmentError(
                 f"Student is enrolled in {current_count} courses (max: {max_courses})"
             )
 
@@ -732,7 +726,8 @@ def conditional_enrollment(student_id: int, course_id: int, max_courses: int = 5
 ```python
 def update_with_audit(table: str, record_id: int, updates: dict, user_id: int):
     """Update record and create audit trail."""
-    with get_db_transaction() as (conn, cursor):
+    with transaction() as conn:
+        cursor = conn.cursor()
         # Get current values
         cursor.execute(f"SELECT * FROM {table} WHERE id = ?", (record_id,))
         old_values = dict(cursor.fetchone())
@@ -773,11 +768,13 @@ def update_with_audit(table: str, record_id: int, updates: dict, user_id: int):
 
 ```python
 # GOOD: Small, focused transaction
-with get_db_transaction() as (conn, cursor):
+with transaction() as conn:
+    cursor = conn.cursor()
     cursor.execute("UPDATE users SET last_login = ? WHERE id = ?", (now, user_id))
 
 # BAD: Huge transaction processing thousands of records
-with get_db_transaction() as (conn, cursor):
+with transaction() as conn:
+    cursor = conn.cursor()
     for record in huge_list:  # Could take minutes!
         cursor.execute("INSERT ...", record)
 ```
@@ -788,7 +785,8 @@ Use executemany for bulk operations:
 
 ```python
 # GOOD: Single transaction, executemany
-with get_db_transaction() as (conn, cursor):
+with transaction() as conn:
+    cursor = conn.cursor()
     cursor.executemany(
         "INSERT INTO enrollments (student_id, course_id) VALUES (?, ?)",
         [(sid, cid) for sid, cid in enrollment_pairs]
@@ -796,7 +794,8 @@ with get_db_transaction() as (conn, cursor):
 
 # BAD: Multiple small transactions
 for student_id, course_id in enrollment_pairs:
-    with get_db_transaction() as (conn, cursor):
+    with transaction() as conn:
+        cursor = conn.cursor()
         cursor.execute("INSERT INTO enrollments ...", (student_id, course_id))
 ```
 
@@ -837,7 +836,8 @@ conn.execute("PRAGMA journal_mode = WAL")
 3. **Close connections properly:**
 ```python
 # Always use context managers
-with get_db_transaction() as (conn, cursor):
+with transaction() as conn:
+    cursor = conn.cursor()
     # Operations
     pass  # Connection automatically closed
 ```
@@ -853,7 +853,9 @@ with get_db_transaction() as (conn, cursor):
 def transfer(from_id, to_id, amount):
     account_ids = sorted([from_id, to_id])
 
-    with get_db_transaction() as (conn, cursor):
+    with transaction() as conn:
+
+        cursor = conn.cursor()
         # Lock in order
         for account_id in account_ids:
             cursor.execute(
@@ -870,14 +872,15 @@ def transfer(from_id, to_id, amount):
 **Solution:** Enable foreign key checking and validate
 
 ```python
-with get_db_transaction() as (conn, cursor):
+with transaction() as conn:
+    cursor = conn.cursor()
     # Enable foreign key constraints
     cursor.execute("PRAGMA foreign_keys = ON")
 
     # Validate before insert
     cursor.execute("SELECT id FROM users WHERE id = ?", (user_id,))
     if not cursor.fetchone():
-        raise ResourceNotFoundException('User', user_id)
+        raise InvalidInputError(f"User not found: {user_id}", field='user_id')
 
     # Now insert
     cursor.execute("INSERT INTO enrollments ...")
@@ -887,7 +890,7 @@ with get_db_transaction() as (conn, cursor):
 
 - [ ] Use transactions for all write operations
 - [ ] Keep transactions as short as possible
-- [ ] Use `get_db_transaction()` context manager
+- [ ] Use the `transaction()` context manager
 - [ ] Handle exceptions and let transactions rollback
 - [ ] Don't perform I/O or long operations in transactions
 - [ ] Validate data before performing writes

@@ -1,0 +1,37 @@
+{
+  "name": "medical_first_aid_notice",
+  "description": "A note home after a pupil received first aid at school, sent to contacts with parental responsibility.",
+  "subject": "First aid at school - {pupil_name}",
+  "body": [
+    "Dear {recipient_name},",
+    "",
+    "We are letting you know that {pupil_name} received first aid at school on {incident_date} {incident_time}.",
+    "",
+    "Injury: {injury}",
+    "Treatment: {treatment}",
+    "Outcome: {outcome}",
+    "",
+    "{note}",
+    "",
+    "Please keep an eye on {pupil_name} and seek medical advice if you are worried, particularly after any bump to the head (drowsiness, sickness, headache or confusion).",
+    "",
+    "Best wishes,",
+    "{sender_name}",
+    "{school_name}"
+  ],
+  "placeholders": {
+    "recipient_name": "The contact's name",
+    "pupil_name": "The pupil's preferred first name and surname",
+    "incident_date": "The date",
+    "incident_time": "The time (may be blank)",
+    "injury": "The injury and its severity",
+    "treatment": "What was done",
+    "outcome": "What happened next",
+    "note": "An optional message",
+    "sender_name": "The member of staff sending it",
+    "school_name": "The school's name"
+  },
+  "defaults": {
+    "school_name": "Secondary School"
+  }
+}

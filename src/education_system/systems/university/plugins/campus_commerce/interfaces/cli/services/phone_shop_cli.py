@@ -16,6 +16,10 @@ except ImportError:
     def get_connection():
         return sqlite3.connect(str(UNIVERSITY_DEFAULT_DB_PATH))
 
+from education_system.systems.university.plugins.campus_commerce.domain.phoneshop.services.phoneshop_core import (
+    post_sale_to_finance,
+)
+
 try:
     from education_system.systems.university.infrastructure.shared_context import get_current_user as get_user
 except ImportError:
@@ -46,7 +50,7 @@ CREATE TABLE IF NOT EXISTS products (
     price REAL NOT NULL,
     stock INTEGER DEFAULT 0,
     description TEXT,
-    created_date TEXT NOT NULL
+    created_at TEXT NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS orders (
@@ -105,7 +109,7 @@ def init_phoneshop_database():
                 for product in sample_products:
                     conn.execute("""
                         INSERT INTO products
-                        (source_type, sku, name, brand, category, price, stock, description, created_date)
+                        (source_type, sku, name, brand, category, price, stock, description, created_at)
                         VALUES ('phone_shop', ?, ?, ?, ?, ?, ?, ?, ?)
                     """, (*product, datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
 
@@ -187,7 +191,7 @@ def get_product_by_id(product_id):
 # ==================== ORDER MANAGEMENT ====================
 
 def create_order(order_data, cart_items):
-    """Create a new order with items."""
+    """Create a new order with items. Returns the new order_id (truthy) or False."""
     try:
         with get_connection() as conn:
             # Create order
@@ -224,7 +228,7 @@ def create_order(order_data, cart_items):
                 """, (item['quantity'], item['product_id']))
 
             conn.commit()
-        return True
+        return order_id
     except Exception as e:
         print(f"Error creating order: {e}")
         return False
@@ -411,11 +415,21 @@ def checkout_menu():
         'order_date': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     }
 
-    if create_order(order_data, cart):
+    order_id = create_order(order_data, cart)
+    if order_id:
         print("\n  ✅ Order placed successfully!")
         print(f"  Order Number: {order_data['order_number']}")
         print(f"  Total: £{total_amount:.2f}")
         cart = []  # Clear cart
+
+        # Post the sale to Finance through the shared domain service
+        payment_id = post_sale_to_finance(
+            order_id, student_id or 'EXTERNAL', total_amount, payment_method,
+            processed_by=current_user.get('username'),
+            order_number=order_data['order_number'],
+        )
+        if payment_id is None:
+            print("  ⚠️  Sale saved, but it could not be posted to Finance (see log).")
     else:
         print("\n  ❌ Failed to process order.")
 

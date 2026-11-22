@@ -17,6 +17,7 @@ from education_system.systems.primary.domain.safeguarding.prevent_duty.prevent_d
 from education_system.systems.primary.domain.learners.pupils.pupils import (
     ValidationError,
 )
+from education_system.systems.primary.interfaces.gui import kit
 
 logger = logging.getLogger(__name__)
 
@@ -53,7 +54,7 @@ def _referral_dialog(host, title: str,
     dlg = tk.Toplevel(host.root)
     dlg.title(title)
     dlg.transient(host.root)
-    dlg.geometry("620x860")
+    dlg.geometry("720x680")
     dlg.update_idletasks()
     try:
         dlg.wait_visibility()
@@ -62,8 +63,7 @@ def _referral_dialog(host, title: str,
         logger.debug("grab_set skipped", exc_info=True)
 
     initial = initial or {}
-    frm = ttk.Frame(dlg, padding=12)
-    frm.pack(fill="both", expand=True)
+    frm, footer = kit.scrolled_form(dlg)
 
     pupil_var   = tk.StringVar(value=str(initial.get("pupil_id") or ""))
     concern_var = tk.StringVar(value=str(initial.get("concern_type")
@@ -91,42 +91,38 @@ def _referral_dialog(host, title: str,
         value=str(initial.get("closed_date") or ""))
 
     rows: list[tuple[str, tk.Widget]] = [
-        ("Pupil ID:",     ttk.Entry(frm, textvariable=pupil_var, width=14)),
+        ("Pupil:",        kit.PupilPicker(frm, pupil_var,
+                                         include_off_roll=bool(initial))),
         ("Concern:",      ttk.Combobox(frm, textvariable=concern_var,
                                           values=list(CONCERN_TYPES),
                                           state="readonly", width=44)),
         ("Risk level:",   ttk.Combobox(frm, textvariable=risk_var,
                                           values=list(RISK_LEVELS),
                                           state="readonly", width=12)),
-        ("Raised by:",    ttk.Entry(frm, textvariable=raised_by_var,
-                                       width=24)),
-        ("Raised date:",  ttk.Entry(frm, textvariable=raised_date_var,
-                                       width=14)),
+        ("Raised by:",    kit.StaffPicker(frm, raised_by_var, by="name",
+                                         active_only=False)),
+        ("Raised date:",  kit.DateField(frm, raised_date_var)),
         ("DSL informed:", ttk.Checkbutton(frm, variable=dsl_var)),
-        ("DSL name:",     ttk.Entry(frm, textvariable=dsl_name_var,
-                                       width=24)),
-        ("DSL informed date:", ttk.Entry(frm, textvariable=dsl_date_var,
-                                            width=14)),
+        ("DSL name:",     kit.StaffPicker(frm, dsl_name_var, by="name",
+                                         dsl_only=True)),
+        ("DSL informed date:", kit.DateField(frm, dsl_date_var)),
         ("Pathway:",      ttk.Combobox(frm, textvariable=pathway_var,
                                           values=list(REFERRAL_PATHWAYS),
                                           state="readonly", width=32)),
-        ("Referral date:", ttk.Entry(frm, textvariable=rdate_var, width=14)),
+        ("Referral date:", kit.DateField(frm, rdate_var)),
         ("Referral ref:",  ttk.Entry(frm, textvariable=rref_var, width=20)),
         ("Agencies:",     ttk.Entry(frm, textvariable=agencies_var,
                                        width=32)),
         ("Parents informed:", ttk.Checkbutton(frm, variable=parents_var)),
-        ("Parents informed date:", ttk.Entry(frm,
-                                                textvariable=parents_date_var,
-                                                width=14)),
-        ("Next review:",  ttk.Entry(frm, textvariable=review_var, width=14)),
+        ("Parents informed date:", kit.DateField(frm, parents_date_var)),
+        ("Next review:",  kit.DateField(frm, review_var)),
         ("Status:",       ttk.Combobox(frm, textvariable=status_var,
                                           values=list(STATUSES),
                                           state="readonly", width=32)),
         ("Outcome:",      ttk.Combobox(frm, textvariable=outcome_var,
                                           values=list(OUTCOMES),
                                           state="readonly", width=22)),
-        ("Closed date:",  ttk.Entry(frm, textvariable=closed_date_var,
-                                       width=14)),
+        ("Closed date:",  kit.DateField(frm, closed_date_var)),
     ]
     for i, (label, widget) in enumerate(rows):
         ttk.Label(frm, text=label).grid(row=i, column=0, sticky="w",
@@ -177,9 +173,7 @@ def _referral_dialog(host, title: str,
             result[k] = w.get("1.0", "end").strip()
         dlg.destroy()
 
-    btns = ttk.Frame(frm)
-    btns.grid(row=len(rows) + len(text_fields), column=0,
-                columnspan=2, sticky="e", pady=(12, 0))
+    btns = footer
     ttk.Button(btns, text="Cancel",
                  command=dlg.destroy).pack(side="right", padx=4)
     ttk.Button(btns, text="Save", command=_save).pack(side="right")
@@ -190,10 +184,12 @@ def _referral_dialog(host, title: str,
 @_safe_view
 def open_prevent_duty(host) -> None:
     logger.debug("GUI: open_prevent_duty")
-    host._clear_content()
-    root = host.content_frame
-    ttk.Label(root, text="Prevent Duty",
-                font=("", 16, "bold")).pack(anchor="w", pady=(0, 8))
+    kit.show_page(host, "Prevent Duty",
+                  lambda parent: _draw_prevent_duty(parent, host))
+
+
+def _draw_prevent_duty(root, host) -> None:
+    kit.page_heading(root, "Prevent Duty")
 
     summary_var = tk.StringVar()
     ttk.Label(root, textvariable=summary_var,
@@ -291,8 +287,9 @@ def open_prevent_duty(host) -> None:
                 f"Pupils: {s['pupils']}")
         except Exception:
             summary_var.set(f"{len(rows)} referral(s)")
-        host.status_var.set(
-            f"Prevent Duty: {len(rows)} record(s)")
+        status_bar = getattr(host, "status_var", None)
+        if status_bar is not None:
+            status_bar.set(f"Prevent Duty: {len(rows)} record(s)")
 
     tree.bind("<Double-1>",
                 lambda _e: _edit(host, tree, on_done=_refresh))

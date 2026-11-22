@@ -19,8 +19,11 @@ import pytest
 
 from education_system.systems.apprenticeships import config
 from education_system.systems.apprenticeships.domain.apprentices.models import ValidationError
-from education_system.systems.apprenticeships.services import preferences, reporting_service
-from education_system.systems.apprenticeships.services.access import Actor, PermissionDenied
+from education_system.systems.apprenticeships.application.workspace import (
+    preferences,
+    reporting_service,
+)
+from education_system.systems.apprenticeships.application.security.access import Actor, PermissionDenied
 
 _COMMANDS = "education_system.systems.apprenticeships.interfaces.cli.commands"
 _WINDOWS = "education_system.systems.apprenticeships.interfaces.gui.windows"
@@ -284,32 +287,32 @@ class TestAccounts:
     """
 
     def test_only_an_administrator_may_read_the_account_list(self, cohort):
-        from education_system.systems.apprenticeships.services import account_service
+        from education_system.systems.apprenticeships.application.security import account_service
 
         with pytest.raises(PermissionDenied):
             account_service.list_accounts(cohort["tutor"])
 
     def test_only_an_administrator_may_grant_a_role(self, cohort):
-        from education_system.systems.apprenticeships.services import account_service
+        from education_system.systems.apprenticeships.application.security import account_service
 
         with pytest.raises(PermissionDenied):
             account_service.grant_role(cohort["tutor"], "someone", "staff")
 
     def test_a_role_outside_this_system_is_refused(self, db, admin):
-        from education_system.systems.apprenticeships.services import account_service
+        from education_system.systems.apprenticeships.application.security import account_service
 
         with pytest.raises(ValidationError, match="Role must be one of"):
             account_service.grant_role(admin, "someone", "headteacher")
 
     def test_an_administrator_cannot_revoke_their_own_access(self, db, admin):
         """Otherwise the system can be left with nobody who can grant it back."""
-        from education_system.systems.apprenticeships.services import account_service
+        from education_system.systems.apprenticeships.application.security import account_service
 
         with pytest.raises(ValidationError, match="your own access"):
             account_service.revoke_access(admin, admin.username)
 
     def test_a_role_with_no_record_behind_it_cannot_be_linked(self, db, admin):
-        from education_system.systems.apprenticeships.services import account_service
+        from education_system.systems.apprenticeships.application.security import account_service
 
         with pytest.raises(ValidationError, match="not scoped to a single record"):
             account_service.link_to_record(admin, "someone", config.ADMIN, 1)
@@ -320,7 +323,7 @@ class TestAccounts:
         from education_system.systems.apprenticeships.infrastructure.persistence.repositories import (  # noqa: E501
             apprentice_repository,
         )
-        from education_system.systems.apprenticeships.services import account_service
+        from education_system.systems.apprenticeships.application.security import account_service
 
         message = account_service.link_to_record(
             admin, "new-login", config.APPRENTICE, cohort["apprentice_id"]
@@ -330,14 +333,14 @@ class TestAccounts:
         assert record.username == "new-login"
 
     def test_link_candidates_report_the_login_already_on_the_record(self, cohort, admin):
-        from education_system.systems.apprenticeships.services import account_service
+        from education_system.systems.apprenticeships.application.security import account_service
 
         candidates = account_service.link_candidates(admin, config.APPRENTICE)
         assert [c["username"] for c in candidates] == ["apprentice1"]
 
     def test_whoami_reports_an_unresolvable_session_rather_than_raising(self, db):
         """A screen has to be able to say why the account actions are off."""
-        from education_system.systems.apprenticeships.services import account_service
+        from education_system.systems.apprenticeships.application.security import account_service
 
         account = account_service.whoami(Actor(username="", role="staff"))
         assert account["user_id"] is None
@@ -351,6 +354,6 @@ class TestAccounts:
         (config.STAFF, False),
     ])
     def test_is_linked_follows_the_role(self, db, role, linked):
-        from education_system.systems.apprenticeships.services import account_service
+        from education_system.systems.apprenticeships.application.security import account_service
 
         assert account_service.is_linked(Actor(username="x", role=role)) is linked

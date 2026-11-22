@@ -17,6 +17,18 @@ Four tables:
 Data is sensitive — auth gating happens upstream in the GUI / CLI
 layers. The data layer itself only enforces shape and integrity.
 
+Added on top (MEDICAL capability required in the data layer itself,
+and every read/write goes to the sensitive-access log):
+
+* ``med_healthcare_plans`` — individual healthcare plans (condition,
+  triggers, actions, emergency procedure, review date, parent and
+  clinician sign-off). Linking a plan to a condition fills that
+  condition's ``care_plan_ref`` (``IHP-<id>``).
+* ``med_administrations`` — medication administration log (medicine,
+  dose, date/time, given by, witnessed by, stock after).
+* ``med_stock`` — stock held in college per medication; each
+  administration decrements it.
+
 Cascade: deleting a student wipes profile + conditions + medications
 + allergies. Deleting a profile wipes the related rows (FK CASCADE).
 """
@@ -31,6 +43,7 @@ from dataclasses import dataclass
 from typing import Any
 
 from education_system import paths
+from education_system.systems.sixth_form.domain.pastoral import _records
 
 logger = logging.getLogger(__name__)
 
@@ -229,6 +242,8 @@ def init_db() -> None:
     _students.init_db()
     with _connect() as conn:
         conn.executescript(_SCHEMA)
+        conn.executescript(_CARE_SCHEMA)
+        conn.commit()
     logger.debug("Medical-records schema ready at %s", DB_PATH)
     _DB_READY = True
 
@@ -944,3 +959,706 @@ def summary() -> MedicalSummary:
         epipen_holders=epipens,
         students_with_flag=flagged,
     )
+
+
+# ══ Individual healthcare plans, administration log, stock ════════
+
+PLAN_STATUSES: tuple[str, ...] = (
+    "Draft", "Active", "Under Review", "Archived",
+)
+ADMIN_OUTCOMES: tuple[str, ...] = (
+    "Given", "Refused", "Not available", "Self-administered (supervised)",
+    "Vomited / spat out",
+)
+
+_CARE_SCHEMA = """
+CREATE TABLE IF NOT EXISTS med_healthcare_plans (
+    plan_id              INTEGER PRIMARY KEY AUTOINCREMENT,
+    student_id           TEXT NOT NULL,
+    condition_id         INTEGER,
+    condition_name       TEXT NOT NULL,
+    status               TEXT NOT NULL DEFAULT 'Draft',
+    triggers             TEXT,
+    symptoms             TEXT,
+    daily_care           TEXT,
+    actions              TEXT,
+    emergency_procedure  TEXT NOT NULL,
+    medication_notes     TEXT,
+    staff_training       TEXT,
+    plan_start           TEXT,
+    review_date          TEXT,
+    last_reviewed        TEXT,
+    parent_signed_name   TEXT,
+    parent_signed_on     TEXT,
+    clinician_name       TEXT,
+    clinician_role       TEXT,
+    clinician_signed_on  TEXT,
+    notes                TEXT,
+    created_at           TEXT DEFAULT (datetime('now')),
+    updated_at           TEXT DEFAULT (datetime('now')),
+    FOREIGN KEY (student_id) REFERENCES students(student_id) ON DELETE CASCADE,
+    FOREIGN KEY (condition_id) REFERENCES med_conditions(condition_id)
+        ON DELETE SET NULL
+);
+
+CREATE TABLE IF NOT EXISTS med_stock (
+    stock_id       INTEGER PRIMARY KEY AUTOINCREMENT,
+    medication_id  INTEGER NOT NULL UNIQUE,
+    student_id     TEXT NOT NULL,
+    quantity       INTEGER NOT NULL DEFAULT 0,
+    unit           TEXT,
+    location       TEXT,
+    expiry_date    TEXT,
+    reorder_level  INTEGER,
+    notes          TEXT,
+    created_at     TEXT DEFAULT (datetime('now')),
+    updated_at     TEXT DEFAULT (datetime('now')),
+    FOREIGN KEY (medication_id) REFERENCES med_medications(medication_id)
+        ON DELETE CASCADE,
+    FOREIGN KEY (student_id) REFERENCES students(student_id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS med_administrations (
+    admin_id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    student_id        TEXT NOT NULL,
+    medication_id     INTEGER,
+    medicine          TEXT NOT NULL,
+    dose              TEXT NOT NULL,
+    administered_on   TEXT NOT NULL,
+    administered_time TEXT NOT NULL,
+    outcome           TEXT NOT NULL DEFAULT 'Given',
+    quantity_used     INTEGER NOT NULL DEFAULT 1,
+    given_by          TEXT NOT NULL,
+    witnessed_by      TEXT,
+    reason            TEXT,
+    stock_after       INTEGER,
+    parent_informed   INTEGER NOT NULL DEFAULT 0,
+    notes             TEXT,
+    created_at        TEXT DEFAULT (datetime('now')),
+    updated_at        TEXT DEFAULT (datetime('now')),
+    FOREIGN KEY (student_id) REFERENCES students(student_id) ON DELETE CASCADE,
+    FOREIGN KEY (medication_id) REFERENCES med_medications(medication_id)
+        ON DELETE SET NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_med_ihp_student  ON med_healthcare_plans(student_id);
+CREATE INDEX IF NOT EXISTS idx_med_ihp_review   ON med_healthcare_plans(review_date);
+CREATE INDEX IF NOT EXISTS idx_med_adm_student  ON med_administrations(student_id);
+CREATE INDEX IF NOT EXISTS idx_med_adm_on       ON med_administrations(administered_on);
+"""
+
+
+@dataclass
+class HealthcarePlan:
+    plan_id: int
+    student_id: str
+    condition_id: int | None
+    condition_name: str
+    status: str
+    triggers: str | None
+    symptoms: str | None
+    daily_care: str | None
+    actions: str | None
+    emergency_procedure: str
+    medication_notes: str | None
+    staff_training: str | None
+    plan_start: str | None
+    review_date: str | None
+    last_reviewed: str | None
+    parent_signed_name: str | None
+    parent_signed_on: str | None
+    clinician_name: str | None
+    clinician_role: str | None
+    clinician_signed_on: str | None
+    notes: str | None
+    created_at: str | None
+    updated_at: str | None
+
+    @property
+    def review_overdue(self) -> bool:
+        return bool(self.status != "Archived" and self.review_date
+                    and self.review_date < _records.today())
+
+    @property
+    def signed_off(self) -> bool:
+        return bool(self.parent_signed_on and self.clinician_signed_on)
+
+
+@dataclass
+class StockItem:
+    stock_id: int
+    medication_id: int
+    student_id: str
+    quantity: int
+    unit: str | None
+    location: str | None
+    expiry_date: str | None
+    reorder_level: int | None
+    notes: str | None
+    created_at: str | None
+    updated_at: str | None
+
+    @property
+    def low(self) -> bool:
+        return self.reorder_level is not None \
+            and self.quantity <= self.reorder_level
+
+    @property
+    def expired(self) -> bool:
+        return bool(self.expiry_date
+                    and self.expiry_date < _records.today())
+
+
+@dataclass
+class Administration:
+    admin_id: int
+    student_id: str
+    medication_id: int | None
+    medicine: str
+    dose: str
+    administered_on: str
+    administered_time: str
+    outcome: str
+    quantity_used: int
+    given_by: str
+    witnessed_by: str | None
+    reason: str | None
+    stock_after: int | None
+    parent_informed: bool
+    notes: str | None
+    created_at: str | None
+    updated_at: str | None
+
+
+def _now_hhmm() -> str:
+    return _dt.datetime.now().strftime("%H:%M")
+
+
+_C = _records.Col
+
+PLAN_SPEC = _records.TableSpec(
+    table="med_healthcare_plans", id_col="plan_id", row_type=HealthcarePlan,
+    label="Healthcare plan",
+    order_by="status = 'Archived', review_date IS NULL, review_date",
+    cols=(
+        _C("student_id", "Student", "student", required=True, fixed=True),
+        _C("condition_id", "Linked condition #", "int", listed=False),
+        _C("condition_name", "Condition", required=True),
+        _C("status", "Status", "choice", choices=PLAN_STATUSES,
+           default="Draft"),
+        _C("triggers", "Triggers", "multiline", listed=False),
+        _C("symptoms", "Signs / symptoms", "multiline", listed=False),
+        _C("daily_care", "Daily care requirements", "multiline",
+           listed=False),
+        _C("actions", "Actions to take", "multiline", listed=False),
+        _C("emergency_procedure", "Emergency procedure", "multiline",
+           required=True, listed=False),
+        _C("medication_notes", "Medication", "multiline", listed=False),
+        _C("staff_training", "Staff training needed", "multiline",
+           listed=False),
+        _C("plan_start", "Plan start", "date", listed=False),
+        _C("review_date", "Review date", "date"),
+        _C("last_reviewed", "Last reviewed", "date"),
+        _C("parent_signed_name", "Parent / carer signed (name)"),
+        _C("parent_signed_on", "Parent signed on", "date"),
+        _C("clinician_name", "Clinician", listed=False),
+        _C("clinician_role", "Clinician role", listed=False),
+        _C("clinician_signed_on", "Clinician signed on", "date"),
+        _C("notes", "Notes", "multiline", listed=False),
+    ))
+
+STOCK_SPEC = _records.TableSpec(
+    table="med_stock", id_col="stock_id", row_type=StockItem,
+    label="Medication stock", order_by="student_id, medication_id",
+    cols=(
+        _C("medication_id", "Medication #", "int", required=True,
+           fixed=True),
+        _C("student_id", "Student", "student", fixed=True, hidden=True),
+        _C("quantity", "Quantity in stock", "int", required=True,
+           min_value=0),
+        _C("unit", "Unit (tablets, doses …)"),
+        _C("location", "Stored at"),
+        _C("expiry_date", "Expiry", "date"),
+        _C("reorder_level", "Re-order at", "int", min_value=0),
+        _C("notes", "Notes", "multiline", listed=False),
+    ))
+
+ADMIN_SPEC = _records.TableSpec(
+    table="med_administrations", id_col="admin_id", row_type=Administration,
+    label="Medication administration",
+    order_by="administered_on DESC, administered_time DESC, admin_id DESC",
+    cols=(
+        _C("student_id", "Student", "student", required=True, fixed=True),
+        _C("medication_id", "Medication # (blank = not on record)", "int",
+           listed=False),
+        _C("medicine", "Medicine"),
+        _C("dose", "Dose", required=True),
+        _C("administered_on", "Date", "date", required=True,
+           default=_records.today),
+        _C("administered_time", "Time", "time", required=True,
+           default=_now_hhmm),
+        _C("outcome", "Outcome", "choice", choices=ADMIN_OUTCOMES,
+           default="Given"),
+        _C("quantity_used", "Quantity used", "int", default=1,
+           min_value=0, listed=False),
+        _C("given_by", "Given by"),
+        _C("witnessed_by", "Witnessed by"),
+        _C("reason", "Reason", listed=False),
+        _C("stock_after", "Stock after", "int", fixed=True, hidden=True),
+        _C("parent_informed", "Parent informed", "bool"),
+        _C("notes", "Notes", "multiline", listed=False),
+    ))
+
+
+def _student_ok(sid: str) -> bool:
+    from education_system.systems.sixth_form.domain.learners.students import (
+        students as _students,
+    )
+    return _students.get_student(sid) is not None
+
+
+def _med_guard(action: str, student_id: str | None = None,
+               ref: str | None = None) -> Any:
+    return _records.guard("MEDICAL", "medical", action,
+                          student_id=student_id, record_ref=ref)
+
+
+# ── Healthcare plans ──────────────────────────────────────────────
+
+def _plan_rules(conn: sqlite3.Connection, p: dict[str, Any]) -> None:
+    if p["condition_id"] is not None:
+        c = conn.execute(
+            "SELECT student_id, name FROM med_conditions "
+            "WHERE condition_id = ?", (p["condition_id"],)).fetchone()
+        if c is None:
+            raise ValidationError(f"No condition #{p['condition_id']}")
+        if c["student_id"] != p["student_id"]:
+            raise ValidationError(
+                f"Condition #{p['condition_id']} belongs to another student")
+    if p["status"] == "Active" and not p["review_date"]:
+        raise ValidationError("An active plan needs a review date")
+    if p["plan_start"] and p["review_date"] \
+            and p["review_date"] < p["plan_start"]:
+        raise ValidationError("Review date cannot be before the plan start")
+    if p["parent_signed_on"] and not p["parent_signed_name"]:
+        raise ValidationError("Give the name of the parent/carer who signed")
+
+
+def _link_care_plan_ref(conn: sqlite3.Connection, plan_id: int,
+                        condition_id: int | None) -> None:
+    if condition_id is None:
+        return
+    conn.execute(
+        "UPDATE med_conditions SET care_plan_ref = ?, "
+        "updated_at = datetime('now') WHERE condition_id = ? "
+        "AND (care_plan_ref IS NULL OR care_plan_ref = '' "
+        "     OR care_plan_ref LIKE 'IHP-%')",
+        (f"IHP-{plan_id}", condition_id))
+
+
+def create_healthcare_plan(data: dict[str, Any]) -> HealthcarePlan:
+    init_db()
+    p = _records.validate(PLAN_SPEC, data, error=ValidationError,
+                          student_exists=_student_ok)
+    _med_guard("create healthcare plan", p["student_id"])
+    with _connect() as conn:
+        _plan_rules(conn, p)
+        new_id = _records.insert(conn, PLAN_SPEC, p)
+        _link_care_plan_ref(conn, new_id, p["condition_id"])
+        conn.commit()
+        out = _records.fetch(conn, PLAN_SPEC, new_id)
+    logger.info("Created healthcare plan #%d for %s (%s)", new_id,
+                p["student_id"], p["condition_name"])
+    return out
+
+
+def get_healthcare_plan(plan_id: int) -> HealthcarePlan | None:
+    init_db()
+    with _connect() as conn:
+        out = _records.fetch(conn, PLAN_SPEC, plan_id)
+    if out is not None:
+        _med_guard("view healthcare plan", out.student_id, f"ihp:{plan_id}")
+    return out
+
+
+def list_healthcare_plans(*, student_id: str | None = None,
+                          status: str | None = None,
+                          include_archived: bool = True
+                          ) -> list[HealthcarePlan]:
+    init_db()
+    _med_guard("list healthcare plans", student_id)
+    where = [] if include_archived else ["status <> 'Archived'"]
+    with _connect() as conn:
+        rows = _records.select(conn, PLAN_SPEC, equals={
+            "student_id": student_id, "status": status}, where=where)
+    return _records.visible_filter("MEDICAL", rows)
+
+
+def update_healthcare_plan(plan_id: int,
+                           data: dict[str, Any]) -> HealthcarePlan:
+    init_db()
+    with _connect() as conn:
+        existing = _records.fetch(conn, PLAN_SPEC, plan_id)
+    if existing is None:
+        raise ValidationError(f"No healthcare plan #{plan_id}")
+    p = _records.validate(PLAN_SPEC, data, error=ValidationError,
+                          existing=existing, student_exists=_student_ok)
+    _med_guard("update healthcare plan", existing.student_id,
+               f"ihp:{plan_id}")
+    with _connect() as conn:
+        _plan_rules(conn, p)
+        _records.update(conn, PLAN_SPEC, plan_id, p)
+        _link_care_plan_ref(conn, plan_id, p["condition_id"])
+        conn.commit()
+        return _records.fetch(conn, PLAN_SPEC, plan_id)
+
+
+def review_healthcare_plan(plan_id: int, *,
+                           reviewed_on: str | None = None,
+                           next_review: str,
+                           notes: str | None = None) -> HealthcarePlan:
+    """Record a plan review: stamps last_reviewed, sets the next review
+    date and returns the plan to Active."""
+    on = _records.check_date(reviewed_on, "Reviewed on",
+                             ValidationError) or _records.today()
+    nxt = _records.check_date(next_review, "Next review", ValidationError)
+    if not nxt or nxt <= on:
+        raise ValidationError("Next review must be a date after the review")
+    plan = get_healthcare_plan(plan_id)
+    if plan is None:
+        raise ValidationError(f"No healthcare plan #{plan_id}")
+    payload: dict[str, Any] = {"last_reviewed": on, "review_date": nxt,
+                               "status": "Active"}
+    if notes and notes.strip():
+        line = f"[{on} review] {notes.strip()}"
+        payload["notes"] = f"{plan.notes}\n{line}" if plan.notes else line
+    return update_healthcare_plan(plan_id, payload)
+
+
+def sign_off_healthcare_plan(plan_id: int, *, who: str,
+                             name: str, role: str | None = None,
+                             signed_on: str | None = None
+                             ) -> HealthcarePlan:
+    """Record parent (``who='parent'``) or clinician sign-off."""
+    on = _records.check_date(signed_on, "Signed on",
+                             ValidationError) or _records.today()
+    if not (name or "").strip():
+        raise ValidationError("Name is required")
+    if who == "parent":
+        payload = {"parent_signed_name": name.strip(),
+                   "parent_signed_on": on}
+    elif who == "clinician":
+        payload = {"clinician_name": name.strip(),
+                   "clinician_role": (role or "").strip() or None,
+                   "clinician_signed_on": on}
+    else:
+        raise ValidationError("Sign-off must be by 'parent' or 'clinician'")
+    return update_healthcare_plan(plan_id, payload)
+
+
+def delete_healthcare_plan(plan_id: int) -> bool:
+    init_db()
+    with _connect() as conn:
+        existing = _records.fetch(conn, PLAN_SPEC, plan_id)
+        if existing is None:
+            return False
+        _med_guard("delete healthcare plan", existing.student_id,
+                   f"ihp:{plan_id}")
+        if existing.condition_id is not None:
+            conn.execute(
+                "UPDATE med_conditions SET care_plan_ref = NULL "
+                "WHERE condition_id = ? AND care_plan_ref = ?",
+                (existing.condition_id, f"IHP-{plan_id}"))
+        ok = _records.delete(conn, PLAN_SPEC, plan_id)
+        conn.commit()
+        return ok
+
+
+@dataclass
+class PlanAttention:
+    plan: HealthcarePlan
+    student_name: str
+    problems: list[str]
+
+
+def plans_needing_attention(*, within_days: int = 0) -> list[PlanAttention]:
+    """Non-archived plans whose review is overdue (or due within
+    *within_days*), or that lack parent / clinician sign-off; plus
+    severe active conditions with no plan at all (reported with a
+    placeholder plan id 0)."""
+    init_db()
+    _med_guard("list plans needing attention")
+    horizon = (_dt.date.today()
+               + _dt.timedelta(days=within_days)).isoformat()
+    today = _records.today()
+    from education_system.systems.sixth_form.domain.learners.students import (
+        students as _students,
+    )
+    names = {s.student_id: s.full_name for s in _students.list_students()}
+    out: list[PlanAttention] = []
+    with _connect() as conn:
+        plans = _records.select(conn, PLAN_SPEC,
+                                where=["status <> 'Archived'"])
+        uncovered = conn.execute(
+            """SELECT c.* FROM med_conditions c
+                WHERE c.active = 1 AND c.severity = 'Severe'
+                  AND NOT EXISTS (
+                      SELECT 1 FROM med_healthcare_plans h
+                       WHERE h.status <> 'Archived'
+                         AND (h.condition_id = c.condition_id
+                              OR (h.student_id = c.student_id
+                                  AND lower(h.condition_name)
+                                      = lower(c.name))))
+                ORDER BY c.student_id""").fetchall()
+    for pl in plans:
+        problems = []
+        if not pl.review_date:
+            problems.append("no review date")
+        elif pl.review_date < today:
+            problems.append(f"review overdue since {pl.review_date}")
+        elif pl.review_date <= horizon:
+            problems.append(f"review due {pl.review_date}")
+        if not pl.parent_signed_on:
+            problems.append("no parent/carer sign-off")
+        if not pl.clinician_signed_on:
+            problems.append("no clinician sign-off")
+        if problems:
+            out.append(PlanAttention(pl, names.get(pl.student_id, "?"),
+                                     problems))
+    for c in uncovered:
+        placeholder = HealthcarePlan(
+            plan_id=0, student_id=c["student_id"],
+            condition_id=c["condition_id"], condition_name=c["name"],
+            status="(none)", triggers=None, symptoms=None, daily_care=None,
+            actions=None, emergency_procedure="", medication_notes=None,
+            staff_training=None, plan_start=None, review_date=None,
+            last_reviewed=None, parent_signed_name=None,
+            parent_signed_on=None, clinician_name=None, clinician_role=None,
+            clinician_signed_on=None, notes=None, created_at=None,
+            updated_at=None)
+        out.append(PlanAttention(placeholder,
+                                 names.get(c["student_id"], "?"),
+                                 ["severe condition has no healthcare plan"]))
+    visible = {x.student_id for x in _records.visible_filter(
+        "MEDICAL", [a.plan for a in out])}
+    return [a for a in out if a.plan.student_id in visible]
+
+
+# ── Stock ─────────────────────────────────────────────────────────
+
+def _medication_owner(conn: sqlite3.Connection, medication_id: int) -> str:
+    r = conn.execute("SELECT student_id FROM med_medications "
+                     "WHERE medication_id = ?", (medication_id,)).fetchone()
+    if r is None:
+        raise ValidationError(f"No medication #{medication_id}")
+    return r["student_id"]
+
+
+def save_stock(data: dict[str, Any]) -> StockItem:
+    """Create or replace the stock line for a medication."""
+    init_db()
+    p = _records.validate(STOCK_SPEC, data, error=ValidationError)
+    with _connect() as conn:
+        p["student_id"] = _medication_owner(conn, p["medication_id"])
+        _med_guard("save medication stock", p["student_id"],
+                   f"med:{p['medication_id']}")
+        existing = conn.execute(
+            "SELECT stock_id FROM med_stock WHERE medication_id = ?",
+            (p["medication_id"],)).fetchone()
+        if existing:
+            sid = existing["stock_id"]
+            _records.update(conn, STOCK_SPEC, sid, p)
+        else:
+            sid = _records.insert(conn, STOCK_SPEC, p)
+        conn.commit()
+        return _records.fetch(conn, STOCK_SPEC, sid)
+
+
+def receive_stock(medication_id: int, quantity: int, *,
+                  expiry_date: str | None = None) -> StockItem:
+    """Add a new supply to stock (creating the line if needed)."""
+    try:
+        qty = int(quantity)
+    except (TypeError, ValueError):
+        raise ValidationError("Quantity must be a whole number") from None
+    if qty <= 0:
+        raise ValidationError("Quantity received must be positive")
+    init_db()
+    with _connect() as conn:
+        r = conn.execute("SELECT * FROM med_stock WHERE medication_id = ?",
+                         (medication_id,)).fetchone()
+    current = _records.to_row(STOCK_SPEC, r) if r else None
+    payload: dict[str, Any] = {
+        "medication_id": medication_id,
+        "quantity": (current.quantity if current else 0) + qty,
+    }
+    for k in ("unit", "location", "reorder_level", "notes"):
+        payload[k] = getattr(current, k) if current else None
+    payload["expiry_date"] = expiry_date or (current.expiry_date
+                                             if current else None)
+    return save_stock(payload)
+
+
+def list_stock(*, student_id: str | None = None,
+               low_only: bool = False,
+               expiring_within_days: int | None = None) -> list[StockItem]:
+    init_db()
+    _med_guard("list medication stock", student_id)
+    where, args = [], []
+    if low_only:
+        where.append("reorder_level IS NOT NULL AND quantity <= reorder_level")
+    if expiring_within_days is not None:
+        where.append("expiry_date IS NOT NULL AND expiry_date <= ?")
+        args.append((_dt.date.today() + _dt.timedelta(
+            days=int(expiring_within_days))).isoformat())
+    with _connect() as conn:
+        rows = _records.select(conn, STOCK_SPEC,
+                               equals={"student_id": student_id},
+                               where=where, args=args)
+    return _records.visible_filter("MEDICAL", rows)
+
+
+def update_stock(stock_id: int, data: dict[str, Any]) -> StockItem:
+    init_db()
+    with _connect() as conn:
+        existing = _records.fetch(conn, STOCK_SPEC, stock_id)
+        if existing is None:
+            raise ValidationError(f"No stock line #{stock_id}")
+        p = _records.validate(STOCK_SPEC, data, error=ValidationError,
+                              existing=existing)
+        _med_guard("update medication stock", existing.student_id,
+                   f"stock:{stock_id}")
+        _records.update(conn, STOCK_SPEC, stock_id, p)
+        conn.commit()
+        return _records.fetch(conn, STOCK_SPEC, stock_id)
+
+
+def delete_stock(stock_id: int) -> bool:
+    init_db()
+    with _connect() as conn:
+        existing = _records.fetch(conn, STOCK_SPEC, stock_id)
+        if existing is None:
+            return False
+        _med_guard("delete medication stock", existing.student_id,
+                   f"stock:{stock_id}")
+        ok = _records.delete(conn, STOCK_SPEC, stock_id)
+        conn.commit()
+        return ok
+
+
+# ── Administration log ────────────────────────────────────────────
+
+def record_administration(data: dict[str, Any]) -> Administration:
+    """Log one administration. When it is linked to a medication on the
+    student's record, the medicine name defaults from it and the stock
+    line (if any) is decremented by ``quantity_used`` for outcomes
+    where the medicine was used."""
+    init_db()
+    p = _records.validate(ADMIN_SPEC, data, error=ValidationError,
+                          student_exists=_student_ok)
+    actor = _med_guard("record medication administration", p["student_id"])
+    p["given_by"] = p["given_by"] or actor.staff_name or actor.username
+    if not p["given_by"]:
+        raise ValidationError("Given by is required")
+    if p["witnessed_by"] and p["witnessed_by"].strip().lower() \
+            == p["given_by"].strip().lower():
+        raise ValidationError("The witness must be a different person")
+    with _connect() as conn:
+        if p["medication_id"] is not None:
+            m = conn.execute(
+                "SELECT student_id, name, dose FROM med_medications "
+                "WHERE medication_id = ?", (p["medication_id"],)).fetchone()
+            if m is None:
+                raise ValidationError(f"No medication #{p['medication_id']}")
+            if m["student_id"] != p["student_id"]:
+                raise ValidationError(
+                    "That medication is on another student's record")
+            p["medicine"] = p["medicine"] or m["name"]
+        if not p["medicine"]:
+            raise ValidationError("Medicine is required")
+        uses_stock = p["outcome"] in ("Given",
+                                      "Self-administered (supervised)",
+                                      "Vomited / spat out")
+        if p["medication_id"] is not None and uses_stock:
+            s = conn.execute(
+                "SELECT stock_id, quantity FROM med_stock "
+                "WHERE medication_id = ?", (p["medication_id"],)).fetchone()
+            if s is not None:
+                left = s["quantity"] - (p["quantity_used"] or 0)
+                if left < 0:
+                    raise ValidationError(
+                        f"Only {s['quantity']} in stock — record the "
+                        "new supply first")
+                conn.execute(
+                    "UPDATE med_stock SET quantity = ?, "
+                    "updated_at = datetime('now') WHERE stock_id = ?",
+                    (left, s["stock_id"]))
+                p["stock_after"] = left
+        new_id = _records.insert(conn, ADMIN_SPEC, p)
+        conn.commit()
+        out = _records.fetch(conn, ADMIN_SPEC, new_id)
+    logger.info("Logged administration #%d of %s to %s (%s)", new_id,
+                p["medicine"], p["student_id"], p["outcome"])
+    return out
+
+
+def list_administrations(*, student_id: str | None = None,
+                         date_from: str | None = None,
+                         date_to: str | None = None,
+                         medication_id: int | None = None
+                         ) -> list[Administration]:
+    init_db()
+    _med_guard("list medication administrations", student_id)
+    where, args = [], []
+    if date_from:
+        where.append("administered_on >= ?")
+        args.append(_records.check_date(date_from, "From", ValidationError))
+    if date_to:
+        where.append("administered_on <= ?")
+        args.append(_records.check_date(date_to, "To", ValidationError))
+    with _connect() as conn:
+        rows = _records.select(conn, ADMIN_SPEC, equals={
+            "student_id": student_id, "medication_id": medication_id},
+            where=where, args=args)
+    return _records.visible_filter("MEDICAL", rows)
+
+
+def update_administration(admin_id: int,
+                          data: dict[str, Any]) -> Administration:
+    """Correct a log entry's details. Stock is not re-calculated; record
+    a stock adjustment separately if the quantity was wrong."""
+    init_db()
+    with _connect() as conn:
+        existing = _records.fetch(conn, ADMIN_SPEC, admin_id)
+    if existing is None:
+        raise ValidationError(f"No administration #{admin_id}")
+    data = {k: v for k, v in data.items()
+            if k not in ("medication_id", "quantity_used")}
+    p = _records.validate(ADMIN_SPEC, data, error=ValidationError,
+                          existing=existing, student_exists=_student_ok)
+    _med_guard("update medication administration", existing.student_id,
+               f"admin:{admin_id}")
+    with _connect() as conn:
+        _records.update(conn, ADMIN_SPEC, admin_id, p)
+        conn.commit()
+        return _records.fetch(conn, ADMIN_SPEC, admin_id)
+
+
+def delete_administration(admin_id: int) -> bool:
+    """Delete a mistaken entry, returning its quantity to stock."""
+    init_db()
+    with _connect() as conn:
+        existing = _records.fetch(conn, ADMIN_SPEC, admin_id)
+        if existing is None:
+            return False
+        _med_guard("delete medication administration", existing.student_id,
+                   f"admin:{admin_id}")
+        if existing.medication_id is not None \
+                and existing.stock_after is not None:
+            conn.execute(
+                "UPDATE med_stock SET quantity = quantity + ?, "
+                "updated_at = datetime('now') WHERE medication_id = ?",
+                (existing.quantity_used or 0, existing.medication_id))
+        ok = _records.delete(conn, ADMIN_SPEC, admin_id)
+        conn.commit()
+        return ok

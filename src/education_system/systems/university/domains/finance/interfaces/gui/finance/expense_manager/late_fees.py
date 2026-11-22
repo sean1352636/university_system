@@ -5,6 +5,7 @@ from tkinter import ttk, messagebox
 from education_system.systems.university.infrastructure.i18n import get_text as _
 from datetime import datetime
 import threading
+from education_system.platform.delivery.gui.tk_threads import start_thread, ui
 
 from education_system.systems.university.infrastructure.database.db import get_connection
 
@@ -74,18 +75,16 @@ class LateFeesMixin:
             try:
                 # Call the original function logic in a thread to avoid blocking UI
                 def calculate_fees():
-                    self.update_status(_("expense_manager.status.calculating_late_fees"))
+                    ui(self.root, self.update_status, _("expense_manager.status.calculating_late_fees"))
                     result = self.calculate_late_fees_backend()
 
-                    messagebox.showinfo(_("expense_manager.dialogs.calculate_late_fees_title"),
-                                       _("expense_manager.messages.late_fees_calculated", count=result['count'], total=result['total']))
+                    ui(self.root, messagebox.showinfo, _("expense_manager.dialogs.calculate_late_fees_title"),
+                       _("expense_manager.messages.late_fees_calculated", count=result['count'], total=result['total']))
 
-                    self.refresh_late_fees()
-                    self.update_status(_("expense_manager.status.late_fees_calculation_completed"))
+                    ui(self.root, self.refresh_late_fees)
+                    ui(self.root, self.update_status, _("expense_manager.status.late_fees_calculation_completed"))
 
-                thread = threading.Thread(target=calculate_fees)
-                thread.daemon = True
-                thread.start()
+                start_thread(self.root, calculate_fees)
 
             except Exception as e:
                 messagebox.showerror(_("common.error"), _("expense_manager.errors.failed_calculate_late_fees", error=e))

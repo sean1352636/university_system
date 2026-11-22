@@ -7,27 +7,34 @@ Education Management System's Flask APIs and SQLite data layer.
 
 ## Prerequisites
 
-1. **Install Locust** (included in `requirements.lock`):
+1. **Install Locust** (included in `requirements-dev.lock`):
    ```bash
-   pip install locust>=2.20.0
+   pip install "locust>=2.20.0"
    # or via the project venv:
-   make install
+   make install-dev
    ```
 
 2. **Start the API server** before running any Locust scenario:
    ```bash
-   make run-api        # college API on http://localhost:5000
-   # or start a specific system:
-   python -m education_system.shared.api.college.api_server
+   make run-api        # unified API on http://localhost:5000
+   # or through the launcher:
+   python -m education_system --api
    ```
    The server must be reachable at the `--host` you supply to Locust.
 
 3. **Seed demo data** so the database has realistic content:
    ```bash
-   make seed
+   python -m education_system --seed 50 --university
    ```
 
 ---
+
+## Before You Run
+
+- Start the server with `EDU_DEV_SEED=true`: the scenarios sign in with the demo accounts in `docs/reference/DEFAULT_ACCOUNTS.md`. A failed login or any non-200 read now counts as a failure.
+- `locustfile.py` and `dashboard_scenario.py` only read. `crud_scenario.py` creates and deletes pupils in the Primary School, so it refuses to start without `LOAD_TEST_ALLOW_WRITES=1`. Never point it at a server holding real data.
+- Login allows 10 requests a minute per IP. Read scenarios sign in once per account and share the token; `auth_scenario.py` tests login itself and treats 429 as expected, so its login numbers are capped by that limit.
+- `auth_scenario.py` locks the `parent1`, `parent2` and `parent3` demo accounts for 15 minutes with its wrong-password logins.
 
 ## How to Run
 
@@ -59,7 +66,7 @@ locust -f tests/performance/load/scenarios/auth_scenario.py \
        --headless -u 20 -r 2 --run-time 30s \
        --host http://localhost:5000
 
-locust -f tests/performance/load/scenarios/crud_scenario.py \
+LOAD_TEST_ALLOW_WRITES=1 locust -f tests/performance/load/scenarios/crud_scenario.py \
        --headless -u 10 -r 1 --run-time 60s \
        --host http://localhost:5000
 
@@ -77,8 +84,8 @@ Locust prints a summary table when a headless run finishes:
 ```
 Name                     # reqs  # fails  |  Avg   Min   Max  Med  |  req/s  failures/s
 ----------------------------------------------------------------------------------------------
-GET /api/health              600       0  |   12     8    95   11  |  10.0     0.00
-GET /api/students            300       2  |  148    45   890  130  |   5.0     0.03
+GET health                   600       0  |   12     8    95   11  |  10.0     0.00
+GET university learners      300       2  |  148    45   890  130  |   5.0     0.03
 ...
 ```
 
@@ -104,7 +111,7 @@ load with a 5 users/s ramp-up:
 
 | Endpoint category              | p50 target | p95 target  | p99 target  |
 |--------------------------------|-----------|-------------|-------------|
-| Dashboard data (`/api/dashboard-*`) | <200 ms | **<500 ms** | <1 000 ms  |
+| Dashboard data (`dashboard`, KPI panels) | <200 ms | **<500 ms** | <1 000 ms  |
 | API CRUD (students, courses, grades) | <100 ms | **<200 ms** | <500 ms   |
 | Reports / exports              | <500 ms   | **<1 000 ms**| <2 000 ms  |
 | Auth (login / token check)     | <100 ms   | **<250 ms** | <500 ms    |

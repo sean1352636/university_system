@@ -15,8 +15,8 @@ def _setup(tmp_path, monkeypatch):
     fe_db = tmp_path / "fe.db"
     monkeypatch.setattr(students, "DB_PATH", sixth_db)
     monkeypatch.setattr(students, "_DB_READY", False)
-    monkeypatch.setattr(students, "_provision_login_account", lambda _student: None)
-    monkeypatch.setattr(students, "_send_welcome_email", lambda _student: None)
+    monkeypatch.setattr(students, "_provision_login_account", lambda *_a, **_k: None)
+    monkeypatch.setattr(students, "_send_welcome_email", lambda *_a, **_k: None)
     persistence.set_db_path(fe_db)
     initialise_auth_db(auth_db)
     identity_service._initialised.discard(auth_db)

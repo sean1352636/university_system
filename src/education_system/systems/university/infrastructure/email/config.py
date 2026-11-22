@@ -75,7 +75,8 @@ def get_smtp_password(username: Optional[str] = None) -> str:
     Attempts to retrieve the password in order of preference:
     1. Environment variable (SMTP_PASSWORD)
     2. System keyring (if available)
-    3. Returns empty string if no secure source available
+    3. The owner-only file ``var/secrets/smtp_password``
+    4. Returns empty string if no secure source available
 
     Args:
         username: Optional SMTP username for keyring lookup.
@@ -97,7 +98,12 @@ def get_smtp_password(username: Optional[str] = None) -> str:
         if keyring_password:
             return keyring_password
 
-    return ''
+    # Priority 3: the owner-only secrets file shared with the platform
+    try:
+        from education_system.platform.integrations.email.config import read_secret_file
+        return read_secret_file()
+    except ImportError:
+        return ''
 
 
 def set_smtp_password(username: str, password: str) -> bool:
@@ -163,6 +169,12 @@ config: Dict[str, Any] = {
     # When ``database_only_mode`` is True, outbound emails are queued
     # instead of being sent via SMTP.
     'database_only_mode': True,
+    # How the outbox delivers: 'inbox_only' (nothing leaves the system),
+    # 'sandbox' (.eml files under var/) or 'live' (SMTP). Empty = derived
+    # from database_only_mode. See infrastructure/email/outbox_delivery.
+    'delivery_mode': '',
+    # SMTP login name as the shared config file spells it.
+    'smtp_username': '',
     # Path to the directory where email templates are stored.  This
     # will be resolved relative to the project root at runtime.
     'templates_dir': 'templates/email',

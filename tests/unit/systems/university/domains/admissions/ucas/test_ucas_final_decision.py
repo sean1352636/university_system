@@ -75,7 +75,9 @@ class TestRecording:
         self._offer(ucas_env)
         ucas_env.uni_ucas.record_final_decision(
             ucas_env.our_choice_id, "Firm")
-        stored = ucas_env.sf_ucas.get_choice(ucas_env.our_choice_id)
+        # The decision as the university holds it (the sixth form's copy
+        # follows by event, see test_ucas_decisions).
+        stored = ucas_env.uni_ucas._sf().get_choice(ucas_env.our_choice_id)
         assert stored.decision_status == "Conditional Offer"
         assert stored.offer_terms == "ABB including B in Mathematics"
 
@@ -157,7 +159,7 @@ class TestEmailBody:
             rendered.append({"name": name, **context})
             return type("M", (), {"message_id": 1})()
 
-        import education_system.systems.sixth_form.domain.operations.communications.messages.email_templates as tpl
+        import education_system.systems.sixth_form.domains.communications.domain.messages.email_templates as tpl
         monkeypatch.setattr(tpl, "send_from_template", _capture)
 
         ucas_env.uni_ucas.record_decision(

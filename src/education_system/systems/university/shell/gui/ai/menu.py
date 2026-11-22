@@ -51,14 +51,25 @@ class MenuMixin:
         actions_menu.add_command(
             label=_t("chatbot.book_room_menu", default="Book a Room…"),
             command=self.show_book_room_dialog)
+        actions_menu.add_separator()
+        actions_menu.add_command(label="Speak to a person…", command=self.speak_to_person)
+        actions_menu.add_command(label="My questions to staff", command=self.show_my_cases)
+        actions_menu.add_separator()
+        actions_menu.add_command(label="Download my conversations…",
+                                 command=self.download_my_conversations)
+        actions_menu.add_command(label="Delete my conversations…",
+                                 command=self.delete_my_conversations)
 
         # View menu
         view_menu = tk.Menu(menubar, tearoff=0)
         menubar.add_cascade(label=_t('gui.shell.ai.menu.menus.view', default="View"), menu=view_menu)
         view_menu.add_command(label=_t('gui.shell.ai.menu.menus.chat', default="Chat"), command=self.show_chat_screen)
         view_menu.add_command(label=_t('gui.shell.ai.menu.menus.settings', default="Settings"), command=self.show_settings_screen)
-        if self.current_user and self.current_user.get('role') in ['admin', 'staff']:
+        if self.current_user and self.current_user.get('role') == 'admin':
             view_menu.add_command(label=_t('gui.shell.ai.menu.menus.admin_panel', default="Admin Panel"), command=self.show_admin_panel)
+        from education_system.systems.university.shell.gui.ai.screens import staff_care
+        if staff_care.permitted_tabs(self):
+            view_menu.add_command(label="Chatbot staff desk", command=self.open_staff_desk)
 
         # Help menu
         help_menu = tk.Menu(menubar, tearoff=0)
@@ -66,6 +77,7 @@ class MenuMixin:
         help_menu.add_command(label=_t('gui.shell.ai.menu.menus.user_guide', default="User Guide"), command=self.show_user_guide)
         help_menu.add_command(label=_t('gui.shell.ai.menu.menus.keyboard_shortcuts', default="Keyboard Shortcuts"), command=self.show_shortcuts)
         help_menu.add_command(label=_t('gui.shell.ai.menu.menus.about', default="About"), command=self.show_about_dialog)
+        help_menu.add_command(label="Privacy notice", command=self.show_privacy_notice)
 
     def clear_chat_history(self):
         """Clear the chat transcript and reset the conversation context."""

@@ -2,9 +2,9 @@
 
 Reference for the two systems that arrived from the
 `college_and_apprenticeships` starter project. They have since diverged:
-**apprenticeships** is built and running; **fe_college** is still a
-docstring skeleton. Everything below describes apprenticeships unless it
-says otherwise.
+both are built and running, and each is registered with the launcher,
+shared auth, `paths` and the unified API. Everything below describes
+apprenticeships unless it says otherwise.
 
 For the domain itself — roles, gateway, EPA, off-the-job rules — see
 [`docs/apprenticeships/apprenticeship_system.md`](../../apprenticeships/apprenticeship_system.md).
@@ -16,7 +16,7 @@ The house 4-layer shape, with one addition:
 ```
 interfaces/    CLI, GUI  (HTTP routes live outside, see below)
     ↓
-services/      Actor-first orchestration. The only write path.
+application/   Actor-first use cases, by area. The only write path.
     ↓
 infrastructure/persistence/repositories/    SQL in, dataclasses out
     ↓
@@ -42,8 +42,8 @@ and the read-only university gateway — are infrastructure, in
 
 | Concern | Module |
 |---|---|
-| Roles, permissions, every closed vocabulary | `config.py` |
-| Who is asking, and what they may see | `services/access.py` |
+| Roles, permissions, every closed vocabulary | `config/__init__.py` |
+| Who is asking, and what they may see | `application/security/access.py` |
 | Filesystem paths | `education_system/paths.py` (`APPRENTICESHIPS_` prefix) |
 | Schema and connections | `infrastructure/persistence/schema.py` |
 | Shared SQL helpers | `infrastructure/persistence/repositories/base.py` |
@@ -79,6 +79,8 @@ is backed by a service. There is no web portal.
 
 ## fe_college
 
-Every module is a docstring stub, laid out in the shape above. It is
-registered with nothing — not the launcher, not shared auth, not
-`paths`, not the unified API. See [`docs/fe_college/`](../../fe_college/).
+A working system in its own strict 4-layer shape: `domain/`,
+`infrastructure/persistence/`, `services/` and `interfaces/`, with
+top-level `cli_main.py` and `gui_main.py`. Its HTTP routes are in
+`src/education_system/api/fe_college/`, and answer 501 until each is
+backed by a service. See [`docs/fe_college/`](../../fe_college/).

@@ -28,7 +28,7 @@ class AdminToolsGUI:
             self._create_content(self.tab)
         else:
             self.root.title(_t('gui.staff.staff_hr.admin_tools_gui_parts.admintoolsgui_init.windows.administrative_tools', default="Administrative Tools"))
-            self.root.geometry("1400x800")
+            self.root.geometry("1400x900")
             self._create_content(self.root)
 
     def _create_content(self, parent):
@@ -40,6 +40,17 @@ class AdminToolsGUI:
         self._create_requests_tab()
         self._create_keys_access_tab()
         self._create_visitors_tab()
+        from education_system.systems.university.domains.staff.interfaces.gui.staff_hr import _access as _hr
+        if _hr.can(self, 'hr_admin'):
+            self._create_hr_roles_tab()
+
+    def _create_hr_roles_tab(self):
+        """HR Roles (HR administrators): role holders, grant/revoke, audit trail."""
+        from education_system.systems.university.domains.staff.interfaces.gui.staff_hr.hr_roles_gui import HRRolesPanel
+        from tkinter import ttk
+        self.hr_roles_tab = ttk.Frame(self.notebook)
+        self.notebook.add(self.hr_roles_tab, text=_t('gui.staff.staff_hr.admin_tools_gui_parts.admintoolsgui_init.tabs.hr_roles', default="HR Roles"))
+        self.hr_roles_panel = HRRolesPanel(self.hr_roles_tab, self.auth)
 
     def _create_document_approvals_tab(self):
         """Create document approvals tab."""

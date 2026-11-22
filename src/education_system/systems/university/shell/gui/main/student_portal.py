@@ -149,6 +149,7 @@ class StudentPortalGUI(SidebarNavMixin):
         self._add_button("Office Hours", self._launch('show_office_hours_gui'))
         self._add_button("Student Registration", self._launch('show_student_registration_gui'))
         self._add_button("Academic Progress", self._launch('show_academic_progress_gui'))
+        self._add_button("My Progression Outcome", self._open_my_progression)
         self._add_button("Course Catalog", self._open_course_catalog)
         self._add_button("Course Planning", self._launch('show_course_planning_gui'))
         self._add_button("To-Do", self._launch('show_todo_app_gui'))
@@ -186,16 +187,24 @@ class StudentPortalGUI(SidebarNavMixin):
 
         # Support
         self._add_heading("Support")
+        self._add_button("Student Handbook", self._launch('show_student_handbook'))
         self._add_button("Helpdesk", self._open_helpdesk)
         self._add_button("Career Services", self._launch('show_career_services_gui'))
         self._add_button("Internship Portal", self._open_internship_portal)
         self._add_button("Advising Portal", self._launch('show_advising_portal_gui'))
         self._add_button("Student Support", self._open_student_support)
+        # Own counselling referral, Support to Study case, trusted contacts, PEEP.
+        self._add_button("Wellbeing Casework", lambda: __import__(
+            "education_system.systems.university.domains.student_support.interfaces.gui."
+            "wellbeing.casework.hub", fromlist=["open_casework"]).open_casework(
+                self.root, self.auth))
         self._add_button("Accessibility", self._open_accessibility)
         self._add_button("Equality & Diversity", self._launch('show_equality_diversity_gui'))
         self._add_button("Feedback", self._launch('show_feedback_system_gui'))
         self._add_button("Complaints Portal",
                          self._launch('show_new_feature_complaints_portal'))
+        self._add_button("Academic Appeals",
+                         self._launch('show_new_feature_academic_appeals'))
 
         # Portfolio & Achievements
         self._add_heading("Portfolio")
@@ -216,7 +225,7 @@ class StudentPortalGUI(SidebarNavMixin):
     def _open_chatbot(self):
         """Open the University Chatbot assistant in its own window."""
         try:
-            from education_system.systems.university.infrastructure.ai.university_chatbot import (
+            from education_system.systems.university.shared.ai.chatbot import (
                 UniversityChatbot,
             )
             from education_system.systems.university.shell.gui.ai.chatbot_gui import (
@@ -253,7 +262,7 @@ class StudentPortalGUI(SidebarNavMixin):
 
     def _open_grade_tracking_portal(self):
         try:
-            from education_system.systems.university.domains.academics.interfaces.gui.grade_tracking.grade_tracking_app import (
+            from education_system.systems.university.domains.assessment.interfaces.gui.grade_tracking.grade_tracking_app import (
                 GradeTrackingApp,
             )
             GradeTrackingApp(tk.Toplevel(self.root), self.auth)
@@ -263,7 +272,7 @@ class StudentPortalGUI(SidebarNavMixin):
 
     def _open_assignments_portal(self):
         try:
-            from education_system.systems.university.domains.academics.interfaces.gui.assignment_system.assignment_gui import (
+            from education_system.systems.university.domains.assessment.interfaces.gui.assignment_system.assignment_gui import (
                 display_assignment_menu_gui,
             )
             display_assignment_menu_gui(self.auth)
@@ -273,7 +282,7 @@ class StudentPortalGUI(SidebarNavMixin):
 
     def _open_course_management_portal(self):
         try:
-            from education_system.systems.university.domains.academics.interfaces.gui.course_management_gui.core.main_gui import (
+            from education_system.systems.university.domains.curriculum.interfaces.gui.course_management_gui.core.main_gui import (
                 CourseManagementGUI,
             )
             CourseManagementGUI(tk.Toplevel(self.root), auth_system=self.auth)
@@ -284,7 +293,7 @@ class StudentPortalGUI(SidebarNavMixin):
 
     def _open_course_catalog(self):
         try:
-            from education_system.systems.university.domains.academics.interfaces.gui.course_catalog.course_catalog_gui import (
+            from education_system.systems.university.domains.curriculum.interfaces.gui.course_catalog.course_catalog_gui import (
                 CourseCatalogGUI,
             )
             CourseCatalogGUI(self.root, auth=self.auth)
@@ -294,7 +303,7 @@ class StudentPortalGUI(SidebarNavMixin):
 
     def _open_library_portal(self):
         try:
-            from education_system.systems.university.domains.academics.interfaces.gui.library.base import (
+            from education_system.systems.university.domains.library.interfaces.gui.library.base import (
                 LibraryGUI,
             )
             LibraryGUI(tk.Toplevel(self.root), self.auth)
@@ -304,7 +313,7 @@ class StudentPortalGUI(SidebarNavMixin):
 
     def _open_calendar_portal(self):
         try:
-            from education_system.systems.university.domains.academics.interfaces.gui.academic_calendar.main_gui import (
+            from education_system.systems.university.domains.teaching.interfaces.gui.academic_calendar.main_gui import (
                 CalendarGUI,
             )
             CalendarGUI(auth_manager=self.auth, parent_window=tk.Toplevel(self.root))
@@ -314,7 +323,7 @@ class StudentPortalGUI(SidebarNavMixin):
 
     def _open_health_portal(self):
         try:
-            from education_system.systems.university.domains.pastoral.interfaces.gui.health.health_portal.main import (
+            from education_system.systems.university.domains.health.interfaces.gui.health.health_portal.main import (
                 HealthPortalGUI,
             )
             HealthPortalGUI(tk.Toplevel(self.root), auth_system=self.auth)
@@ -324,7 +333,7 @@ class StudentPortalGUI(SidebarNavMixin):
 
     def _open_student_union_portal(self):
         try:
-            from education_system.systems.university.domains.pastoral.interfaces.gui.student_union_gui import (
+            from education_system.systems.university.domains.student_life.interfaces.gui.student_union_gui import (
                 StudentUnionGUI,
             )
             StudentUnionGUI(parent=tk.Toplevel(self.root), auth=self.auth)
@@ -341,7 +350,7 @@ class StudentPortalGUI(SidebarNavMixin):
 
     def _open_clubs_portal(self):
         try:
-            from education_system.systems.university.domains.pastoral.interfaces.gui.student_union_gui import (
+            from education_system.systems.university.domains.student_life.interfaces.gui.student_union_gui import (
                 StudentUnionGUI,
             )
             StudentUnionGUI(parent=tk.Toplevel(self.root), auth=self.auth)
@@ -351,7 +360,7 @@ class StudentPortalGUI(SidebarNavMixin):
 
     def _open_student_jobs_portal(self):
         try:
-            from education_system.systems.university.domains.pastoral.interfaces.gui.student_jobs.jobs_gui import (
+            from education_system.systems.university.domains.student_life.interfaces.gui.student_jobs.jobs_gui import (
                 StudentJobsGUI,
             )
             StudentJobsGUI(parent=self.root, auth=self.auth)
@@ -411,7 +420,7 @@ class StudentPortalGUI(SidebarNavMixin):
 
     def _open_helpdesk(self):
         try:
-            from education_system.systems.university.domains.pastoral.interfaces.gui.helpdesk.base import (
+            from education_system.systems.university.domains.student_support.interfaces.gui.helpdesk.base import (
                 HelpdeskGUI,
             )
             HelpdeskGUI(tk.Toplevel(self.root), self.auth)
@@ -421,7 +430,7 @@ class StudentPortalGUI(SidebarNavMixin):
 
     def _open_internship_portal(self):
         try:
-            from education_system.systems.university.domains.pastoral.interfaces.gui.internship_management.internship_gui import (
+            from education_system.systems.university.domains.student_life.interfaces.gui.internship_management.internship_gui import (
                 InternshipGUI,
             )
             InternshipGUI(tk.Toplevel(self.root), auth_object=self.auth)
@@ -431,7 +440,7 @@ class StudentPortalGUI(SidebarNavMixin):
 
     def _open_student_support(self):
         try:
-            from education_system.systems.university.domains.pastoral.interfaces.gui.student_support import (
+            from education_system.systems.university.domains.student_support.interfaces.gui.student_support import (
                 StudentSupportGUI,
             )
             StudentSupportGUI(tk.Toplevel(self.root), auth_system=self.auth)
@@ -439,9 +448,19 @@ class StudentPortalGUI(SidebarNavMixin):
             logger.error(f"Error opening student support: {e}")
             messagebox.showerror(_t('gui.shell.main.student_portal.dialogs.error', default="Error"), f"Failed to open Student Support: {e}")
 
+    def _open_my_progression(self):
+        try:
+            from education_system.systems.university.domains.assessment.interfaces.gui.boards.assessment_boards_gui import (
+                open_my_outcomes,
+            )
+            open_my_outcomes(self.root, self.auth)
+        except Exception as e:
+            logger.error(f"Error opening progression outcome: {e}")
+            messagebox.showerror(_t('gui.shell.main.student_portal.dialogs.error', default="Error"), f"Failed to open My Progression Outcome: {e}", parent=self.root)
+
     def _open_accessibility(self):
         try:
-            from education_system.systems.university.domains.pastoral.interfaces.gui.accessibility_tools_gui import (
+            from education_system.systems.university.domains.student_support.interfaces.gui.accessibility_tools_gui import (
                 AccessibilityToolsGUI,
             )
             AccessibilityToolsGUI(self.root, self.auth)
@@ -525,7 +544,7 @@ class StudentPortalGUI(SidebarNavMixin):
 
         try:
             from education_system.systems.university.shell.gui.main.dashboard.student_dashboard import create_student_dashboard
-            from education_system.systems.university.services.dashboard.dashboard_service import DashboardService
+            from education_system.systems.university.shared.analytics.dashboard.dashboard_service import DashboardService
             service = DashboardService()
             create_student_dashboard(self.content_frame, self.auth, service,
                                      main_gui=self._get_backend_gui)

@@ -89,8 +89,20 @@ _QUICK_SEARCH_COLUMNS = ("student_id", "first_name", "middle_name", "last_name",
 DEFAULT_PAGE_SIZE = 100
 
 
+#: Status filter on the records list -> lower-cased statuses it shows.
+STATUS_GROUPS = {
+    "Current students": ("active", "registration pending", "interrupted", "suspended",
+                         "deferred", "enrolled"),
+    "Active": ("active", "enrolled"),
+    "Interrupted / suspended / deferred": ("interrupted", "suspended", "deferred"),
+    "Withdrawn": ("withdrawn",),
+    "Completed / closed": ("completed", "closed", "graduated"),
+    "All students": None,
+}
+
+
 def _load_students_into(self, tree, *, search_term=None, search_field=None,
-                        quick_search=None, limit=None, offset=0):
+                        quick_search=None, limit=None, offset=0, status_group=None):
     """Single canonical loader for the records list treeview.
 
     Used by ``view_students`` (legacy panel hook used by
@@ -172,6 +184,13 @@ def _load_students_into(self, tree, *, search_term=None, search_field=None,
                 params.append(f"%{term}%")
             joined = " OR ".join(clauses)
             where = f"{where} AND ({joined})" if where else f"WHERE ({joined})"
+
+        statuses = STATUS_GROUPS.get(status_group) if status_group else None
+        if statuses:
+            clause = (f"LOWER(COALESCE(status, 'active')) IN "
+                      f"({', '.join('?' for _ in statuses)})")
+            params.extend(statuses)
+            where = f"{where} AND {clause}" if where else f"WHERE {clause}"
 
         cursor = conn.cursor()
         # Total before paging, so the pager can say "of N".
@@ -302,23 +321,51 @@ def _build_student_records(self, host, close_action):
     ttk.Label(main_frame, text=_t("student.records_management"),
              font=('Arial', 14, 'bold')).pack(pady=(0, 20))
 
-    # Action buttons frame
+    # Action buttons on two rows so they fit the content area beside the
+    # main GUI's sidebar: general actions, then actions on the selected
+    # student (and admin tools).
     button_frame = ttk.Frame(main_frame)
-    button_frame.pack(fill=tk.X, pady=(0, 10))
+    button_frame.pack(fill=tk.X, pady=(0, 4))
+    student_bar = ttk.Frame(main_frame)
+    student_bar.pack(fill=tk.X, pady=(0, 10))
 
     ttk.Button(button_frame, text=_t("student.create_student"),
               command=self.create_student_dialog).pack(side=tk.LEFT, padx=5)
-    if self.auth and self.auth.check_permission('delete_any_student'):
-        ttk.Button(button_frame,
-                   text=_t("student.delete_student", default="Delete Student"),
-                   command=lambda: self.delete_selected_student(tree)).pack(
-            side=tk.LEFT, padx=5)
     ttk.Button(button_frame, text=_t("student.export_data"),
               command=self.export_data_dialog).pack(side=tk.LEFT, padx=5)
     ttk.Button(button_frame, text=_t("gui.refresh"),
               command=lambda: self.view_students_in_window(tree)).pack(side=tk.LEFT, padx=5)
     ttk.Button(button_frame, text=_t("gui.close"),
               command=close_action).pack(side=tk.RIGHT, padx=5)
+
+    def _with_selected(action):
+        sid = _selected_student_id(self, tree)
+        if not sid:
+            messagebox.showinfo(_t("student.records"), "Select a student first.")
+            return
+        if action(self, sid) and getattr(self, "_reload_records_page", None):
+            self._reload_records_page()
+
+    from .student_crud_gui import records_tools
+    ttk.Label(student_bar, text="Selected student:").pack(side=tk.LEFT, padx=(5, 4))
+    if self.auth and self.auth.check_permission('delete_any_student'):
+        ttk.Button(student_bar, text="Withdraw…",
+                   command=lambda: self.delete_selected_student(tree)).pack(
+            side=tk.LEFT, padx=3)
+    ttk.Button(student_bar, text="Reinstate…",
+               command=lambda: _with_selected(records_tools.reinstate_student)).pack(
+        side=tk.LEFT, padx=3)
+    ttk.Button(student_bar, text="Change history",
+               command=lambda: _with_selected(records_tools.show_change_history)).pack(
+        side=tk.LEFT, padx=3)
+    if self.auth and self.auth.check_permission('delete_any_student'):
+        from .student_crud_gui.erasure import manage_erasure_requests
+        ttk.Button(student_bar, text="Erasure requests",
+                   command=lambda: manage_erasure_requests(self)).pack(side=tk.RIGHT, padx=3)
+    if self.auth and self.auth.check_permission('update_any_student'):
+        ttk.Button(student_bar, text="Data check",
+                   command=lambda: records_tools.data_check_dialog(self)).pack(
+            side=tk.RIGHT, padx=3)
 
     # Inline search bar — replaces the modal search dialog. Filters the
     # currently-loaded rows in-memory on KeyRelease so the result set
@@ -329,7 +376,7 @@ def _build_student_records(self, host, close_action):
     search_bar.pack(fill=tk.X, pady=(0, 6))
     ttk.Label(search_bar, text=_t("student.search_term")).pack(side=tk.LEFT, padx=(0, 6))
     search_var = tk.StringVar()
-    search_entry = ttk.Entry(search_bar, textvariable=search_var, width=40)
+    search_entry = ttk.Entry(search_bar, textvariable=search_var, width=28)
     search_entry.pack(side=tk.LEFT)
     status_var = tk.StringVar(value="")
     ttk.Label(search_bar, textvariable=status_var,
@@ -337,6 +384,11 @@ def _build_student_records(self, host, close_action):
     ttk.Button(search_bar, text="✕",
                command=lambda: search_var.set(""),
                width=3).pack(side=tk.LEFT, padx=(6, 0))
+    ttk.Label(search_bar, text="Show").pack(side=tk.LEFT, padx=(16, 4))
+    status_group = ttk.Combobox(search_bar, values=list(STATUS_GROUPS), state="readonly",
+                                width=26)
+    status_group.set("Current students")
+    status_group.pack(side=tk.LEFT)
 
     # Create student list interface
     records_frame = ttk.LabelFrame(main_frame, text=_t("student.records"), padding="10")
@@ -445,8 +497,10 @@ def _build_student_records(self, host, close_action):
     state = {"page": 0, "size": DEFAULT_PAGE_SIZE, "total": 0, "after": None}
     self._records_pager = state          # so refreshes can reuse the page
 
+    # Packed at the bottom, before the expanding list is laid out, so the
+    # list gives up height first and the pager stays visible.
     pager = ttk.Frame(main_frame)
-    pager.pack(fill=tk.X, pady=(4, 0))
+    pager.pack(side=tk.BOTTOM, fill=tk.X, pady=(4, 0), before=records_frame)
     prev_btn = ttk.Button(pager, text="◀ Prev", width=9)
     prev_btn.pack(side=tk.LEFT)
     next_btn = ttk.Button(pager, text="Next ▶", width=9)
@@ -472,13 +526,13 @@ def _build_student_records(self, host, close_action):
         # AttributeError and the Student Records tab failed to build.
         term = (search_var.get() or "").strip()
         state["total"] = _load_students_into(
-            self, tree, quick_search=term or None,
+            self, tree, quick_search=term or None, status_group=status_group.get(),
             limit=state["size"], offset=state["page"] * state["size"]) or 0
         # A search (or a deletion) can leave us past the end.
         if state["page"] >= _pages():
             state["page"] = _pages() - 1
             state["total"] = _load_students_into(
-                self, tree, quick_search=term or None,
+                self, tree, quick_search=term or None, status_group=status_group.get(),
                 limit=state["size"], offset=state["page"] * state["size"]) or 0
         shown = len(tree.get_children(""))
         first = state["page"] * state["size"] + 1 if shown else 0
@@ -528,6 +582,7 @@ def _build_student_records(self, host, close_action):
             _run()
 
     search_var.trace_add("write", _on_search)
+    status_group.bind("<<ComboboxSelected>>", lambda _e: _on_search())
     search_entry.bind("<Escape>", lambda _e: search_var.set(""))
 
     # Refresh re-runs the current page rather than reloading everything.
@@ -1146,7 +1201,7 @@ def show_student_details(self, student_id):
         notebook.add(library_tab, text=_t('gui.learners.students.student_records.tabs.library', default="📚 Library"))
 
         def _build_library_tab(tab):
-            from education_system.systems.university.domains.academics.interfaces.gui.library.cross_module_api import (
+            from education_system.systems.university.domains.library.interfaces.gui.library.cross_module_api import (
                 LibrarySummaryFrame,
             )
             LibrarySummaryFrame(
@@ -1696,8 +1751,8 @@ def _build_student_summary(tab, student_id, na,
             pass
         try:
             row = conn.execute(
-                "SELECT COUNT(*) FROM academic_misconduct_cases "
-                "WHERE student_id = ? AND COALESCE(status, '') != 'Closed'",
+                "SELECT COUNT(*) FROM integrity_cases "
+                "WHERE student_id = ? AND COALESCE(stage, 'referred') != 'closed'",
                 (str(student_id),)
             ).fetchone()
             if row:
@@ -1707,7 +1762,7 @@ def _build_student_summary(tab, student_id, na,
             pass
         conn.close()
         if case_seen:
-            case_sub = "open disciplinary + AM cases"
+            case_sub = "open disciplinary + integrity cases"
             if open_cases > 0:
                 case_color = "#b00020"
             else:

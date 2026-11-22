@@ -89,7 +89,7 @@ This module provides comprehensive CRUD (Create, Read, Update, Delete) operation
 ## Functions Exported
 
 ```python
-from university_system.modules.shared.gui.main.staff import (
+from education_system.systems.university.shell.gui.main.staff import (
     create_staff_dialog,    # Create new staff member
     update_staff_dialog,    # Update existing staff
     view_staff,             # View all staff in tree
@@ -149,7 +149,7 @@ CREATE TABLE users (
 # 4. Fill in the form and submit
 
 # Programmatic usage (if needed)
-from university_system.modules.shared.gui.main import UnifiedManagementGUI
+from education_system.systems.university.shell.gui.main import UnifiedManagementGUI
 
 # Create GUI instance
 app = UnifiedManagementGUI(auth_manager)
@@ -191,7 +191,7 @@ Test the module with:
 
 ```bash
 # Run GUI
-python -m education_system --gui
+python -m education_system --university --gui
 
 # Login as staff/admin
 # Navigate to Human Resources
@@ -209,7 +209,7 @@ python -m education_system --gui
 
 ## Support
 
-For detailed documentation, see: `/university_system/STAFF_CRUD_GUIDE.md`
+For detailed documentation, see: `docs/university/guides/administration/STAFF_CRUD_GUIDE.md`
 
 ---
 

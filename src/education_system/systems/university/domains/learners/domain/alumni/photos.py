@@ -16,11 +16,11 @@ def view_my_photos():
         cursor = conn.cursor()
 
         cursor.execute('''
-            SELECT photo_id, title, upload_date, status
-            FROM alumni_photos
-            WHERE user_id = ?
+            SELECT photo_id, COALESCE(caption, ''), upload_date, COALESCE(status, 'pending')
+            FROM photo_gallery
+            WHERE uploaded_by = ?
             ORDER BY upload_date DESC
-        ''', (auth.current_user['user_id'],))
+        ''', (auth.current_user.get('username'),))
 
         photos = cursor.fetchall()
         conn.close()
@@ -53,8 +53,8 @@ def moderate_photos():
         cursor = conn.cursor()
 
         cursor.execute('''
-            SELECT photo_id, title, user_id, upload_date, status
-            FROM alumni_photos
+            SELECT photo_id, COALESCE(caption, ''), uploaded_by, upload_date, status
+            FROM photo_gallery
             WHERE status = 'pending'
             ORDER BY upload_date ASC
         ''')
@@ -76,11 +76,11 @@ def moderate_photos():
             action = input("Action (approve/reject/skip): ").lower()
 
             if action == 'approve':
-                cursor.execute('UPDATE alumni_photos SET status = "approved" WHERE photo_id = ?', (photo[0],))
+                cursor.execute("UPDATE photo_gallery SET status = 'approved' WHERE photo_id = ?", (photo[0],))
                 print(f"Photo {photo[0]} approved.")
             elif action == 'reject':
                 reason = input("Enter rejection reason: ")
-                cursor.execute('UPDATE alumni_photos SET status = "rejected" WHERE photo_id = ?', (photo[0],))
+                cursor.execute("UPDATE photo_gallery SET status = 'rejected' WHERE photo_id = ?", (photo[0],))
                 print(f"Photo {photo[0]} rejected.")
             elif action == 'skip':
                 continue
@@ -117,9 +117,9 @@ def manage_photo_gallery():
     elif choice == '2':
         upload_photos(cursor)
     elif choice == '3':
-        view_my_photos(cursor)
+        view_my_photos()
     elif choice == '4' and auth.check_permission('manage_content'):
-        moderate_photos(cursor)
+        moderate_photos()
     else:
         print("Invalid choice.")
 

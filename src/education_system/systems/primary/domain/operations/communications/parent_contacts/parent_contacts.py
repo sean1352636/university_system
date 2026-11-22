@@ -17,6 +17,7 @@ import sqlite3
 from dataclasses import dataclass
 from typing import Any
 from education_system import paths
+from education_system.systems.primary.infrastructure.schema_repair import repair_links
 
 logger = logging.getLogger(__name__)
 
@@ -67,7 +68,7 @@ CREATE TABLE IF NOT EXISTS parent_contacts (
     notes             TEXT,
     created_at        TEXT DEFAULT (datetime('now')),
     updated_at        TEXT DEFAULT (datetime('now')),
-    FOREIGN KEY (student_id) REFERENCES students(student_id) ON DELETE CASCADE
+    FOREIGN KEY (student_id) REFERENCES pupils(pupil_id) ON DELETE CASCADE
 );
 
 CREATE INDEX IF NOT EXISTS idx_pc_student ON parent_contacts(student_id);
@@ -130,6 +131,7 @@ def init_db() -> None:
         return
     from education_system.systems.primary.domain import _pupils_bridge as _students
     _students.init_db()
+    repair_links(DB_PATH)
     with _connect() as conn:
         conn.executescript(_SCHEMA)
     logger.debug("Parent-contacts schema ready at %s", DB_PATH)
@@ -355,7 +357,7 @@ def list_contacts_with_detail(**kwargs) -> list[ContactRow]:
     rows = list_contacts(**kwargs)
     if not rows:
         return []
-        from education_system.systems.primary.domain import _pupils_bridge as _students
+    from education_system.systems.primary.domain import _pupils_bridge as _students
     names = {s.student_id: s.full_name for s in _students.list_students()}
     return [ContactRow(contact=c,
                         student_name=names.get(c.student_id, "(unknown)"))

@@ -1,3 +1,4 @@
+from education_system.systems.university.plugins.campus_commerce.domain.services.restaurant.operations.user_access import can as restaurant_can
 from education_system.systems.university.infrastructure.auth import UserAuth, display_auth_menu
 from education_system.systems.university.infrastructure.database.data_backup import display_backup_menu, backup_before_operation
 from education_system.systems.university.infrastructure.email import send_confirmation_email
@@ -127,7 +128,7 @@ def add_new_supplier():
         print("You must be logged in to add suppliers.")
         return
 
-    if not auth.check_permission('manage_inventory'):
+    if not restaurant_can(auth, 'manage_inventory'):
         print("You don't have permission to add suppliers.")
         return
 
@@ -205,7 +206,7 @@ def update_supplier():
         print("You must be logged in to update suppliers.")
         return
 
-    if not auth.check_permission('manage_inventory'):
+    if not restaurant_can(auth, 'manage_inventory'):
         print("You don't have permission to update suppliers.")
         return
 
@@ -1194,7 +1195,7 @@ def add_inventory_item():
         print("You must be logged in to add inventory items.")
         return
 
-    if not auth.check_permission('manage_inventory'):
+    if not restaurant_can(auth, 'manage_inventory'):
         print("You don't have permission to add inventory items.")
         return
 
@@ -1350,7 +1351,7 @@ def update_stock_levels():
         print("You must be logged in to update stock levels.")
         return
 
-    if not auth.check_permission('manage_inventory'):
+    if not restaurant_can(auth, 'manage_inventory'):
         print("You don't have permission to update stock levels.")
         return
 

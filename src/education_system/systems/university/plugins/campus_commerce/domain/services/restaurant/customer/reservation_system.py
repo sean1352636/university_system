@@ -1,3 +1,4 @@
+from education_system.systems.university.plugins.campus_commerce.domain.services.restaurant.operations.user_access import can as restaurant_can
 from education_system.systems.university.infrastructure.auth import UserAuth, display_auth_menu
 from education_system.systems.university.plugins.campus_commerce.domain.services.restaurant.operations.audit import log_audit_action
 from education_system.systems.university.infrastructure.database.data_backup import display_backup_menu, backup_before_operation
@@ -158,7 +159,7 @@ def add_new_table():
         print("You must be logged in to add tables.")
         return
 
-    if not auth.check_permission('manage_reservations'):
+    if not restaurant_can(auth, 'manage_reservations'):
         print("You don't have permission to add tables.")
         return
 
@@ -250,7 +251,7 @@ def update_table():
         print("You must be logged in to update tables.")
         return
 
-    if not auth.check_permission('manage_reservations'):
+    if not restaurant_can(auth, 'manage_reservations'):
         print("You don't have permission to update tables.")
         return
 
@@ -371,7 +372,7 @@ def delete_table():
         print("You must be logged in to delete tables.")
         return
 
-    if not auth.check_permission('manage_reservations'):
+    if not restaurant_can(auth, 'manage_reservations'):
         print("You don't have permission to delete tables.")
         return
 

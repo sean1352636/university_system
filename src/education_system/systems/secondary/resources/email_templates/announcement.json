@@ -1,0 +1,21 @@
+{
+  "name": "announcement",
+  "description": "A published announcement e-mailed to its audience (staff or families).",
+  "subject": "{title}",
+  "body": [
+    "Dear {recipient_name},",
+    "",
+    "{body}",
+    "",
+    "{author_name}",
+    "{school_name}"
+  ],
+  "placeholders": {
+    "recipient_name": "The recipient's name",
+    "title": "The announcement's title",
+    "body": "The announcement",
+    "author_name": "Who wrote it",
+    "school_name": "The school's name"
+  },
+  "defaults": {"school_name": "Secondary School"}
+}

@@ -527,7 +527,14 @@ def reset_user_password(self):
         messagebox.showerror(_t("user_management_gui.errors.error_title"), _t("user_management_gui.errors.could_not_retrieve_user_data"))
         return
 
-    username = user_values[0]
+    # Columns are (ID, Username, Name, Role, Status): the username is the
+    # second value. Reading values[0] sent the numeric ID to reset_password
+    # as a username, so every reset failed or hit the wrong account.
+    placeholder_ids = (_t("user_management_gui.status.error"), _t("user_management_gui.status.info"))
+    if len(user_values) < 2 or str(user_values[0]) in placeholder_ids or not str(user_values[1]).strip():
+        messagebox.showerror(_t("user_management_gui.errors.error_title"), _t("user_management_gui.errors.could_not_retrieve_user_data"))
+        return
+    username = str(user_values[1])
 
     # Create password reset dialog
     dialog = tk.Toplevel(self.root)

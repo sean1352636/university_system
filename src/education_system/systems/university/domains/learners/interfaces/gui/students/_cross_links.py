@@ -315,6 +315,19 @@ def student_menu_items(values, *, parent=None, app=None):
                  lambda u=sid, e=email, f=first, l=last:
                      app.view_student_attendance(u, e, f, l)),
             )
+        # Visa sponsorship moved here from the sidebar (2026-10-19); same
+        # roles as the old button.
+        try:
+            role = (auth.current_user or {}).get('role') if auth else None
+            visa_ok = (hasattr(app, 'show_visa_compliance_gui') and
+                       'visa_compliance' in app.get_visible_buttons_for_role(role))
+        except Exception:
+            visa_ok = False
+        if visa_ok:
+            items.append(
+                ("🛂 Visa Sponsorship…",
+                 lambda u=sid: app.show_visa_compliance_gui(u)),
+            )
         items.append(
             ("📅 View timetable",
              lambda u=sid, f=first, l=last: app.view_student_timetable(u, f, l)),
@@ -349,7 +362,7 @@ def _split_name(full_name):
 
 def _open_loyalty_snapshot(user_id, parent=None):
     try:
-        from education_system.systems.university.domains.academics.interfaces.gui.library._cross_links import (
+        from education_system.systems.university.domains.library.interfaces.gui.library._cross_links import (
             show_loyalty_snapshot,
         )
         show_loyalty_snapshot(user_id, parent=parent)
@@ -359,7 +372,7 @@ def _open_loyalty_snapshot(user_id, parent=None):
 
 def _open_careers_snapshot(user_id, parent=None):
     try:
-        from education_system.systems.university.domains.academics.interfaces.gui.library._cross_links import (
+        from education_system.systems.university.domains.library.interfaces.gui.library._cross_links import (
             show_careers_snapshot,
         )
         show_careers_snapshot(user_id, parent=parent)

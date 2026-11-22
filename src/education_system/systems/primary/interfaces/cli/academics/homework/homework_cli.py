@@ -364,7 +364,7 @@ def _delete_assignment() -> None:
         print(f"  Deleted assignment #{aid}.")
 
 
-_DISPATCH = {"Homework": open_homework}
+_DISPATCH = {"Homework": open_homework, "Homework / Reading Log": open_homework}
 
 
 def dispatch(label: str) -> bool:

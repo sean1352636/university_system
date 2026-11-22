@@ -13,22 +13,23 @@ import logging
 from datetime import date as _date, timedelta as _timedelta
 from typing import Callable
 
-from education_system.systems.sixth_form.domain.academics.attendance import (
-    attendance as data,
-    attendance_audit as audit,
-    attendance_authorisation as authz,
-    attendance_codes as codes,
-)
 from education_system.systems.sixth_form.domain.academics.attendance.attendance import (
     ValidationError,
 )
 from education_system.systems.sixth_form.interfaces.cli.academics.attendance.attendance_cli import (
+    lazy_domain,
     _input,
     _pause,
     _pick_from,
     _pick_group,
     _UserAbort,
 )
+
+# Domain modules load on first use (see attendance_cli.lazy_domain).
+data = lazy_domain("attendance")
+audit = lazy_domain("attendance_audit")
+authz = lazy_domain("attendance_authorisation")
+codes = lazy_domain("attendance_codes")
 
 logger = logging.getLogger(__name__)
 

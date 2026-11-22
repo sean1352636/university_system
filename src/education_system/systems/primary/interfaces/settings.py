@@ -2,7 +2,7 @@
 
 Two scopes:
 
-* **Local** — sixth-form-only preferences stored in our own
+* **Local** — primary-school-only preferences stored in our own
   ``settings_kv`` table. Things like default report windows,
   attendance thresholds, UI flags.
 * **Global** — auth-wide policy settings (lockout, password

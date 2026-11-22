@@ -363,16 +363,18 @@ def delete_todo_flow(todo_id: int | None = None) -> None:
 
 def clear_completed_flow() -> None:
     print("\n═══ Clear Completed ═══")
-    try:
-        owner = _input("Owner (blank = everyone)")
-    except _UserAbort:
-        print("\n  Cancelled.")
+    mine = data.current_owner_names()
+    if not mine:
+        print("\n  Sign in to clear your completed to-dos.")
+        _pause()
         return
-    if not _yes_no("Permanently remove all Done/Cancelled todos?",
+    print(f"\n  Only your own to-dos (owner: {' / '.join(mine)}) are "
+          "removed; other staff members' are not affected.")
+    if not _yes_no("Permanently remove your Done/Cancelled todos?",
                      default=False):
         print("\n  Cancelled.")
         return
-    n = data.clear_completed(owner=owner or None)
+    n = data.clear_completed(owners=mine)
     print(f"\n  ✓ Removed {n} todo(s).")
     _pause()
 

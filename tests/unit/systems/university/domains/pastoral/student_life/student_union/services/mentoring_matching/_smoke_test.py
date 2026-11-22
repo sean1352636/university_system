@@ -8,7 +8,7 @@ import os
 import sys
 import tempfile
 
-from education_system.systems.university.domains.pastoral.domain.student_life.student_union.services.mentoring_matching import (
+from education_system.systems.university.domains.student_life.domain.student_life.student_union.services.mentoring_matching import (
     MentoringMatchingService,
     MentoringMatchingError,
 )

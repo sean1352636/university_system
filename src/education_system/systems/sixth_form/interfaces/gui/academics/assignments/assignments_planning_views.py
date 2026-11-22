@@ -16,14 +16,19 @@ from education_system.systems.sixth_form.interfaces.gui._ui import grab_when_vie
 
 import logging
 import tkinter as tk
-from tkinter import messagebox, ttk
+from tkinter import ttk
+from education_system.platform.delivery.gui.parented_dialogs import messagebox
 from typing import Callable
 
 from education_system.systems.sixth_form.domain.academics.assignments import (
-    assignments as data,
     assignments_catalogue as cat,
     assignments_scheduling as sched,
 )
+from education_system.systems.sixth_form.domain.academics.assignments import (
+    store as assignments_store,
+    submissions as assignments_submissions,
+)
+import datetime as _dt
 from education_system.systems.sixth_form.domain.academics.assignments.assignments_catalogue import (
     EXAM_BOARDS,
     QUALIFICATIONS,
@@ -113,7 +118,7 @@ class PlanningTab:
 
     def refresh(self) -> None:
         try:
-            rows = data.list_assignments()
+            rows = assignments_store.list_assignments()
         except Exception as e:
             messagebox.showerror("Planning", str(e))
             return
@@ -144,7 +149,7 @@ class PlanningTab:
     def assignment(self):
         if self._selected_id is None:
             return None
-        return data.get_assignment(self._selected_id)
+        return assignments_store.get_assignment(self._selected_id)
 
     def need_assignment(self, action: str):
         a = self.assignment()
@@ -274,7 +279,7 @@ class LibraryPane:
             messagebox.showinfo("Library",
                                   "Select a library entry first.")
             return None
-        return data.get_assignment(int(sel[0]))
+        return assignments_store.get_assignment(int(sel[0]))
 
     def _clone(self) -> None:
         source = self._selected()
@@ -391,7 +396,7 @@ class SpecificationDialog:
                 component_code=(self.component_code_e.get().strip()
                                  or None),
                 objectives=self.objectives_e.get().strip() or None)
-            data.update_assignment(
+            assignments_store.update_assignment(
                 self.assignment.assignment_id,
                 {"estimated_hours": self.hours_e.get().strip() or None})
         except Exception as e:
@@ -475,7 +480,7 @@ class CloneDialog:
         ttk.Label(form, text="Set date:").grid(row=2, column=0,
                                                   sticky="e", pady=4)
         self.set_e = ttk.Entry(form, width=14)
-        self.set_e.insert(0, data._dt.date.today().isoformat())
+        self.set_e.insert(0, _dt.date.today().isoformat())
         self.set_e.grid(row=2, column=1, sticky="w", padx=6)
 
         ttk.Label(form, text="Due date:").grid(row=3, column=0,
@@ -600,7 +605,7 @@ class VariantsPane:
                 _fmt(v.estimated_hours),
                 "yes" if v.is_default else "—"))
         names = _names()
-        for sub in data.list_submissions(assignment_id=a.assignment_id):
+        for sub in assignments_store.list_submissions(assignment_id=a.assignment_id):
             v = variants.get(sub.variant_id or -1)
             self.students.insert("", "end", iid=str(sub.submission_id),
                                   values=(
@@ -886,7 +891,7 @@ class SchedulePane:
             self.summary_var.set("")
             return
         names = _names()
-        for sub in data.list_submissions(assignment_id=a.assignment_id):
+        for sub in assignments_store.list_submissions(assignment_id=a.assignment_id):
             tags = []
             if sub.chase_level >= sched.MAX_CHASE_LEVEL:
                 tags.append("escalated")
@@ -896,7 +901,7 @@ class SchedulePane:
                               values=(
                 sub.submission_id, sub.student_id,
                 names.get(sub.student_id, "?"), sub.status,
-                data.effective_due_date(sub, a) or "—",
+                assignments_submissions.effective_due_date(sub, a) or "—",
                 sub.reminders_sent or "—",
                 (sched.chase_level_name(sub.chase_level)
                  if sub.chase_level else "—"),

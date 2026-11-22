@@ -33,7 +33,7 @@ def _admin_user_id() -> str | None:
     try:
         with get_connection() as conn:
             row = conn.execute(
-                "SELECT user_id FROM users WHERE LOWER(role) = 'admin' "
+                "SELECT id FROM users WHERE LOWER(role) = 'admin' "
                 "AND email IS NOT NULL LIMIT 1"
             ).fetchone()
             return str(row[0]) if row else None

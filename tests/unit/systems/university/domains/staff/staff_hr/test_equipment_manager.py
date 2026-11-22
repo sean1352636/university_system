@@ -1,6 +1,8 @@
 """Tests for EquipmentManager: categories, equipment CRUD, bookings with
 conflict detection, and maintenance lifecycle."""
 
+import sqlite3
+
 import pytest
 
 from education_system.systems.university.domains.staff.domain.staff_hr.services.managers.equipment_manager import (
@@ -8,13 +10,33 @@ from education_system.systems.university.domains.staff.domain.staff_hr.services.
 )
 
 
+ADMIN = {'username': 'admin', 'role': 'admin'}
+MANAGER = {'username': 'mgr', 'role': 'staff'}
+OTHER = {'username': 'other', 'role': 'staff'}
+BOOKER = {'username': 'U1', 'role': 'staff'}
+
+
+@pytest.fixture
+def people(hr_db):
+    """U1 reports to mgr; 'other' is an unrelated member of staff."""
+    conn = sqlite3.connect(hr_db)
+    conn.execute("CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY, username TEXT, "
+                 "role TEXT, first_name TEXT, last_name TEXT)")
+    for name, role in (('admin', 'admin'), ('mgr', 'staff'), ('other', 'staff'), ('U1', 'staff')):
+        conn.execute("INSERT INTO users (username, role) VALUES (?, ?)", (name, role))
+    conn.execute("INSERT INTO staff_profiles (user_id, manager_id) VALUES ('U1', 'mgr')")
+    conn.commit()
+    conn.close()
+    return hr_db
+
+
 class TestCategoriesAndEquipment:
     def test_create_category_and_list(self, hr_db):
         cid = M.create_category('Microscopes', description='Optical')
         assert cid > 0
+        # The schema seeds a few standard categories alongside this one.
         cats = M.get_categories()
-        assert len(cats) == 1
-        assert cats[0]['name'] == 'Microscopes'
+        assert 'Microscopes' in [c['name'] for c in cats]
 
     def test_add_and_get_equipment(self, hr_db):
         eid = M.add_equipment('Centrifuge', location='Lab A')
@@ -47,12 +69,48 @@ class TestBookings:
         with pytest.raises(ValueError):
             M.create_booking(eid, 'U2', '2026-06-01', '10:00', '12:00')
 
-    def test_requires_approval_pending_then_approve(self, hr_db):
+    def test_requires_approval_pending_then_approve(self, people):
         eid = M.add_equipment('Laser', requires_approval=True)
         bid = M.create_booking(eid, 'U1', '2026-06-02', '09:00', '10:00')
         assert M.get_booking(bid)['status'] == 'pending'
-        M.approve_booking(bid, 'admin')
-        assert M.get_booking(bid)['status'] == 'approved'
+        M.approve_booking(bid, actor=ADMIN)
+        booking = M.get_booking(bid)
+        assert booking['status'] == 'approved'
+        assert booking['approved_by'] == 'admin'
+
+
+class TestBookingApprovalChecks:
+    def _pending(self):
+        eid = M.add_equipment('Laser', requires_approval=True)
+        return M.create_booking(eid, 'U1', '2026-06-02', '09:00', '10:00')
+
+    def test_line_manager_can_approve(self, people):
+        bid = self._pending()
+        M.approve_booking(bid, actor=MANAGER)
+        assert M.get_booking(bid)['approved_by'] == 'mgr'
+
+    def test_booker_cannot_approve_own_booking(self, people):
+        bid = self._pending()
+        with pytest.raises(PermissionError):
+            M.approve_booking(bid, actor=BOOKER)
+        assert M.get_booking(bid)['status'] == 'pending'
+
+    def test_unrelated_staff_cannot_reject(self, people):
+        bid = self._pending()
+        with pytest.raises(PermissionError):
+            M.reject_booking(bid, notes='no', actor=OTHER)
+        assert M.get_booking(bid)['status'] == 'pending'
+
+    def test_nobody_named_is_refused(self, people):
+        bid = self._pending()
+        with pytest.raises(PermissionError):
+            M.approve_booking(bid)
+
+    def test_only_pending_bookings_are_decided(self, people):
+        bid = self._pending()
+        M.reject_booking(bid, notes='clash', actor=MANAGER)
+        with pytest.raises(ValueError):
+            M.approve_booking(bid, actor=ADMIN)
 
     def test_cancel_booking(self, hr_db):
         eid = M.add_equipment('Scope')

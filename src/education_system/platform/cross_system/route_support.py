@@ -317,6 +317,13 @@ def transfer(
     before the applicant is created, so the destination's record and the
     approved handover never disagree about what crossed.
     """
+    if handover.is_in_phase(source_system, destination_system):
+        # The destination adapter is this system's own: asking it for an
+        # applicant would re-register the learner in the database they are
+        # leaving, and the completion step would then close that record.
+        raise RouteError(
+            f"A {source_system} → {destination_system} move is a change of "
+            f"institution within the phase; use transfer_within_phase()")
     consent_ref = recorded_consent or consent_reference(consent)
     if verify_transition_handover_consent(consent_ref, db_path=db_path) is False:
         logger.warning("Consent %s is not a granted transition_handover "
@@ -413,6 +420,121 @@ def transfer(
     return outcome
 
 
+def _institution_label(institution: dict[str, Any] | str) -> str:
+    if isinstance(institution, dict):
+        return str(institution.get("name") or institution.get("urn")
+                   or institution.get("ukprn") or "").strip()
+    return str(institution or "").strip()
+
+
+def transfer_within_phase(
+    *,
+    system: str,
+    student_id: str,
+    receiving_institution: dict[str, Any] | str,
+    reason: str,
+    leaving_date: str | None = None,
+    expected_start: str | None = None,
+    consent: bool | set[str] | None = None,
+    safeguarding_reference: str | None = None,
+    recorded_consent: str | None = None,
+    extra_record: dict[str, Any] | None = None,
+    close_details: dict[str, Any] | None = None,
+    actor_user_id: int | None = None,
+    db_path: str | None = None,
+) -> TransferOutcome:
+    """Move a learner to another institution in the same phase.
+
+    Each system runs one institution, so the receiver is outside this
+    system's database: no destination adapter is called and no applicant
+    is created. The handover is released through the boundary's in-phase
+    spec (consent enforced as on every other route), stored on the
+    transition for the receiving institution to be sent, the transition is
+    completed with the source enrolment marked ``transferred``, and the
+    local record is closed through the system's adapter (never deleted).
+
+    ``receiving_institution`` is required — a name, or a dict with
+    ``name`` and optionally ``urn`` / ``ukprn`` / ``contact``. Resumes an
+    open transition on the same boundary, like :func:`transfer`.
+    """
+    if handover.get_spec(system, system) is None:
+        raise RouteError(f"{system!r} has no in-phase transfer route")
+    label = _institution_label(receiving_institution)
+    if not label:
+        raise RouteError("Name the institution the learner is moving to")
+    if not (reason or "").strip():
+        raise RouteError("A reason for the move is required")
+    institution = (dict(receiving_institution)
+                   if isinstance(receiving_institution, dict)
+                   else {"name": label})
+
+    consent_ref = recorded_consent or consent_reference(consent)
+    if verify_transition_handover_consent(consent_ref, db_path=db_path) is False:
+        logger.warning("Consent %s is not a granted transition_handover "
+                       "consent; sensitive fields will not cross", consent_ref)
+        consent = None
+    record, released = release(
+        system, system, student_id, consent=consent,
+        safeguarding_reference=safeguarding_reference,
+        extra_record={
+            **(extra_record or {}),
+            "receiving_institution": institution,
+            "move_details": {"reason": reason.strip(),
+                             "leaving_date": leaving_date,
+                             "expected_start": expected_start},
+        })
+    if not released.complete:
+        raise RouteError(
+            f"The {system} → {label} handover is missing required "
+            f"information: " + describe_missing(system, system,
+                                                released.missing_required))
+    problems = handover.validate_handover(system, system, released.payload)
+    if problems:
+        raise RouteError("; ".join(problems))
+
+    journey_id = journey_for(identity_of(record), system=system,
+                             student_id=student_id, db_path=db_path)
+    # "Transferred" is what the FE and apprenticeship adapters read to mark
+    # the record transferred rather than withdrawn.
+    full_reason = f"Transferred to {label}: {reason.strip()}"
+    row, created = start(
+        journey_id, source_system=system, destination_system=system,
+        student_id=student_id, reason=full_reason,
+        actor_user_id=actor_user_id, db_path=db_path)
+    if not created:
+        logger.info("Resuming in-phase %s transition %s at %s", system,
+                    row["transition_id"], row["status"])
+    tid = row["transition_id"]
+    outcome = TransferOutcome(journey_id=journey_id, transition=row,
+                              released=released)
+
+    if row["status"] in ("expected", "applied", "offered", "accepted"):
+        row = transitions.approve_handover(
+            tid, released, consent_reference=consent_ref,
+            actor_user_id=actor_user_id, effective_date=leaving_date,
+            db_path=db_path)
+    if row["status"] in ("handover_approved", "admitted"):
+        row = transitions.complete(
+            tid, start_date=leaving_date, close_source=True,
+            source_exit_reason=full_reason, source_status="transferred",
+            actor_user_id=actor_user_id, effective_date=leaving_date,
+            destination_detail=label, db_path=db_path)
+    outcome.transition = row
+
+    try:
+        close_source(row, full_reason, db_path=db_path, end_date=leaving_date,
+                     destination=label, destination_school=label,
+                     destination_urn=institution.get("urn"),
+                     **(close_details or {}))
+    except Exception as exc:
+        logger.exception("Could not close the %s record for transition %s",
+                         system, tid)
+        outcome.warnings.append(
+            f"Transfer to {label} recorded, but the {system} record could "
+            f"not be closed: {exc}")
+    return outcome
+
+
 __all__ = [
     "IDENTITY_KEYS",
     "RouteError",
@@ -432,4 +554,5 @@ __all__ = [
     "source_local_id",
     "start",
     "transfer",
+    "transfer_within_phase",
 ]

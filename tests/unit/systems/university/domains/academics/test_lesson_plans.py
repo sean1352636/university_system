@@ -13,7 +13,7 @@ timetable is never edited from here.
 import pytest
 
 from education_system.systems.university.infrastructure.database.db import sqlite3
-from education_system.systems.university.domains.academics.domain.services.module_scheduling import (
+from education_system.systems.university.domains.teaching.domain.module_scheduling import (
     lesson_plans as lp,
 )
 

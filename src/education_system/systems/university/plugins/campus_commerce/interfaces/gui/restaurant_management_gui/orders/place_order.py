@@ -24,13 +24,15 @@ import uuid
 # Import database connection
 from education_system.systems.university.plugins.campus_commerce.interfaces.gui.restaurant_management_gui.core.main_gui import get_db_connection
 
-# Import finance integration
+# Read-only finance helpers for the payment dialog; posting goes through
+# the domain service (restaurant.operations.settlement), shared with the CLI.
 try:
     from education_system.systems.university.domains.finance.infrastructure.finance_integration import (
-        process_student_finance_account_payment,
         get_student_finance_account_balance,
         get_student_info,
-        record_payment_to_finance
+    )
+    from education_system.systems.university.plugins.campus_commerce.domain.services.restaurant.operations.settlement import (
+        post_order_payment,
     )
     FINANCE_AVAILABLE = True
 except ImportError:
@@ -123,7 +125,7 @@ class PlaceOrderWindow:
                         if student_id:
                             self.current_student_id = student_id
                             cursor.execute('''
-                                SELECT email, first_name, last_name
+                                SELECT email_address, first_name, last_name
                                 FROM students
                                 WHERE student_id = ?
                             ''', (student_id,))
@@ -776,25 +778,23 @@ class PlaceOrderWindow:
             conn.commit()
             conn.close()
 
-            # Process finance account payment after releasing the DB connection
-            # so process_student_finance_account_payment can acquire its own
-            if payment_method == 'Finance Account' and FINANCE_AVAILABLE and finance_student_id:
-                result = process_student_finance_account_payment(
-                    student_id=finance_student_id,
-                    amount=total,
-                    description=f"Restaurant Order #{order_id}",
-                    transaction_source='Restaurant',
-                    transaction_ref=f"ORDER-{order_id}",
-                    processed_by=self.auth.current_user.get('username') if self.auth and hasattr(self.auth, 'current_user') else 'system'
+            # Post the payment through the shared domain service after releasing
+            # the DB connection (Finance Account debits the account; every other
+            # method is recorded with record_payment_to_finance).
+            if FINANCE_AVAILABLE:
+                result = post_order_payment(
+                    order_id, total, payment_method,
+                    student_id=finance_student_id or "EXTERNAL",
+                    processed_by=self.auth.current_user.get('username') if self.auth and getattr(self.auth, 'current_user', None) else 'system',
                 )
 
-                if not result.get('success'):
+                if payment_method == 'Finance Account' and not result.get('success'):
                     # Payment failed — mark the order as failed
                     try:
                         rollback_conn = get_db_connection()
                         if rollback_conn:
                             rollback_conn.execute(
-                                "UPDATE orders SET order_status = 'Payment Failed' WHERE id = ?",
+                                "UPDATE orders SET order_status = 'Payment Failed' WHERE order_id = ?",
                                 (order_id,))
                             rollback_conn.commit()
                             rollback_conn.close()

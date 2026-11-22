@@ -130,7 +130,7 @@ def contacts_module():
     owns the other, and a module-level import would make the dependency
     circular the first time contacts wants to know about accounts.
     """
-    from education_system.systems.sixth_form.domain.operations.communications.parent_contacts import (
+    from education_system.systems.sixth_form.domains.communications.domain.parent_contacts import (
         parent_contacts,
     )
     return parent_contacts
@@ -268,7 +268,7 @@ def _send_welcome_email(account_id: int, username: str, password: str,
         return
 
     from education_system.systems.sixth_form import SYSTEM_NAME
-    from education_system.systems.sixth_form.domain.operations.communications.messages import (
+    from education_system.systems.sixth_form.domains.communications.domain.messages import (
         email_templates,
     )
     children = linked_students(account_id)
@@ -752,11 +752,28 @@ def student_snapshot(student_id: str) -> dict[str, Any]:
                     behaviour["negative"] = r["n"]
 
     assessment = risk_analytics.assess_student(student_id)
-    subjects = [{
-        "subject": p.subject, "predicted": p.predicted_grade,
-        "target": p.target_grade, "latest_mock": p.latest_mock_grade,
-        "forecast": p.forecast_grade, "on_target": p.on_target,
-    } for p in assessment.predictions]
+    # Predicted grades have no share flag, so a guardian only sees a
+    # prediction that went out on a published (approved) report card.
+    # The forecast blends the prediction in, so it is withheld with it.
+    from education_system.systems.sixth_form.domain.operations.communications.parent_portal import (
+        learner_view as _lv,
+    )
+    try:
+        shared = _lv.shareable_predictions(student_id)
+    except Exception:
+        logger.debug("Shareable predictions unavailable for %s", student_id,
+                     exc_info=True)
+        shared = {}
+    subjects = []
+    for p in assessment.predictions:
+        ok = p.subject in shared
+        subjects.append({
+            "subject": p.subject,
+            "predicted": shared.get(p.subject) if ok else None,
+            "target": p.target_grade, "latest_mock": p.latest_mock_grade,
+            "forecast": p.forecast_grade if ok else None,
+            "on_target": p.on_target if ok else None,
+        })
 
     ucas = None
     try:
@@ -891,6 +908,16 @@ def child_detail(account_id: int, student_id: str) -> dict[str, Any]:
     detail = student_snapshot(student_id)
     detail["attendance"] = recent_attendance(student_id)
     detail["behaviour"] = recent_behaviour(student_id)
+    # The read-only move-to-university tracker the learner sees in their own
+    # portal (results-day embargo applied there). None without an application.
+    detail["ucas_tracker"] = None
+    try:
+        from education_system.systems.sixth_form.domain.operations.communications.parent_portal import (
+            learner_view as _lv,
+        )
+        detail["ucas_tracker"] = _lv.ucas_tracker(student_id)
+    except Exception:
+        logger.debug("UCAS tracker unavailable for %s", student_id, exc_info=True)
     return detail
 
 
@@ -909,10 +936,10 @@ def parent_messages(account_id: int, limit: int = 50) -> list[dict[str, Any]]:
     if not address:
         return []
 
-    from education_system.systems.sixth_form.domain.operations.communications.messages import (
+    from education_system.systems.sixth_form.domains.communications.domain.messages import (
         messages as _msgs,
     )
-    rows = _msgs.list_messages(to_address=address, sent_only=True)
+    rows = _msgs.list_messages(to_address=address, inbox_visible=True)
     return [{
         "message_id": m.message_id,
         "subject": m.subject,
@@ -936,7 +963,7 @@ def parent_message(account_id: int, message_id: int) -> dict[str, Any]:
     if not address:
         raise ValidationError("This account has no email address.")
 
-    from education_system.systems.sixth_form.domain.operations.communications.messages import (
+    from education_system.systems.sixth_form.domains.communications.domain.messages import (
         messages as _msgs,
     )
     msg = _msgs.get_message(int(message_id))
@@ -982,3 +1009,397 @@ def account_dashboard(account_id: int) -> dict[str, Any]:
                     "email": resolved_email(account_id)},
         "children": children,
     }
+
+
+# ── Parent actions (scoped to linked children) ───────────────────────
+#
+# Everything below takes the signed-in account and a child, and refuses
+# unless the two are linked. The work itself is done by the owning
+# module (attendance, trips, bursaries, parents' evenings, report cards);
+# this layer only scopes it and records who acted.
+
+def _require_link(account_id: int, student_id: str) -> str:
+    sid = (student_id or "").strip()
+    if not sid or not is_linked(account_id, sid):
+        raise ValidationError("You are not linked to this student.")
+    return sid
+
+
+def _require_account(account_id: int) -> ParentAccount:
+    account = get_account(account_id)
+    if account is None or not account.is_active:
+        raise ValidationError("Your parent portal account is not active.")
+    return account
+
+
+def _lv():
+    from education_system.systems.sixth_form.domain.operations.communications.parent_portal import (
+        learner_view,
+    )
+    return learner_view
+
+
+def child_timetable(account_id: int, student_id: str) -> list[dict[str, Any]]:
+    return _lv().timetable(_require_link(account_id, student_id))
+
+
+def child_report_cards(account_id: int, student_id: str) -> list[dict[str, Any]]:
+    return _lv().report_cards(_require_link(account_id, student_id))
+
+
+def child_report_card_text(account_id: int, student_id: str, card_id: int) -> str:
+    return _lv().report_card_text(_require_link(account_id, student_id), card_id)
+
+
+def child_report_card_file(account_id: int, student_id: str, card_id: int, *,
+                           fmt: str = "html") -> str:
+    """Write a published report to a file and return its path."""
+    from education_system.systems.sixth_form.domain.assessment.report_cards import (
+        report_cards as _rc,
+    )
+    sid = _require_link(account_id, student_id)
+    card = _rc.published_card(sid, card_id)
+    return str(_rc.render(card.card_id, fmt=fmt))
+
+
+# Absence ----------------------------------------------------------------
+
+def report_child_absence(account_id: int, student_id: str, date_from: str, *,
+                         date_to: str | None = None, reason: str | None = None,
+                         message: str | None = None):
+    """Tell the college a linked child is or will be absent.
+
+    Goes to the attendance office's queue as Pending (exactly like a phone
+    call) via ``attendance_absence_reports.report_absence_as_parent``,
+    which re-checks the link itself.
+    """
+    account = _require_account(account_id)
+    sid = _require_link(account_id, student_id)
+    from education_system.systems.sixth_form.domain.academics.attendance import (
+        attendance_absence_reports as _abs,
+    )
+    return _abs.report_absence_as_parent(
+        account.username, sid, date_from, date_to=date_to,
+        reason_text=(reason or "").strip() or None,
+        message=(message or "").strip() or None)
+
+
+def child_absence_reports(account_id: int, student_id: str) -> list[dict[str, Any]]:
+    sid = _require_link(account_id, student_id)
+    from education_system.systems.sixth_form.domain.academics.attendance import (
+        attendance_absence_reports as _abs,
+    )
+    return [{"report_id": r.report_id, "dates": r.span, "reason": r.reason_text,
+             "reported_by": r.reported_by, "state": r.state,
+             "self_certified": r.self_certified, "received_at": r.received_at}
+            for r in _abs.list_reports(student_id=sid, limit=50)]
+
+
+# Trips and consent ------------------------------------------------------
+
+def child_trips(account_id: int, student_id: str) -> list[dict[str, Any]]:
+    return _lv().trips(_require_link(account_id, student_id))
+
+
+def set_trip_consent(account_id: int, student_id: str, booking_id: int, *,
+                     consent: bool, medical_note: str | None = None,
+                     dietary_note: str | None = None,
+                     note: str | None = None) -> dict[str, Any]:
+    """Give (or withdraw) consent for a linked child's trip booking.
+
+    The booking must belong to the child. Medical and dietary notes are
+    stored on the booking for the trip leader. The consent note records
+    who consented, how and when, so the trip file shows it was the
+    parent and not staff.
+    """
+    account = _require_account(account_id)
+    sid = _require_link(account_id, student_id)
+    from education_system.systems.sixth_form.domains.finance.domain.trips import trips as _t
+    booking = _t.get_booking(int(booking_id))
+    if booking is None or booking.student_id != sid:
+        raise ValidationError("That trip booking is not for this student.")
+    trip = _t.get_trip(booking.trip_id)
+    if trip is not None and trip.status in ("Completed", "Cancelled"):
+        raise ValidationError(f"{trip.name} is {trip.status.lower()} — consent "
+                              "can no longer be changed here.")
+    stamp = _dt.datetime.now().isoformat(sep=" ", timespec="minutes")
+    action = "given" if consent else "withdrawn"
+    record = f"Consent {action} by {account.full_name} via parent portal {stamp}"
+    if (note or "").strip():
+        record += f": {note.strip()}"
+    payload: dict[str, Any] = {"consent_received": bool(consent),
+                               "consent_note": record}
+    if medical_note is not None:
+        payload["medical_note"] = medical_note
+    if dietary_note is not None:
+        payload["dietary_note"] = dietary_note
+    try:
+        _t.update_booking(booking.booking_id, payload)
+    except _t.ValidationError as e:
+        raise ValidationError(str(e)) from None
+    logger.info("Trip consent %s for booking #%s by parent %s", action,
+                booking.booking_id, account.username)
+    return next((t for t in _lv().trips(sid) if t["booking_id"] == booking.booking_id),
+                {})
+
+
+# Bursaries --------------------------------------------------------------
+
+def child_bursaries(account_id: int, student_id: str) -> list[dict[str, Any]]:
+    return _lv().bursaries(_require_link(account_id, student_id))
+
+
+def bursary_types() -> tuple[str, ...]:
+    from education_system.systems.sixth_form.domains.finance.domain.bursaries import (
+        bursaries as _b,
+    )
+    return _b.BURSARY_TYPES
+
+
+def start_bursary_application(account_id: int, student_id: str, *,
+                              bursary_type: str, reason: str,
+                              amount_requested: float | None = None,
+                              household_income: float | None = None,
+                              household_size: int | None = None):
+    """Start a bursary application for a linked child.
+
+    Lands as Submitted with no evidence recorded; the finance office
+    assesses it and asks for evidence in the usual way.
+    """
+    account = _require_account(account_id)
+    sid = _require_link(account_id, student_id)
+    if not (reason or "").strip():
+        raise ValidationError("Please say briefly what the support is for.")
+    from education_system.systems.sixth_form.domains.finance.domain.bursaries import (
+        bursaries as _b,
+    )
+    try:
+        return _b.create_application({
+            "student_id": sid, "bursary_type": bursary_type,
+            "application_date": _dt.date.today().isoformat(),
+            "amount_requested": amount_requested, "status": "Submitted",
+            "household_income": household_income, "household_size": household_size,
+            "reason": reason.strip(),
+            "notes": f"Started by {account.full_name} ({account.username}) "
+                     "via the parent portal",
+        })
+    except _b.ValidationError as e:
+        raise ValidationError(str(e)) from None
+
+
+# Parents' evenings ------------------------------------------------------
+
+def _pe():
+    from education_system.systems.sixth_form.domains.communications.domain.parents_evenings import (
+        parents_evenings,
+    )
+    return parents_evenings
+
+
+def parents_evening_events() -> list[Any]:
+    return _pe().bookable_events()
+
+
+def parents_evening_options(account_id: int, event_id: int, student_id: str):
+    return _pe().parent_options(int(event_id), _require_link(account_id, student_id))
+
+
+def book_parents_evening(account_id: int, event_id: int, student_id: str,
+                         staff_id: str, slot_time: str, *,
+                         notes: str | None = None):
+    account = _require_account(account_id)
+    sid = _require_link(account_id, student_id)
+    pe = _pe()
+    try:
+        return pe.parent_book(int(event_id), student_id=sid, staff_id=staff_id,
+                              slot_time=slot_time, parent_account_id=account_id,
+                              parent_name=account.full_name, notes=notes)
+    except pe.ValidationError as e:
+        raise ValidationError(str(e)) from None
+
+
+def cancel_parents_evening(account_id: int, booking_id: int):
+    _require_account(account_id)
+    pe = _pe()
+    children = {c["student_id"] for c in linked_students(account_id)}
+    try:
+        return pe.parent_cancel(int(booking_id), student_ids=children,
+                                parent_account_id=account_id)
+    except pe.ValidationError as e:
+        raise ValidationError(str(e)) from None
+
+
+def parents_evening_bookings(account_id: int) -> list[Any]:
+    children = [c["student_id"] for c in linked_students(account_id)]
+    return _pe().bookings_for_students(children)
+
+
+# Contact-detail change requests -----------------------------------------
+
+CONTACT_REQUEST_FIELDS: dict[str, str] = {
+    "email": "Email",
+    "primary_phone": "Main phone",
+    "secondary_phone": "Other phone",
+    "address": "Address",
+    "preferred_method": "Preferred contact method",
+    "preferred_language": "Preferred language",
+}
+REQUEST_PENDING = "Pending"
+REQUEST_APPLIED = "Applied"
+REQUEST_REJECTED = "Rejected"
+
+_REQUEST_SCHEMA = """
+CREATE TABLE IF NOT EXISTS parent_contact_change_requests (
+    request_id      INTEGER PRIMARY KEY AUTOINCREMENT,
+    account_id      INTEGER NOT NULL,
+    student_id      TEXT,
+    contact_id      INTEGER,
+    changes         TEXT NOT NULL,
+    note            TEXT,
+    status          TEXT NOT NULL DEFAULT 'Pending',
+    created_at      TEXT DEFAULT (datetime('now')),
+    resolved_by     TEXT,
+    resolved_at     TEXT,
+    resolution_note TEXT,
+    FOREIGN KEY (account_id) REFERENCES parent_accounts(account_id) ON DELETE CASCADE,
+    FOREIGN KEY (student_id) REFERENCES students(student_id)        ON DELETE CASCADE,
+    FOREIGN KEY (contact_id) REFERENCES parent_contacts(contact_id) ON DELETE SET NULL
+);
+CREATE INDEX IF NOT EXISTS idx_pccr_status  ON parent_contact_change_requests(status);
+CREATE INDEX IF NOT EXISTS idx_pccr_account ON parent_contact_change_requests(account_id);
+"""
+
+_REQUESTS_READY = False
+
+
+def _init_requests() -> None:
+    global _REQUESTS_READY
+    if _REQUESTS_READY:
+        return
+    init_db()
+    with _connect() as conn:
+        conn.executescript(_REQUEST_SCHEMA)
+    _REQUESTS_READY = True
+
+
+def _request_row(r: sqlite3.Row) -> dict[str, Any]:
+    import json
+    d = dict(r)
+    try:
+        d["changes"] = json.loads(r["changes"] or "{}")
+    except ValueError:
+        d["changes"] = {}
+    return d
+
+
+def request_contact_update(account_id: int, changes: dict[str, Any], *,
+                           student_id: str | None = None,
+                           note: str | None = None) -> dict[str, Any]:
+    """Ask the office to change the contact details held for this parent.
+
+    Never edits the contact record itself: the office checks and applies
+    the request (a changed phone number or address on a child's record
+    is a safeguarding matter, not a self-service one).
+    """
+    import json
+    _init_requests()
+    account = _require_account(account_id)
+    clean = {k: str(v).strip() for k, v in (changes or {}).items()
+             if k in CONTACT_REQUEST_FIELDS and v is not None and str(v).strip()}
+    if not clean:
+        raise ValidationError("Enter at least one detail to change.")
+    if "email" in clean:
+        _clean_email(clean["email"])
+    contact_id = None
+    sid = None
+    if student_id:
+        sid = _require_link(account_id, student_id)
+    links = linked_students(account_id)
+    for link in links:
+        if (sid is None or link["student_id"] == sid) and link["contact_id"]:
+            contact_id = link["contact_id"]
+            sid = sid or link["student_id"]
+            break
+    if sid is None and links:
+        sid = links[0]["student_id"]
+    with _connect() as conn:
+        cur = conn.execute(
+            "INSERT INTO parent_contact_change_requests (account_id, student_id, "
+            "contact_id, changes, note) VALUES (?,?,?,?,?)",
+            (account_id, sid, contact_id, json.dumps(clean),
+             (note or "").strip() or None))
+        conn.commit()
+        rid = cur.lastrowid
+    logger.info("Contact change request #%s from parent %s", rid, account.username)
+    return get_contact_request(rid)
+
+
+def get_contact_request(request_id: int) -> dict[str, Any]:
+    _init_requests()
+    with _connect() as conn:
+        r = conn.execute("SELECT * FROM parent_contact_change_requests WHERE request_id=?",
+                         (int(request_id),)).fetchone()
+    if r is None:
+        raise ValidationError(f"No request #{request_id}")
+    return _request_row(r)
+
+
+def my_contact_requests(account_id: int) -> list[dict[str, Any]]:
+    _init_requests()
+    with _connect() as conn:
+        return [_request_row(r) for r in conn.execute(
+            "SELECT * FROM parent_contact_change_requests WHERE account_id=? "
+            "ORDER BY created_at DESC, request_id DESC", (account_id,))]
+
+
+def list_contact_requests(*, status: str | None = REQUEST_PENDING) -> list[dict[str, Any]]:
+    """Staff queue of contact-detail change requests."""
+    _init_requests()
+    sql = ("SELECT r.*, a.full_name AS parent_name, a.username, "
+           "s.first_name || ' ' || s.last_name AS student_name "
+           "FROM parent_contact_change_requests r "
+           "JOIN parent_accounts a ON a.account_id = r.account_id "
+           "LEFT JOIN students s ON s.student_id = r.student_id")
+    args: list[Any] = []
+    if status:
+        sql += " WHERE r.status=?"
+        args.append(status)
+    sql += " ORDER BY r.created_at, r.request_id"
+    with _connect() as conn:
+        return [_request_row(r) for r in conn.execute(sql, args)]
+
+
+def resolve_contact_request(request_id: int, *, apply: bool, by: str,
+                            note: str | None = None) -> dict[str, Any]:
+    """Office decision on a request.
+
+    ``apply=True`` writes the changes to the linked contact record through
+    ``parent_contacts.update_contact`` (its validation applies). With no
+    contact record linked the request is marked Applied with a note so
+    the office can update the record by hand.
+    """
+    req = get_contact_request(request_id)
+    if req["status"] != REQUEST_PENDING:
+        raise ValidationError(f"Request #{request_id} is already {req['status'].lower()}")
+    resolution = (note or "").strip() or None
+    if apply:
+        if req["contact_id"]:
+            contacts = contacts_module()
+            try:
+                contacts.update_contact(req["contact_id"], req["changes"])
+            except contacts.ValidationError as e:
+                raise ValidationError(str(e)) from None
+            _sync_mirror_email(req["account_id"])
+        else:
+            resolution = ((resolution + " — ") if resolution else "") + \
+                "no contact record linked; update the record by hand"
+    with _connect() as conn:
+        conn.execute(
+            "UPDATE parent_contact_change_requests SET status=?, resolved_by=?, "
+            "resolved_at=datetime('now'), resolution_note=? WHERE request_id=?",
+            (REQUEST_APPLIED if apply else REQUEST_REJECTED, by, resolution,
+             request_id))
+        conn.commit()
+    logger.info("Contact change request #%s %s by %s", request_id,
+                "applied" if apply else "rejected", by)
+    return get_contact_request(request_id)

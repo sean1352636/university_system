@@ -322,7 +322,15 @@ _MENU: list[tuple[str, Callable[[], None]]] = [
     ("Per-Subject",             per_subject_flow),
     ("Predicted vs Actual",     pred_vs_actual_flow),
     ("Alerts",                  alerts_flow),
+    ("Report Cards",            lambda: _report_cards()),
 ]
+
+
+def _report_cards() -> None:
+    from education_system.systems.sixth_form.interfaces.cli.assessment.report_cards import (
+        report_cards_cli,
+    )
+    report_cards_cli.run()
 
 
 def run() -> None:

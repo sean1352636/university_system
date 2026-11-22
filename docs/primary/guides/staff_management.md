@@ -12,7 +12,7 @@ Manage staff records, contracts, and statutory compliance.
 
 ### Staff Records
 
-Each staff member is assigned a unique **STF-prefixed ID** (STF0001, STF0002, etc.).
+Each staff member is assigned a unique **ID with the prefix `T`** followed by digits.
 
 | Field | Description |
 |---|---|
@@ -156,7 +156,7 @@ A searchable directory of all staff members.
 
 | Module | Access Path | Key Roles |
 |---|---|---|
-| HR | Sidebar → Staff → HR | admin |
-| CPD | Sidebar → Staff → CPD | admin, teacher (own records) |
-| Cover | Sidebar → Staff → Cover | admin |
-| Staff Directory | Sidebar → Staff → Directory | admin, teacher |
+| HR | Sidebar → Staff & Communication → Staff HR | admin |
+| CPD | Sidebar → Staff & Communication → CPD | admin, teacher (own records) |
+| Cover | Sidebar → Academic Management → Cover | admin |
+| Staff Directory | Sidebar → Staff & Communication → Staff Directory | admin, teacher |

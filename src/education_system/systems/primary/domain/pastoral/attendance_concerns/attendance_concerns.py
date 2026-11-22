@@ -23,7 +23,7 @@ logger = logging.getLogger(__name__)
 
 CONCERN_STATUSES: tuple[str, ...] = (
     "Open", "Monitoring", "Improving", "Closed", "Escalated")
-DEFAULT_STATUS: str = "Open";
+DEFAULT_STATUS: str = "Open"
 
 CONCERN_LEVELS: tuple[str, ...] = (
     "Low (90-94%)", "Moderate (85-89%)", "High (80-84%)",
@@ -103,6 +103,8 @@ def init_db() -> None:
     global _DB_READY
     if _DB_READY:
         return
+    from education_system.systems.primary.domain.learners.pupils import pupils as _pupils
+    _pupils.init_db()  # reads join pupils; a fresh database has no pupils table yet
     try:
         with _connect() as conn:
             conn.executescript(_SCHEMA)
@@ -110,7 +112,7 @@ def init_db() -> None:
         logger.exception(
             "Failed to initialise attendance_concerns tables")
         raise
-    logger.info("Secondary attendance_concerns tables ready")
+    logger.info("Primary attendance_concerns tables ready")
     _DB_READY = True
 
 

@@ -84,8 +84,11 @@ def _on_appraisal_completed(**payload: Any) -> None:
         # Look up current salary, then propose an allowance row.
         with get_connection() as conn:
             row = conn.execute(
-                "SELECT salary FROM employees WHERE user_id = ? LIMIT 1",
-                (str(user_id),),
+                "SELECT COALESCE(salary_override, salary) FROM staff_contracts "
+                "WHERE LOWER(COALESCE(status, 'active')) = 'active' AND (user_id = ? OR user_id = "
+                "(SELECT username FROM users WHERE CAST(id AS TEXT) = ?)) "
+                "ORDER BY start_date DESC LIMIT 1",
+                (str(user_id), str(user_id)),
             ).fetchone()
             salary = float(row[0]) if row and row[0] else 0.0
         if salary <= 0:
@@ -114,8 +117,9 @@ def _is_role_critical(user_id: str | None) -> bool:
     try:
         with get_connection() as conn:
             row = conn.execute(
-                "SELECT job_title FROM employees WHERE user_id = ? LIMIT 1",
-                (str(user_id),),
+                "SELECT job_title FROM staff_profiles WHERE user_id = ? OR user_id = "
+                "(SELECT username FROM users WHERE CAST(id AS TEXT) = ?) LIMIT 1",
+                (str(user_id), str(user_id)),
             ).fetchone()
             if not row or not row[0]:
                 return False

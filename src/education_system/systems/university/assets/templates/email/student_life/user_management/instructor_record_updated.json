@@ -1,0 +1,11 @@
+{
+    "subject": "Your instructor record has been updated",
+    "body": "Dear $instructor_name,\n\nYour instructor record was updated on $updated_at by $updated_by.\n\nWhat changed:\n$changes\n\nThese details are used when courses are assigned and timetables are planned.\n\nIf any of this looks wrong, please contact your Head of Department or academic.admin@$email_domain.\n\nBest regards,\nAcademic Administration Team",
+    "variables": {
+        "instructor_name": "Full name of the instructor",
+        "updated_at": "When the record was changed",
+        "updated_by": "Who changed the record",
+        "changes": "One line per changed field, showing the old and new value",
+        "email_domain": "University email domain"
+    }
+}

@@ -7,7 +7,7 @@ from datetime import datetime
 
 from flask import Blueprint, g, jsonify, request
 
-from education_system.platform.delivery.api.university.auth import token_required
+from education_system.platform.delivery.api.university.auth import staff_required, token_required
 from education_system.platform.delivery.api.university.pagination import get_pagination_params, paginated_response
 from education_system.systems.university.infrastructure.exceptions import ValidationError
 from education_system.systems.university.infrastructure.sql_safety import escape_like
@@ -17,6 +17,14 @@ from education_system.systems.university.infrastructure.activity_logger import l
 logger = logging.getLogger(__name__)
 
 external_examiner_bp = Blueprint("external_examiner", __name__, url_prefix="/api/external-examiners")
+
+#: Examiner records, visit reports and action plans are staff-internal: any
+#: staff role may read them, learners may not. Appointing or amending an
+#: examiner needs ``manage_courses`` (admin, staff - the quality office).
+EXAMINER_APPOINT = "manage_courses"
+#: Scheduling visits, recording findings and working the action plan needs
+#: ``manage_assessments`` (admin, instructor, staff).
+EXAMINER_WORK = "manage_assessments"
 
 
 def _row_to_dict(row) -> dict:
@@ -29,6 +37,7 @@ def _row_to_dict(row) -> dict:
 
 @external_examiner_bp.route("/examiners", methods=["GET"])
 @token_required
+@staff_required
 def list_examiners():
     status = request.args.get("status")
     search = request.args.get("search")
@@ -71,6 +80,7 @@ def list_examiners():
 
 @external_examiner_bp.route("/examiners/<int:examiner_id>", methods=["GET"])
 @token_required
+@staff_required
 def get_examiner(examiner_id: int):
     with get_connection() as conn:
         row = conn.execute(
@@ -84,6 +94,7 @@ def get_examiner(examiner_id: int):
 
 @external_examiner_bp.route("/examiners", methods=["POST"])
 @token_required
+@staff_required(permission=EXAMINER_APPOINT)
 def create_examiner():
     data = request.get_json(silent=True) or {}
     if "name" not in data:
@@ -111,6 +122,7 @@ def create_examiner():
 
 @external_examiner_bp.route("/examiners/<int:examiner_id>", methods=["PUT"])
 @token_required
+@staff_required(permission=EXAMINER_APPOINT)
 def update_examiner(examiner_id: int):
     with get_connection() as conn:
         existing = conn.execute(
@@ -149,6 +161,7 @@ def update_examiner(examiner_id: int):
 
 @external_examiner_bp.route("/examiners/<int:examiner_id>/history", methods=["GET"])
 @token_required
+@staff_required
 def get_examiner_history(examiner_id: int):
     with get_connection() as conn:
         examiner = conn.execute(
@@ -173,6 +186,7 @@ def get_examiner_history(examiner_id: int):
 
 @external_examiner_bp.route("/visits", methods=["GET"])
 @token_required
+@staff_required
 def list_visits():
     examiner_id = request.args.get("examiner_id")
     department = request.args.get("department")
@@ -209,6 +223,7 @@ def list_visits():
 
 @external_examiner_bp.route("/visits/<int:visit_id>", methods=["GET"])
 @token_required
+@staff_required
 def get_visit(visit_id: int):
     with get_connection() as conn:
         row = conn.execute(
@@ -222,6 +237,7 @@ def get_visit(visit_id: int):
 
 @external_examiner_bp.route("/visits", methods=["POST"])
 @token_required
+@staff_required(permission=EXAMINER_WORK)
 def schedule_visit():
     data = request.get_json(silent=True) or {}
     for field in ["examiner_id", "visit_date"]:
@@ -234,7 +250,7 @@ def schedule_visit():
                (examiner_id, visit_date, department, purpose, created_by)
                VALUES (?, ?, ?, ?, ?)""",
             (data["examiner_id"], data["visit_date"], data.get("department", ""),
-             data.get("purpose", ""), data.get("created_by", g.current_user.get("sub", ""))),
+             data.get("purpose", ""), g.current_user.get("sub", "")),
         )
         new_id = conn.execute("SELECT last_insert_rowid()").fetchone()[0]
 
@@ -249,6 +265,7 @@ def schedule_visit():
 
 @external_examiner_bp.route("/visits/<int:visit_id>/findings", methods=["PUT"])
 @token_required
+@staff_required(permission=EXAMINER_WORK)
 def record_findings(visit_id: int):
     with get_connection() as conn:
         existing = conn.execute(
@@ -278,6 +295,7 @@ def record_findings(visit_id: int):
 
 @external_examiner_bp.route("/actions", methods=["GET"])
 @token_required
+@staff_required
 def list_actions():
     visit_id = request.args.get("visit_id")
     status = request.args.get("status")
@@ -314,6 +332,7 @@ def list_actions():
 
 @external_examiner_bp.route("/actions/<int:action_id>", methods=["GET"])
 @token_required
+@staff_required
 def get_action(action_id: int):
     with get_connection() as conn:
         row = conn.execute(
@@ -327,6 +346,7 @@ def get_action(action_id: int):
 
 @external_examiner_bp.route("/actions", methods=["POST"])
 @token_required
+@staff_required(permission=EXAMINER_WORK)
 def create_action():
     data = request.get_json(silent=True) or {}
     if "action_description" not in data:
@@ -353,6 +373,7 @@ def create_action():
 
 @external_examiner_bp.route("/actions/<int:action_id>/status", methods=["PUT"])
 @token_required
+@staff_required(permission=EXAMINER_WORK)
 def update_action_status(action_id: int):
     with get_connection() as conn:
         existing = conn.execute(
@@ -383,6 +404,7 @@ def update_action_status(action_id: int):
 
 @external_examiner_bp.route("/actions/overdue", methods=["GET"])
 @token_required
+@staff_required
 def get_overdue_actions():
     today = datetime.now().strftime("%Y-%m-%d")
     with get_connection() as conn:
@@ -399,6 +421,7 @@ def get_overdue_actions():
 
 @external_examiner_bp.route("/department-summary", methods=["GET"])
 @token_required
+@staff_required
 def get_department_summary():
     department = request.args.get("department")
 

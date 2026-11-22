@@ -66,26 +66,30 @@ _TRACKED_EVENTS = (
 )
 
 
-_PREFS_SCHEMA_SQL = """
-CREATE TABLE IF NOT EXISTS email_preferences (
-    user_id     TEXT NOT NULL,
-    event_kind  TEXT NOT NULL,
-    enabled     INTEGER NOT NULL DEFAULT 1,
-    updated_at  TEXT NOT NULL,
-    PRIMARY KEY (user_id, event_kind)
-)
-"""
-
-_INDEX_SQL = (
-    "CREATE INDEX IF NOT EXISTS idx_email_prefs_user "
-    "ON email_preferences(user_id)",
-)
-
-
 def _ensure_prefs(conn: sqlite3.Connection) -> None:
-    conn.executescript(_PREFS_SCHEMA_SQL)
-    for sql in _INDEX_SQL:
-        conn.execute(sql)
+    """``email_preferences`` lives in ``email_outbox_schema`` (migration
+    b9d1f3a5c7e0); the outbox reads the same rows for bulk mail."""
+    from education_system.systems.university.infrastructure.database.schemas import (
+        email_outbox_schema,
+    )
+    email_outbox_schema.apply_to_connection(conn)
+
+
+def _pref_key(conn, user_id: str | int) -> str:
+    """Preferences are keyed by USERNAME (the Communication Hub and the
+    outbox use the same rows). Bus events carry a users.id, a username
+    or a student number; resolve it, falling back to the value itself."""
+    ref = str(user_id)
+    try:
+        row = conn.execute(
+            "SELECT username FROM users WHERE username = ? OR CAST(id AS TEXT) = ? "
+            "OR student_id = ? ORDER BY username = ? DESC LIMIT 1",
+            (ref, ref, ref, ref)).fetchone()
+        if row and row[0]:
+            return str(row[0])
+    except Exception:
+        logger.debug("Could not resolve %s to a username", ref, exc_info=True)
+    return ref
 
 
 # ---------------------------------------------------------------------------
@@ -106,7 +110,7 @@ def set_pref(user_id: str | int, event_kind: str, enabled: bool) -> bool:
                 "ON CONFLICT(user_id, event_kind) DO UPDATE "
                 "  SET enabled = excluded.enabled, "
                 "      updated_at = excluded.updated_at",
-                (str(user_id), event_kind, 1 if enabled else 0, now),
+                (_pref_key(conn, user_id), event_kind, 1 if enabled else 0, now),
             )
             conn.commit()
         return True
@@ -126,7 +130,7 @@ def is_enabled(user_id: str | int, event_kind: str) -> bool:
             row = conn.execute(
                 "SELECT enabled FROM email_preferences "
                 "WHERE user_id = ? AND event_kind = ? LIMIT 1",
-                (str(user_id), event_kind),
+                (_pref_key(conn, user_id), event_kind),
             ).fetchone()
             return bool(row[0]) if row else True
     except Exception:
@@ -143,7 +147,7 @@ def get_prefs(user_id: str | int) -> dict[str, bool]:
             for r in conn.execute(
                 "SELECT event_kind, enabled FROM email_preferences "
                 "WHERE user_id = ?",
-                (str(user_id),),
+                (_pref_key(conn, user_id),),
             ).fetchall():
                 out[r["event_kind"]] = bool(r["enabled"])
     except Exception:
@@ -284,18 +288,23 @@ def _render(template: str, context: dict[str, Any]) -> str:
         return template
 
 
-def _attempt_send(recipient: str, subject: str, body: str) -> bool:
-    """Best-effort delegation to the existing email service.
+def _attempt_send(recipient: str, subject: str, body: str, *,
+                  event_kind: str = "general", user_id: str | int | None = None) -> bool:
+    """Send through the university outbox (in-app copy + delivery).
 
-    Returns True if a real send happened, False if we only logged.
-    """
+    Returns True when the message was accepted (queued or kept in-app)."""
     try:
-        from education_system.systems.university.infrastructure.email.email_service import (
+        from education_system.systems.university.infrastructure.email.email_service.core import (
             send_email,
         )
-        return bool(send_email(recipient, subject, body))
+        to_ref = None
+        if user_id is not None:
+            with get_connection() as conn:
+                to_ref = _pref_key(conn, user_id)
+        return bool(send_email(recipient, subject, body, kind="transactional",
+                               category=event_kind, to_ref=to_ref))
     except Exception:
-        # Fall through to logging-only mode.
+        logger.warning("E-mail for %s not sent", event_kind, exc_info=True)
         return False
 
 
@@ -323,7 +332,8 @@ def send_templated(user_id: str | int, event_kind: str,
     body = _render(template[1], payload)
 
     recipient = _resolve_recipient_email(user_id) or ""
-    delivered = bool(recipient) and _attempt_send(recipient, subject, body)
+    delivered = bool(recipient) and _attempt_send(recipient, subject, body,
+                                                 event_kind=event_kind, user_id=user_id)
 
     msg_id = uuid.uuid4().hex
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")

@@ -9,7 +9,8 @@ from __future__ import annotations
 
 import logging
 import tkinter as tk
-from tkinter import messagebox, simpledialog, ttk
+from tkinter import ttk
+from education_system.platform.delivery.gui.parented_dialogs import messagebox, simpledialog
 
 from education_system.systems.sixth_form.domain.operations.communications.parent_portal import (
     parent_portal as data,
@@ -222,5 +223,82 @@ def open_directory(gui) -> None:
     ttk.Button(btns, text="Reset PW", command=do_reset).pack(side="left", padx=4)
     ttk.Button(btns, text="On/Off", command=do_toggle).pack(side="left")
     ttk.Button(btns, text="Delete", command=do_delete).pack(side="left", padx=4)
+    ttk.Button(btns, text="Contact Requests…",
+               command=lambda: open_contact_requests(gui)).pack(side="left", padx=4)
     tree.bind("<<TreeviewSelect>>", on_select)
+    refresh()
+
+
+def _who() -> str:
+    try:
+        from education_system.systems.sixth_form.domain.governance.user_management import (
+            access,
+        )
+        return access.current().username or "staff"
+    except Exception:
+        return "staff"
+
+
+def open_contact_requests(gui) -> None:
+    """Queue of contact-detail change requests parents sent from the portal.
+
+    Applying writes the change to the parent's contact record (through
+    Parent Contacts' own validation); rejecting closes the request.
+    """
+    from education_system.platform.delivery.gui import window_sizing
+    master = getattr(gui, "root", gui)
+    win = tk.Toplevel(master)
+    win.title("Parent contact change requests")
+    window_sizing.fit(win, "1400x900", (1200, 800))
+
+    bar = ttk.Frame(win, padding=8)
+    bar.pack(fill="x")
+    status_var = tk.StringVar(value="Pending")
+    ttk.Label(bar, text="Show:").pack(side="left")
+    ttk.Combobox(bar, textvariable=status_var, state="readonly", width=12,
+                 values=("Pending", "Applied", "Rejected", "All")).pack(side="left", padx=4)
+
+    cols = ("id", "when", "parent", "student", "changes", "note", "status", "resolved")
+    tree = ttk.Treeview(win, columns=cols, show="headings")
+    for c, t, w in (("id", "#", 50), ("when", "Received", 140), ("parent", "Parent", 160),
+                    ("student", "Student", 150), ("changes", "Requested change", 420),
+                    ("note", "Note", 200), ("status", "Status", 80),
+                    ("resolved", "Resolved", 200)):
+        tree.heading(c, text=t)
+        tree.column(c, width=w, anchor="w")
+
+    def refresh() -> None:
+        tree.delete(*tree.get_children())
+        st = status_var.get()
+        for r in data.list_contact_requests(status=None if st == "All" else st):
+            changes = "; ".join(f"{data.CONTACT_REQUEST_FIELDS.get(k, k)}: {v}"
+                                for k, v in r["changes"].items())
+            if not r.get("contact_id"):
+                changes += "  (no contact record linked)"
+            tree.insert("", "end", iid=str(r["request_id"]), values=(
+                r["request_id"], r["created_at"] or "", r["parent_name"],
+                r.get("student_name") or r.get("student_id") or "—", changes,
+                r.get("note") or "", r["status"],
+                f"{r.get('resolved_by') or ''} {r.get('resolved_at') or ''}".strip()))
+
+    def decide(apply: bool) -> None:
+        sel = tree.selection()
+        if not sel:
+            return
+        note = simpledialog.askstring(
+            "Contact request", "Note for the record (optional):", parent=win)
+        if note is None:
+            return
+        try:
+            data.resolve_contact_request(int(sel[0]), apply=apply, by=_who(), note=note)
+        except data.ValidationError as e:
+            messagebox.showerror("Contact request", str(e), parent=win)
+            return
+        refresh()
+
+    ttk.Button(bar, text="Refresh", command=refresh).pack(side="left", padx=8)
+    ttk.Button(bar, text="Apply change", command=lambda: decide(True)).pack(side="left")
+    ttk.Button(bar, text="Reject", command=lambda: decide(False)).pack(side="left", padx=4)
+    status_var.trace_add("write", lambda *_: refresh())
+    tree.pack(fill="both", expand=True, padx=8, pady=(0, 8))
     refresh()

@@ -42,7 +42,7 @@ _PROMOTERS = {
         "education_system.systems.secondary.domain.admissions.sixthform_transfer:move_to_sixth_form",
         "subjects"),
     "sixth_form": (
-        "education_system.systems.sixth_form.domain.learners.students.students:mark_transferred",
+        "education_system.systems.sixth_form.domain.learners.students.transfers:mark_transferred",
         "plain"),
 }
 

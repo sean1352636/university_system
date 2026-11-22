@@ -83,7 +83,8 @@ class ExpiryManager:
                     cursor = conn.cursor()
                     # db-audit: ignore[DBW001] - string literal
                     cursor.execute(f"""
-                        SELECT id, student_id, document_type, file_name, expiry_date,
+                        SELECT document_id, COALESCE(NULLIF(owner_id, ''), student_id),
+                               document_type, COALESCE(file_name, original_filename), expiry_date,
                                JULIANDAY(expiry_date) - JULIANDAY('now') as days_until,
                                status
                         FROM documents
@@ -143,11 +144,45 @@ class ExpiryManager:
 
     def send_expiry_notifications(self):
         """Send expiry notifications to students"""
-        messagebox.showinfo(_t('gui.shell.document_manager.expiry.dialogs.send_notifications', default="Send Notifications"),
-                          _t('gui.shell.document_manager.expiry.dialogs.expiry_notifications_will_be_sent_to_affected_students_this_woul', default="Expiry notifications will be sent to affected students.\n\n"
-                          "This would integrate with the email service to send automated reminders."))
+        from education_system.systems.university.shell.gui.document_manager.notifications import (
+            deliver_to_students, delivery_summary, resolve_student_recipients,
+        )
+        try:
+            recipients = resolve_student_recipients("expired_or_expiring")
+        except Exception as e:
+            messagebox.showerror(_t('gui.shell.document_manager.expiry.dialogs.error', default="Error"),
+                                 f"Could not find affected students: {e}", parent=self.root)
+            return
+        if not recipients:
+            messagebox.showinfo(_t('gui.shell.document_manager.expiry.dialogs.send_notifications', default="Send Notifications"),
+                                _t('gui.shell.document_manager.expiry.dialogs.no_expiring_documents',
+                                   default="No student has a document that has expired or expires in the next 30 days."),
+                                parent=self.root)
+            return
+        if not messagebox.askyesno(_t('gui.shell.document_manager.expiry.dialogs.send_notifications', default="Send Notifications"),
+                                   f"Send expiry reminders to {len(recipients)} student(s) with documents that "
+                                   "have expired or expire within 30 days?\n\n"
+                                   "Each student gets an e-mail and a portal inbox message listing their documents.",
+                                   parent=self.root):
+            return
+        subject = "Document expiry reminder"
+        body = ("Dear {{student_name}},\n\n"
+                "The following documents on your student record have expired or will expire "
+                "within 30 days:\n\n{{document_list}}\n\n"
+                "Please upload a renewed copy through the student portal.\n\n"
+                "Regards,\nUniversity Document Management")
+        user = self.gui.current_user if isinstance(self.gui.current_user, dict) else {}
+        try:
+            stats = deliver_to_students(recipients, subject, body, email=True, inbox=True,
+                                        sender_id=user.get('id'), kind="transactional")
+        except Exception as e:
+            messagebox.showerror(_t('gui.shell.document_manager.expiry.dialogs.error', default="Error"),
+                                 f"Sending reminders failed: {e}", parent=self.root)
+            return
         self.gui.log_event('send', 'expiry_notifications',
-                      details='Triggered expiry notification batch')
+                      details={'recipients': len(recipients), 'stats': stats})
+        messagebox.showinfo(_t('gui.shell.document_manager.expiry.dialogs.send_notifications', default="Send Notifications"),
+                            delivery_summary(stats, len(recipients)), parent=self.root)
 
     def check_document_expiry(self):
         """Check document expiry status and generate report"""
@@ -276,7 +311,8 @@ class ExpiryManager:
                     cursor = conn.cursor()
                     # db-audit: ignore[DBW001] - string literal
                     cursor.execute(f"""
-                        SELECT id, student_id, document_type, expiry_date,
+                        SELECT document_id, COALESCE(NULLIF(owner_id, ''), student_id),
+                               document_type, expiry_date,
                                JULIANDAY(expiry_date) - JULIANDAY('now') as days_remaining,
                                status
                         FROM documents
@@ -394,9 +430,11 @@ class ExpiryManager:
                 with get_connection() as conn:
                     cursor = conn.cursor()
                     cursor.execute("""
-                        SELECT status, student_id, document_type, file_name
-                        FROM documents WHERE id = ?
-                    """, (doc_id,))
+                        SELECT status, COALESCE(NULLIF(owner_id, ''), student_id),
+                               document_type, COALESCE(file_name, original_filename)
+                        FROM documents WHERE document_id = ? OR id = ?
+                        ORDER BY document_id LIMIT 1
+                    """, (doc_id, doc_id))
                     result = cursor.fetchone()
 
                 if result:
@@ -448,8 +486,8 @@ class ExpiryManager:
                     cursor.execute("""
                         UPDATE documents
                         SET status = ?, updated_at = CURRENT_TIMESTAMP
-                        WHERE id = ?
-                    """, (new_status, doc_id))
+                        WHERE document_id = ? OR id = ?
+                    """, (new_status, doc_id, doc_id))
 
                 messagebox.showinfo(_t('gui.shell.document_manager.expiry.dialogs.success', default="Success"),
                                   f"Document status updated successfully!\n\n"
@@ -462,8 +500,7 @@ class ExpiryManager:
                               details=f'Status changed from {current_status} to {new_status}. Reason: {reason}')
 
                 if notify_var.get():
-                    messagebox.showinfo(_t('gui.shell.document_manager.expiry.dialogs.notification', default="Notification"),
-                                      _t('gui.shell.document_manager.expiry.dialogs.student_notification_would_be_sent_via_email', default="Student notification would be sent via email"))
+                    self._notify_status_change(doc_id, current_status, new_status, reason, status_window)
 
                 status_window.destroy()
 
@@ -482,3 +519,36 @@ class ExpiryManager:
                   command=submit_status_update).pack(side='left', padx=5)
         ttk.Button(button_frame, text=_t('gui.shell.document_manager.expiry.buttons.cancel', default="Cancel"),
                   command=status_window.destroy).pack(side='right', padx=5)
+
+    def _notify_status_change(self, doc_id, old_status, new_status, reason, parent):
+        """Tell the document's student about a status change (e-mail + inbox)."""
+        from education_system.systems.university.shell.gui.document_manager.notifications import (
+            deliver_to_students, delivery_summary, resolve_student_recipients,
+        )
+        try:
+            with get_connection() as conn:
+                row = conn.execute("""
+                    SELECT COALESCE(NULLIF(owner_id, ''), student_id),
+                           COALESCE(document_type, original_filename, file_name, 'document')
+                    FROM documents WHERE document_id = ? OR id = ?
+                    ORDER BY document_id LIMIT 1
+                """, (doc_id, doc_id)).fetchone()
+            recipients = resolve_student_recipients("custom", [row[0]]) if row and row[0] else []
+            if not recipients:
+                messagebox.showwarning(_t('gui.shell.document_manager.expiry.dialogs.notification', default="Notification"),
+                                       _t('gui.shell.document_manager.expiry.dialogs.no_student_for_document',
+                                          default="The document is not linked to a student record, so no one was notified."),
+                                       parent=parent)
+                return
+            body = (f"Dear {{{{student_name}}}},\n\n"
+                    f"The status of your document ({row[1]}) has changed from "
+                    f"{old_status} to {new_status}.\n\nReason: {reason}\n\n"
+                    "Regards,\nUniversity Document Management")
+            user = self.gui.current_user if isinstance(self.gui.current_user, dict) else {}
+            stats = deliver_to_students(recipients, "Document status updated", body, email=True,
+                                        inbox=True, sender_id=user.get('id'), kind="transactional")
+            messagebox.showinfo(_t('gui.shell.document_manager.expiry.dialogs.notification', default="Notification"),
+                                delivery_summary(stats, 1), parent=parent)
+        except Exception as e:
+            messagebox.showerror(_t('gui.shell.document_manager.expiry.dialogs.error', default="Error"),
+                                 f"Status saved, but the student could not be notified: {e}", parent=parent)

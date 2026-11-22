@@ -7,7 +7,7 @@ from datetime import datetime
 
 from flask import Blueprint, g, jsonify, request
 
-from education_system.platform.delivery.api.university.auth import token_required
+from education_system.platform.delivery.api.university.auth import staff_required, token_required
 from education_system.platform.delivery.api.university.pagination import get_pagination_params, paginated_response
 from education_system.systems.university.infrastructure.exceptions import ValidationError
 from education_system.systems.university.infrastructure.sql_safety import escape_like
@@ -17,6 +17,18 @@ from education_system.systems.university.infrastructure.activity_logger import l
 logger = logging.getLogger(__name__)
 
 legal_bp = Blueprint("legal", __name__, url_prefix="/api/legal")
+
+# Legal-service cases, consultations, documents and payments are staff-only
+# (no client self-service over this API). Callers' identity in
+# created_by / processed_by is taken from the token, never the body.
+#: Read cases, consultations, documents, payments. Held by ``admin`` and
+#: ``staff``.
+LEGAL_VIEW_PERMISSION = "view_any_student"
+#: Open / change cases, consultations, documents. Held by ``admin`` and
+#: ``staff``.
+LEGAL_MANAGE_PERMISSION = "update_any_student"
+#: Record a legal-service payment. Held by ``admin`` and ``staff``.
+LEGAL_PAYMENT_PERMISSION = "record_payments"
 
 
 def _row_to_dict(row) -> dict:
@@ -29,6 +41,7 @@ def _row_to_dict(row) -> dict:
 
 @legal_bp.route("/cases", methods=["GET"])
 @token_required
+@staff_required(permission=LEGAL_VIEW_PERMISSION)
 def list_cases():
     search = request.args.get("search")
     client_id = request.args.get("client_id")
@@ -79,6 +92,7 @@ def list_cases():
 
 @legal_bp.route("/cases/<int:case_id>", methods=["GET"])
 @token_required
+@staff_required(permission=LEGAL_VIEW_PERMISSION)
 def get_case(case_id: int):
     with get_connection() as conn:
         row = conn.execute(
@@ -91,6 +105,7 @@ def get_case(case_id: int):
 
 @legal_bp.route("/cases", methods=["POST"])
 @token_required
+@staff_required(permission=LEGAL_MANAGE_PERMISSION)
 def create_case():
     data = request.get_json(silent=True) or {}
     for field in ["client_id", "client_name", "case_type", "case_title"]:
@@ -119,6 +134,7 @@ def create_case():
 
 @legal_bp.route("/consultations", methods=["GET"])
 @token_required
+@staff_required(permission=LEGAL_VIEW_PERMISSION)
 def list_consultations():
     search = request.args.get("search")
     case_id = request.args.get("case_id")
@@ -169,6 +185,7 @@ def list_consultations():
 
 @legal_bp.route("/consultations/<int:consultation_id>", methods=["GET"])
 @token_required
+@staff_required(permission=LEGAL_VIEW_PERMISSION)
 def get_consultation(consultation_id: int):
     with get_connection() as conn:
         row = conn.execute(
@@ -181,6 +198,7 @@ def get_consultation(consultation_id: int):
 
 @legal_bp.route("/consultations", methods=["POST"])
 @token_required
+@staff_required(permission=LEGAL_MANAGE_PERMISSION)
 def create_consultation():
     data = request.get_json(silent=True) or {}
     for field in ["client_id", "client_name", "scheduled_date", "scheduled_time"]:
@@ -210,6 +228,7 @@ def create_consultation():
 
 @legal_bp.route("/agreements/<int:case_id>/status", methods=["PUT"])
 @token_required
+@staff_required(permission=LEGAL_MANAGE_PERMISSION)
 def update_agreement_status(case_id: int):
     data = request.get_json(silent=True) or {}
     if "status" not in data:
@@ -241,6 +260,7 @@ def update_agreement_status(case_id: int):
 
 @legal_bp.route("/disputes/<int:case_id>/close", methods=["POST"])
 @token_required
+@staff_required(permission=LEGAL_MANAGE_PERMISSION)
 def close_dispute(case_id: int):
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     with transaction() as conn:
@@ -268,6 +288,7 @@ def close_dispute(case_id: int):
 
 @legal_bp.route("/agreements/search", methods=["GET"])
 @token_required
+@staff_required(permission=LEGAL_VIEW_PERMISSION)
 def search_agreements():
     case_number = request.args.get("case_number", "")
     if not case_number:
@@ -289,6 +310,7 @@ def search_agreements():
 
 @legal_bp.route("/statistics", methods=["GET"])
 @token_required
+@staff_required(permission=LEGAL_VIEW_PERMISSION)
 def get_statistics():
     with get_connection() as conn:
         # Cases by status
@@ -330,6 +352,7 @@ def get_statistics():
 
 @legal_bp.route("/documents", methods=["POST"])
 @token_required
+@staff_required(permission=LEGAL_MANAGE_PERMISSION)
 def create_document():
     data = request.get_json(silent=True) or {}
     for field in ["case_id", "document_type", "document_name"]:
@@ -349,7 +372,7 @@ def create_document():
                 data["document_name"],
                 data.get("file_path", ""),
                 data.get("file_content", ""),
-                data.get("created_by", g.current_user.get("sub", "")),
+                g.current_user.get("sub", ""),
                 data.get("notes", ""),
                 datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             ),
@@ -368,6 +391,7 @@ def create_document():
 
 @legal_bp.route("/documents", methods=["GET"])
 @token_required
+@staff_required(permission=LEGAL_VIEW_PERMISSION)
 def list_documents():
     case_id = request.args.get("case_id")
 
@@ -400,6 +424,7 @@ def list_documents():
 
 @legal_bp.route("/documents/<int:document_id>", methods=["GET"])
 @token_required
+@staff_required(permission=LEGAL_VIEW_PERMISSION)
 def get_document(document_id: int):
     with get_connection() as conn:
         row = conn.execute(
@@ -416,6 +441,7 @@ def get_document(document_id: int):
 
 @legal_bp.route("/payments", methods=["POST"])
 @token_required
+@staff_required(permission=LEGAL_PAYMENT_PERMISSION)
 def record_payment():
     data = request.get_json(silent=True) or {}
     for field in ["client_id", "amount", "payment_type", "payment_method"]:
@@ -448,7 +474,7 @@ def record_payment():
                 data["payment_type"],
                 data["payment_method"],
                 transaction_ref,
-                data.get("processed_by", g.current_user.get("sub", "")),
+                g.current_user.get("sub", ""),
                 notes_text,
                 now,
             ),
@@ -487,6 +513,7 @@ def record_payment():
 
 @legal_bp.route("/payments", methods=["GET"])
 @token_required
+@staff_required(permission=LEGAL_VIEW_PERMISSION)
 def list_payments():
     client_id = request.args.get("client_id")
     case_id = request.args.get("case_id")
@@ -529,6 +556,7 @@ def list_payments():
 
 @legal_bp.route("/consultations/upcoming", methods=["GET"])
 @token_required
+@staff_required(permission=LEGAL_VIEW_PERMISSION)
 def list_upcoming_consultations():
     days = request.args.get("days", 7, type=int)
     today = datetime.now().strftime("%Y-%m-%d")
@@ -551,6 +579,7 @@ def list_upcoming_consultations():
 
 @legal_bp.route("/consultations/<int:consultation_id>", methods=["PUT"])
 @token_required
+@staff_required(permission=LEGAL_MANAGE_PERMISSION)
 def update_consultation(consultation_id: int):
     data = request.get_json(silent=True) or {}
     if not data:
@@ -598,6 +627,7 @@ def update_consultation(consultation_id: int):
 
 @legal_bp.route("/consultations/<int:consultation_id>", methods=["DELETE"])
 @token_required
+@staff_required(permission=LEGAL_MANAGE_PERMISSION)
 def cancel_consultation(consultation_id: int):
     data = request.get_json(silent=True) or {}
     reason = data.get("reason", "")

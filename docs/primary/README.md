@@ -1,6 +1,6 @@
 # Primary School Management System - Documentation
 
-Complete documentation for the Primary School Management System (v1.0.0).
+Complete documentation for the Primary School Management System.
 
 ## Documentation Structure
 
@@ -8,7 +8,11 @@ Complete documentation for the Primary School Management System (v1.0.0).
 docs/primary/
 ├── README.md                 # This file - documentation index
 ├── QUICK_START.md            # Get running in 5 minutes
-└── TROUBLESHOOTING.md        # Common issues and solutions
+├── TROUBLESHOOTING.md        # Common issues and solutions
+├── development/              # Development guide, adding modules, testing, API
+├── guides/                   # Feature guides
+├── infrastructure/           # Authentication, configuration, database
+└── security/                 # Security, MFA, session timeout
 ```
 
 ## Quick Start
@@ -31,23 +35,23 @@ New to the system? Start here:
 
 | Topic | Details |
 |-------|---------|
-| Shared Auth | Unified authentication via `education_system/shared/auth/` |
-| Auth Database | Central `education_system/shared/data/db_files/auth.db` |
-| Password Policy | Minimum 8 characters; uppercase, lowercase, digits, and special characters |
+| Shared Auth | Unified authentication via `src/education_system/platform/identity/auth/` |
+| Auth Database | Central `var/data/platform/db_files/auth.db` |
+| Password Policy | Minimum 12 characters; uppercase, lowercase, digits, and special characters |
 | MFA | TOTP via pyotp with recovery codes |
-| Sessions | Database-backed with token and expiry; 30-minute timeout by default |
-| Lockout | Account locks after 5 failed attempts; 15-minute lockout duration |
+| Sessions | Database-backed with token and expiry; 30-minute lifetime by default |
+| Lockout | Account locks after 3 failed attempts; 15-minute lockout duration |
 
 ### Infrastructure
 
 | Topic | Details |
 |-------|---------|
-| Database | SQLite at `primary_school/data/db_files/primary_school.db` |
-| Logging | File logging at `primary_school/logs/app.log` |
-| Configuration | Defaults in `primary_school/core/defaults.py` |
-| Exceptions | Hierarchy rooted at `SchoolSystemError` in `primary_school/core/exceptions.py` |
-| Paths | Centralized path definitions in `primary_school/core/paths.py` |
-| SQL Safety | SQL injection protection in `primary_school/core/sql_safety.py` |
+| Database | SQLite at `var/data/primary/primary.db` |
+| Logging | Console logging set up by the launcher; `--verbose` shows INFO |
+| Configuration | Auth defaults in `src/education_system/platform/identity/auth/defaults.py` |
+| Exceptions | Modules raise `ValidationError`; there is no system-wide hierarchy |
+| Paths | Centralized path definitions in `src/education_system/paths.py` |
+| SQL Safety | SQL injection protection in `src/education_system/platform/kernel/database/sql_safety.py` |
 
 ### Development
 
@@ -56,28 +60,27 @@ New to the system? Start here:
 | Language | Python 3.11+ |
 | GUI Framework | tkinter with ttk widgets |
 | Database | SQLite via `sqlite3` standard library |
-| Service Pattern | Service layer with `_conn()` returning `connect(db_path)`, try/except/finally with `conn.close()` |
-| Module Layout | Each domain module in `modules/domain/<category>/<module>/` with service and GUI components |
+| Data Layer Pattern | Module functions call `init_db()`, then `with _connect() as conn:` |
+| Module Layout | Domain code in `domain/<area>/<module>/`, screens in `interfaces/{cli,gui}/<area>/<module>/`, routes in `education_system/api/primary/routes/` |
 
 ## System Overview
 
 The Primary School Management System is a comprehensive platform for managing all aspects of a primary school (Reception through Year 6). It provides:
 
-- **46 domain modules** covering academics, pastoral care, staff management, administration, pupil life, facilities, and communication
-- **7 module categories**: academics (11), pastoral_care (5), staff (4), admin (9), pupil_life (8), facilities (4), communication (6)
-- **Tkinter GUI** with tabbed interface and scrollable sidebar navigation
+- **Domain modules** covering academics, admissions, assessment, finance, governance, learners, operations, pastoral care, safeguarding, and staff
+- **9 menu categories**: Pupil Management, Academic Management, Assessment & Progress, Pastoral & Wellbeing, Staff & Communication, Finance, Reports & Analytics, Cross-System, System
+- **Tkinter GUI** with scrollable sidebar navigation
 - **Command-line interface** for headless operation
-- **SQLite database** at `primary_school/data/db_files/primary_school.db`
+- **SQLite database** at `var/data/primary/primary.db`
 - **Shared authentication** with role-based access control (admin, staff, student, parent)
 - **Multi-factor authentication** support via TOTP
 - **Key stage coverage**: EYFS (Reception), KS1 (Years 1-2), KS2 (Years 3-6)
-- **Assessment levels**: Emerging, Developing, Expected, Greater Depth
+- **Assessment grades**: BLW (Below), WTS (Working Towards), EXS (Expected), GDS (Greater Depth)
 
 ## Getting Started
 
 ```bash
-# Activate the virtual environment
-source venv/bin/activate
+# Activate your virtual environment first
 
 # Launch the GUI
 python -m education_system --primary --gui
@@ -89,37 +92,38 @@ python -m education_system --primary --cli
 ## Project Layout
 
 ```
-primary_school/
+src/education_system/systems/primary/
 ├── __init__.py              # Package init
-├── core/                    # Core utilities
-│   ├── defaults.py          # Default config, credentials, constants
-│   ├── exceptions.py        # Exception hierarchy (SchoolSystemError)
-│   ├── i18n.py              # Internationalization support
-│   ├── logs.py              # Logging configuration
-│   ├── paths.py             # Centralized path definitions
-│   └── sql_safety.py        # SQL injection protection
-├── infrastructure/          # Infrastructure layer
-│   ├── auth/                # Authentication (wraps shared auth)
-│   ├── database/            # Database schema and access
-│   └── validation/          # Input validation
-├── modules/domain/          # 46 domain modules
-│   ├── academics/           # pupils, subjects, classes, assessment,
-│   │                        # attendance, timetable, homework, sats,
-│   │                        # phonics, reading_records, progress
-│   ├── pastoral_care/       # behaviour, rewards, safeguarding, send, pastoral
-│   ├── staff/               # hr, cpd, cover, staff_directory
-│   ├── admin/               # users, settings, admissions, finance,
-│   │                        # data_export, audit_log, policies, documents
-│   ├── pupil_life/          # clubs, meals, transport, trips,
-│   │                        # library, medical, class_groups, consent
-│   ├── facilities/          # room_booking, assets, visitors, incidents
-│   └── communication/       # email, notifications, announcements,
-│                            # calendar, parents_evening, communication_log
-├── data/                    # Runtime data
-│   ├── db_files/            # SQLite database files
-│   └── config/              # Configuration files
-└── logs/                    # Application log files
-    └── app.log              # Main application log
+├── manifest.py              # Key, display name and interfaces
+├── cli_main.py              # CLI entry point
+├── gui_main.py              # GUI entry point
+├── domain/                  # Domain modules
+│   ├── academics/           # academic_year, attendance, calendar, classes,
+│   │                        # enrichment, homework, lesson_plans, library,
+│   │                        # subjects, timetable, year_groups
+│   ├── admissions/          # admissions, enrolment
+│   ├── assessment/          # assessment, eyfs_profile, ks1_sats, ks2_sats,
+│   │                        # mtc, phonics, progress, reading_levels and more
+│   ├── finance/             # dinner_money, expense_claims, funding,
+│   │                        # pupil_premium, receipts, trips
+│   ├── governance/          # audit, compliance, gdpr, mfa, policies and more
+│   ├── learners/            # pupils
+│   ├── operations/          # assets, communications, document_hub, reporting,
+│   │                        # todo, visitors and more
+│   ├── pastoral/            # behaviour, house_points, send, transport,
+│   │                        # wellbeing and more
+│   ├── safeguarding/        # safeguarding, prevent_duty
+│   └── staff/               # appraisals, cover, cpd, staff_hr and more
+├── infrastructure/          # Currently only __init__.py
+└── interfaces/
+    ├── cli/                 # Terminal menus, by area
+    └── gui/                 # tkinter windows, by area
+
+src/education_system/api/primary/
+├── routes/                  # One Flask blueprint per module
+└── schemas/                 # Scaffolded, not yet implemented
+
+var/data/primary/primary.db  # SQLite database
 ```
 
 ## Documentation Standards
@@ -129,9 +133,8 @@ All documentation follows these standards:
 - Written in GitHub-flavored Markdown
 - Code examples are tested and working
 - Clear, concise, professional language
-- Paths use `primary_school/` throughout (not university or college paths)
+- Paths are relative to the repository root
 
 ---
 
-**Last Updated**: March 2026
-**Version**: 1.0.0
+**Last Updated**: October 2026

@@ -10,6 +10,8 @@ Public surface:
 - ``has_active_hold(student_id)``  → bool
 - ``place_hold(...)``              → hold_id  + publishes EVENT_HOLD_CHANGED
 - ``release_hold(...)``            → bool     + publishes EVENT_HOLD_CHANGED
+- ``check_registration_holds(conn, ...)`` → refuses registration on an active
+  hold unless a ``finance.hold_override`` holder overrides it with a reason
 - ``raise_charge(...)``            → tx_id    + publishes EVENT_CHARGE_RAISED
 - ``student_balance(student_id)``  → float
 - ``grant_balance(grant_ref)``     → float
@@ -20,6 +22,7 @@ call so callers don't need to coordinate migrations.
 
 from __future__ import annotations
 
+import json
 import logging
 from datetime import datetime
 from typing import Any
@@ -207,6 +210,124 @@ def release_hold(hold_id: int, *, released_by: str | None = None) -> bool:
         hold_id=hold_id, student_id=student_id, action="released",
     )
     return True
+
+
+# ---------------------------------------------------------------------------
+# Registration gate: active holds block annual and module registration unless
+# someone holding the ``finance.hold_override`` capability overrides them
+# with a reason. Works on the caller's connection so it can run inside the
+# registration transaction (no executescript: that would commit it).
+# ---------------------------------------------------------------------------
+
+class FinanceHoldBlock(ValueError):
+    """Registration refused because of active finance holds. ``holds`` lists
+    them; the message gives every reason so staff and the student see why."""
+
+    def __init__(self, holds: list[dict[str, Any]], *, can_override: bool = False):
+        self.holds = holds
+        self.can_override = can_override
+        reasons = "; ".join(
+            f"{h['reason']} (£{float(h.get('amount') or 0):,.2f}, placed "
+            f"{str(h.get('placed_at') or '')[:10]})" for h in holds)
+        super().__init__(
+            "Registration is blocked by a finance hold: " + reasons
+            + ". Please contact Student Finance to clear it"
+            + (" (you can override it with a reason)" if can_override else "") + ".")
+
+
+def _gate_schema(conn: sqlite3.Connection) -> None:
+    conn.execute(_HOLDS_SCHEMA_SQL)
+    for sql in _HOLDS_INDEX_SQL:
+        conn.execute(sql)
+    from education_system.systems.university.infrastructure.database.schemas import (
+        student_fees_schema,
+    )
+    student_fees_schema.apply_to_connection(conn)
+
+
+def holds_on(conn: sqlite3.Connection, student_id: str | int) -> list[dict[str, Any]]:
+    """Active holds for the student, read on ``conn``."""
+    _gate_schema(conn)
+    cur = conn.execute(
+        "SELECT hold_id, amount, reason, source, reference_id, placed_at, placed_by "
+        "FROM finance_holds WHERE student_id = ? AND is_active = 1 ORDER BY placed_at DESC",
+        (str(student_id),))
+    names = [d[0] for d in cur.description]
+    return [dict(zip(names, tuple(r))) for r in cur.fetchall()]
+
+
+def can_override_holds(conn: sqlite3.Connection, username: str | None,
+                       role: str | None) -> bool:
+    """Whether this person holds the ``finance.hold_override`` capability."""
+    from education_system.systems.university.domains.finance.domain.tuition import access
+    if not username:
+        return False
+    return access.holds(conn, access.Actor(str(username), str(role or "").lower()),
+                        access.HOLD_OVERRIDE)
+
+
+def _covering_override(conn, student_id: str, year: str, hold_ids: set[int]):
+    for override_id, ids in conn.execute(
+            "SELECT override_id, hold_ids FROM finance_hold_overrides WHERE student_id = ? "
+            "AND academic_year = ? ORDER BY override_id DESC", (student_id, year)).fetchall():
+        try:
+            covered = {int(i) for i in json.loads(ids or "[]")}
+        except (TypeError, ValueError):
+            continue
+        if hold_ids <= covered:
+            return int(override_id)
+    return None
+
+
+def check_registration_holds(conn: sqlite3.Connection, student_id: str | int, *,
+                             academic_year: str, context: str,
+                             override_by: str | None = None, override_role: str | None = None,
+                             override_reason: str | None = None) -> int | None:
+    """Refuse registration while the student has active holds.
+
+    Passes when there are none, or when an earlier override for this
+    academic year already covers every active hold. Otherwise an override
+    needs ``override_by`` holding ``finance.hold_override`` and a reason;
+    it is recorded (and audited) and its id returned. Raises
+    :class:`FinanceHoldBlock` when refused. Does not commit.
+    """
+    sid = str(student_id)
+    holds = holds_on(conn, sid)
+    if not holds:
+        return None
+    year = str(academic_year)
+    hold_ids = {int(h["hold_id"]) for h in holds}
+    existing = _covering_override(conn, sid, year, hold_ids)
+    if existing is not None:
+        return existing
+    allowed = can_override_holds(conn, override_by, override_role)
+    reason = (override_reason or "").strip()
+    if not (allowed and reason):
+        raise FinanceHoldBlock(holds, can_override=allowed)
+    override_id = int(conn.execute(
+        "INSERT INTO finance_hold_overrides (student_id, academic_year, context, hold_ids, "
+        "reason, authorised_by, authorised_role) VALUES (?, ?, ?, ?, ?, ?, ?)",
+        (sid, year, context, json.dumps(sorted(hold_ids)), reason, override_by,
+         override_role)).lastrowid)
+    from education_system.systems.university.domains.finance.domain.tuition import access
+    access.audit(conn, override_by, "hold.overridden", "finance_hold_override", override_id,
+                 student_id=sid, detail={"context": context, "academic_year": year,
+                                         "reason": reason, "holds": holds})
+    return override_id
+
+
+def hold_overrides(conn: sqlite3.Connection, student_id: str | int | None = None
+                   ) -> list[dict[str, Any]]:
+    """Recorded hold overrides, newest first."""
+    _gate_schema(conn)
+    sql = "SELECT * FROM finance_hold_overrides"
+    params: tuple = ()
+    if student_id is not None:
+        sql += " WHERE student_id = ?"
+        params = (str(student_id),)
+    cur = conn.execute(sql + " ORDER BY override_id DESC", params)
+    names = [d[0] for d in cur.description]
+    return [dict(zip(names, tuple(r))) for r in cur.fetchall()]
 
 
 # ---------------------------------------------------------------------------
@@ -517,7 +638,180 @@ def student_account_summary(student_id: str | int,
     return summary
 
 
+# ---------------------------------------------------------------------------
+# Posting port — the one door through which a domain service posts money
+# it has just taken (or refunded) to Finance. Thin pass-throughs to
+# ``finance.infrastructure.finance_integration`` and the GL hook, imported
+# lazily so this module stays import-light and a domain can call it without
+# reaching into the Finance slice directly.
+# ---------------------------------------------------------------------------
+
+
+_STUDENT_ACCOUNT_LABELS = frozenset({
+    "finance_account", "student_account", "student account", "student finance",
+    "student_finance", "student finance account", "student_finance_account",
+})
+
+
+def is_student_account_method(method: str | None) -> bool:
+    """True when a payment/refund method label means "settle from the
+    student's finance account" — GUIs and CLIs spell it several ways."""
+    if not method:
+        return False
+    label = str(method).strip().lower()
+    return label in _STUDENT_ACCOUNT_LABELS or label.startswith("student account (")
+
+
+def record_payment(**kwargs: Any) -> int | None:
+    """Post a completed cash/card payment to Finance's ``payments`` table.
+
+    Same keyword surface as ``finance_integration.record_payment_to_finance``
+    (student_id, amount, payment_method, transaction_source, transaction_ref,
+    notes, created_by, ...). Returns the payment id, or ``None`` on failure;
+    never raises, so a posting failure cannot roll back the caller's write.
+    """
+    try:
+        from education_system.systems.university.domains.finance.infrastructure import (
+            finance_integration,
+        )
+        return finance_integration.record_payment_to_finance(**kwargs)
+    except Exception as exc:  # pragma: no cover - defensive
+        logger.error("Finance posting failed for %s/%s: %s",
+                     kwargs.get("transaction_source"), kwargs.get("transaction_ref"), exc)
+        return None
+
+
+def pay_from_student_account(**kwargs: Any) -> dict[str, Any]:
+    """Settle a charge from the student's finance account balance.
+
+    Pass-through to ``finance_integration.process_student_finance_account_payment``
+    (student_id, amount, description, transaction_source, transaction_ref,
+    processed_by). It debits the balance and writes the ``payments`` row
+    itself, so callers must not also ``record_payment`` for the same money.
+    Returns the integration's result dict (``success``, ``message``,
+    ``new_balance``, ``transaction_id``); never raises.
+    """
+    try:
+        from education_system.systems.university.domains.finance.infrastructure import (
+            finance_integration,
+        )
+        return finance_integration.process_student_finance_account_payment(**kwargs)
+    except Exception as exc:  # pragma: no cover - defensive
+        logger.error("Student-account payment failed for %s: %s", kwargs.get("student_id"), exc)
+        return {"success": False, "message": str(exc), "new_balance": None,
+                "transaction_id": None}
+
+
+def account_balance(student_id: str | int) -> float | None:
+    """The student's finance account balance, or ``None`` when they have no
+    account (unlike :func:`student_balance`, which reads that as 0.0) or it
+    can't be read. Never raises."""
+    if not student_id:
+        return None
+    try:
+        from education_system.systems.university.domains.finance.infrastructure import (
+            finance_integration,
+        )
+        return finance_integration.get_student_finance_account_balance(str(student_id))
+    except Exception as exc:  # pragma: no cover - defensive
+        logger.warning("Could not read finance balance for %s: %s", student_id, exc)
+        return None
+
+
+def record_refund(**kwargs: Any) -> int | None:
+    """Record a refund in Finance's ``unified_refunds`` (and the ledger).
+
+    Same keyword surface as ``finance_integration.record_refund_to_finance``
+    (student_id, refund_amount, original_payment_id, refund_reason,
+    refund_type, transaction_source, transaction_ref, refund_method,
+    requested_by, notes). Returns the refund id, or ``None`` on failure;
+    never raises.
+    """
+    try:
+        from education_system.systems.university.domains.finance.infrastructure import (
+            finance_integration,
+        )
+        return finance_integration.record_refund_to_finance(**kwargs)
+    except Exception as exc:  # pragma: no cover - defensive
+        logger.error("Finance refund failed for %s/%s: %s",
+                     kwargs.get("transaction_source"), kwargs.get("transaction_ref"), exc)
+        return None
+
+
+def credit_student_account(**kwargs: Any) -> dict[str, Any]:
+    """Credit (top up) a student's finance account — e.g. a refund paid back
+    to the balance it came from.
+
+    Pass-through to ``finance_integration.top_up_student_finance_account``
+    (student_id, amount, payment_method, processed_by, description).
+    Returns its result dict (``success``, ``message``, ``new_balance``);
+    never raises.
+    """
+    try:
+        from education_system.systems.university.domains.finance.infrastructure import (
+            finance_integration,
+        )
+        return finance_integration.top_up_student_finance_account(**kwargs)
+    except Exception as exc:  # pragma: no cover - defensive
+        logger.error("Crediting the finance account of %s failed: %s",
+                     kwargs.get("student_id"), exc)
+        return {"success": False, "message": str(exc), "new_balance": None}
+
+
+def warn_if_low_balance(student_id: str | int, balance: float | None) -> bool:
+    """E-mail the student Finance's low-balance warning when ``balance`` is
+    under Finance's threshold. Returns whether a warning was sent; never
+    raises."""
+    if balance is None or not student_id:
+        return False
+    try:
+        from education_system.systems.university.domains.finance.infrastructure import (
+            finance_integration,
+        )
+        if float(balance) >= finance_integration.LOW_BALANCE_THRESHOLD:
+            return False
+        return bool(finance_integration.send_low_balance_email(str(student_id), float(balance)))
+    except Exception as exc:  # pragma: no cover - defensive
+        logger.debug("Low-balance warning for %s not sent: %s", student_id, exc)
+        return False
+
+
+def ensure_student_account(student_id: str | int) -> bool:
+    """Create the student's finance account if it does not exist yet."""
+    try:
+        from education_system.systems.university.domains.finance.infrastructure import (
+            finance_integration,
+        )
+        return bool(finance_integration.ensure_student_finance_account_exists(str(student_id)))
+    except Exception as exc:  # pragma: no cover - defensive
+        logger.warning("Could not ensure finance account for %s: %s", student_id, exc)
+        return False
+
+
+def notify_ledger(kind: str, row_id: int | None, *, posted_by: str | None = None) -> None:
+    """Auto-post a ``payments`` / ``unified_refunds`` row to the GL.
+
+    ``kind`` is ``'payment'`` or ``'refund'``. No-op when ``row_id`` is
+    ``None`` or the ledger is not initialised; never raises (logged instead)
+    so a GL hiccup cannot undo the operational write that preceded it.
+    """
+    if row_id is None:
+        return
+    try:
+        from education_system.systems.university.domains.finance.domain.ledger import (
+            notify_ledger as _notify,
+        )
+        _notify(kind, row_id, posted_by=posted_by or "auto")
+    except Exception as exc:
+        logger.warning("ledger hook failed for %s %s: %s", kind, row_id, exc)
+
+
 __all__ = [
+    "FinanceHoldBlock",
+    "can_override_holds",
+    "check_registration_holds",
+    "hold_overrides",
+    "holds_on",
     "has_active_hold",
     "list_active_holds",
     "place_hold",
@@ -527,4 +821,9 @@ __all__ = [
     "student_balance",
     "grant_balance",
     "student_account_summary",
+    "is_student_account_method",
+    "record_payment",
+    "pay_from_student_account",
+    "ensure_student_account",
+    "notify_ledger",
 ]

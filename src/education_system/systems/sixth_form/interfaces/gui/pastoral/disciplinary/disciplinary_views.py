@@ -6,7 +6,9 @@ from education_system.systems.sixth_form.interfaces.gui._ui import grab_when_vie
 import datetime as _dt
 import logging
 import tkinter as tk
-from tkinter import messagebox, ttk
+from tkinter import ttk
+from education_system.systems.sixth_form.interfaces.gui._sidebar import SidebarBook
+from education_system.platform.delivery.gui.parented_dialogs import messagebox, simpledialog
 from education_system.platform import branding
 from education_system.systems.sixth_form.domain.pastoral.disciplinary import (
     disciplinary as data,
@@ -50,7 +52,7 @@ def open_disciplinary_window(parent=None) -> None:
     win.geometry(WIN_GEOMETRY)
     win.minsize(*WIN_MINSIZE)
 
-    nb = ttk.Notebook(win)
+    nb = SidebarBook(win)
     nb.pack(fill="both", expand=True, padx=10, pady=10)
 
     CasesTab(nb, scope="open",              label="Open")
@@ -59,6 +61,10 @@ def open_disciplinary_window(parent=None) -> None:
     CasesTab(nb, scope="parent_meetings",   label="Parent Meetings")
     CasesTab(nb, scope="all",               label="All")
     SummaryTab(nb)
+    from education_system.systems.sixth_form.interfaces.gui.pastoral.disciplinary.hearings_tabs import (
+        add_hearing_tabs,
+    )
+    add_hearing_tabs(nb)
 
 
 def _student_options() -> list[tuple[str, str]]:
@@ -116,6 +122,11 @@ class CasesTab:
                                                   padx=(8, 4))
         ttk.Button(bar, text="Clear",
                     command=self._clear).pack(side="left")
+        self.f_archived = tk.BooleanVar(value=False)
+        ttk.Checkbutton(bar, text="Include archived",
+                        variable=self.f_archived,
+                        command=self.refresh).pack(side="left",
+                                                   padx=(8, 0))
         ttk.Button(bar, text="New",
                     command=self._new).pack(side="left", padx=(16, 0))
 
@@ -146,6 +157,7 @@ class CasesTab:
         self.tree.tag_configure("active_sanction",
                                   background="#ffd1d1",
                                   foreground="#8c0d0d")
+        self.tree.tag_configure("archived", foreground="#888888")
         self.tree.bind("<Double-Button-1>", lambda _e: self._edit())
 
         actions = ttk.Frame(self.frame)
@@ -160,6 +172,7 @@ class CasesTab:
                 ("Close case",      self._close),
                 ("Change status",   self._set_status),
                 ("Delete",          self._delete),
+                ("Restore",         self._restore),
                 ("Refresh",         self.refresh),
         ):
             ttk.Button(actions, text=label,
@@ -196,6 +209,8 @@ class CasesTab:
             f["appeal_pending"] = True
         elif self.scope == "parent_meetings":
             f["parent_meeting_pending"] = True
+        if self.f_archived.get():
+            f["include_archived"] = True
         return f
 
     def refresh(self) -> None:
@@ -230,7 +245,7 @@ class CasesTab:
                                         f"{severity_label(c.severity)[:3]}"),
                                        c.title, c.status,
                                        sanc, parent_str),
-                              tags=(tag,))
+                              tags=(tag,) + (("archived",) if c.archived_at else ()))
         self.count.config(text=f"{len(rows)} case(s)")
 
     def _selected(self) -> DisciplinaryCase | None:
@@ -325,10 +340,30 @@ class CasesTab:
         if not c:
             return
         if not messagebox.askyesno(
-                "Disciplinary", f"Delete case #{c.case_id}?",
+                "Disciplinary",
+                f"Archive case #{c.case_id}?\n\n"
+                "It is archived, not deleted (UK retention): it leaves "
+                "the lists, who/when/why are recorded, and ticking "
+                "'Include archived' shows it again.",
                 parent=self.frame):
             return
-        data.delete_case(c.case_id)
+        reason = simpledialog.askstring(
+            "Disciplinary", "Reason for archiving (optional):",
+            parent=self.frame)
+        if reason is None:
+            return
+        data.delete_case(c.case_id, reason=reason)
+        self.refresh()
+
+    def _restore(self) -> None:
+        r = self._selected()
+        if not r:
+            return
+        if not r.archived_at:
+            messagebox.showinfo("Disciplinary", "That record is not archived.",
+                                parent=self.frame)
+            return
+        data.restore_case(r.case_id)
         self.refresh()
 
 

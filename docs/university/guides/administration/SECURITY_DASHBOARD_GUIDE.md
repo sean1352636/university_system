@@ -380,5 +380,5 @@ The system scans for sensitive data patterns:
 ---
 
 **Last Updated**: February 2026
-**Module**: `university_system/infrastructure/security/`
+**Module**: `src/education_system/systems/university/infrastructure/security/`
 **Support**: security@university.edu | (555) 123-SEC

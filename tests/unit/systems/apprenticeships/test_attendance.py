@@ -15,10 +15,8 @@ from education_system.systems.apprenticeships import config
 from education_system.systems.apprenticeships.domain.apprentices.models import ValidationError
 from education_system.systems.apprenticeships.domain.training import attendance
 from education_system.systems.apprenticeships.domain.training.sessions import SessionAttendance
-from education_system.systems.apprenticeships.services import (
-    reporting_service,
-    training_service,
-)
+from education_system.systems.apprenticeships.application.learning import training_service
+from education_system.systems.apprenticeships.application.workspace import reporting_service
 
 
 def _mark(n: int, status: str, reason: str | None = None) -> SessionAttendance:

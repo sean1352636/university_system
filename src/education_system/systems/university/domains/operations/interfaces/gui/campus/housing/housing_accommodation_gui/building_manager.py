@@ -84,9 +84,21 @@ def create_buildings_list(gui_instance, parent):
               command=lambda: delete_selected_building(gui_instance)).pack(side='left', padx=5)
     ttk.Button(buttons_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.building_manager.buttons.manage_rooms', default="Manage Rooms"),
               command=lambda: manage_selected_building_rooms(gui_instance)).pack(side='left', padx=5)
+    ttk.Button(buttons_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.building_manager.buttons.import_rooms_csv', default="Import Rooms from CSV..."),
+              command=lambda: _open_rooms_import(gui_instance)).pack(side='left', padx=5)
+
+    # Shown only when there is nothing to list, so an empty system says what
+    # to do next instead of showing an unexplained blank table.
+    gui_instance.buildings_empty_label = ttk.Label(parent, text="", foreground='#555555', wraplength=700)
+    gui_instance.buildings_empty_label.grid(row=2, column=0, columnspan=2, sticky='w')
 
     # Load buildings
     refresh_buildings_list(gui_instance)
+
+
+def _open_rooms_import(gui_instance):
+    from education_system.systems.university.domains.operations.interfaces.gui.campus.housing.housing_accommodation_gui.room_manager import show_rooms_csv_import
+    show_rooms_csv_import(gui_instance)
 
 
 def manage_selected_building_rooms(gui_instance):
@@ -113,23 +125,45 @@ def refresh_buildings_list(gui_instance):
         conn = get_connection()
         cursor = conn.cursor()
 
+        # Counts come from the rooms that exist and occupancy from the beds
+        # held by Active/Pending assignments (current_occupants is kept equal
+        # to that by triggers) - not from the hand-maintained counters.
         cursor.execute('''
-        SELECT building_id, building_name, campus_location, total_rooms, available_rooms,
-               ROUND((CAST(total_rooms - available_rooms AS FLOAT) / total_rooms) * 100, 1) as occupancy_rate
-        FROM housing_buildings
-        ORDER BY building_name
+        SELECT b.building_id, b.building_name, b.campus_location,
+               COUNT(r.room_id) AS total_rooms,
+               COALESCE(SUM(CASE WHEN r.status = 'Available'
+                                  AND COALESCE(r.current_occupants, 0) < r.max_occupants
+                                 THEN 1 ELSE 0 END), 0) AS available_rooms,
+               CASE WHEN COALESCE(SUM(r.max_occupants), 0) > 0
+                    THEN ROUND(CAST(SUM(COALESCE(r.current_occupants, 0)) AS FLOAT)
+                               / SUM(r.max_occupants) * 100, 1)
+               END AS occupancy_rate
+        FROM housing_buildings b
+        LEFT JOIN housing_rooms r ON r.building_id = b.building_id
+        GROUP BY b.building_id, b.building_name, b.campus_location
+        ORDER BY b.building_name
         ''')
 
         buildings = cursor.fetchall()
 
         for building in buildings:
-            occupancy = f"{building[5]}%" if building[5] is not None else "0%"
+            occupancy = f"{building[5]}%" if building[5] is not None else "-"
             gui_instance.buildings_tree.insert('', 'end', values=(
                 building[0], building[1], building[2],
                 building[3], building[4], occupancy
             ))
 
         conn.close()
+
+        label = getattr(gui_instance, 'buildings_empty_label', None)
+        if label is not None:
+            if not buildings:
+                label.configure(text=_t(
+                    'gui.operations.campus.housing.housing_accommodation_gui.building_manager.labels.no_buildings_yet',
+                    default="No residences are set up yet. Use the Add Building tab to create one, "
+                            "then Manage Rooms (or Import Rooms from CSV) to add its rooms."))
+            else:
+                label.configure(text="")
 
     except Exception as e:
         messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.building_manager.dialogs.error', default="Error"), f"Failed to load buildings: {str(e)}")

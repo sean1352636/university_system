@@ -5,7 +5,9 @@ from __future__ import annotations
 import logging
 import tkinter as tk
 from datetime import date as _date
-from tkinter import messagebox, ttk
+from tkinter import ttk
+from education_system.systems.sixth_form.interfaces.gui._sidebar import SidebarBook
+from education_system.platform.delivery.gui.parented_dialogs import messagebox
 from typing import Callable
 from education_system.systems.sixth_form.domain.operations.reporting.attendance_report import attendance_report
 from education_system.systems.sixth_form.domain.academics.class_groups import class_groups
@@ -32,7 +34,7 @@ def open_attendance_report_window(parent=None) -> None:
     win.title(f"Attendance Report — {branding.SYSTEM_NAME}")
     win.geometry(WIN_GEOMETRY)
     win.minsize(*WIN_MINSIZE)
-    nb = ttk.Notebook(win)
+    nb = SidebarBook(win)
     nb.pack(fill="both", expand=True, padx=10, pady=10)
     CohortTab(nb)
     PerStudentTab(nb)

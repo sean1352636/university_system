@@ -130,6 +130,30 @@ def test_db():
         )
     ''')
 
+    # People: approvals are checked against the line (MGR001 manages EMP001)
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS users (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            username TEXT UNIQUE,
+            role TEXT,
+            first_name TEXT,
+            last_name TEXT,
+            email TEXT
+        )
+    ''')
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS staff_profiles (
+            profile_id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id TEXT UNIQUE,
+            employee_id TEXT,
+            manager_id TEXT
+        )
+    ''')
+    cursor.executemany("INSERT INTO users (username, role) VALUES (?, 'staff')",
+                       [('EMP001',), ('MGR001',)])
+    cursor.executemany("INSERT INTO staff_profiles (user_id, manager_id) VALUES (?, ?)",
+                       [('EMP001', 'MGR001'), ('MGR001', None)])
+
     # Insert default categories
     cursor.execute('''
         INSERT INTO expense_categories (name, description, max_amount, requires_receipt)
@@ -403,6 +427,32 @@ class TestExpenseApproval:
         cursor.execute('SELECT status FROM expense_claims WHERE claim_id = ?', (claim_id,))
         claim = cursor.fetchone()
         assert claim['status'] == 'rejected'
+        conn.close()
+
+    @patch('education_system.systems.university.domains.staff.domain.staff_hr.services.managers.expense_manager.get_connection')
+    @patch('education_system.systems.university.domains.staff.domain.staff_hr.services.managers.expense_manager.transaction')
+    @patch('education_system.systems.university.domains.staff.domain.staff_hr.services.managers.expense_manager.log_activity')
+    def test_claimant_cannot_approve_own_claim(self, mock_log, mock_transaction, mock_get_conn, test_db):
+        """The claimant (or anyone outside their line and HR) is refused."""
+        conn = sqlite3.connect(test_db)
+        conn.row_factory = sqlite3.Row
+
+        cursor = conn.cursor()
+        cursor.execute('''
+            INSERT INTO expense_claims (user_id, category_id, amount, description, expense_date, status)
+            VALUES ('EMP001', 1, 100.00, 'Own claim', '2026-01-10', 'submitted')
+        ''')
+        claim_id = cursor.lastrowid
+        conn.commit()
+
+        mock_transaction.return_value.__enter__ = Mock(return_value=conn)
+        mock_transaction.return_value.__exit__ = Mock(return_value=False)
+
+        with pytest.raises(PermissionError):
+            ExpenseManager.approve_claim(claim_id, approver_id='EMP001')
+
+        cursor.execute('SELECT status FROM expense_claims WHERE claim_id = ?', (claim_id,))
+        assert cursor.fetchone()['status'] == 'submitted'
         conn.close()
 
 class TestExpenseCategories:

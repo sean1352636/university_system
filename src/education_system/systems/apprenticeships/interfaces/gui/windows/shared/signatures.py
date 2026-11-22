@@ -26,7 +26,7 @@ from education_system.systems.apprenticeships.domain.records.signatures import (
     SignOff,
 )
 from education_system.systems.apprenticeships.interfaces.gui import widgets
-from education_system.systems.apprenticeships.services import signature_service
+from education_system.systems.apprenticeships.application.records import signature_service
 
 logger = logging.getLogger(__name__)
 

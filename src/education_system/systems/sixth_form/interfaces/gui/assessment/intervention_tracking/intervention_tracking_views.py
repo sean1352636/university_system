@@ -9,7 +9,9 @@ from education_system.systems.sixth_form.interfaces.gui._ui import grab_when_vie
 import datetime as _dt
 import logging
 import tkinter as tk
-from tkinter import messagebox, ttk
+from tkinter import ttk
+from education_system.systems.sixth_form.interfaces.gui._sidebar import SidebarBook
+from education_system.platform.delivery.gui.parented_dialogs import messagebox
 from typing import Callable
 from education_system.platform import branding
 from education_system.systems.sixth_form.domain.assessment.intervention_tracking import (
@@ -50,7 +52,7 @@ def open_intervention_tracking_window(parent=None) -> None:
     win.geometry(WIN_GEOMETRY)
     win.minsize(*WIN_MINSIZE)
 
-    nb = ttk.Notebook(win)
+    nb = SidebarBook(win)
     nb.pack(fill="both", expand=True, padx=10, pady=10)
 
     InterventionsTab(nb)
@@ -327,6 +329,9 @@ class InterventionsTab:
                 + f" ({iv.impact_label})"
                 if iv.impact_grade else "Impact: —"),
         ]
+        alert_id = data.source_alert_id(iv.intervention_id)
+        if alert_id is not None:
+            sub_bits.append(f"From early-warning alert #{alert_id}")
         self.subdetail_var.set("  ·  ".join(sub_bits))
         for s in det.sessions:
             tags = (s.status,) if s.status in SESSION_STATUSES else ()

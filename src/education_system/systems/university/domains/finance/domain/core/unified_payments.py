@@ -8,7 +8,8 @@ of UNION-ing per-domain tables.
 
 Historically each domain had its own payment ledger
 (``library_payments``, ``bursary_payments``, ``nailbar_payments``,
-``library_fine_payments``, plus the now-dropped ``student_payments``).
+``library_fine_payments``, plus ``student_payments``, now a read-only view
+over ``payments`` — migration 4d6f8b0c2e5a).
 The schema's polymorphic columns (``source_type``,
 ``source_payment_id``, ``payment_type``, ``reference_type``,
 ``reference_id``, ``department``) were always there for unification but

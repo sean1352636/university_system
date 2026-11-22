@@ -11,6 +11,7 @@ from __future__ import annotations
 import logging
 import tkinter as tk
 from tkinter import ttk
+from education_system.systems.sixth_form.interfaces.gui._sidebar import SidebarBook
 from education_system.systems.sixth_form.domain.operations.reporting.data_dashboard import data_dashboard as data
 from education_system.systems.sixth_form.domain.operations.reporting.data_dashboard.data_dashboard import (
     DEFAULT_WINDOW_DAYS,
@@ -86,7 +87,7 @@ def open_data_dashboard_window(gui) -> None:
     ttk.Entry(bar, textvariable=window_var, width=6).pack(
         side="left", padx=(4, 12))
 
-    nb = ttk.Notebook(frame)
+    nb = SidebarBook(frame)
     nb.pack(fill="both", expand=True, pady=(4, 0))
 
     # tab frames are created/destroyed on refresh because the panel set

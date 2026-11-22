@@ -20,16 +20,6 @@ from education_system.systems.university.services.data_exporter import (
     PDFExporter,
 )
 
-# Batch Operations
-from education_system.systems.university.services.batch_operations import (
-    BatchOperations,
-    BatchResult,
-    BatchStatus,
-    OperationResult,
-    EnrollmentRequest,
-    GradeUpdateRequest,
-    BatchSizeExceeded,
-)
 
 __all__ = [
     # Data Export
@@ -41,12 +31,4 @@ __all__ = [
     'JSONExporter',
     'CSVExporter',
     'PDFExporter',
-    # Batch Operations
-    'BatchOperations',
-    'BatchResult',
-    'BatchStatus',
-    'OperationResult',
-    'EnrollmentRequest',
-    'GradeUpdateRequest',
-    'BatchSizeExceeded',
 ]

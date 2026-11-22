@@ -348,5 +348,5 @@ View package statistics including:
 ---
 
 **Last Updated**: February 2026
-**Module**: `university_system/modules/domain/mail/`
+**Module**: `src/education_system/systems/university/domains/operations/domain/communications/mail/`
 **Support**: mailroom@university.edu | (555) 123-MAIL

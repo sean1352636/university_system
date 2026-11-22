@@ -40,9 +40,7 @@ class AuthBootstrapConsistencyChecksMixin:
                         logger.info(f"Account for '{username}' already exists, skipping...")
                         continue
 
-                    # Generate a temporary password
-                    temp_password = self._generate_temp_password()
-                    salt, password_hash = self._hash_password(temp_password)
+                    salt, password_hash = "", ""  # passwords are kept only in the shared auth (auth.db)
 
                     try:
                         cursor.execute('''
@@ -51,7 +49,7 @@ class AuthBootstrapConsistencyChecksMixin:
                             VALUES (?, ?, ?, ?, ?, ?, 1)
                         ''', (username, password_hash, salt, user_id, timestamp, timestamp))
 
-                        logger.info(f"Created account for {username} with temporary password")
+                        logger.info(f"Created account record for {username} (sign-in is in the shared auth)")
                     except sqlite3.IntegrityError as e:
                         logger.error(f"Failed to create account for {username}: {e}")
 

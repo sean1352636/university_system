@@ -22,6 +22,7 @@ from education_system.systems.primary.domain.learners.pupils import (
 from education_system.systems.primary.domain.learners.pupils.pupils import (
     ValidationError,
 )
+from education_system.systems.primary.interfaces.gui import kit
 
 logger = logging.getLogger(__name__)
 
@@ -71,14 +72,17 @@ def _session_choices() -> tuple[list[str], dict[str, int]]:
 @_safe_view
 def open_wraparound(host) -> None:
     logger.debug("GUI: open_wraparound")
+    kit.show_page(host, "Breakfast / After-School Club",
+                  lambda parent: _draw_wraparound(parent, host))
 
-    win = tk.Toplevel(host.root)
-    win.title("Breakfast / After-School Club")
-    win.transient(host.root)
-    win.geometry("1140x640")
 
-    nb = ttk.Notebook(win)
-    nb.pack(fill="both", expand=True, padx=10, pady=10)
+def _draw_wraparound(parent: ttk.Frame, host) -> None:
+    win = parent.winfo_toplevel()
+    kit.page_heading(parent, "Breakfast / After-School Club",
+                     "Wraparound sessions, the daily register and all attendance.")
+
+    nb = ttk.Notebook(parent)
+    nb.pack(fill="both", expand=True)
 
     sessions_tab = ttk.Frame(nb, padding=10)
     register_tab = ttk.Frame(nb, padding=10)
@@ -217,8 +221,12 @@ def open_wraparound(host) -> None:
     ttk.Label(r_top, text="Date:").pack(side="left")
     today = _dt.date.today().isoformat()
     reg_date_var = tk.StringVar(value=today)
-    ttk.Entry(r_top, textvariable=reg_date_var, width=14).pack(
-        side="left", padx=(4, 10))
+    kit.DateField(r_top, reg_date_var).pack(side="left", padx=(4, 10))
+    # The session only runs on its own days (the domain refuses a booking on
+    # any other), so say which days they are and flag a date that is not one.
+    reg_days_var = tk.StringVar()
+    reg_days_lbl = ttk.Label(r_top, textvariable=reg_days_var, foreground="#666")
+    reg_days_lbl.pack(side="left")
 
     reg_summary = tk.StringVar()
     ttk.Label(register_tab, textvariable=reg_summary,
@@ -226,9 +234,9 @@ def open_wraparound(host) -> None:
 
     add_row = ttk.LabelFrame(register_tab, text="Add booking", padding=8)
     add_row.pack(fill="x", pady=(8, 6))
-    ttk.Label(add_row, text="Pupil ID:").grid(row=0, column=0, sticky="w")
+    ttk.Label(add_row, text="Pupil:").grid(row=0, column=0, sticky="w")
     add_pid_var = tk.StringVar()
-    ttk.Entry(add_row, textvariable=add_pid_var, width=14).grid(
+    kit.PupilPicker(add_row, add_pid_var, width=40).grid(
         row=0, column=1, padx=(4, 10))
     ttk.Label(add_row, text="Status:").grid(row=0, column=2, sticky="w")
     add_status_var = tk.StringVar(value="booked")
@@ -262,11 +270,34 @@ def open_wraparound(host) -> None:
             return None
         return mapping[sel]
 
+    def _show_session_days(sid: int | None, date: str) -> None:
+        try:
+            sess = data.get_session(sid) if sid is not None else None
+        except Exception:  # noqa: BLE001 - the hint is a nicety
+            logger.debug("get_session(%s) failed", sid, exc_info=True)
+            sess = None
+        days = sess.day_list if sess is not None else []
+        if not days:
+            reg_days_var.set("")
+            return
+        text = "Runs: " + ", ".join(d[:3] for d in days)
+        colour = "#666"
+        try:
+            weekday = _dt.date.fromisoformat(date).strftime("%A") if date else ""
+        except ValueError:
+            weekday = ""
+        if weekday and weekday not in days:
+            text += f"  ({weekday} is not a session day)"
+            colour = "#a33"
+        reg_days_var.set(text)
+        reg_days_lbl.configure(foreground=colour)
+
     def _refresh_register() -> None:
         labels, _ = _session_choices()
         reg_session_box["values"] = labels
         sid = _ssn_id_from_reg()
         date = reg_date_var.get().strip()
+        _show_session_days(sid, date)
         for iid in rtree.get_children():
             rtree.delete(iid)
         if sid is None or not date:
@@ -308,7 +339,7 @@ def open_wraparound(host) -> None:
             return
         pid = add_pid_var.get().strip()
         if not pid:
-            messagebox.showinfo("Wraparound", "Enter a pupil ID.", parent=win)
+            messagebox.showinfo("Wraparound", "Choose a pupil.", parent=win)
             return
         try:
             data.book({
@@ -392,21 +423,21 @@ def open_wraparound(host) -> None:
     att_session_box = ttk.Combobox(a_filt, textvariable=att_session_var,
                                    values=["All"], state="readonly", width=36)
     att_session_box.pack(side="left", padx=(4, 10))
-    ttk.Label(a_filt, text="Pupil ID:").pack(side="left")
+    ttk.Label(a_filt, text="Pupil:").pack(side="left")
     att_pupil_var = tk.StringVar()
-    ttk.Entry(a_filt, textvariable=att_pupil_var, width=12).pack(
+    kit.PupilPicker(a_filt, att_pupil_var, width=32).pack(
         side="left", padx=(4, 10))
-    ttk.Label(a_filt, text="From:").pack(side="left")
+    a_filt2 = ttk.Frame(attendance_tab)
+    a_filt2.pack(fill="x", pady=(0, 6))
+    ttk.Label(a_filt2, text="From:").pack(side="left")
     att_from_var = tk.StringVar()
-    ttk.Entry(a_filt, textvariable=att_from_var, width=12).pack(
-        side="left", padx=(4, 10))
-    ttk.Label(a_filt, text="To:").pack(side="left")
+    kit.DateField(a_filt2, att_from_var).pack(side="left", padx=(4, 10))
+    ttk.Label(a_filt2, text="To:").pack(side="left")
     att_to_var = tk.StringVar()
-    ttk.Entry(a_filt, textvariable=att_to_var, width=12).pack(
-        side="left", padx=(4, 10))
-    ttk.Label(a_filt, text="Status:").pack(side="left")
+    kit.DateField(a_filt2, att_to_var).pack(side="left", padx=(4, 10))
+    ttk.Label(a_filt2, text="Status:").pack(side="left")
     att_status_var = tk.StringVar(value="All")
-    ttk.Combobox(a_filt, textvariable=att_status_var,
+    ttk.Combobox(a_filt2, textvariable=att_status_var,
                  values=["All"] + list(ATTENDANCE_STATUSES),
                  state="readonly", width=10).pack(side="left", padx=(4, 10))
 
@@ -528,8 +559,9 @@ def open_wraparound(host) -> None:
     ttk.Button(a_btns, text="Refresh",
                command=_refresh_attendance).pack(side="left", padx=(8, 0))
 
-    ttk.Button(win, text="Close", command=win.destroy).pack(
-        anchor="e", padx=12, pady=(0, 10))
+    ttk.Button(parent, text="Close",
+               command=lambda: kit.close_page(host, parent)).pack(
+        anchor="e", pady=(6, 0))
 
     def _refresh_all() -> None:
         _refresh_sessions()
@@ -588,33 +620,41 @@ def _open_session_dialog(parent, *, session_id: int | None,
                  state="readonly", width=20).grid(
         row=1, column=1, sticky="w", pady=3)
 
-    ttk.Label(frm, text="Days (comma-sep)").grid(
+    ttk.Label(frm, text="Days").grid(
         row=2, column=0, sticky="w", pady=3)
     days_var = tk.StringVar(
         value=existing.days_of_week or "" if existing else "")
-    ttk.Entry(frm, textvariable=days_var, width=30).grid(
-        row=2, column=1, columnspan=2, sticky="ew", pady=3)
-    ttk.Label(frm, text=f"({', '.join(DAYS_OF_WEEK)})",
-              foreground="#888").grid(
-        row=3, column=1, columnspan=2, sticky="w")
+    stored_days = {d.strip().lower()[:3] for d in days_var.get().split(",") if d.strip()}
+    day_box = ttk.Frame(frm)
+    day_box.grid(row=2, column=1, columnspan=2, sticky="w", pady=3)
+    day_vars: list[tuple[str, tk.BooleanVar]] = []
+    for day in DAYS_OF_WEEK:
+        dv = tk.BooleanVar(value=day.lower()[:3] in stored_days)
+        day_vars.append((day, dv))
+        ttk.Checkbutton(day_box, text=day[:3], variable=dv).pack(side="left", padx=(0, 4))
 
-    ttk.Label(frm, text="Start (HH:MM)").grid(
+    def _sync_days(*_a) -> None:
+        days_var.set(",".join(d for d, dv in day_vars if dv.get()))
+    for _d, dv in day_vars:
+        dv.trace_add("write", _sync_days)
+
+    ttk.Label(frm, text="Start").grid(
         row=4, column=0, sticky="w", pady=3)
     start_var = tk.StringVar(value=existing.start_time or "" if existing else "")
-    ttk.Entry(frm, textvariable=start_var, width=10).grid(
+    kit.TimeField(frm, start_var, hours=range(6, 20)).grid(
         row=4, column=1, sticky="w", pady=3)
 
-    ttk.Label(frm, text="End (HH:MM)").grid(
+    ttk.Label(frm, text="End").grid(
         row=5, column=0, sticky="w", pady=3)
     end_var = tk.StringVar(value=existing.end_time or "" if existing else "")
-    ttk.Entry(frm, textvariable=end_var, width=10).grid(
+    kit.TimeField(frm, end_var, hours=range(6, 20)).grid(
         row=5, column=1, sticky="w", pady=3)
 
     ttk.Label(frm, text="Capacity").grid(row=6, column=0, sticky="w", pady=3)
     cap_var = tk.StringVar(
         value="" if not existing or existing.capacity is None
         else str(existing.capacity))
-    ttk.Entry(frm, textvariable=cap_var, width=8).grid(
+    kit.NumberField(frm, cap_var, from_=1, to=500, width=8).grid(
         row=6, column=1, sticky="w", pady=3)
 
     ttk.Label(frm, text="Fee (£)").grid(row=7, column=0, sticky="w", pady=3)
@@ -622,7 +662,7 @@ def _open_session_dialog(parent, *, session_id: int | None,
     if existing and existing.fee_pence:
         fee_default = f"{existing.fee_pence/100:.2f}"
     fee_var = tk.StringVar(value=fee_default)
-    ttk.Entry(frm, textvariable=fee_var, width=10).grid(
+    kit.NumberField(frm, fee_var, increment=0.01, to=999, width=10).grid(
         row=7, column=1, sticky="w", pady=3)
     ttk.Label(frm, text="(0 or blank = free)",
               foreground="#888").grid(row=7, column=2, sticky="w", padx=(8, 0))

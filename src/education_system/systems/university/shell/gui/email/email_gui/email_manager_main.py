@@ -403,6 +403,8 @@ class EmailManagerGUI:
         email_menu.add_separator()
         email_menu.add_command(label=_t("email.menu.templates", default="Templates"), command=self.manage_templates)
         email_menu.add_command(label=_t("email.menu.configuration", default="Configuration"), command=self.email_configuration)
+        email_menu.add_command(label="Delivery", command=self.open_delivery)
+        email_menu.add_command(label="E-mail preferences", command=self.email_preferences)
 
         # Communication menu
         comm_menu = tk.Menu(menubar, tearoff=0)

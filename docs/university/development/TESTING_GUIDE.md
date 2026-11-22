@@ -4,24 +4,15 @@ Comprehensive guide to testing the University Management System.
 
 ## 📊 Test Suite Overview
 
-The system includes **103 comprehensive test files** covering all major components:
+University tests are organised by scope, then by owner:
 
-- **Core Functionality**: 11 tests (authentication, enrollment, courses)
-- **Database**: 6 tests (integrity, consistency, backup/restore)
-- **Security**: 5 tests (password hashing, encryption, input sanitization)
-- **Services**: 5 tests (authentication, authorization, payment)
-- **Domain**: 5 tests (entities, aggregates, policies)
-- **Infrastructure**: 10 tests (cache, config, logging, migrations)
-- **API**: 5 tests (endpoints, rate limiting, headers)
-- **CLI**: 5 tests (workflows, error rendering, help)
-- **GUI**: 9 tests (initialization, accessibility, screens)
-- **Feature Modules**: 19 tests (academic, finance, health, union)
-- **Analytics**: 4 tests (datasets, models, engineering)
-- **Integration**: 5 tests (email, storage, event bus)
-- **Email**: 2 tests (service, validation)
-- **Reporting**: 3 tests (generation, charts, PDF)
-- **Jobs**: 1 test (schedulers)
-- **Utilities**: 8 tests (logging, performance, search)
+- **Unit**: `tests/unit/systems/university/` (`application/`, `domains/`, `infrastructure/`, `services/`, `shell/`)
+- **Integration**: `tests/integration/systems/university/`
+- **Contract**: `tests/contract/university/`
+- **End to end**: `tests/end_to_end/university/`
+- **Smoke**: `tests/smoke/university/`
+- **Security**: `tests/security/`
+- **Performance**: `tests/performance/benchmarks/`
 
 ## 🚀 Quick Start
 
@@ -34,26 +25,25 @@ make test
 # Run with coverage report
 make test-coverage
 
-# Run tests in parallel (faster)
-make test-fast
+# Run the university suite
+make test-university
 
 # Run specific test category
-make test-unit
-make test-integration
 make test-security
+make test-gui
 ```
 
 ### Using Python Directly
 
 ```bash
 # All tests with pytest
-python -m pytest university_system/tests/
+python -m pytest tests/
 
 # Specific test file
-python university_system/tests/test_authentication.py
+python -m pytest tests/unit/platform/identity/auth/test_auth_core.py -v --timeout=60
 
-# Test suite runner
-python university_system/tests/run_all_tests.py
+# University unit tests
+python -m pytest tests/unit/systems/university/ -m "not slow and not gui" --timeout=60
 ```
 
 ## 📁 Test Organization
@@ -61,35 +51,27 @@ python university_system/tests/run_all_tests.py
 ### Directory Structure
 
 ```
-university_system/tests/
-├── run_all_tests.py           # Master test runner
-├── README.md                  # Test documentation
-│
-├── Core Functionality Tests
-├── test_authentication.py
-├── test_student_enrollment.py
-├── test_course_management.py
-├── test_modules.py
-├── test_instructors.py
-│
-├── Database Tests
-├── test_database.py
-├── test_database_integrity.py
-├── test_data_consistency.py
-├── test_backup_restore.py
-│
-├── Security Tests
-├── test_security_password_hashing.py
-├── test_security_encryption_fernet.py
-├── test_security_input_sanitization.py
-│
-├── GUI Tests
-├── test_gui_initialization.py
-├── test_gui_login_flow.py
-├── test_widget_safety.py
-│
-└── [90+ more test files...]
+tests/
+├── conftest.py
+├── fixtures/                     # Shared fixtures, including university DB isolation
+├── unit/
+│   ├── platform/                 # Includes identity/auth/
+│   └── systems/university/
+│       ├── _support/             # Includes run_all_tests.py
+│       ├── application/
+│       ├── domains/              # One folder per slice; see the note below
+│       ├── infrastructure/
+│       ├── services/
+│       └── shell/
+├── integration/systems/university/
+├── contract/university/
+├── end_to_end/university/
+├── smoke/university/
+├── security/
+└── performance/benchmarks/
 ```
+
+`tests/unit/systems/university/domains/` still has `academics/` and `pastoral/` folders from before those slices were split, alongside folders for the current slices.
 
 ## 🧪 Test Types
 
@@ -98,30 +80,27 @@ university_system/tests/
 Test individual functions and methods in isolation.
 
 ```python
-# Example: test_authentication.py
+# Example: a test under tests/unit/platform/identity/auth/
 import unittest
-from university_system.infrastructure.auth import UserAuth
+from education_system.platform.identity.auth.password_manager import hash_password, verify_password
 
-class TestAuthentication(unittest.TestCase):
-    def setUp(self):
-        self.auth = UserAuth()
-
+class TestPasswordHashing(unittest.TestCase):
     def test_password_hashing(self):
         """Test that passwords are properly hashed"""
         password = "SecurePass123!"
-        hashed = self.auth.hash_password(password)
+        hashed = hash_password(password)
         self.assertNotEqual(password, hashed)
-        self.assertTrue(self.auth.verify_password(password, hashed))
+        self.assertTrue(verify_password(password, hashed))
 
-    def test_invalid_login(self):
-        """Test failed login with wrong password"""
-        result = self.auth.login("user", "wrong_password")
-        self.assertFalse(result)
+    def test_wrong_password(self):
+        """Test that a wrong password does not verify"""
+        hashed = hash_password("SecurePass123!")
+        self.assertFalse(verify_password("wrong_password", hashed))
 ```
 
 **Run unit tests only**:
 ```bash
-python -m pytest -m unit university_system/tests/
+python -m pytest -m unit tests/unit/systems/university/
 ```
 
 ### Integration Tests
@@ -129,10 +108,10 @@ python -m pytest -m unit university_system/tests/
 Test how modules work together.
 
 ```python
-# Example: test_integration.py
+# Example: a test under tests/integration/systems/university/
 import unittest
-from university_system.infrastructure.auth import UserAuth
-from university_system.infrastructure.email import send_email_via_smtp
+from education_system.systems.university.infrastructure.auth import UserAuth
+from education_system.systems.university.infrastructure.email.smtp import send_email_via_smtp
 
 class TestEmailIntegration(unittest.TestCase):
     def test_registration_email(self):
@@ -149,7 +128,7 @@ class TestEmailIntegration(unittest.TestCase):
 
 **Run integration tests only**:
 ```bash
-python -m pytest -m integration university_system/tests/
+python -m pytest -m integration tests/integration/systems/university/
 ```
 
 ### Security Tests
@@ -157,9 +136,9 @@ python -m pytest -m integration university_system/tests/
 Test security features and protections.
 
 ```python
-# Example: test_security_input_sanitization.py
+# Example: a test under tests/security/injection/
 import unittest
-from university_system.utils.security import sanitize_input
+from education_system.systems.university.infrastructure.validation.sanitizers import sanitize_input
 
 class TestInputSanitization(unittest.TestCase):
     def test_sql_injection_prevention(self):
@@ -177,7 +156,7 @@ class TestInputSanitization(unittest.TestCase):
 
 **Run security tests only**:
 ```bash
-python -m pytest -m security university_system/tests/
+python -m pytest -m security tests/security/
 ```
 
 ### GUI Tests
@@ -185,28 +164,21 @@ python -m pytest -m security university_system/tests/
 Test graphical interface components.
 
 ```python
-# Example: test_gui_initialization.py
+# Example: a test under tests/unit/systems/university/shell/gui/main/
 import unittest
-from tkinter import Tk
-from university_system.modules.interfaces.gui.main_gui import MainGUI
+from unittest.mock import Mock
+from education_system.systems.university.shell.gui.main.main_gui import UnifiedManagementGUI
 
 class TestGUIInitialization(unittest.TestCase):
-    def setUp(self):
-        self.root = Tk()
-
     def test_main_window_creation(self):
         """Test main window initializes correctly"""
-        gui = MainGUI(self.root)
+        gui = UnifiedManagementGUI(Mock())
         self.assertIsNotNone(gui)
-        self.assertEqual(gui.root.title(), "University Management System")
-
-    def tearDown(self):
-        self.root.destroy()
 ```
 
 **Run GUI tests only**:
 ```bash
-python -m pytest -m gui university_system/tests/
+python -m pytest -m gui tests/unit/systems/university/shell/ -n 0
 ```
 
 ## 📈 Test Coverage
@@ -227,9 +199,8 @@ Coverage settings in `pyproject.toml`:
 
 ```toml
 [tool.coverage.run]
-source = ["university_system"]
-omit = ["*/tests/*", "*/__pycache__/*"]
-branch = true
+source = ["src/education_system"]
+omit = ["tests/*", "*/tests/*", "*/__pycache__/*"]
 
 [tool.coverage.report]
 precision = 2
@@ -264,7 +235,7 @@ Tests cover:
 """
 
 import unittest
-from university_system.modules.feature import Feature
+from education_system.systems.university.domains.<slice>.domain.feature import Feature
 
 class TestFeature(unittest.TestCase):
     """Test suite for Feature"""
@@ -375,10 +346,10 @@ make ci
 
 # This runs:
 # 1. clean - Remove cache files
-# 2. install-dev - Install dependencies
-# 3. lint - Check code style
-# 4. type-check - Check types
-# 5. test-coverage - Run tests with coverage
+# 2. lint - Check code style
+# 3. test-cov - Run tests with coverage
+# 4. security-scan - Run bandit
+# 5. supply-chain-check - Check locks and dependencies
 ```
 
 ### Pre-commit Checks
@@ -386,13 +357,11 @@ make ci
 Before committing code:
 
 ```bash
-# Run all quality checks
-make pre-commit
+# Format code
+make format
 
-# This runs:
-# 1. format - Format code
-# 2. lint - Check style
-# 3. test - Run tests
+# Run lint and tests
+make check
 ```
 
 ## 🐛 Debugging Failed Tests
@@ -401,16 +370,16 @@ make pre-commit
 
 ```bash
 # Run specific test file
-python -m pytest university_system/tests/test_authentication.py -v
+python -m pytest tests/unit/platform/identity/auth/test_auth_core.py -v
 
 # Run specific test function
-python -m pytest university_system/tests/test_authentication.py::TestAuth::test_login -v
+python -m pytest tests/unit/platform/identity/auth/test_auth_core.py::TestClassName::test_name -v
 
 # Show print statements (useful for debugging)
-python -m pytest university_system/tests/test_authentication.py -s
+python -m pytest tests/unit/platform/identity/auth/test_auth_core.py -s
 
 # Drop into debugger on failure
-python -m pytest university_system/tests/test_authentication.py --pdb
+python -m pytest tests/unit/platform/identity/auth/test_auth_core.py --pdb
 ```
 
 ### Common Test Failures
@@ -421,7 +390,7 @@ python -m pytest university_system/tests/test_authentication.py --pdb
    - Add `tearDown()` methods
 
 2. **Import Errors**
-   - Check PYTHONPATH is set correctly
+   - Check the project is installed (`make install-dev`) or `src/` is on `PYTHONPATH`
    - Ensure `__init__.py` files exist
    - Verify package structure
 
@@ -452,10 +421,9 @@ python -m pytest university_system/tests/test_authentication.py --pdb
 
 ## 📚 Related Documentation
 
-- [Contributing Guide](../../../../CONTRIBUTING.md) - Contribution guidelines
+- [Contributing Guide](../../../CONTRIBUTING.md) - Contribution guidelines
 
 ---
 
-**Test Suite**: 103 test files
 **Coverage Goal**: 80%+ overall, 90%+ critical modules
 **Test Runner**: pytest with unittest framework

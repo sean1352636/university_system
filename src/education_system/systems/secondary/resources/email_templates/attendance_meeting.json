@@ -1,0 +1,35 @@
+{
+  "name": "attendance_meeting",
+  "description": "Invitation to an attendance meeting to agree support (stage: Attendance meeting).",
+  "subject": "Attendance meeting - {pupil_name}",
+  "body": [
+    "Dear {recipient_name},",
+    "",
+    "{first_name}'s attendance has not improved enough and we would like to meet you to talk about it and agree how we can support {first_name}.",
+    "",
+    "{first_name}'s attendance from {period} is {attendance_pct}%. {first_name} has missed {sessions_missed} sessions (half-days), {unauthorised} of them unauthorised.",
+    "",
+    "{details}",
+    "",
+    "At the meeting we will listen to any barriers to attendance and agree an attendance support plan with actions for school, home and {first_name}. Please let us know if the time does not suit you.",
+    "",
+    "Yours sincerely,",
+    "{sender_name}",
+    "{school_name}"
+  ],
+  "placeholders": {
+    "recipient_name": "The contact's name",
+    "pupil_name": "The pupil's preferred first name and surname",
+    "first_name": "The pupil's preferred first name",
+    "attendance_pct": "Attendance this school year (%)",
+    "sessions_missed": "Sessions missed this school year",
+    "unauthorised": "Unauthorised sessions this school year",
+    "period": "The dates the figures cover",
+    "details": "Meeting date, the agreed target and any extra note",
+    "sender_name": "The attendance lead / key worker",
+    "school_name": "The school's name"
+  },
+  "defaults": {
+    "school_name": "Secondary School"
+  }
+}

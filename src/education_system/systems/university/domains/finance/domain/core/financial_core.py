@@ -200,10 +200,11 @@ def seed_budget_categories(cursor) -> bool:
     return True
 
 
-# Dummy auth setup to bypass JWT
+# Nobody is signed in until set_finance_auth() or the menu's shared auth says
+# otherwise: every permission check fails closed.
 auth = type("Auth", (), {})()
-auth.current_user = {"username": "admin"}
-auth.check_permission = lambda p: True
+auth.current_user = None
+auth.check_permission = lambda p: False
 app = Flask(__name__)
 
 # Initialize security headers for all responses

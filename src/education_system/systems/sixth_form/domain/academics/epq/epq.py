@@ -26,6 +26,9 @@ from dataclasses import dataclass
 from typing import Any
 
 from education_system import paths
+from education_system.systems.sixth_form.domain.academics.qualifications import (
+    grade_scales as _gs,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -42,7 +45,12 @@ STAGES: tuple[str, ...] = (
 )
 DEFAULT_STAGE: str = "Proposal"
 
-GRADES: tuple[str, ...] = ("A*", "A", "B", "C", "D", "E", "U")
+# The EPQ scale from qualifications.grade_scales (A*-U, as before).
+GRADES: tuple[str, ...] = _gs.scale_for("EPQ").grades
+
+#: Guided learning hours the EPQ specification sets for the project.
+#: Logged production-log hours are checked against it.
+EPQ_TARGET_HOURS: float = 120.0
 
 MILESTONE_TYPES: tuple[str, ...] = (
     "PROPOSAL", "MID_REVIEW", "DRAFT", "PRESENTATION",
@@ -126,6 +134,32 @@ class EPQProject:
     notes: str | None
     created_at: str
     updated_at: str
+    # Teacher authentication (JCQ): the supervisor confirms the work is
+    # the candidate's own, after the candidate's declaration.
+    candidate_declared_at: str | None = None
+    authenticated_by: str | None = None
+    authenticated_at: str | None = None
+    authentication_notes: str | None = None
+
+    @property
+    def is_authenticated(self) -> bool:
+        return bool(self.authenticated_by and self.authenticated_at)
+
+
+@dataclass
+class HoursCheck:
+    project_id: int
+    logged_hours: float
+    target_hours: float
+    remaining: float
+    met: bool
+
+    @property
+    def label(self) -> str:
+        if self.met:
+            return f"{self.logged_hours:g} / {self.target_hours:g} h — target met"
+        return (f"{self.logged_hours:g} / {self.target_hours:g} h — "
+                f"{self.remaining:g} h short")
 
 
 @dataclass
@@ -185,6 +219,13 @@ def init_db() -> None:
     _students.init_db()
     with _connect() as conn:
         conn.executescript(_SCHEMA)
+        cols = {r["name"] for r in conn.execute("PRAGMA table_info(epq_projects)")}
+        for col in ("candidate_declared_at", "authenticated_by",
+                    "authenticated_at", "authentication_notes"):
+            if col not in cols:
+                conn.execute(f"ALTER TABLE epq_projects ADD COLUMN {col} TEXT")
+                logger.info("EPQ: added column %s", col)
+        conn.commit()
     logger.debug("EPQ schema ready at %s", DB_PATH)
     _DB_READY = True
 
@@ -199,6 +240,14 @@ def _row_project(r: sqlite3.Row) -> EPQProject:
         final_mark=r["final_mark"], final_grade=r["final_grade"],
         notes=r["notes"],
         created_at=r["created_at"], updated_at=r["updated_at"],
+        candidate_declared_at=(r["candidate_declared_at"]
+                               if "candidate_declared_at" in r.keys() else None),
+        authenticated_by=(r["authenticated_by"]
+                          if "authenticated_by" in r.keys() else None),
+        authenticated_at=(r["authenticated_at"]
+                          if "authenticated_at" in r.keys() else None),
+        authentication_notes=(r["authentication_notes"]
+                              if "authentication_notes" in r.keys() else None),
     )
 
 
@@ -286,9 +335,12 @@ def _validate_project_payload(data: dict[str, Any]) -> dict[str, Any]:
         out["final_mark"] = m
 
     grade = (data.get("final_grade") or "").strip() or None
-    if grade is not None and grade not in GRADES:
-        raise ValidationError(
-            f"Final grade must be one of: {', '.join(GRADES)}")
+    if grade is not None:
+        try:
+            grade = _gs.validate_grade(grade, "EPQ")
+        except ValueError:
+            raise ValidationError(
+                f"Final grade must be one of: {', '.join(GRADES)}") from None
     out["final_grade"] = grade
 
     out["research_question"] = (data.get("research_question") or "").strip() or None
@@ -369,6 +421,10 @@ def create_project(data: dict[str, Any]) -> EPQProject:
     except ValidationError as e:
         logger.warning("create_project validation failed: %s", e)
         raise
+    if p["final_grade"] or p["stage"] == "Complete":
+        raise ValidationError(
+            "A new project cannot be Complete or carry a final grade — the "
+            "supervisor must authenticate the work first")
     try:
         with _connect() as conn:
             cur = conn.execute(
@@ -505,6 +561,16 @@ def update_project(project_id: int, data: dict[str, Any]) -> EPQProject:
         "final_grade":       data.get("final_grade", existing.final_grade),
         "notes":             data.get("notes", existing.notes),
     })
+    # JCQ: no final mark/grade, and no "Complete", until the supervisor
+    # has authenticated the work. Only a *change* is held to this, so
+    # projects graded before authentication was recorded stay editable.
+    grading = (p["final_grade"] and p["final_grade"] != existing.final_grade) \
+        or (p["final_mark"] is not None and p["final_mark"] != existing.final_mark) \
+        or (p["stage"] == "Complete" and existing.stage != "Complete")
+    if grading and not existing.is_authenticated:
+        raise ValidationError(
+            "The supervisor must authenticate this project (teacher "
+            "authentication) before it is marked, graded or completed")
     with _connect() as conn:
         conn.execute(
             """UPDATE epq_projects SET
@@ -568,6 +634,37 @@ def create_log_entry(data: dict[str, Any]) -> EPQLogEntry:
     return out
 
 
+#: Stages in which the learner may still add to their own production log.
+LEARNER_LOG_CLOSED_STAGES: tuple[str, ...] = ("Complete", "Withdrawn")
+
+
+def add_own_log_entry(student_id: str, *, entry_date: str, hours: Any,
+                      activity: str, reflection: str | None = None) -> EPQLogEntry:
+    """The learner adds an entry to their *own* production log.
+
+    The project is found from ``student_id`` — a learner never names a
+    project id. The log closes once the project is Complete or
+    Withdrawn, or once the supervisor has authenticated the work, and an
+    entry may not be dated in the future.
+    """
+    proj = get_project_for_student(student_id or "")
+    if proj is None:
+        raise ValidationError("You do not have an EPQ project on record.")
+    if proj.stage in LEARNER_LOG_CLOSED_STAGES:
+        raise ValidationError(
+            f"Your project is {proj.stage}; the production log is closed.")
+    if proj.is_authenticated:
+        raise ValidationError(
+            "Your supervisor has authenticated your work, so the production "
+            "log is closed. Ask them if something needs adding.")
+    when = _validate_date(entry_date, "Entry date")
+    if when and when > _dt.date.today().isoformat():
+        raise ValidationError("A log entry cannot be dated in the future.")
+    return create_log_entry({"project_id": proj.project_id, "entry_date": when,
+                             "hours": hours, "activity": activity,
+                             "reflection": reflection})
+
+
 def get_log_entry(log_id: int) -> EPQLogEntry | None:
     init_db()
     with _connect() as conn:
@@ -600,6 +697,90 @@ def delete_log_entry(log_id: int) -> bool:
             logger.info("Deleted EPQ log entry #%d", log_id)
             return True
         return False
+
+
+def hours_check(project_id: int, *, target: float | None = None) -> HoursCheck:
+    """Logged production-log hours against the 120-hour EPQ target."""
+    tgt = float(target if target is not None else EPQ_TARGET_HOURS)
+    logged = round(total_hours_for_project(project_id), 2)
+    return HoursCheck(project_id=project_id, logged_hours=logged,
+                      target_hours=tgt, remaining=round(max(0.0, tgt - logged), 2),
+                      met=logged >= tgt)
+
+
+def projects_below_target(*, target: float | None = None) -> list[tuple[EPQProject, HoursCheck]]:
+    """Live (not Withdrawn) projects whose logged hours are under target."""
+    out = []
+    for proj in list_projects():
+        if proj.stage == "Withdrawn":
+            continue
+        chk = hours_check(proj.project_id, target=target)
+        if not chk.met:
+            out.append((proj, chk))
+    return out
+
+
+def authenticate_project(project_id: int, *, teacher: str,
+                         candidate_declared: bool,
+                         notes: str | None = None,
+                         hours_shortfall_reason: str | None = None) -> EPQProject:
+    """Record the supervisor's authentication of the candidate's work.
+
+    The candidate must have signed their declaration. If the production
+    log is short of the 120-hour target the teacher must say why
+    (``hours_shortfall_reason``) — that reason is kept with the notes.
+    """
+    init_db()
+    proj = get_project(project_id)
+    if proj is None:
+        raise ValidationError(f"No project with id {project_id}")
+    teacher = (teacher or "").strip()
+    if not teacher:
+        raise ValidationError("Authenticating teacher is required")
+    if not candidate_declared:
+        raise ValidationError(
+            "The candidate must sign their declaration before the teacher "
+            "can authenticate the work")
+    chk = hours_check(project_id)
+    note = (notes or "").strip()
+    if not chk.met:
+        reason = (hours_shortfall_reason or "").strip()
+        if not reason:
+            raise ValidationError(
+                f"Production log shows {chk.logged_hours:g} of "
+                f"{chk.target_hours:g} hours — give a reason to authenticate anyway")
+        note = (note + "\n" if note else "") + f"Hours shortfall: {reason}"
+    with _connect() as conn:
+        conn.execute(
+            """UPDATE epq_projects SET
+                   candidate_declared_at = COALESCE(candidate_declared_at, datetime('now')),
+                   authenticated_by = ?, authenticated_at = datetime('now'),
+                   authentication_notes = ?, updated_at = datetime('now')
+               WHERE project_id = ?""",
+            (teacher, note or None, project_id))
+        conn.commit()
+    logger.info("EPQ project #%d authenticated by %s (%s)", project_id,
+                teacher, chk.label)
+    out = get_project(project_id)
+    assert out is not None
+    return out
+
+
+def revoke_authentication(project_id: int) -> EPQProject:
+    """Undo an authentication recorded in error (the grade stays)."""
+    init_db()
+    with _connect() as conn:
+        conn.execute(
+            """UPDATE epq_projects SET candidate_declared_at = NULL,
+                   authenticated_by = NULL, authenticated_at = NULL,
+                   updated_at = datetime('now') WHERE project_id = ?""",
+            (project_id,))
+        conn.commit()
+    out = get_project(project_id)
+    if out is None:
+        raise ValidationError(f"No project with id {project_id}")
+    logger.info("EPQ project #%d authentication revoked", project_id)
+    return out
 
 
 def total_hours_for_project(project_id: int) -> float:

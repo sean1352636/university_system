@@ -7,11 +7,11 @@ from datetime import date, timedelta
 import pytest
 
 from education_system.systems.apprenticeships.domain.apprentices.models import ValidationError
-from education_system.systems.apprenticeships.services import (
-    apprentice_service,
+from education_system.systems.apprenticeships.application.apprentices import apprentice_service
+from education_system.systems.apprenticeships.application.employers import employer_contact_service
+from education_system.systems.apprenticeships.application.programmes import programme_service
+from education_system.systems.apprenticeships.application.workspace import (
     calendar_service,
-    employer_contact_service,
-    programme_service,
     reporting_service,
     task_service,
 )

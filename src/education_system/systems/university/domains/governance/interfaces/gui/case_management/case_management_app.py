@@ -3,7 +3,8 @@
 Launched as a subprocess by the main GUI (``_NEW_FEATURE_MODULES``), so the
 signed-in user arrives through the ``EDU_AUTH_*`` env bundle and is resolved
 by ``require_launcher_auth``. Staff only. Backed entirely by
-``application.case_management``; nothing touches the DB at import time.
+``application.case_management``; nothing touches the DB at import time. The
+"Academic Appeals" tab runs the appeals procedure (``appeals_panel``).
 """
 from __future__ import annotations
 
@@ -47,8 +48,21 @@ class CaseManagementApp(tk.Frame):
         tk.Label(header, text=f"Signed in: {self._actor} ({self._user.get('role') or '-'})",
                  bg="#2c3e50", fg="#bdc3c7").pack(side="right", padx=16)
 
+        # The shared register and the academic appeals procedure, one tab each.
+        notebook = ttk.Notebook(self)
+        notebook.pack(fill="both", expand=True)
+        register = tk.Frame(notebook)
+        notebook.add(register, text="Case Register")
+        try:
+            from education_system.systems.university.domains.governance.interfaces.gui.case_management.appeals_panel import (  # noqa: E501
+                AppealsPanel,
+            )
+            notebook.add(AppealsPanel(notebook, user=self._user), text="Academic Appeals")
+        except Exception:
+            logger.exception("Academic appeals panel unavailable")
+
         # Action bar is packed before the expanding panes (memory: window sizing).
-        bar = tk.Frame(self)
+        bar = tk.Frame(register)
         bar.pack(fill="x", padx=8, pady=6)
         tk.Label(bar, text="Type:").pack(side="left")
         self._type_var = tk.StringVar(value="")
@@ -62,7 +76,7 @@ class CaseManagementApp(tk.Frame):
                            ("Change Status", self.transition)):
             ttk.Button(bar, text=label, command=cmd).pack(side="left", padx=4)
 
-        panes = ttk.PanedWindow(self, orient="horizontal")
+        panes = ttk.PanedWindow(register, orient="horizontal")
         panes.pack(fill="both", expand=True, padx=8, pady=(0, 8))
         cols = ("case_id", "case_type", "subject_id", "status", "opened_at")
         self._tree = ttk.Treeview(panes, columns=cols, show="headings")

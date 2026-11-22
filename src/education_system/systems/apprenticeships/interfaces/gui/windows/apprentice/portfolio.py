@@ -20,10 +20,8 @@ from typing import Any
 
 from education_system.systems.apprenticeships import config
 from education_system.systems.apprenticeships.interfaces.gui import widgets
-from education_system.systems.apprenticeships.services import (
-    portfolio_service,
-    programme_service,
-)
+from education_system.systems.apprenticeships.application.assessments import portfolio_service
+from education_system.systems.apprenticeships.application.programmes import programme_service
 
 logger = logging.getLogger(__name__)
 
@@ -361,7 +359,7 @@ def _coverage(parent: Any, rows: list, blurb: str) -> None:
 
 
 def _apprentice(gui, apprentice_id: int) -> Any:
-    from education_system.systems.apprenticeships.services import apprentice_service
+    from education_system.systems.apprenticeships.application.apprentices import apprentice_service
 
     return apprentice_service.get_apprentice(gui.actor, apprentice_id)
 

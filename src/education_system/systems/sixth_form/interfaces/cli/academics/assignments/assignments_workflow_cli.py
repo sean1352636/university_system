@@ -14,10 +14,14 @@ import logging
 from typing import Any, Callable
 
 from education_system.systems.sixth_form.domain.academics.assignments import (
-    assignments as data,
     assignments_assessment as assess,
     assignments_feedback as feedback,
     assignments_marking as marking,
+)
+from education_system.systems.sixth_form.domain.academics.assignments import (
+    crud as assignments_crud,
+    models as assignments_models,
+    store as assignments_store,
 )
 from education_system.systems.sixth_form.interfaces.cli.academics.assignments.assignments_cli import (
     _input,
@@ -45,8 +49,8 @@ def _fmt(value: float | None, dash: str = "—") -> str:
     return f"{value:g}" if value is not None else dash
 
 
-def _who(submission: data.Submission,
-          assignment: data.Assignment) -> str:
+def _who(submission: assignments_models.Submission,
+          assignment: assignments_models.Assignment) -> str:
     """Student label, honouring anonymous marking."""
     return feedback.display_student_id(submission, assignment)
 
@@ -66,7 +70,7 @@ def pending_release_flow() -> None:
           f"{'Marks':>6}  {'Grade':<5}  Policy")
     print("  " + "-" * 90)
     for s in rows:
-        a = data.get_assignment(s.assignment_id)
+        a = assignments_store.get_assignment(s.assignment_id)
         policy = a.release_policy if a else "—"
         if a and a.release_policy == "On date":
             policy += f" ({a.release_on or 'no date'})"
@@ -119,7 +123,7 @@ def release_one_flow() -> None:
     try:
         out = feedback.release_submission(sub.submission_id,
                                            released_by=by or None)
-    except data.ValidationError as e:
+    except assignments_models.ValidationError as e:
         print(f"\n  ✗ {e}")
         _pause()
         return
@@ -172,7 +176,7 @@ def acknowledge_flow() -> None:
     try:
         out = feedback.acknowledge(sub.submission_id,
                                     response=response or None)
-    except data.ValidationError as e:
+    except assignments_models.ValidationError as e:
         print(f"\n  ✗ {e}")
         _pause()
         return
@@ -215,7 +219,7 @@ def student_responses_flow() -> None:
         return
     names = _names()
     found = 0
-    for s in data.list_submissions(assignment_id=a.assignment_id):
+    for s in assignments_store.list_submissions(assignment_id=a.assignment_id):
         if not s.student_response:
             continue
         found += 1
@@ -323,7 +327,7 @@ def anonymity_flow() -> None:
     state = "on" if a.anonymous_marking else "off"
     print(f"\n  Anonymous marking is {state} for #{a.assignment_id}.")
     print("  Names are hidden until results are released.")
-    subs = data.list_submissions(assignment_id=a.assignment_id)
+    subs = assignments_store.list_submissions(assignment_id=a.assignment_id)
     hidden = sum(1 for s in subs if feedback.is_anonymous(s, a))
     print(f"  {hidden}/{len(subs)} submission(s) currently anonymised.")
     try:
@@ -336,7 +340,7 @@ def anonymity_flow() -> None:
     if want.lower() not in ("y", "yes"):
         _pause()
         return
-    data.update_assignment(a.assignment_id,
+    assignments_store.update_assignment(a.assignment_id,
                             {"anonymous_marking":
                                 not a.anonymous_marking})
     print(f"\n  ✓ Anonymous marking is now "
@@ -365,7 +369,7 @@ def raise_appeal_flow() -> None:
         appeal = feedback.raise_appeal(sub.submission_id,
                                         grounds=grounds,
                                         appeal_type=kind, raised_by=by)
-    except data.ValidationError as e:
+    except assignments_models.ValidationError as e:
         print(f"\n  ✗ {e}")
         if "window closed" in str(e):
             if _input("Accept it as a late appeal anyway? (y/n)",
@@ -401,7 +405,7 @@ def list_appeals_flow() -> None:
           f"{'Type':<22}  {'Status':<14}  Raised")
     print("  " + "-" * 105)
     for appeal in rows:
-        sub = data.get_submission(appeal.submission_id)
+        sub = assignments_store.get_submission(appeal.submission_id)
         sid = sub.student_id if sub else "?"
         print(f"  {appeal.appeal_id:>4}  {appeal.submission_id:>5}  "
               f"{sid:<10}  {names.get(sid, '?')[:18]:<18}  "
@@ -425,7 +429,7 @@ def view_appeal_flow() -> None:
         print(f"\n  ✗ No appeal #{appeal_id}")
         _pause()
         return
-    sub = data.get_submission(appeal.submission_id)
+    sub = assignments_store.get_submission(appeal.submission_id)
     print(f"\n    Appeal #{appeal.appeal_id}  [{appeal.status}]")
     print(f"    Submission    : #{appeal.submission_id}"
           + (f"  ({sub.student_id})" if sub else ""))
@@ -462,7 +466,7 @@ def start_review_flow() -> None:
     try:
         out = feedback.start_review(appeal_id, reviewer=reviewer,
                                      notes=notes or None)
-    except data.ValidationError as e:
+    except assignments_models.ValidationError as e:
         print(f"\n  ✗ {e}")
         _pause()
         return
@@ -502,7 +506,7 @@ def resolve_appeal_flow() -> None:
                                        outcome=outcome,
                                        new_marks=new_marks,
                                        resolved_by=by)
-    except data.ValidationError as e:
+    except assignments_models.ValidationError as e:
         print(f"\n  ✗ {e}")
         _pause()
         return
@@ -571,7 +575,7 @@ def add_question_flow() -> None:
             "options": options, "answer_key": answer_key,
             "marks": marks, "tolerance": tolerance or None,
             "case_sensitive": case_sensitive})
-    except data.ValidationError as e:
+    except assignments_models.ValidationError as e:
         print(f"\n  ✗ {e}")
         _pause()
         return
@@ -682,7 +686,7 @@ def override_answer_flow() -> None:
         out = assess.override_answer(sub.submission_id, qid,
                                       marks=marks, overridden_by=by,
                                       reason=reason or None)
-    except data.ValidationError as e:
+    except assignments_models.ValidationError as e:
         print(f"\n  ✗ {e}")
         _pause()
         return
@@ -766,7 +770,7 @@ def create_group_flow() -> None:
     try:
         group = assess.create_group(a.assignment_id, name,
                                      notes=notes or None)
-    except data.ValidationError as e:
+    except assignments_models.ValidationError as e:
         print(f"\n  ✗ {e}")
         _pause()
         return
@@ -796,7 +800,7 @@ def add_group_member_flow() -> None:
     try:
         member = assess.add_group_member(group.group_id,
                                           sub.submission_id, role=role)
-    except data.ValidationError as e:
+    except assignments_models.ValidationError as e:
         print(f"\n  ✗ {e}")
         _pause()
         return
@@ -821,7 +825,7 @@ def group_adjustment_flow() -> None:
     try:
         member = assess.set_member_adjustment(
             sub.submission_id, adjustment=adjustment, reason=reason)
-    except data.ValidationError as e:
+    except assignments_models.ValidationError as e:
         print(f"\n  ✗ {e}")
         _pause()
         return
@@ -857,7 +861,7 @@ def mark_group_flow() -> None:
                                 marked_by=by or None)
         applied = assess.apply_group_marks(group.group_id,
                                             marked_by=by or None)
-    except data.ValidationError as e:
+    except assignments_models.ValidationError as e:
         print(f"\n  ✗ {e}")
         _pause()
         return
@@ -898,7 +902,7 @@ def record_peer_flow() -> None:
                                    marks=marks,
                                    criterion_id=criterion_id,
                                    comment=comment or None)
-    except data.ValidationError as e:
+    except assignments_models.ValidationError as e:
         print(f"\n  ✗ {e}")
         _pause()
         return
@@ -924,7 +928,7 @@ def peer_summary_flow() -> None:
     print(f"  {'Sub':>5}  {'Student':<10}  {'Name':<20}  "
           f"{'Reviewers':>9}  {'Peer':>6}  {'Spread':>7}  {'Mark':>6}")
     print("  " + "-" * 85)
-    for s in data.list_submissions(assignment_id=a.assignment_id):
+    for s in assignments_store.list_submissions(assignment_id=a.assignment_id):
         summary = assess.peer_summary(s.submission_id, mode=mode,
                                        store=False)
         if not summary.reviewer_count:
@@ -994,7 +998,7 @@ def record_self_flow() -> None:
         assess.record_self_assessment(sub.submission_id,
                                        predicted_marks=predicted,
                                        note=note or None)
-    except data.ValidationError as e:
+    except assignments_models.ValidationError as e:
         print(f"\n  ✗ {e}")
         _pause()
         return
@@ -1022,7 +1026,7 @@ def self_assessment_flow() -> None:
           f"{'Predicted':>9}  {'Actual':>7}  {'Gap':>6}  Judgement")
     print("  " + "-" * 90)
     for row in rows:
-        sub = data.get_submission(row.submission_id)
+        sub = assignments_store.get_submission(row.submission_id)
         sid = sub.student_id if sub else "?"
         print(f"  {row.submission_id:>5}  {sid:<10}  "
               f"{names.get(sid, '?')[:20]:<20}  "
@@ -1050,10 +1054,10 @@ def components_flow() -> None:
     except _UserAbort:
         print("\n  Cancelled.")
         return
-    components = data.list_components(a.assignment_id)
+    components = assignments_store.list_components(a.assignment_id)
     if not components:
         if a.parent_assignment_id:
-            parent = data.get_assignment(a.parent_assignment_id)
+            parent = assignments_store.get_assignment(a.parent_assignment_id)
             print(f"\n  This is a component of "
                   f"#{a.parent_assignment_id} "
                   f"{parent.title if parent else ''} "
@@ -1062,7 +1066,7 @@ def components_flow() -> None:
             print("\n  (no components — this is a standalone assignment)")
         _pause()
         return
-    weights = data.component_weights(a.assignment_id)
+    weights = assignments_crud.component_weights(a.assignment_id)
     print(f"\n  #{a.assignment_id} {a.title} — "
           f"{len(components)} component(s)")
     print()
@@ -1092,10 +1096,10 @@ def link_component_flow() -> None:
         print("\n  Cancelled.")
         return
     try:
-        data.update_assignment(child.assignment_id, {
+        assignments_store.update_assignment(child.assignment_id, {
             "parent_assignment_id": parent.assignment_id,
             "component_weight": weight or None})
-    except data.ValidationError as e:
+    except assignments_models.ValidationError as e:
         print(f"\n  ✗ {e}")
         _pause()
         return
@@ -1115,7 +1119,7 @@ def unlink_component_flow() -> None:
         print("\n  That assignment is not a component.")
         _pause()
         return
-    data.update_assignment(child.assignment_id,
+    assignments_store.update_assignment(child.assignment_id,
                             {"parent_assignment_id": None,
                              "component_weight": None})
     print(f"\n  ✓ #{child.assignment_id} is standalone again")
@@ -1131,7 +1135,7 @@ def rollup_flow() -> None:
     except _UserAbort:
         print("\n  Cancelled.")
         return
-    if not data.list_components(a.assignment_id):
+    if not assignments_store.list_components(a.assignment_id):
         print("\n  That assignment has no components.")
         _pause()
         return
@@ -1140,8 +1144,8 @@ def rollup_flow() -> None:
     print(f"  {'Student':<10}  {'Name':<20}  {'Weighted':>9}  "
           f"{'Overall':>8}  {'Grade':<5}  Detail")
     print("  " + "-" * 100)
-    for sub in data.list_submissions(assignment_id=a.assignment_id):
-        roll = data.component_rollup(a.assignment_id, sub.student_id)
+    for sub in assignments_store.list_submissions(assignment_id=a.assignment_id):
+        roll = assignments_crud.component_rollup(a.assignment_id, sub.student_id)
         detail = ", ".join(
             f"{c.assignment.title[:12]} {_fmt(c.percent)}%"
             for c in roll.components)
@@ -1161,7 +1165,7 @@ def rollup_flow() -> None:
     except _UserAbort:
         print("\n  Cancelled.")
         return
-    result = data.rollup_all(a.assignment_id, marked_by=by or None)
+    result = assignments_crud.rollup_all(a.assignment_id, marked_by=by or None)
     print(f"\n  ✓ Applied to {result['applied']} student(s), "
           f"{result['skipped']} incomplete.")
     _pause()

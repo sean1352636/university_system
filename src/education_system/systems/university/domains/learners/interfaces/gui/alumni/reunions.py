@@ -26,17 +26,25 @@ except ImportError:
 
 # Alumni service functions
 from education_system.systems.university.domains.learners.interfaces.gui.alumni._service_imports import (
-    init_alumni_db, register_alumni, view_alumni, update_alumni,
-    view_events, create_enhanced_event, event_check_in_system,
-    record_donation, view_donations, setup_mentorship, view_mentorships,
-    search_alumni_directory, view_connection_requests, manage_business_directory,
-    create_newsletter, manage_alumni_forum, post_job_opportunity, view_job_board,
-    schedule_career_counseling, view_fundraising_campaigns, create_fundraising_campaign,
-    view_engagement_leaderboard, view_my_badges, manage_photo_gallery,
-    manage_class_reunions, manage_regional_chapters, setup_alumni_directory,
-    generate_alumni_report, set_auth, setup_alumni_permissions,
-    smart_mentorship_matching, generate_engagement_recommendations,
-    create_alumni_story, view_alumni_stories, get_connection,
+    init_alumni_db,
+    view_events,
+    create_enhanced_event,
+    event_check_in_system,
+    view_connection_requests,
+    manage_business_directory,
+    manage_alumni_forum,
+    post_job_opportunity,
+    view_job_board,
+    schedule_career_counseling,
+    view_engagement_leaderboard,
+    view_my_badges,
+    manage_photo_gallery,
+    manage_class_reunions,
+    generate_alumni_report,
+    set_auth,
+    setup_alumni_permissions,
+    generate_engagement_recommendations,
+    get_connection,
 )
 
 

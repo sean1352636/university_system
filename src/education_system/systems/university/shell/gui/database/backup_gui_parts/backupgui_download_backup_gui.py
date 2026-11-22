@@ -7,6 +7,8 @@ from .. import backup_gui_shared as _shared
 import tkinter.simpledialog  # noqa: F401 - registers tk.simpledialog
 globals().update({name: value for name, value in _shared.__dict__.items() if not name.startswith("__")})
 
+from education_system.platform.delivery.gui.tk_threads import start_thread, ui
+
 
 class BackupGUI:
     def download_backup_gui(self):
@@ -76,7 +78,7 @@ class BackupGUI:
 
             for index, backup in enumerate(to_sync, start=1):
                 progress = (index - 1) / total * 100
-                self.root.after(0, update_status, progress, f"Uploading {backup['filename']} ({index}/{total})")
+                ui(self.root, update_status, progress, f"Uploading {backup['filename']} ({index}/{total})")
 
                 remote_target = posixpath.join(remote_path.rstrip('/'), backup['filename'])
 
@@ -102,12 +104,12 @@ class BackupGUI:
                     else:
                         failures.append((backup, "Upload failed"))
 
-                self.root.after(0, update_status, index / total * 100, f"Processed {index}/{total} backups")
+                ui(self.root, update_status, index / total * 100, f"Processed {index}/{total} backups")
 
             metadata_manager.save_metadata()
-            self.root.after(0, finish_sync, successes, failures)
+            ui(self.root, finish_sync, successes, failures)
 
-        threading.Thread(target=sync_worker, daemon=True).start()
+        start_thread(self.root, sync_worker)
 
     def refresh_logs(self):
         """Refresh log display"""

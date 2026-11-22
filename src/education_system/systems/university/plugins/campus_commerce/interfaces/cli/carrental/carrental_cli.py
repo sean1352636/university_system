@@ -420,6 +420,7 @@ class CarRentalCLI:
         amount = float(input("Amount: ").strip())
         payment_method = input("Payment method (cash/card/bank_transfer): ").strip()
 
+        # The domain service posts the payment to Finance.
         txn_id = TransactionManager.record_payment(
             rental_id=rental_id, customer_id=customer_id,
             amount=amount, payment_method=payment_method,
@@ -436,9 +437,12 @@ class CarRentalCLI:
         amount = float(input("Refund amount: ").strip())
         reason = input("Reason: ").strip()
 
+        refund_method = input("Refund method (cash/card) [cash]: ").strip().lower() or 'cash'
+
+        # The domain service posts the refund to Finance.
         txn_id = TransactionManager.record_refund(
             rental_id=rental_id, customer_id=customer_id,
-            amount=amount, reason=reason,
+            amount=amount, reason=reason, refund_method=refund_method,
         )
         if txn_id:
             print(f"\nRefund recorded (Transaction ID: {txn_id})")

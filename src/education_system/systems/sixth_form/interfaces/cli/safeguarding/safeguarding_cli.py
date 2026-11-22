@@ -1,7 +1,9 @@
 """CLI flows for Sixth Form Safeguarding.
 
-⚠ Confidential data: access should be restricted to DSL / safeguarding
-staff by the auth layer.
+⚠ Confidential data. Access is enforced in the domain layer: staff
+without the safeguarding capability get only "Report a Concern".
+Concerns are never deleted — "Close Concern (retain)" replaces the old
+delete, and chronology entries are retracted with a reason.
 """
 
 from __future__ import annotations
@@ -13,7 +15,9 @@ from education_system.systems.sixth_form.domain.safeguarding import safeguarding
 from education_system.systems.sixth_form.domain.safeguarding import safeguarding as data
 from education_system.systems.sixth_form.domain.learners.students import students as student_data
 from education_system.systems.sixth_form.domain.safeguarding.safeguarding import (
+    ARCHIVED_STATUS,
     CATEGORIES,
+    LINK_ROLES,
     CONCERN_TYPES,
     Concern,
     DEFAULT_STATUS,
@@ -116,13 +120,14 @@ def _print_concerns(rows: list[Concern]) -> None:
         return
     print()
     print(f"  {'#':>4}  {'Student':<10}  {'Date':<10}  "
-          f"{'Category':<22}  {'Risk':<8}  {'Status':<14}  Follow-up")
-    print("  " + "-" * 88)
+          f"{'Category':<22}  {'Risk':<8}  {'Status':<17}  Follow-up")
+    print("  " + "-" * 92)
     for c in rows:
         print(f"  {c.concern_id:>4}  {c.student_id:<10}  "
               f"{c.concern_date:<10}  "
               f"{c.category[:22]:<22}  {c.risk_level:<8}  "
-              f"{c.status:<14}  {c.follow_up_date or '—'}")
+              f"{c.status:<17}  {c.follow_up_date or '—'}"
+              + ("  [18+]" if c.adult_safeguarding else ""))
     print(f"\n  {len(rows)} concern(s).")
 
 
@@ -226,6 +231,29 @@ def view_concern(concern_id: int | None = None) -> None:
                        + (f" ({c.referral_date})" if c.referral_date else ""))
               if c.referral_made else "No"))
     print(f"    Follow-up date     : {c.follow_up_date or '—'}")
+    age = c.age_at_concern
+    print(f"    Age at concern     : {age if age is not None else '—'}"
+          + ("  — ADULT SAFEGUARDING (Care Act 2014)"
+             if c.adult_safeguarding else ""))
+    print(f"    Suggested agencies : {', '.join(c.suggested_agencies)}")
+    linked = data.linked_students(c.concern_id)
+    if linked:
+        print("    Linked learners    : " + "; ".join(
+            f"{x.student_id} {x.student_name or ''} ({x.link_role})"
+            for x in linked))
+    prev = data.prevent_links(c.concern_id)
+    if prev:
+        print("    Linked Prevent     : " + "; ".join(
+            f"#{pc.concern_id} {pc.concern_type} ({pc.status})"
+            for pc in prev))
+    if c.body_map_ref or c.body_map_notes:
+        print(f"    Body map           : {c.body_map_ref or '—'} "
+              f"{c.body_map_notes or ''}")
+    if c.access_level == "Restricted":
+        print(f"    Restricted notes   : {c.restricted_notes or '—'}")
+    if c.is_archived:
+        print(f"    Closed — retained  : {c.archived_reason} "
+              f"(by {c.archived_by}, {c.archived_at})")
     print()
     print("    Description:")
     for line in c.description.splitlines() or [""]:
@@ -245,7 +273,9 @@ def view_concern(concern_id: int | None = None) -> None:
         print("      (none)")
     for u in updates:
         print(f"      [{u.update_date}] (by {u.updated_by or '—'}) "
-              f"#{u.update_id}")
+              f"#{u.update_id}"
+              + (f"  [RETRACTED by {u.retracted_by}: {u.retracted_reason}]"
+                 if u.retracted else ""))
         for line in u.update_text.splitlines() or [""]:
             print(f"          {line}")
     _pause()
@@ -369,6 +399,19 @@ def _collect_form(existing: Concern | None) -> dict[str, Any]:
         "Notes (optional)",
         default=(existing.notes or "") if is_edit else "",
     )
+    payload["body_map_ref"] = _input(
+        "Body map reference (optional)",
+        default=(existing.body_map_ref or "") if is_edit else "",
+    )
+    payload["body_map_notes"] = _input(
+        "Body map notes (optional)",
+        default=(existing.body_map_notes or "") if is_edit else "",
+    )
+    if data.can_see_restricted():
+        payload["restricted_notes"] = _input(
+            "Restricted notes — DSL only (optional)",
+            default=(existing.restricted_notes or "") if is_edit else "",
+        )
     return payload
 
 
@@ -434,8 +477,9 @@ def edit_concern(concern_id: int | None = None) -> None:
 
 
 def delete_concern_flow(concern_id: int | None = None) -> None:
-    print("\n═══ Delete Concern ═══")
-    print("  ⚠ This will also remove the chronology of updates.")
+    print("\n═══ Close Concern (retain) ═══")
+    print("  Safeguarding records are kept, never deleted. The concern is "
+          f"marked '{ARCHIVED_STATUS}' with your reason.")
     try:
         cid = concern_id if concern_id is not None else int(
             _input("Concern ID", allow_empty=False))
@@ -451,18 +495,24 @@ def delete_concern_flow(concern_id: int | None = None) -> None:
         print(f"  ✗ No concern #{cid}")
         _pause()
         return
-    confirm = _input(
-        f"Delete concern #{cid} ({existing.category}, {existing.risk_level})? "
-        f"Type 'yes' to confirm",
-        default="no")
-    if confirm.lower() != "yes":
+    if existing.is_archived:
+        print(f"  Concern #{cid} is already {ARCHIVED_STATUS}.")
+        _pause()
+        return
+    try:
+        reason = _input(
+            f"Reason for closing #{cid} ({existing.category}, "
+            f"{existing.risk_level})", allow_empty=False)
+    except _UserAbort:
         print("\n  Cancelled.")
         return
     try:
-        if data.delete_concern(cid):
-            print(f"\n  ✓ Deleted #{cid}")
+        data.archive_concern(cid, reason=reason)
+        print(f"\n  ✓ Concern #{cid} closed — retained")
+    except ValidationError as e:
+        print(f"\n  ✗ {e}")
     except Exception as e:
-        logger.exception("delete_concern crashed")
+        logger.exception("archive_concern crashed")
         print(f"\n  ✗ Unexpected error: {e}")
     _pause()
 
@@ -546,7 +596,8 @@ def edit_update_flow() -> None:
 
 
 def delete_update_flow() -> None:
-    print("\n═══ Delete Chronology Entry ═══")
+    print("\n═══ Retract Chronology Entry ═══")
+    print("  The entry stays on the file, struck through with your reason.")
     try:
         uid = int(_input("Update ID", allow_empty=False))
     except ValueError:
@@ -560,17 +611,19 @@ def delete_update_flow() -> None:
         print(f"  ✗ No update #{uid}")
         _pause()
         return
-    confirm = _input(
-        f"Delete chronology entry #{uid}? Type 'yes'",
-        default="no")
-    if confirm.lower() != "yes":
+    try:
+        reason = _input(f"Reason for retracting entry #{uid}",
+                        allow_empty=False)
+    except _UserAbort:
         print("\n  Cancelled.")
         return
     try:
-        if data.delete_update(uid):
-            print(f"\n  ✓ Deleted #{uid}")
+        data.retract_update(uid, reason=reason)
+        print(f"\n  ✓ Entry #{uid} retracted")
+    except ValidationError as e:
+        print(f"\n  ✗ {e}")
     except Exception as e:
-        logger.exception("delete_update crashed")
+        logger.exception("retract_update crashed")
         print(f"\n  ✗ Unexpected error: {e}")
     _pause()
 
@@ -603,6 +656,9 @@ def summary() -> None:
                               key=lambda kv: -kv[1])[:10]:
             print(f"    {cat[:30]:<30} : {n}")
     print("\n  Notifications & referrals:")
+    print(f"    Unreviewed reports : {summ.unreviewed_reports}")
+    print(f"    Open — learner 18+ : {summ.adult_open}")
+    print(f"    Closed — retained  : {summ.archived}")
     print(f"    DSL notified     : {summ.dsl_notified}")
     print(f"    Parents informed : {summ.parents_informed}")
     print(f"    Referrals made   : {summ.referrals}")
@@ -617,7 +673,7 @@ def _row_action_loop(rows: list[Concern]) -> None:
         return
     print()
     print("  Actions:  V) View   E) Edit   A) Add chronology   "
-          "D) Delete   (Enter to go back)")
+          "D) Close (retain)   (Enter to go back)")
     while True:
         try:
             choice = input("  Action: ").strip().lower()
@@ -677,6 +733,270 @@ def _add_update_for(concern_id: int) -> None:
     _pause()
 
 
+# ── Report a concern (any member of staff) ───────────────────────
+
+def report_concern_flow() -> None:
+    print("\n═══ Report a Safeguarding Concern ═══")
+    print("  If a learner is in immediate danger call 999, then tell the DSL")
+    print("  in person. Record what you saw or were told, in the learner's")
+    print("  words where you can. You will not be able to open the record")
+    print("  afterwards — it goes straight to the DSL team.")
+    try:
+        sid = _pick_student()
+        age = data.student_age(sid)
+        if age is not None and age >= data.ADULT_AGE:
+            print(f"    Learner is {age}: adult safeguarding — the DSL will "
+                  "consider adult social care (Care Act 2014).")
+        when = _input("When did it happen (YYYY-MM-DD)",
+                      default=_date.today().isoformat(), allow_empty=False)
+        category = _pick_from("What kind of concern", list(CATEGORIES),
+                              default="Other")
+        ctype = _pick_from("How you know", list(CONCERN_TYPES),
+                           default="Disclosure")
+        risk = _pick_from("How worried are you", list(RISK_LEVELS),
+                          default="Medium")
+        desc = _input("What you saw / were told", allow_empty=False)
+        action = _input("Anything you did (optional)")
+    except _UserAbort:
+        print("\n  Cancelled.")
+        return
+    try:
+        receipt = data.report_concern(
+            sid, desc, category=category, concern_type=ctype,
+            risk_level=risk, concern_date=when, action_taken=action)
+    except ValidationError as e:
+        print(f"\n  ✗ {e}")
+        _pause()
+        return
+    print(f"\n  ✓ {receipt.message}")
+    _pause()
+
+
+def my_reports_flow() -> None:
+    print("\n═══ Concerns I Have Filed ═══")
+    rows = data.my_reports()
+    if not rows:
+        print("  (none)")
+    for r in rows:
+        print(f"  #{r.concern_id:>4}  {r.student_id:<10}  filed {r.reported_at}")
+    _pause()
+
+
+def run_report() -> None:
+    """Menu for staff without safeguarding access."""
+    menu = [("Report a Concern", report_concern_flow),
+            ("Concerns I Have Filed", my_reports_flow)]
+    while True:
+        print("\n── Report a Safeguarding Concern ──")
+        for i, (label, _) in enumerate(menu, 1):
+            print(f"  {i:>2}) {label}")
+        print("   0) Back")
+        try:
+            choice = input("  Select: ").strip()
+        except (EOFError, KeyboardInterrupt):
+            print()
+            return
+        if choice == "0":
+            return
+        if not choice.isdigit() or not (1 <= int(choice) <= len(menu)):
+            print("  Invalid selection.")
+            continue
+        try:
+            menu[int(choice) - 1][1]()
+        except _UserAbort:
+            print("\n  Cancelled.")
+
+
+def dispatch_report(label: str) -> bool:
+    if label != "Report a Safeguarding Concern":
+        return False
+    run_report()
+    return True
+
+
+def unreviewed_flow() -> None:
+    print("\n═══ Unreviewed Reports ═══")
+    rows = data.list_unreviewed()
+    _print_concerns(rows)
+    if not rows:
+        _pause()
+        return
+    try:
+        raw = _input("Acknowledge concern # (blank to skip)")
+    except _UserAbort:
+        return
+    if raw.isdigit():
+        try:
+            data.acknowledge_report(int(raw))
+            print(f"  ✓ Concern #{raw} acknowledged")
+        except ValidationError as e:
+            print(f"  ✗ {e}")
+    _pause()
+
+
+def _ask_concern_id() -> int:
+    raw = _input("Concern ID", allow_empty=False)
+    if not raw.isdigit():
+        print("  ✗ Concern ID must be a number.")
+        raise _UserAbort
+    return int(raw)
+
+
+def link_student_flow() -> None:
+    print("\n═══ Link Learner to Concern ═══")
+    try:
+        cid = _ask_concern_id()
+        for x in data.linked_students(cid):
+            print(f"    linked #{x.link_id}: {x.student_id} "
+                  f"{x.student_name or ''} ({x.link_role})")
+        if _yes_no("Remove an existing link instead?"):
+            lid = int(_input("Link #", allow_empty=False))
+            reason = _input("Reason", allow_empty=False)
+            print("  ✓ Removed" if data.unlink_student(lid, reason=reason)
+                  else "  ✗ No such link")
+            _pause()
+            return
+        sid = _pick_student()
+        role = _pick_from("Role", list(LINK_ROLES), default=LINK_ROLES[0])
+    except (_UserAbort, ValueError):
+        print("\n  Cancelled.")
+        return
+    try:
+        data.link_student(cid, sid, link_role=role)
+        print(f"\n  ✓ Linked {sid} to concern #{cid}")
+    except ValidationError as e:
+        print(f"\n  ✗ {e}")
+    _pause()
+
+
+def link_prevent_flow() -> None:
+    print("\n═══ Link Prevent Concern ═══")
+    from education_system.systems.sixth_form.domain.safeguarding.prevent_duty import (
+        prevent_duty as _pd,
+    )
+    try:
+        cid = _ask_concern_id()
+        c = data.get_concern(cid)
+        if c is None:
+            print(f"  ✗ No concern #{cid}")
+            _pause()
+            return
+        rows = _pd.list_concerns(student_id=c.student_id)
+        if not rows:
+            print("  This learner has no Prevent concerns.")
+            _pause()
+            return
+        for pc in rows:
+            print(f"    #{pc.concern_id}  {pc.report_date}  "
+                  f"{pc.concern_type}  ({pc.status})")
+        pid = int(_input("Prevent concern #", allow_empty=False))
+        note = _input("Note (optional)")
+    except (_UserAbort, ValueError):
+        print("\n  Cancelled.")
+        return
+    try:
+        data.link_prevent_concern(cid, pid, note=note)
+        print(f"\n  ✓ Prevent #{pid} linked to concern #{cid}")
+    except ValidationError as e:
+        print(f"\n  ✗ {e}")
+    _pause()
+
+
+def attachments_flow() -> None:
+    print("\n═══ Attachments / Body Map ═══")
+    try:
+        cid = _ask_concern_id()
+        for a in data.list_attachments(cid):
+            print(f"    #{a.attachment_id}  {a.title}  {a.file_ref}  "
+                  f"({a.uploaded_by or '—'}, {a.uploaded_on})")
+        choice = _pick_from("Action", ["Add attachment", "Set body map",
+                                       "Back"], default="Back")
+        if choice == "Add attachment":
+            title = _input("Title", allow_empty=False)
+            ref = _input("File reference (path / document id)",
+                         allow_empty=False)
+            data.add_attachment(cid, title=title, file_ref=ref)
+            print("  ✓ Attached")
+        elif choice == "Set body map":
+            c = data.get_concern(cid)
+            ref = _input("Body map reference",
+                         default=(c.body_map_ref or "") if c else "")
+            notes = _input("What it shows",
+                           default=(c.body_map_notes or "") if c else "")
+            data.set_body_map(cid, body_map_ref=ref, body_map_notes=notes)
+            print("  ✓ Body map recorded")
+    except _UserAbort:
+        print("\n  Cancelled.")
+        return
+    except ValidationError as e:
+        print(f"\n  ✗ {e}")
+    _pause()
+
+
+def restricted_notes_flow() -> None:
+    print("\n═══ Restricted Notes (DSL only) ═══")
+    try:
+        cid = _ask_concern_id()
+        c = data.get_concern(cid)
+        notes = _input("Restricted notes",
+                       default=(c.restricted_notes or "") if c else "")
+        data.set_restricted_notes(cid, notes)
+        print("  ✓ Saved")
+    except _UserAbort:
+        print("\n  Cancelled.")
+        return
+    except (ValidationError, data.AccessDenied) as e:
+        print(f"\n  ✗ {e}")
+    _pause()
+
+
+def chronology_flow() -> None:
+    print("\n═══ Learner Safeguarding Chronology ═══")
+    try:
+        sid = _input("Student ID (leavers too)", allow_empty=False)
+    except _UserAbort:
+        return
+    rows = data.student_chronology(sid)
+    if not rows:
+        print("  (no entries)")
+    for e in rows:
+        print(f"  {e.date or '—':<10}  {e.kind:<9} {e.ref:<12} {e.title}"
+              + ("  [RETRACTED]" if e.retracted else ""))
+        if e.by:
+            print(f"              by {e.by}")
+        for line in (e.detail or "").splitlines():
+            print(f"              {line}")
+    _pause()
+
+
+def who_viewed_flow() -> None:
+    print("\n═══ Who Viewed a Record ═══")
+    try:
+        raw = _input("Concern # (blank for a learner)")
+        sid = None if raw else _input("Student ID", allow_empty=False)
+    except _UserAbort:
+        return
+    rows = data.who_viewed(concern_id=int(raw) if raw.isdigit() else None,
+                           student_id=sid)
+    if not rows:
+        print("  (no entries)")
+    for r in rows:
+        print(f"  {r.get('at')}  {r.get('username'):<16} "
+              f"{r.get('action'):<22} {r.get('student_id') or '':<10} "
+              f"{r.get('record_ref') or '':<14} "
+              + ("" if r.get("allowed") else "REFUSED"))
+    _pause()
+
+
+def _casework(name: str) -> Callable[[], None]:
+    def run_area() -> None:
+        from education_system.systems.sixth_form.interfaces.cli.safeguarding import (
+            safeguarding_casework_cli as _cw_cli,
+        )
+        getattr(_cw_cli, name)()
+    return run_area
+
+
 # ── Submenu dispatcher ────────────────────────────────────────────
 
 _MENU: list[tuple[str, Callable[[], None]]] = [
@@ -687,15 +1007,32 @@ _MENU: list[tuple[str, Callable[[], None]]] = [
     ("View Concern",            view_concern),
     ("New Concern",             new_concern),
     ("Edit Concern",            edit_concern),
-    ("Delete Concern",          delete_concern_flow),
+    ("Close Concern (retain)",  delete_concern_flow),
     ("Add Chronology Entry",    add_update_flow),
     ("Edit Chronology Entry",   edit_update_flow),
-    ("Delete Chronology Entry", delete_update_flow),
+    ("Retract Chronology Entry", delete_update_flow),
     ("Summary",                 summary),
+    ("Report a Concern",        report_concern_flow),
+    ("Unreviewed Reports",      unreviewed_flow),
+    ("Link Learner to Concern", link_student_flow),
+    ("Link Prevent Concern",    link_prevent_flow),
+    ("Attachments / Body Map",  attachments_flow),
+    ("Restricted Notes",        restricted_notes_flow),
+    ("Learner Chronology",      chronology_flow),
+    ("Who Viewed a Record",     who_viewed_flow),
+    ("Referrals",               _casework("run_referrals")),
+    ("Plans (CP / CIN / EH)",   _casework("run_plans")),
+    ("LADO Register",           _casework("run_lado")),
+    ("File Transfers",          _casework("run_transfers")),
+    ("Casework Summary",        _casework("casework_summary_flow")),
 ]
 
 
 def run() -> None:
+    if not data.can_read():
+        # KCSIE: anyone can report; only the DSL team reads the record.
+        run_report()
+        return
     while True:
         print("\n── Safeguarding ──")
         for i, (label, _) in enumerate(_MENU, 1):
@@ -716,6 +1053,9 @@ def run() -> None:
             handler()
         except _UserAbort:
             print("\n  Cancelled.")
+        except data.AccessDenied as e:
+            print(f"\n  ✗ {e}")
+            _pause()
         except Exception as e:
             logger.exception("Safeguarding CLI handler crashed")
             print(f"\n  ✗ Unexpected error: {e}")
@@ -723,6 +1063,14 @@ def run() -> None:
 
 
 def dispatch(label: str) -> bool:
+    if dispatch_report(label):
+        return True
+    if label == "LADO Allegations":
+        from education_system.systems.sixth_form.interfaces.cli.safeguarding import (
+            safeguarding_casework_cli as _cw_cli,
+        )
+        _cw_cli.run_lado()
+        return True
     if label != "Safeguarding":
         return False
     try:

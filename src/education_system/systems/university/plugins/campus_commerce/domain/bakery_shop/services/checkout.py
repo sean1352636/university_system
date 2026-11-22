@@ -571,18 +571,15 @@ class CheckoutMixin:
         if remaining > 0:
             splits.append({"method": payment_method, "amount": remaining})
 
-        # 1. Charge student account if applicable (only its share).
+        # 1. Charge student account if applicable (only its share). The
+        #    debit records the Finance payment row itself.
         if payment_method == "student_account" and remaining > 0:
             try:
-                from education_system.systems.university.domains.finance.infrastructure.finance_integration import (
-                    process_student_finance_account_payment,
+                from education_system.systems.university.plugins.campus_commerce.domain.bakery_shop.services.bakery_service import (
+                    charge_student_account,
                 )
-                uid = self._finance_user_id()
-                result = process_student_finance_account_payment(
-                    student_id=str(uid), amount=remaining,
-                    description="Bakery Shop purchase",
-                    transaction_source="Bakery",
-                    transaction_ref=f"BAKERY_{datetime.now().strftime('%Y%m%d%H%M%S')}",
+                result = charge_student_account(
+                    str(self._finance_user_id()), remaining,
                     processed_by=self.current_user or "system",
                 )
                 if not result.get("success"):
@@ -710,22 +707,12 @@ class CheckoutMixin:
         except Exception:
             logger.exception("Discount-engine side effects partially failed")
 
-        # 4. Record revenue
-        try:
-            from education_system.systems.university.domains.finance.infrastructure.finance_integration import (
-                record_revenue_to_finance,
-            )
-            record_revenue_to_finance(
-                student_id=str(self._finance_user_id() or ""),
-                amount=total,
-                revenue_category="Bakery Sales",
-                transaction_source="Bakery",
-                transaction_ref=order_id,
-                payment_method=payment_method.replace("_", " ").title(),
-                notes="University Bakery Shop purchase",
-            )
-        except Exception:
-            logger.debug("record_revenue_to_finance failed", exc_info=True)
+        # 4. Record revenue through the shared domain helper (skipped for
+        #    student_account, which was recorded by the debit above).
+        from education_system.systems.university.plugins.campus_commerce.domain.bakery_shop.services.bakery_service import (
+            post_sale_to_finance,
+        )
+        post_sale_to_finance(order_id, total, payment_method, self._finance_user_id())
 
         logger.info(
             "Bakery order placed order_id=%s user=%s method=%s subtotal=%.2f "

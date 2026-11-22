@@ -15,8 +15,8 @@ from education_system.systems.university.domains.operations.domain.reporting imp
 )
 
 _QA = (
-    "education_system.systems.university.domains.academics.domain."
-    "research.external_quality_assurance.services.qa_service"
+    "education_system.systems.university.domains.quality.domain."
+    "external_quality_assurance.services.qa_service"
 )
 
 

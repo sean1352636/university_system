@@ -13,10 +13,10 @@ from datetime import date, timedelta
 import pytest
 
 from education_system import paths
-from education_system.systems.apprenticeships.services import (
+from education_system.systems.apprenticeships.application.learning import learning_plan_service
+from education_system.systems.apprenticeships.application.records import document_service
+from education_system.systems.apprenticeships.application.workspace import (
     calendar_service,
-    document_service,
-    learning_plan_service,
     reporting_service,
     search_service,
     task_service,

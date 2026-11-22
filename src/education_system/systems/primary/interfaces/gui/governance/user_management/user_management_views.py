@@ -26,23 +26,20 @@ from education_system.systems.primary.interfaces.user_accounts import (
     UserRow,
 )
 
+from education_system.systems.primary.interfaces.gui import kit
+
 logger = logging.getLogger(__name__)
 
 
-def _clear(gui) -> ttk.Frame:
-    for w in gui.content_frame.winfo_children():
-        w.destroy()
-    return gui.content_frame
-
-
-def _heading(parent, text: str) -> None:
-    ttk.Label(parent, text=text, font=("", 16, "bold")).pack(
-        anchor="w", pady=(0, 8))
-
-
 def open_user_management_window(gui) -> None:
-    frame = _clear(gui)
-    _heading(frame, "User Management")
+    kit.show_page(gui, "User Management",
+                  lambda parent: _draw_user_management(parent, gui))
+
+
+def _draw_user_management(frame, gui) -> None:
+    kit.page_heading(frame, "User Management",
+                     "Roles and access across the platform; bulk grant, revoke "
+                     "and activate.")
 
     if not getattr(gui, "auth", None):
         ttk.Label(frame, text="No active session — cannot load users.",
@@ -100,13 +97,13 @@ def _build_summary_tab(gui, parent: ttk.Frame, state: dict) -> None:
                    font=("", 9)).pack(anchor="w")
 
     _tile(0, "Total users",   total_var, "Across all systems")
-    _tile(1, "Secondary-school",    sixth_var, "Have college access")
+    _tile(1, "Primary-school",    sixth_var, "Have primary access")
     _tile(2, "Active",        active_var, "is_active = true")
     _tile(3, "Locked",        locked_var, "Currently locked", fg="#a33")
-    _tile(4, "Admins",        admins_var, "Secondary-school admins")
+    _tile(4, "Admins",        admins_var, "Primary-school admins")
     _tile(5, "Logins (7d)",   recent_var, "Last 7 days")
 
-    roles_frame = ttk.LabelFrame(parent, text="Secondary-school role distribution",
+    roles_frame = ttk.LabelFrame(parent, text="Primary-school role distribution",
                                    padding=6)
     roles_frame.pack(fill="both", expand=True, pady=(4, 0))
     role_tree = ttk.Treeview(roles_frame, columns=("role", "count"),
@@ -123,11 +120,11 @@ def _build_summary_tab(gui, parent: ttk.Frame, state: dict) -> None:
         except Exception as e:
             logger.exception("snapshot failed")
             messagebox.showerror("Error", f"Could not load: {e}",
-                                  parent=gui.root)
+                                  parent=parent.winfo_toplevel())
             return
         s = snap.summary
         total_var.set(str(s.total))
-        sixth_var.set(str(s.sixth_form_users))
+        sixth_var.set(str(s.primary_users))
         active_var.set(str(s.active))
         locked_var.set(str(s.locked))
         admins_var.set(str(snap.admins))
@@ -138,7 +135,7 @@ def _build_summary_tab(gui, parent: ttk.Frame, state: dict) -> None:
                              key=lambda r: -ROLE_HIERARCHY[r]):
             role_tree.insert(
                 "", "end",
-                values=(role, snap.role_distribution_sixthform.get(role, 0)))
+                values=(role, snap.role_distribution_primary.get(role, 0)))
         gui.status_var.set("User management summary refreshed")
 
     ttk.Button(parent, text="Refresh", command=refresh
@@ -188,8 +185,8 @@ def _build_matrix_tab(gui, parent: ttk.Frame, state: dict) -> None:
             tree.insert("", "end", values=(s.system_key, s.users, breakdown))
         footer.configure(
             text=(f"{len(m.systems)} system(s). "
-                  f"Users without secondary-school access: "
-                  f"{len(m.users_without_sixthform)}"))
+                  f"Users without primary-school access: "
+                  f"{len(m.users_without_primary)}"))
         gui.status_var.set("Access matrix refreshed")
 
     ttk.Button(parent, text="Refresh", command=refresh
@@ -210,9 +207,9 @@ def _build_users_tab(gui, parent: ttk.Frame, state: dict,
 
     ttk.Label(filt, text="Scope:").pack(side="left")
     ttk.Combobox(filt, textvariable=scope_var, state="readonly", width=22,
-                  values=["All", "Secondary-school only",
-                           "Without secondary-school access",
-                           "Locked", "Inactive", "Admins (secondary-school)"]
+                  values=["All", "Primary-school only",
+                           "Without primary-school access",
+                           "Locked", "Inactive", "Admins (primary-school)"]
                   ).pack(side="left", padx=(4, 12))
     ttk.Label(filt, text="Search:").pack(side="left")
     ttk.Entry(filt, textvariable=query_var, width=22
@@ -244,15 +241,15 @@ def _build_users_tab(gui, parent: ttk.Frame, state: dict,
             w.destroy()
         try:
             scope = scope_var.get()
-            if scope == "Secondary-school only":
+            if scope == "Primary-school only":
                 rows = ua_data.list_users(gui.auth, system_key=SYSTEM_KEY)
-            elif scope == "Without secondary-school access":
+            elif scope == "Without primary-school access":
                 rows = data.list_without_access(gui.auth)
             elif scope == "Locked":
                 rows = data.list_locked(gui.auth)
             elif scope == "Inactive":
                 rows = data.list_inactive(gui.auth)
-            elif scope == "Admins (secondary-school)":
+            elif scope == "Admins (primary-school)":
                 rows = data.list_admins(gui.auth)
             else:
                 rows = ua_data.list_users(gui.auth)
@@ -285,7 +282,7 @@ def _build_users_tab(gui, parent: ttk.Frame, state: dict,
             "id":        ("ID",       50),
             "username":  ("Username", 150),
             "display":   ("Display",  200),
-            "sixthform": ("Secondary-school role", 130),
+            "sixthform": ("Primary-school role", 130),
             "active":    ("Active",   60),
             "locked":    ("Locked",   60),
         }
@@ -338,76 +335,76 @@ def _build_users_tab(gui, parent: ttk.Frame, state: dict,
         ids = _selected_ids()
         if not ids:
             messagebox.showinfo("Nothing selected", "Tick users first.",
-                                  parent=gui.root)
+                                  parent=parent.winfo_toplevel())
             return
         role = role_var.get()
         if role not in ROLE_HIERARCHY:
             messagebox.showerror("Bad role", "Pick a valid role.",
-                                  parent=gui.root)
+                                  parent=parent.winfo_toplevel())
             return
         if not messagebox.askyesno(
                 "Grant role",
                 f"Grant '{role}' on '{SYSTEM_KEY}' to {len(ids)} user(s)?",
-                parent=gui.root):
+                parent=parent.winfo_toplevel()):
             return
         try:
             result = data.bulk_grant(gui.auth, ids, SYSTEM_KEY, role)
         except Exception as e:
             logger.exception("bulk_grant crashed")
-            messagebox.showerror("Error", str(e), parent=gui.root)
+            messagebox.showerror("Error", str(e), parent=parent.winfo_toplevel())
             return
         msg = (f"Granted '{role}' to {len(result.succeeded)} user(s)."
                 + (f"\n{len(result.failed)} failed."
                     if result.failed else ""))
-        messagebox.showinfo("Bulk grant", msg, parent=gui.root)
+        messagebox.showinfo("Bulk grant", msg, parent=parent.winfo_toplevel())
         refresh_all()
 
     def _do_revoke() -> None:
         ids = _selected_ids()
         if not ids:
             messagebox.showinfo("Nothing selected", "Tick users first.",
-                                  parent=gui.root)
+                                  parent=parent.winfo_toplevel())
             return
         if not messagebox.askyesno(
                 "Revoke access",
                 f"Revoke '{SYSTEM_KEY}' access for {len(ids)} user(s)?",
-                parent=gui.root):
+                parent=parent.winfo_toplevel()):
             return
         try:
             result = data.bulk_revoke(gui.auth, ids, SYSTEM_KEY)
         except Exception as e:
             logger.exception("bulk_revoke crashed")
-            messagebox.showerror("Error", str(e), parent=gui.root)
+            messagebox.showerror("Error", str(e), parent=parent.winfo_toplevel())
             return
         msg = (f"Revoked for {len(result.succeeded)} user(s)."
                 + (f"\n{len(result.failed)} failed."
                     if result.failed else ""))
-        messagebox.showinfo("Bulk revoke", msg, parent=gui.root)
+        messagebox.showinfo("Bulk revoke", msg, parent=parent.winfo_toplevel())
         refresh_all()
 
     def _set_active(active: bool) -> None:
         ids = _selected_ids()
         if not ids:
             messagebox.showinfo("Nothing selected", "Tick users first.",
-                                  parent=gui.root)
+                                  parent=parent.winfo_toplevel())
             return
         verb = "Activate" if active else "Deactivate"
         if not messagebox.askyesno(
                 f"{verb} users",
-                f"{verb} {len(ids)} user(s)?", parent=gui.root):
+                f"{verb} {len(ids)} user(s)?", parent=parent.winfo_toplevel()):
             return
         try:
             result = data.bulk_set_active(gui.auth, ids, active)
         except Exception as e:
             logger.exception("bulk_set_active crashed")
-            messagebox.showerror("Error", str(e), parent=gui.root)
+            messagebox.showerror("Error", str(e), parent=parent.winfo_toplevel())
             return
         messagebox.showinfo(
             f"{verb}d",
             (f"{verb}d {len(result.succeeded)} user(s)."
               + (f"\n{len(result.failed)} failed."
                   if result.failed else "")),
-            parent=gui.root)
+            parent=parent.winfo_toplevel())
         refresh_all()
 
     ttk.Button(filt, text="Apply", command=refresh
@@ -419,7 +416,7 @@ def _build_users_tab(gui, parent: ttk.Frame, state: dict,
     ttk.Button(bulk_bar, text="Grant role to selected",
                 command=_do_grant
                 ).pack(side="left", padx=(0, 6))
-    ttk.Button(bulk_bar, text="Revoke secondary-school access",
+    ttk.Button(bulk_bar, text="Revoke primary-school access",
                 command=_do_revoke
                 ).pack(side="left", padx=(0, 12))
     ttk.Button(bulk_bar, text="Activate selected",

@@ -1,14 +1,29 @@
 """
 Leave Menu - Leave management CLI.
+
+Leave, sickness absence, family leave, flexible working and (HR) leave
+entitlements. Everything goes through ``LeaveManager`` and the
+``domain/staff_hr`` leave modules, which check who may do what; pass
+``auth`` (the signed-in session) so they check that person — without it the
+role is read from ``users`` for ``user_id``.
 """
 
 from datetime import datetime
+from education_system.systems.university.domains.staff.domain.staff_hr import access
+from education_system.systems.university.domains.staff.domain.staff_hr import leave_rules
 from education_system.systems.university.domains.staff.domain.staff_hr.services import LeaveManager
+from education_system.systems.university.domains.staff.interfaces.cli.staff_hr.menus import (
+    leave_more_menus as more,
+)
 
 
 def display_leave_menu(user_id: str, is_approver: bool = False,
-                       approval_mode: bool = False) -> None:
+                       approval_mode: bool = False, auth=None) -> None:
     """Display leave management menu."""
+    actor = access.user_of(auth) if auth is not None else leave_rules.actor_for(user_id)
+    user_id = access.username_of(actor) or user_id
+    is_approver = is_approver or access.can(actor, 'manager')
+    is_hr = access.can(actor, 'hr')
     while True:
         print("\n" + "=" * 60)
         print("LEAVE MANAGEMENT")
@@ -33,6 +48,13 @@ def display_leave_menu(user_id: str, is_approver: bool = False,
             print("  6. View Pending Approvals")
             print("  7. Approve/Reject Request")
 
+        print("\n--- Absence & Family ---")
+        print("  8. Sickness Absence")
+        print("  9. Family Leave")
+        print(" 10. Flexible Working")
+        if is_hr:
+            print(" 11. Leave Entitlements (HR)")
+
         print("\n  0. Return")
 
         choice = input("\nEnter choice: ").strip()
@@ -42,17 +64,25 @@ def display_leave_menu(user_id: str, is_approver: bool = False,
         elif choice == '1':
             _view_balance(user_id)
         elif choice == '2':
-            _submit_request(user_id)
+            _submit_request(user_id, actor)
         elif choice == '3':
             _view_requests(user_id)
         elif choice == '4':
-            _cancel_request(user_id)
+            _cancel_request(user_id, actor)
         elif choice == '5':
-            _view_calendar()
+            _view_calendar(actor)
         elif choice == '6' and (is_approver or approval_mode):
-            _view_pending_approvals(user_id)
+            _view_pending_approvals(user_id, actor)
         elif choice == '7' and (is_approver or approval_mode):
-            _handle_approval(user_id)
+            _handle_approval(user_id, actor)
+        elif choice == '8':
+            more.absence_menu(actor)
+        elif choice == '9':
+            more.family_menu(actor)
+        elif choice == '10':
+            more.flexible_menu(actor)
+        elif choice == '11' and is_hr:
+            more.entitlements_menu(actor)
         else:
             print("Invalid choice.")
 
@@ -70,13 +100,24 @@ def _view_balance(user_id: str) -> None:
             remaining = b.get('remaining_days', 0)
             print(f"\n{b.get('leave_type_name')}:")
             print(f"  Allocated: {allocated:.1f} | Used: {used:.1f} | Remaining: {remaining:.1f}")
+            extras = []
+            if b.get('bank_holiday_days'):
+                extras.append(f"bank holidays booked {b['bank_holiday_days']:g}")
+            if b.get('carried_over'):
+                extras.append(f"carried over {b['carried_over']:g}"
+                              + (f" (expires {b['carry_over_expires']})"
+                                 if b.get('carry_over_expires') else ''))
+            if b.get('pending_days'):
+                extras.append(f"pending {b['pending_days']:g}")
+            if extras:
+                print("  " + "; ".join(extras))
     else:
         print("No leave balance found. Contact HR.")
     print("-" * 50)
     input("\nPress Enter to continue...")
 
 
-def _submit_request(user_id: str) -> None:
+def _submit_request(user_id: str, actor=None) -> None:
     """Submit a leave request."""
     print("\n--- Submit Leave Request ---")
 
@@ -100,6 +141,7 @@ def _submit_request(user_id: str) -> None:
 
     start_date = input("Start Date (YYYY-MM-DD): ").strip()
     end_date = input("End Date (YYYY-MM-DD): ").strip()
+    half = input("Half days? (s)tart, (e)nd, (b)oth or Enter for none: ").strip().lower()
     reason = input("Reason: ").strip()
 
     try:
@@ -108,22 +150,18 @@ def _submit_request(user_id: str) -> None:
         datetime.strptime(end_date, '%Y-%m-%d')
 
         # Check for conflicts
-        conflicts = LeaveManager.check_conflicts(user_id, start_date, end_date)
-        if conflicts:
-            print("\nWarning: You have overlapping leave requests!")
-            for c in conflicts:
-                print(f"  - {c.get('leave_type_name')}: {c.get('start_date')} to {c.get('end_date')}")
-            if input("Continue anyway? (y/n): ").strip().lower() != 'y':
-                return
-
+        days = LeaveManager.count_days(user_id, start_date, end_date,
+                                       half in ('s', 'b'), half in ('e', 'b'))
+        print(f"\nThat is {days:g} working days.")
         request_id = LeaveManager.submit_request(
             user_id, leave_type['leave_type_id'],
-            start_date, end_date, reason=reason
+            start_date, end_date, reason=reason, actor=actor,
+            start_half=half in ('s', 'b'), end_half=half in ('e', 'b'),
         )
         print(f"\nLeave request submitted successfully. Request ID: {request_id}")
 
-    except ValueError:
-        print("\nError: Invalid date format. Use YYYY-MM-DD.")
+    except (ValueError, PermissionError) as e:
+        print(f"\nNot submitted: {e}")
     except Exception as e:
         print(f"\nError: {e}")
 
@@ -151,9 +189,12 @@ def _view_requests(user_id: str) -> None:
     input("\nPress Enter to continue...")
 
 
-def _cancel_request(user_id: str) -> None:
-    """Cancel a pending request."""
-    requests = LeaveManager.get_requests(user_id, status='pending')
+def _cancel_request(user_id: str, actor=None) -> None:
+    """Cancel a pending request, or approved leave that has not started."""
+    today = datetime.now().strftime('%Y-%m-%d')
+    requests = [r for r in LeaveManager.get_requests(user_id, limit=200)
+                if (r.get('source') or 'leave') == 'leave' and
+                (r['status'] == 'pending' or (r['status'] == 'approved' and r['start_date'] > today))]
     if not requests:
         print("\nNo pending requests to cancel.")
         input("Press Enter to continue...")
@@ -161,7 +202,8 @@ def _cancel_request(user_id: str) -> None:
 
     print("\nPending Requests:")
     for i, r in enumerate(requests, 1):
-        print(f"  {i}. {r.get('leave_type_name')}: {r.get('start_date')} to {r.get('end_date')}")
+        print(f"  {i}. {r.get('leave_type_name')}: {r.get('start_date')} to {r.get('end_date')}"
+              f" ({r.get('status')})")
 
     try:
         choice = int(input("\nSelect request to cancel (0 to abort): ").strip())
@@ -169,7 +211,7 @@ def _cancel_request(user_id: str) -> None:
             return
         if 1 <= choice <= len(requests):
             request = requests[choice - 1]
-            if LeaveManager.cancel_request(request['request_id'], user_id):
+            if LeaveManager.cancel_request(request['request_id'], user_id, actor=actor):
                 print("\nRequest cancelled successfully.")
             else:
                 print("\nFailed to cancel request.")
@@ -179,11 +221,11 @@ def _cancel_request(user_id: str) -> None:
     input("Press Enter to continue...")
 
 
-def _view_calendar() -> None:
+def _view_calendar(actor=None) -> None:
     """View team leave calendar."""
     month = datetime.now().month
     year = datetime.now().year
-    calendar = LeaveManager.get_calendar(month=month, year=year)
+    calendar = LeaveManager.get_calendar(month=month, year=year, actor=actor)
 
     print("\n" + "-" * 60)
     print(f"LEAVE CALENDAR - {datetime(year, month, 1).strftime('%B %Y')}")
@@ -200,9 +242,9 @@ def _view_calendar() -> None:
     input("\nPress Enter to continue...")
 
 
-def _view_pending_approvals(approver_id: str) -> None:
+def _view_pending_approvals(approver_id: str, actor=None) -> None:
     """View pending leave approvals."""
-    pending = LeaveManager.get_pending_approvals(approver_id)
+    pending = LeaveManager.get_pending_approvals(approver_id, actor=actor)
     print("\n" + "-" * 60)
     print("PENDING LEAVE APPROVALS")
     print("-" * 60)
@@ -220,9 +262,9 @@ def _view_pending_approvals(approver_id: str) -> None:
     input("\nPress Enter to continue...")
 
 
-def _handle_approval(approver_id: str) -> None:
+def _handle_approval(approver_id: str, actor=None) -> None:
     """Handle leave approval/rejection."""
-    pending = LeaveManager.get_pending_approvals(approver_id)
+    pending = LeaveManager.get_pending_approvals(approver_id, actor=actor)
     if not pending:
         print("\nNo pending approvals.")
         input("Press Enter to continue...")
@@ -241,15 +283,18 @@ def _handle_approval(approver_id: str) -> None:
             request = pending[choice - 1]
             action = input("(A)pprove or (R)eject? ").strip().upper()
             if action == 'A':
-                LeaveManager.approve_request(request['request_id'], approver_id)
+                LeaveManager.approve_request(request['request_id'], approver_id, actor=actor)
                 print("\nRequest approved.")
             elif action == 'R':
                 reason = input("Rejection reason: ").strip()
-                LeaveManager.reject_request(request['request_id'], approver_id, reason)
+                LeaveManager.reject_request(request['request_id'], approver_id, reason,
+                                            actor=actor)
                 print("\nRequest rejected.")
             else:
                 print("Invalid action.")
-    except ValueError:
-        print("Invalid input.")
+    except PermissionError as e:
+        print(f"\nNot allowed: {e}")
+    except ValueError as e:
+        print(f"Invalid: {e}")
 
     input("Press Enter to continue...")

@@ -6,7 +6,9 @@ from education_system.systems.sixth_form.interfaces.gui._ui import grab_when_vie
 import logging
 import tkinter as tk
 from datetime import date as _date
-from tkinter import messagebox, ttk
+from tkinter import ttk
+from education_system.systems.sixth_form.interfaces.gui._sidebar import SidebarBook
+from education_system.platform.delivery.gui.parented_dialogs import messagebox
 from typing import Callable
 from education_system.systems.sixth_form.domain.operations.reporting.progress import progress
 from education_system.systems.sixth_form.domain.staff import staff
@@ -45,7 +47,7 @@ def open_progress_window(parent=None) -> None:
     win.title(f"Progress Tracking — {branding.SYSTEM_NAME}")
     win.geometry(WIN_GEOMETRY)
     win.minsize(*WIN_MINSIZE)
-    nb = ttk.Notebook(win)
+    nb = SidebarBook(win)
     nb.pack(fill="both", expand=True, padx=10, pady=10)
     ReviewsTab(nb)
     TargetsTab(nb)
@@ -391,6 +393,32 @@ class ViewDialog:
             tree.insert("", "end", values=(
                 t.target_id, t.area, t.description,
                 t.due_date or "—", t.status))
+
+        # Academic targets live in Target Setting; show the student's
+        # per-subject grade targets alongside the review's own targets.
+        ttk.Label(self.win,
+                   text=f"Subject grade targets — Target Setting "
+                        f"({len(rv.academic_targets)})",
+                   font=("", 10, "bold")).pack(anchor="w",
+                                                   padx=12, pady=(4, 0))
+        gt_frame = ttk.Frame(self.win)
+        gt_frame.pack(fill="x", padx=12, pady=(4, 8))
+        gcols = ("subject", "mte", "asp", "current", "status")
+        gheads = {"subject": "Subject", "mte": "Minimum",
+                  "asp": "Aspirational", "current": "Current",
+                  "status": "Status"}
+        gtree = ttk.Treeview(gt_frame, columns=gcols,
+                                show="headings", height=4)
+        for c in gcols:
+            gtree.heading(c, text=gheads[c])
+            gtree.column(c, width=220 if c == "subject" else 110,
+                          anchor="w")
+        gtree.pack(fill="x")
+        for g in rv.academic_targets:
+            gtree.insert("", "end", values=(
+                g.subject_name, g.mte_grade,
+                g.aspirational_grade or "—",
+                g.current_grade or "—", g.status))
 
         bar = ttk.Frame(self.win)
         bar.pack(fill="x", padx=12, pady=(0, 12))

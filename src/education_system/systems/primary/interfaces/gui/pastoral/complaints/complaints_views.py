@@ -1,4 +1,4 @@
-"""Tkinter views for Sixth Form Complaints."""
+"""Tkinter views for Primary School Complaints."""
 
 from __future__ import annotations
 
@@ -27,6 +27,7 @@ from education_system.systems.primary.domain.pastoral.complaints.complaints impo
     ValidationError,
     severity_label,
 )
+from education_system.systems.primary.interfaces.gui import kit
 
 logger = logging.getLogger(__name__)
 
@@ -46,14 +47,26 @@ _STATUS_TAGS = {
 
 def open_complaints_window(parent=None) -> None:
     data.init_db()
-    master = getattr(parent, "root", parent)
-    win = tk.Toplevel(master) if master is not None else tk.Tk()
-    win.title(f"Complaints — {branding.SYSTEM_NAME}")
-    win.geometry(WIN_GEOMETRY)
-    win.minsize(*WIN_MINSIZE)
+    if parent is None:
+        # Run on its own (no main window): a window of its own, as before.
+        win = tk.Tk()
+        win.title(f"Complaints — {branding.SYSTEM_NAME}")
+        win.geometry(WIN_GEOMETRY)
+        win.minsize(*WIN_MINSIZE)
+        frame = ttk.Frame(win, padding=10)
+        frame.pack(fill="both", expand=True)
+        _draw_complaints(frame, None)
+        return
+    kit.show_page(parent, "Complaints",
+                  lambda page: _draw_complaints(page, parent))
 
-    nb = ttk.Notebook(win)
-    nb.pack(fill="both", expand=True, padx=10, pady=10)
+
+def _draw_complaints(parent, host) -> None:
+    kit.page_heading(parent, "Complaints",
+                     "Complaints from receipt through acknowledgement, "
+                     "investigation, response and escalation.")
+    nb = ttk.Notebook(parent)
+    nb.pack(fill="both", expand=True)
 
     ComplaintsTab(nb, scope="open",     label="Open")
     ComplaintsTab(nb, scope="overdue",  label="Overdue")
@@ -75,29 +88,23 @@ class ComplaintsTab:
         bar = ttk.Frame(self.frame)
         bar.pack(fill="x", padx=8, pady=(8, 4))
         ttk.Label(bar, text="Category:").pack(side="left")
-        self.f_cat = ttk.Combobox(bar, values=("",) + CATEGORIES,
-                                    state="readonly", width=22)
-        self.f_cat.current(0)
+        self.f_cat = kit.ChoiceField(bar, choices=CATEGORIES, blank=True,
+                                     width=22)
         self.f_cat.pack(side="left", padx=(2, 8))
         ttk.Label(bar, text="Stage:").pack(side="left")
-        self.f_stage = ttk.Combobox(bar, values=("",) + STAGES,
-                                       state="readonly", width=16)
-        self.f_stage.current(0)
+        self.f_stage = kit.ChoiceField(bar, choices=STAGES, blank=True,
+                                       width=16)
         self.f_stage.pack(side="left", padx=(2, 8))
         if self.scope == "all":
             ttk.Label(bar, text="Status:").pack(side="left")
-            self.f_status = ttk.Combobox(bar,
-                                           values=("",) + STATUSES,
-                                           state="readonly", width=18)
-            self.f_status.current(0)
+            self.f_status = kit.ChoiceField(bar, choices=STATUSES,
+                                            blank=True, width=18)
             self.f_status.pack(side="left", padx=(2, 8))
         else:
             self.f_status = None
         ttk.Label(bar, text="Outcome:").pack(side="left")
-        self.f_outcome = ttk.Combobox(bar,
-                                          values=("",) + OUTCOMES,
-                                          state="readonly", width=16)
-        self.f_outcome.current(0)
+        self.f_outcome = kit.ChoiceField(bar, choices=OUTCOMES, blank=True,
+                                         width=16)
         self.f_outcome.pack(side="left", padx=(2, 8))
         ttk.Label(bar, text="Subject:").pack(side="left")
         self.f_subj = ttk.Entry(bar, width=12)
@@ -163,12 +170,12 @@ class ComplaintsTab:
         self.count.pack(side="right")
 
     def _clear(self) -> None:
-        self.f_cat.current(0)
-        self.f_stage.current(0)
-        self.f_outcome.current(0)
+        self.f_cat.set("")
+        self.f_stage.set("")
+        self.f_outcome.set("")
         self.f_subj.delete(0, "end")
         if self.f_status is not None:
-            self.f_status.current(0)
+            self.f_status.set("")
         self.refresh()
 
     def _filters(self) -> dict:
@@ -403,7 +410,7 @@ class ComplaintEditor:
         self.win = tk.Toplevel(parent)
         self.win.title(f"Edit complaint #{complaint.complaint_id}"
                           if complaint else "New complaint")
-        self.win.geometry("860x880")
+        self.win.geometry("860x700")
         self.win.transient(parent); self.win.after_idle(self.win.grab_set)
         self._build()
         if complaint:
@@ -411,49 +418,62 @@ class ComplaintEditor:
         self.win.wait_window()
 
     def _build(self) -> None:
-        body = ttk.Frame(self.win)
-        body.pack(fill="both", expand=True, padx=12, pady=10)
+        body, footer = kit.scrolled_form(self.win)
         body.grid_columnconfigure(1, weight=1)
         body.grid_columnconfigure(3, weight=1)
         self.vars: dict[str, tk.Variable] = {}
         self.texts: dict[str, tk.Text] = {}
         self.bools: dict[str, tk.BooleanVar] = {}
 
-        def entry(row, col, label, key, width=22):
+        def entry(row, col, label, key, width=22, kind=None):
             ttk.Label(body, text=label).grid(
                 row=row, column=col, sticky="w", padx=4, pady=2)
             v = tk.StringVar()
             self.vars[key] = v
-            ttk.Entry(body, textvariable=v, width=width).grid(
+            if kind == "date":
+                w = kit.DateField(body, v)
+            elif kind == "staff_name":
+                w = kit.StaffPicker(body, v, by="name", width=30)
+            else:
+                w = ttk.Entry(body, textvariable=v, width=width)
+            w.grid(row=row, column=col + 1, sticky="ew" if kind is None
+                   else "w", padx=4, pady=2)
+
+        def combo(row, col, label, key, values, width=22, blank=False):
+            ttk.Label(body, text=label).grid(
+                row=row, column=col, sticky="w", padx=4, pady=2)
+            v = tk.StringVar()
+            self.vars[key] = v
+            kit.ChoiceField(body, v, choices=values, blank=blank,
+                            width=width).grid(
                 row=row, column=col + 1, sticky="ew", padx=4, pady=2)
 
-        def combo(row, col, label, key, values, width=22):
-            ttk.Label(body, text=label).grid(
-                row=row, column=col, sticky="w", padx=4, pady=2)
-            v = tk.StringVar()
-            self.vars[key] = v
-            ttk.Combobox(body, textvariable=v, values=values,
-                          state="readonly", width=width).grid(
-                row=row, column=col + 1, sticky="ew", padx=4, pady=2)
+        def severity_choices():
+            out = []
+            for n in range(1, 6):
+                try:
+                    out.append((str(n), f"{n} — {severity_label(n)}"))
+                except Exception:  # noqa: BLE001 - the number is enough
+                    out.append((str(n), str(n)))
+            return out
 
         entry(0, 0, "Subject*", "subject", width=48)
-        entry(1, 0, "Received on*", "received_on")
+        entry(1, 0, "Received on*", "received_on", kind="date")
         entry(1, 2, "Complainant name*", "complainant_name")
         combo(2, 0, "Complainant role*", "complainant_role",
                  COMPLAINANT_ROLES)
         combo(2, 2, "Category*", "category", CATEGORIES)
         combo(3, 0, "Stage*", "stage", STAGES)
-        combo(3, 2, "Severity*", "severity",
-                 ("1", "2", "3", "4", "5"))
+        combo(3, 2, "Severity*", "severity", severity_choices())
         entry(4, 0, "Email", "contact_email")
         entry(4, 2, "Phone", "contact_phone")
-        entry(5, 0, "Assigned to", "assigned_to")
+        entry(5, 0, "Assigned to", "assigned_to", kind="staff_name")
         combo(5, 2, "Status*", "status", STATUSES)
-        entry(6, 0, "Acknowledged on", "acknowledged_on")
-        entry(6, 2, "Target response", "target_response_date")
-        entry(7, 0, "Response issued on", "response_issued_on")
-        entry(7, 2, "Closed on", "closed_on")
-        combo(8, 0, "Outcome", "outcome", ("",) + OUTCOMES)
+        entry(6, 0, "Acknowledged on", "acknowledged_on", kind="date")
+        entry(6, 2, "Target response", "target_response_date", kind="date")
+        entry(7, 0, "Response issued on", "response_issued_on", kind="date")
+        entry(7, 2, "Closed on", "closed_on", kind="date")
+        combo(8, 0, "Outcome", "outcome", OUTCOMES, blank=True)
         combo(8, 2, "Satisfaction", "complainant_satisfaction",
                  SATISFACTIONS)
         entry(9, 0, "Linked to", "linked_to", width=48)
@@ -488,11 +508,9 @@ class ComplaintEditor:
             self.texts[key] = t
             row += 1
 
-        bar = ttk.Frame(self.win)
-        bar.pack(fill="x", padx=12, pady=(0, 10))
-        ttk.Button(bar, text="Save",
+        ttk.Button(footer, text="Save",
                     command=self._save).pack(side="right", padx=4)
-        ttk.Button(bar, text="Cancel",
+        ttk.Button(footer, text="Cancel",
                     command=self.win.destroy).pack(side="right")
 
         self.vars["received_on"].set(_dt.date.today().isoformat())
@@ -551,7 +569,7 @@ class AcknowledgeDialog:
         self.win = tk.Toplevel(parent)
         self.win.title(
             f"Acknowledge — #{complaint.complaint_id}")
-        self.win.geometry("440x240")
+        self.win.geometry("560x240")
         self.win.transient(parent); self.win.after_idle(self.win.grab_set)
         body = ttk.Frame(self.win)
         body.pack(fill="both", expand=True, padx=12, pady=10)
@@ -560,18 +578,18 @@ class AcknowledgeDialog:
             row=0, column=0, sticky="w", padx=4, pady=6)
         self.assigned = tk.StringVar(
             value=complaint.assigned_to or "")
-        ttk.Entry(body, textvariable=self.assigned).grid(
+        kit.StaffPicker(body, self.assigned, by="name").grid(
             row=0, column=1, sticky="ew", padx=4, pady=6)
         ttk.Label(body, text="Acknowledged on").grid(
             row=1, column=0, sticky="w", padx=4, pady=6)
         self.when = tk.StringVar(value=_dt.date.today().isoformat())
-        ttk.Entry(body, textvariable=self.when, width=14).grid(
+        kit.DateField(body, self.when).grid(
             row=1, column=1, sticky="w", padx=4, pady=6)
         ttk.Label(body, text="Target response date").grid(
             row=2, column=0, sticky="w", padx=4, pady=6)
         self.target = tk.StringVar(
             value=complaint.target_response_date or "")
-        ttk.Entry(body, textvariable=self.target, width=14).grid(
+        kit.DateField(body, self.target).grid(
             row=2, column=1, sticky="w", padx=4, pady=6)
         bar = ttk.Frame(self.win)
         bar.pack(fill="x", padx=12, pady=(0, 10))
@@ -613,15 +631,14 @@ class ResponseDialog:
             row=0, column=0, sticky="w", padx=4, pady=4)
         self.outcome = tk.StringVar(
             value=complaint.outcome or OUTCOMES[0])
-        ttk.Combobox(body, textvariable=self.outcome,
-                      values=OUTCOMES, state="readonly").grid(
+        kit.ChoiceField(body, self.outcome, choices=OUTCOMES).grid(
             row=0, column=1, sticky="ew", padx=4, pady=4)
         ttk.Label(body, text="Issued on").grid(
             row=1, column=0, sticky="w", padx=4, pady=4)
         self.when = tk.StringVar(
             value=complaint.response_issued_on
             or _dt.date.today().isoformat())
-        ttk.Entry(body, textvariable=self.when, width=14).grid(
+        kit.DateField(body, self.when).grid(
             row=1, column=1, sticky="w", padx=4, pady=4)
         ttk.Label(body, text="Response summary*").grid(
             row=2, column=0, sticky="nw", padx=4, pady=4)
@@ -681,8 +698,7 @@ class EscalateDialog:
         ttk.Label(body, text="Escalate to").grid(
             row=1, column=0, sticky="w", padx=4, pady=4)
         self.to_stage = tk.StringVar(value=choices[0])
-        ttk.Combobox(body, textvariable=self.to_stage,
-                      values=choices, state="readonly").grid(
+        kit.ChoiceField(body, self.to_stage, choices=choices).grid(
             row=1, column=1, sticky="ew", padx=4, pady=4)
         ttk.Label(body, text="Reason").grid(
             row=2, column=0, sticky="nw", padx=4, pady=4)
@@ -719,8 +735,7 @@ def _prompt_choice(parent, title: str, options: list[str], *,
     win.transient(parent); win.after_idle(win.grab_set)
     ttk.Label(win, text=title).pack(anchor="w", padx=8, pady=8)
     var = tk.StringVar(value=default or (options[0] if options else ""))
-    ttk.Combobox(win, textvariable=var, values=options,
-                  state="readonly").pack(fill="x", padx=8)
+    kit.ChoiceField(win, var, choices=options).pack(fill="x", padx=8)
     result: dict = {"value": None}
 
     def ok() -> None:

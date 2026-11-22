@@ -12,24 +12,25 @@ import logging
 from datetime import date as _date, timedelta as _timedelta
 from typing import Callable
 
-from education_system.systems.sixth_form.domain.academics.attendance import (
-    attendance_analytics as analytics,
-    attendance_anomalies as anomalies,
-    attendance_calendar as calendar,
-    attendance_census as census,
-    attendance_governor_report as governor,
-    attendance_integration as integration,
-    attendance_thresholds as thresholds,
-)
 from education_system.systems.sixth_form.domain.academics.attendance.attendance import (
     ValidationError,
 )
 from education_system.systems.sixth_form.interfaces.cli.academics.attendance.attendance_cli import (
+    lazy_domain,
     _input,
     _pause,
     _pick_from,
     _UserAbort,
 )
+
+# Domain modules load on first use (see attendance_cli.lazy_domain).
+analytics = lazy_domain("attendance_analytics")
+anomalies = lazy_domain("attendance_anomalies")
+calendar = lazy_domain("attendance_calendar")
+census = lazy_domain("attendance_census")
+governor = lazy_domain("attendance_governor_report")
+integration = lazy_domain("attendance_integration")
+thresholds = lazy_domain("attendance_thresholds")
 from education_system.systems.sixth_form.domain.academics.timetable.timetable import (
     day_name,
 )

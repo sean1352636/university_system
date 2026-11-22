@@ -27,10 +27,8 @@ class HardeningMixin:
             ttk.Button(row,text='Remove',command=lambda k=item['memory_key'],r=row:(self.conversation_store.delete_memory(user,k),r.destroy())).pack(side=tk.RIGHT)
 
     def create_support_handoff(self):
-        if not messagebox.askyesno('Contact support','Share this conversation and diagnostic reference with IT Services?',parent=self.root): return
-        ref=getattr(self,'_last_diagnostic',{}).get('reference','')
-        ticket=self.conversation_store.create_handoff(self.current_user.get('username','unknown'),self.conversation_id,ref)
-        self.add_chat_message('System',f'Support request #{ticket} was created.','system')
+        """'Contact support' opens a real case with the chatbot agents."""
+        self.speak_to_person()
 
     def show_chat_notifications(self):
         notes=self.conversation_store.notifications(self.current_user.get('username','unknown'))

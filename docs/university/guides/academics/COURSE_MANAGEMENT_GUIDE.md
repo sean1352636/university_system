@@ -558,14 +558,11 @@ Click any course to view:
 
 ## Additional Resources
 
-- **Registration Guide**: `docs/registration_guide.pdf`
-- **Degree Planning Worksheet**: `docs/degree_planning.xlsx`
-- **Course Catalog (PDF)**: `docs/course_catalog_2025-26.pdf`
 - **Academic Calendar**: `calendar.university.edu`
 - **Video Tutorials**: `registrar.university.edu/tutorials`
 
 ---
 
 **Last Updated**: January 2026
-**Module**: `university_system/modules/domain/academics/services/course_management_core.py`
+**Module**: `src/education_system/systems/university/domains/curriculum/domain/course_management/`
 **Support**: registrar@university.edu | (555) 123-4567

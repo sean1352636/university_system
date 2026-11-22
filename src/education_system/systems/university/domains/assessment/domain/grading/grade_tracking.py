@@ -334,6 +334,31 @@ def init_enhanced_grades_db():
         print(f"Database error: {e}")
         return False
 
+def _exam_menu():
+    from education_system.systems.university.domains.assessment.domain.grading import exam_marking_cli as m
+    return {'13': m.exam_settings_menu, '14': m.absences_menu, '15': m.moderation_menu,
+            '16': m.release_menu, '17': m.resits_menu, '18': m.module_results_menu,
+            '19': m.classification_menu, '20': m.change_log_menu}
+
+
+class _LazyMenu(dict):
+    """Loads the exam-marking CLI on first use."""
+    def _load(self):
+        if not dict.__len__(self):
+            self.update(_exam_menu())
+
+    def __contains__(self, key):
+        self._load()
+        return dict.__contains__(self, key)
+
+    def __getitem__(self, key):
+        self._load()
+        return dict.__getitem__(self, key)
+
+
+_EXAM_MENU = _LazyMenu()
+
+
 def display_enhanced_grade_menu():
     """Display the enhanced grade and performance tracking menu and handle user choices"""
     # Initialize basic tables first
@@ -358,11 +383,20 @@ def display_enhanced_grade_menu():
         print(f"8. {get_text('grades.menu.competency', default='Competency-Based Assessment')}")
         print(f"9. {get_text('grades.menu.predictive', default='Predictive Analytics & Early Warning')}")
         print(f"10. {get_text('grades.menu.performance', default='Performance Analysis')}")
+        print("\n--- Exam Marking & Results ---")
+        print("13. Exam Settings (anonymous marking, moderation)")
+        print("14. Record Absences (ABS / ABS-MC)")
+        print("15. Moderation (second marking)")
+        print("16. Release Exam Marks")
+        print("17. Resits (referral / deferral)")
+        print("18. Module Results & Weightings")
+        print("19. Degree Classification")
+        print("20. Mark Change Log")
         print(f"\n--- {get_text('grades.sections.settings', default='Settings')} ---")
         print(f"11. {get_text('grades.menu.language', default='Language')}")
         print(f"12. {get_text('grades.menu.return_main', default='Return to Main Menu')}")
 
-        choice = input(f"{get_text('grades.enter_choice', default='Enter your choice')} (1-12): ")
+        choice = input(f"{get_text('grades.enter_choice', default='Enter your choice')} (1-20): ")
 
         if choice == '1':
             record_assessment_grades()
@@ -386,6 +420,11 @@ def display_enhanced_grade_menu():
             performance_analysis_menu()
         elif choice == '11':
             display_language_menu_option()
+        elif choice in _EXAM_MENU:
+            try:
+                _EXAM_MENU[choice]()
+            except Exception as e:
+                print(f"Error: {e}")
         elif choice == '12':
             print(get_text('grades.returning', default='Returning to main menu...'))
             break

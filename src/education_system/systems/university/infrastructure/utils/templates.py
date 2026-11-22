@@ -261,7 +261,7 @@ def template_management_menu():
                     key = input(_t("shared.utils.templates.prompt_enter_key")).strip()
                     if not key:
                         break
-                    value = input(_t("shared.utils.templates.prompt_enter_value", key=key)).strip()
+                    value = input(_t("shared.utils.templates.prompt_enter_value").replace("{key}", key)).strip()
                     template_data[key] = value
             else:
                 template_data = input(_t("shared.utils.templates.prompt_enter_template_content")).strip()
@@ -293,7 +293,7 @@ def template_management_menu():
                             key = input(_t("shared.utils.templates.prompt_enter_key")).strip()
                             if not key:
                                 break
-                            value = input(_t("shared.utils.templates.prompt_enter_value", key=key)).strip()
+                            value = input(_t("shared.utils.templates.prompt_enter_value").replace("{key}", key)).strip()
                             template_data[key] = value
                     else:
                         template_data = input(_t("shared.utils.templates.prompt_enter_new_template_content")).strip()

@@ -35,7 +35,7 @@ The University Management System implements a secure, centralized authentication
 │                        v                                     │
 │              Authentication Layer                            │
 │  ┌──────────────────────────────────────────────────────┐  │
-│  │     infrastructure/auth/auth_system.py               │  │
+│  │     platform/identity/auth/core.py (UserAuth)        │  │
 │  │  - User authentication                               │  │
 │  │  - Password hashing/verification                     │  │
 │  │  - Session management                                │  │
@@ -47,17 +47,19 @@ The University Management System implements a secure, centralized authentication
 │                        v                                     │
 │                   Database Layer                             │
 │  ┌──────────┐    ┌──────────┐    ┌──────────────────────┐  │
-│  │  users   │    │sessions  │    │   audit_log          │  │
+│  │  users   │    │sessions  │    │ security_audit_log   │  │
 │  └──────────┘    └──────────┘    └──────────────────────┘  │
 └─────────────────────────────────────────────────────────────┘
 ```
 
 ### Key Files
 
-- `infrastructure/auth/auth_system.py`: Core authentication module
-- `infrastructure/auth/permissions.py`: Permission management
-- `infrastructure/auth/roles.py`: Role definitions
-- `infrastructure/database/db.py`: Database operations
+- `src/education_system/platform/identity/auth/core.py`: Shared `UserAuth`, which signs users in against the central `auth.db` (`var/data/platform/db_files/auth.db`)
+- `src/education_system/platform/identity/auth/password_manager.py`: Password hashing and validation
+- `src/education_system/platform/identity/auth/session_manager.py`: Session tokens
+- `src/education_system/systems/university/infrastructure/auth/facade.py`: The university's `UserAuth` façade, which delegates sign-in to the shared auth
+- `src/education_system/systems/university/infrastructure/auth/core_utils/constants.py`: Role and permission definitions
+- `src/education_system/systems/university/infrastructure/database/db.py`: Database operations
 
 ## Authentication Flow
 
@@ -78,11 +80,11 @@ The University Management System implements a secure, centralized authentication
      │                       ├────────────────────────>│
      │                       │                         │
      │                       │  3. Return user record  │
-     │                       │     (hash, salt, role)  │
+     │                       │     (hash, role)        │
      │                       │<────────────────────────┤
      │                       │                         │
-     │                       │  4. Hash submitted      │
-     │                       │     password with salt  │
+     │                       │  4. Verify submitted    │
+     │                       │     password (bcrypt)   │
      │                       │                         │
      │                       │  5. Compare hashes      │
      │                       │                         │
@@ -97,7 +99,7 @@ The University Management System implements a secure, centralized authentication
      │                       ├────────────────────────>│
      │                       │                         │
      │                       │  8. Log successful      │
-     │                       │     login to audit_log  │
+     │                       │     login to audit log  │
      │                       ├────────────────────────>│
      │                       │                         │
      │  9. Return session    │                         │
@@ -117,10 +119,9 @@ The University Management System implements a secure, centralized authentication
 ```
 If password doesn't match:
   1. Increment failed_login_attempts
-  2. Log failed attempt to audit_log
-  3. If attempts >= threshold (e.g., 5):
-     - Set account_locked_until (e.g., 30 minutes)
-     - Send notification email
+  2. Log failed attempt to security_audit_log
+  3. If attempts >= MAX_LOGIN_ATTEMPTS (3):
+     - Set locked_until (15 minutes)
   4. Return generic error message (prevent username enumeration)
 ```
 
@@ -150,383 +151,171 @@ If password doesn't match:
 
 ### Hashing Algorithm
 
-The system uses PBKDF2-HMAC-SHA256 for password hashing:
+The system uses bcrypt for password hashing (`src/education_system/platform/identity/auth/password_manager.py`):
 
 ```python
-import hashlib
-import os
-from typing import Tuple
-
-def hash_password(password: str, salt: bytes = None) -> Tuple[str, str]:
-    """
-    Hash a password using PBKDF2-HMAC-SHA256.
-
-    Args:
-        password: The password to hash
-        salt: Optional salt (generated if not provided)
-
-    Returns:
-        Tuple of (hashed_password, salt) both as hex strings
-
-    Security parameters:
-        - Algorithm: PBKDF2-HMAC-SHA256
-        - Iterations: 100,000
-        - Salt length: 32 bytes
-        - Hash length: 128 bytes
-    """
-    if salt is None:
-        salt = os.urandom(32)  # 32 bytes = 256 bits
-    elif isinstance(salt, str):
-        salt = bytes.fromhex(salt)
-
-    # Hash the password with 100,000 iterations
-    key = hashlib.pbkdf2_hmac(
-        'sha256',           # Hash algorithm
-        password.encode('utf-8'),  # Convert password to bytes
-        salt,               # Salt
-        100000,             # Number of iterations
-        dklen=128           # Desired key length
-    )
-
-    return key.hex(), salt.hex()
+def hash_password(password: str) -> str:
+    """Hash a password using bcrypt."""
+    return bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
 ```
 
 ### Password Verification
 
+Legacy PBKDF2-SHA256 hashes from migrated university accounts are still verified when a legacy salt is present.
+
 ```python
-def verify_password(password: str, stored_hash: str, stored_salt: str) -> bool:
+def verify_password(password: str, password_hash: str, legacy_salt: str | None = None) -> bool:
+    """Verify a password against its hash.
+
+    Supports bcrypt (default) and legacy PBKDF2-SHA256 hashes for migrated
+    university accounts.  When *legacy_salt* is provided the hash is treated
+    as a PBKDF2 hex digest; otherwise bcrypt verification is used.
+
+    Returns True if the password matches, False otherwise.
     """
-    Verify a password against stored hash and salt.
-
-    Args:
-        password: Password to verify
-        stored_hash: Stored password hash (hex string)
-        stored_salt: Stored salt (hex string)
-
-    Returns:
-        True if password matches, False otherwise
-    """
-    # Hash the submitted password with the stored salt
-    computed_hash, _ = hash_password(password, stored_salt)
-
-    # Constant-time comparison to prevent timing attacks
-    return hmac.compare_digest(computed_hash, stored_hash)
+    if legacy_salt:
+        return _verify_pbkdf2_legacy(password, legacy_salt, password_hash)
+    try:
+        return bcrypt.checkpw(password.encode("utf-8"), password_hash.encode("utf-8"))
+    except (ValueError, AttributeError):
+        # Run dummy comparison to prevent timing oracle
+        bcrypt.checkpw(password.encode("utf-8"), _DUMMY_HASH.encode("utf-8"))
+        return False
 ```
 
 ### Password Requirements
 
-Default password requirements (configurable):
+Default password requirements, with `MIN_PASSWORD_LENGTH = 12` in `src/education_system/platform/identity/auth/defaults.py`:
 
 ```python
-PASSWORD_REQUIREMENTS = {
-    'min_length': 8,
-    'require_uppercase': True,
-    'require_lowercase': True,
-    'require_digit': True,
-    'require_special': True,
-    'special_chars': '!@#$%^&*()_+-=[]{}|;:,.<>?'
-}
+def validate_password_strength(password: str) -> tuple[bool, str]:
+    """Check password meets minimum strength requirements.
 
-def validate_password_strength(password: str) -> Tuple[bool, str]:
+    Returns (is_valid, message).
     """
-    Validate password meets requirements.
+    if len(password) < MIN_PASSWORD_LENGTH:
+        return False, f"Password must be at least {MIN_PASSWORD_LENGTH} characters."
 
-    Returns:
-        Tuple of (is_valid, error_message)
-    """
-    if len(password) < PASSWORD_REQUIREMENTS['min_length']:
-        return False, f"Password must be at least {PASSWORD_REQUIREMENTS['min_length']} characters"
+    if not re.search(r"[A-Z]", password):
+        return False, "Password must contain at least one uppercase letter."
 
-    if PASSWORD_REQUIREMENTS['require_uppercase'] and not any(c.isupper() for c in password):
-        return False, "Password must contain at least one uppercase letter"
+    if not re.search(r"[a-z]", password):
+        return False, "Password must contain at least one lowercase letter."
 
-    if PASSWORD_REQUIREMENTS['require_lowercase'] and not any(c.islower() for c in password):
-        return False, "Password must contain at least one lowercase letter"
+    if not re.search(r"\d", password):
+        return False, "Password must contain at least one digit."
 
-    if PASSWORD_REQUIREMENTS['require_digit'] and not any(c.isdigit() for c in password):
-        return False, "Password must contain at least one digit"
+    if not re.search(r"[!@#$%^&*(),.?\":{}|<>]", password):
+        return False, "Password must contain at least one special character."
 
-    if PASSWORD_REQUIREMENTS['require_special']:
-        if not any(c in PASSWORD_REQUIREMENTS['special_chars'] for c in password):
-            return False, "Password must contain at least one special character"
+    if password.lower() in _COMMON_PASSWORDS:
+        return False, "Password is too common. Please choose a more unique password."
 
-    return True, ""
+    return True, "Password meets requirements."
 ```
 
 ## Session Management
 
+Sessions are held in the `sessions` table of `auth.db` and managed by `SessionManager` in `src/education_system/platform/identity/auth/session_manager.py`.
+
 ### Session Creation
 
 ```python
-import secrets
-from datetime import datetime, timedelta
+from education_system.platform.identity.auth.session_manager import SessionManager
 
-def create_session(user_id: int, ip_address: str = None, user_agent: str = None) -> str:
-    """
-    Create a new session for a user.
+sessions = SessionManager()
 
-    Args:
-        user_id: User ID
-        ip_address: Client IP address (optional)
-        user_agent: Client user agent (optional)
-
-    Returns:
-        Session token (secure random string)
-    """
-    # Generate secure random token
-    session_token = secrets.token_urlsafe(32)
-
-    # Calculate expiration time (default: 1 hour)
-    expires_at = datetime.now() + timedelta(seconds=SESSION_TIMEOUT)
-
-    # Store session in database
-    with get_db_transaction() as (conn, cursor):
-        cursor.execute("""
-            INSERT INTO sessions (user_id, session_token, ip_address, user_agent, expires_at)
-            VALUES (?, ?, ?, ?, ?)
-        """, (user_id, session_token, ip_address, user_agent, expires_at))
-
-    return session_token
+# Returns a secure random token. At most MAX_SESSIONS_PER_USER sessions stay
+# active; the oldest is revoked to make room for a new one.
+token = sessions.create_session(user_id)
 ```
 
 ### Session Validation
 
 ```python
-def validate_session(session_token: str) -> Optional[Dict]:
-    """
-    Validate a session token and return user info.
-
-    Args:
-        session_token: Session token to validate
-
-    Returns:
-        User info dict if valid, None if invalid/expired
-    """
-    db = DatabaseManager()
-    conn = db.get_connection()
-    cursor = conn.cursor()
-
-    # Query session and user info
-    cursor.execute("""
-        SELECT s.user_id, s.expires_at, s.last_activity,
-               u.username, u.role, u.active, u.account_locked_until
-        FROM sessions s
-        JOIN users u ON s.user_id = u.id
-        WHERE s.session_token = ?
-    """, (session_token,))
-
-    result = cursor.fetchone()
-    db.close()
-
-    if not result:
-        return None
-
-    user_id, expires_at, last_activity, username, role, active, locked_until = result
-
-    # Check if session expired
-    if datetime.fromisoformat(expires_at) < datetime.now():
-        invalidate_session(session_token)
-        return None
-
-    # Check if account is active
-    if not active:
-        return None
-
-    # Check if account is locked
-    if locked_until and datetime.fromisoformat(locked_until) > datetime.now():
-        return None
-
-    # Update last activity
-    update_session_activity(session_token)
-
-    return {
-        'user_id': user_id,
-        'username': username,
-        'role': role
-    }
+# Returns a dict if the token is valid, None if invalid or expired.
+# Pass system_key to also check the user's access to that system.
+session = sessions.validate_session(token, system_key="university")
 ```
 
 ### Session Timeout
 
-```python
-# Session configuration
-SESSION_TIMEOUT = 3600  # 1 hour in seconds
-SESSION_REFRESH_INTERVAL = 900  # 15 minutes
-
-def update_session_activity(session_token: str):
-    """Update last activity timestamp for a session."""
-    with get_db_transaction() as (conn, cursor):
-        cursor.execute("""
-            UPDATE sessions
-            SET last_activity = CURRENT_TIMESTAMP
-            WHERE session_token = ?
-        """, (session_token,))
-```
+`SESSION_TIMEOUT_MINUTES` defaults to 30 and can be overridden with the `EDU_SESSION_TIMEOUT` environment variable. `MAX_SESSIONS_PER_USER` defaults to 5 (`EDU_MAX_SESSIONS`). Both are in `src/education_system/platform/identity/auth/defaults.py`.
 
 ### Session Cleanup
 
 ```python
-def cleanup_expired_sessions():
-    """
-    Remove expired sessions from database.
-    Should be run periodically (e.g., via cron job).
-    """
-    with get_db_transaction() as (conn, cursor):
-        cursor.execute("""
-            DELETE FROM sessions
-            WHERE expires_at < CURRENT_TIMESTAMP
-        """)
-        deleted_count = cursor.rowcount
-
-    return deleted_count
+sessions.invalidate_session(token)            # One session
+sessions.invalidate_user_sessions(user_id)    # All of a user's sessions
+sessions.cleanup_expired()                    # Remove expired sessions
 ```
 
 ## Authorization
 
 ### Permission System
 
-Permissions are defined as strings in the format `resource.action`:
+Permissions are named strings. Each role's list is defined in `PERMISSIONS` in `src/education_system/systems/university/infrastructure/auth/core_utils/constants.py`:
 
 ```python
-# Example permissions
-PERMISSIONS = {
-    # Course permissions
-    'courses.view',
-    'courses.create',
-    'courses.edit',
-    'courses.delete',
-
-    # Student permissions
-    'students.view',
-    'students.edit',
-    'students.grades.view',
-    'students.grades.edit',
-
-    # Admin permissions
-    'users.manage',
-    'system.configure',
-
-    # Financial permissions
-    'finance.view',
-    'finance.process_payments',
+PERMISSIONS: Dict[str, List[str]] = {
+    'admin': [
+        'access_academic_support', 'access_ai_detector', 'add_module', 'add_student',
+        # ...
+    ],
+    'instructor': [...],
+    'staff': [...],
+    'student': [...],
+    # ...
 }
 ```
 
 ### Role Definitions
 
 ```python
-# infrastructure/auth/roles.py
-ROLES = {
-    'admin': {
-        'description': 'System administrator',
-        'permissions': '*',  # All permissions
-    },
-    'faculty': {
-        'description': 'Faculty member',
-        'permissions': [
-            'courses.view',
-            'courses.create',
-            'courses.edit',
-            'students.view',
-            'students.grades.view',
-            'students.grades.edit',
-            'assignments.create',
-            'assignments.grade',
-        ]
-    },
-    'student': {
-        'description': 'Student',
-        'permissions': [
-            'courses.view',
-            'courses.enroll',
-            'assignments.view',
-            'assignments.submit',
-            'grades.view_own',
-        ]
-    },
-    'staff': {
-        'description': 'Staff member',
-        'permissions': [
-            'students.view',
-            'finance.view',
-            'finance.process_payments',
-        ]
-    }
+# src/education_system/systems/university/infrastructure/auth/core_utils/constants.py
+ROLES: Dict[str, str] = {
+    'admin': 'Administrator with full system access',
+    'staff': 'Staff with access to student records and reports',
+    'student': 'Student with access to own records only',
+    'instructor': 'Instructor with access to assigned modules and student grades',
+    'parent': 'Parent with access to their children\'s records',
+    # ...
 }
 ```
 
 ### Permission Checking
 
+The university `UserAuth` checks the signed-in user's permissions:
+
 ```python
-def has_permission(user_id: int, permission: str) -> bool:
-    """
-    Check if a user has a specific permission.
-
-    Args:
-        user_id: User ID
-        permission: Permission string (e.g., 'courses.create')
-
-    Returns:
-        True if user has permission, False otherwise
-    """
-    # Get user role
-    db = DatabaseManager()
-    conn = db.get_connection()
-    cursor = conn.cursor()
-
-    cursor.execute("SELECT role FROM users WHERE id = ?", (user_id,))
-    result = cursor.fetchone()
-    db.close()
-
-    if not result:
-        return False
-
-    role = result[0]
-
-    # Admin has all permissions
-    if role == 'admin':
-        return True
-
-    # Check role permissions
-    role_permissions = ROLES.get(role, {}).get('permissions', [])
-
-    # Wildcard permission
-    if role_permissions == '*':
-        return True
-
-    # Exact match or wildcard match
-    return (
-        permission in role_permissions or
-        permission.split('.')[0] + '.*' in role_permissions
-    )
+auth.has_permission('add_student')                          # True or False
+auth.check_permission('add_student', raise_exception=True)  # Raises if not allowed
+auth.get_user_permissions(user_id)                          # All of a user's permissions
 ```
 
 ### Permission Decorator
 
 ```python
 from functools import wraps
-from infrastructure.auth.permissions import has_permission
-from infrastructure.exceptions import AuthorizationException
+from education_system.systems.university.infrastructure.exceptions import PermissionDeniedError
 
 def require_permission(permission: str):
     """
     Decorator to require a specific permission.
 
     Usage:
-        @require_permission('courses.create')
-        def create_course(user_id, course_data):
+        @require_permission('add_module')
+        def create_course(auth, course_data):
             ...
     """
     def decorator(func):
         @wraps(func)
         def wrapper(*args, **kwargs):
-            # Extract user_id from arguments
-            user_id = kwargs.get('user_id') or args[0]
+            # Extract the auth instance from arguments
+            auth = kwargs.get('auth') or args[0]
 
-            if not has_permission(user_id, permission):
-                raise AuthorizationException(
-                    f"User {user_id} does not have permission: {permission}"
-                )
+            if not auth.has_permission(permission):
+                raise PermissionDeniedError(resource=permission)
 
             return func(*args, **kwargs)
         return wrapper
@@ -537,384 +326,140 @@ def require_permission(permission: str):
 
 ### User Roles
 
-| Role     | Access Level | Description                              |
-|----------|-------------|------------------------------------------|
-| Admin    | Full        | Complete system access                   |
-| Faculty  | High        | Course and student management            |
-| Student  | Limited     | Personal records and course enrollment   |
-| Staff    | Medium      | Module-specific operations               |
+| Role       | Access Level | Description                              |
+|------------|-------------|------------------------------------------|
+| Admin      | Full        | Complete system access                   |
+| Instructor | High        | Assigned modules and student grades      |
+| Staff      | Medium      | Student records and reports              |
+| Student    | Limited     | Own records only                         |
+| Parent     | Limited     | Their children's records                 |
+
+The full list, including the health roles, is `ROLES` in `core_utils/constants.py`.
 
 ### Role Assignment
 
-```python
-def assign_role(user_id: int, role: str, assigned_by: int):
-    """
-    Assign a role to a user.
-
-    Args:
-        user_id: User to assign role to
-        role: Role name
-        assigned_by: User ID performing the assignment
-
-    Raises:
-        ValueError: If role is invalid
-        AuthorizationException: If assigner lacks permission
-    """
-    # Validate role
-    if role not in ROLES:
-        raise ValueError(f"Invalid role: {role}")
-
-    # Check permission
-    if not has_permission(assigned_by, 'users.manage'):
-        raise AuthorizationException("Insufficient permissions to assign roles")
-
-    # Update user role
-    with get_db_transaction() as (conn, cursor):
-        cursor.execute("""
-            UPDATE users
-            SET role = ?, updated_at = CURRENT_TIMESTAMP
-            WHERE id = ?
-        """, (role, user_id))
-
-        # Log the role change
-        cursor.execute("""
-            INSERT INTO audit_log (user_id, event_type, event_description, metadata)
-            VALUES (?, 'role.assigned', 'Role assigned to user', ?)
-        """, (
-            assigned_by,
-            json.dumps({
-                'target_user_id': user_id,
-                'new_role': role
-            })
-        ))
-```
+Roles are held in `auth.db` and managed by `RoleManager` in `src/education_system/platform/identity/auth/role_manager.py`, and by the university's `src/education_system/systems/university/infrastructure/auth/managers/role_manager.py`.
 
 ## Implementation Examples
 
 ### CLI Authentication
 
 ```python
-# modules/interfaces/cli/main.py
-from infrastructure.auth.auth_system import authenticate, create_session
+# src/education_system/launcher/auth.py
+from education_system.launcher.auth import cli_universal_login
 
-def login_cli():
-    """CLI login flow."""
-    username = input("Username: ")
-    password = getpass.getpass("Password: ")
-
-    try:
-        user_info = authenticate(username, password)
-
-        if user_info:
-            session_token = create_session(user_info['id'])
-            print(f"Login successful! Welcome, {user_info['username']}")
-            return user_info, session_token
-        else:
-            print("Invalid credentials")
-            return None, None
-
-    except Exception as e:
-        print(f"Login error: {e}")
-        return None, None
+# Returns (user_info, system_key, system_role, auth), or None if cancelled
+result = cli_universal_login(target_system="university")
 ```
+
+The prompt itself is in `src/education_system/platform/delivery/cli/login_cli.py`.
 
 ### GUI Authentication
 
 ```python
-# modules/interfaces/gui/login_gui.py
-import tkinter as tk
-from tkinter import messagebox
-from infrastructure.auth.auth_system import authenticate, create_session
+# src/education_system/launcher/auth.py
+from education_system.launcher.auth import gui_universal_login
 
-class LoginWindow:
-    def __init__(self):
-        self.window = tk.Tk()
-        self.window.title("University System - Login")
+# Shows UniversalLoginWindow and returns (user_info, system_key, system_role, auth),
+# or None if cancelled
+result = gui_universal_login(target_system="university")
+```
 
-        # Username field
-        tk.Label(self.window, text="Username:").grid(row=0, column=0)
-        self.username_entry = tk.Entry(self.window)
-        self.username_entry.grid(row=0, column=1)
+The window itself is in `src/education_system/platform/delivery/gui/login_gui.py`.
 
-        # Password field
-        tk.Label(self.window, text="Password:").grid(row=1, column=0)
-        self.password_entry = tk.Entry(self.window, show="*")
-        self.password_entry.grid(row=1, column=1)
+### Direct Sign-In
 
-        # Login button
-        tk.Button(self.window, text="Login", command=self.login).grid(row=2, column=1)
+```python
+from education_system.platform.identity.auth.core import UserAuth
 
-    def login(self):
-        username = self.username_entry.get()
-        password = self.password_entry.get()
+auth = UserAuth()
 
-        try:
-            user_info = authenticate(username, password)
-
-            if user_info:
-                session_token = create_session(user_info['id'])
-                messagebox.showinfo("Success", f"Welcome, {user_info['username']}!")
-                self.window.destroy()
-                # Open main application window
-            else:
-                messagebox.showerror("Error", "Invalid credentials")
-
-        except Exception as e:
-            messagebox.showerror("Error", f"Login failed: {e}")
+# Returns a user info dict on success. Raises AuthError on failure.
+user_info = auth.login(username, password)
 ```
 
 ### Web API Authentication
 
-```python
-# modules/web/app.py
-from flask import Flask, request, jsonify, session
-from infrastructure.auth.auth_system import authenticate, create_session, validate_session
-
-app = Flask(__name__)
-app.secret_key = os.environ.get('SECRET_KEY', 'dev-secret-key')
-
-@app.route('/api/auth/login', methods=['POST'])
-def api_login():
-    """API endpoint for user login."""
-    data = request.get_json()
-    username = data.get('username')
-    password = data.get('password')
-
-    if not username or not password:
-        return jsonify({'error': 'Missing credentials'}), 400
-
-    try:
-        user_info = authenticate(
-            username,
-            password,
-            ip_address=request.remote_addr,
-            user_agent=request.headers.get('User-Agent')
-        )
-
-        if user_info:
-            session_token = create_session(
-                user_info['id'],
-                ip_address=request.remote_addr,
-                user_agent=request.headers.get('User-Agent')
-            )
-
-            return jsonify({
-                'success': True,
-                'token': session_token,
-                'user': {
-                    'id': user_info['id'],
-                    'username': user_info['username'],
-                    'role': user_info['role']
-                }
-            })
-        else:
-            return jsonify({'error': 'Invalid credentials'}), 401
-
-    except Exception as e:
-        return jsonify({'error': 'Authentication failed'}), 500
-
-@app.route('/api/auth/logout', methods=['POST'])
-def api_logout():
-    """API endpoint for user logout."""
-    token = request.headers.get('Authorization', '').replace('Bearer ', '')
-
-    if token:
-        invalidate_session(token)
-
-    return jsonify({'success': True})
-
-# Authentication middleware
-@app.before_request
-def authenticate_request():
-    """Validate session for protected endpoints."""
-    # Skip auth for public endpoints
-    if request.path.startswith('/api/auth/login'):
-        return
-
-    # Extract token
-    token = request.headers.get('Authorization', '').replace('Bearer ', '')
-
-    if not token:
-        return jsonify({'error': 'Missing authentication token'}), 401
-
-    # Validate session
-    user_info = validate_session(token)
-
-    if not user_info:
-        return jsonify({'error': 'Invalid or expired session'}), 401
-
-    # Attach user info to request
-    request.user = user_info
-```
+The API's sign-in routes are in `src/education_system/platform/delivery/api/routes/auth_routes.py`. Principals and bearer-token handling are in `src/education_system/platform/delivery/api/security/principals.py`, with the route decorators in `src/education_system/platform/delivery/api/security/decorators.py`.
 
 ## Security Features
 
 ### Account Lockout
 
-Protect against brute force attacks:
+Protect against brute force attacks. The limits are in `src/education_system/platform/identity/auth/defaults.py`, and `UserAuth.login` in `core.py` applies them:
 
 ```python
-MAX_FAILED_ATTEMPTS = 5
-LOCKOUT_DURATION = 1800  # 30 minutes in seconds
-
-def check_account_lockout(username: str) -> Optional[datetime]:
-    """
-    Check if account is locked.
-
-    Returns:
-        Lock expiration time if locked, None if not locked
-    """
-    db = DatabaseManager()
-    conn = db.get_connection()
-    cursor = conn.cursor()
-
-    cursor.execute("""
-        SELECT account_locked_until
-        FROM users
-        WHERE username = ?
-    """, (username,))
-
-    result = cursor.fetchone()
-    db.close()
-
-    if not result or not result[0]:
-        return None
-
-    locked_until = datetime.fromisoformat(result[0])
-
-    # Check if lock expired
-    if locked_until < datetime.now():
-        # Clear the lock
-        unlock_account(username)
-        return None
-
-    return locked_until
-
-def handle_failed_login(username: str):
-    """Handle a failed login attempt."""
-    with get_db_transaction() as (conn, cursor):
-        # Increment failed attempts
-        cursor.execute("""
-            UPDATE users
-            SET failed_login_attempts = failed_login_attempts + 1
-            WHERE username = ?
-        """, (username,))
-
-        # Check if we should lock the account
-        cursor.execute("""
-            SELECT failed_login_attempts
-            FROM users
-            WHERE username = ?
-        """, (username,))
-
-        attempts = cursor.fetchone()[0]
-
-        if attempts >= MAX_FAILED_ATTEMPTS:
-            # Lock the account
-            locked_until = datetime.now() + timedelta(seconds=LOCKOUT_DURATION)
-            cursor.execute("""
-                UPDATE users
-                SET account_locked_until = ?
-                WHERE username = ?
-            """, (locked_until, username))
-
-            # Log the lockout
-            cursor.execute("""
-                INSERT INTO audit_log (event_type, event_description, metadata)
-                VALUES ('account.locked', 'Account locked due to failed login attempts', ?)
-            """, (json.dumps({'username': username, 'attempts': attempts}),))
+MAX_LOGIN_ATTEMPTS = 3
+LOCKOUT_DURATION_MINUTES = 15
 ```
 
 ### Audit Logging
 
-Log all authentication events:
+Authentication events are written to the `security_audit_log` table in `auth.db`:
 
-```python
-def log_auth_event(event_type: str, user_id: int = None, username: str = None,
-                   success: bool = True, ip_address: str = None, metadata: dict = None):
-    """
-    Log an authentication event.
-
-    Args:
-        event_type: Type of event (e.g., 'login', 'logout', 'password_change')
-        user_id: User ID (if authenticated)
-        username: Username (for failed attempts)
-        success: Whether the operation succeeded
-        ip_address: Client IP address
-        metadata: Additional event data
-    """
-    with get_db_transaction() as (conn, cursor):
-        cursor.execute("""
-            INSERT INTO audit_log (
-                user_id, event_type, event_description,
-                success, ip_address, metadata
-            )
-            VALUES (?, ?, ?, ?, ?, ?)
-        """, (
-            user_id,
-            f'auth.{event_type}',
-            f'Authentication event: {event_type}',
-            success,
-            ip_address,
-            json.dumps(metadata or {})
-        ))
+```sql
+CREATE TABLE IF NOT EXISTS security_audit_log (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    event_type  TEXT    NOT NULL,
+    username    TEXT,
+    user_id     INTEGER,
+    detail      TEXT,
+    ip_address  TEXT,
+    created_at  TEXT    NOT NULL DEFAULT (datetime('now'))
+);
 ```
 
 ## API Reference
 
 ### Core Functions
 
-#### `authenticate(username, password, ip_address=None, user_agent=None)`
+#### `UserAuth.login(username, password)`
 
-Authenticate a user with username and password.
+Authenticate a user against the shared auth database (`education_system.platform.identity.auth.core`).
 
 **Parameters:**
 - `username` (str): Username
-- `password` (str): Password (plaintext, will be hashed)
-- `ip_address` (str, optional): Client IP address
-- `user_agent` (str, optional): Client user agent
+- `password` (str): Password (plaintext, verified against the stored hash)
 
 **Returns:**
-- `dict`: User info if successful, None if failed
+- `dict`: User info, including the systems the user can access
 
 **Raises:**
-- `AuthenticationException`: If account is locked
+- `AuthError`: If sign-in fails, including when the account is locked
 
-#### `create_session(user_id, ip_address=None, user_agent=None)`
+#### `SessionManager.create_session(user_id)`
 
-Create a new session for a user.
+Create a new session for a user (`education_system.platform.identity.auth.session_manager`).
 
 **Parameters:**
 - `user_id` (int): User ID
-- `ip_address` (str, optional): Client IP address
-- `user_agent` (str, optional): Client user agent
 
 **Returns:**
 - `str`: Session token
 
-#### `validate_session(session_token)`
+#### `SessionManager.validate_session(token, system_key=None)`
 
 Validate a session token.
 
 **Parameters:**
-- `session_token` (str): Session token to validate
+- `token` (str): Session token to validate
+- `system_key` (str, optional): System to check access against
 
 **Returns:**
-- `dict`: User info if valid, None if invalid
+- `dict`: Session info if valid, None if invalid
 
-#### `invalidate_session(session_token)`
+#### `SessionManager.invalidate_session(token)`
 
 Invalidate a session.
 
 **Parameters:**
-- `session_token` (str): Session token to invalidate
+- `token` (str): Session token to invalidate
 
-#### `has_permission(user_id, permission)`
+#### `has_permission(permission)`
 
-Check if a user has a specific permission.
+Method of the university `UserAuth`. Check if the current user has a specific permission.
 
 **Parameters:**
-- `user_id` (int): User ID
 - `permission` (str): Permission string
 
 **Returns:**
@@ -930,9 +475,7 @@ Error: "Account is locked until YYYY-MM-DD HH:MM:SS"
 
 Solution:
 1. Wait for lockout period to expire, or
-2. Admin can manually unlock:
-   UPDATE users SET account_locked_until = NULL, failed_login_attempts = 0
-   WHERE username = 'username';
+2. Sign in as the system admin and clear the lockout from the admin panel
 ```
 
 **Session Expired**
@@ -941,34 +484,28 @@ Error: "Session expired or invalid"
 
 Solution:
 1. User must log in again
-2. Increase SESSION_TIMEOUT if sessions expire too quickly
+2. Increase EDU_SESSION_TIMEOUT if sessions expire too quickly
 3. Check for clock synchronization issues
 ```
 
 **Permission Denied**
 ```
-Error: "User does not have permission: courses.create"
+Error: "User does not have permission: add_module"
 
 Solution:
 1. Check user role
-2. Verify role has required permission in ROLES definition
+2. Verify role has required permission in PERMISSIONS definition
 3. Assign appropriate role if needed
 ```
 
 ### Debug Mode
 
-Enable authentication debugging:
+Enable debug logging for the auth loggers:
 
 ```python
-# In config or environment
-AUTH_DEBUG = True
+import logging
 
-# This will log detailed auth information
-if AUTH_DEBUG:
-    logger.debug(f"Authenticating user: {username}")
-    logger.debug(f"User role: {role}")
-    logger.debug(f"Required permission: {permission}")
-    logger.debug(f"Has permission: {has_permission(user_id, permission)}")
+logging.getLogger("education_system.platform.identity.auth").setLevel(logging.DEBUG)
 ```
 
 ## Best Practices
@@ -986,8 +523,8 @@ if AUTH_DEBUG:
 
 - [OWASP Authentication Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Authentication_Cheat_Sheet.html)
 - [NIST Digital Identity Guidelines](https://pages.nist.gov/800-63-3/)
-- [PBKDF2 Specification](https://tools.ietf.org/html/rfc2898)
+- [PBKDF2 Specification](https://tools.ietf.org/html/rfc2898) (legacy hashes only)
 
 ---
 
-For questions or issues, contact the development team or see [SECURITY.md](../../../../SECURITY.md).
+For questions or issues, contact the development team or see [SECURITY.md](../../../SECURITY.md).

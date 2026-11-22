@@ -172,11 +172,13 @@ class MFAEnforcement:
                 cursor = conn.cursor()
                 cursor.execute('''
                     SELECT u.id, u.username, u.role, u.created_at,
-                           COALESCE(m.is_enabled, 0) as mfa_enabled,
-                           m.method as mfa_method,
-                           m.setup_date as mfa_setup_date
+                           COALESCE(m.mfa_enabled, 0) as mfa_enabled,
+                           (SELECT mm.method_type FROM mfa_methods mm
+                             WHERE mm.user_id = u.id AND mm.is_enabled = 1
+                             ORDER BY mm.is_primary DESC LIMIT 1) as mfa_method,
+                           m.created_at as mfa_setup_date
                     FROM users u
-                    LEFT JOIN user_mfa m ON u.id = m.user_id
+                    LEFT JOIN mfa_user_settings m ON u.id = m.user_id
                     WHERE u.id = ?
                 ''', (user_id,))
                 row = cursor.fetchone()
@@ -219,10 +221,11 @@ class MFAEnforcement:
                 cursor.execute(f'''
                     SELECT u.id, u.username, u.email, u.role, u.created_at
                     FROM users u
-                    LEFT JOIN user_mfa m ON u.id = m.user_id
+                    LEFT JOIN mfa_user_settings m ON u.id = m.user_id
+                    LEFT JOIN user_accounts ua ON u.id = ua.user_id
                     WHERE u.role IN ({placeholders})
-                      AND u.is_active = 1
-                      AND (m.is_enabled IS NULL OR m.is_enabled = 0)
+                      AND COALESCE(ua.is_active, 1) = 1
+                      AND COALESCE(m.mfa_enabled, 0) = 0
                 ''', roles_tuple)
 
                 for row in cursor.fetchall():

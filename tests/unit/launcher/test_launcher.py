@@ -27,7 +27,10 @@ class TestDispatchTable:
 
     def test_auth_systems_cover_all(self):
         from education_system.launcher.systems import AUTH_GUI_SYSTEMS, AUTH_CLI_SYSTEMS
-        expected = {"university", "sixth_form", "secondary", "primary", "nursery"}
+        expected = {"university", "sixth_form", "secondary", "primary", "nursery",
+                    "apprenticeships", "fe_college", "special_education",
+                    "adult_education", "alternative_provision", "training_provider",
+                    "local_authority"}
         assert AUTH_GUI_SYSTEMS == expected
         assert AUTH_CLI_SYSTEMS == expected
 
@@ -39,6 +42,11 @@ class TestSystemTestLaunchers:
         ("run_secondarysch_tests", "tests/unit/systems/secondary"),
         ("run_primarysch_tests", "tests/unit/systems/primary"),
         ("run_nursery_tests", "tests/unit/systems/nursery"),
+        ("run_special_education_tests", "tests/unit/systems/special_education"),
+        ("run_adult_education_tests", "tests/unit/systems/adult_education"),
+        ("run_alternative_provision_tests", "tests/unit/systems/alternative_provision"),
+        ("run_training_provider_tests", "tests/unit/systems/training_provider"),
+        ("run_local_authority_tests", "tests/unit/systems/local_authority"),
     ])
     def test_system_runner_uses_consolidated_test_path(self, function_name, test_path):
         from education_system.launcher import systems

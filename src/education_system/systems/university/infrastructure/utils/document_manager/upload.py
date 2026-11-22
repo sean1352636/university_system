@@ -368,15 +368,14 @@ class UploadMixin:
 
     def create_notification(self, cursor, recipient_id, notification_type, title, message, document_id=None):
         """Create a notification with integrated email system support"""
-        # Insert notification into database. Best-effort: the standalone
-        # ``notifications`` table has been retired, so a missing table must
-        # never break the document operation that triggered this. The email
-        # path below still runs so recipients are informed.
+        # Into the recipient's inbox, inside the caller's transaction. Best-effort:
+        # a failure must never break the document operation that triggered this.
+        # The email path below still runs so recipients are informed.
         try:
-            cursor.execute('''
-            INSERT INTO notifications (recipient_id, notification_type, title, message, created_date, related_document_id)
-            VALUES (?, ?, ?, ?, ?, ?)
-            ''', (recipient_id, notification_type, title, message, datetime.now().strftime('%Y-%m-%d %H:%M:%S'), document_id))
+            from education_system.systems.university.infrastructure.email.messages_inbox import (
+                deliver_inbox_message_on,
+            )
+            deliver_inbox_message_on(cursor.connection, recipient_id, f"[Documents] {title}", message)
         except Exception:
             logger.debug("Suppressed exception", exc_info=True)
 

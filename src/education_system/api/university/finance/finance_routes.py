@@ -7,7 +7,15 @@ from datetime import datetime
 
 from flask import Blueprint, g, jsonify, request
 
-from education_system.platform.delivery.api.university.auth import scoped_to, token_required
+from education_system.platform.delivery.api.university.auth import (
+    authorize_object,
+    current_subject_id,
+    is_staff,
+    require_staff,
+    scoped_to,
+    staff_required,
+    token_required,
+)
 from education_system.platform.delivery.api.university.pagination import get_pagination_params, paginated_response
 from education_system.platform.delivery.api.university.validators import validate_payment_create
 from education_system.systems.university.infrastructure.exceptions import StudentNotFoundError, ValidationError
@@ -17,6 +25,13 @@ from education_system.systems.university.infrastructure.activity_logger import l
 logger = logging.getLogger(__name__)
 
 finance_bp = Blueprint("finance", __name__, url_prefix="/api/finance")
+
+# Staff capability to read another student's fees, payments and balance
+# (held by admin and staff; instructors are staff but do not hold it).
+FINANCE_VIEW_PERMISSION = "manage_students_finance"
+# Staff capability to record a payment, which also posts it to the GL
+# (held by admin and staff).
+PAYMENT_RECORD_PERMISSION = "record_payments"
 
 
 def _row_to_dict(row) -> dict:
@@ -40,6 +55,9 @@ def list_fees():
     student_id = request.args.get("student_id")
     if not student_id:
         raise ValidationError("'student_id' query parameter is required")
+    denial = authorize_object(student_id, permission=FINANCE_VIEW_PERMISSION)
+    if denial is not None:
+        return denial
 
     _get_student_or_404(student_id)
 
@@ -61,10 +79,21 @@ def list_fees():
 @token_required
 def list_payments():
     student_id = request.args.get("student_id")
+    if is_staff():
+        denial = require_staff(permission=FINANCE_VIEW_PERMISSION)
+        if denial is not None:
+            return denial
+        if student_id:
+            _get_student_or_404(student_id)
+    else:
+        # Everyone else sees only their own payments, whatever student_id
+        # they sent; with no subject there is nothing to pin, so deny.
+        student_id = current_subject_id()
+        if not student_id:
+            return jsonify({"error": "Forbidden", "status": 403}), 403
 
     with get_connection() as conn:
         if student_id:
-            _get_student_or_404(student_id)
             page, per_page, offset = get_pagination_params()
             rows = conn.execute(
                 "SELECT * FROM payments WHERE student_id = ? ORDER BY payment_date DESC LIMIT ? OFFSET ?",
@@ -91,6 +120,7 @@ def list_payments():
 
 @finance_bp.route("/payments", methods=["POST"])
 @token_required
+@staff_required(permission=PAYMENT_RECORD_PERMISSION)
 def create_payment():
     data = request.get_json(silent=True) or {}
     validate_payment_create(data)
@@ -156,7 +186,7 @@ def list_scholarships():
 
 @finance_bp.route("/account/<student_id>", methods=["GET"])
 @token_required
-@scoped_to("student_id")
+@scoped_to("student_id", permission=FINANCE_VIEW_PERMISSION)
 def student_account(student_id: str):
     _get_student_or_404(student_id)
 

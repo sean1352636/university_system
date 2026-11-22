@@ -12,6 +12,8 @@ Provides functionality for:
 from datetime import datetime, timedelta
 from typing import Any, Dict, List, Optional
 
+from education_system.systems.university.domains.staff.domain.staff_hr import access
+from education_system.systems.university.domains.staff.domain.staff_hr.services.managers import _people as people
 from education_system.systems.university.infrastructure.database.db import get_connection, transaction
 from education_system.systems.university.infrastructure.activity_logger import log_activity
 from education_system.systems.university.infrastructure.sql_safety import validate_identifier  # nosec B608
@@ -229,16 +231,24 @@ class ExpenseManager:
 
     @staticmethod
     def approve_claim(claim_id: int, approver_id: str,
-                     amount_approved: float = None, comments: str = None) -> bool:
-        """Approve an expense claim."""
+                     amount_approved: float = None, comments: str = None,
+                     actor: Any = None) -> bool:
+        """Approve a submitted expense claim (False when there is none).
+
+        The decider — ``actor``, else the person ``approver_id`` names —
+        must be the claimant's line manager or HR, never the claimant
+        (PermissionError otherwise)."""
         with transaction() as conn:
             # Get claim details
             claim = conn.execute('''
-                SELECT * FROM expense_claims WHERE claim_id = ?
+                SELECT * FROM expense_claims WHERE claim_id = ? AND status = 'submitted'
             ''', (claim_id,)).fetchone()
 
             if not claim:
                 return False
+            who = people.require_approver(actor, approver_id, claim['user_id'], conn,
+                                          "approve this expense claim")
+            approver_id = who['username']
 
             # Create approval record
             conn.execute('''
@@ -259,17 +269,28 @@ class ExpenseManager:
                 WHERE claim_id = ?
             ''', (datetime.now().isoformat(), claim_id))
 
+            access.audit(conn, who, 'expense_approved', claim['user_id'], 'expense_claims', claim_id)
             log_activity('update', 'expense_claim', details={
                 'claim_id': claim_id, 'action': 'approved', 'approver': approver_id
             })
             return True
 
     @staticmethod
-    def reject_claim(claim_id: int, approver_id: str, comments: str = None, reason: str = None) -> bool:
-        """Reject an expense claim."""
+    def reject_claim(claim_id: int, approver_id: str, comments: str = None, reason: str = None,
+                     actor: Any = None) -> bool:
+        """Reject a submitted expense claim (False when there is none); who
+        may decide as for :meth:`approve_claim`."""
         if comments is None and reason is not None:
             comments = reason
         with transaction() as conn:
+            claim = conn.execute("SELECT user_id FROM expense_claims WHERE claim_id = ? "
+                                 "AND status = 'submitted'", (claim_id,)).fetchone()
+            if not claim:
+                return False
+            who = people.require_approver(actor, approver_id, claim['user_id'], conn,
+                                          "reject this expense claim")
+            approver_id = who['username']
+            access.audit(conn, who, 'expense_rejected', claim['user_id'], 'expense_claims', claim_id)
             # Create approval record
             conn.execute('''
                 INSERT INTO expense_approvals (
@@ -290,9 +311,19 @@ class ExpenseManager:
             return True
 
     @staticmethod
-    def return_for_revision(claim_id: int, approver_id: str, comments: str) -> bool:
-        """Return a claim for revision."""
+    def return_for_revision(claim_id: int, approver_id: str, comments: str,
+                            actor: Any = None) -> bool:
+        """Return a submitted claim for revision (False when there is none);
+        who may decide as for :meth:`approve_claim`."""
         with transaction() as conn:
+            claim = conn.execute("SELECT user_id FROM expense_claims WHERE claim_id = ? "
+                                 "AND status = 'submitted'", (claim_id,)).fetchone()
+            if not claim:
+                return False
+            who = people.require_approver(actor, approver_id, claim['user_id'], conn,
+                                          "return this expense claim")
+            approver_id = who['username']
+            access.audit(conn, who, 'expense_returned', claim['user_id'], 'expense_claims', claim_id)
             conn.execute('''
                 INSERT INTO expense_approvals (
                     claim_id, approver_id, decision, comments, decision_date

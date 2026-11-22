@@ -31,18 +31,24 @@ from education_system.systems.university.infrastructure.i18n import (
 )
 from education_system.systems.university.infrastructure.utils.gui_language_selector import show_gui_language_selector
 
-# Import finance integration for student payments
+# Import finance integration for student payments (balance checks only; the
+# sale itself is posted by the shared bar service)
 try:
     from education_system.systems.university.domains.finance.infrastructure.finance_integration import (
-        process_student_finance_account_payment,
         get_student_finance_account_balance,
         get_student_info,
-        record_payment_to_finance
     )
     FINANCE_ACCOUNT_AVAILABLE = True
 except ImportError:
     FINANCE_ACCOUNT_AVAILABLE = False
     print("Warning: Student finance account integration not available")
+
+try:
+    from education_system.systems.university.plugins.campus_commerce.domain.bar.services.bar_core import (
+        complete_bar_sale,
+    )
+except ImportError:
+    complete_bar_sale = None
 
 # Import email service for receipts
 try:
@@ -641,72 +647,59 @@ class BarGUI:
         customer_name = self.customer_name_entry.get().strip() or 'Walk-in Customer'
         student_id = self.student_id_entry.get().strip()
 
-        # Process payment
+        # Validate payment choice (the charge itself happens in the service)
         payment_method = self.payment_method.get()
-        payment_success = self.process_payment(student_id, self.order_total, payment_method)
-
-        if not payment_success:
+        if not self.process_payment(student_id, self.order_total, payment_method):
             return
 
-        # Record order in database
-        try:
-            conn = get_db_connection()
-            if not conn:
-                messagebox.showerror(_t("common.error", default="Error"), _t("common.database_error", default="Database connection error"))
-                return
+        if complete_bar_sale is None:
+            messagebox.showerror(_t("common.error", default="Error"), _t("bar.messages.service_unavailable", default="Bar sales service not available"))
+            return
 
-            cursor = conn.cursor()
+        # Charge, record the order and post the sale to Finance (shared with the CLI)
+        result = complete_bar_sale(
+            self.current_order,
+            customer_name=customer_name,
+            student_id=student_id,
+            payment_method="Student Account" if self._is_student_account(payment_method) else payment_method,
+            age_verified=self.age_verified,
+            processed_by=self.current_user.get('username'),
+        )
+        if not result.get('success'):
+            messagebox.showerror(_t("common.error", default="Error"), f"Failed to complete order: {result.get('message', 'Unknown error')}")
+            return
 
-            # Insert order
-            cursor.execute('''
-                INSERT INTO orders (source_type, student_id, customer_name, total_amount, payment_method, age_verified, order_status)
-                VALUES ('bar', ?, ?, ?, ?, ?, 'completed')
-            ''', (student_id, customer_name, self.order_total, payment_method, 1 if self.age_verified else 0))
+        order_id = result['order_id']
 
-            order_id = cursor.lastrowid
+        # Send receipt email
+        customer_email = self.current_user.get('email')
+        if customer_email and EMAIL_SERVICE_AVAILABLE:
+            self.send_receipt_email(
+                order_id, customer_email, self.current_order, self.order_total,
+                payment_method=payment_method, customer_name=customer_name
+            )
 
-            # Insert order items
-            for item in self.current_order:
-                cursor.execute('''
-                    INSERT INTO order_items (source_type, source_order_id, product_id, item_name, quantity, unit_price, subtotal)
-                    VALUES ('bar', ?, ?, ?, ?, ?, ?)
-                ''', (order_id, item['item_id'], item['name'], item['quantity'], item['price'], item['subtotal']))
+        # Log activity
+        if ACTIVITY_LOGGER_AVAILABLE:
+            log_activity('create', 'bar_order', user_id=self.current_user.get('id'),
+                       details={'order_id': order_id, 'amount': self.order_total})
 
-                # Update stock
-                cursor.execute('''
-                    UPDATE products SET stock_quantity = stock_quantity - ? WHERE product_id = ? AND source_type = 'bar'
-                ''', (item['quantity'], item['item_id']))
+        messagebox.showinfo(_t("common.success", default="Success"), _t("bar.messages.order_complete", default="Order completed successfully!"))
 
-            conn.commit()
-            conn.close()
+        # Clear order
+        self.clear_order()
 
-            # Record revenue
-            self.record_revenue(self.order_total, f"Order #{order_id}")
-
-            # Send receipt email
-            customer_email = self.current_user.get('email')
-            if customer_email and EMAIL_SERVICE_AVAILABLE:
-                self.send_receipt_email(
-                    order_id, customer_email, self.current_order, self.order_total,
-                    payment_method=payment_method, customer_name=customer_name
-                )
-
-            # Log activity
-            if ACTIVITY_LOGGER_AVAILABLE:
-                log_activity('create', 'bar_order', user_id=self.current_user.get('id'),
-                           details={'order_id': order_id, 'amount': self.order_total})
-
-            messagebox.showinfo(_t("common.success", default="Success"), _t("bar.messages.order_complete", default="Order completed successfully!"))
-
-            # Clear order
-            self.clear_order()
-
-        except Exception as e:
-            messagebox.showerror(_t("common.error", default="Error"), f"Failed to complete order: {e}")
+    @staticmethod
+    def _is_student_account(payment_method):
+        return _t("bar.pos.student_account", default="Student Finance Account") in (payment_method or '')
 
     def process_payment(self, student_id, amount, payment_method):
-        """Handle payment via student finance account or cash"""
-        if _t("bar.pos.student_account", default="Student Finance Account") in payment_method:
+        """Validate a student-account payment up front (balance, account).
+
+        The debit itself is made by ``complete_bar_sale`` so the GUI and CLI
+        post to Finance through the same service.
+        """
+        if self._is_student_account(payment_method):
             if not FINANCE_ACCOUNT_AVAILABLE:
                 messagebox.showerror(_t("common.error", default="Error"), _t("bar.messages.account_payment_unavailable", default="Student account payment not available"))
                 return False
@@ -733,49 +726,10 @@ class BarGUI:
                 messagebox.showerror(_t("common.error", default="Error"), f"Insufficient balance. Current balance: £{balance:.2f}, Required: £{amount:.2f}. Please top up your account.")
                 return False
 
-            # Process payment
-            try:
-                result = process_student_finance_account_payment(
-                    student_id, amount, "Bar purchase", "Bar", f"ORDER-{datetime.now().strftime('%Y%m%d%H%M%S')}"
-                )
-                if not result.get('success', False):
-                    messagebox.showerror(_t("common.error", default="Error"), result.get('message', _t("bar.messages.payment_failed", default="Payment failed. Please try again.")))
-                    return False
-                return True
-            except Exception as e:
-                messagebox.showerror(_t("common.error", default="Error"), f"Payment failed: {e}")
-                return False
+            return True
 
         # Cash or card payment - just confirm
         return True
-
-    def record_revenue(self, amount, description):
-        """Add sale to finance system as revenue.
-
-        8.117.104: routed through unified record_payment() with
-        ``source_type='bar'`` so cross-domain reports can isolate bar
-        revenue. Pre-fix this did a raw INSERT with all rows tagged
-        ``payment_method='Bar Revenue'`` and student_id='BAR_REVENUE'
-        so analytics couldn't tell bar tabs apart from other revenue.
-        """
-        if not FINANCE_ACCOUNT_AVAILABLE:
-            return
-        try:
-            from education_system.systems.university.domains.finance.domain.core.unified_payments import (
-                record_payment,
-            )
-            record_payment(
-                student_id='BAR_REVENUE',
-                amount=amount,
-                payment_method='cash',
-                source_type='bar',
-                payment_type='revenue',
-                department='bar',
-                description=description,
-                created_by=self.current_user.get('username', 'system'),
-            )
-        except Exception as e:
-            print(f"Failed to record revenue: {e}")
 
     def get_student_finance_balance(self, student_id):
         """Check student's available balance"""

@@ -50,10 +50,10 @@ def mock_db():
 class TestParentPortalGUIInitialization:
     """Test ParentPortalGUI initialization"""
 
-    @patch('education_system.systems.university.domains.academics.interfaces.gui.parent_portal.base.ParentPortal')
+    @patch('education_system.systems.university.domains.learners.interfaces.gui.parent_portal.base.ParentPortal')
     def test_initialization_with_auth(self, mock_portal_class, mock_auth):
         """Test initialization with authentication"""
-        from education_system.systems.university.domains.academics.interfaces.gui.parent_portal import ParentPortalGUI
+        from education_system.systems.university.domains.learners.interfaces.gui.parent_portal import ParentPortalGUI
 
         portal_instance = Mock()
         portal_instance.get_parent_id_from_user.return_value = 'P001'
@@ -67,18 +67,18 @@ class TestParentPortalGUIInitialization:
 
     def test_initialization_without_auth(self):
         """Test initialization without authentication"""
-        from education_system.systems.university.domains.academics.interfaces.gui.parent_portal import ParentPortalGUI
+        from education_system.systems.university.domains.learners.interfaces.gui.parent_portal import ParentPortalGUI
 
         gui = ParentPortalGUI(None)
 
         assert gui.auth is None
         assert gui.parent_portal is None
 
-    @patch('education_system.systems.university.domains.academics.interfaces.gui.parent_portal.base.ParentPortal')
+    @patch('education_system.systems.university.domains.learners.interfaces.gui.parent_portal.base.ParentPortal')
     @patch('tkinter.Tk')
     def test_create_main_window(self, mock_tk, mock_portal_class, mock_auth):
         """Test creating main window"""
-        from education_system.systems.university.domains.academics.interfaces.gui.parent_portal import ParentPortalGUI
+        from education_system.systems.university.domains.learners.interfaces.gui.parent_portal import ParentPortalGUI
 
         portal_instance = Mock()
         portal_instance.get_parent_id_from_user.return_value = 'P001'
@@ -99,11 +99,11 @@ class TestParentPortalGUIInitialization:
 class TestLayoutSetup:
     """Test layout setup functionality"""
 
-    @patch('education_system.systems.university.domains.academics.interfaces.gui.parent_portal.base.ParentPortal')
+    @patch('education_system.systems.university.domains.learners.interfaces.gui.parent_portal.base.ParentPortal')
     @patch('tkinter.Tk')
     def test_setup_layout(self, mock_tk, mock_portal_class, mock_auth):
         """Test setting up the layout"""
-        from education_system.systems.university.domains.academics.interfaces.gui.parent_portal import ParentPortalGUI
+        from education_system.systems.university.domains.learners.interfaces.gui.parent_portal import ParentPortalGUI
 
         portal_instance = Mock()
         portal_instance.get_parent_id_from_user.return_value = 'P001'
@@ -122,10 +122,10 @@ class TestLayoutSetup:
 class TestChildrenManagement:
     """Test children management functionality"""
 
-    @patch('education_system.systems.university.domains.academics.interfaces.gui.parent_portal.base.ParentPortal')
+    @patch('education_system.systems.university.domains.learners.interfaces.gui.parent_portal.base.ParentPortal')
     def test_load_children_list(self, mock_portal_class, mock_auth):
         """Test loading children list"""
-        from education_system.systems.university.domains.academics.interfaces.gui.parent_portal import ParentPortalGUI
+        from education_system.systems.university.domains.learners.interfaces.gui.parent_portal import ParentPortalGUI
 
         portal_instance = Mock()
         portal_instance.get_parent_id_from_user.return_value = 'P001'
@@ -139,10 +139,10 @@ class TestChildrenManagement:
 
         assert gui.parent_portal == portal_instance
 
-    @patch('education_system.systems.university.domains.academics.interfaces.gui.parent_portal.base.ParentPortal')
+    @patch('education_system.systems.university.domains.learners.interfaces.gui.parent_portal.base.ParentPortal')
     def test_select_child(self, mock_portal_class, mock_auth):
         """Test selecting a child"""
-        from education_system.systems.university.domains.academics.interfaces.gui.parent_portal import ParentPortalGUI
+        from education_system.systems.university.domains.learners.interfaces.gui.parent_portal import ParentPortalGUI
 
         portal_instance = Mock()
         portal_instance.get_parent_id_from_user.return_value = 'P001'
@@ -156,11 +156,11 @@ class TestChildrenManagement:
 class TestDashboardView:
     """Test dashboard view functionality"""
 
-    @patch('education_system.systems.university.domains.academics.interfaces.gui.parent_portal.base.ParentPortal')
+    @patch('education_system.systems.university.domains.learners.interfaces.gui.parent_portal.base.ParentPortal')
     @patch('tkinter.Tk')
     def test_show_dashboard(self, mock_tk, mock_portal_class, mock_auth):
         """Test showing dashboard"""
-        from education_system.systems.university.domains.academics.interfaces.gui.parent_portal import ParentPortalGUI
+        from education_system.systems.university.domains.learners.interfaces.gui.parent_portal import ParentPortalGUI
 
         portal_instance = Mock()
         portal_instance.get_parent_id_from_user.return_value = 'P001'
@@ -179,10 +179,10 @@ class TestDashboardView:
 class TestGradesView:
     """Test grades viewing functionality"""
 
-    @patch('education_system.systems.university.domains.academics.interfaces.gui.parent_portal.base.ParentPortal')
+    @patch('education_system.systems.university.domains.learners.interfaces.gui.parent_portal.base.ParentPortal')
     def test_view_child_grades(self, mock_portal_class, mock_auth):
         """Test viewing child grades"""
-        from education_system.systems.university.domains.academics.interfaces.gui.parent_portal import ParentPortalGUI
+        from education_system.systems.university.domains.learners.interfaces.gui.parent_portal import ParentPortalGUI
 
         portal_instance = Mock()
         portal_instance.get_parent_id_from_user.return_value = 'P001'
@@ -196,10 +196,10 @@ class TestGradesView:
 
         assert gui.parent_portal == portal_instance
 
-    @patch('education_system.systems.university.domains.academics.interfaces.gui.parent_portal.base.ParentPortal')
+    @patch('education_system.systems.university.domains.learners.interfaces.gui.parent_portal.base.ParentPortal')
     def test_view_grade_details(self, mock_portal_class, mock_auth):
         """Test viewing grade details"""
-        from education_system.systems.university.domains.academics.interfaces.gui.parent_portal import ParentPortalGUI
+        from education_system.systems.university.domains.learners.interfaces.gui.parent_portal import ParentPortalGUI
 
         portal_instance = Mock()
         portal_instance.get_parent_id_from_user.return_value = 'P001'
@@ -221,10 +221,10 @@ class TestGradesView:
 class TestAttendanceView:
     """Test attendance viewing functionality"""
 
-    @patch('education_system.systems.university.domains.academics.interfaces.gui.parent_portal.base.ParentPortal')
+    @patch('education_system.systems.university.domains.learners.interfaces.gui.parent_portal.base.ParentPortal')
     def test_view_attendance(self, mock_portal_class, mock_auth):
         """Test viewing attendance"""
-        from education_system.systems.university.domains.academics.interfaces.gui.parent_portal import ParentPortalGUI
+        from education_system.systems.university.domains.learners.interfaces.gui.parent_portal import ParentPortalGUI
 
         portal_instance = Mock()
         portal_instance.get_parent_id_from_user.return_value = 'P001'
@@ -240,10 +240,10 @@ class TestAttendanceView:
 
         assert gui.parent_portal == portal_instance
 
-    @patch('education_system.systems.university.domains.academics.interfaces.gui.parent_portal.base.ParentPortal')
+    @patch('education_system.systems.university.domains.learners.interfaces.gui.parent_portal.base.ParentPortal')
     def test_view_attendance_details(self, mock_portal_class, mock_auth):
         """Test viewing detailed attendance"""
-        from education_system.systems.university.domains.academics.interfaces.gui.parent_portal import ParentPortalGUI
+        from education_system.systems.university.domains.learners.interfaces.gui.parent_portal import ParentPortalGUI
 
         portal_instance = Mock()
         portal_instance.get_parent_id_from_user.return_value = 'P001'
@@ -262,10 +262,10 @@ class TestAttendanceView:
 class TestTimetableView:
     """Test timetable viewing functionality"""
 
-    @patch('education_system.systems.university.domains.academics.interfaces.gui.parent_portal.base.ParentPortal')
+    @patch('education_system.systems.university.domains.learners.interfaces.gui.parent_portal.base.ParentPortal')
     def test_view_timetable(self, mock_portal_class, mock_auth):
         """Test viewing timetable"""
-        from education_system.systems.university.domains.academics.interfaces.gui.parent_portal import ParentPortalGUI
+        from education_system.systems.university.domains.learners.interfaces.gui.parent_portal import ParentPortalGUI
 
         portal_instance = Mock()
         portal_instance.get_parent_id_from_user.return_value = 'P001'
@@ -283,10 +283,10 @@ class TestTimetableView:
 class TestCommunication:
     """Test communication functionality"""
 
-    @patch('education_system.systems.university.domains.academics.interfaces.gui.parent_portal.base.ParentPortal')
+    @patch('education_system.systems.university.domains.learners.interfaces.gui.parent_portal.base.ParentPortal')
     def test_send_message_to_teacher(self, mock_portal_class, mock_auth):
         """Test sending message to teacher"""
-        from education_system.systems.university.domains.academics.interfaces.gui.parent_portal import ParentPortalGUI
+        from education_system.systems.university.domains.learners.interfaces.gui.parent_portal import ParentPortalGUI
 
         portal_instance = Mock()
         portal_instance.get_parent_id_from_user.return_value = 'P001'
@@ -297,10 +297,10 @@ class TestCommunication:
 
         assert gui.parent_portal == portal_instance
 
-    @patch('education_system.systems.university.domains.academics.interfaces.gui.parent_portal.base.ParentPortal')
+    @patch('education_system.systems.university.domains.learners.interfaces.gui.parent_portal.base.ParentPortal')
     def test_view_messages(self, mock_portal_class, mock_auth):
         """Test viewing messages"""
-        from education_system.systems.university.domains.academics.interfaces.gui.parent_portal import ParentPortalGUI
+        from education_system.systems.university.domains.learners.interfaces.gui.parent_portal import ParentPortalGUI
 
         portal_instance = Mock()
         portal_instance.get_parent_id_from_user.return_value = 'P001'
@@ -322,10 +322,10 @@ class TestCommunication:
 class TestAnnouncementsView:
     """Test announcements viewing functionality"""
 
-    @patch('education_system.systems.university.domains.academics.interfaces.gui.parent_portal.base.ParentPortal')
+    @patch('education_system.systems.university.domains.learners.interfaces.gui.parent_portal.base.ParentPortal')
     def test_view_announcements(self, mock_portal_class, mock_auth):
         """Test viewing announcements"""
-        from education_system.systems.university.domains.academics.interfaces.gui.parent_portal import ParentPortalGUI
+        from education_system.systems.university.domains.learners.interfaces.gui.parent_portal import ParentPortalGUI
 
         portal_instance = Mock()
         portal_instance.get_parent_id_from_user.return_value = 'P001'
@@ -346,10 +346,10 @@ class TestAnnouncementsView:
 class TestFeesPayment:
     """Test fees and payment functionality"""
 
-    @patch('education_system.systems.university.domains.academics.interfaces.gui.parent_portal.base.ParentPortal')
+    @patch('education_system.systems.university.domains.learners.interfaces.gui.parent_portal.base.ParentPortal')
     def test_view_fee_balance(self, mock_portal_class, mock_auth):
         """Test viewing fee balance"""
-        from education_system.systems.university.domains.academics.interfaces.gui.parent_portal import ParentPortalGUI
+        from education_system.systems.university.domains.learners.interfaces.gui.parent_portal import ParentPortalGUI
 
         portal_instance = Mock()
         portal_instance.get_parent_id_from_user.return_value = 'P001'
@@ -364,10 +364,10 @@ class TestFeesPayment:
 
         assert gui.parent_portal == portal_instance
 
-    @patch('education_system.systems.university.domains.academics.interfaces.gui.parent_portal.base.ParentPortal')
+    @patch('education_system.systems.university.domains.learners.interfaces.gui.parent_portal.base.ParentPortal')
     def test_view_payment_history(self, mock_portal_class, mock_auth):
         """Test viewing payment history"""
-        from education_system.systems.university.domains.academics.interfaces.gui.parent_portal import ParentPortalGUI
+        from education_system.systems.university.domains.learners.interfaces.gui.parent_portal import ParentPortalGUI
 
         portal_instance = Mock()
         portal_instance.get_parent_id_from_user.return_value = 'P001'
@@ -385,11 +385,11 @@ class TestFeesPayment:
 class TestReportsDownload:
     """Test reports download functionality"""
 
-    @patch('education_system.systems.university.domains.academics.interfaces.gui.parent_portal.base.ParentPortal')
-    @patch('education_system.systems.university.domains.academics.interfaces.gui.parent_portal.base.filedialog')
+    @patch('education_system.systems.university.domains.learners.interfaces.gui.parent_portal.base.ParentPortal')
+    @patch('education_system.systems.university.domains.learners.interfaces.gui.parent_portal.base.filedialog')
     def test_download_progress_report(self, mock_filedialog, mock_portal_class, mock_auth):
         """Test downloading progress report"""
-        from education_system.systems.university.domains.academics.interfaces.gui.parent_portal import ParentPortalGUI
+        from education_system.systems.university.domains.learners.interfaces.gui.parent_portal import ParentPortalGUI
 
         portal_instance = Mock()
         portal_instance.get_parent_id_from_user.return_value = 'P001'
@@ -402,11 +402,11 @@ class TestReportsDownload:
 
         assert gui.parent_portal == portal_instance
 
-    @patch('education_system.systems.university.domains.academics.interfaces.gui.parent_portal.base.ParentPortal')
-    @patch('education_system.systems.university.domains.academics.interfaces.gui.parent_portal.base.filedialog')
+    @patch('education_system.systems.university.domains.learners.interfaces.gui.parent_portal.base.ParentPortal')
+    @patch('education_system.systems.university.domains.learners.interfaces.gui.parent_portal.base.filedialog')
     def test_download_attendance_report(self, mock_filedialog, mock_portal_class, mock_auth):
         """Test downloading attendance report"""
-        from education_system.systems.university.domains.academics.interfaces.gui.parent_portal import ParentPortalGUI
+        from education_system.systems.university.domains.learners.interfaces.gui.parent_portal import ParentPortalGUI
 
         portal_instance = Mock()
         portal_instance.get_parent_id_from_user.return_value = 'P001'
@@ -423,10 +423,10 @@ class TestReportsDownload:
 class TestProfileManagement:
     """Test profile management functionality"""
 
-    @patch('education_system.systems.university.domains.academics.interfaces.gui.parent_portal.base.ParentPortal')
+    @patch('education_system.systems.university.domains.learners.interfaces.gui.parent_portal.base.ParentPortal')
     def test_view_parent_profile(self, mock_portal_class, mock_auth):
         """Test viewing parent profile"""
-        from education_system.systems.university.domains.academics.interfaces.gui.parent_portal import ParentPortalGUI
+        from education_system.systems.university.domains.learners.interfaces.gui.parent_portal import ParentPortalGUI
 
         portal_instance = Mock()
         portal_instance.get_parent_id_from_user.return_value = 'P001'
@@ -441,10 +441,10 @@ class TestProfileManagement:
 
         assert gui.parent_portal == portal_instance
 
-    @patch('education_system.systems.university.domains.academics.interfaces.gui.parent_portal.base.ParentPortal')
+    @patch('education_system.systems.university.domains.learners.interfaces.gui.parent_portal.base.ParentPortal')
     def test_update_contact_information(self, mock_portal_class, mock_auth):
         """Test updating contact information"""
-        from education_system.systems.university.domains.academics.interfaces.gui.parent_portal import ParentPortalGUI
+        from education_system.systems.university.domains.learners.interfaces.gui.parent_portal import ParentPortalGUI
 
         portal_instance = Mock()
         portal_instance.get_parent_id_from_user.return_value = 'P001'
@@ -459,11 +459,11 @@ class TestProfileManagement:
 class TestExportFunctionality:
     """Test export functionality"""
 
-    @patch('education_system.systems.university.domains.academics.interfaces.gui.parent_portal.base.ParentPortal')
-    @patch('education_system.systems.university.domains.academics.interfaces.gui.parent_portal.base.filedialog')
+    @patch('education_system.systems.university.domains.learners.interfaces.gui.parent_portal.base.ParentPortal')
+    @patch('education_system.systems.university.domains.learners.interfaces.gui.parent_portal.base.filedialog')
     def test_export_grades_to_csv(self, mock_filedialog, mock_portal_class, mock_auth):
         """Test exporting grades to CSV"""
-        from education_system.systems.university.domains.academics.interfaces.gui.parent_portal import ParentPortalGUI
+        from education_system.systems.university.domains.learners.interfaces.gui.parent_portal import ParentPortalGUI
 
         portal_instance = Mock()
         portal_instance.get_parent_id_from_user.return_value = 'P001'

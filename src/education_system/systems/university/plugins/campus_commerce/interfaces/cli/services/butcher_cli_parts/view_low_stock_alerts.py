@@ -16,16 +16,16 @@ def view_low_stock_alerts():
 
         with get_connection() as conn:
             cursor = conn.execute('''
-                SELECT p.product_id, p.product_name, p.category,
-                       p.stock_kg, p.reorder_point, p.supplier
+                SELECT p.product_id, p.name, p.category,
+                       p.stock_quantity, p.min_stock_level, p.supplier
                 FROM products p
-                WHERE p.source_type = 'butcher' AND p.stock_kg <= p.reorder_point
+                WHERE p.source_type = 'butcher' AND p.stock_quantity <= p.min_stock_level
                 ORDER BY
                     CASE
-                        WHEN p.stock_kg = 0 THEN 1
+                        WHEN p.stock_quantity = 0 THEN 1
                         ELSE 2
                     END,
-                    p.stock_kg ASC
+                    p.stock_quantity ASC
             ''')
 
             alerts = cursor.fetchall()

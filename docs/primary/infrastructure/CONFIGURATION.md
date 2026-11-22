@@ -1,195 +1,175 @@
 # Primary School Configuration Guide
 
-> Last Updated: March 2026
+> Last Updated: October 2026
 
 ## Overview
 
-The Primary School Management System is configured through a combination of environment variables, Python configuration modules, and JSON config files. This guide covers all configuration surfaces and their default values.
+The Primary School Management System is configured through a combination of environment variables, shared Python modules, and settings stored in the database. This guide covers all configuration surfaces and their default values.
 
 ---
 
 ## Environment Variables
 
-The following environment variables control runtime behaviour. All are optional and fall back to sensible defaults.
+The following environment variables control runtime behaviour. There are no primary-only variables other than the data directory and the fallback API token; the rest are shared by every system.
 
 | Variable | Default | Description |
 |---|---|---|
-| `PRIMARY_SCHOOL_API_HOST` | `127.0.0.1` | Host address for the API server to bind to. |
-| `PRIMARY_SCHOOL_API_PORT` | `5002` | Port for the API server. Each system uses a different port (University: 5000, College: 5001, Primary: 5002). |
-| `PRIMARY_SCHOOL_DEBUG` | `false` | Enable debug mode. Set to `true` for verbose logging and auto-reload in development. **Never enable in production.** |
-| `PRIMARY_SCHOOL_JWT_SECRET` | Auto-generated | Secret key for signing JWT tokens. Must be set explicitly in production. |
-| `PRIMARY_SCHOOL_SESSION_TIMEOUT` | `1800` | Session timeout in seconds (default: 30 minutes). |
-| `PRIMARY_SCHOOL_DB_PATH` | `data/db_files/primary_school.db` | Override the default database file location. |
-| `PRIMARY_SCHOOL_LOG_LEVEL` | `INFO` | Logging level: DEBUG, INFO, WARNING, ERROR, CRITICAL. |
-| `PRIMARY_SCHOOL_LOG_DIR` | `logs/` | Directory for log file output. |
+| `EDU_PRIMARY_DATA_DIR` | `var/data/primary` | Override the directory that holds `primary.db`. |
+| `API_HOST` | `0.0.0.0` | Host address for the unified API server to bind to. |
+| `API_PORT` | `5000` | Port for the unified API server. All systems share it. |
+| `API_DEBUG` | `false` | Enable the Flask debugger. Refused when `APP_ENV` is production. **Never enable in production.** |
+| `APP_ENV` | Production if unset | Deployment environment. The launcher sets a development default for a source checkout. |
+| `JWT_SECRET_KEY` | None | Secret key for signing JWT tokens. Must be set explicitly in production. |
+| `EDU_SESSION_TIMEOUT` | `30` | Session lifetime in minutes. |
+| `EDU_IDLE_TIMEOUT_MINUTES` | `30` | Minutes of inactivity before the GUI and CLI log out. `0` turns this off. |
+| `EDU_MAX_SESSIONS` | `5` | Concurrent sessions per user. |
+| `EDU_DEV_SEED` | Unset | Set to `true` to seed the demo accounts. Never enable in production. |
+| `EDU_VERBOSE` | Unset | Set to `1` to show INFO on the console, the same as `--verbose`. |
+| `LOG_LEVEL` | `INFO` | API server logging level: DEBUG, INFO, WARNING, ERROR, CRITICAL. |
+| `LOG_FORMAT` | `text` | API server log format. |
+| `PRIMARY_API_TOKEN` | Unset | Fallback service token, used by routes only if the platform JWT check cannot be imported. |
 
 ### Setting Environment Variables
 
 ```bash
 # Linux/macOS — for the current session
-export PRIMARY_SCHOOL_API_PORT=5002
-export PRIMARY_SCHOOL_DEBUG=true
+export API_PORT=5002
+export EDU_VERBOSE=1
 
 # Or inline when running
-PRIMARY_SCHOOL_DEBUG=true python -m education_system
+EDU_VERBOSE=1 python -m education_system
 ```
 
 ---
 
-## Core Configuration Modules
+## Shared Configuration Modules
 
-### `core/defaults.py`
+The Primary School has no `core/` package. Values it used to define there now live in the owning module.
 
-Centralised default values used throughout the Primary School system. This module defines constants that other modules import rather than hardcoding values.
+### `src/education_system/platform/identity/auth/defaults.py`
 
-Typical contents:
+Authentication defaults, shared by every system:
 
 | Constant | Value | Purpose |
 |---|---|---|
-| `DEFAULT_YEAR_GROUPS` | `["Reception", "Year 1", ..., "Year 6"]` | Valid year groups for the primary school. |
-| `KEY_STAGES` | `{"EYFS": ["Reception"], "KS1": ["Year 1", "Year 2"], "KS2": ["Year 3", ..., "Year 6"]}` | Key stage to year group mappings. |
-| `ASSESSMENT_LEVELS` | `["Emerging", "Developing", "Expected", "Greater Depth"]` | Standard assessment levels. |
-| `PUPIL_ID_PREFIX` | `"PRI"` | Prefix for auto-generated pupil IDs (e.g., PRI0001). |
-| `STAFF_ID_PREFIX` | `"STF"` | Prefix for auto-generated staff IDs (e.g., STF0001). |
-| `SESSION_TIMEOUT` | `1800` | Default session timeout in seconds. |
-| `MAX_LOGIN_ATTEMPTS` | `5` | Failed login attempts before lockout. |
-| `LOCKOUT_DURATION` | `900` | Lockout duration in seconds (15 minutes). |
-| `API_PORT` | `5002` | Default API server port. |
+| `SESSION_TIMEOUT_MINUTES` | `30` | Session lifetime in minutes. |
+| `MAX_SESSIONS_PER_USER` | `5` | Concurrent sessions per user. |
+| `MIN_PASSWORD_LENGTH` | `12` | Minimum password length. |
+| `MAX_LOGIN_ATTEMPTS` | `3` | Failed login attempts before lockout. |
+| `LOCKOUT_DURATION_MINUTES` | `15` | Lockout duration in minutes. |
 
-### `core/paths.py`
+### Domain constants
 
-Centralised path definitions. All file and directory references throughout the codebase should use paths from this module to ensure consistency and portability.
+These sit beside the code that uses them:
 
-```python
-# Typical path definitions
-import os
+| Constant | Value | Module |
+|---|---|---|
+| `YEAR_GROUPS` | `("R", "1", "2", "3", "4", "5", "6")` | `domain/learners/pupils/pupils.py` |
+| `ID_PREFIX` | `"P"` | `domain/learners/pupils/pupils.py` (pupil IDs) |
+| `ID_PREFIX` | `"T"` | `domain/staff/staff.py` (staff IDs) |
 
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+### `src/education_system/paths.py`
 
-DB_DIR = os.path.join(BASE_DIR, "data", "db_files")
-DB_PATH = os.path.join(DB_DIR, "primary_school.db")
-
-CONFIG_DIR = os.path.join(BASE_DIR, "data", "config")
-LOG_DIR = os.path.join(BASE_DIR, "logs")
-
-SHARED_DIR = os.path.join(os.path.dirname(BASE_DIR), "shared")
-SHARED_AUTH_DB = os.path.join(SHARED_DIR, "data", "db_files", "auth.db")
-```
-
-**Rule:** Never hardcode file paths in service or GUI modules. Always import from `core.paths`.
-
-### `core/logs.py`
-
-Logging configuration for the Primary School system. Sets up Python's `logging` module with:
-
-- **Console handler** for real-time output during development.
-- **File handler** writing to the `logs/` directory with rotation.
-- **Configurable log level** via `PRIMARY_SCHOOL_LOG_LEVEL` environment variable.
-- **Structured format** including timestamp, module name, log level, and message.
+Centralised path definitions for every system. All file and directory references should use paths from this module to ensure consistency and portability. Every constant carries the owning system's prefix.
 
 ```python
-import logging
-
-# Typical log format
-FORMAT = "%(asctime)s [%(name)s] %(levelname)s: %(message)s"
+from education_system.paths import (
+    PRIMARY_DATA_DIR,      # var/data/primary, or EDU_PRIMARY_DATA_DIR
+    PRIMARY_PUPILS_DB,     # var/data/primary/primary.db
+    PRIMARY_BACKUP_DIR,    # var/backups/primary
+    PLATFORM_AUTH_DB_FILE, # var/data/platform/db_files/auth.db
+)
 ```
+
+Each module also has a named alias such as `PRIMARY_STAFF_DB`, and all of them point at the same `primary.db`. Directories are never created on import; `ensure_primary_directories()` creates them.
+
+**Rule:** Never hardcode file paths in domain or GUI modules. Always import from `education_system.paths`.
+
+### Logging
+
+The launcher sets up Python's `logging` module in `src/education_system/launcher/main.py`:
+
+- **Console handler** only. The Primary School does not write a log file of its own.
+- **Console level** of WARNING, or INFO with `--verbose` or `EDU_VERBOSE=1`. Use `--quiet` to hold the root logger at WARNING.
+- **Format** of timestamp and message.
 
 Usage in modules:
 
 ```python
-from core.logs import get_logger
+import logging
 
-logger = get_logger(__name__)
+logger = logging.getLogger(__name__)
 logger.info("Pupil %s enrolled in class %s", pupil_id, class_id)
 ```
 
-### `core/exceptions.py`
+### Exceptions
 
-Custom exception classes for the Primary School system. Provides a hierarchy of domain-specific exceptions for clear error handling:
+There is no system-wide exception hierarchy for the Primary School. Domain modules raise `ValidationError`, either their own or the one in `domain/learners/pupils/pupils.py`. The hierarchy in `src/education_system/platform/kernel/exceptions.py` belongs to the University.
 
-```python
-class PrimarySchoolError(Exception):
-    """Base exception for all Primary School errors."""
+### Settings
 
-class ValidationError(PrimarySchoolError):
-    """Raised when input validation fails."""
-
-class NotFoundError(PrimarySchoolError):
-    """Raised when a requested record does not exist."""
-
-class AuthorisationError(PrimarySchoolError):
-    """Raised when a user lacks permission for an operation."""
-
-class DatabaseError(PrimarySchoolError):
-    """Raised on database operation failures."""
-```
+Runtime-configurable settings are kept in the `settings_kv` table and managed from **System → Settings**. They are defined in `src/education_system/systems/primary/interfaces/settings.py`.
 
 ---
 
 ## Data Directories
 
-The Primary School system uses the following directory structure for data storage:
+The Primary School system uses the following directories for runtime data:
 
 ```
-primary_school/
+var/
   data/
-    db_files/
-      primary_school.db        # Main domain database
-    config/
-      *.json                   # JSON configuration files
-  logs/
-    primary_school.log         # Application log (rotated)
+    primary/
+      primary.db               # Main domain database
+    platform/
+      db_files/
+        auth.db                # Shared authentication database
+  backups/
+    primary/                   # Backups
 ```
 
-### `data/db_files/`
+### `var/data/primary/`
 
-Contains the SQLite database file. This directory is created automatically on first run if it does not exist. See [DATABASE.md](DATABASE.md) for full schema details.
-
-### `data/config/`
-
-Contains JSON configuration files for features that require runtime-configurable settings without code changes. Examples include email configuration, notification templates, and feature flags.
-
-### `logs/`
-
-Contains application log files. Log rotation is configured to prevent unbounded growth. Typical rotation policy:
-
-- Maximum file size: 10 MB
-- Backup count: 5 rotated files retained
+Contains the SQLite database file. See [DATABASE.md](DATABASE.md) for full schema details.
 
 ---
 
 ## Infrastructure Modules
 
-### `infrastructure/auth/`
+`src/education_system/systems/primary/infrastructure/` is currently only an `__init__.py`. Its former roles are handled elsewhere:
 
-Thin wrapper around `shared/auth/`. See [AUTHENTICATION.md](AUTHENTICATION.md) for details.
+### Authentication
 
-### `infrastructure/database/`
+`src/education_system/platform/identity/auth/`. See [AUTHENTICATION.md](AUTHENTICATION.md) for details.
 
-Database connection factory and schema initialization. Provides the `connect()` function used by all service layers.
+### Database
 
-### `infrastructure/validation/`
+Each domain module creates its own tables from its `init_db()`. Most connect through `_connect()` in `domain/learners/pupils/pupils.py`.
 
-Input validation utilities. Common validators for:
+### Validation
 
-- Pupil ID format (`PRI` prefix + 4 digits)
-- Staff ID format (`STF` prefix + 4 digits)
+Domain modules validate their own input. Shared validators are in `src/education_system/platform/kernel/validation/validators.py`, for:
+
 - Date formats (ISO 8601)
-- Year group values (Reception through Year 6)
+- Times and time ranges
 - Email addresses
 - Required field presence
+- Positive integers
 
 ---
 
 ## Port Allocation
 
-Each Education System subsystem uses a dedicated API port to allow co-hosting:
+The systems do not have ports of their own. One unified API server hosts all seven on `API_PORT` (default 5000), each under its own URL prefix:
 
-| System | Default Port |
+| System | Prefix |
 |---|---|
-| University | 5000 |
-| College | 5001 |
-| Primary School | 5002 |
-| Secondary School | 5003 |
+| University | `/api/v1/university` |
+| Sixth Form College | `/api/v1/sixthform` |
+| Secondary School | `/api/v1/school` |
+| Primary School | `/api/v1/primary` |
+| Nursery | `/api/v1/nursery` |
+| FE College | `/api/v1/fecollege` |
+| Apprenticeships | `/api/v1/apprentice` |
 
-Ensure no other services are using port 5002 (or your configured port) before starting the Primary School API server.
+Ensure no other services are using port 5000 (or your configured port) before starting the API server.

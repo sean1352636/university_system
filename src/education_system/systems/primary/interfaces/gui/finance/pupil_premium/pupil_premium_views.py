@@ -17,8 +17,26 @@ from education_system.systems.primary.domain.finance.pupil_premium.pupil_premium
 from education_system.systems.primary.domain.learners.pupils.pupils import (
     ValidationError, YEAR_GROUPS,
 )
+from education_system.systems.primary.interfaces.gui import kit
 
 logger = logging.getLogger(__name__)
+
+
+def _pp_years() -> list[str]:
+    """Academic years as Pupil Premium stores them ("2026/27"): the kit's
+    "2026-27" list with the slash the domain validates."""
+    out = []
+    for y in kit.academic_years():
+        y = y.replace("-", "/")
+        if len(y) == 7 and y[:4].isdigit() and y[4] == "/" and y[5:].isdigit():
+            if y not in out:
+                out.append(y)
+    return out
+
+
+def _current_pp_year() -> str:
+    first = kit.academic_years(back=0, ahead=0)
+    return first[0].replace("-", "/") if first else ""
 
 
 def _safe_view(func: Callable[..., None]) -> Callable[..., None]:
@@ -52,7 +70,7 @@ def _record_dialog(host, title: str,
     dlg = tk.Toplevel(host.root)
     dlg.title(title)
     dlg.transient(host.root)
-    dlg.geometry("500x520")
+    dlg.geometry("640x560")
     dlg.update_idletasks()
     try:
         dlg.wait_visibility()
@@ -61,12 +79,11 @@ def _record_dialog(host, title: str,
         logger.debug("grab_set skipped — dialog not viewable", exc_info=True)
 
     initial = initial or {}
-    frm = ttk.Frame(dlg, padding=12)
-    frm.pack(fill="both", expand=True)
+    frm, footer = kit.scrolled_form(dlg)
 
     pupil_var  = tk.StringVar(value=str(initial.get("pupil_id") or ""))
     ay_var     = tk.StringVar(value=str(initial.get("academic_year")
-                                          or ""))
+                                          or _current_pp_year()))
     cat_var    = tk.StringVar(value=str(initial.get("category")
                                           or "Ever 6 FSM"))
     status_var = tk.StringVar(value=str(initial.get("status")
@@ -82,31 +99,31 @@ def _record_dialog(host, title: str,
                                               or ""))
 
     rows: list[tuple[str, tk.Widget]] = [
-        ("Pupil ID:",    ttk.Entry(frm, textvariable=pupil_var,
-                                      width=14)),
-        ("Academic year:", ttk.Entry(frm, textvariable=ay_var,
-                                       width=10)),
+        ("Pupil:",       kit.PupilPicker(frm, pupil_var,
+                                      include_off_roll=bool(initial))),
+        ("Academic year:", kit.ChoiceField(frm, ay_var,
+                                       choices=_pp_years(),
+                                       editable=True, width=10)),
         ("Category:",    ttk.Combobox(frm, textvariable=cat_var,
                                         values=list(CATEGORIES),
                                         state="readonly", width=26)),
         ("Status:",      ttk.Combobox(frm, textvariable=status_var,
                                         values=list(PP_STATUSES),
                                         state="readonly", width=14)),
-        ("Funding £:",   ttk.Entry(frm, textvariable=funding_var,
+        ("Funding £:",   kit.NumberField(frm, funding_var,
+                                      increment=0.01, to=99999,
                                       width=10)),
-        ("Start date:",  ttk.Entry(frm, textvariable=start_var,
-                                      width=14)),
-        ("End date:",    ttk.Entry(frm, textvariable=end_var,
-                                      width=14)),
+        ("Start date:",  kit.DateField(frm, start_var)),
+        ("End date:",    kit.DateField(frm, end_var)),
         ("Source:",      ttk.Entry(frm, textvariable=source_var,
                                       width=30)),
-        ("Keyworker:",   ttk.Entry(frm, textvariable=keyworker_var,
-                                      width=24)),
+        ("Keyworker:",   kit.StaffPicker(frm, keyworker_var,
+                                      by="name")),
     ]
     for i, (label, widget) in enumerate(rows):
         ttk.Label(frm, text=label).grid(row=i, column=0, sticky="w",
                                          pady=2)
-        widget.grid(row=i, column=1, sticky="ew", pady=2)
+        widget.grid(row=i, column=1, sticky="w", pady=2)
     frm.columnconfigure(1, weight=1)
 
     ttk.Label(frm, text="Notes:").grid(row=len(rows), column=0,
@@ -133,9 +150,7 @@ def _record_dialog(host, title: str,
         }
         dlg.destroy()
 
-    btns = ttk.Frame(frm)
-    btns.grid(row=len(rows) + 1, column=0, columnspan=2, sticky="e",
-              pady=(12, 0))
+    btns = footer
     ttk.Button(btns, text="Cancel",
                command=dlg.destroy).pack(side="right", padx=4)
     ttk.Button(btns, text="Save", command=_save).pack(side="right")
@@ -149,7 +164,7 @@ def _intervention_dialog(host, pp_id: int,
     dlg = tk.Toplevel(host.root)
     dlg.title(f"Intervention — PP record #{pp_id}")
     dlg.transient(host.root)
-    dlg.geometry("520x540")
+    dlg.geometry("560x600")
     dlg.update_idletasks()
     try:
         dlg.wait_visibility()
@@ -158,8 +173,7 @@ def _intervention_dialog(host, pp_id: int,
         pass
 
     initial = initial or {}
-    frm = ttk.Frame(dlg, padding=12)
-    frm.pack(fill="both", expand=True)
+    frm, footer = kit.scrolled_form(dlg)
 
     title_var  = tk.StringVar(value=str(initial.get("title") or ""))
     spend_var  = tk.StringVar(value=str(initial.get("spend") or "0"))
@@ -172,10 +186,10 @@ def _intervention_dialog(host, pp_id: int,
 
     rows: list[tuple[str, tk.Widget]] = [
         ("Title:",    ttk.Entry(frm, textvariable=title_var, width=40)),
-        ("Spend £:",  ttk.Entry(frm, textvariable=spend_var, width=10)),
-        ("Start date:", ttk.Entry(frm, textvariable=start_var,
-                                    width=14)),
-        ("End date:", ttk.Entry(frm, textvariable=end_var, width=14)),
+        ("Spend £:",  kit.NumberField(frm, spend_var, increment=0.01,
+                                      to=99999, width=10)),
+        ("Start date:", kit.DateField(frm, start_var)),
+        ("End date:", kit.DateField(frm, end_var)),
         ("Status:",   ttk.Combobox(frm, textvariable=status_var,
                                      values=list(INTERVENTION_STATUSES),
                                      state="readonly", width=14)),
@@ -217,8 +231,7 @@ def _intervention_dialog(host, pp_id: int,
             result[k] = w.get("1.0", "end").strip()
         dlg.destroy()
 
-    btns = ttk.Frame(frm)
-    btns.pack(fill="x", pady=(10, 0))
+    btns = footer
     ttk.Button(btns, text="Cancel",
                command=dlg.destroy).pack(side="right", padx=4)
     ttk.Button(btns, text="Save", command=_save).pack(side="right")
@@ -229,10 +242,12 @@ def _intervention_dialog(host, pp_id: int,
 @_safe_view
 def open_pupil_premium(host) -> None:
     logger.debug("GUI: open_pupil_premium")
-    host._clear_content()
-    root = host.content_frame
-    ttk.Label(root, text="Pupil Premium",
-              font=("", 16, "bold")).pack(anchor="w", pady=(0, 8))
+    kit.show_page(host, "Pupil Premium",
+                  lambda parent: _draw_pupil_premium(parent, host))
+
+
+def _draw_pupil_premium(root, host) -> None:
+    kit.page_heading(root, "Pupil Premium")
 
     summary_var = tk.StringVar()
     ttk.Label(root, textvariable=summary_var, foreground="#666").pack(
@@ -247,8 +262,8 @@ def open_pupil_premium(host) -> None:
                  width=5).pack(side="left", padx=(0, 6))
     ttk.Label(bar, text="Academic year:").pack(side="left", padx=(0, 4))
     ay_var = tk.StringVar(value="")
-    ttk.Entry(bar, textvariable=ay_var, width=10).pack(
-        side="left", padx=(0, 6))
+    kit.ChoiceField(bar, ay_var, choices=_pp_years(), blank=True,
+                    editable=True, width=10).pack(side="left", padx=(0, 6))
     ttk.Label(bar, text="Category:").pack(side="left", padx=(0, 4))
     cat_var = tk.StringVar(value="")
     ttk.Combobox(bar, textvariable=cat_var,
@@ -329,7 +344,9 @@ def open_pupil_premium(host) -> None:
                 f"Remaining: £{s['remaining']:.2f}")
         except Exception:
             summary_var.set(f"{len(rows)} record(s)")
-        host.status_var.set(f"Pupil Premium: {len(rows)} record(s)")
+        status_bar = getattr(host, "status_var", None)
+        if status_bar is not None:
+            status_bar.set(f"Pupil Premium: {len(rows)} record(s)")
 
     tree.bind("<Double-1>",
               lambda _e: _open_interventions(host, tree))

@@ -1,0 +1,1 @@
+"""Domain package: directed time."""

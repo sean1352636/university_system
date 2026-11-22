@@ -24,7 +24,11 @@ from education_system.platform.delivery.gui.treeview_helpers import (
     selected_id,
 )
 from education_system.platform.delivery.gui.window_sizing import center as _center
-from education_system.systems.university.domains.assessment.domain.boards import service
+from education_system.systems.university.domains.assessment.domain.boards import (
+    classification_admin,
+    progression,
+    service,
+)
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 
 logger = logging.getLogger(__name__)
@@ -44,7 +48,12 @@ _TABS: list[tuple[str, str, list[str]]] = [
                         "exclude_core_modules", "active", "notes"]),
     ("Awards", "awards", ["award_id", "student_id", "award_name", "classification", "status",
                           "release_authorised", "ratified_by"]),
+    ("Progression", "progression", ["outcome_id", "student_id", "outcome", "from_year",
+                                    "to_year", "trailing_credits", "exit_award",
+                                    "proposed_outcome", "status", "released", "rollover_note"]),
 ]
+MY_OUTCOME_COLUMNS = ["outcome_id", "board_name", "academic_year", "label", "from_year",
+                      "to_year", "exit_award", "exit_classification", "released_at"]
 
 
 class AssessmentBoardsWindow(ttk.Frame):
@@ -75,6 +84,11 @@ class AssessmentBoardsWindow(ttk.Frame):
             (("Save Minutes", self.save_minutes), ("Chair Approve", self.chair_approve),
              ("Ratify", self.ratify), ("Reopen", self.reopen),
              ("Releasable Award", self.releasable_award), ("Refresh", self.refresh)),
+            (("Propose Outcome", self.propose_outcome),
+             ("Record Progression Outcome", self.record_outcome),
+             ("Release Outcomes", self.release_outcomes), ("Rollover", self.rollover),
+             ("Classification Rules", self.classification_rules),
+             ("Preview Classification", self.preview_classification)),
         )
         # Action bars are packed before the expanding panes (window-sizing convention).
         for buttons in rows:
@@ -142,6 +156,11 @@ class AssessmentBoardsWindow(ttk.Frame):
             text=f"#{board['board_id']} {board['name']} ({board['board_type']}, "
                  f"{board['academic_year']}) [{board['status']}] v{board['version']} "
                  f"chair {board['chair_id'] or '-'}")
+        try:
+            board["progression"] = progression.outcomes(board["board_id"])
+        except Exception:  # outcome table not created yet on this database
+            logger.exception("progression outcomes unavailable")
+            board["progression"] = []
         for _title, key, columns in _TABS:
             _fill(self._tabs[key], board.get(key, []), columns)
         minutes = board.get("minutes")
@@ -169,7 +188,7 @@ class AssessmentBoardsWindow(ttk.Frame):
     def _run(self, action, success: str) -> None:
         try:
             result = action()
-        except ValueError as exc:
+        except (ValueError, PermissionError) as exc:
             messagebox.showerror("Error", str(exc), parent=self)
             return
         messagebox.showinfo("Done", success.format(result=result), parent=self)
@@ -321,6 +340,229 @@ class AssessmentBoardsWindow(ttk.Frame):
             f"{award['award_name']} - {award['classification']}\n{award['programme_code']} "
             f"{award['academic_year']}\nratified {award['ratified_at']} by {award['ratified_by']}",
             parent=self)
+
+    # ----- progression outcomes ----------------------------------------
+    def propose_outcome(self) -> None:
+        board_id = self._require_board()
+        student = self._selected_student()
+        if board_id is None:
+            return
+        if not student:
+            messagebox.showwarning("Selection", "Select a student on the Agenda tab.",
+                                   parent=self)
+            return
+        try:
+            proposal = progression.propose(board_id, student)
+        except ValueError as exc:
+            messagebox.showerror("Error", str(exc), parent=self)
+            return
+        lines = [f"Proposed: {proposal['label']}", proposal["reason"],
+                 f"Year {proposal['from_year']} -> {proposal['to_year'] or '-'}"]
+        if proposal["trailing_modules"]:
+            lines.append("Trailing: " + ", ".join(proposal["trailing_modules"]))
+        if proposal["resit_modules"]:
+            lines.append("Resit: " + ", ".join(proposal["resit_modules"]))
+        lines.append(f"Exit award the credit already meets: {proposal['exit_award'] or 'none'}")
+        messagebox.showinfo(f"Proposal for {student}", "\n".join(lines), parent=self)
+
+    def record_outcome(self) -> None:
+        board_id = self._require_board()
+        if board_id is None:
+            return
+        values = ask_form(self, "Record progression outcome", [
+            Field("student_id", "Student ID", default=self._selected_student()),
+            Field("outcome", "Outcome", kind="choice", options=list(progression.OUTCOMES),
+                  default="progress"),
+            Field("rationale", "Rationale", kind="text"),
+            Field("trailing_modules", "Trailing modules (comma-separated)", optional=True),
+            Field("resit_modules", "Resit modules (blank = all failed)", optional=True),
+            Field("exit_award", "Exit award (blank = highest the credit meets)", optional=True),
+            Field("to_year", "Year of study next (blank = by outcome)", kind="int",
+                  optional=True),
+        ])
+        if not values:
+            return
+
+        def split(text):
+            return [m.strip() for m in (text or "").split(",") if m.strip()] or None
+        self._run(lambda: progression.record_outcome(
+            board_id, values["student_id"], values["outcome"], decided_by=self.actor,
+            rationale=values["rationale"] or "", trailing_modules=split(values["trailing_modules"]),
+            resit_modules=split(values["resit_modules"]), exit_award=values["exit_award"] or None,
+            to_year=values["to_year"]), "Progression outcome #{result} recorded")
+
+    def release_outcomes(self) -> None:
+        board_id = self._require_board()
+        if board_id is not None and messagebox.askyesno(
+                "Release", f"Release board #{board_id}'s ratified outcomes to its students?",
+                parent=self):
+            self._run(lambda: progression.release(board_id, released_by=self.actor),
+                      "{result} outcome(s) released; students notified")
+
+    def rollover(self) -> None:
+        board_id = self._require_board()
+        if board_id is None or not messagebox.askyesno(
+                "Rollover", "Apply the ratified outcomes now? Progressing students move to the "
+                            "next year of study; withdrawals are applied.", parent=self):
+            return
+        try:
+            result = progression.rollover(board_id, actor_id=self.actor)
+        except ValueError as exc:
+            messagebox.showerror("Error", str(exc), parent=self)
+            return
+        lines = [f"{a['student_id']}: {a['note']}" for a in result["applied"]]
+        messagebox.showinfo("Rollover", "\n".join(lines) or "Nothing left to roll over.",
+                            parent=self)
+        self.refresh()
+
+    def preview_classification(self) -> None:
+        values = ask_form(self, "Preview classification", [
+            Field("student_id", "Student ID", default=self._selected_student())])
+        if not values:
+            return
+        try:
+            result = classification_admin.preview(values["student_id"])
+        except ValueError as exc:
+            messagebox.showerror("Error", str(exc), parent=self)
+            return
+        award = result.get("exit_award")
+        messagebox.showinfo("Classification", "\n".join([
+            f"Rules: {result['rule_set']} ({result['scheme']}; {result['basis']})",
+            f"Average: {result['average'] if result['average'] is not None else '-'}",
+            f"Classification: {result['classification'] or '-'}"
+            + (" (borderline)" if result["borderline"] else ""),
+            result.get("note") or "",
+            f"Exit award met: {award['name'] if award else 'none'}"]), parent=self)
+
+    def classification_rules(self) -> None:
+        ClassificationRulesWindow(self.winfo_toplevel(), self.actor,
+                                  str(self.user.get("role") or ""))
+
+
+class ClassificationRulesWindow(tk.Toplevel):
+    """Rule sets and their bindings to regulation versions / programmes."""
+
+    SET_COLUMNS = ["rule_set_id", "name", "scheme", "bindings", "retired", "created_by"]
+    BIND_COLUMNS = ["binding_id", "version_id", "programme_code", "rule_set_id", "name",
+                    "scheme", "bound_by", "bound_at"]
+
+    def __init__(self, master, actor: str, role: str) -> None:
+        super().__init__(master)
+        self.actor, self.role = actor, role
+        self.title("Classification Rules")
+        _center(self, 1400, 900, minsize=(1200, 800))
+        self.transient(master)
+        bar = ttk.Frame(self, padding=(10, 6))
+        bar.pack(fill="x")
+        for label, command in (("New Rule Set", self.create), ("View Rules", self.view),
+                               ("Bind to Regulation / Programme", self.bind),
+                               ("Remove Binding", self.unbind), ("Refresh", self.refresh)):
+            ttk.Button(bar, text=label, command=command).pack(side="left", padx=2)
+        ttk.Label(self, padding=(10, 0), text=(
+            "Students on unbound regulations keep the university default (Level 5 x1, "
+            "Level 6 x2, 2-mark borderline flag).")).pack(anchor="w")
+        panes = ttk.Panedwindow(self, orient="vertical")
+        panes.pack(fill="both", expand=True, padx=10, pady=6)
+        top, bottom = ttk.Frame(panes), ttk.Frame(panes)
+        panes.add(top, weight=1)
+        panes.add(bottom, weight=1)
+        self.sets = _make_tree(top, self.SET_COLUMNS)
+        self.binds = _make_tree(bottom, self.BIND_COLUMNS)
+        self.refresh()
+
+    def refresh(self) -> None:
+        try:
+            _fill(self.sets, classification_admin.rule_sets(), self.SET_COLUMNS)
+            _fill(self.binds, classification_admin.bindings(), self.BIND_COLUMNS)
+        except Exception as exc:
+            logger.exception("classification rules unavailable")
+            messagebox.showerror("Error", str(exc), parent=self)
+
+    def _do(self, action, success: str) -> None:
+        try:
+            result = action()
+        except (ValueError, PermissionError) as exc:
+            messagebox.showerror("Error", str(exc), parent=self)
+            return
+        messagebox.showinfo("Done", success.format(result=result), parent=self)
+        self.refresh()
+
+    def create(self) -> None:
+        first = ask_form(self, "New rule set", [
+            Field("scheme", "Scheme", kind="choice", options=list(classification_admin.SCHEMES),
+                  default="ug_honours")])
+        if not first:
+            return
+        values = ask_form(self, "New rule set", [
+            Field("name", "Name (e.g. UG Honours 2026 regulations)"),
+            Field("config", "Rules (JSON; sector-norm starting point shown)", kind="text",
+                  default=classification_admin.template(first["scheme"])),
+            Field("notes", "Notes", kind="text", optional=True),
+        ])
+        if values:
+            self._do(lambda: classification_admin.create(
+                values["name"], first["scheme"], values["config"], actor=self.actor,
+                role=self.role, notes=values["notes"] or ""), "Rule set #{result} created")
+
+    def view(self) -> None:
+        rule_set_id = selected_id(self.sets)
+        if rule_set_id is None:
+            messagebox.showwarning("Selection", "Select a rule set.", parent=self)
+            return
+        found = classification_admin.show(rule_set_id)
+        import json as _json
+        messagebox.showinfo(found["name"], f"Scheme: {found['scheme']}\n\n"
+                            + _json.dumps(found["config"], indent=2), parent=self)
+
+    def bind(self) -> None:
+        values = ask_form(self, "Bind rule set", [
+            Field("rule_set_id", "Rule set ID", kind="int",
+                  default=str(selected_id(self.sets) or "")),
+            Field("version_id", "Regulation version ID (programme governance)", kind="int",
+                  optional=True),
+            Field("programme_code", "or Programme code (ungoverned programmes)", optional=True),
+        ])
+        if values:
+            self._do(lambda: classification_admin.bind(
+                values["rule_set_id"], actor=self.actor, role=self.role,
+                version_id=values["version_id"], programme_code=values["programme_code"]),
+                "Binding #{result} saved")
+
+    def unbind(self) -> None:
+        binding_id = selected_id(self.binds)
+        if binding_id is None:
+            messagebox.showwarning("Selection", "Select a binding.", parent=self)
+            return
+        if messagebox.askyesno("Remove", f"Remove binding #{binding_id}?", parent=self):
+            self._do(lambda: classification_admin.unbind(binding_id, role=self.role),
+                     "Binding removed")
+
+
+def open_my_outcomes(master, auth: Any = None) -> tk.Toplevel | None:
+    """A student's own released progression outcomes (nothing before release)."""
+    user = session_user(auth) or {}
+    student_id = progression.student_id_for(user)
+    if not student_id:
+        messagebox.showwarning("My Progression", "Sign in as a student to see your outcome.",
+                               parent=master)
+        return None
+    top = tk.Toplevel(master)
+    top.title("My Progression Outcome")
+    _center(top, 1400, 900, minsize=(1200, 800))
+    ttk.Label(top, padding=10, font=("Helvetica", 13, "bold"),
+              text=f"Progression outcomes for {student_id}").pack(anchor="w")
+    tree = _make_tree(top, MY_OUTCOME_COLUMNS, width=140)
+    try:
+        rows = progression.my_outcomes(student_id)
+    except Exception:
+        logger.exception("my outcomes failed")
+        rows = []
+    _fill(tree, rows, MY_OUTCOME_COLUMNS)
+    if not rows:
+        ttk.Label(top, padding=10, text="No outcome has been released to you yet. Outcomes "
+                  "appear here once the assessment board has ratified and released them."
+                  ).pack(anchor="w")
+    return top
 
 
 def open_window(master, auth: Any = None) -> tk.Toplevel | None:

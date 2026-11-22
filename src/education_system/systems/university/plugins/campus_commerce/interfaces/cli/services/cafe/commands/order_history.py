@@ -1,4 +1,7 @@
 from ..context import *  # noqa: F401,F403
+from education_system.systems.university.plugins.campus_commerce.domain.cafe.services.checkout import (
+    refund_order,
+)
 
 def order_history_cli() -> None:
     """View order history."""
@@ -9,7 +12,8 @@ def order_history_cli() -> None:
         print("3. This Month")
         print("4. All Orders")
         print("5. View Order Details")
-        print("6. Back")
+        print("6. Refund an Order")
+        print("7. Back")
 
         choice = input("\nEnter choice: ").strip()
 
@@ -55,5 +59,32 @@ def order_history_cli() -> None:
             input("\nPress Enter to continue...")
 
         elif choice == '6':
+            try:
+                order_id = int(input("Enter Order ID to refund: "))
+            except ValueError:
+                print("Invalid ID.")
+                continue
+            items = get_order_items(order_id)
+            if not items:
+                print("Order not found or no items.")
+                continue
+            total = sum(item[3] for item in items)
+            print(f"Order #{order_id} total: £{total:.2f}")
+            print("Refund method:")
+            print("1. Cash")
+            print("2. Card")
+            print("3. Student Account")
+            method = {'1': 'Cash', '2': 'Card', '3': 'Student Account'}.get(
+                input("Choice: ").strip(), 'Cash')
+            student_id = None
+            if method == 'Student Account':
+                student_id = input("Student ID: ").strip() or None
+            outcome = refund_order(order_id, total, method, student_id=student_id)
+            print(outcome['message'])
+            if outcome['success']:
+                print(f"Refund reference: {outcome['refund_ref']}")
+            input("\nPress Enter to continue...")
+
+        elif choice == '7':
             break
 

@@ -10,6 +10,7 @@ from tkinter.scrolledtext import ScrolledText
 from tkinter import ttk, messagebox, filedialog, scrolledtext
 from tkinter.font import Font
 import threading
+from education_system.platform.delivery.gui.tk_threads import start_thread, ui
 from datetime import datetime, timedelta
 import json
 import webbrowser
@@ -1248,20 +1249,18 @@ def generate_regulatory_reports(self):
                 'payment_methods': payment_methods
             }
 
-            self.root.after(0, lambda: [
+            ui(self.root, lambda: [
                 self.show_regulatory_report(report_data),
                 self.update_status("Ready")
             ])
 
         except Exception as e:
-            self.root.after(0, lambda _e=e: [
+            ui(self.root, lambda _e=e: [
                 messagebox.showerror(_t('gui.finance.finance_reporting.feature_dialogs.dialogs.error', default="Error"), f"Regulatory report generation failed: {_e}"),
                 self.update_status("Error")
             ])
 
-    thread = threading.Thread(target=generate_in_background)
-    thread.daemon = True
-    thread.start()
+    start_thread(self.root, generate_in_background)
 
 def show_regulatory_report(self, data):
     """Show regulatory compliance report"""

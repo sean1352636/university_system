@@ -429,7 +429,7 @@ class DisbursementsMixin:
         try:
             with get_connection() as conn:
                 disb = conn.execute("""
-                    SELECT d.*, s.first_name, s.last_name, s.email, s.student_id as sid,
+                    SELECT d.*, s.first_name, s.last_name, s.email_address AS email, s.student_id as sid,
                            u.username as processor_name
                     FROM disbursements d
                     LEFT JOIN students s ON d.student_id = s.student_id

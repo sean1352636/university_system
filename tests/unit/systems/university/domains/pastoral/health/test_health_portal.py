@@ -12,7 +12,7 @@ from pathlib import Path
 from datetime import datetime
 from unittest.mock import Mock, patch, MagicMock
 
-from education_system.systems.university.domains.pastoral.domain.health.services import health_portal
+from education_system.systems.university.domains.health.domain.health.services import health_portal
 from education_system.systems.university.infrastructure.database import db
 from education_system.systems.university.infrastructure.database.db import get_connection
 
@@ -283,7 +283,7 @@ class TestExportHealthRecords:
 
     @patch('builtins.input', side_effect=['1'])
     @patch('builtins.print')
-    @patch('education_system.systems.university.domains.pastoral.interfaces.cli.health_portal.exports.paths')
+    @patch('education_system.systems.university.domains.health.interfaces.cli.health_portal.exports.paths')
     def test_export_health_records_csv(self, mock_paths, mock_print, mock_input, mock_auth, setup_portal_db, temp_dir):
         """Test exporting health records to CSV."""
         mock_paths.DATA_DIR = Path(temp_dir)
@@ -296,7 +296,7 @@ class TestExportHealthRecords:
 
     @patch('builtins.input', side_effect=['2'])
     @patch('builtins.print')
-    @patch('education_system.systems.university.domains.pastoral.interfaces.cli.health_portal.exports.paths')
+    @patch('education_system.systems.university.domains.health.interfaces.cli.health_portal.exports.paths')
     def test_export_health_records_json(self, mock_paths, mock_print, mock_input, mock_auth, setup_portal_db, temp_dir):
         """Test exporting health records to JSON."""
         mock_paths.DATA_DIR = Path(temp_dir)
@@ -312,8 +312,8 @@ class TestBackupManagement:
     """Tests for backup management functions."""
 
     @patch('builtins.print')
-    @patch('education_system.systems.university.domains.pastoral.interfaces.cli.health_portal.backups.paths')
-    @patch('education_system.systems.university.domains.pastoral.interfaces.cli.health_portal.backups.DEFAULT_DB_PATH')
+    @patch('education_system.systems.university.domains.health.interfaces.cli.health_portal.backups.paths')
+    @patch('education_system.systems.university.domains.health.interfaces.cli.health_portal.backups.DEFAULT_DB_PATH')
     def test_create_manual_backup(self, mock_db_path, mock_paths, mock_print, mock_auth, temp_dir):
         """Test creating a manual backup."""
         mock_paths.DATA_DIR = Path(temp_dir)

@@ -232,59 +232,26 @@ Status: {values[6]}
         if not refund_method:
             return
 
-        # Process based on method
-        success = False
-
-        if refund_method == 'Student Account':
+        if refund_method == 'Student Account' and not student_id:
+            # Prompt for student ID
+            student_id = simpledialog.askstring(_t("cafe.refunds.student_id_label"), _t("cafe.messages.student_id_prompt"))
             if not student_id:
-                # Prompt for student ID
-                student_id = simpledialog.askstring(_t("cafe.refunds.student_id_label"), _t("cafe.messages.student_id_prompt"))
-                if not student_id:
-                    return
+                return
 
-            success = self.add_cafe_refund_to_student_account(student_id, amount, order_id)
-        else:
-            # For cash/card, just record the refund
-            success = True
+        # The domain service credits the student account (if chosen), marks
+        # the order refunded and posts the refund to Finance.
+        from education_system.systems.university.plugins.campus_commerce.domain.cafe.services.checkout import (
+            refund_order,
+        )
+        outcome = refund_order(
+            order_id, amount, refund_method, student_id=student_id,
+            processed_by=self.current_user.get('username', 'System') if getattr(self, 'current_user', None) else 'System',
+        )
+        success = outcome['success']
 
         if success:
-            # Update order status to refunded
             try:
-                conn = get_db_connection()
-                if not conn:
-                    messagebox.showerror(_t("common.error"), _t("cafe.errors.db_connection_failed"))
-                    return
-
-                cursor = conn.cursor()
-
-                cursor.execute('''
-                    UPDATE orders
-                    SET order_status = 'refunded'
-                    WHERE order_id = ? AND source_type = 'cafe'
-                ''', (order_id,))
-
-                # Generate refund reference
-                import uuid
-                refund_ref = f"CAFE-REFUND-{uuid.uuid4().hex[:12].upper()}"
-
-                # Record refund in unified_refunds table
-                cursor.execute('''
-                    INSERT INTO unified_refunds
-                    (source_type, reference_id, reference_type, amount, refund_method, refund_reference, student_id, refund_date, status)
-                    VALUES ('cafe', ?, 'order', ?, ?, ?, ?, CURRENT_TIMESTAMP, 'processed')
-                ''', (str(order_id), amount, refund_method, refund_ref, student_id))
-                refund_row_id = cursor.lastrowid
-
-                conn.commit()
-                conn.close()
-
-                # Auto-post to GL (cash has moved). Never raises.
-                try:
-                    from education_system.systems.university.domains.finance.domain.ledger import notify_ledger
-                    notify_ledger('refund', refund_row_id, posted_by='cafe')
-                except Exception as _e:
-                    import logging
-                    logging.getLogger(__name__).warning("ledger hook failed: %s", _e)
+                refund_ref = outcome['refund_ref']
 
                 # Send refund receipt email
                 self.send_cafe_refund_receipt(order_id, customer_name, amount, refund_method, refund_ref, student_id)
@@ -302,7 +269,7 @@ Status: {values[6]}
             except Exception as e:
                 messagebox.showerror(_t("common.error"), f"Failed to process refund: {e}")
         else:
-            messagebox.showerror(_t("common.error"), _t("cafe.messages.refund_failed"))
+            messagebox.showerror(_t("common.error"), outcome.get('message') or _t("cafe.messages.refund_failed"))
 
     def show_cafe_refund_method_dialog(self, amount: float, order_id: int, student_id=None):
         """Show refund method selection dialog."""
@@ -377,60 +344,6 @@ Status: {values[6]}
             print(f"Error getting student balance: {e}")
             return None
 
-    def add_cafe_refund_to_student_account(self, student_id: str, amount: float, order_id: int):
-        """Add refund amount to student's finance account."""
-        try:
-            conn = get_db_connection()
-            if not conn:
-                return False
-
-            cursor = conn.cursor()
-
-            # Get account_id and balance
-            cursor.execute('''
-                SELECT account_id, balance FROM student_finance_accounts
-                WHERE student_id = ? AND account_status = 'active'
-            ''', (student_id,))
-            row = cursor.fetchone()
-
-            if not row:
-                # Try to create account if it doesn't exist
-                cursor.execute('''
-                    INSERT INTO student_finance_accounts
-                    (student_id, account_type, balance, account_status, created_at)
-                    VALUES (?, 'standard', ?, 'active', CURRENT_TIMESTAMP)
-                ''', (student_id, amount))
-                account_id = cursor.lastrowid
-                balance_before = 0
-                balance_after = amount
-            else:
-                account_id = row[0]
-                balance_before = float(row[1])
-                balance_after = balance_before + amount
-
-                # Add to balance
-                cursor.execute('''
-                    UPDATE student_finance_accounts
-                    SET balance = ?, updated_at = CURRENT_TIMESTAMP
-                    WHERE account_id = ?
-                ''', (balance_after, account_id))
-
-            # Record transaction
-            cursor.execute('''
-                INSERT INTO transactions
-                (source_type, account_id, student_id, transaction_type, amount, balance_before,
-                 balance_after, description, created_at)
-                VALUES ('student_finance', ?, ?, 'credit', ?, ?, ?, ?, CURRENT_TIMESTAMP)
-            ''', (account_id, student_id, amount, balance_before, balance_after,
-                  f'Cafe Refund - Order: {order_id}'))
-
-            conn.commit()
-            conn.close()
-            return True
-        except Exception as e:
-            print(f"Error adding to student account: {e}")
-            return False
-
     def send_cafe_refund_receipt(self, order_id: int, customer_name: str, amount: float,
                                  method: str, refund_ref: str, student_id=None):
         """Send refund receipt email."""
@@ -446,7 +359,7 @@ Status: {values[6]}
             email = None
 
             if student_id:
-                cursor.execute("SELECT email FROM students WHERE student_id = ?", (student_id,))
+                cursor.execute("SELECT email_address FROM students WHERE student_id = ?", (student_id,))
                 row = cursor.fetchone()
                 if row:
                     email = row[0]

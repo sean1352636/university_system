@@ -8,6 +8,7 @@ import tkinter as tk
 from tkinter import messagebox, ttk
 from typing import Callable
 
+from education_system.systems.primary.interfaces.gui import kit
 from education_system.systems.primary.domain.assessment.target_setting import (
     target_setting as data,
 )
@@ -52,19 +53,20 @@ def _safe_view(func: Callable[..., None]) -> Callable[..., None]:
 @_safe_view
 def open_target_setting(host) -> None:
     logger.debug("GUI: open_target_setting")
+    kit.show_page(host, "Target Setting", lambda parent: _draw_target_setting(parent, host))
 
-    win = tk.Toplevel(host.root)
-    win.title("Target Setting")
-    win.transient(host.root)
-    win.geometry("1140x620")
 
-    top = ttk.Frame(win, padding=10)
+def _draw_target_setting(parent, host) -> None:
+    kit.page_heading(parent, "Target Setting")
+    win = parent.winfo_toplevel()
+
+    top = ttk.Frame(parent, padding=(0, 0, 0, 6))
     top.pack(fill="x")
     summary_var = tk.StringVar()
     ttk.Label(top, textvariable=summary_var,
               font=("Segoe UI", 10, "bold")).pack(side="left")
 
-    filt = ttk.Frame(win, padding=(10, 0, 10, 6))
+    filt = ttk.Frame(parent, padding=(0, 0, 0, 6))
     filt.pack(fill="x")
     ttk.Label(filt, text="Year:").pack(side="left")
     year_var = tk.StringVar(value="All")
@@ -89,7 +91,7 @@ def open_target_setting(host) -> None:
 
     cols = ("target_id", "pupil_id", "name", "year", "academic_year",
             "subject", "grade", "score", "review", "status")
-    tree = ttk.Treeview(win, columns=cols, show="headings", height=15)
+    tree = ttk.Treeview(parent, columns=cols, show="headings", height=15)
     for col, label, width, anchor in [
         ("target_id", "#", 50, "center"),
         ("pupil_id", "Pupil ID", 90, "w"),
@@ -104,9 +106,9 @@ def open_target_setting(host) -> None:
     ]:
         tree.heading(col, text=label)
         tree.column(col, width=width, anchor=anchor)
-    tree.pack(fill="both", expand=True, padx=10, pady=(0, 6))
+    tree.pack(fill="both", expand=True, pady=(0, 6))
 
-    btns = ttk.Frame(win, padding=10)
+    btns = ttk.Frame(parent, padding=(0, 6))
     btns.pack(fill="x")
 
     def _refresh() -> None:
@@ -209,13 +211,27 @@ def open_target_setting(host) -> None:
         side="left", padx=(8, 0))
     ttk.Button(btns, text="Refresh", command=_refresh).pack(
         side="left", padx=(8, 0))
-    ttk.Button(btns, text="Close", command=win.destroy).pack(side="right")
+    ttk.Button(btns, text="Close", command=lambda: kit.close_page(host, parent)).pack(
+        side="right")
 
     tree.bind("<Double-Button-1>", lambda _e: _edit())
     for v in (year_var, subj_var, status_var, py_var):
         v.trace_add("write", lambda *_: _refresh())
 
     _refresh()
+
+
+def _subject_names(known: list[str]) -> list[str]:
+    """The school's subjects (Subjects screen) plus any already targeted.
+    The target stores the subject name as free text, so typing one that is
+    not listed is still allowed."""
+    names: set[str] = set(known)
+    try:
+        from education_system.systems.primary.domain.academics.subjects import subjects
+        names.update(s.name for s in subjects.list_all())
+    except Exception:  # noqa: BLE001 - recorded subjects are still offered
+        logger.debug("subject list failed", exc_info=True)
+    return sorted(names, key=str.lower)
 
 
 def _open_form_dialog(parent, *, target_id: int | None,
@@ -237,7 +253,6 @@ def _open_form_dialog(parent, *, target_id: int | None,
     dlg = tk.Toplevel(parent)
     dlg.title("Target" if existing else "New target")
     dlg.transient(parent)
-    dlg.geometry("520x520")
     try:
         dlg.wait_visibility()
         dlg.grab_set()
@@ -249,8 +264,8 @@ def _open_form_dialog(parent, *, target_id: int | None,
 
     pupil_var = tk.StringVar(value=existing.pupil_id if existing else "")
     pupil_label = tk.StringVar(value="")
-    ttk.Label(frm, text="Pupil ID *").grid(row=0, column=0, sticky="w", pady=3)
-    ttk.Entry(frm, textvariable=pupil_var, width=14).grid(
+    ttk.Label(frm, text="Pupil *").grid(row=0, column=0, sticky="w", pady=3)
+    kit.PupilPicker(frm, pupil_var).grid(
         row=0, column=1, sticky="w", pady=3)
     ttk.Label(frm, textvariable=pupil_label, foreground="#666").grid(
         row=0, column=2, sticky="w", padx=(8, 0))
@@ -273,7 +288,7 @@ def _open_form_dialog(parent, *, target_id: int | None,
     ttk.Label(frm, text="Academic year *").grid(
         row=1, column=0, sticky="w", pady=3)
     ay_var = tk.StringVar(value=existing.academic_year if existing else "")
-    ttk.Entry(frm, textvariable=ay_var, width=14).grid(
+    kit.AcademicYearPicker(frm, ay_var).grid(
         row=1, column=1, sticky="w", pady=3)
     ttk.Label(frm, text="e.g. 2025-26", foreground="#888").grid(
         row=1, column=2, sticky="w", padx=(8, 0))
@@ -284,9 +299,9 @@ def _open_form_dialog(parent, *, target_id: int | None,
         known = data.known_subjects()
     except Exception:
         known = []
-    ttk.Combobox(frm, textvariable=subj_var, values=known,
-                 width=28).grid(row=2, column=1, columnspan=2,
-                                sticky="ew", pady=3)
+    kit.ChoiceField(frm, subj_var, choices=_subject_names(known),
+                    editable=True, width=28).grid(row=2, column=1, columnspan=2,
+                                                  sticky="ew", pady=3)
 
     ttk.Label(frm, text="Target grade *").grid(
         row=3, column=0, sticky="w", pady=3)
@@ -301,20 +316,20 @@ def _open_form_dialog(parent, *, target_id: int | None,
     score_var = tk.StringVar(
         value="" if not existing or existing.target_score is None
         else f"{existing.target_score:g}")
-    ttk.Entry(frm, textvariable=score_var, width=8).grid(
+    kit.NumberField(frm, score_var, from_=0, to=130).grid(
         row=4, column=1, sticky="w", pady=3)
 
-    ttk.Label(frm, text="Set on (YYYY-MM-DD)").grid(
+    ttk.Label(frm, text="Set on").grid(
         row=5, column=0, sticky="w", pady=3)
     set_var = tk.StringVar(value=existing.set_on or "" if existing else "")
-    ttk.Entry(frm, textvariable=set_var, width=14).grid(
+    kit.DateField(frm, set_var).grid(
         row=5, column=1, sticky="w", pady=3)
 
-    ttk.Label(frm, text="Review date (YYYY-MM-DD)").grid(
+    ttk.Label(frm, text="Review date").grid(
         row=6, column=0, sticky="w", pady=3)
     review_var = tk.StringVar(
         value=existing.review_date or "" if existing else "")
-    ttk.Entry(frm, textvariable=review_var, width=14).grid(
+    kit.DateField(frm, review_var).grid(
         row=6, column=1, sticky="w", pady=3)
 
     ttk.Label(frm, text="Status").grid(row=7, column=0, sticky="w", pady=3)

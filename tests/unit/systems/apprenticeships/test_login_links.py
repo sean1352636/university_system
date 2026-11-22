@@ -17,10 +17,10 @@ from education_system.platform.identity.auth.db import connect
 from education_system.systems.apprenticeships.infrastructure.persistence.repositories import (
     apprentice_repository,
 )
-from education_system.systems.apprenticeships.services import (
+from education_system.systems.apprenticeships.application.apprentices import apprentice_service
+from education_system.systems.apprenticeships.application.security import (
     access,
     account_service,
-    apprentice_service,
     login_links,
 )
 

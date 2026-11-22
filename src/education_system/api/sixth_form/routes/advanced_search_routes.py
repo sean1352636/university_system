@@ -21,6 +21,8 @@ import os
 
 from flask import Blueprint, g, jsonify, request
 
+from education_system.api.sixth_form import access_gate
+
 logger = logging.getLogger(__name__)
 
 advanced_search_bp = Blueprint(
@@ -28,6 +30,7 @@ advanced_search_bp = Blueprint(
 
 
 def _token_required(view):
+    view = access_gate.gate(view)
     try:
         from education_system.platform.delivery.api.auth import token_required
         return token_required(view)
@@ -43,18 +46,14 @@ def _token_required(view):
         return wrapper
 
 
-def _data():
-    from education_system.systems.sixth_form.domain.learners.advanced_search import (
-        advanced_search as data,
-    )
-    return data
-
 
 @advanced_search_bp.route("/advanced-search/saved", methods=["GET"])
 @_token_required
 def saved_route():
-    data = _data()
-    rows = data.list_saved_searches()
+    from education_system.systems.sixth_form.domain.learners.advanced_search import (
+        history as search_history,
+    )
+    rows = search_history.list_saved_searches()
     return jsonify({
         "saved_searches": [
             {"saved_id": s.saved_id, "name": s.name, "query": s.query,
@@ -68,7 +67,10 @@ def saved_route():
 @advanced_search_bp.route("/advanced-search/run", methods=["GET"])
 @_token_required
 def run_route():
-    data = _data()
+    from education_system.systems.sixth_form.domain.learners.advanced_search import (
+        engine as search_engine,
+        models as search_models,
+    )
     q = request.args.get("q", "")
     scopes_arg = request.args.get("scopes")
     scopes = ([s.strip() for s in scopes_arg.split(",") if s.strip()]
@@ -80,9 +82,9 @@ def run_route():
     role = request.args.get("role")
     filters = {"role": role} if role else {}
     try:
-        results = data.run_search(q, scopes=scopes, limit_per_scope=limit,
+        results = search_engine.run_search(q, scopes=scopes, limit_per_scope=limit,
                                   filters=filters, record_history=False)
-    except data.ValidationError as e:
+    except search_models.ValidationError as e:
         return jsonify({"error": str(e)}), 400
     return jsonify({
         "query": results.query,
@@ -99,8 +101,10 @@ def run_route():
 @advanced_search_bp.route("/advanced-search/cohorts", methods=["GET"])
 @_token_required
 def cohorts_route():
-    data = _data()
-    rows = data.list_cohorts()
+    from education_system.systems.sixth_form.domain.learners.advanced_search import (
+        history as search_history,
+    )
+    rows = search_history.list_cohorts()
     return jsonify({
         "cohorts": [
             {"cohort_id": c.cohort_id, "name": c.name,
@@ -113,8 +117,10 @@ def cohorts_route():
 @advanced_search_bp.route("/advanced-search/telemetry", methods=["GET"])
 @_token_required
 def telemetry_route():
-    data = _data()
-    ts = data.telemetry_summary()
+    from education_system.systems.sixth_form.domain.learners.advanced_search import (
+        insights as search_insights,
+    )
+    ts = search_insights.telemetry_summary()
     return jsonify({
         "total_searches": ts.total_searches,
         "zero_result": ts.zero_result,

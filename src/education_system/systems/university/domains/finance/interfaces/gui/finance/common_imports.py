@@ -257,7 +257,7 @@ except ImportError as e:
     def manage_financial_aid():
         """Manage financial aid - opens the Financial Aid Admin Portal"""
         try:
-            from education_system.systems.university.domains.finance.interfaces.gui.financial_aid.admin_portal import FinancialAidAdminPortal
+            from education_system.systems.university.domains.finance.interfaces.gui.financial_aid.admin_portal import AdminPortal
 
             # Create a new window for financial aid management
             aid_window = tk.Toplevel()
@@ -265,7 +265,7 @@ except ImportError as e:
             aid_window.geometry("1200x800")
 
             # Initialize the admin portal
-            portal = FinancialAidAdminPortal(aid_window)
+            portal = AdminPortal(aid_window)
             portal.show_dashboard()
 
         except ImportError as e:
@@ -349,37 +349,46 @@ except ImportError as e:
 
 # ==================== STUDENT CREDITS ====================
 try:
-    from education_system.systems.university.domains.finance.domain.core.account_management import (
-        manage_student_credits
+    from education_system.systems.university.domains.finance.domain.core.students import (
+        apply_student_credit,
+        record_student_credit,
+        view_credit_history as _print_credit_history,
+        view_student_credits as _print_student_credits,
     )
 
     def view_student_credits(student_id=None):
-        """View student credits"""
+        """Print a student's active credits (the GUI captures stdout)."""
         if not student_id:
             student_id = simpledialog.askstring(_t('gui.finance.finance.common_imports.dialogs.student_credits', default="Student Credits"), _t('gui.finance.finance.common_imports.dialogs.enter_student_id', default="Enter student ID:"))
         if student_id:
-            manage_student_credits(student_id, action='view')
+            _print_student_credits(student_id)
 
-    def add_student_credit(student_id=None, amount=None):
-        """Add credit to student account"""
+    def add_student_credit(student_id=None, amount=None, source='adjustment', description='', expiry_date=None):
+        """Add credit to student account; returns the new credit id."""
         if not student_id:
             student_id = simpledialog.askstring(_t('gui.finance.finance.common_imports.dialogs.add_credit', default="Add Credit"), _t('gui.finance.finance.common_imports.dialogs.enter_student_id', default="Enter student ID:"))
-        if student_id:
-            manage_student_credits(student_id, action='add')
+        if not student_id:
+            return None
+        if amount is None:
+            amount = simpledialog.askfloat(_t('gui.finance.finance.common_imports.dialogs.add_credit', default="Add Credit"), _t('gui.finance.finance.common_imports.dialogs.enter_amount', default="Enter amount:"))
+        if amount is None:
+            return None
+        return record_student_credit(student_id, amount, source, description, expiry_date)
 
-    def apply_credit_to_fees(student_id=None):
-        """Apply credits to fees"""
+    def apply_credit_to_fees(student_id=None, credit_id=None, amount=None):
+        """Apply one credit (or all of them, oldest first) to outstanding fees."""
         if not student_id:
             student_id = simpledialog.askstring(_t('gui.finance.finance.common_imports.dialogs.apply_credit', default="Apply Credit"), _t('gui.finance.finance.common_imports.dialogs.enter_student_id', default="Enter student ID:"))
-        if student_id:
-            manage_student_credits(student_id, action='apply')
+        if not student_id:
+            return None
+        return apply_student_credit(student_id, credit_id, amount)
 
     def view_credit_history(student_id=None):
-        """View credit history"""
+        """Print a student's credit history (the GUI captures stdout)."""
         if not student_id:
             student_id = simpledialog.askstring(_t('gui.finance.finance.common_imports.dialogs.credit_history', default="Credit History"), _t('gui.finance.finance.common_imports.dialogs.enter_student_id', default="Enter student ID:"))
         if student_id:
-            manage_student_credits(student_id, action='history')
+            _print_credit_history(student_id)
 
 except ImportError:
     # Student credits fallback stubs - generated via factory
@@ -746,7 +755,11 @@ def create_budget_category(name, category_type, description="", parent_category_
     if not name or category_type not in {"revenue", "expense"}:
         raise ValueError("A name and a valid category type are required")
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    from education_system.systems.university.domains.finance.infrastructure.database.finance_schemas import (
+        ensure_budget_category_description,
+    )
     with transaction() as conn:
+        ensure_budget_category_description(conn)
         cursor = conn.execute(
             """INSERT INTO budget_categories
                (category_name, category_type, description, parent_category_id,
@@ -760,7 +773,11 @@ def create_budget_category(name, category_type, description="", parent_category_
 def edit_budget_category(category_id, name, description=""):
     if not str(name).strip():
         raise ValueError("Category name is required")
+    from education_system.systems.university.domains.finance.infrastructure.database.finance_schemas import (
+        ensure_budget_category_description,
+    )
     with transaction() as conn:
+        ensure_budget_category_description(conn)
         cursor = conn.execute(
             """UPDATE budget_categories
                SET category_name = ?, description = ?, updated_at = ?

@@ -53,8 +53,8 @@ dialog (the same flow as the toolbar `Edit Selected` button).
 
 Other roles (students, parents) silently no-op on double-click — there
 is no error popup. The behaviour is implemented in
-`college_system/modules/domain/students/gui/student_gui.py` via
-`_on_double_click_student` and `_show_student_details`.
+`src/education_system/systems/sixth_form/interfaces/gui/learners/students/student_views.py`
+via the student table's `<Double-1>` binding.
 
 ---
 

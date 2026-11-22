@@ -76,10 +76,9 @@ def _today_attendance() -> tuple[int, int, float | None] | None:
             attendance,
         )
         today = _date.today().isoformat()
-        rows = attendance.list_records(date=today)
+        rows = [r for r in attendance.list_records(date=today) if r.is_possible]
         total = len(rows)
-        attending = sum(1 for r in rows
-                         if r.status in attendance.ATTENDING_STATUSES)
+        attending = sum(1 for r in rows if r.is_attending)
         pct = round(100.0 * attending / total, 1) if total else None
         return total, attending, pct
     return _safe(_)
@@ -110,8 +109,8 @@ def _announcement_feed(limit: int = 5) -> list[FeedItem]:
                 else "info"
             items.append(FeedItem(
                 kind="announcement",
-                when=getattr(a, "published_at", "") or getattr(
-                    a, "created_at", "") or "",
+                when=getattr(a, "published_on", "") or getattr(
+                    a, "created_on", "") or "",
                 title=getattr(a, "title", "(announcement)"),
                 detail=getattr(a, "body", "")[:140] if getattr(
                     a, "body", None) else "",
@@ -192,19 +191,29 @@ def _overdue_target_feed(limit: int = 10) -> list[FeedItem]:
 
 
 def _high_risk_feed(limit: int = 10) -> list[FeedItem]:
+    """Pupils whose latest active progress review is High or Critical risk."""
     def _():
-        from education_system.systems.primary.domain.progress_dashboard import (
-            progress_dashboard,
+        from education_system.systems.primary.domain import _pupils_bridge as students
+        from education_system.systems.primary.domain.assessment.progress import (
+            progress,
         )
-        rows = progress_dashboard.students_at_risk()
+        latest: dict[str, Any] = {}
+        for r in progress.list_reviews(active_only=True):
+            cur = latest.get(r.student_id)
+            if cur is None or r.review_date > cur.review_date:
+                latest[r.student_id] = r
+        risky = [r for r in latest.values() if r.risk_level in ("High", "Critical")]
+        risky.sort(key=lambda r: (r.risk_level != "Critical", r.review_date), reverse=False)
         out: list[FeedItem] = []
-        for r in rows[:limit]:
+        for r in risky[:limit]:
+            s = students.get_student(r.student_id)
+            who = s.full_name if s else r.student_id
             out.append(FeedItem(
                 kind="review",
-                when=r.latest_date or "",
-                title=f"{r.full_name} ({r.student_id})",
-                detail=f"{r.risk} risk · {r.overall or '—'}",
-                severity="alert" if r.risk == "Critical" else "warn",
+                when=r.review_date or "",
+                title=f"{who} ({r.student_id})",
+                detail=f"{r.risk_level} risk · {r.overall or '—'}",
+                severity="alert" if r.risk_level == "Critical" else "warn",
             ))
         return out
     return _safe(_) or []
@@ -221,13 +230,11 @@ def _open_alerts_feed(limit: int = 10) -> list[FeedItem]:
         for a in rows[:limit]:
             out.append(FeedItem(
                 kind="alert",
-                when=getattr(a, "raised_on", "") or getattr(
+                when=getattr(a, "raised_date", "") or getattr(
                     a, "created_at", "") or "",
                 title=getattr(a, "title", None)
                        or getattr(a, "trigger", "(alert)"),
-                detail=getattr(a, "summary", "")
-                        or getattr(a, "detail", "")
-                        or "",
+                detail=getattr(a, "details", "") or "",
                 severity="alert",
             ))
         return out

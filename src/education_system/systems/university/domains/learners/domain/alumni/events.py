@@ -361,17 +361,18 @@ def view_event_details(event_id, cursor):
                user_alumni_id = result[0]
 
                safe_execute(cursor, '''
-                   SELECT * FROM unified_event_registrations
-                   WHERE event_id = ? AND alumni_id = ?
+                   SELECT is_waitlisted, payment_status, registration_date
+                   FROM unified_event_registrations
+                   WHERE event_id = ? AND user_id = ?
                ''', (event_id, user_alumni_id))
 
                registration = cursor.fetchone()
 
                if registration:
-                   status = "Waitlisted" if registration[7] else "Registered"
-                   payment_status = registration[5] if registration[5] else "N/A"
+                   status = "Waitlisted" if registration[0] else "Registered"
+                   payment_status = registration[1] if registration[1] else "N/A"
                    print(f"\nYour Status: {status}")
-                   print(f"Registration Date: {registration[3]}")
+                   print(f"Registration Date: {registration[2]}")
                    if event_data[7]:  # payment_required
                        print(f"Payment Status: {payment_status}")
                else:
@@ -403,10 +404,10 @@ def view_my_event_registrations(cursor):
 
        # Get registrations
        safe_execute(cursor, '''
-           SELECT er.*, ae.title, ae.start_datetime, ae.location, ae.event_fee
+           SELECT ae.title, ae.start_datetime, er.is_waitlisted, er.payment_status, er.attendance_confirmed
            FROM unified_event_registrations er
            JOIN unified_events ae ON er.event_id = ae.event_id
-           WHERE er.alumni_id = ? AND ae.source_type = 'alumni'
+           WHERE er.user_id = ? AND ae.source_type = 'alumni'
            ORDER BY ae.start_datetime DESC
        ''', (user_alumni_id,))
 
@@ -422,10 +423,10 @@ def view_my_event_registrations(cursor):
        print("-" * 100)
 
        for reg in registrations:
-           event_name = reg[9][:29] if reg[9] else "N/A"
-           event_date = reg[10]
-           status = "Waitlisted" if reg[7] else "Registered"
-           payment_status = reg[5] if reg[5] else "N/A"
+           event_name = reg[0][:29] if reg[0] else "N/A"
+           event_date = reg[1] or ""
+           status = "Waitlisted" if reg[2] else "Registered"
+           payment_status = reg[3] if reg[3] else "N/A"
            attended = "Yes" if reg[4] else "No"
 
            # Check if event is in the past
@@ -472,7 +473,7 @@ def register_for_event():
         cursor.execute('''
             INSERT INTO unified_event_registrations (event_id, user_id, registration_date, status)
             VALUES (?, ?, ?, 'registered')
-        ''', (event_id, auth.current_user['user_id'], datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
+        ''', (event_id, auth.current_user.get('username'), datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
 
         conn.commit()
         conn.close()
@@ -891,9 +892,9 @@ def event_check_in_system():
     elif checkin_choice == '3':
         # View attendance
         cursor.execute('''
-            SELECT er.*, a.first_name, a.last_name
+            SELECT a.first_name, a.last_name, er.check_in_time
             FROM unified_event_registrations er
-            JOIN alumni a ON er.alumni_id = a.alumni_id
+            JOIN alumni a ON er.user_id = a.alumni_id
             WHERE er.event_id = ? AND er.attendance_confirmed = 1
             ORDER BY er.check_in_time
         ''', (event_id,))
@@ -904,8 +905,8 @@ def event_check_in_system():
         if attendees:
             print("-" * 60)
             for attendee in attendees:
-                name = f"{attendee[7]} {attendee[8]}"
-                checkin_time = attendee[6] if attendee[6] else "Unknown"
+                name = f"{attendee[0]} {attendee[1]}"
+                checkin_time = attendee[2] if attendee[2] else "Unknown"
                 print(f"{name} - Checked in: {checkin_time}")
     else:
         print("Invalid choice.")
@@ -917,8 +918,8 @@ def process_event_checkin(event_id, alumni_id, cursor):
     """Process event check-in for an alumni"""
     # Check if alumni is registered
     cursor.execute('''
-        SELECT * FROM unified_event_registrations
-        WHERE event_id = ? AND alumni_id = ?
+        SELECT attendance_confirmed, payment_status FROM unified_event_registrations
+        WHERE event_id = ? AND user_id = ?
     ''', (event_id, alumni_id))
 
     registration = cursor.fetchone()
@@ -927,12 +928,12 @@ def process_event_checkin(event_id, alumni_id, cursor):
         print(f"Alumni {alumni_id} is not registered for this event.")
         return
 
-    if registration[4]:  # attendance_confirmed
+    if registration[0]:  # attendance_confirmed
         print(f"Alumni {alumni_id} has already checked in.")
         return
 
     # Check payment status if required
-    if registration[5] == 'pending':  # payment_status
+    if registration[1] == 'pending':  # payment_status
         print(f"Alumni {alumni_id} has pending payment. Please process payment first.")
         return
 
@@ -941,7 +942,7 @@ def process_event_checkin(event_id, alumni_id, cursor):
     cursor.execute('''
         UPDATE unified_event_registrations
         SET attendance_confirmed = 1, check_in_time = ?
-        WHERE event_id = ? AND alumni_id = ?
+        WHERE event_id = ? AND user_id = ?
     ''', (check_in_time, event_id, alumni_id))
 
     # Get alumni name for confirmation

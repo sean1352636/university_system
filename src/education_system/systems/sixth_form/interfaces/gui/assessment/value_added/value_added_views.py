@@ -6,7 +6,9 @@ from education_system.systems.sixth_form.interfaces.gui._ui import grab_when_vie
 import datetime as _dt
 import logging
 import tkinter as tk
-from tkinter import messagebox, ttk
+from tkinter import ttk
+from education_system.systems.sixth_form.interfaces.gui._sidebar import SidebarBook
+from education_system.platform.delivery.gui.parented_dialogs import messagebox
 from typing import Callable
 from education_system.platform import branding
 from education_system.systems.sixth_form.domain.assessment.value_added import (
@@ -38,11 +40,16 @@ def open_value_added_window(parent=None) -> None:
     win.geometry(WIN_GEOMETRY)
     win.minsize(*WIN_MINSIZE)
 
-    nb = ttk.Notebook(win)
+    nb = SidebarBook(win)
     nb.pack(fill="both", expand=True, padx=10, pady=10)
 
     RecordsTab(nb)
     SummaryTab(nb)
+    # Gap build: benchmark table, derived VA and MEG tabs.
+    from education_system.systems.sixth_form.interfaces.gui.assessment.value_added.derivation_views import (
+        add_derivation_tabs,
+    )
+    add_derivation_tabs(nb)
 
 
 def _student_options() -> list[tuple[str, str]]:
@@ -435,8 +442,9 @@ class ActualDialog:
             row=0, column=0, columnspan=2, sticky="w", pady=(0, 8))
         ttk.Label(form, text="Actual grade:").grid(row=1, column=0,
                                                       sticky="e", pady=4)
-        self.cb = ttk.Combobox(form, values=A_LEVEL_GRADES,
-                                  state="readonly", width=8)
+        self.cb = ttk.Combobox(form, values=data.grades_for(
+                                      existing.qualification_type),
+                                  state="readonly", width=14)
         if existing.actual_grade:
             self.cb.set(existing.actual_grade)
         self.cb.grid(row=1, column=1, sticky="w", padx=6)
@@ -474,8 +482,9 @@ class PredictedDialog:
         form.pack(fill="both", expand=True)
         ttk.Label(form, text="Predicted grade:").grid(
             row=0, column=0, sticky="e", pady=4)
-        self.cb = ttk.Combobox(form, values=("",) + A_LEVEL_GRADES,
-                                  state="readonly", width=8)
+        self.cb = ttk.Combobox(form, values=("",) + data.grades_for(
+                                      existing.qualification_type),
+                                  state="readonly", width=14)
         if existing.predicted_grade:
             self.cb.set(existing.predicted_grade)
         self.cb.grid(row=0, column=1, sticky="w", padx=6)
@@ -498,6 +507,23 @@ class PredictedDialog:
 
 
 class RecordDialog:
+    def _sync_scale(self) -> None:
+        """New record: offer the grades of the picked learner's aim."""
+        try:
+            from education_system.systems.sixth_form.domain.academics.qualifications import (
+                learning_aims,
+            )
+            idx = self.student_cb.current() if self.student_cb else -1
+            sid = self._student_ids[idx] if idx >= 0 else None
+            scale = learning_aims.grade_options(sid, self.subject_cb.get().strip())
+        except Exception:
+            logger.exception("Could not resolve grade scale")
+            scale = A_LEVEL_GRADES
+        for cb in (self.exp_cb, self.tgt_cb, self.pred_cb, self.act_cb):
+            cb.configure(values=("",) + tuple(scale), width=14)
+            if cb.get() and cb.get() not in scale:
+                cb.set("")
+
     def __init__(self, parent: tk.Misc, *,
                  existing: VARecord | None,
                  on_save: Callable[[], None]) -> None:
@@ -581,17 +607,22 @@ class RecordDialog:
                                   str(self.existing.prior_attainment))
         self.prior_e.grid(row=r, column=3, sticky="w", padx=6)
 
+        # Grade lists follow the qualification of the learner's aim in the
+        # subject (A*-U when unknown / for older A-level records).
+        _scale = (data.grades_for(self.existing.qualification_type)
+                  if self.existing else A_LEVEL_GRADES)
+
         r += 1
         ttk.Label(form, text="Expected:").grid(row=r, column=0,
                                                   sticky="e", pady=3)
-        self.exp_cb = ttk.Combobox(form, values=("",) + A_LEVEL_GRADES,
+        self.exp_cb = ttk.Combobox(form, values=("",) + _scale,
                                       state="readonly", width=8)
         if self.existing and self.existing.expected_grade:
             self.exp_cb.set(self.existing.expected_grade)
         self.exp_cb.grid(row=r, column=1, sticky="w", padx=6)
         ttk.Label(form, text="Target (MTE):").grid(row=r, column=2,
                                                       sticky="e", pady=3)
-        self.tgt_cb = ttk.Combobox(form, values=("",) + A_LEVEL_GRADES,
+        self.tgt_cb = ttk.Combobox(form, values=("",) + _scale,
                                       state="readonly", width=8)
         if self.existing and self.existing.target_grade:
             self.tgt_cb.set(self.existing.target_grade)
@@ -600,18 +631,22 @@ class RecordDialog:
         r += 1
         ttk.Label(form, text="Predicted:").grid(row=r, column=0,
                                                    sticky="e", pady=3)
-        self.pred_cb = ttk.Combobox(form, values=("",) + A_LEVEL_GRADES,
+        self.pred_cb = ttk.Combobox(form, values=("",) + _scale,
                                        state="readonly", width=8)
         if self.existing and self.existing.predicted_grade:
             self.pred_cb.set(self.existing.predicted_grade)
         self.pred_cb.grid(row=r, column=1, sticky="w", padx=6)
         ttk.Label(form, text="Actual:").grid(row=r, column=2,
                                                 sticky="e", pady=3)
-        self.act_cb = ttk.Combobox(form, values=("",) + A_LEVEL_GRADES,
+        self.act_cb = ttk.Combobox(form, values=("",) + _scale,
                                       state="readonly", width=8)
         if self.existing and self.existing.actual_grade:
             self.act_cb.set(self.existing.actual_grade)
         self.act_cb.grid(row=r, column=3, sticky="w", padx=6)
+        if not self.existing:
+            for w in (self.student_cb, self.subject_cb):
+                w.bind("<<ComboboxSelected>>", lambda _e: self._sync_scale())
+            self.subject_cb.bind("<FocusOut>", lambda _e: self._sync_scale())
 
         r += 1
         ttk.Label(form, text="ALPS (1-9):").grid(row=r, column=0,

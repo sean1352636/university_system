@@ -6,7 +6,6 @@ import datetime as _dt
 import logging
 import tkinter as tk
 from tkinter import messagebox, ttk
-from education_system.platform import branding
 from education_system.systems.primary.domain.staff.appraisals import (
     appraisals as data,
 )
@@ -28,6 +27,8 @@ from education_system.systems.primary.domain.staff.appraisals.appraisals import 
 from education_system.systems.primary.domain.staff import (
     staff as staff_data,
 )
+from education_system.systems.primary.domain.staff.staff import ROLES
+from education_system.systems.primary.interfaces.gui import kit
 
 logger = logging.getLogger(__name__)
 
@@ -58,14 +59,17 @@ _OBJ_TAGS = {
 
 def open_appraisals_window(parent=None) -> None:
     data.init_db()
-    master = getattr(parent, "root", parent)
-    win = tk.Toplevel(master) if master is not None else tk.Tk()
-    win.title(f"Appraisals — {branding.SYSTEM_NAME}")
-    win.geometry(WIN_GEOMETRY)
-    win.minsize(*WIN_MINSIZE)
+    host = parent if parent is not None else tk.Tk()
+    kit.show_page(host, "Appraisals",
+                  lambda page: _draw_appraisals(page, host))
 
-    nb = ttk.Notebook(win)
-    nb.pack(fill="both", expand=True, padx=10, pady=10)
+
+def _draw_appraisals(parent, host) -> None:
+    kit.page_heading(parent, "Appraisals",
+                     "Appraisal cycles, objectives, mid-year and end-year "
+                     "reviews, grades and pay progression.")
+    nb = ttk.Notebook(parent)
+    nb.pack(fill="both", expand=True)
 
     AppraisalsTab(nb)
     SummaryTab(nb)
@@ -83,6 +87,32 @@ def _staff_options() -> list[tuple[str, str]]:
 
 def _staff_options_optional() -> list[tuple[str | None, str]]:
     return [(None, "(none)"), *_staff_options()]
+
+
+def _staff_names() -> list[str]:
+    """Current staff names, for name fields that may also hold an
+    outside person (so the drop-down stays typeable)."""
+    try:
+        rows = staff_data.list_staff(active_only=True)
+    except Exception:  # noqa: BLE001 - an empty list beats a broken form
+        logger.exception("staff names for appraisal form failed")
+        return []
+    return sorted({s.full_name for s in rows})
+
+
+def _cycle_choices() -> list[str]:
+    """Appraisal cycles already used plus the ones around now, in the
+    ``2026-2027`` form the new-appraisal default uses."""
+    today = _dt.date.today()
+    start = today.year if today.month >= 9 else today.year - 1
+    out = [f"{y}-{y + 1}" for y in range(start + 1, start - 4, -1)]
+    try:
+        for c in data.list_cycles():
+            if c not in out:
+                out.append(c)
+    except Exception:  # noqa: BLE001
+        logger.exception("appraisal cycle list failed")
+    return out
 
 
 class AppraisalsTab:
@@ -103,10 +133,12 @@ class AppraisalsTab:
         bar = ttk.Frame(self.top)
         bar.pack(fill="x", pady=(0, 4))
         ttk.Label(bar, text="Cycle:").pack(side="left")
-        self.f_cycle = ttk.Entry(bar, width=14)
+        self.f_cycle = kit.ChoiceField(bar, choices=_cycle_choices(),
+                                       blank=True, editable=True, width=12)
         self.f_cycle.pack(side="left", padx=(2, 8))
-        ttk.Label(bar, text="Staff id:").pack(side="left")
-        self.f_staff = ttk.Entry(bar, width=12)
+        ttk.Label(bar, text="Staff:").pack(side="left")
+        self.f_staff = kit.StaffPicker(bar, active_only=False, width=30)
+        self.f_staff.bind_change(lambda _v: self.refresh())
         self.f_staff.pack(side="left", padx=(2, 8))
         ttk.Label(bar, text="Status:").pack(side="left")
         self.f_status = ttk.Combobox(bar,
@@ -314,8 +346,8 @@ class AppraisalsTab:
         a = self._selected()
         if not a:
             return
-        when = _prompt_text(
-            self.frame, "Objectives set on (YYYY-MM-DD)",
+        when = _prompt_date(
+            self.frame, "Objectives set on",
             initial=_dt.date.today().isoformat())
         if not when:
             return
@@ -332,8 +364,7 @@ class AppraisalsTab:
         a = self._selected()
         if not a:
             return
-        when = _prompt_text(self.frame,
-                              "Reviewed on (YYYY-MM-DD)",
+        when = _prompt_date(self.frame, "Reviewed on",
                               initial=_dt.date.today().isoformat())
         if not when:
             return
@@ -520,7 +551,7 @@ class AppraisalEditor:
         self.win = tk.Toplevel(parent)
         self.win.title(f"Edit appraisal #{appraisal.appraisal_id}"
                           if appraisal else "New appraisal")
-        self.win.geometry("880x820")
+        self.win.geometry("880x700")
         self.win.transient(parent); self.win.after_idle(self.win.grab_set)
         self._build()
         if appraisal:
@@ -528,8 +559,7 @@ class AppraisalEditor:
         self.win.wait_window()
 
     def _build(self) -> None:
-        body = ttk.Frame(self.win)
-        body.pack(fill="both", expand=True, padx=12, pady=10)
+        body, footer = kit.scrolled_form(self.win)
         body.grid_columnconfigure(1, weight=1)
         body.grid_columnconfigure(3, weight=1)
         self.vars: dict[str, tk.Variable] = {}
@@ -538,24 +568,34 @@ class AppraisalEditor:
 
         ttk.Label(body, text="Staff*").grid(
             row=0, column=0, sticky="w", padx=4, pady=2)
-        self.staff_combo = ttk.Combobox(body, state="readonly",
-                                            width=42)
-        opts = _staff_options()
-        self._staff_opts = opts
-        self.staff_combo["values"] = [lbl for _, lbl in opts]
-        self.staff_combo.grid(row=0, column=1, sticky="ew",
-                                  padx=4, pady=2)
+        self.staff_var = tk.StringVar()
+        kit.StaffPicker(body, self.staff_var, active_only=False,
+                        width=36).grid(row=0, column=1, sticky="ew",
+                                       padx=4, pady=2)
 
         ttk.Label(body, text="Appraiser").grid(
             row=0, column=2, sticky="w", padx=4, pady=2)
-        self.appr_combo = ttk.Combobox(body, state="readonly",
-                                            width=42)
-        appr_opts = _staff_options_optional()
-        self._appr_opts = appr_opts
-        self.appr_combo["values"] = [lbl for _, lbl in appr_opts]
-        self.appr_combo.current(0)
-        self.appr_combo.grid(row=0, column=3, sticky="ew",
-                                  padx=4, pady=2)
+        self.appr_var = tk.StringVar()
+        kit.StaffPicker(body, self.appr_var, active_only=False,
+                        width=36).grid(row=0, column=3, sticky="ew",
+                                       padx=4, pady=2)
+
+        def date(row, col, label, key):
+            ttk.Label(body, text=label).grid(
+                row=row, column=col, sticky="w", padx=4, pady=2)
+            v = tk.StringVar()
+            self.vars[key] = v
+            kit.DateField(body, v).grid(
+                row=row, column=col + 1, sticky="w", padx=4, pady=2)
+
+        def editable(row, col, label, key, values):
+            ttk.Label(body, text=label).grid(
+                row=row, column=col, sticky="w", padx=4, pady=2)
+            v = tk.StringVar()
+            self.vars[key] = v
+            kit.ChoiceField(body, v, choices=values, blank=True,
+                            editable=True, width=22).grid(
+                row=row, column=col + 1, sticky="ew", padx=4, pady=2)
 
         def entry(row, col, label, key, width=22):
             ttk.Label(body, text=label).grid(
@@ -574,13 +614,14 @@ class AppraisalEditor:
                           state="readonly", width=width).grid(
                 row=row, column=col + 1, sticky="ew", padx=4, pady=2)
 
-        entry(1, 0, "Cycle*", "cycle")
-        entry(1, 2, "Appraiser name", "appraiser_name")
-        entry(2, 0, "Job role", "job_role")
+        editable(1, 0, "Cycle*", "cycle", _cycle_choices())
+        editable(1, 2, "Appraiser name", "appraiser_name",
+                 _staff_names())
+        editable(2, 0, "Job role", "job_role", ROLES)
         combo(2, 2, "Status*", "status", STATUSES)
-        entry(3, 0, "Objectives set on", "objectives_set_on")
-        entry(3, 2, "Mid-year review on", "mid_year_review_on")
-        entry(4, 0, "End-year review on", "end_year_review_on")
+        date(3, 0, "Objectives set on", "objectives_set_on")
+        date(3, 2, "Mid-year review on", "mid_year_review_on")
+        date(4, 0, "End-year review on", "end_year_review_on")
         combo(4, 2, "Overall grade", "overall_grade",
                  ("", "1", "2", "3", "4"))
         combo(5, 0, "Pay progression*", "pay_progression",
@@ -614,11 +655,9 @@ class AppraisalEditor:
             self.texts[key] = t
             row += 1
 
-        bar = ttk.Frame(self.win)
-        bar.pack(fill="x", padx=12, pady=(0, 10))
-        ttk.Button(bar, text="Save",
+        ttk.Button(footer, text="Save",
                     command=self._save).pack(side="right", padx=4)
-        ttk.Button(bar, text="Cancel",
+        ttk.Button(footer, text="Cancel",
                     command=self.win.destroy).pack(side="right")
 
         today = _dt.date.today()
@@ -629,14 +668,8 @@ class AppraisalEditor:
     def _load(self) -> None:
         a = self.appraisal
         assert a is not None
-        for i, (sid, _) in enumerate(self._staff_opts):
-            if sid == a.staff_id:
-                self.staff_combo.current(i)
-                break
-        for i, (sid, _) in enumerate(self._appr_opts):
-            if sid == a.appraiser_id:
-                self.appr_combo.current(i)
-                break
+        self.staff_var.set(a.staff_id or "")
+        self.appr_var.set(a.appraiser_id or "")
         for key in ("cycle", "appraiser_name", "job_role",
                      "objectives_set_on", "mid_year_review_on",
                      "end_year_review_on", "status",
@@ -652,17 +685,15 @@ class AppraisalEditor:
             self.texts[k].insert("1.0", getattr(a, k) or "")
 
     def _save(self) -> None:
-        sidx = self.staff_combo.current()
-        if sidx < 0:
+        staff_id = self.staff_var.get().strip()
+        if not staff_id:
             messagebox.showerror("Appraisals",
                                     "Pick a staff member.",
                                     parent=self.win)
             return
-        aidx = self.appr_combo.current()
         payload: dict = {
-            "staff_id": self._staff_opts[sidx][0],
-            "appraiser_id": (self._appr_opts[aidx][0]
-                                if aidx >= 0 else None),
+            "staff_id": staff_id,
+            "appraiser_id": self.appr_var.get().strip() or None,
         }
         for k, v in self.vars.items():
             payload[k] = v.get().strip()
@@ -694,7 +725,7 @@ class ObjectiveEditor:
         self.win.title(
             f"Edit objective O{objective.objective_number}"
             if objective else "New objective")
-        self.win.geometry("780x780")
+        self.win.geometry("780x700")
         self.win.transient(parent); self.win.after_idle(self.win.grab_set)
         self._build()
         if objective:
@@ -702,11 +733,22 @@ class ObjectiveEditor:
         self.win.wait_window()
 
     def _build(self) -> None:
-        body = ttk.Frame(self.win)
-        body.pack(fill="both", expand=True, padx=12, pady=10)
+        body, footer = kit.scrolled_form(self.win)
         body.grid_columnconfigure(1, weight=1)
         self.vars: dict[str, tk.Variable] = {}
         self.texts: dict[str, tk.Text] = {}
+
+        ttk.Label(body, text="Weighting (%)").grid(
+            row=4, column=0, sticky="w", padx=4, pady=2)
+        self.vars["weighting"] = tk.StringVar()
+        kit.NumberField(body, self.vars["weighting"], to=100,
+                        increment=5).grid(
+            row=4, column=1, sticky="w", padx=4, pady=2)
+        ttk.Label(body, text="Reviewed on").grid(
+            row=5, column=0, sticky="w", padx=4, pady=2)
+        self.vars["reviewed_on"] = tk.StringVar()
+        kit.DateField(body, self.vars["reviewed_on"]).grid(
+            row=5, column=1, sticky="w", padx=4, pady=2)
 
         def entry(row, label, key):
             ttk.Label(body, text=label).grid(
@@ -729,8 +771,6 @@ class ObjectiveEditor:
         combo(1, "Type*", "objective_type", OBJECTIVE_TYPES)
         combo(2, "Status*", "status", OBJECTIVE_STATUSES)
         entry(3, "Target metric", "target_metric")
-        entry(4, "Weighting (%)", "weighting")
-        entry(5, "Reviewed on", "reviewed_on")
 
         row = 6
         for key, label in (
@@ -749,11 +789,9 @@ class ObjectiveEditor:
             self.texts[key] = t
             row += 1
 
-        bar = ttk.Frame(self.win)
-        bar.pack(fill="x", padx=12, pady=(0, 10))
-        ttk.Button(bar, text="Save",
+        ttk.Button(footer, text="Save",
                     command=self._save).pack(side="right", padx=4)
-        ttk.Button(bar, text="Cancel",
+        ttk.Button(footer, text="Cancel",
                     command=self.win.destroy).pack(side="right")
 
         self.vars["objective_type"].set(DEFAULT_OBJECTIVE_TYPE)
@@ -766,7 +804,7 @@ class ObjectiveEditor:
                      "target_metric", "reviewed_on"):
             self.vars[key].set(getattr(o, key) or "")
         self.vars["weighting"].set(
-            str(o.weighting) if o.weighting is not None else "")
+            f"{o.weighting:g}" if o.weighting is not None else "")
         for k in self.texts:
             self.texts[k].delete("1.0", "end")
             self.texts[k].insert("1.0", getattr(o, k) or "")
@@ -808,7 +846,7 @@ class EndYearDialog:
             row=0, column=0, sticky="w", padx=4, pady=4)
         self.when = tk.StringVar(
             value=_dt.date.today().isoformat())
-        ttk.Entry(body, textvariable=self.when, width=14).grid(
+        kit.DateField(body, self.when).grid(
             row=0, column=1, sticky="w", padx=4, pady=4)
         ttk.Label(body, text="Overall grade").grid(
             row=1, column=0, sticky="w", padx=4, pady=4)
@@ -885,14 +923,14 @@ class EndYearDialog:
         self.win.destroy()
 
 
-def _prompt_text(parent, title: str, *,
+def _prompt_date(parent, title: str, *,
                   initial: str = "") -> str | None:
     win = tk.Toplevel(parent)
-    win.title(title); win.geometry("360x140")
+    win.title(title); win.geometry("420x150")
     win.transient(parent); win.after_idle(win.grab_set)
     ttk.Label(win, text=title).pack(anchor="w", padx=8, pady=8)
     var = tk.StringVar(value=initial)
-    ttk.Entry(win, textvariable=var).pack(fill="x", padx=8)
+    kit.DateField(win, var).pack(anchor="w", padx=8)
     result: dict = {"value": None}
 
     def ok() -> None:

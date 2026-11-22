@@ -10,6 +10,9 @@ from datetime import datetime, timedelta
 from typing import Optional, List, Dict, Any, Tuple
 
 from education_system.systems.university.infrastructure.database.db import get_db_connection, transaction
+from education_system.systems.university.plugins.campus_commerce.domain import finance_posting
+
+FINANCE_SOURCE = 'NailBar'
 
 logger = logging.getLogger(__name__)
 
@@ -461,10 +464,48 @@ class TransactionManager:
     """Manages financial transactions"""
 
     @staticmethod
+    def post_payment_to_finance(customer_id: str, amount: float, payment_method: str,
+                                transaction_ref: str, description: str = None,
+                                processed_by: str = None, notes: str = None) -> Dict[str, Any]:
+        """Post a nail bar payment to Finance (the only place the nail bar
+        does so). Student-account methods debit the account; cash/card are
+        recorded as payments. See ``finance_posting.post_sale``."""
+        return finance_posting.post_sale(
+            student_id=customer_id,
+            amount=amount,
+            payment_method=payment_method,
+            transaction_source=FINANCE_SOURCE,
+            transaction_ref=transaction_ref,
+            description=description or 'Nail Bar Service',
+            processed_by=processed_by,
+            notes=notes,
+        )
+
+    @staticmethod
     def process_payment(appointment_id: int, amount: float, payment_method: str,
                        customer_id: str, tip_amount: float = 0,
-                       reference_number: str = None, processed_by: str = None) -> int:
-        """Process payment for an appointment"""
+                       reference_number: str = None, processed_by: str = None,
+                       description: str = None) -> int:
+        """Process payment for an appointment and post it to Finance.
+
+        Shared by the GUI and CLIs. A student-account payment is debited
+        first and raises ``ValueError`` when declined (nothing recorded);
+        for cash/card the local rows are written and a finance posting
+        failure is only logged.
+        """
+        total = float(amount) + float(tip_amount or 0)
+        reference_number = reference_number or f"NAILBAR-{appointment_id}-{datetime.now().strftime('%Y%m%d%H%M%S')}"
+        tip_note = f"Tip: £{tip_amount:.2f}" if tip_amount else None
+
+        finance = None
+        if finance_posting.is_student_account(payment_method):
+            finance = TransactionManager.post_payment_to_finance(
+                customer_id, total, payment_method, reference_number,
+                description=description, processed_by=processed_by, notes=tip_note,
+            )
+            if not finance['success']:
+                raise ValueError(finance['message'] or 'Student account payment declined')
+
         with transaction() as conn:
             cursor = conn.execute('''
                 INSERT INTO transactions
@@ -481,31 +522,6 @@ class TransactionManager:
                 SET payment_status = 'paid', payment_method = ?, updated_at = ?
                 WHERE appointment_id = ?
             ''', (payment_method, datetime.now().isoformat(), appointment_id))
-
-            # 8.117.104: unified record_payment() with source_type='nailbar'
-            # at the service layer too. (The CLI variant in
-            # services/cli/nailbar_cli.py was already migrated in
-            # 8.117.103.)
-            try:
-                from education_system.systems.university.domains.finance.domain.core.unified_payments import (
-                    record_payment as _record_payment,
-                )
-                _record_payment(
-                    student_id=customer_id,
-                    amount=amount + tip_amount,
-                    payment_method=payment_method,
-                    source_type='nailbar',
-                    source_payment_id=f"appt-{appointment_id}",
-                    payment_type='service',
-                    reference_type='nailbar_appointment',
-                    reference_id=str(appointment_id),
-                    department='nailbar',
-                    description='Nail Bar Service',
-                    notes=(f'tip {tip_amount}' if tip_amount else None),
-                    created_by=processed_by,
-                )
-            except Exception as e:
-                logger.warning(f"Could not record to main finance system: {e}")
 
             # Update customer loyalty
             try:
@@ -524,7 +540,67 @@ class TransactionManager:
                     "Failed to update loyalty preferences for customer_id=%s",
                     customer_id, exc_info=True)
 
-            return transaction_id
+        if finance is None:
+            TransactionManager.post_payment_to_finance(
+                customer_id, total, payment_method, reference_number,
+                description=description, processed_by=processed_by, notes=tip_note,
+            )
+
+        return transaction_id
+
+    @staticmethod
+    def process_refund(transaction_id: int, amount: float = None, refund_method: str = None,
+                       processed_by: str = None, reason: str = None) -> Optional[Dict[str, Any]]:
+        """Refund a nail bar payment: mark it refunded and post the refund to
+        Finance (crediting the student account when that is the method).
+        Shared by the GUI and CLIs. Returns ``None`` if the transaction is
+        unknown or already refunded.
+        """
+        with get_db_connection() as conn:
+            row = conn.execute(
+                "SELECT transaction_id, reference_id, customer_id, amount, tip_amount, payment_method, status "
+                "FROM transactions WHERE transaction_id = ? AND source_type = 'nail_bar'",
+                (transaction_id,),
+            ).fetchone()
+        if not row:
+            return None
+        txn = dict(row)
+        if (txn.get('status') or '').lower() == 'refunded':
+            return None
+
+        amount = float(amount if amount is not None else (txn['amount'] or 0) + (txn['tip_amount'] or 0))
+        refund_method = refund_method or (txn.get('payment_method') or 'cash')
+        refund_ref = f"REFUND-{datetime.now().strftime('%Y%m%d%H%M%S')}-{transaction_id}"
+        notes = reason or f"Nail Bar/Salon service refund (transaction_id={transaction_id})"
+
+        with transaction() as conn:
+            conn.execute(
+                "UPDATE transactions SET status = 'refunded' "
+                "WHERE transaction_id = ? AND source_type = 'nail_bar'",
+                (transaction_id,),
+            )
+
+        finance = finance_posting.post_refund(
+            student_id=txn.get('customer_id'),
+            amount=amount,
+            transaction_source=FINANCE_SOURCE,
+            transaction_ref=refund_ref,
+            refund_method=refund_method,
+            reason=notes,
+            processed_by=processed_by or 'System',
+            notes=f"appointment {txn.get('reference_id')}",
+        )
+        return {
+            'refund_ref': f"{FINANCE_SOURCE.upper()}-{refund_ref}",
+            'transaction_id': transaction_id,
+            'customer_id': txn.get('customer_id'),
+            'amount': amount,
+            'refund_method': refund_method,
+            'finance_refund_id': finance.get('refund_id'),
+            'credited': finance.get('credited'),
+            'new_balance': finance.get('new_balance'),
+        }
+
 
     @staticmethod
     def get_transaction(transaction_id: int) -> Optional[Dict]:

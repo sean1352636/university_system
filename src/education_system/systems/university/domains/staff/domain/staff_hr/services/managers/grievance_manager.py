@@ -1,6 +1,16 @@
 """
 Grievance Manager - Grievance and disciplinary management.
 
+Staff discipline lives in ``staff_disciplinary_records`` / ``_actions`` /
+``_appeals`` (``disciplinary_records`` is the *student* discipline store).
+
+The ``*_as(actor, ...)`` methods are the confidential entry points screens
+use: a case is seen only by HR (``access.is_hr``), its handler (grievance
+``assigned_to`` / discipline ``investigating_officer``) and its parties —
+the complainant and respondent of a grievance, the subject of a discipline
+record (who never sees the investigation notes). Every read is written to
+the HR audit trail. The plain methods keep their old signatures.
+
 Provides functionality for:
 - File grievances (anonymous option)
 - Disciplinary record tracking
@@ -446,12 +456,13 @@ class GrievanceManager:
             reference = GrievanceManager._generate_reference('DIS')
 
             cursor = conn.execute('''
-                INSERT INTO disciplinary_records (
+                INSERT INTO staff_disciplinary_records (
                     reference_number, user_id, offense_type, offense_category,
                     severity, description, date_occurred, date_reported,
                     reported_by, witnesses, evidence_path, status,
-                    investigation_notes, is_confidential, previous_warnings
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    investigation_notes, is_confidential, previous_warnings,
+                    investigating_officer
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ''', (
                 reference,
                 user_id,
@@ -468,6 +479,7 @@ class GrievanceManager:
                 data.get('investigation_notes'),
                 data.get('is_confidential', True),
                 data.get('previous_warnings', 0),
+                data.get('investigating_officer'),
             ))
             record_id = cursor.lastrowid
 
@@ -481,7 +493,7 @@ class GrievanceManager:
         """Get a disciplinary record by ID."""
         with get_connection() as conn:
             row = conn.execute('''
-                SELECT * FROM disciplinary_records WHERE record_id = ?
+                SELECT * FROM staff_disciplinary_records WHERE record_id = ?
             ''', (record_id,)).fetchone()
             return dict(row) if row else None
 
@@ -490,7 +502,7 @@ class GrievanceManager:
         """Get all disciplinary records for a user."""
         with get_connection() as conn:
             rows = conn.execute('''
-                SELECT * FROM disciplinary_records
+                SELECT * FROM staff_disciplinary_records
                 WHERE user_id = ?
                 ORDER BY date_occurred DESC
             ''', (user_id,)).fetchall()
@@ -523,7 +535,7 @@ class GrievanceManager:
 
         with transaction() as conn:
             conn.execute(
-                'UPDATE disciplinary_records SET ' + ', '.join(fields) + ' WHERE record_id = ?',
+                'UPDATE staff_disciplinary_records SET ' + ', '.join(fields) + ' WHERE record_id = ?',
                 values)
             log_activity('update', 'disciplinary_record', details={'record_id': record_id})
             return True
@@ -535,7 +547,7 @@ class GrievanceManager:
         """Create a disciplinary action."""
         with transaction() as conn:
             cursor = conn.execute('''
-                INSERT INTO disciplinary_actions (
+                INSERT INTO staff_disciplinary_actions (
                     record_id, action_type, action_level, effective_date,
                     end_date, duration_days, imposed_by, reason, conditions,
                     appeal_deadline, document_path
@@ -557,7 +569,7 @@ class GrievanceManager:
 
             # Update the record status
             conn.execute('''
-                UPDATE disciplinary_records SET status = 'action_taken', updated_at = ?
+                UPDATE staff_disciplinary_records SET status = 'action_taken', updated_at = ?
                 WHERE record_id = ?
             ''', (datetime.now().isoformat(), record_id))
 
@@ -571,7 +583,7 @@ class GrievanceManager:
         """Get all actions for a disciplinary record."""
         with get_connection() as conn:
             rows = conn.execute('''
-                SELECT * FROM disciplinary_actions
+                SELECT * FROM staff_disciplinary_actions
                 WHERE record_id = ?
                 ORDER BY effective_date DESC
             ''', (record_id,)).fetchall()
@@ -582,7 +594,7 @@ class GrievanceManager:
         """Mark a disciplinary action as acknowledged by employee."""
         with transaction() as conn:
             conn.execute('''
-                UPDATE disciplinary_actions
+                UPDATE staff_disciplinary_actions
                 SET acknowledged_by_employee = 1, acknowledged_date = ?
                 WHERE action_id = ?
             ''', (acknowledged_date or datetime.now().isoformat(), action_id))
@@ -599,7 +611,7 @@ class GrievanceManager:
         """Submit an appeal against a disciplinary action."""
         with transaction() as conn:
             cursor = conn.execute('''
-                INSERT INTO disciplinary_appeals (
+                INSERT INTO staff_disciplinary_appeals (
                     action_id, appellant_id, appeal_date, grounds,
                     supporting_documents, status
                 ) VALUES (?, ?, ?, ?, ?, 'submitted')
@@ -609,7 +621,7 @@ class GrievanceManager:
 
             # Update the action
             conn.execute('''
-                UPDATE disciplinary_actions SET appeal_submitted = 1
+                UPDATE staff_disciplinary_actions SET appeal_submitted = 1
                 WHERE action_id = ?
             ''', (action_id,))
 
@@ -631,7 +643,7 @@ class GrievanceManager:
         """Get an appeal by ID."""
         with get_connection() as conn:
             row = conn.execute('''
-                SELECT * FROM disciplinary_appeals WHERE appeal_id = ?
+                SELECT * FROM staff_disciplinary_appeals WHERE appeal_id = ?
             ''', (appeal_id,)).fetchone()
             return dict(row) if row else None
 
@@ -641,7 +653,7 @@ class GrievanceManager:
         """Process and decide on an appeal."""
         with transaction() as conn:
             conn.execute('''
-                UPDATE disciplinary_appeals
+                UPDATE staff_disciplinary_appeals
                 SET status = 'decided', outcome = ?, outcome_details = ?,
                     outcome_date = ?, panel_members = ?
                 WHERE appeal_id = ?
@@ -650,12 +662,12 @@ class GrievanceManager:
 
             # Get the action_id
             row = conn.execute('''
-                SELECT action_id FROM disciplinary_appeals WHERE appeal_id = ?
+                SELECT action_id FROM staff_disciplinary_appeals WHERE appeal_id = ?
             ''', (appeal_id,)).fetchone()
 
             if row:
                 conn.execute('''
-                    UPDATE disciplinary_actions SET appeal_outcome = ?
+                    UPDATE staff_disciplinary_actions SET appeal_outcome = ?
                     WHERE action_id = ?
                 ''', (outcome, row['action_id']))
 
@@ -711,20 +723,20 @@ class GrievanceManager:
 
             # Total records
             row = conn.execute('''
-                SELECT COUNT(*) as count FROM disciplinary_records
+                SELECT COUNT(*) as count FROM staff_disciplinary_records
             ''').fetchone()
             stats['total'] = row['count'] if row else 0
 
             # By severity
             rows = conn.execute('''
-                SELECT severity, COUNT(*) as count FROM disciplinary_records
+                SELECT severity, COUNT(*) as count FROM staff_disciplinary_records
                 GROUP BY severity
             ''').fetchall()
             stats['by_severity'] = {row['severity']: row['count'] for row in rows}
 
             # By status
             rows = conn.execute('''
-                SELECT status, COUNT(*) as count FROM disciplinary_records
+                SELECT status, COUNT(*) as count FROM staff_disciplinary_records
                 GROUP BY status
             ''').fetchall()
             stats['by_status'] = {row['status']: row['count'] for row in rows}
@@ -834,7 +846,7 @@ class GrievanceManager:
                                     end_date: str = None) -> List[Dict[str, Any]]:
         """Search disciplinary records with filters."""
         with get_connection() as conn:
-            query = 'SELECT * FROM disciplinary_records WHERE 1=1'
+            query = 'SELECT * FROM staff_disciplinary_records WHERE 1=1'
             params = []
 
             if offense_type:
@@ -867,9 +879,9 @@ class GrievanceManager:
         with get_connection() as conn:
             rows = conn.execute('''
                 SELECT a.*, da.action_type, dr.user_id, dr.offense_type
-                FROM disciplinary_appeals a
-                JOIN disciplinary_actions da ON a.action_id = da.action_id
-                JOIN disciplinary_records dr ON da.record_id = dr.record_id
+                FROM staff_disciplinary_appeals a
+                JOIN staff_disciplinary_actions da ON a.action_id = da.action_id
+                JOIN staff_disciplinary_records dr ON da.record_id = dr.record_id
                 WHERE a.status = 'submitted'
                 ORDER BY a.appeal_date ASC
             ''').fetchall()
@@ -889,3 +901,382 @@ class GrievanceManager:
         return GrievanceManager.process_appeal(
             appeal_id, outcome, decision_notes, panel_members=decided_by
         )
+
+    # ==================== CONFIDENTIAL ENTRY POINTS ====================
+
+    #: Discipline fields the subject of a record does not see.
+    SUBJECT_HIDDEN = ('investigation_notes', 'witnesses', 'evidence_path')
+
+    @staticmethod
+    def _access():
+        from education_system.systems.university.domains.staff.domain.staff_hr import access
+        return access
+
+    @staticmethod
+    def _me(actor) -> str:
+        return GrievanceManager._access().require_user(actor)['username']
+
+    @staticmethod
+    def _grievance_role(actor, grievance: Dict[str, Any]) -> Optional[str]:
+        """'hr', 'handler', 'complainant', 'respondent' or None."""
+        access = GrievanceManager._access()
+        me = access.username_of(actor)
+        if not me or not grievance:
+            return None
+        if access.is_hr(actor):
+            return 'hr'
+        if grievance.get('assigned_to') == me:
+            return 'handler'
+        if grievance.get('complainant_id') == me:
+            return 'complainant'
+        if grievance.get('respondent_id') == me:
+            return 'respondent'
+        return None
+
+    @staticmethod
+    def _shape_grievance(grievance: Dict[str, Any], role: str) -> Dict[str, Any]:
+        out = dict(grievance)
+        if role == 'respondent' and out.get('is_anonymous'):
+            out['complainant_id'] = None
+        return out
+
+    @staticmethod
+    def _load_grievance(conn, grievance_id: int) -> Optional[Dict[str, Any]]:
+        row = conn.execute('''
+            SELECT g.*, cat.name as category_name
+            FROM grievances g
+            LEFT JOIN grievance_categories cat ON g.category_id = cat.category_id
+            WHERE g.grievance_id = ?
+        ''', (grievance_id,)).fetchone()
+        return dict(row) if row else None
+
+    @staticmethod
+    def grievances_for(actor, status: str = None, priority: str = None) -> List[Dict[str, Any]]:
+        """Every grievance for HR; otherwise the ones this person filed, is the
+        respondent to, or handles."""
+        access = GrievanceManager._access()
+        me = GrievanceManager._me(actor)
+        hr = access.is_hr(actor)
+        query = '''
+            SELECT g.*, cat.name as category_name
+            FROM grievances g
+            LEFT JOIN grievance_categories cat ON g.category_id = cat.category_id
+            WHERE 1=1
+        '''
+        params: list = []
+        if not hr:
+            query += ' AND (g.complainant_id = ? OR g.respondent_id = ? OR g.assigned_to = ?)'
+            params += [me, me, me]
+        if status:
+            query += ' AND g.status = ?'
+            params.append(status)
+        if priority:
+            query += ' AND g.priority = ?'
+            params.append(priority)
+        query += ' ORDER BY g.filed_date DESC'
+        with transaction() as conn:
+            rows = [dict(r) for r in conn.execute(query, params).fetchall()]
+            if rows:
+                access.audit(conn, actor, 'list_grievances', None, 'grievances', None,
+                             {'count': len(rows), 'all': hr})
+        out = []
+        for row in rows:
+            role = GrievanceManager._grievance_role(actor, row) or 'hr'
+            out.append(GrievanceManager._shape_grievance(row, role))
+        return out
+
+    @staticmethod
+    def view_grievance(actor, grievance_id: int) -> Dict[str, Any]:
+        """One grievance with its actions and meetings, for someone allowed to
+        see it (the complainant sees only actions marked visible to them)."""
+        access = GrievanceManager._access()
+        with transaction() as conn:
+            grievance = GrievanceManager._load_grievance(conn, grievance_id)
+            role = GrievanceManager._grievance_role(actor, grievance)
+            if not role:
+                raise PermissionError("You may not see this grievance")
+            sql = 'SELECT * FROM grievance_actions WHERE grievance_id = ?'
+            if role in ('complainant', 'respondent'):
+                sql += ' AND is_visible_to_complainant = 1'
+            actions = [dict(r) for r in conn.execute(sql + ' ORDER BY action_date DESC',
+                                                     (grievance_id,)).fetchall()]
+            meetings = [dict(r) for r in conn.execute(
+                'SELECT * FROM grievance_meetings WHERE grievance_id = ? ORDER BY meeting_date',
+                (grievance_id,)).fetchall()]
+            access.audit(conn, actor, 'view_grievance', grievance.get('complainant_id'),
+                         'grievances', grievance_id, {'as': role})
+        out = GrievanceManager._shape_grievance(grievance, role)
+        out['actions'] = actions
+        out['meetings'] = meetings
+        out['viewer_role'] = role
+        return out
+
+    @staticmethod
+    def file_grievance_as(actor, **data) -> int:
+        """File a grievance as the signed-in person."""
+        return GrievanceManager.create_grievance(GrievanceManager._me(actor), **data)
+
+    @staticmethod
+    def assign_grievance_as(actor, grievance_id: int, assigned_to: str) -> bool:
+        """HR assigns a handler (by username)."""
+        access = GrievanceManager._access()
+        access.require(actor, 'cases', "Only HR can assign grievances")
+        handler = access.staff_key(assigned_to) or assigned_to
+        done = GrievanceManager.assign_grievance(grievance_id, handler, GrievanceManager._me(actor))
+        with transaction() as conn:
+            access.audit(conn, actor, 'assign_grievance', None, 'grievances', grievance_id,
+                         {'assigned_to': handler})
+        return done
+
+    @staticmethod
+    def update_grievance_as(actor, grievance_id: int, **data) -> bool:
+        """HR or the handler update a grievance; a complainant may only withdraw."""
+        with get_connection() as conn:
+            grievance = GrievanceManager._load_grievance(conn, grievance_id)
+        role = GrievanceManager._grievance_role(actor, grievance)
+        if role not in ('hr', 'handler'):
+            raise PermissionError("Only HR or the case handler can update this grievance")
+        if 'assigned_to' in data:
+            access = GrievanceManager._access()
+            if role != 'hr':
+                raise PermissionError("Only HR can reassign a grievance")
+            data['assigned_to'] = access.staff_key(data['assigned_to']) or data['assigned_to']
+        return GrievanceManager.update_grievance(grievance_id, GrievanceManager._me(actor), **data)
+
+    @staticmethod
+    def add_action_as(actor, grievance_id: int, **data) -> int:
+        with get_connection() as conn:
+            grievance = GrievanceManager._load_grievance(conn, grievance_id)
+        if GrievanceManager._grievance_role(actor, grievance) not in ('hr', 'handler'):
+            raise PermissionError("Only HR or the case handler can record case actions")
+        data['taken_by'] = GrievanceManager._me(actor)
+        return GrievanceManager.add_action(grievance_id, **data)
+
+    @staticmethod
+    def _require_handling(actor, grievance_id: int) -> Dict[str, Any]:
+        with get_connection() as conn:
+            grievance = GrievanceManager._load_grievance(conn, grievance_id)
+        if not grievance:
+            raise ValueError(f"Grievance {grievance_id} not found")
+        if GrievanceManager._grievance_role(actor, grievance) not in ('hr', 'handler'):
+            raise PermissionError("Only HR or the case handler can do this")
+        return grievance
+
+    @staticmethod
+    def resolve_grievance_as(actor, grievance_id: int, resolution_summary: str,
+                             resolution_type: str = 'resolved', outcome: str = 'resolved') -> bool:
+        GrievanceManager._require_handling(actor, grievance_id)
+        return GrievanceManager.resolve_grievance(grievance_id, GrievanceManager._me(actor),
+                                                  resolution_type, resolution_summary, outcome)
+
+    @staticmethod
+    def escalate_grievance_as(actor, grievance_id: int, reason: str) -> bool:
+        GrievanceManager._require_handling(actor, grievance_id)
+        return GrievanceManager.escalate_grievance(grievance_id, reason, GrievanceManager._me(actor))
+
+    @staticmethod
+    def schedule_meeting_as(actor, grievance_id: int, **data) -> int:
+        GrievanceManager._require_handling(actor, grievance_id)
+        return GrievanceManager.create_meeting(grievance_id, **data)
+
+    @staticmethod
+    def withdraw_grievance_as(actor, grievance_id: int, reason: str = None) -> bool:
+        with get_connection() as conn:
+            grievance = GrievanceManager._load_grievance(conn, grievance_id)
+        if GrievanceManager._grievance_role(actor, grievance) not in ('hr', 'complainant'):
+            raise PermissionError("Only the complainant or HR can withdraw a grievance")
+        return GrievanceManager.withdraw_grievance(grievance_id, GrievanceManager._me(actor), reason)
+
+    @staticmethod
+    def grievance_statistics_as(actor) -> Dict[str, Any]:
+        GrievanceManager._access().require(actor, 'cases')
+        return GrievanceManager.get_grievance_statistics()
+
+    # ---- discipline ----
+
+    @staticmethod
+    def _record_role(actor, record: Dict[str, Any]) -> Optional[str]:
+        """'hr', 'investigator', 'subject' or None."""
+        access = GrievanceManager._access()
+        me = access.username_of(actor)
+        if not me or not record:
+            return None
+        if access.is_hr(actor):
+            return 'hr'
+        if record.get('investigating_officer') == me:
+            return 'investigator'
+        if record.get('user_id') == me:
+            return 'subject'
+        return None
+
+    @staticmethod
+    def _shape_record(record: Dict[str, Any], role: str) -> Dict[str, Any]:
+        out = dict(record)
+        if role == 'subject':
+            for key in GrievanceManager.SUBJECT_HIDDEN:
+                out.pop(key, None)
+        return out
+
+    @staticmethod
+    def disciplinary_records_for(actor, user_id: str = None, **filters) -> List[Dict[str, Any]]:
+        """HR: every staff record (optionally one person's, or filtered like
+        :meth:`search_disciplinary_records`); an investigating officer: their
+        cases; anyone else: their own records, without investigation notes."""
+        access = GrievanceManager._access()
+        me = GrievanceManager._me(actor)
+        hr = access.is_hr(actor)
+        query, params = 'SELECT * FROM staff_disciplinary_records WHERE 1=1', []
+        if user_id:
+            query += ' AND user_id = ?'
+            params.append(access.staff_key(user_id) or user_id)
+        if not hr:
+            query += ' AND (user_id = ? OR investigating_officer = ?)'
+            params += [me, me]
+        for col, op in (('offense_type', '='), ('severity', '='), ('status', '='),
+                        ('start_date', '>='), ('end_date', '<=')):
+            value = filters.get(col)
+            if value:
+                column = 'date_occurred' if col.endswith('_date') else col
+                query += f' AND {column} {op} ?'  # nosec B608 - fixed column list
+                params.append(value)
+        query += ' ORDER BY date_occurred DESC'
+        with transaction() as conn:
+            rows = [dict(r) for r in conn.execute(query, params).fetchall()]
+            if rows:
+                access.audit(conn, actor, 'list_disciplinary_records',
+                             access.staff_key(user_id) if user_id else None,
+                             'staff_disciplinary_records', None, {'count': len(rows)})
+        return [GrievanceManager._shape_record(r, GrievanceManager._record_role(actor, r) or 'hr')
+                for r in rows]
+
+    @staticmethod
+    def view_disciplinary_record(actor, record_id: int) -> Dict[str, Any]:
+        """One record with its actions and appeals, for HR, its investigating
+        officer or its subject (the subject without investigation notes)."""
+        access = GrievanceManager._access()
+        with transaction() as conn:
+            row = conn.execute('SELECT * FROM staff_disciplinary_records WHERE record_id = ?',
+                               (record_id,)).fetchone()
+            record = dict(row) if row else None
+            role = GrievanceManager._record_role(actor, record)
+            if not role:
+                raise PermissionError("You may not see this disciplinary record")
+            actions = [dict(r) for r in conn.execute(
+                'SELECT * FROM staff_disciplinary_actions WHERE record_id = ? '
+                'ORDER BY effective_date DESC', (record_id,)).fetchall()]
+            appeals = [dict(r) for r in conn.execute(
+                'SELECT a.* FROM staff_disciplinary_appeals a JOIN staff_disciplinary_actions d '
+                'ON a.action_id = d.action_id WHERE d.record_id = ? ORDER BY a.appeal_date',
+                (record_id,)).fetchall()]
+            access.audit(conn, actor, 'view_disciplinary_record', record.get('user_id'),
+                         'staff_disciplinary_records', record_id, {'as': role})
+        out = GrievanceManager._shape_record(record, role)
+        out['actions'] = actions
+        out['appeals'] = appeals
+        out['viewer_role'] = role
+        return out
+
+    @staticmethod
+    def disciplinary_actions_for(actor, record_id: int) -> List[Dict[str, Any]]:
+        return GrievanceManager.view_disciplinary_record(actor, record_id)['actions']
+
+    @staticmethod
+    def create_disciplinary_record_as(actor, user_id: str, **data) -> int:
+        """HR opens a staff discipline case (``reported_by`` defaults to them)."""
+        access = GrievanceManager._access()
+        access.require(actor, 'cases', "Only HR can open disciplinary cases")
+        subject = access.staff_key(user_id) or user_id
+        if subject == access.username_of(actor):
+            raise PermissionError("You cannot open a disciplinary case about yourself")
+        data.setdefault('reported_by', GrievanceManager._me(actor))
+        if data.get('investigating_officer'):
+            data['investigating_officer'] = (access.staff_key(data['investigating_officer'])
+                                             or data['investigating_officer'])
+        record_id = GrievanceManager.create_disciplinary_record(subject, **data)
+        with transaction() as conn:
+            access.audit(conn, actor, 'create_disciplinary_record', subject,
+                         'staff_disciplinary_records', record_id)
+        return record_id
+
+    @staticmethod
+    def update_disciplinary_record_as(actor, record_id: int, **data) -> bool:
+        record = GrievanceManager.get_disciplinary_record(record_id)
+        role = GrievanceManager._record_role(actor, record)
+        if role not in ('hr', 'investigator'):
+            raise PermissionError("Only HR or the investigating officer can update this case")
+        if 'investigating_officer' in data and role != 'hr':
+            raise PermissionError("Only HR can change the investigating officer")
+        done = GrievanceManager.update_disciplinary_record(record_id, **data)
+        access = GrievanceManager._access()
+        with transaction() as conn:
+            access.audit(conn, actor, 'update_disciplinary_record', record.get('user_id'),
+                         'staff_disciplinary_records', record_id, {'fields': sorted(data)})
+        return done
+
+    @staticmethod
+    def create_disciplinary_action_as(actor, record_id: int, **data) -> int:
+        """HR imposes an action (``imposed_by`` is them)."""
+        access = GrievanceManager._access()
+        access.require(actor, 'cases', "Only HR can impose disciplinary actions")
+        record = GrievanceManager.get_disciplinary_record(record_id)
+        if not record:
+            raise ValueError(f"Disciplinary record {record_id} not found")
+        if record.get('user_id') == access.username_of(actor):
+            raise PermissionError("You cannot act on your own disciplinary case")
+        data['imposed_by'] = GrievanceManager._me(actor)
+        action_id = GrievanceManager.create_disciplinary_action(record_id, **data)
+        with transaction() as conn:
+            access.audit(conn, actor, 'create_disciplinary_action', record.get('user_id'),
+                         'staff_disciplinary_actions', action_id)
+        return action_id
+
+    @staticmethod
+    def _action_subject(action_id: int) -> Optional[str]:
+        with get_connection() as conn:
+            row = conn.execute(
+                'SELECT r.user_id FROM staff_disciplinary_actions a JOIN '
+                'staff_disciplinary_records r ON a.record_id = r.record_id WHERE a.action_id = ?',
+                (action_id,)).fetchone()
+        return row[0] if row else None
+
+    @staticmethod
+    def acknowledge_disciplinary_action_as(actor, action_id: int) -> bool:
+        """The subject acknowledges receipt of an action."""
+        if GrievanceManager._action_subject(action_id) != GrievanceManager._me(actor):
+            raise PermissionError("Only the person concerned can acknowledge this action")
+        return GrievanceManager.acknowledge_disciplinary_action(action_id)
+
+    @staticmethod
+    def submit_appeal_as(actor, action_id: int, grounds: str,
+                         supporting_documents: str = None) -> int:
+        """The subject appeals an action against them."""
+        me = GrievanceManager._me(actor)
+        if GrievanceManager._action_subject(action_id) != me:
+            raise PermissionError("Only the person concerned can appeal this action")
+        return GrievanceManager.submit_appeal(action_id, me, grounds, supporting_documents)
+
+    @staticmethod
+    def process_appeal_as(actor, appeal_id: int, outcome: str, outcome_details: str,
+                          panel_members: str = None) -> bool:
+        access = GrievanceManager._access()
+        access.require(actor, 'cases', "Only HR can decide disciplinary appeals")
+        appeal = GrievanceManager.get_appeal(appeal_id)
+        if appeal and appeal.get('appellant_id') == access.username_of(actor):
+            raise PermissionError("You cannot decide your own appeal")
+        done = GrievanceManager.process_appeal(appeal_id, outcome, outcome_details,
+                                               panel_members or GrievanceManager._me(actor))
+        with transaction() as conn:
+            access.audit(conn, actor, 'decide_disciplinary_appeal',
+                         (appeal or {}).get('appellant_id'), 'staff_disciplinary_appeals',
+                         appeal_id, {'outcome': outcome})
+        return done
+
+    @staticmethod
+    def pending_appeals_as(actor) -> List[Dict[str, Any]]:
+        GrievanceManager._access().require(actor, 'cases')
+        return GrievanceManager.get_pending_appeals()
+
+    @staticmethod
+    def disciplinary_statistics_as(actor) -> Dict[str, Any]:
+        GrievanceManager._access().require(actor, 'cases')
+        return GrievanceManager.get_disciplinary_statistics()

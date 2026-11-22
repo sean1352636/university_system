@@ -6,8 +6,19 @@
   external audit). Cannot be reversed; only superseding journals in a
   later period can correct errors.
 - reopen_period: 'closed' → 'open'. Refused for 'locked'.
+
+Fiscal years (UK HE, 1 Aug – 31 Jul, named by the year they end in):
+
+- ensure_periods_for(conn, date): the automatic roll-forward used by
+  posting — opens the twelve periods of the date's fiscal year only when it
+  is the current or next year (by today's date) and no later year exists.
+- open_fiscal_year(fy, opened_by): finance opens any other year on purpose
+  (an older year for a late correction, or a year further ahead). A year
+  whose periods already exist is left as it is — closed and locked periods
+  are never reopened this way.
 """
 
+import logging
 from datetime import datetime
 
 from education_system.systems.university.infrastructure.database.db import get_connection
@@ -79,6 +90,52 @@ def reopen_period(period_id):
         conn.commit()
     finally:
         conn.close()
+
+
+def ensure_periods_for(conn, journal_date, today=None) -> bool:
+    """Open the fiscal year containing ``journal_date`` if the ledger may do
+    so on its own. Returns True when periods were created. Does not commit
+    (the caller's transaction posts the journal and commits both)."""
+    from datetime import date
+    from education_system.systems.university.domains.finance.domain.ledger import seed
+    try:
+        fy = seed.fiscal_year_for(journal_date)
+    except ValueError:
+        return False
+    current = seed.fiscal_year_for(today or date.today())
+    if fy not in (current, current + 1):
+        return False
+    latest = conn.execute("SELECT MAX(fiscal_year) FROM gl_periods").fetchone()[0]
+    if latest is not None and fy < latest:
+        return False          # a gap before a later year: open it deliberately
+    created = seed.seed_fiscal_year_periods(conn, fy)
+    if created:
+        logging.getLogger(__name__).info("Ledger opened fiscal year %s (%s periods) for a "
+                                         "journal dated %s", fy, created, journal_date)
+    return bool(created)
+
+
+def open_fiscal_year(fiscal_year, opened_by):
+    """Open the twelve periods of ``fiscal_year`` (finance staff). Returns
+    the number of periods created (0 when the year already exists)."""
+    from education_system.systems.university.domains.finance.domain.ledger import seed
+    try:
+        fy = int(fiscal_year)
+    except (TypeError, ValueError):
+        raise ValueError("Give the fiscal year as the year it ends in, e.g. 2027") from None
+    if not 2000 <= fy <= 2100:
+        raise ValueError("That fiscal year is out of range")
+    if not str(opened_by or "").strip():
+        raise ValueError("Say who is opening the year")
+    conn = get_connection()
+    try:
+        created = seed.seed_fiscal_year_periods(conn, fy)
+        conn.commit()
+    finally:
+        conn.close()
+    logging.getLogger(__name__).info("Fiscal year %s opened by %s (%s periods created)",
+                                     fy, opened_by, created)
+    return created
 
 
 def list_periods(fiscal_year=None):

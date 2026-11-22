@@ -1,0 +1,47 @@
+{
+  "name": "welcome_pupil",
+  "description": "Sent to a new pupil's school e-mail address when their login is created.",
+  "subject": "Welcome to {school_name}, {pupil_first_name}",
+  "body": [
+    "Dear {pupil_first_name},",
+    "",
+    "Welcome to {school_name}! Your school account has been set up.",
+    "",
+    "Your sign-in details:",
+    "    Username:      {username}",
+    "    Password:      {password}",
+    "    School e-mail: {school_email}",
+    "",
+    "Your form group:",
+    "{form_details}",
+    "",
+    "Keep your password to yourself - never share it with friends.",
+    "If you think someone else knows it, tell the school office and they will reset it.",
+    "",
+    "If you have any problems signing in, please speak to your form tutor or the school office.",
+    "",
+    "Best wishes,",
+    "{school_name}"
+  ],
+  "placeholders": {
+    "pupil_first_name": "The pupil's preferred or first name",
+    "pupil_name": "The pupil's preferred first name and surname",
+    "username": "The pupil's login username",
+    "password": "The pupil's first password",
+    "school_email": "The pupil's school e-mail address",
+    "year_group": "The pupil's year group number",
+    "form_group": "The pupil's form group",
+    "school_name": "The school's name",
+    "form_details": "The pupil's form, form tutor (with e-mail) and form room, one per line",
+    "form_tutor": "The form tutor's name",
+    "form_tutor_email": "The form tutor's e-mail address",
+    "form_room": "The form room"
+  },
+  "defaults": {
+    "school_name": "Secondary School",
+    "form_details": "    Form:        not set yet",
+    "form_tutor": "",
+    "form_tutor_email": "",
+    "form_room": ""
+  }
+}

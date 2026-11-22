@@ -12,8 +12,8 @@ from functools import partial
 
 from education_system.systems.apprenticeships.domain.workspace.items import group_by_day
 from education_system.systems.apprenticeships.interfaces.cli import prompts
-from education_system.systems.apprenticeships.services import calendar_service
-from education_system.systems.apprenticeships.services.access import Actor
+from education_system.systems.apprenticeships.application.workspace import calendar_service
+from education_system.systems.apprenticeships.application.security.access import Actor
 
 logger = logging.getLogger(__name__)
 

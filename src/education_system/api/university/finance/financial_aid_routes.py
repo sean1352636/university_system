@@ -7,7 +7,14 @@ from datetime import datetime
 
 from flask import Blueprint, g, jsonify, request
 
-from education_system.platform.delivery.api.university.auth import admin_required, token_required
+from education_system.platform.delivery.api.university.auth import (
+    authorize_object,
+    current_subject_id,
+    is_staff,
+    require_staff,
+    staff_required,
+    token_required,
+)
 from education_system.platform.delivery.api.university.pagination import get_pagination_params, paginated_response
 from education_system.platform.delivery.api.university.validators import (
     validate_aid_package_update,
@@ -20,6 +27,23 @@ from education_system.systems.university.infrastructure.activity_logger import l
 logger = logging.getLogger(__name__)
 
 financial_aid_bp = Blueprint("financial_aid", __name__, url_prefix="/api/financial-aid")
+
+# Staff capability to read (and submit on behalf of) another student's aid
+# applications, packages and payment plans (held by admin and staff).
+AID_VIEW_PERMISSION = "manage_students_finance"
+# Staff capability to decide applications and change packages (admin only).
+AID_MANAGE_PERMISSION = "manage_financial_aid"
+
+
+def _pin_or_deny(student_id):
+    """Staff (with AID_VIEW_PERMISSION) keep their filter; everyone else is
+    pinned to their own subject. Returns ``(student_id, denial)``."""
+    if is_staff():
+        return student_id, require_staff(permission=AID_VIEW_PERMISSION)
+    me = current_subject_id()
+    if not me:
+        return None, (jsonify({"error": "Forbidden", "status": 403}), 403)
+    return me, None
 
 
 def _row_to_dict(row) -> dict:
@@ -36,6 +60,9 @@ def list_applications():
     student_id = request.args.get("student_id")
     status = request.args.get("status")
     academic_year = request.args.get("academic_year")
+    student_id, denial = _pin_or_deny(student_id)
+    if denial is not None:
+        return denial
 
     with get_connection() as conn:
         conditions = []
@@ -75,6 +102,9 @@ def list_applications():
 def create_application():
     data = request.get_json(silent=True) or {}
     validate_financial_aid_application_create(data)
+    denial = authorize_object(data["student_id"], permission=AID_VIEW_PERMISSION)
+    if denial is not None:
+        return denial
 
     with transaction() as conn:
         conn.execute(
@@ -104,7 +134,7 @@ def create_application():
 
 @financial_aid_bp.route("/applications/<int:application_id>", methods=["PUT"])
 @token_required
-@admin_required
+@staff_required(permission=AID_MANAGE_PERMISSION)
 def update_application(application_id: int):
     with get_connection() as conn:
         existing = conn.execute(
@@ -153,6 +183,9 @@ def update_application(application_id: int):
 def list_packages():
     student_id = request.args.get("student_id")
     academic_year = request.args.get("academic_year")
+    student_id, denial = _pin_or_deny(student_id)
+    if denial is not None:
+        return denial
 
     with get_connection() as conn:
         conditions = []
@@ -182,6 +215,9 @@ def get_package(package_id: int):
         ).fetchone()
     if not row:
         raise ValidationError(f"Aid package {package_id} not found")
+    denial = authorize_object(row["student_id"], permission=AID_VIEW_PERMISSION)
+    if denial is not None:
+        return denial
     log_activity("view", "aid_package", user=g.current_user.get("sub"))
     return jsonify(_row_to_dict(row))
 
@@ -191,10 +227,15 @@ def get_package(package_id: int):
 def update_package(package_id: int):
     with get_connection() as conn:
         existing = conn.execute(
-            "SELECT 1 FROM aid_packages WHERE package_id = ?", (package_id,)
+            "SELECT student_id FROM aid_packages WHERE package_id = ?", (package_id,)
         ).fetchone()
     if not existing:
         raise ValidationError(f"Aid package {package_id} not found")
+    # The student may accept/decline their own package; staff need the
+    # aid-management capability.
+    denial = authorize_object(existing["student_id"], permission=AID_MANAGE_PERMISSION)
+    if denial is not None:
+        return denial
 
     data = request.get_json(silent=True) or {}
     validate_aid_package_update(data)
@@ -234,6 +275,9 @@ def list_payment_plans():
     student_id = request.args.get("student_id")
     if not student_id:
         raise ValidationError("'student_id' query parameter is required")
+    denial = authorize_object(student_id, permission=AID_VIEW_PERMISSION)
+    if denial is not None:
+        return denial
 
     with get_connection() as conn:
         rows = conn.execute(
@@ -249,6 +293,13 @@ def list_payment_plans():
 @token_required
 def list_installments(plan_id: int):
     with get_connection() as conn:
+        plan = conn.execute(
+            "SELECT student_id FROM student_payment_plans WHERE payment_plan_id = ?", (plan_id,)
+        ).fetchone()
+        denial = authorize_object(plan["student_id"] if plan else None,
+                                  permission=AID_VIEW_PERMISSION)
+        if denial is not None:
+            return denial
         rows = conn.execute(
             "SELECT * FROM payment_plan_installments WHERE payment_plan_id = ? ORDER BY due_date",
             (plan_id,),

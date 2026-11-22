@@ -23,11 +23,11 @@ This guide covers data encryption, key management, KMS integration, and secure d
 The Data Encryption module provides comprehensive encryption capabilities using industry-standard Fernet symmetric encryption (AES-128-CBC + HMAC-SHA256). It supports a two-tier key management system with optional cloud KMS integration, per-field database encryption, file encryption, and automated key rotation tracking.
 
 **Key files:**
-- Encryption Manager: `infrastructure/security/data_encryption.py`
-- KMS Integration: `infrastructure/security/kms_integration.py`
-- Security Dashboard GUI: `infrastructure/security/security_dashboard_gui.py`
-- Security Dashboard CLI: `infrastructure/security/security_dashboard_cli.py`
-- Audit Helpers: `infrastructure/security/audit_helpers.py`
+- Encryption Manager: `src/education_system/systems/university/infrastructure/security/data_encryption.py`
+- KMS Integration: `src/education_system/systems/university/infrastructure/security/kms_integration.py`
+- Security Dashboard GUI: `src/education_system/systems/university/infrastructure/security/security_dashboard_gui.py`
+- Security Dashboard CLI: `src/education_system/systems/university/infrastructure/security/security_dashboard_cli.py`
+- Audit Helpers: `src/education_system/systems/university/infrastructure/security/audit_helpers.py`
 
 ## Encryption Architecture
 
@@ -129,7 +129,7 @@ Connects to HashiCorp Vault's transit secrets engine for key management.
 ### Checking KMS Status
 
 ```python
-from university_system.infrastructure.security.data_encryption import EncryptionManager
+from education_system.systems.university.infrastructure.security.data_encryption import EncryptionManager
 
 manager = EncryptionManager()
 # KMS is automatically detected from USE_KMS environment variable
@@ -142,7 +142,7 @@ All providers support lazy initialization and graceful fallback to file-based st
 ### Creating Keys
 
 ```python
-from university_system.infrastructure.security.data_encryption import EncryptionManager
+from education_system.systems.university.infrastructure.security.data_encryption import EncryptionManager
 
 manager = EncryptionManager()
 
@@ -325,7 +325,7 @@ This creates a full encrypted copy of the database, suitable for secure off-site
 
 ### CLI Dashboard
 
-The Security Dashboard CLI (`infrastructure/security/security_dashboard_cli.py`) provides:
+The Security Dashboard CLI (`src/education_system/systems/university/infrastructure/security/security_dashboard_cli.py`) provides:
 - Encryption key status overview
 - Key rotation reminders
 - Encrypted field inventory
@@ -333,7 +333,7 @@ The Security Dashboard CLI (`infrastructure/security/security_dashboard_cli.py`)
 
 ### GUI Dashboard
 
-The Security Dashboard GUI (`infrastructure/security/security_dashboard_gui.py`) provides a Tkinter interface for:
+The Security Dashboard GUI (`src/education_system/systems/university/infrastructure/security/security_dashboard_gui.py`) provides a Tkinter interface for:
 - Visual key management
 - Encryption status monitoring
 - One-click key rotation

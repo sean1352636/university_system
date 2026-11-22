@@ -7,6 +7,13 @@ Two related tables:
   primary area of need, diagnoses, mobility aids, and the most recent
   review metadata.
 
+  ``send_status`` / ``has_ehcp`` are **derived from the SEND register**
+  (:mod:`pastoral.send.send`, the single source of truth) for every
+  student on it: the register pushes changes here, saving a profile
+  re-applies the register's value, and ``init_db`` re-syncs once per
+  process. Students not on the register keep the value typed here;
+  :func:`send_register_mismatches` lists those for the SENCo.
+
 * ``accessibility_accommodations`` — one row per individual arrangement
   the student is entitled to (e.g. "25% extra time", "reader",
   "wheelchair-accessible classrooms"). Categorised so exam-access
@@ -254,6 +261,74 @@ def init_db() -> None:
     logger.debug("Accessibility schema ready at %s", DB_PATH)
 
     _DB_READY = True
+    # The SEND register owns send_status; catch up rows that changed
+    # before the register started pushing into this table.
+    try:
+        from education_system.systems.sixth_form.domain.pastoral.send import send as _send
+        _send.sync_all_accessibility_profiles()
+    except sqlite3.Error:
+        logger.exception("Could not sync accessibility profiles from the "
+                         "SEND register")
+
+
+def _apply_register_status(p: dict[str, Any]) -> dict[str, Any]:
+    """Overwrite send_status / has_ehcp with the SEND register's value
+    when the student is on the register."""
+    from education_system.systems.sixth_form.domain.pastoral.send import send as _send
+    derived = _send.accessibility_status_for(p["student_id"])
+    if derived is None:
+        return p
+    status, entry = derived
+    if p.get("send_status") not in (None, "", status):
+        logger.info("Accessibility profile for %s: send_status %r replaced "
+                    "by SEND register value %r", p["student_id"],
+                    p["send_status"], status)
+    p["send_status"] = status
+    p["has_ehcp"] = status == "EHCP"
+    if entry.ehcp_reference and not p.get("ehcp_reference"):
+        p["ehcp_reference"] = entry.ehcp_reference
+    return p
+
+
+def register_status_for(student_id: str) -> str | None:
+    """SEND status per the register, or None if not on it."""
+    from education_system.systems.sixth_form.domain.pastoral.send import send as _send
+    derived = _send.accessibility_status_for(student_id)
+    return derived[0] if derived else None
+
+
+@dataclass
+class RegisterMismatch:
+    student_id: str
+    student_name: str
+    profile_status: str
+    register_status: str | None
+    problem: str
+
+
+def send_register_mismatches() -> list[RegisterMismatch]:
+    """Profiles that disagree with the SEND register, or claim a SEND
+    status for a student who is not on it."""
+    init_db()
+    from education_system.systems.sixth_form.domain.learners.students import (
+        students as _students,
+    )
+    names = {s.student_id: s.full_name for s in _students.list_students()}
+    out: list[RegisterMismatch] = []
+    for p in list_profiles():
+        reg = register_status_for(p.student_id)
+        if reg is None:
+            if p.send_status not in ("None", "Exited"):
+                out.append(RegisterMismatch(
+                    p.student_id, names.get(p.student_id, "(unknown)"),
+                    p.send_status, None,
+                    "Not on the SEND register — add a register entry or "
+                    "set the profile to None"))
+        elif reg != p.send_status:
+            out.append(RegisterMismatch(
+                p.student_id, names.get(p.student_id, "(unknown)"),
+                p.send_status, reg, "Differs from the SEND register"))
+    return out
 
 
 def _row_profile(r: sqlite3.Row) -> Profile:
@@ -391,7 +466,7 @@ def _validate_accomm_payload(payload: dict[str, Any]) -> dict[str, Any]:
 
 def create_profile(payload: dict[str, Any]) -> Profile:
     init_db()
-    p = _validate_profile_payload(payload)
+    p = _apply_register_status(_validate_profile_payload(payload))
     with _connect() as conn:
         if conn.execute(
                 "SELECT 1 FROM accessibility_profiles WHERE student_id = ?",
@@ -543,7 +618,7 @@ def update_profile(profile_id: int,
         "reviewer":        payload.get("reviewer", existing.reviewer),
         "notes":           payload.get("notes", existing.notes),
     }
-    p = _validate_profile_payload(merged)
+    p = _apply_register_status(_validate_profile_payload(merged))
     with _connect() as conn:
         conn.execute(
             """UPDATE accessibility_profiles SET

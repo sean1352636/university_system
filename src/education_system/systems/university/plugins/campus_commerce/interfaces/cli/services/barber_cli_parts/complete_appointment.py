@@ -114,44 +114,34 @@ def complete_appointment():
                 # Generate reference
                 ref_number = f"BARBER-PAY-{datetime.now().strftime('%Y%m%d%H%M%S')}"
 
-                with transaction() as conn_tx:
-                    # Record transaction
-                    conn_tx.execute('''
-                        INSERT INTO transactions
-                        (source_type, reference_id, reference_type, customer_id, amount, payment_method, tip_amount,
-                         reference_number, status, created_at)
-                        VALUES ('barber', ?, 'appointment', ?, ?, ?, ?, ?, 'completed', ?)
-                    ''', (appt_id, customer_id, price, payment_method, tip_amount,
-                          ref_number, datetime.now().isoformat()))
+                # The barber service records the transaction and posts it
+                # to Finance (student-account debit or cash/card payment) -
+                # shared with the GUI, so nothing posts twice.
+                from education_system.systems.university.plugins.campus_commerce.domain.barber.services.barber_core import TransactionManager
+                try:
+                    TransactionManager.process_payment(
+                        appointment_id=appt_id, amount=float(price),
+                        payment_method=payment_method, customer_id=customer_id,
+                        tip_amount=tip_amount, reference_number=ref_number,
+                        processed_by=(get_current_user() or {}).get('username'),
+                        description=f"Barber service: {service_name}",
+                    )
+                except ValueError as declined:
+                    print(f"❌ Payment declined: {declined}")
+                    input("\nPress Enter to continue...")
+                    return
 
+                with transaction() as conn_tx:
                     # Update appointment
                     conn_tx.execute('''
                         UPDATE barber_appointments
                         SET status = 'completed',
-                            payment_status = 'paid',
-                            payment_method = ?,
                             notes = COALESCE(notes, '') || ?
                         WHERE appointment_id = ?
-                    ''', (payment_method, f"\n{notes}" if notes else "", appt_id))
+                    ''', (f"\n{notes}" if notes else "", appt_id))
 
                 print("\n✅ Appointment completed and payment processed!")
                 print(f"💳 Transaction reference: {ref_number}")
-
-                # Try to record in finance system
-                if FINANCE_AVAILABLE:
-                    try:
-                        if payment_method == 'student_account':
-                            process_student_finance_account_payment(
-                                customer_id, total_amount, 'Barber Shop Service', ref_number
-                            )
-                        else:
-                            record_payment_to_finance(
-                                customer_id, total_amount, payment_method,
-                                'Barber Shop Service', ref_number
-                            )
-                        print("✅ Payment recorded in finance system")
-                    except Exception as fin_err:
-                        logger.warning(f"Could not record to finance system: {fin_err}")
 
                 # Send receipt email
                 if EMAIL_AVAILABLE and customer_email:

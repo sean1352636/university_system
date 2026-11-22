@@ -3,6 +3,7 @@ from tkinter.scrolledtext import ScrolledText
 from tkinter import ttk, messagebox, filedialog, scrolledtext
 from tkinter.font import Font
 import threading
+from education_system.platform.delivery.gui.tk_threads import start_thread, ui
 from datetime import datetime, timedelta
 import json
 import webbrowser
@@ -451,6 +452,9 @@ class FinancialManagementGUI:
 
     def update_status(self, message, progress=None):
         """Update status bar message and progress"""
+        if threading.current_thread() is not threading.main_thread():
+            ui(self.root, self.update_status, message, progress)
+            return
         self.status_var.set(message)
         if progress is not None:
             self.progress_var.set(progress)
@@ -458,6 +462,9 @@ class FinancialManagementGUI:
 
     def log_activity(self, message):
         """Log activity to the dashboard"""
+        if threading.current_thread() is not threading.main_thread():
+            ui(self.root, self.log_activity, message)
+            return
         timestamp = datetime.now().strftime("%H:%M:%S")
         activity_message = f"[{timestamp}] {message}\n"
         self.activity_text.insert(tk.END, activity_message)
@@ -487,9 +494,7 @@ class FinancialManagementGUI:
         self.update_status(f"Executing {func_id}...")
 
         # Run in background thread to prevent GUI freezing
-        thread = threading.Thread(target=self.run_function_background, args=(func_id,))
-        thread.daemon = True
-        thread.start()
+        start_thread(self.root, self.run_function_background, func_id)
 
     def return_to_home(self):
         """Return to the home page"""

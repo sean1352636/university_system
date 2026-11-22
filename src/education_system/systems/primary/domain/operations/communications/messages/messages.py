@@ -31,6 +31,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Any
 from education_system import paths
+from education_system.systems.primary.infrastructure.schema_repair import repair_links
 
 logger = logging.getLogger(__name__)
 
@@ -60,8 +61,8 @@ DEFAULT_PRIORITY: str = "Normal"
 
 CATEGORIES: tuple[str, ...] = (
     "General", "Academic", "Attendance", "Behaviour",
-    "Pastoral", "Safeguarding", "UCAS", "Careers",
-    "Exams", "Finance", "Trips", "Closure / Weather", "Other",
+    "Pastoral", "Safeguarding", "SEND", "Reading", "Clubs",
+    "Finance", "Trips", "Closure / Weather", "Other",
 )
 DEFAULT_CATEGORY: str = "General"
 
@@ -99,13 +100,11 @@ CREATE TABLE IF NOT EXISTS messages (
     reply_to_message_id INTEGER,
     created_at        TEXT DEFAULT (datetime('now')),
     updated_at        TEXT DEFAULT (datetime('now')),
-    FOREIGN KEY (student_id) REFERENCES students(student_id)
+    FOREIGN KEY (student_id) REFERENCES pupils(pupil_id)
         ON DELETE SET NULL,
     FOREIGN KEY (staff_id)   REFERENCES staff(staff_id)
         ON DELETE SET NULL,
     FOREIGN KEY (parent_contact_id) REFERENCES parent_contacts(contact_id)
-        ON DELETE SET NULL,
-    FOREIGN KEY (alumni_id) REFERENCES alumni(alumni_id)
         ON DELETE SET NULL,
     FOREIGN KEY (reply_to_message_id) REFERENCES messages(message_id)
         ON DELETE SET NULL
@@ -203,14 +202,7 @@ def init_db() -> None:
     _students.init_db()
     _staff.init_db()
     _pc.init_db()
-    # Ensure the alumni table exists so the FK target is present.
-    try:
-        from education_system.systems.primary.domain.alumni \
-            import alumni as _alumni
-        _alumni.init_db()
-    except Exception:
-        logger.debug("alumni module not available at init_db",
-                      exc_info=True)
+    repair_links(DB_PATH)
     with _connect() as conn:
         conn.executescript(_SCHEMA)
         existing = {row[1] for row in conn.execute(

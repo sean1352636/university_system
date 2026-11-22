@@ -9,7 +9,8 @@ from __future__ import annotations
 
 import logging
 import tkinter as tk
-from tkinter import messagebox, ttk
+from tkinter import ttk
+from education_system.platform.delivery.gui.parented_dialogs import messagebox
 
 from education_system.systems.sixth_form.domain.academics.timetable.timetable import (
     DAY_NUMBERS,
@@ -127,14 +128,18 @@ def open_directory(gui) -> None:
             return
         if not messagebox.askyesno(
                 "Commit plan",
-                "Overwrite live timetable slots for this plan's groups?"):
+                "Rewrite live timetable slots for this plan's groups?\n\n"
+                "Slots are moved in place where possible. A slot with "
+                "attendance or register history is never deleted: if the "
+                "plan no longer uses it, it is taken off the timetable and "
+                "archived with its history."):
             return
         try:
-            n = data.commit_plan(int(sel[0]))
+            res = data.commit_plan_detailed(int(sel[0]))
         except ValueError as e:
             messagebox.showerror("Optimiser", str(e))
             return
-        messagebox.showinfo("Optimiser", f"Wrote {n} live timetable slots.")
+        messagebox.showinfo("Optimiser", res.summary())
         refresh_plans()
 
     def delete() -> None:

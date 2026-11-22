@@ -14,16 +14,15 @@ from typing import Optional, List, Dict, Tuple
 from education_system.systems.university.infrastructure.database.db import get_connection, transaction
 from education_system.systems.university.infrastructure.shared_context import get_auth
 
-# Import finance integration
+# Finance posting lives in the shared bar service (GUI and CLI post the same way)
 try:
-    from education_system.systems.university.domains.finance.infrastructure.finance_integration import (
-        process_student_finance_account_payment,
-        get_student_finance_account_balance,
-        record_payment_to_finance
+    from education_system.systems.university.plugins.campus_commerce.domain.bar.services.bar_core import (
+        complete_bar_sale,
     )
     FINANCE_AVAILABLE = True
 except ImportError:
     FINANCE_AVAILABLE = False
+    complete_bar_sale = None
 
 # Import email service
 try:
@@ -391,68 +390,28 @@ def checkout():
         payment_method = "Card"
     elif payment_choice == "3" and student_id and FINANCE_AVAILABLE:
         payment_method = "Student Account"
-        # Process student account payment
-        try:
-            success = process_student_finance_account_payment(
-                student_id=student_id,
-                amount=total,
-                description=f"Bar purchase - {len(current_order)} items"
-            )
-            if not success:
-                print("❌ Student account payment failed")
-                input("Press Enter to continue...")
-                return
-        except Exception as e:
-            print(f"❌ Payment error: {e}")
-            input("Press Enter to continue...")
-            return
     else:
         print("❌ Invalid payment method")
         input("Press Enter to continue...")
         return
 
-    # Process order
-    try:
-        with transaction() as conn:
-            # Create order
-            cursor = conn.execute('''
-                INSERT INTO orders (source_type, student_id, customer_name, total_amount, payment_method, age_verified, order_status)
-                VALUES ('bar', ?, ?, ?, ?, ?, 'completed')
-            ''', (student_id or None, customer_name, total, payment_method, 1 if age_verified else 0))
+    # Charge, write the order and post to Finance through the shared service
+    if complete_bar_sale is None:
+        print("❌ Bar sales service not available")
+        input("Press Enter to continue...")
+        return
+    user = get_current_user() or {}
+    result = complete_bar_sale(
+        current_order,
+        customer_name=customer_name,
+        student_id=student_id,
+        payment_method=payment_method,
+        age_verified=age_verified,
+        processed_by=user.get('username'),
+    )
 
-            order_id = cursor.lastrowid
-
-            # Add order items and update stock
-            for item in current_order:
-                conn.execute('''
-                    INSERT INTO order_items (source_type, source_order_id, product_id, item_name, quantity, unit_price, subtotal)
-                    VALUES ('bar', ?, ?, ?, ?, ?, ?)
-                ''', (order_id, item['item_id'], item['name'], item['quantity'],
-                      item['price'], item['price'] * item['quantity']))
-
-                # Update stock
-                conn.execute('''
-                    UPDATE products
-                    SET stock_quantity = stock_quantity - ?
-                    WHERE product_id = ? AND source_type = 'bar'
-                ''', (item['quantity'], item['item_id']))
-
-                # Log inventory transaction
-                conn.execute('''
-                    INSERT INTO transactions (source_type, reference_id, reference_type, quantity_change, transaction_type, notes)
-                    VALUES ('bar_inventory', ?, 'item', ?, 'sale', ?)
-                ''', (item['item_id'], -item['quantity'], f'Order #{order_id}'))
-
-            # Record in finance system
-            if FINANCE_AVAILABLE and payment_method != "Student Account":
-                record_payment_to_finance(
-                    student_id=student_id,
-                    amount=total,
-                    payment_type="Bar Sales",
-                    description=f"Bar Order #{order_id}",
-                    payment_method=payment_method
-                )
-
+    if result.get('success'):
+        order_id = result['order_id']
         print(f"\n✅ Order #{order_id} completed successfully!")
         print(f"Payment: {payment_method} - £{total:.2f}")
 
@@ -462,9 +421,8 @@ def checkout():
 
         # Clear order
         current_order = []
-
-    except Exception as e:
-        print(f"❌ Error processing order: {e}")
+    else:
+        print(f"❌ {result.get('message', 'Error processing order')}")
 
     input("\nPress Enter to continue...")
 

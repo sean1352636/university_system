@@ -127,7 +127,7 @@ Aborted (core dumped)
 ### Check Current Mode
 
 ```python
-from utils.ai.university_chatbot import UniversityChatbot
+from education_system.systems.university.shared.ai.chatbot import UniversityChatbot
 
 chatbot = UniversityChatbot()
 if chatbot.voice_interface.enabled:

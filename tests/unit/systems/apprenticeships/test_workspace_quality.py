@@ -6,11 +6,13 @@ is the respondent's; the tests pin down who each one lands on.
 
 from __future__ import annotations
 
-from education_system.systems.apprenticeships.services import (
+from education_system.systems.apprenticeships.application.quality import (
     complaint_service,
+    survey_service,
+)
+from education_system.systems.apprenticeships.application.workspace import (
     reporting_service,
     search_service,
-    survey_service,
     task_service,
 )
 

@@ -7,7 +7,8 @@
 >
 > It describes **v5.0.0 as of 2025-11-05** and is stale in at least these ways:
 > paths such as `data/db_files/student_records.db` predate the ADR 0018 move of
-> runtime data into `var/`, and the "database not initialised" status reflects
+> runtime data into `var/`, source paths such as `modules/domain/...` and
+> `university_system/...` predate the current `src/education_system/` layout, and the "database not initialised" status reflects
 > that author's checkout, not the repository. Treat the counts and findings as a
 > point-in-time record. For current schema documentation see `DATABASE.md`
 > alongside this file.

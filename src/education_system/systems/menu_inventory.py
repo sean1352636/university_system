@@ -2,8 +2,9 @@
 
 The GUI and CLI of each system render the same navigation structure, but each
 system declares it in its own place and its own shape: a dict in
-``nursery/menu.py``, a list of tuples in ``primary``/``secondary``/
-``sixth_form``, a per-role mapping in ``fe_college`` and ``apprenticeships``.
+``nursery/menu.py``, a list of tuples in ``primary``, a list of ``(label, key)``
+entries in ``secondary/app/routing.py`` and ``sixth_form``'s gui_main, a per-role
+mapping in ``fe_college`` and ``apprenticeships``.
 
 This normalises all six onto ``{category: [feature, ...]}`` so tooling can ask
 one question — "what can a user actually do in this system?" — without
@@ -29,10 +30,10 @@ SOURCES: dict[str, tuple[str, str, str]] = {
                 "NAV_CATEGORIES", "sections"),
     "primary": ("education_system.systems.primary.gui_main",
                 "NAV_CATEGORIES", "sections"),
-    "secondary": ("education_system.systems.secondary.gui_main",
-                  "NAV_CATEGORIES", "sections"),
+    "secondary": ("education_system.systems.secondary.app.routing",
+                  "CATEGORIES", "label_key"),
     "sixth_form": ("education_system.systems.sixth_form.interfaces.gui.gui_main",
-                   "NAV_CATEGORIES", "sections"),
+                   "NAV_CATEGORIES", "label_key"),
     "fe_college": ("education_system.systems.fe_college.gui_main",
                    "NAVIGATION", "by_role"),
     "apprenticeships": ("education_system.systems.apprenticeships.interfaces.gui.gui_main",
@@ -73,6 +74,12 @@ def _from_sections(nav) -> dict[str, list[str]]:
     return {str(cat): [_label_of(i) for i in items] for cat, items in pairs}
 
 
+def _from_label_key(nav) -> dict[str, list[str]]:
+    """``[(category, [(label, key), ...])]``: the label is always first, so
+    no guessing (a key can be longer than its label: "Email" / "messages")."""
+    return {str(cat): [label for label, _key in items] for cat, items in nav}
+
+
 def _from_by_role(nav) -> dict[str, list[str]]:
     """Union every role's menu: the API serves all roles, not one."""
     merged: dict[str, set[str]] = {}
@@ -86,6 +93,7 @@ def _from_by_role(nav) -> dict[str, list[str]]:
 _SHAPES: dict[str, Callable] = {
     "mapping": _from_mapping,
     "sections": _from_sections,
+    "label_key": _from_label_key,
     "by_role": _from_by_role,
 }
 

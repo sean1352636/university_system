@@ -589,9 +589,9 @@ class RefundsMixin:
 
             # Collection cases
             try:
-                cursor.execute("SELECT COUNT(*) FROM collection_cases WHERE status = 'active'")
+                cursor.execute("SELECT COUNT(*) FROM collection_cases WHERE case_status NOT IN ('resolved', 'closed')")
                 active_cases = cursor.fetchone()[0]
-                cursor.execute("SELECT SUM(outstanding_amount) FROM collection_cases WHERE status = 'active'")
+                cursor.execute("SELECT SUM(total_debt - COALESCE(amount_collected, 0)) FROM collection_cases WHERE case_status NOT IN ('resolved', 'closed')")
                 outstanding_collection = cursor.fetchone()[0] or 0
                 summary += f"Active Collection Cases: {active_cases}\n"
                 summary += f"Total Outstanding in Collections: \u00a3{outstanding_collection:,.2f}\n"

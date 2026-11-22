@@ -7,6 +7,7 @@ from typing import Optional, List, Dict, Any
 
 from education_system.systems.university.infrastructure.database.db import get_db_connection, transaction
 from education_system.systems.university.infrastructure.sql_safety import validate_identifier  # nosec B608
+from education_system.systems.university.services.bus import finance_bus
 
 logger = logging.getLogger(__name__)
 
@@ -504,10 +505,37 @@ class TransactionManager:
     @staticmethod
     def record_payment(rental_id: int, borrower_id: str, amount: float,
                       payment_method: str, processed_by: str = None) -> Optional[int]:
-        """Record a payment transaction"""
+        """Record a payment transaction and post it to Finance.
+
+        This is the single place equipment money reaches Finance, so the GUI
+        and CLI share it. A student-account method settles from the
+        student's finance account first (which writes Finance's own
+        ``payments`` row); any other method posts one ``payments`` row via
+        the finance bus after the local write succeeds. A posting failure
+        is logged and never rolls back the local payment.
+        """
         try:
             import random
             ref_number = f"EQP-{datetime.now().strftime('%Y%m%d')}-{random.randint(1000, 9999)}"
+            rental = RentalManager.get_rental(rental_id) or {}
+            rental_ref = rental.get('rental_number') or str(rental_id)
+
+            if finance_bus.is_student_account_method(payment_method):
+                if not borrower_id:
+                    logger.error("Student-account payment for rental %s has no borrower id", rental_id)
+                    return None
+                result = finance_bus.pay_from_student_account(
+                    student_id=borrower_id,
+                    amount=amount,
+                    description=f"Equipment rental payment - {rental_ref}",
+                    transaction_source='EquipmentRental',
+                    transaction_ref=rental_ref,
+                    processed_by=processed_by,
+                )
+                if not result.get('success'):
+                    logger.error("Student-account payment failed for rental %s: %s",
+                                 rental_id, result.get('message'))
+                    return None
 
             with transaction() as conn:
                 cursor = conn.execute('''
@@ -524,23 +552,25 @@ class TransactionManager:
                         updated_at = CURRENT_TIMESTAMP
                     WHERE rental_id = ?
                 ''', (payment_method, rental_id))
-
-                # Record in main payments table for finance integration
-                pay_cur = conn.execute('''
-                    INSERT INTO payments
-                    (student_id, amount, payment_method, payment_date, status, notes, created_by)
-                    VALUES (?, ?, ?, ?, 'completed', 'Equipment Rental Payment', ?)
-                ''', (borrower_id, amount, payment_method,
-                      datetime.now().strftime('%Y-%m-%d'), processed_by))
-                payment_row_id = pay_cur.lastrowid
                 rental_lastrow = cursor.lastrowid
 
-            # Auto-post to GL (cash has moved). Never raises.
-            try:
-                from education_system.systems.university.domains.finance.domain.ledger import notify_ledger
-                notify_ledger('payment', payment_row_id, posted_by=processed_by or 'equipment')
-            except Exception as _e:
-                logger.warning("ledger hook failed: %s", _e)
+            # Post to Finance (cash/card/transfer). Student-account money was
+            # already recorded by pay_from_student_account above.
+            if not finance_bus.is_student_account_method(payment_method):
+                payment_id = finance_bus.record_payment(
+                    student_id=borrower_id or 'EXTERNAL',
+                    amount=amount,
+                    payment_method=payment_method,
+                    transaction_source='EquipmentRental',
+                    transaction_ref=rental_ref,
+                    notes=f"Equipment rental: {rental.get('item_name', '')}",
+                    created_by=processed_by,
+                )
+                if payment_id:
+                    logger.info("Revenue recorded to finance: £%.2f for rental %s", amount, rental_ref)
+                else:
+                    logger.error("Finance posting failed for equipment rental %s (local payment kept)",
+                                 rental_ref)
 
             return rental_lastrow
         except Exception as e:

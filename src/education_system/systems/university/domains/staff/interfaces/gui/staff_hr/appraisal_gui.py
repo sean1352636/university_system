@@ -18,9 +18,11 @@ from tkinter import ttk, messagebox, scrolledtext
 from datetime import datetime
 from typing import Optional
 
-from education_system.systems.university.infrastructure.database.db import get_connection, transaction
 from education_system.systems.university.infrastructure.auth import UserAuth
-from education_system.systems.university.infrastructure.activity_logger import log_activity
+from education_system.systems.university.domains.staff.domain.staff_hr.services.managers.performance_manager import (
+    PerformanceManager,
+)
+from education_system.systems.university.domains.staff.interfaces.gui.staff_hr import _access as _hr
 
 
 class AppraisalGUI:
@@ -32,6 +34,7 @@ class AppraisalGUI:
         self.current_user = auth.current_user if auth and auth.current_user else None
         self.parent_notebook = parent_notebook
         self.window = None
+        self.username = _hr.user_key(self) if self.current_user else None
 
         if not self.current_user:
             messagebox.showerror(_t('gui.staff.staff_hr.appraisal.dialogs.error', default="Error"), _t('gui.staff.staff_hr.appraisal.dialogs.login_required_to_access_performance_appraisals', default="Login required to access Performance Appraisals"))
@@ -52,8 +55,8 @@ class AppraisalGUI:
         """Create as standalone window."""
         self.window = tk.Toplevel(self.root)
         self.window.title(_t('gui.staff.staff_hr.appraisal.windows.performance_appraisal_system', default="Performance Appraisal System"))
-        self.window.geometry("1200x700")
-        self.window.minsize(1000, 600)
+        self.window.geometry("1400x900")
+        self.window.minsize(1200, 800)
 
         bottom_frame = ttk.Frame(self.window)
         bottom_frame.pack(side=tk.BOTTOM, fill=tk.X, padx=10, pady=5)
@@ -75,9 +78,14 @@ class AppraisalGUI:
         self._create_cycles_tab()
         self._create_my_appraisals_tab()
         self._create_goals_tab()
-        if self.current_user.get('role') in ['admin', 'Admin', 'administrator', 'staff']:
+        # Reviews: line managers (their reports) and HR; cycles: HR only.
+        if _hr.can(self, 'manager'):
             self._create_team_reviews_tab()
+        if _hr.can(self, 'hr'):
             self._create_manage_tab()
+
+    def _actor(self):
+        return _hr.actor(self)
 
     def _create_cycles_tab(self):
         """Create the appraisal cycles tab."""
@@ -303,31 +311,20 @@ class AppraisalGUI:
         """Load appraisal cycles."""
         try:
             self.cycles_tree.delete(*self.cycles_tree.get_children())
-
-            with get_connection() as conn:
-                cursor = conn.cursor()
-                cursor.execute('''
-                    SELECT cycle_id, name, start_date, end_date,
-                           self_review_deadline, manager_review_deadline, status
-                    FROM appraisal_cycles
-                    ORDER BY start_date DESC
-                ''')
-
-                active_cycle = None
-
-                for row in cursor.fetchall():
-                    status = row[6]
-                    values = (row[0], row[1], row[2], row[3],
-                              row[4] or '-', row[5] or '-', status.capitalize())
-                    self.cycles_tree.insert('', 'end', values=values, tags=(status,))
-
-                    if status == 'active':
-                        active_cycle = row
+            active_cycle = None
+            for cycle in PerformanceManager.get_cycles():
+                status = cycle.get('status') or 'draft'
+                values = (cycle['cycle_id'], cycle['name'], cycle.get('start_date'), cycle.get('end_date'),
+                          cycle.get('self_review_deadline') or '-',
+                          cycle.get('manager_review_deadline') or '-', status.capitalize())
+                self.cycles_tree.insert('', 'end', values=values, tags=(status,))
+                if status == 'active' and active_cycle is None:
+                    active_cycle = cycle
 
             if active_cycle:
-                self.current_cycle_label.config(text=f"Current Cycle: {active_cycle[1]}")
-                if active_cycle[4]:
-                    self.cycle_deadline_label.config(text=f"Self-Review Due: {active_cycle[4]}")
+                self.current_cycle_label.config(text=f"Current Cycle: {active_cycle['name']}")
+                if active_cycle.get('self_review_deadline'):
+                    self.cycle_deadline_label.config(text=f"Self-Review Due: {active_cycle['self_review_deadline']}")
             else:
                 self.current_cycle_label.config(text=_t('gui.staff.staff_hr.appraisal.text.no_active_cycle', default="No active cycle"))
                 self.cycle_deadline_label.config(text="")
@@ -339,27 +336,15 @@ class AppraisalGUI:
         """Load user's appraisals."""
         try:
             self.appraisals_tree.delete(*self.appraisals_tree.get_children())
-
-            user_id = self.current_user.get('id') or self.current_user.get('username')
-
-            with get_connection() as conn:
-                cursor = conn.cursor()
-                cursor.execute('''
-                    SELECT a.appraisal_id, c.name, a.self_rating, a.manager_rating,
-                           a.final_rating, a.status
-                    FROM appraisal_records a
-                    JOIN appraisal_cycles c ON a.cycle_id = c.cycle_id
-                    WHERE a.user_id = ?
-                    ORDER BY c.start_date DESC
-                ''', (user_id,))
-
-                for row in cursor.fetchall():
-                    values = (row[0], row[1],
-                              f"{row[2]:.1f}" if row[2] else '-',
-                              f"{row[3]:.1f}" if row[3] else '-',
-                              f"{row[4]:.1f}" if row[4] else '-',
-                              row[5].replace('_', ' ').capitalize())
-                    self.appraisals_tree.insert('', 'end', values=values, tags=(row[5],))
+            for rec in PerformanceManager.get_appraisals(self.username, actor=self._actor()):
+                status = rec.get('status') or 'pending'
+                values = (rec['appraisal_id'], rec.get('cycle_name'),
+                          f"{rec['self_rating']:.1f}" if rec.get('self_rating') else '-',
+                          f"{rec['manager_rating']:.1f}" if rec.get('manager_rating') else '-',
+                          f"{rec['final_rating']:.1f}" if rec.get('final_rating') else '-',
+                          status.replace('_', ' ').capitalize())
+                tag = 'self_review' if status.startswith('self_review') else status
+                self.appraisals_tree.insert('', 'end', values=values, tags=(tag,))
 
         except Exception as e:
             messagebox.showerror(_t('gui.staff.staff_hr.appraisal.dialogs.error', default="Error"), f"Failed to load appraisals: {e}")
@@ -368,41 +353,24 @@ class AppraisalGUI:
         """Load user's goals."""
         try:
             self.goals_tree.delete(*self.goals_tree.get_children())
-
-            user_id = self.current_user.get('id') or self.current_user.get('username')
             status_filter = self.goal_status_filter.get()
+            goals = PerformanceManager.get_goals(
+                self.username, status=None if status_filter == 'All' else status_filter.lower(),
+                actor=self._actor())
 
-            with get_connection() as conn:
-                cursor = conn.cursor()
-
-                query = '''
-                    SELECT goal_id, title, category, target_date, progress, weight, status
-                    FROM appraisal_goals
-                    WHERE user_id = ?
-                '''
-                params = [user_id]
-
-                if status_filter != 'All':
-                    query += ' AND status = ?'
-                    params.append(status_filter.lower())
-
-                query += ' ORDER BY target_date ASC'
-
-                cursor.execute(query, params)
-
-                total = 0
-                completed = 0
-                total_progress = 0
-
-                for row in cursor.fetchall():
-                    total += 1
-                    if row[6] == 'completed':
-                        completed += 1
-                    total_progress += row[4] or 0
-
-                    values = (row[0], row[1], row[2] or '-', row[3] or '-',
-                              f"{row[4]}%", f"{row[5]:.1f}", row[6].capitalize())
-                    self.goals_tree.insert('', 'end', values=values)
+            total = 0
+            completed = 0
+            total_progress = 0
+            for goal in goals:
+                total += 1
+                if goal.get('status') == 'completed':
+                    completed += 1
+                total_progress += goal.get('progress') or 0
+                values = (goal['goal_id'], goal['title'], goal.get('category') or '-',
+                          goal.get('target_date') or '-', f"{goal.get('progress') or 0}%",
+                          f"{float(goal.get('weight') or 1.0):.1f}",
+                          (goal.get('status') or 'active').capitalize())
+                self.goals_tree.insert('', 'end', values=values)
 
             self.total_goals_label.config(text=f"Total Goals: {total}")
             self.completed_goals_label.config(text=f"Completed: {completed}")
@@ -414,29 +382,17 @@ class AppraisalGUI:
             messagebox.showerror(_t('gui.staff.staff_hr.appraisal.dialogs.error', default="Error"), f"Failed to load goals: {e}")
 
     def _load_team_reviews(self):
-        """Load team reviews for manager."""
+        """Load team reviews for manager: their reports' appraisals (all for HR)."""
         try:
             self.team_tree.delete(*self.team_tree.get_children())
-
-            with get_connection() as conn:
-                cursor = conn.cursor()
-                cursor.execute('''
-                    SELECT a.appraisal_id, a.user_id, c.name, a.self_rating,
-                           a.manager_rating, a.status
-                    FROM appraisal_records a
-                    JOIN appraisal_cycles c ON a.cycle_id = c.cycle_id
-                    WHERE c.status = 'active'
-                    AND a.status IN ('self_review', 'manager_review')
-                    ORDER BY a.user_id
-                ''')
-
-                for row in cursor.fetchall():
-                    tag = 'pending_review' if row[5] == 'self_review' else 'reviewed'
-                    values = (row[0], row[1], row[2],
-                              f"{row[3]:.1f}" if row[3] else '-',
-                              f"{row[4]:.1f}" if row[4] else '-',
-                              row[5].replace('_', ' ').capitalize())
-                    self.team_tree.insert('', 'end', values=values, tags=(tag,))
+            for rec in PerformanceManager.get_team_reviews(self._actor(), include_done=True):
+                status = rec.get('status') or ''
+                tag = 'reviewed' if status == 'completed' else 'pending_review'
+                values = (rec['appraisal_id'], rec['user_id'], rec.get('cycle_name'),
+                          f"{rec['self_rating']:.1f}" if rec.get('self_rating') else '-',
+                          f"{rec['manager_rating']:.1f}" if rec.get('manager_rating') else '-',
+                          status.replace('_', ' ').capitalize())
+                self.team_tree.insert('', 'end', values=values, tags=(tag,))
 
         except Exception as e:
             messagebox.showerror(_t('gui.staff.staff_hr.appraisal.dialogs.error', default="Error"), f"Failed to load team reviews: {e}")
@@ -448,17 +404,19 @@ class AppraisalGUI:
             # Find pending appraisal
             for item_id in self.appraisals_tree.get_children():
                 item = self.appraisals_tree.item(item_id)
-                if item['values'][5].lower() == 'pending':
+                if str(item['values'][5]).lower() == 'pending':
                     self.appraisals_tree.selection_set(item_id)
                     selection = [item_id]
                     break
 
-        if not selection:
-            messagebox.showwarning(_t('gui.staff.staff_hr.appraisal.dialogs.warning', default="Warning"), _t('gui.staff.staff_hr.appraisal.dialogs.no_pending_appraisal_found', default="No pending appraisal found"))
-            return
-
-        item = self.appraisals_tree.item(selection[0])
-        appraisal_id = item['values'][0]
+        appraisal_id = self.appraisals_tree.item(selection[0])['values'][0] if selection else None
+        cycle = None
+        if appraisal_id is None:
+            # No appraisal opened for you yet: review against the active cycle.
+            cycle = PerformanceManager.get_active_cycle()
+            if not cycle:
+                messagebox.showwarning(_t('gui.staff.staff_hr.appraisal.dialogs.warning', default="Warning"), _t('gui.staff.staff_hr.appraisal.dialogs.no_pending_appraisal_found', default="No pending appraisal found"))
+                return
 
         dialog = tk.Toplevel(self.root)
         dialog.title(_t('gui.staff.staff_hr.appraisal.windows.self_review', default="Self-Review"))
@@ -504,21 +462,16 @@ class AppraisalGUI:
         improve_text.pack(fill=tk.X)
 
         def submit():
+            review = dict(strengths=strengths_text.get('1.0', tk.END).strip(),
+                          areas_for_improvement=improve_text.get('1.0', tk.END).strip())
             try:
-                with transaction() as conn:
-                    conn.execute('''
-                        UPDATE appraisal_records
-                        SET self_rating = ?, self_comments = ?, strengths = ?,
-                            areas_for_improvement = ?, status = 'self_review',
-                            self_submitted_date = ?, updated_at = ?
-                        WHERE appraisal_id = ?
-                    ''', (rating_var.get(), comments_text.get('1.0', tk.END).strip(),
-                          strengths_text.get('1.0', tk.END).strip(),
-                          improve_text.get('1.0', tk.END).strip(),
-                          datetime.now().isoformat(), datetime.now().isoformat(), appraisal_id))
-
-                log_activity('update', 'appraisal_record', appraisal_id=appraisal_id,
-                             details={'action': 'self_review_completed'})
+                if appraisal_id is not None:
+                    PerformanceManager.self_review_by_id(appraisal_id, self._actor(), rating_var.get(),
+                                                         comments_text.get('1.0', tk.END).strip(), **review)
+                else:
+                    PerformanceManager.submit_self_review(self.username, cycle['cycle_id'], rating_var.get(),
+                                                          comments_text.get('1.0', tk.END).strip(),
+                                                          actor=self._actor(), **review)
                 messagebox.showinfo(_t('gui.staff.staff_hr.appraisal.dialogs.success', default="Success"), _t('gui.staff.staff_hr.appraisal.dialogs.self_review_submitted_successfully', default="Self-review submitted successfully"))
                 dialog.destroy()
                 self._load_my_appraisals()
@@ -588,21 +541,14 @@ class AppraisalGUI:
                 error_label.config(text=_t('gui.staff.staff_hr.appraisal.text.goal_title_is_required', default="Goal title is required"))
                 return
 
-            user_id = self.current_user.get('id') or self.current_user.get('username')
-
             try:
                 weight = float(weight_var.get()) if weight_var.get() else 1.0
-
-                with transaction() as conn:
-                    conn.execute('''
-                        INSERT INTO appraisal_goals
-                        (user_id, title, description, category, target_date, weight, status)
-                        VALUES (?, ?, ?, ?, ?, ?, 'active')
-                    ''', (user_id, title_var.get().strip(), desc_text.get('1.0', tk.END).strip(),
-                          category_var.get(), target_var.get().strip() or None, weight))
-
-                log_activity('create', 'appraisal_goal', user_id=user_id,
-                             details={'title': title_var.get().strip()})
+                active = PerformanceManager.get_active_cycle()
+                PerformanceManager.add_goal(self.username, title_var.get().strip(), actor=self._actor(),
+                                            description=desc_text.get('1.0', tk.END).strip(),
+                                            category=category_var.get(),
+                                            target_date=target_var.get().strip() or None, weight=weight,
+                                            cycle_id=active['cycle_id'] if active else None)
                 messagebox.showinfo(_t('gui.staff.staff_hr.appraisal.dialogs.success', default="Success"), _t('gui.staff.staff_hr.appraisal.dialogs.goal_added_successfully', default="Goal added successfully"))
                 dialog.destroy()
                 self._load_goals()
@@ -624,7 +570,7 @@ class AppraisalGUI:
 
         item = self.goals_tree.item(selection[0])
         goal_id = item['values'][0]
-        current_progress = int(item['values'][4].replace('%', ''))
+        current_progress = int(str(item['values'][4]).replace('%', ''))
 
         dialog = tk.Toplevel(self.root)
         dialog.title(_t('gui.staff.staff_hr.appraisal.windows.update_progress', default="Update Progress"))
@@ -656,14 +602,8 @@ class AppraisalGUI:
 
         def save():
             try:
-                status = 'completed' if mark_complete.get() or progress_var.get() == 100 else 'active'
-
-                with transaction() as conn:
-                    conn.execute('''
-                        UPDATE appraisal_goals
-                        SET progress = ?, status = ?, updated_at = ?
-                        WHERE goal_id = ?
-                    ''', (progress_var.get(), status, datetime.now().isoformat(), goal_id))
+                PerformanceManager.update_goal_progress(goal_id, progress_var.get(), actor=self._actor(),
+                                                        completed=mark_complete.get())
 
                 messagebox.showinfo(_t('gui.staff.staff_hr.appraisal.dialogs.success', default="Success"), _t('gui.staff.staff_hr.appraisal.dialogs.progress_updated', default="Progress updated"))
                 dialog.destroy()
@@ -687,34 +627,31 @@ class AppraisalGUI:
         appraisal_id = item['values'][0]
 
         try:
-            with get_connection() as conn:
-                cursor = conn.cursor()
-                cursor.execute('''
-                    SELECT a.*, c.name FROM appraisal_records a
-                    JOIN appraisal_cycles c ON a.cycle_id = c.cycle_id
-                    WHERE a.appraisal_id = ?
-                ''', (appraisal_id,))
-                row = cursor.fetchone()
+            rec = PerformanceManager.get_appraisal_by_id(appraisal_id, actor=self._actor())
 
-            if row:
+            if rec:
                 details = f"""
-Cycle: {row[-1]}
-Self Rating: {row[4] or 'N/A'}
-Manager Rating: {row[5] or 'N/A'}
-Final Rating: {row[6] or 'N/A'}
-Status: {row[11].replace('_', ' ').capitalize()}
+Cycle: {rec.get('cycle_name')}
+Reviewer: {rec.get('reviewer_id') or 'N/A'}
+Self Rating: {rec.get('self_rating') or 'N/A'}
+Manager Rating: {rec.get('manager_rating') or 'N/A'}
+Final Rating: {rec.get('final_rating') or 'N/A'}
+Status: {(rec.get('status') or 'pending').replace('_', ' ').capitalize()}
 
 Self Comments:
-{row[7] or 'None'}
+{rec.get('self_comments') or 'None'}
 
 Manager Comments:
-{row[8] or 'None'}
+{rec.get('manager_comments') or 'None'}
 
 Strengths:
-{row[9] or 'None'}
+{rec.get('strengths') or 'None'}
 
 Areas for Improvement:
-{row[10] or 'None'}
+{rec.get('areas_for_improvement') or 'None'}
+
+Development Plan:
+{rec.get('development_plan') or 'None'}
                 """
                 messagebox.showinfo(_t('gui.staff.staff_hr.appraisal.dialogs.appraisal_details', default="Appraisal Details"), details.strip())
 
@@ -770,28 +707,9 @@ Areas for Improvement:
 
         def submit():
             try:
-                reviewer_id = self.current_user.get('id') or self.current_user.get('username')
-
-                with transaction() as conn:
-                    # Get self rating to calculate final
-                    cursor = conn.cursor()
-                    cursor.execute('SELECT self_rating FROM appraisal_records WHERE appraisal_id = ?', (appraisal_id,))
-                    self_rating = cursor.fetchone()[0] or 3.0
-
-                    final_rating = (self_rating + rating_var.get()) / 2
-
-                    conn.execute('''
-                        UPDATE appraisal_records
-                        SET manager_rating = ?, final_rating = ?, manager_comments = ?,
-                            development_plan = ?, reviewer_id = ?, status = 'completed',
-                            manager_submitted_date = ?, updated_at = ?
-                        WHERE appraisal_id = ?
-                    ''', (rating_var.get(), final_rating, comments_text.get('1.0', tk.END).strip(),
-                          plan_text.get('1.0', tk.END).strip(), reviewer_id,
-                          datetime.now().isoformat(), datetime.now().isoformat(), appraisal_id))
-
-                log_activity('update', 'appraisal_record', appraisal_id=appraisal_id,
-                             details={'action': 'manager_review_completed'})
+                PerformanceManager.manager_review_by_id(appraisal_id, self._actor(), rating_var.get(),
+                                                        comments_text.get('1.0', tk.END).strip(),
+                                                        development_plan=plan_text.get('1.0', tk.END).strip())
                 messagebox.showinfo(_t('gui.staff.staff_hr.appraisal.dialogs.success', default="Success"), _t('gui.staff.staff_hr.appraisal.dialogs.manager_review_completed', default="Manager review completed"))
                 dialog.destroy()
                 self._load_team_reviews()
@@ -867,21 +785,13 @@ Areas for Improvement:
                 error_label.config(text=_t('gui.staff.staff_hr.appraisal.text.cycle_name_is_required', default="Cycle name is required"))
                 return
 
-            created_by = self.current_user.get('username') or self.current_user.get('id')
-
             try:
-                with transaction() as conn:
-                    conn.execute('''
-                        INSERT INTO appraisal_cycles
-                        (name, description, start_date, end_date, self_review_deadline,
-                         manager_review_deadline, status, created_by)
-                        VALUES (?, ?, ?, ?, ?, ?, 'draft', ?)
-                    ''', (fields['name'].get().strip(), desc_text.get('1.0', tk.END).strip(),
-                          fields['start'].get().strip(), fields['end'].get().strip(),
-                          fields['self_due'].get().strip() or None,
-                          fields['mgr_due'].get().strip() or None, created_by))
-
-                log_activity('create', 'appraisal_cycle', details={'name': fields['name'].get().strip()})
+                PerformanceManager.create_cycle(fields['name'].get().strip(), fields['start'].get().strip(),
+                                                fields['end'].get().strip(), actor=self._actor(),
+                                                description=desc_text.get('1.0', tk.END).strip(),
+                                                self_review_deadline=fields['self_due'].get().strip() or None,
+                                                manager_review_deadline=fields['mgr_due'].get().strip() or None,
+                                                status='draft')
                 messagebox.showinfo(_t('gui.staff.staff_hr.appraisal.dialogs.success', default="Success"), _t('gui.staff.staff_hr.appraisal.dialogs.appraisal_cycle_created', default="Appraisal cycle created"))
                 dialog.destroy()
                 self._load_cycles()
@@ -903,7 +813,7 @@ Areas for Improvement:
 
         item = self.cycles_tree.item(selection[0])
         cycle_id = item['values'][0]
-        status = item['values'][6].lower()
+        status = str(item['values'][6]).lower()
 
         if status != 'draft':
             messagebox.showwarning(_t('gui.staff.staff_hr.appraisal.dialogs.warning', default="Warning"), _t('gui.staff.staff_hr.appraisal.dialogs.only_draft_cycles_can_be_started', default="Only draft cycles can be started"))
@@ -913,10 +823,12 @@ Areas for Improvement:
             return
 
         try:
-            with transaction() as conn:
-                conn.execute('UPDATE appraisal_cycles SET status = ? WHERE cycle_id = ?', ('active', cycle_id))
+            opened = PerformanceManager.start_cycle(cycle_id, actor=self._actor())
 
-            messagebox.showinfo(_t('gui.staff.staff_hr.appraisal.dialogs.success', default="Success"), _t('gui.staff.staff_hr.appraisal.dialogs.appraisal_cycle_started', default="Appraisal cycle started"))
+            messagebox.showinfo(_t('gui.staff.staff_hr.appraisal.dialogs.success', default="Success"),
+                                _t('gui.staff.staff_hr.appraisal.dialogs.appraisal_cycle_started', default="Appraisal cycle started")
+                                + f" ({opened})")
+            self._load_my_appraisals()
             self._load_cycles()
 
         except Exception as e:
@@ -936,8 +848,7 @@ Areas for Improvement:
             return
 
         try:
-            with transaction() as conn:
-                conn.execute('UPDATE appraisal_cycles SET status = ? WHERE cycle_id = ?', ('completed', cycle_id))
+            PerformanceManager.complete_cycle(cycle_id, actor=self._actor())
 
             messagebox.showinfo(_t('gui.staff.staff_hr.appraisal.dialogs.success', default="Success"), _t('gui.staff.staff_hr.appraisal.dialogs.appraisal_cycle_completed', default="Appraisal cycle completed"))
             self._load_cycles()

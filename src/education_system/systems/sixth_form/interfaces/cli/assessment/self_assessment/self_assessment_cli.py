@@ -181,9 +181,9 @@ def _print_full(a: SelfAssessment) -> None:
     print()
     print(f"    #{a.assessment_id}")
     print(f"    Student          : {a.student_id}")
-    print(f"    Date / term      : {a.assessment_date}  "
-          f"{a.term or '—'}")
-    print(f"    Year group       : {a.year_group or '—'}")
+    print(f"    Date / period    : {a.assessment_date}  "
+          f"{a.period or '—'}")
+    print(f"    Subject          : {a.subject_name or '—'}")
     print(f"    Type             : {a.assessment_type}")
     print(f"    Status           : {a.status}")
     print(f"    Average score    : "
@@ -255,8 +255,8 @@ def filter_flow() -> None:
         type_in = _input("Type contains") or None
         status = _input(f"Status ({'/'.join(STATUSES)})") or None
         reviewer = _input("Reviewer contains") or None
-        term = _input("Term") or None
-        year = _input("Year group") or None
+        subject = _input("Subject") or None
+        period = _input("Period") or None
         df = _input("From (YYYY-MM-DD)") or None
         dt2 = _input("To (YYYY-MM-DD)") or None
     except _UserAbort:
@@ -266,7 +266,7 @@ def filter_flow() -> None:
         rows = data.list_assessments(
             student_id=student_id, assessment_type=type_in,
             status=status, reviewer_like=reviewer,
-            term=term, year_group=year,
+            subject_name=subject, period=period,
             date_from=df, date_to=dt2,
         )
     except ValidationError as e:
@@ -290,7 +290,7 @@ def per_student_flow() -> None:
     print(f"\n  Summary for {sid}:")
     print(f"    Total              : {summ.total}")
     print(f"    Most-recent score  : "
-          f"{summ.most_recent_score if summ.most_recent_score is not None else '—'}")
+          f"{summ.average_score if summ.average_score is not None else '—'}")
     print(f"    Awaiting review    : {summ.awaiting_review}")
     print(f"    Reviewed           : {summ.reviewed}")
     _pause()
@@ -323,12 +323,12 @@ def _collect_form(existing: SelfAssessment | None) -> dict[str, Any]:
         "Type", list(ASSESSMENT_TYPES),
         default=(existing.assessment_type if is_edit
                   else DEFAULT_ASSESSMENT_TYPE))
-    payload["term"] = _input(
-        "Term (e.g. Autumn 1)",
-        default=(existing.term or "") if is_edit else "")
-    payload["year_group"] = _input(
-        "Year group",
-        default=(existing.year_group or "") if is_edit else "")
+    payload["subject_name"] = _input(
+        "Subject (optional)",
+        default=(existing.subject_name or "") if is_edit else "")
+    payload["period"] = _input(
+        "Period (e.g. Autumn 1)",
+        default=(existing.period or "") if is_edit else "")
 
     print("\n  Ratings (1=Very Low .. 5=Excellent; blank = skip):")
     for d in DIMENSIONS:

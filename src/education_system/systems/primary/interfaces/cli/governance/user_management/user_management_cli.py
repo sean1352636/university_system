@@ -3,7 +3,7 @@
 Roles- and access-focused complement to the User Accounts CLI:
 
 * show the access matrix (per system × role)
-* show role distribution for the secondary-school system
+* show role distribution for the primary-school system
 * list admins / users without access / locked / inactive
 * bulk grant or revoke a role across multiple users
 * bulk activate / deactivate
@@ -101,7 +101,7 @@ def _print_users(rows: list[UserRow]) -> None:
         return
     print()
     print(f"  {'ID':>4}  {'Username':<18}  {'Display':<22}  "
-          f"{'Secondary-school':<12}  {'Active':<6}  {'Locked':<6}")
+          f"{'Primary-school':<12}  {'Active':<6}  {'Locked':<6}")
     print("  " + "-" * 78)
     for u in rows:
         role = u.role_for(SYSTEM_KEY) or "—"
@@ -129,13 +129,13 @@ def show_access_matrix(auth: Any) -> None:
             f"{r}:{n}" for r, n in sorted(s.by_role.items(),
                                             key=lambda kv: -kv[1]))
         print(f"  {s.system_key:<14}  {s.users:>6}  {breakdown}")
-    print(f"\n  Users with no secondary-school access: "
-          f"{len(m.users_without_sixthform)}")
+    print(f"\n  Users with no primary-school access: "
+          f"{len(m.users_without_primary)}")
     _pause()
 
 
 def show_role_distribution(auth: Any) -> None:
-    print("\n═══ Secondary-School Role Distribution ═══\n")
+    print("\n═══ Primary-School Role Distribution ═══\n")
     counts = data.role_distribution(auth, SYSTEM_KEY)
     print(f"  {'Role':<22}  {'Users':>6}")
     print("  " + "-" * 32)
@@ -146,13 +146,13 @@ def show_role_distribution(auth: Any) -> None:
 
 
 def list_admins_flow(auth: Any) -> None:
-    print("\n═══ Secondary-School Admins ═══")
+    print("\n═══ Primary-School Admins ═══")
     _print_users(data.list_admins(auth))
     _pause()
 
 
 def list_without_access_flow(auth: Any) -> None:
-    print("\n═══ Users without secondary-school access ═══")
+    print("\n═══ Users without primary-school access ═══")
     _print_users(data.list_without_access(auth))
     _pause()
 
@@ -273,11 +273,11 @@ def summary_flow(auth: Any) -> None:
     print(f"  Active                : {s.active}")
     print(f"  Inactive              : {s.inactive}")
     print(f"  Locked                : {s.locked}")
-    print(f"  Secondary-school users      : {s.secondary_school_users}")
-    print(f"  Secondary-school admins     : {snap.admins}")
+    print(f"  Primary-school users      : {s.primary_users}")
+    print(f"  Primary-school admins     : {snap.admins}")
     print(f"  Recent logins (7d)    : {s.recent_logins_7d}")
-    print("\n  Secondary-school roles:")
-    for role, n in snap.role_distribution_sixthform.items():
+    print("\n  Primary-school roles:")
+    for role, n in snap.role_distribution_primary.items():
         if n:
             print(f"    {role:<22}  {n:>4}")
     print("\n  Per-system users:")
@@ -291,9 +291,9 @@ def summary_flow(auth: Any) -> None:
 _MENU: list[tuple[str, Callable[[Any], None]]] = [
     ("Summary",                       summary_flow),
     ("Access Matrix",                 show_access_matrix),
-    ("Secondary-school Role Distribution",  show_role_distribution),
+    ("Primary-school Role Distribution",  show_role_distribution),
     ("List Admins",                   list_admins_flow),
-    ("Users without secondary-school access", list_without_access_flow),
+    ("Users without primary-school access", list_without_access_flow),
     ("List Locked",                   list_locked_flow),
     ("List Inactive",                 list_inactive_flow),
     ("Bulk Grant Role",               bulk_grant_flow),

@@ -9,7 +9,7 @@ logger = logging.getLogger(__name__)
 
 
 class HESAExportGUI:
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, auth=None):
         # When ``parent`` is a workspace tab Frame (passed by
         # ``open_in_workspace``), embed inside it directly.
         if parent is not None and not hasattr(parent, "wm_title"):
@@ -24,11 +24,13 @@ class HESAExportGUI:
         except Exception as e:
             logger.error(f"Service init error: {e}")
             self.service = None
-        try:
-            from education_system.systems.university.infrastructure.shared_context import get_auth
-            self.auth = get_auth()
-        except Exception:
-            self.auth = None
+        self.auth = auth
+        if self.auth is None or not getattr(self.auth, "current_user", None):
+            try:
+                from education_system.systems.university.infrastructure.shared_context import get_auth
+                self.auth = get_auth()
+            except Exception:
+                self.auth = None
         self.setup_ui()
         try:
             if hasattr(self.root, "after_idle"):
@@ -61,6 +63,30 @@ class HESAExportGUI:
         self._create_submission_log_tab(notebook)
         self._create_statistics_tab(notebook)
         self._create_curriculum_programmes_tab(notebook)
+        self._create_data_futures_tab(notebook)
+        self._create_slc_tab(notebook)
+
+    # ------------------------------------------------------- Data Futures
+    def _create_data_futures_tab(self, notebook):
+        """The Data Futures builder (reference period, validation report,
+        SIDs, coding frames), shared with the Statutory Returns window."""
+        from education_system.systems.university.domains.governance.interfaces.gui.compliance.statutory_returns.hesa_panel import (
+            HesaPanel,
+        )
+        panel = HesaPanel(notebook, user=self._current_user, on_change=self._refresh_returns)
+        notebook.add(panel, text=_t('gui.governance.compliance.hesa_export.hesa_export.tabs.data_futures',
+                                    default="Data Futures"))
+
+    # ------------------------------------------------- Student Loans Company
+    def _create_slc_tab(self, notebook):
+        """SLC attendance confirmation per census point and change-of-
+        circumstance notices (``application/statutory/slc``)."""
+        from education_system.systems.university.domains.governance.interfaces.gui.compliance.statutory_returns.slc_panel import (
+            SlcPanel,
+        )
+        notebook.add(SlcPanel(notebook, user=self._current_user),
+                     text=_t('gui.governance.compliance.hesa_export.hesa_export.tabs.slc',
+                             default="Student Loans Company"))
 
     # ------------------------------------------------ Curriculum Programmes
     def _create_curriculum_programmes_tab(self, notebook):
@@ -91,7 +117,7 @@ class HESAExportGUI:
         for r in self.curr_tree.get_children():
             self.curr_tree.delete(r)
         try:
-            from education_system.systems.university.domains.academics.domain.curriculum_specification.services.curriculum_specification_service import (
+            from education_system.systems.university.domains.curriculum.domain.curriculum_specification.services.curriculum_specification_service import (
                 CurriculumSpecificationService,
             )
             curr = CurriculumSpecificationService()
@@ -113,7 +139,7 @@ class HESAExportGUI:
         code = self.curr_tree.item(sel[0], "values")[0]
         version = self.curr_tree.item(sel[0], "values")[5]
         try:
-            from education_system.systems.university.domains.academics.domain.curriculum_specification.services.curriculum_specification_service import (
+            from education_system.systems.university.domains.curriculum.domain.curriculum_specification.services.curriculum_specification_service import (
                 CurriculumSpecificationService,
             )
             curr = CurriculumSpecificationService()
@@ -164,9 +190,9 @@ class HESAExportGUI:
         try:
             returns = self.service.list_returns()
             for r in returns:
-                self.returns_tree.insert("", tk.END, values=(
-                    r.get("year", ""), r.get("type", ""),
-                    r.get("status", ""), r.get("date", ""),
+                self.returns_tree.insert("", tk.END, iid=str(r["id"]), values=(
+                    r.get("academic_year", ""), r.get("return_type", ""),
+                    r.get("status", ""), r.get("created_at", ""),
                 ))
         except Exception as e:
             logger.error(f"Error loading returns: {e}")
@@ -211,24 +237,31 @@ class HESAExportGUI:
         if not sel:
             messagebox.showwarning(_t('gui.governance.compliance.hesa_export.hesa_export.dialogs.selection', default="Selection"), _t('gui.governance.compliance.hesa_export.hesa_export.dialogs.select_a_return_first', default="Select a return first."), parent=self.root)
             return None
-        values = self.returns_tree.item(sel[0], "values")
-        # Look up the return ID by year and type
         try:
-            returns = self.service.list_returns()
-            for r in returns:
-                if r.get("academic_year") == values[0] and r.get("return_type") == values[1]:
-                    return r["id"]
-        except Exception:
-            logger.debug("Suppressed exception", exc_info=True)
-        return None
+            return int(sel[0])
+        except ValueError:
+            return None
+
+    def _current_user(self):
+        return getattr(self.auth, "current_user", None) if self.auth else None
 
     def _generate_xml(self):
         return_id = self._get_selected_return_id()
         if return_id is None:
             return
         try:
-            self.service.generate_xml_export(return_id)
-            messagebox.showinfo(_t('gui.governance.compliance.hesa_export.hesa_export.dialogs.success', default="Success"), _t('gui.governance.compliance.hesa_export.hesa_export.dialogs.xml_generated_successfully', default="XML generated successfully."), parent=self.root)
+            self.service.generate_xml_export(return_id, actor=self._current_user())
+            from education_system.systems.university.application.statutory import hesa_return
+            built = hesa_return.report(self._current_user(), return_id)
+            rep, ret = built["report"], built["return"]
+            where = (ret.get("output_path") or
+                     _t('gui.governance.compliance.hesa_export.hesa_export.dialogs.no_upload_file',
+                        default="No upload file: fix the errors (Data Futures tab) and rebuild."))
+            messagebox.showinfo(_t('gui.governance.compliance.hesa_export.hesa_export.dialogs.success', default="Success"),
+                                _t('gui.governance.compliance.hesa_export.hesa_export.dialogs.xml_generated_summary',
+                                   default="XML built: {errors} error(s), {warnings} warning(s).\n\n{where}").format(
+                                       errors=rep.get("errors", 0), warnings=rep.get("warnings", 0), where=where),
+                                parent=self.root)
             self._refresh_returns()
         except Exception as e:
             messagebox.showerror(_t('gui.governance.compliance.hesa_export.hesa_export.dialogs.error', default="Error"), str(e), parent=self.root)

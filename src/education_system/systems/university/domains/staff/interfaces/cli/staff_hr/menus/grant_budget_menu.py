@@ -8,10 +8,17 @@ transfers, and budget reporting).
 from education_system.systems.university.domains.staff.domain.staff_hr.services.managers import (
     GrantBudgetManager,
 )
+from education_system.systems.university.domains.staff.interfaces.cli.staff_hr.menus import _access as _hr
 
 
 def display_grant_budget_menu(user_id: str, is_admin: bool = False) -> None:
     """Display the grant budget management menu."""
+    # Approvals: the research office and principal investigators (each
+    # decision is checked again by GrantBudgetManager).
+    try:
+        deciding = is_admin or GrantBudgetManager.can_decide(_hr.actor())
+    except Exception:
+        deciding = is_admin
     while True:
         print("\n" + "=" * 60)
         print("GRANT BUDGET MANAGEMENT")
@@ -28,7 +35,7 @@ def display_grant_budget_menu(user_id: str, is_admin: bool = False) -> None:
         print("  9. List Transfers")
         print("  10. Request Budget Transfer")
 
-        if is_admin:
+        if deciding:
             print("\n--- Approvals ---")
             print("  11. Approve Expense")
             print("  12. Reject Expense")
@@ -61,13 +68,13 @@ def display_grant_budget_menu(user_id: str, is_admin: bool = False) -> None:
             _list_transfers()
         elif choice == '10':
             _request_transfer(user_id)
-        elif choice == '11' and is_admin:
+        elif choice == '11' and deciding:
             _approve_expense(user_id)
-        elif choice == '12' and is_admin:
+        elif choice == '12' and deciding:
             _reject_expense(user_id)
-        elif choice == '13' and is_admin:
+        elif choice == '13' and deciding:
             _approve_transfer(user_id)
-        elif choice == '14' and is_admin:
+        elif choice == '14' and deciding:
             _reject_transfer(user_id)
         else:
             print("Invalid choice.")
@@ -290,7 +297,7 @@ def _approve_expense(user_id: str) -> None:
     if expense_id is None:
         return
     try:
-        GrantBudgetManager.approve_expense(expense_id, user_id)
+        GrantBudgetManager.approve_expense(expense_id, user_id, actor=_hr.actor())
         print("\nExpense approved.")
     except Exception as e:
         print(f"\nError: {e}")
@@ -303,7 +310,7 @@ def _reject_expense(user_id: str) -> None:
     if expense_id is None:
         return
     try:
-        GrantBudgetManager.reject_expense(expense_id, user_id)
+        GrantBudgetManager.reject_expense(expense_id, user_id, actor=_hr.actor())
         print("\nExpense rejected.")
     except Exception as e:
         print(f"\nError: {e}")
@@ -359,7 +366,7 @@ def _approve_transfer(user_id: str) -> None:
     if transfer_id is None:
         return
     try:
-        GrantBudgetManager.approve_transfer(transfer_id, user_id)
+        GrantBudgetManager.approve_transfer(transfer_id, user_id, actor=_hr.actor())
         print("\nTransfer approved.")
     except Exception as e:
         print(f"\nError: {e}")
@@ -372,7 +379,7 @@ def _reject_transfer(user_id: str) -> None:
     if transfer_id is None:
         return
     try:
-        GrantBudgetManager.reject_transfer(transfer_id, user_id)
+        GrantBudgetManager.reject_transfer(transfer_id, user_id, actor=_hr.actor())
         print("\nTransfer rejected.")
     except Exception as e:
         print(f"\nError: {e}")

@@ -25,20 +25,20 @@ _SYSTEM = "apprenticeships"
 _CATEGORY = "People"
 
 
+@people_menu_bp.route("/employer-contacts", methods=["GET"])
+@token_required
+@staff_required
+def people_employer_contacts():
+    """Employer Contacts"""
+    return feature_pending("Employer Contacts", _SYSTEM, category=_CATEGORY)
+
+
 @people_menu_bp.route("/staff-caseloads", methods=["GET"])
 @token_required
 @staff_required
 def people_staff_caseloads():
     """Staff & Caseloads"""
     return feature_pending("Staff & Caseloads", _SYSTEM, category=_CATEGORY)
-
-
-@people_menu_bp.route("/admin-admissions", methods=["GET"])
-@token_required
-@staff_required
-def people_admin_admissions():
-    """admin.admissions"""
-    return feature_pending("admin.admissions", _SYSTEM, category=_CATEGORY)
 
 
 @people_menu_bp.route("/admin-apprentices", methods=["GET"])
@@ -55,4 +55,20 @@ def people_admin_apprentices():
 def people_admin_employers():
     """admin.employers"""
     return feature_pending("admin.employers", _SYSTEM, category=_CATEGORY)
+
+
+@people_menu_bp.route("/shared-admissions", methods=["GET"])
+@token_required
+@staff_required
+def people_shared_admissions():
+    """shared.admissions"""
+    return feature_pending("shared.admissions", _SYSTEM, category=_CATEGORY)
+
+
+@people_menu_bp.route("/shared-workload", methods=["GET"])
+@token_required
+@staff_required
+def people_shared_workload():
+    """shared.workload"""
+    return feature_pending("shared.workload", _SYSTEM, category=_CATEGORY)
 

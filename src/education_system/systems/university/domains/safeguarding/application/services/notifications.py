@@ -27,12 +27,60 @@ from education_system.systems.university.domains.safeguarding.application.servic
 
 
 def _try_send_email(recipient, subject, body):
+    """Hand the message to the university e-mail outbox, which delivers it
+    under the configured mode (inbox only / sandbox / live) with retries."""
     try:
-        from education_system.platform.integrations.email import send_email  # type: ignore
+        from education_system.systems.university.infrastructure.email.email_service.core import (
+            send_email,
+        )
 
-        return bool(send_email(recipient, subject, body))
+        return bool(send_email(recipient, subject, body, kind="transactional",
+                               category="safeguarding"))
     except Exception:
+        logger.warning("Safeguarding e-mail to %s not handed to the outbox", recipient,
+                       exc_info=True)
         return False
+
+
+def _email_addresses(recipient):
+    """Where an e-mail for ``recipient`` goes: the address itself, a
+    username's address (users, then staff), or for ``duty-officer`` every
+    DSL / safeguarding lead (administrators when there are none). Rows
+    queued before addresses were looked up carry ``<username>@example.edu``;
+    those are resolved again."""
+    if not recipient:
+        return []
+    recipient = str(recipient).strip()
+    if "@" in recipient and not recipient.lower().endswith("@example.edu"):
+        return [recipient]
+    username = recipient.split("@", 1)[0]
+    from education_system.systems.university.infrastructure.database.db import (
+        get_connection,
+    )
+
+    try:
+        with get_connection() as conn:
+            if username == "duty-officer":
+                for roles in (("dsl", "safeguarding"), ("admin", "superadmin")):
+                    found = [r[0] for r in conn.execute(
+                        "SELECT email FROM users WHERE LOWER(role) IN (?, ?) "
+                        "AND COALESCE(email, '') <> ''", roles)]
+                    if found:
+                        return sorted(set(found))
+                return []
+            for sql in (
+                "SELECT email FROM users WHERE username = ? COLLATE NOCASE LIMIT 1",
+                "SELECT email FROM staff WHERE username = ? COLLATE NOCASE LIMIT 1",
+            ):
+                try:
+                    row = conn.execute(sql, (username,)).fetchone()
+                except Exception:
+                    continue
+                if row and row[0]:
+                    return [row[0]]
+    except Exception:
+        logger.debug("E-mail lookup for %s failed", username, exc_info=True)
+    return []
 
 
 def queue_notification(channel, recipient, subject, body, case_id=None):
@@ -40,12 +88,13 @@ def queue_notification(channel, recipient, subject, body, case_id=None):
     sent_at = None
     status = "Queued"
     if channel == "email" and recipient:
-        ok = _try_send_email(recipient, subject or "", body or "")
-        if ok:
-            sent_at = now
-            status = "Sent"
-        else:
-            status = "Queued"  # left for an outbox worker to retry
+        addresses = _email_addresses(recipient)
+        if addresses:
+            recipient = ", ".join(addresses)
+            if all([_try_send_email(a, subject or "", body or "") for a in addresses]):
+                sent_at = now
+                status = "Sent"
+        # Otherwise "Queued": retry_queued_emails() tries again.
     conn = _connect()
     cur = conn.cursor()
     cur.execute(
@@ -58,6 +107,35 @@ def queue_notification(channel, recipient, subject, body, case_id=None):
     conn.commit()
     conn.close()
     return nid
+
+
+def retry_queued_emails(limit=100):
+    """Send e-mail notifications still "Queued" (the outbox was unavailable
+    or the recipient had no address yet). Returns how many were sent."""
+    conn = _connect()
+    try:
+        rows = conn.execute(
+            "SELECT id, recipient, subject, body FROM safeguarding_notifications "
+            "WHERE channel='email' AND status='Queued' ORDER BY id LIMIT ?",
+            (limit,),
+        ).fetchall()
+        sent = 0
+        for nid, recipient, subject, body in rows:
+            addresses = _email_addresses(recipient)
+            if not addresses or not all(
+                [_try_send_email(a, subject or "", body or "") for a in addresses]
+            ):
+                continue
+            conn.execute(
+                "UPDATE safeguarding_notifications SET recipient=?, status='Sent', "
+                "sent_at=? WHERE id=?",
+                (", ".join(addresses), datetime.now().isoformat(), nid),
+            )
+            conn.commit()
+            sent += 1
+        return sent
+    finally:
+        conn.close()
 
 
 def list_notifications(case_id=None, limit=200):
@@ -102,7 +180,7 @@ def escalation_notify_dsl(case_id, severity, assignee, oncall):
         f"1-hour SLA."
     )
     # Email + SMS + pager — recipient address-book lookup is out of scope here.
-    queue_notification("email", f"{oncall['username']}@example.edu", subject, body, case_id=case_id)
+    queue_notification("email", oncall["username"], subject, body, case_id=case_id)
     queue_notification("sms", oncall["username"], subject, body, case_id=case_id)
     queue_notification("pager", oncall["username"], subject, body, case_id=case_id)
 
@@ -127,7 +205,7 @@ def notify_reporter_on_status_change(case_id, new_status, actor):
         return
     queue_notification(
         "email",
-        f"{recipient}@example.edu",
+        recipient,
         f"Update on your safeguarding submission #{case_id}",
         f"Your case is now '{new_status}'. The safeguarding team will be in "
         f"touch if further information is needed.",
@@ -157,7 +235,7 @@ def stuck_case_alerts(actor="system"):
         recipient = assignee or "duty-officer"
         queue_notification(
             "email",
-            f"{recipient}@example.edu",
+            recipient,
             f"[SLA BREACH] safeguarding case #{sid}",
             f"Case #{sid} (severity {sev}) has missed its SLA. Please action immediately.",
             case_id=sid,
@@ -197,7 +275,7 @@ def daily_dsl_digest(actor="system"):
     )
     oncall = get_oncall_dsl()
     recipient = oncall.get("username") if oncall else "duty-officer"
-    queue_notification("digest", f"{recipient}@example.edu", "Safeguarding daily digest", body)
+    queue_notification("email", recipient, "Safeguarding daily digest", body)
     audit_log(actor=actor, action="daily_digest", details=f"new24h={new_24h} breached={breached}")
     return body
 
@@ -246,7 +324,7 @@ def notify_tutor(case_id, tutor_username, actor="system"):
     conn.close()
     queue_notification(
         "email",
-        f"{tutor_username}@example.edu",
+        tutor_username,
         f"Pastoral awareness — case #{case_id}",
         redacted,
         case_id=case_id,
@@ -259,6 +337,7 @@ def notify_tutor(case_id, tutor_username, actor="system"):
 __all__ = [
     "_try_send_email",
     "queue_notification",
+    "retry_queued_emails",
     "list_notifications",
     "escalation_notify_dsl",
     "notify_reporter_on_status_change",

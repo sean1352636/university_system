@@ -5,6 +5,8 @@ import shutil
 from datetime import datetime
 import logging
 
+from education_system.platform.delivery.gui.tk_threads import start_thread, ui
+
 logger = logging.getLogger(__name__)
 
 try:
@@ -32,14 +34,14 @@ class BackupManager:
         stays responsive, but Tk is single-threaded: configuring a label,
         destroying the progress dialog or opening a messagebox from that
         thread is undefined behaviour — stray TclErrors at best, a wedged
-        interpreter at worst. Widget work comes back through after().
+        interpreter at worst. Widget work is queued for the main thread via
+        ui(); dropped if the window has already gone.
         """
-        try:
+        def _run():
             if self.root.winfo_exists():
-                self.root.after(0, callback)
-        except (tk.TclError, RuntimeError):
-            # Window gone, or the main loop already exited: nothing to update.
-            pass
+                callback()
+
+        ui(self.root, _run)
 
     def backup_system(self):
         """Create system backup"""
@@ -146,8 +148,8 @@ class BackupManager:
                 from tkinter import filedialog
 
                 # Get current DB path
-                from education_system.systems.university.infrastructure.database.db import get_db_path
-                db_path = get_db_path()
+                from education_system.systems.university.infrastructure.database.db import DEFAULT_DB_PATH
+                db_path = DEFAULT_DB_PATH
 
                 # Ask where to save
                 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -210,10 +212,10 @@ class BackupManager:
         """Restore database from backup file path"""
         try:
             import shutil
-            from education_system.systems.university.infrastructure.database.db import get_db_path
+            from education_system.systems.university.infrastructure.database.db import DEFAULT_DB_PATH
 
             # Get current DB path
-            db_path = get_db_path()
+            db_path = DEFAULT_DB_PATH
 
             # Create backup of current database before restore
             current_backup = f"{db_path}.before_restore_{datetime.now().strftime('%Y%m%d_%H%M%S')}.db"
@@ -313,9 +315,7 @@ class BackupManager:
                     self._post(lambda err=e: finish(error=err))
 
             # Run backup in separate thread to keep UI responsive
-            import threading
-            backup_thread = threading.Thread(target=perform_backup, daemon=True)
-            backup_thread.start()
+            start_thread(self.root, perform_backup)
 
         except Exception as e:
             messagebox.showerror(_t('gui.shell.document_manager.backup.dialogs.error', default="Error"), f"Failed to create backup: {e}")
@@ -551,9 +551,7 @@ class BackupManager:
                     self._post(lambda err=e: finish(error=err))
 
             # Run restore in separate thread
-            import threading
-            restore_thread = threading.Thread(target=perform_restore, daemon=True)
-            restore_thread.start()
+            start_thread(self.root, perform_restore)
 
         except Exception as e:
             messagebox.showerror(_t('gui.shell.document_manager.backup.dialogs.error', default="Error"), f"Failed to restore from backup: {e}")

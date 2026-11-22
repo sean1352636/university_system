@@ -19,9 +19,11 @@ from datetime import datetime, timedelta
 from typing import Optional
 import csv
 
-from education_system.systems.university.infrastructure.database.db import get_connection, transaction
 from education_system.systems.university.infrastructure.auth import UserAuth
-from education_system.systems.university.infrastructure.activity_logger import log_activity
+from education_system.systems.university.domains.staff.domain.staff_hr.services.managers.training_manager import (
+    TrainingManager,
+)
+from education_system.systems.university.domains.staff.interfaces.gui.staff_hr import _access as _hr
 from education_system.systems.university.infrastructure.i18n import get_text as get_translation
 
 # Translation helper
@@ -37,6 +39,7 @@ class TrainingGUI:
         self.current_user = auth.current_user if auth and auth.current_user else None
         self.parent_notebook = parent_notebook
         self.window = None
+        self.username = _hr.user_key(self) if self.current_user else None
 
         if not self.current_user:
             messagebox.showerror(
@@ -60,8 +63,8 @@ class TrainingGUI:
         """Create as standalone window."""
         self.window = tk.Toplevel(self.root)
         self.window.title(_t("staff_hr.training.window_title", default="Training & Certification System"))
-        self.window.geometry("1200x700")
-        self.window.minsize(1000, 600)
+        self.window.geometry("1400x900")
+        self.window.minsize(1200, 800)
 
         bottom_frame = ttk.Frame(self.window)
         bottom_frame.pack(side=tk.BOTTOM, fill=tk.X, padx=10, pady=5)
@@ -83,8 +86,12 @@ class TrainingGUI:
         self._create_catalog_tab()
         self._create_my_training_tab()
         self._create_certifications_tab()
-        if self.current_user.get('role') in ['admin', 'Admin', 'administrator', 'staff']:
+        # Course administration is HR's.
+        if _hr.can(self, 'hr'):
             self._create_manage_tab()
+
+    def _actor(self):
+        return _hr.actor(self)
 
     def _create_catalog_tab(self):
         """Create the training catalog tab."""
@@ -394,39 +401,19 @@ class TrainingGUI:
 
             category = self.category_filter.get()
             mandatory_only = self.mandatory_only.get()
+            na = _t("staff_hr.training.catalog.values.na", default="-")
 
-            with get_connection() as conn:
-                cursor = conn.cursor()
+            for course in TrainingManager.get_courses(None if category == 'All' else category,
+                                                      mandatory_only=bool(mandatory_only)):
+                duration = _t("staff_hr.training.catalog.values.duration_hours", default="{hours}h").format(hours=f"{course['duration_hours']:.1f}") if course.get('duration_hours') else na
+                passing = _t("staff_hr.training.catalog.values.passing_percent", default="{score}%").format(score=course['passing_score']) if course.get('passing_score') else na
+                mandatory = _t("staff_hr.training.catalog.values.yes", default="Yes") if course.get('is_mandatory') else _t("staff_hr.training.catalog.values.no", default="No")
 
-                query = '''
-                    SELECT course_id, name, category, provider, duration_hours,
-                           passing_score, is_mandatory
-                    FROM training_courses
-                    WHERE is_active = 1
-                '''
-                params = []
+                values = (course['course_id'], course['name'], course.get('category') or na,
+                          course.get('provider') or na, duration, passing, mandatory)
 
-                if category != 'All':
-                    query += ' AND category = ?'
-                    params.append(category)
-
-                if mandatory_only:
-                    query += ' AND is_mandatory = 1'
-
-                query += ' ORDER BY name'
-
-                cursor.execute(query, params)
-
-                for row in cursor.fetchall():
-                    duration = _t("staff_hr.training.catalog.values.duration_hours", default="{hours}h").format(hours=f"{row[4]:.1f}") if row[4] else _t("staff_hr.training.catalog.values.na", default="-")
-                    passing = _t("staff_hr.training.catalog.values.passing_percent", default="{score}%").format(score=row[5]) if row[5] else _t("staff_hr.training.catalog.values.na", default="-")
-                    mandatory = _t("staff_hr.training.catalog.values.yes", default="Yes") if row[6] else _t("staff_hr.training.catalog.values.no", default="No")
-
-                    values = (row[0], row[1], row[2] or _t("staff_hr.training.catalog.values.na", default="-"), row[3] or _t("staff_hr.training.catalog.values.na", default="-"),
-                              duration, passing, mandatory)
-
-                    tags = ('mandatory',) if row[6] else ()
-                    self.catalog_tree.insert('', 'end', values=values, tags=tags)
+                tags = ('mandatory',) if course.get('is_mandatory') else ()
+                self.catalog_tree.insert('', 'end', values=values, tags=tags)
 
         except Exception as e:
             messagebox.showerror(
@@ -439,54 +426,37 @@ class TrainingGUI:
         try:
             self.training_tree.delete(*self.training_tree.get_children())
 
-            user_id = self.current_user.get('id') or self.current_user.get('username')
             status_filter = self.training_status_filter.get()
             today = datetime.now().strftime("%Y-%m-%d")
+            rows = TrainingManager.get_enrollments(
+                self.username, None if status_filter == 'All' else status_filter.lower().replace(' ', '_'),
+                actor=self._actor())
 
-            with get_connection() as conn:
-                cursor = conn.cursor()
+            total = 0
+            completed = 0
+            pending = 0
+            overdue = 0
 
-                query = '''
-                    SELECT e.enrollment_id, c.name, c.category, e.enrolled_date,
-                           e.due_date, e.status, e.score, e.completed_date
-                    FROM training_enrollments e
-                    JOIN training_courses c ON e.course_id = c.course_id
-                    WHERE e.user_id = ?
-                '''
-                params = [user_id]
+            for row in rows:
+                total += 1
+                status = row.get('status') or 'enrolled'
 
-                if status_filter != 'All':
-                    query += ' AND e.status = ?'
-                    params.append(status_filter.lower().replace(' ', '_'))
+                if status == 'completed':
+                    completed += 1
+                elif status in ['enrolled', 'in_progress']:
+                    pending += 1
+                    if row.get('due_date') and row['due_date'] < today:
+                        overdue += 1
+                        status = 'overdue'
 
-                query += ' ORDER BY e.enrolled_date DESC'
+                score = f"{row['score']}%" if row.get('score') else '-'
 
-                cursor.execute(query, params)
+                values = (row['enrollment_id'], row.get('course_name'), row.get('category') or '-',
+                          row['enrolled_date'][:10] if row.get('enrolled_date') else '-',
+                          row.get('due_date') or '-', status.replace('_', ' ').capitalize(),
+                          score, row['completed_date'][:10] if row.get('completed_date') else '-')
 
-                total = 0
-                completed = 0
-                pending = 0
-                overdue = 0
-
-                for row in cursor.fetchall():
-                    total += 1
-                    status = row[5]
-
-                    if status == 'completed':
-                        completed += 1
-                    elif status in ['enrolled', 'in_progress']:
-                        pending += 1
-                        if row[4] and row[4] < today:
-                            overdue += 1
-                            status = 'overdue'
-
-                    score = f"{row[6]}%" if row[6] else '-'
-
-                    values = (row[0], row[1], row[2] or '-', row[3][:10] if row[3] else '-',
-                              row[4] or '-', status.replace('_', ' ').capitalize(),
-                              score, row[7][:10] if row[7] else '-')
-
-                    self.training_tree.insert('', 'end', values=values, tags=(status,))
+                self.training_tree.insert('', 'end', values=values, tags=(status,))
 
             self.total_courses_label.config(text=_t("staff_hr.training.my_training.summary.total_enrolled", default="Total Enrolled: {count}").format(count=total))
             self.completed_label.config(text=_t("staff_hr.training.my_training.summary.completed", default="Completed: {count}").format(count=completed))
@@ -504,43 +474,34 @@ class TrainingGUI:
         try:
             self.certs_tree.delete(*self.certs_tree.get_children())
 
-            user_id = self.current_user.get('id') or self.current_user.get('username')
             today = datetime.now()
             warning_date = (today + timedelta(days=30)).strftime("%Y-%m-%d")
+            na = _t("staff_hr.training.catalog.values.na", default="-")
 
             expiring_count = 0
 
-            with get_connection() as conn:
-                cursor = conn.cursor()
-                cursor.execute('''
-                    SELECT cert_id, name, issuing_body, credential_id,
-                           issue_date, expiry_date, status
-                    FROM certifications
-                    WHERE user_id = ?
-                    ORDER BY expiry_date ASC
-                ''', (user_id,))
+            for cert in TrainingManager.get_certifications(self.username, actor=self._actor()):
+                status = cert.get('status') or 'active'
+                tag = status
+                expiry = cert.get('expiry_date')
 
-                for row in cursor.fetchall():
-                    status = row[6]
-                    tag = status
+                # Check expiry
+                if expiry:
+                    if expiry < today.strftime("%Y-%m-%d"):
+                        status = _t("staff_hr.training.certifications.statuses.expired", default="Expired")
+                        tag = 'expired'
+                    elif expiry <= warning_date:
+                        status = _t("staff_hr.training.certifications.statuses.expiring_soon", default="Expiring Soon")
+                        tag = 'expiring'
+                        expiring_count += 1
+                    else:
+                        status = _t("staff_hr.training.certifications.statuses.active", default="Active")
+                        tag = 'active'
 
-                    # Check expiry
-                    if row[5]:
-                        if row[5] < today.strftime("%Y-%m-%d"):
-                            status = _t("staff_hr.training.certifications.statuses.expired", default="Expired")
-                            tag = 'expired'
-                        elif row[5] <= warning_date:
-                            status = _t("staff_hr.training.certifications.statuses.expiring_soon", default="Expiring Soon")
-                            tag = 'expiring'
-                            expiring_count += 1
-                        else:
-                            status = _t("staff_hr.training.certifications.statuses.active", default="Active")
-                            tag = 'active'
+                values = (cert['cert_id'], cert['name'], cert.get('issuing_body') or na, cert.get('credential_id') or na,
+                          cert.get('issue_date') or na, expiry or _t("staff_hr.training.certifications.statuses.no_expiry", default="No Expiry"), status)
 
-                    values = (row[0], row[1], row[2] or _t("staff_hr.training.catalog.values.na", default="-"), row[3] or _t("staff_hr.training.catalog.values.na", default="-"),
-                              row[4] or _t("staff_hr.training.catalog.values.na", default="-"), row[5] or _t("staff_hr.training.certifications.statuses.no_expiry", default="No Expiry"), status)
-
-                    self.certs_tree.insert('', 'end', values=values, tags=(tag,))
+                self.certs_tree.insert('', 'end', values=values, tags=(tag,))
 
             if expiring_count > 0:
                 self.expiry_alert_label.config(
@@ -579,36 +540,19 @@ class TrainingGUI:
         ):
             return
 
-        user_id = self.current_user.get('id') or self.current_user.get('username')
-
         try:
-            # Check if already enrolled
-            with get_connection() as conn:
-                cursor = conn.cursor()
-                cursor.execute('''
-                    SELECT enrollment_id FROM training_enrollments
-                    WHERE user_id = ? AND course_id = ? AND status != 'completed'
-                ''', (user_id, course_id))
-
-                if cursor.fetchone():
-                    messagebox.showwarning(
-                        _t("staff_hr.training.dialogs.enroll.warning_title", default="Warning"),
-                        _t("staff_hr.training.dialogs.enroll.warning_already_enrolled", default="You are already enrolled in this course")
-                    )
-                    return
-
-            with transaction() as conn:
-                # Default due date is 30 days from now
-                due_date = (datetime.now() + timedelta(days=30)).strftime("%Y-%m-%d")
-
-                conn.execute('''
-                    INSERT INTO training_enrollments
-                    (user_id, course_id, enrolled_date, due_date, status)
-                    VALUES (?, ?, ?, ?, 'enrolled')
-                ''', (user_id, course_id, datetime.now().strftime("%Y-%m-%d"), due_date))
-
-            log_activity('create', 'training_enrollment', user_id=user_id,
-                         details={'course_id': course_id, 'course_name': course_name})
+            # Default due date is 30 days from now
+            due_date = (datetime.now() + timedelta(days=30)).strftime("%Y-%m-%d")
+            try:
+                TrainingManager.enroll(self.username, course_id, due_date, actor=self._actor())
+            except ValueError as e:
+                already = 'already enrolled' in str(e)
+                messagebox.showwarning(
+                    _t("staff_hr.training.dialogs.enroll.warning_title", default="Warning"),
+                    _t("staff_hr.training.dialogs.enroll.warning_already_enrolled", default="You are already enrolled in this course")
+                    if already else str(e)
+                )
+                return
 
             messagebox.showinfo(
                 _t("staff_hr.training.dialogs.enroll.success_title", default="Success"),
@@ -634,7 +578,7 @@ class TrainingGUI:
 
         item = self.training_tree.item(selection[0])
         enrollment_id = item['values'][0]
-        status = item['values'][5].lower()
+        status = str(item['values'][5]).lower()
 
         if status == 'completed':
             messagebox.showwarning(
@@ -663,18 +607,17 @@ class TrainingGUI:
                 if not 0 <= score <= 100:
                     raise ValueError(_t("staff_hr.training.dialogs.mark_complete.error_range", default="Score must be between 0 and 100"))
 
-                with transaction() as conn:
-                    conn.execute('''
-                        UPDATE training_enrollments
-                        SET status = 'completed', score = ?, completed_date = ?, updated_at = ?
-                        WHERE enrollment_id = ?
-                    ''', (score, datetime.now().strftime("%Y-%m-%d"),
-                          datetime.now().isoformat(), enrollment_id))
-
-                messagebox.showinfo(
-                    _t("staff_hr.training.dialogs.enroll.success_title", default="Success"),
-                    _t("staff_hr.training.dialogs.mark_complete.success", default="Training marked as complete")
-                )
+                result = TrainingManager.record_result(enrollment_id, score, actor=self._actor())
+                if result == 'failed':
+                    messagebox.showwarning(
+                        _t("staff_hr.training.dialogs.enroll.warning_title", default="Warning"),
+                        _t("staff_hr.training.dialogs.mark_complete.failed", default="Below the passing score: recorded as failed")
+                    )
+                else:
+                    messagebox.showinfo(
+                        _t("staff_hr.training.dialogs.enroll.success_title", default="Success"),
+                        _t("staff_hr.training.dialogs.mark_complete.success", default="Training marked as complete")
+                    )
                 dialog.destroy()
                 self._load_my_training()
 
@@ -761,21 +704,15 @@ class TrainingGUI:
                 error_label.config(text=_t("staff_hr.training.dialogs.add_certification.error_name_required", default="Certification name is required"))
                 return
 
-            user_id = self.current_user.get('id') or self.current_user.get('username')
             expiry = fields['expiry_date'].get().strip() or None
 
             try:
-                with transaction() as conn:
-                    conn.execute('''
-                        INSERT INTO certifications
-                        (user_id, name, issuing_body, credential_id, issue_date, expiry_date, notes, status)
-                        VALUES (?, ?, ?, ?, ?, ?, ?, 'active')
-                    ''', (user_id, name, fields['issuer'].get().strip(),
-                          fields['credential_id'].get().strip(),
-                          fields['issue_date'].get().strip(), expiry,
-                          notes_text.get('1.0', tk.END).strip()))
-
-                log_activity('create', 'certification', user_id=user_id, details={'name': name})
+                TrainingManager.add_certification(
+                    self.username, name, actor=self._actor(),
+                    issuing_body=fields['issuer'].get().strip(),
+                    credential_id=fields['credential_id'].get().strip(),
+                    issue_date=fields['issue_date'].get().strip(), expiry_date=expiry,
+                    notes=notes_text.get('1.0', tk.END).strip(), status='active')
                 messagebox.showinfo(
                     _t("staff_hr.training.dialogs.enroll.success_title", default="Success"),
                     _t("staff_hr.training.dialogs.add_certification.success", default="Certification added successfully")
@@ -801,10 +738,10 @@ class TrainingGUI:
         course_id = item['values'][0]
 
         try:
-            with get_connection() as conn:
-                cursor = conn.cursor()
-                cursor.execute('SELECT * FROM training_courses WHERE course_id = ?', (course_id,))
-                row = cursor.fetchone()
+            course = TrainingManager.get_course(course_id)
+            row = None if not course else [course.get(k) for k in (
+                'course_id', 'name', 'description', 'category', 'provider', 'duration_hours',
+                'passing_score', 'is_mandatory', 'recertification_months', 'is_active')]
 
             if row:
                 details = f"""
@@ -931,16 +868,11 @@ class TrainingGUI:
                 duration = float(fields['duration'].get()) if fields['duration'].get() else None
                 passing = float(fields['passing_score'].get()) if fields['passing_score'].get() else 70
 
-                with transaction() as conn:
-                    conn.execute('''
-                        INSERT INTO training_courses
-                        (name, description, category, provider, duration_hours, passing_score, is_mandatory)
-                        VALUES (?, ?, ?, ?, ?, ?, ?)
-                    ''', (name, desc_text.get('1.0', tk.END).strip(),
-                          fields['category'].get(), fields['provider'].get().strip(),
-                          duration, passing, fields['mandatory'].get()))
-
-                log_activity('create', 'training_course', details={'name': name})
+                TrainingManager.create_course(
+                    name, actor=self._actor(), description=desc_text.get('1.0', tk.END).strip(),
+                    category=fields['category'].get(), provider=fields['provider'].get().strip(),
+                    duration_hours=duration, passing_score=passing,
+                    is_mandatory=1 if fields['mandatory'].get() else 0)
                 messagebox.showinfo(
                     _t("staff_hr.training.dialogs.enroll.success_title", default="Success"),
                     _t("staff_hr.training.dialogs.add_course.success", default="Course added successfully")
@@ -968,17 +900,11 @@ class TrainingGUI:
         course_id = item['values'][0]
 
         try:
-            with get_connection() as conn:
-                cursor = conn.cursor()
-                cursor.execute('SELECT * FROM training_courses WHERE course_id = ?', (course_id,))
-                row = cursor.fetchone()
-
-                # Get enrollment stats
-                cursor.execute('''
-                    SELECT status, COUNT(*) FROM training_enrollments
-                    WHERE course_id = ? GROUP BY status
-                ''', (course_id,))
-                enrollment_stats = {r[0]: r[1] for r in cursor.fetchall()}
+            course = TrainingManager.get_course(course_id)
+            row = None if not course else [course.get(k) for k in (
+                'course_id', 'name', 'description', 'category', 'provider', 'duration_hours',
+                'passing_score', 'is_mandatory', 'recertification_months', 'is_active')]
+            enrollment_stats = TrainingManager.enrollment_stats(course_id, actor=self._actor())
 
             if not row:
                 messagebox.showerror(_t('gui.staff.staff_hr.training.dialogs.error', default="Error"), _t('gui.staff.staff_hr.training.dialogs.course_not_found', default="Course not found"))
@@ -1050,10 +976,10 @@ class TrainingGUI:
         course_id = item['values'][0]
 
         try:
-            with get_connection() as conn:
-                cursor = conn.cursor()
-                cursor.execute('SELECT * FROM training_courses WHERE course_id = ?', (course_id,))
-                row = cursor.fetchone()
+            course = TrainingManager.get_course(course_id)
+            row = None if not course else [course.get(k) for k in (
+                'course_id', 'name', 'description', 'category', 'provider', 'duration_hours',
+                'passing_score', 'is_mandatory', 'recertification_months', 'is_active')]
 
             if not row:
                 messagebox.showerror(_t('gui.staff.staff_hr.training.dialogs.error', default="Error"), _t('gui.staff.staff_hr.training.dialogs.course_not_found', default="Course not found"))
@@ -1152,21 +1078,13 @@ class TrainingGUI:
                     passing = float(fields['passing_score'].get()) if fields['passing_score'].get().strip() else 70
                     recert = int(fields['recert'].get()) if fields['recert'].get().strip() else None
 
-                    with transaction() as conn:
-                        conn.execute('''
-                            UPDATE training_courses
-                            SET name = ?, description = ?, category = ?, provider = ?,
-                                duration_hours = ?, passing_score = ?, is_mandatory = ?,
-                                recertification_months = ?, is_active = ?, updated_at = ?
-                            WHERE course_id = ?
-                        ''', (name, desc_text.get('1.0', tk.END).strip(),
-                              fields['category'].get(), fields['provider'].get().strip(),
-                              duration, passing, fields['mandatory'].get(),
-                              recert, fields['active'].get(),
-                              datetime.now().isoformat(), course_id))
-
-                    log_activity('update', 'training_course', details={
-                        'course_id': course_id, 'name': name})
+                    TrainingManager.update_course(
+                        course_id, actor=self._actor(), name=name,
+                        description=desc_text.get('1.0', tk.END).strip(),
+                        category=fields['category'].get(), provider=fields['provider'].get().strip(),
+                        duration_hours=duration, passing_score=passing,
+                        is_mandatory=1 if fields['mandatory'].get() else 0,
+                        recertification_months=recert, is_active=1 if fields['active'].get() else 0)
                     messagebox.showinfo(_t('gui.staff.staff_hr.training.dialogs.success', default="Success"), _t('gui.staff.staff_hr.training.dialogs.course_updated_successfully', default="Course updated successfully"))
                     dialog.destroy()
                     self._load_catalog()
@@ -1198,12 +1116,7 @@ class TrainingGUI:
 
         # Check for enrollments first
         try:
-            with get_connection() as conn:
-                cursor = conn.cursor()
-                cursor.execute(
-                    'SELECT COUNT(*) FROM training_enrollments WHERE course_id = ?',
-                    (course_id,))
-                enrollment_count = cursor.fetchone()[0]
+            enrollment_count = sum(TrainingManager.enrollment_stats(course_id, actor=self._actor()).values())
 
             if enrollment_count > 0:
                 if not messagebox.askyesno(_t('gui.staff.staff_hr.training.dialogs.warning', default="Warning"),
@@ -1216,16 +1129,7 @@ class TrainingGUI:
                     f"Permanently delete course '{course_name}'?"):
                     return
 
-            with transaction() as conn:
-                conn.execute(
-                    'DELETE FROM training_enrollments WHERE course_id = ?',
-                    (course_id,))
-                conn.execute(
-                    'DELETE FROM training_courses WHERE course_id = ?',
-                    (course_id,))
-
-            log_activity('delete', 'training_course', details={
-                'course_id': course_id, 'name': course_name})
+            TrainingManager.delete_course(course_id, actor=self._actor())
             messagebox.showinfo(_t('gui.staff.staff_hr.training.dialogs.success', default="Success"), f"Course '{course_name}' deleted")
             self._load_catalog()
             self._load_manage_courses()
@@ -1253,8 +1157,7 @@ class TrainingGUI:
             return
 
         try:
-            with transaction() as conn:
-                conn.execute('UPDATE training_courses SET is_active = 0 WHERE course_id = ?', (course_id,))
+            TrainingManager.deactivate_course(course_id, actor=self._actor())
 
             messagebox.showinfo(
                 _t("staff_hr.training.dialogs.enroll.success_title", default="Success"),
@@ -1276,33 +1179,18 @@ class TrainingGUI:
 
             show_filter = self.manage_filter.get() if hasattr(self, 'manage_filter') else 'All'
 
-            with get_connection() as conn:
-                cursor = conn.cursor()
+            active = {'Active Only': True, 'Inactive Only': False}.get(show_filter)
+            for course in TrainingManager.get_all_courses(actor=self._actor(), active=active):
+                duration = f"{course['duration_hours']:.1f}h" if course.get('duration_hours') else "-"
+                passing = f"{course['passing_score']}%" if course.get('passing_score') else "-"
+                mandatory = "Yes" if course.get('is_mandatory') else "No"
+                is_active = "Yes" if course.get('is_active') else "No"
+                tag = '' if course.get('is_active') else 'inactive'
 
-                query = '''
-                    SELECT c.course_id, c.name, c.category, c.provider,
-                           c.duration_hours, c.passing_score, c.is_mandatory, c.is_active,
-                           (SELECT COUNT(*) FROM training_enrollments WHERE course_id = c.course_id)
-                    FROM training_courses c
-                '''
-                if show_filter == 'Active Only':
-                    query += ' WHERE c.is_active = 1'
-                elif show_filter == 'Inactive Only':
-                    query += ' WHERE c.is_active = 0'
-
-                query += ' ORDER BY c.name'
-                cursor.execute(query)
-
-                for row in cursor.fetchall():
-                    duration = f"{row[4]:.1f}h" if row[4] else "-"
-                    passing = f"{row[5]}%" if row[5] else "-"
-                    mandatory = "Yes" if row[6] else "No"
-                    active = "Yes" if row[7] else "No"
-                    tag = '' if row[7] else 'inactive'
-
-                    values = (row[0], row[1], row[2] or "-", row[3] or "-",
-                              duration, passing, mandatory, active, row[8])
-                    self.manage_tree.insert('', 'end', values=values, tags=(tag,))
+                values = (course['course_id'], course['name'], course.get('category') or "-",
+                          course.get('provider') or "-", duration, passing, mandatory, is_active,
+                          course.get('enrollment_count') or 0)
+                self.manage_tree.insert('', 'end', values=values, tags=(tag,))
 
         except Exception as e:
             messagebox.showerror(_t('gui.staff.staff_hr.training.dialogs.error', default="Error"), f"Failed to load courses: {e}")

@@ -8,10 +8,8 @@ from typing import Any
 from education_system.systems.apprenticeships import config
 from education_system.systems.apprenticeships.domain.programmes import versions
 from education_system.systems.apprenticeships.interfaces.gui import widgets
-from education_system.systems.apprenticeships.services import (
-    apprentice_service,
-    programme_service,
-)
+from education_system.systems.apprenticeships.application.apprentices import apprentice_service
+from education_system.systems.apprenticeships.application.programmes import programme_service
 
 # Apprentices whose plan is closed; the curriculum is not applied to them.
 _FINISHED = ("Completed", "Withdrawn", "Transferred")

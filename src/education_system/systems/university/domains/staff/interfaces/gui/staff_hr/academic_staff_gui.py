@@ -17,11 +17,13 @@ import tkinter as tk
 from tkinter import ttk, messagebox
 from typing import Optional
 from datetime import datetime
-import json
 
-from education_system.systems.university.infrastructure.database.db import get_connection, transaction
 from education_system.systems.university.infrastructure.auth import UserAuth
 from education_system.systems.university.infrastructure.activity_logger import log_activity
+from education_system.systems.university.domains.staff.domain.staff_hr.services.managers.academic_staff_manager import (
+    AcademicStaffManager,
+)
+from education_system.systems.university.domains.staff.interfaces.gui.staff_hr import _access as _hr
 
 try:
     from education_system.systems.university.domains.staff.infrastructure.database.staff_hr_schemas_all import (
@@ -30,6 +32,18 @@ try:
 except ImportError:
     get_program_types = lambda: ['phd', 'masters', 'undergraduate']
     get_observation_types = lambda: ['formal', 'informal', 'peer']
+
+
+def _err():
+    return _t('gui.staff.staff_hr.academic_staff.dialogs.error', default="Error")
+
+
+def _warn():
+    return _t('gui.staff.staff_hr.academic_staff.dialogs.warning', default="Warning")
+
+
+def _ok():
+    return _t('gui.staff.staff_hr.academic_staff.dialogs.success', default="Success")
 
 
 class AcademicStaffGUI:
@@ -43,6 +57,10 @@ class AcademicStaffGUI:
         if not self.current_user:
             return
 
+        self.manager = AcademicStaffManager()
+        self.username = _hr.user_key(self)
+        self.is_hr = _hr.can(self, 'hr')
+
         if parent_notebook:
             self.tab = ttk.Frame(parent_notebook)
             parent_notebook.add(self.tab, text=_t('gui.staff.staff_hr.academic_staff.tabs.academic_staff', default="Academic Staff"))
@@ -54,8 +72,8 @@ class AcademicStaffGUI:
         """Create standalone window when not embedded."""
         self.window = tk.Toplevel(self.root)
         self.window.title(_t('gui.staff.staff_hr.academic_staff.windows.academic_staff_management', default="Academic Staff Management"))
-        self.window.geometry("1200x800")
-        self.window.minsize(1000, 600)
+        self.window.geometry("1400x900")
+        self.window.minsize(1200, 800)
 
         bottom_frame = ttk.Frame(self.window)
         bottom_frame.pack(side=tk.BOTTOM, fill=tk.X, padx=10, pady=5)
@@ -152,76 +170,33 @@ class AcademicStaffGUI:
 
     def _load_teaching_portfolio(self):
         """Load teaching portfolio data."""
-        user_id = self.current_user.get('id') or self.current_user.get('username')
-
         try:
-            with get_connection() as conn:
-                cursor = conn.cursor()
-                cursor.execute('''
-                    SELECT teaching_philosophy, teaching_interests, courses_taught,
-                           teaching_innovations, awards_recognition, professional_development
-                    FROM teaching_portfolios WHERE user_id = ?
-                ''', (user_id,))
-                row = cursor.fetchone()
-
-                if row:
-                    self.philosophy_text.delete('1.0', tk.END)
-                    self.philosophy_text.insert('1.0', row[0] or '')
-                    self.interests_text.delete('1.0', tk.END)
-                    self.interests_text.insert('1.0', row[1] or '')
-                    self.courses_text.delete('1.0', tk.END)
-                    self.courses_text.insert('1.0', row[2] or '')
-                    self.innovations_text.delete('1.0', tk.END)
-                    self.innovations_text.insert('1.0', row[3] or '')
-                    self.awards_text.delete('1.0', tk.END)
-                    self.awards_text.insert('1.0', row[4] or '')
-                    self.pd_text.delete('1.0', tk.END)
-                    self.pd_text.insert('1.0', row[5] or '')
+            row = self.manager.get_teaching_portfolio(self.username, actor=_hr.actor(self))
         except Exception as e:
-            print(f"Error loading teaching portfolio: {e}")
+            messagebox.showerror(_err(), f"Failed to load portfolio: {e}")
+            return
+        if row:
+            for widget, field in self._portfolio_widgets():
+                widget.delete('1.0', tk.END)
+                widget.insert('1.0', row.get(field) or '')
+
+    def _portfolio_widgets(self):
+        return ((self.philosophy_text, 'teaching_philosophy'),
+                (self.interests_text, 'teaching_interests'),
+                (self.courses_text, 'courses_taught'),
+                (self.innovations_text, 'teaching_innovations'),
+                (self.awards_text, 'awards_recognition'),
+                (self.pd_text, 'professional_development'))
 
     def _save_teaching_portfolio(self):
         """Save teaching portfolio."""
-        user_id = self.current_user.get('id') or self.current_user.get('username')
-
+        data = {field: widget.get('1.0', tk.END).strip() for widget, field in self._portfolio_widgets()}
         try:
-            with transaction() as conn:
-                cursor = conn.cursor()
-                cursor.execute('SELECT portfolio_id FROM teaching_portfolios WHERE user_id = ?', (user_id,))
-                exists = cursor.fetchone()
-
-                data = (
-                    self.philosophy_text.get('1.0', tk.END).strip(),
-                    self.interests_text.get('1.0', tk.END).strip(),
-                    self.courses_text.get('1.0', tk.END).strip(),
-                    self.innovations_text.get('1.0', tk.END).strip(),
-                    self.awards_text.get('1.0', tk.END).strip(),
-                    self.pd_text.get('1.0', tk.END).strip()
-                )
-
-                if exists:
-                    cursor.execute('''
-                        UPDATE teaching_portfolios SET
-                            teaching_philosophy = ?, teaching_interests = ?,
-                            courses_taught = ?, teaching_innovations = ?,
-                            awards_recognition = ?, professional_development = ?,
-                            last_updated = ?
-                        WHERE user_id = ?
-                    ''', data + (datetime.now().isoformat(), user_id))
-                else:
-                    cursor.execute('''
-                        INSERT INTO teaching_portfolios (
-                            user_id, teaching_philosophy, teaching_interests,
-                            courses_taught, teaching_innovations,
-                            awards_recognition, professional_development
-                        ) VALUES (?, ?, ?, ?, ?, ?, ?)
-                    ''', (user_id,) + data)
-
-                conn.commit()
-                log_activity('update', 'teaching_portfolio', user_id=user_id)
-                messagebox.showinfo(_t('gui.staff.staff_hr.academic_staff.dialogs.success', default="Success"), _t('gui.staff.staff_hr.academic_staff.dialogs.teaching_portfolio_saved_successfully', default="Teaching portfolio saved successfully"))
+            self.manager.update_teaching_portfolio(self.username, actor=_hr.actor(self), **data)
+            log_activity('update', 'teaching_portfolio', user_id=self.username)
+            messagebox.showinfo(_ok(), _t('gui.staff.staff_hr.academic_staff.dialogs.teaching_portfolio_saved_successfully', default="Teaching portfolio saved successfully"))
         except Exception as e:
-            messagebox.showerror(_t('gui.staff.staff_hr.academic_staff.dialogs.error', default="Error"), f"Failed to save portfolio: {e}")
+            messagebox.showerror(_err(), f"Failed to save portfolio: {e}")
 
     # ================================================================
     # RESEARCH OUTPUT TAB
@@ -296,104 +271,53 @@ class AcademicStaffGUI:
         self._load_research_profile()
 
     def _load_research_profile(self):
-        """Load research profile data."""
-        user_id = self.current_user.get('id') or self.current_user.get('username')
-
+        """Load research profile data and the person's recorded outputs."""
         try:
-            with get_connection() as conn:
-                cursor = conn.cursor()
-                cursor.execute('''
-                    SELECT research_interests, h_index, total_citations,
-                           total_publications, orcid_id, google_scholar_id,
-                           researchgate_url, scopus_id
-                    FROM research_profiles WHERE user_id = ?
-                ''', (user_id,))
-                row = cursor.fetchone()
+            row = self.manager.get_research_profile(self.username, actor=_hr.actor(self))
+            if row:
+                self.research_interests_text.delete('1.0', tk.END)
+                self.research_interests_text.insert('1.0', row.get('research_interests') or '')
+                self.h_index_var.set(str(row.get('h_index') or 0))
+                self.citations_var.set(str(row.get('total_citations') or 0))
+                self.publications_var.set(str(row.get('total_publications') or 0))
+                self.orcid_var.set(row.get('orcid_id') or '')
+                self.scholar_var.set(row.get('google_scholar_id') or '')
+                self.rg_var.set(row.get('researchgate_url') or '')
+                self.scopus_var.set(row.get('scopus_id') or '')
 
-                if row:
-                    self.research_interests_text.delete('1.0', tk.END)
-                    self.research_interests_text.insert('1.0', row[0] or '')
-                    self.h_index_var.set(str(row[1] or 0))
-                    self.citations_var.set(str(row[2] or 0))
-                    self.publications_var.set(str(row[3] or 0))
-                    self.orcid_var.set(row[4] or '')
-                    self.scholar_var.set(row[5] or '')
-                    self.rg_var.set(row[6] or '')
-                    self.scopus_var.set(row[7] or '')
-
-                # Load publications summary from research_publications if exists
-                cursor.execute('''
-                    SELECT title, publication_type, publication_date, citation_count
-                    FROM research_publications
-                    WHERE project_id IN (
-                        SELECT project_id FROM research_projects
-                        WHERE principal_investigator_id = ?
-                    )
-                    ORDER BY publication_date DESC LIMIT 10
-                ''', (user_id,))
-                pubs = cursor.fetchall()
-
-                self.research_summary.config(state=tk.NORMAL)
-                self.research_summary.delete('1.0', tk.END)
-                if pubs:
-                    for pub in pubs:
-                        self.research_summary.insert(tk.END, f"- {pub[0]}\n")
-                        self.research_summary.insert(tk.END, f"  Type: {pub[1]}, Date: {pub[2]}, Citations: {pub[3]}\n\n")
-                else:
-                    self.research_summary.insert(tk.END, "No publications found in the system.\n")
-                    self.research_summary.insert(tk.END, "Publications may be tracked in the Research module.")
-                self.research_summary.config(state=tk.DISABLED)
+            pubs = self.manager.get_publications(self.username, actor=_hr.actor(self), limit=10)
+            self.research_summary.config(state=tk.NORMAL)
+            self.research_summary.delete('1.0', tk.END)
+            if pubs:
+                for pub in pubs:
+                    self.research_summary.insert(tk.END, f"- {pub['title']}\n")
+                    self.research_summary.insert(
+                        tk.END, f"  Type: {pub.get('publication_type') or '-'}, "
+                                f"Date: {pub.get('publication_date') or '-'}, "
+                                f"Citations: {pub.get('citation_count') or 0}\n\n")
+            else:
+                self.research_summary.insert(tk.END, "No publications found in the system.\n")
+                self.research_summary.insert(tk.END, "Publications may be tracked in the Research module.")
+            self.research_summary.config(state=tk.DISABLED)
 
         except Exception as e:
-            print(f"Error loading research profile: {e}")
+            messagebox.showerror(_err(), f"Failed to load research profile: {e}")
 
     def _save_research_profile(self):
         """Save research profile."""
-        user_id = self.current_user.get('id') or self.current_user.get('username')
-
         try:
-            with transaction() as conn:
-                cursor = conn.cursor()
-                cursor.execute('SELECT profile_id FROM research_profiles WHERE user_id = ?', (user_id,))
-                exists = cursor.fetchone()
-
-                if exists:
-                    cursor.execute('''
-                        UPDATE research_profiles SET
-                            research_interests = ?, h_index = ?, total_citations = ?,
-                            total_publications = ?, orcid_id = ?, google_scholar_id = ?,
-                            researchgate_url = ?, scopus_id = ?, last_updated = ?
-                        WHERE user_id = ?
-                    ''', (
-                        self.research_interests_text.get('1.0', tk.END).strip(),
-                        int(self.h_index_var.get() or 0),
-                        int(self.citations_var.get() or 0),
-                        int(self.publications_var.get() or 0),
-                        self.orcid_var.get(), self.scholar_var.get(),
-                        self.rg_var.get(), self.scopus_var.get(),
-                        datetime.now().isoformat(), user_id
-                    ))
-                else:
-                    cursor.execute('''
-                        INSERT INTO research_profiles (
-                            user_id, research_interests, h_index, total_citations,
-                            total_publications, orcid_id, google_scholar_id,
-                            researchgate_url, scopus_id
-                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-                    ''', (
-                        user_id, self.research_interests_text.get('1.0', tk.END).strip(),
-                        int(self.h_index_var.get() or 0),
-                        int(self.citations_var.get() or 0),
-                        int(self.publications_var.get() or 0),
-                        self.orcid_var.get(), self.scholar_var.get(),
-                        self.rg_var.get(), self.scopus_var.get()
-                    ))
-
-                conn.commit()
-                log_activity('update', 'research_profile', user_id=user_id)
-                messagebox.showinfo(_t('gui.staff.staff_hr.academic_staff.dialogs.success', default="Success"), _t('gui.staff.staff_hr.academic_staff.dialogs.research_profile_saved_successfully', default="Research profile saved successfully"))
+            self.manager.update_research_profile(
+                self.username, actor=_hr.actor(self),
+                research_interests=self.research_interests_text.get('1.0', tk.END).strip(),
+                h_index=self.h_index_var.get(),
+                total_citations=self.citations_var.get(),
+                total_publications=self.publications_var.get(),
+                orcid_id=self.orcid_var.get().strip(), google_scholar_id=self.scholar_var.get().strip(),
+                researchgate_url=self.rg_var.get().strip(), scopus_id=self.scopus_var.get().strip())
+            log_activity('update', 'research_profile', user_id=self.username)
+            messagebox.showinfo(_ok(), _t('gui.staff.staff_hr.academic_staff.dialogs.research_profile_saved_successfully', default="Research profile saved successfully"))
         except Exception as e:
-            messagebox.showerror(_t('gui.staff.staff_hr.academic_staff.dialogs.error', default="Error"), f"Failed to save profile: {e}")
+            messagebox.showerror(_err(), f"Failed to save profile: {e}")
 
     # ================================================================
     # SUPERVISIONS TAB
@@ -420,7 +344,7 @@ class AcademicStaffGUI:
         ttk.Label(filter_frame, text=_t('gui.staff.staff_hr.academic_staff.labels.status', default="Status:")).pack(side=tk.LEFT, padx=5)
         self.supervision_status_var = tk.StringVar(value=_t('gui.staff.staff_hr.academic_staff.values.all', default="All"))
         ttk.Combobox(filter_frame, textvariable=self.supervision_status_var,
-                     values=["All", "active", "completed", "withdrawn"],
+                     values=["All", "requested", "active", "completed", "withdrawn", "declined"],
                      width=15).pack(side=tk.LEFT, padx=5)
         ttk.Button(filter_frame, text=_t('gui.staff.staff_hr.academic_staff.buttons.filter', default="Filter"), command=self._load_supervisions).pack(side=tk.LEFT, padx=5)
 
@@ -453,35 +377,23 @@ class AcademicStaffGUI:
 
     def _load_supervisions(self):
         """Load supervisions data."""
-        user_id = self.current_user.get('id') or self.current_user.get('username')
         status_filter = self.supervision_status_var.get()
 
         self.supervisions_tree.delete(*self.supervisions_tree.get_children())
 
         try:
-            with get_connection() as conn:
-                cursor = conn.cursor()
-
-                query = '''
-                    SELECT supervision_id, student_name, program_type, thesis_title,
-                           supervision_role, start_date, expected_end_date, status
-                    FROM student_supervisions
-                    WHERE supervisor_id = ?
-                '''
-                params = [user_id]
-
-                if status_filter != "All":
-                    query += ' AND status = ?'
-                    params.append(status_filter)
-
-                query += ' ORDER BY start_date DESC'
-                cursor.execute(query, params)
-
-                for row in cursor.fetchall():
-                    status = row[7] or 'active'
-                    self.supervisions_tree.insert('', 'end', values=row, tags=(status,))
+            rows = self.manager.get_supervisions(
+                self.username, None if status_filter == "All" else status_filter,
+                actor=_hr.actor(self))
+            for row in rows:
+                status = row.get('status') or 'active'
+                self.supervisions_tree.insert('', 'end', values=(
+                    row['supervision_id'], row.get('student_name') or '', row.get('program_type') or '',
+                    row.get('thesis_title') or '', row.get('supervision_role') or '',
+                    row.get('start_date') or '', row.get('expected_end_date') or '', status),
+                    tags=(status,))
         except Exception as e:
-            print(f"Error loading supervisions: {e}")
+            messagebox.showerror(_err(), f"Failed to load supervisions: {e}")
 
     def _add_supervision(self):
         """Add new supervision."""
@@ -491,7 +403,7 @@ class AcademicStaffGUI:
         """Edit selected supervision."""
         selection = self.supervisions_tree.selection()
         if not selection:
-            messagebox.showwarning(_t('gui.staff.staff_hr.academic_staff.dialogs.warning', default="Warning"), _t('gui.staff.staff_hr.academic_staff.dialogs.please_select_a_supervision_to_edit', default="Please select a supervision to edit"))
+            messagebox.showwarning(_warn(), _t('gui.staff.staff_hr.academic_staff.dialogs.please_select_a_supervision_to_edit', default="Please select a supervision to edit"))
             return
 
         item = self.supervisions_tree.item(selection[0])
@@ -539,74 +451,50 @@ class AcademicStaffGUI:
         ttk.Label(dialog, text=_t('gui.staff.staff_hr.academic_staff.labels.status', default="Status:")).pack(pady=5)
         status_var = tk.StringVar(value=_t('gui.staff.staff_hr.academic_staff.values.active', default="active"))
         ttk.Combobox(dialog, textvariable=status_var,
-                     values=['active', 'completed', 'withdrawn'],
+                     values=['requested', 'active', 'completed', 'withdrawn', 'declined'],
                      width=15).pack(pady=5)
 
         # Load existing data if editing
         if supervision_id:
             try:
-                with get_connection() as conn:
-                    cursor = conn.cursor()
-                    cursor.execute('''
-                        SELECT student_name, student_id, program_type, thesis_title,
-                               supervision_role, start_date, expected_end_date, status
-                        FROM student_supervisions WHERE supervision_id = ?
-                    ''', (supervision_id,))
-                    row = cursor.fetchone()
-                    if row:
-                        student_name_var.set(row[0] or '')
-                        student_id_var.set(row[1] or '')
-                        program_var.set(row[2] or '')
-                        thesis_var.set(row[3] or '')
-                        role_var.set(row[4] or 'primary')
-                        start_var.set(row[5] or '')
-                        end_var.set(row[6] or '')
-                        status_var.set(row[7] or 'active')
+                row = self.manager.get_supervision(supervision_id, actor=_hr.actor(self))
+                if row:
+                    student_name_var.set(row.get('student_name') or '')
+                    student_id_var.set(row.get('student_id') or '')
+                    program_var.set(row.get('program_type') or '')
+                    thesis_var.set(row.get('thesis_title') or '')
+                    role_var.set(row.get('supervision_role') or 'primary')
+                    start_var.set(row.get('start_date') or '')
+                    end_var.set(row.get('expected_end_date') or '')
+                    status_var.set(row.get('status') or 'active')
             except Exception as e:
-                print(f"Error loading supervision: {e}")
+                messagebox.showerror(_err(), f"Failed to load supervision: {e}", parent=dialog)
 
         def save():
-            user_id = self.current_user.get('id') or self.current_user.get('username')
-
-            if not student_name_var.get():
-                messagebox.showwarning(_t('gui.staff.staff_hr.academic_staff.dialogs.warning', default="Warning"), _t('gui.staff.staff_hr.academic_staff.dialogs.please_enter_student_name', default="Please enter student name"))
+            if not student_name_var.get().strip():
+                messagebox.showwarning(_warn(), _t('gui.staff.staff_hr.academic_staff.dialogs.please_enter_student_name', default="Please enter student name"))
                 return
 
+            data = dict(student_name=student_name_var.get().strip(),
+                        thesis_title=thesis_var.get().strip(), supervision_role=role_var.get(),
+                        start_date=start_var.get().strip() or None,
+                        expected_end_date=end_var.get().strip() or None, status=status_var.get())
             try:
-                with transaction() as conn:
-                    if supervision_id:
-                        conn.execute('''
-                            UPDATE student_supervisions SET
-                                student_name = ?, student_id = ?, program_type = ?,
-                                thesis_title = ?, supervision_role = ?, start_date = ?,
-                                expected_end_date = ?, status = ?, updated_at = ?
-                            WHERE supervision_id = ?
-                        ''', (
-                            student_name_var.get(), student_id_var.get(), program_var.get(),
-                            thesis_var.get(), role_var.get(), start_var.get() or None,
-                            end_var.get() or None, status_var.get(),
-                            datetime.now().isoformat(), supervision_id
-                        ))
-                    else:
-                        conn.execute('''
-                            INSERT INTO student_supervisions (
-                                supervisor_id, student_name, student_id, program_type,
-                                thesis_title, supervision_role, start_date,
-                                expected_end_date, status
-                            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-                        ''', (
-                            user_id, student_name_var.get(), student_id_var.get(),
-                            program_var.get(), thesis_var.get(), role_var.get(),
-                            start_var.get() or None, end_var.get() or None, status_var.get()
-                        ))
-                    conn.commit()
+                if supervision_id:
+                    self.manager.update_supervision(
+                        supervision_id, actor=_hr.actor(self), student_id=student_id_var.get().strip(),
+                        program_type=program_var.get(), **data)
+                else:
+                    self.manager.add_supervision(
+                        self.username, student_id_var.get().strip(), program_var.get(),
+                        actor=_hr.actor(self), **data)
 
-                log_activity('update' if supervision_id else 'create', 'student_supervision', user_id=user_id)
-                messagebox.showinfo(_t('gui.staff.staff_hr.academic_staff.dialogs.success', default="Success"), _t('gui.staff.staff_hr.academic_staff.dialogs.supervision_saved_successfully', default="Supervision saved successfully"))
+                log_activity('update' if supervision_id else 'create', 'student_supervision', user_id=self.username)
+                messagebox.showinfo(_ok(), _t('gui.staff.staff_hr.academic_staff.dialogs.supervision_saved_successfully', default="Supervision saved successfully"))
                 dialog.destroy()
                 self._load_supervisions()
             except Exception as e:
-                messagebox.showerror(_t('gui.staff.staff_hr.academic_staff.dialogs.error', default="Error"), f"Failed to save supervision: {e}")
+                messagebox.showerror(_err(), f"Failed to save supervision: {e}", parent=dialog)
 
         ttk.Button(dialog, text=_t('gui.staff.staff_hr.academic_staff.buttons.save', default="Save"), command=save).pack(pady=20)
 
@@ -614,7 +502,7 @@ class AcademicStaffGUI:
         """Update progress notes for supervision."""
         selection = self.supervisions_tree.selection()
         if not selection:
-            messagebox.showwarning(_t('gui.staff.staff_hr.academic_staff.dialogs.warning', default="Warning"), _t('gui.staff.staff_hr.academic_staff.dialogs.please_select_a_supervision', default="Please select a supervision"))
+            messagebox.showwarning(_warn(), _t('gui.staff.staff_hr.academic_staff.dialogs.please_select_a_supervision', default="Please select a supervision"))
             return
 
         item = self.supervisions_tree.item(selection[0])
@@ -633,30 +521,20 @@ class AcademicStaffGUI:
 
         # Load existing notes
         try:
-            with get_connection() as conn:
-                cursor = conn.cursor()
-                cursor.execute('SELECT progress_notes FROM student_supervisions WHERE supervision_id = ?',
-                               (supervision_id,))
-                row = cursor.fetchone()
-                if row and row[0]:
-                    notes_text.insert('1.0', row[0])
+            row = self.manager.get_supervision(supervision_id, actor=_hr.actor(self))
+            if row and row.get('progress_notes'):
+                notes_text.insert('1.0', row['progress_notes'])
         except Exception as e:
-            print(f"Error loading notes: {e}")
+            messagebox.showerror(_err(), f"Failed to load notes: {e}", parent=dialog)
 
         def save_notes():
             try:
-                with transaction() as conn:
-                    conn.execute('''
-                        UPDATE student_supervisions SET
-                            progress_notes = ?, updated_at = ?
-                        WHERE supervision_id = ?
-                    ''', (notes_text.get('1.0', tk.END).strip(),
-                          datetime.now().isoformat(), supervision_id))
-                    conn.commit()
-                messagebox.showinfo(_t('gui.staff.staff_hr.academic_staff.dialogs.success', default="Success"), _t('gui.staff.staff_hr.academic_staff.dialogs.progress_notes_saved', default="Progress notes saved"))
+                self.manager.update_supervision(supervision_id, actor=_hr.actor(self),
+                                                progress_notes=notes_text.get('1.0', tk.END).strip())
+                messagebox.showinfo(_ok(), _t('gui.staff.staff_hr.academic_staff.dialogs.progress_notes_saved', default="Progress notes saved"))
                 dialog.destroy()
             except Exception as e:
-                messagebox.showerror(_t('gui.staff.staff_hr.academic_staff.dialogs.error', default="Error"), f"Failed to save notes: {e}")
+                messagebox.showerror(_err(), f"Failed to save notes: {e}", parent=dialog)
 
         ttk.Button(dialog, text=_t('gui.staff.staff_hr.academic_staff.buttons.save_notes', default="Save Notes"), command=save_notes).pack(pady=10)
 
@@ -669,8 +547,8 @@ class AcademicStaffGUI:
         tab = ttk.Frame(self.notebook)
         self.notebook.add(tab, text=_t('gui.staff.staff_hr.academic_staff.tabs.external_examiners', default="External Examiners"))
 
-        role = self.current_user.get('role')
-        is_admin = role in ['admin', 'staff']
+        # Examiner appointments are HR's to record.
+        is_admin = self.is_hr
 
         # Buttons frame
         btn_frame = ttk.Frame(tab)
@@ -711,19 +589,14 @@ class AcademicStaffGUI:
         self.examiners_tree.delete(*self.examiners_tree.get_children())
 
         try:
-            with get_connection() as conn:
-                cursor = conn.cursor()
-                cursor.execute('''
-                    SELECT examiner_id, name, institution, expertise_area,
-                           department, appointment_start, appointment_end, status
-                    FROM external_examiners
-                    ORDER BY name
-                ''')
-
-                for row in cursor.fetchall():
-                    self.examiners_tree.insert('', 'end', values=row)
+            for row in self.manager.get_external_examiners(active_only=False):
+                self.examiners_tree.insert('', 'end', values=(
+                    row['examiner_id'], row.get('name') or '', row.get('institution') or '',
+                    row.get('expertise_area') or '', row.get('department') or '',
+                    row.get('appointment_start') or '', row.get('appointment_end') or '',
+                    row.get('status') or ''))
         except Exception as e:
-            print(f"Error loading examiners: {e}")
+            messagebox.showerror(_err(), f"Failed to load examiners: {e}")
 
     def _add_examiner(self):
         """Add new external examiner."""
@@ -733,7 +606,7 @@ class AcademicStaffGUI:
         """Edit selected examiner."""
         selection = self.examiners_tree.selection()
         if not selection:
-            messagebox.showwarning(_t('gui.staff.staff_hr.academic_staff.dialogs.warning', default="Warning"), _t('gui.staff.staff_hr.academic_staff.dialogs.please_select_an_examiner_to_edit', default="Please select an examiner to edit"))
+            messagebox.showwarning(_warn(), _t('gui.staff.staff_hr.academic_staff.dialogs.please_select_an_examiner_to_edit', default="Please select an examiner to edit"))
             return
 
         item = self.examiners_tree.item(selection[0])
@@ -767,73 +640,44 @@ class AcademicStaffGUI:
                      values=['active', 'inactive', 'expired'], width=15).pack(pady=2)
 
         if examiner_id:
-            try:
-                with get_connection() as conn:
-                    cursor = conn.cursor()
-                    cursor.execute('''
-                        SELECT name, institution, email, phone, expertise_area,
-                               department, appointment_start, appointment_end, status
-                        FROM external_examiners WHERE examiner_id = ?
-                    ''', (examiner_id,))
-                    row = cursor.fetchone()
-                    if row:
-                        fields['name'].set(row[0] or '')
-                        fields['institution'].set(row[1] or '')
-                        fields['email'].set(row[2] or '')
-                        fields['phone'].set(row[3] or '')
-                        fields['expertise_area'].set(row[4] or '')
-                        fields['department'].set(row[5] or '')
-                        fields['appointment_start_(yyyy-mm-dd)'].set(row[6] or '')
-                        fields['appointment_end_(yyyy-mm-dd)'].set(row[7] or '')
-                        status_var.set(row[8] or 'active')
-            except Exception as e:
-                print(f"Error loading examiner: {e}")
+            row = self.manager.get_external_examiner(examiner_id)
+            if row:
+                fields['name'].set(row.get('name') or '')
+                fields['institution'].set(row.get('institution') or '')
+                fields['email'].set(row.get('email') or '')
+                fields['phone'].set(row.get('phone') or '')
+                fields['expertise_area'].set(row.get('expertise_area') or '')
+                fields['department'].set(row.get('department') or '')
+                fields['appointment_start_(yyyy-mm-dd)'].set(row.get('appointment_start') or '')
+                fields['appointment_end_(yyyy-mm-dd)'].set(row.get('appointment_end') or '')
+                status_var.set(row.get('status') or 'active')
 
         def save():
-            if not fields['name'].get():
-                messagebox.showwarning(_t('gui.staff.staff_hr.academic_staff.dialogs.warning', default="Warning"), _t('gui.staff.staff_hr.academic_staff.dialogs.please_enter_examiner_name', default="Please enter examiner name"))
+            if not fields['name'].get().strip():
+                messagebox.showwarning(_warn(), _t('gui.staff.staff_hr.academic_staff.dialogs.please_enter_examiner_name', default="Please enter examiner name"))
                 return
 
+            data = dict(institution=fields['institution'].get().strip(),
+                        email=fields['email'].get().strip(), phone=fields['phone'].get().strip(),
+                        expertise_area=fields['expertise_area'].get().strip(),
+                        department=fields['department'].get().strip(),
+                        appointment_start=fields['appointment_start_(yyyy-mm-dd)'].get().strip() or None,
+                        appointment_end=fields['appointment_end_(yyyy-mm-dd)'].get().strip() or None,
+                        status=status_var.get())
             try:
-                with transaction() as conn:
-                    if examiner_id:
-                        conn.execute('''
-                            UPDATE external_examiners SET
-                                name = ?, institution = ?, email = ?, phone = ?,
-                                expertise_area = ?, department = ?, appointment_start = ?,
-                                appointment_end = ?, status = ?
-                            WHERE examiner_id = ?
-                        ''', (
-                            fields['name'].get(), fields['institution'].get(),
-                            fields['email'].get(), fields['phone'].get(),
-                            fields['expertise_area'].get(), fields['department'].get(),
-                            fields['appointment_start_(yyyy-mm-dd)'].get() or None,
-                            fields['appointment_end_(yyyy-mm-dd)'].get() or None,
-                            status_var.get(), examiner_id
-                        ))
-                    else:
-                        conn.execute('''
-                            INSERT INTO external_examiners (
-                                name, institution, email, phone, expertise_area,
-                                department, appointment_start, appointment_end, status
-                            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-                        ''', (
-                            fields['name'].get(), fields['institution'].get(),
-                            fields['email'].get(), fields['phone'].get(),
-                            fields['expertise_area'].get(), fields['department'].get(),
-                            fields['appointment_start_(yyyy-mm-dd)'].get() or None,
-                            fields['appointment_end_(yyyy-mm-dd)'].get() or None,
-                            status_var.get()
-                        ))
-                    conn.commit()
+                if examiner_id:
+                    self.manager.update_external_examiner(examiner_id, _hr.actor(self),
+                                                          name=fields['name'].get().strip(), **data)
+                else:
+                    self.manager.add_external_examiner(fields['name'].get().strip(),
+                                                       actor=_hr.actor(self), **data)
 
-                user_id = self.current_user.get('id') or self.current_user.get('username')
-                log_activity('update' if examiner_id else 'create', 'external_examiner', user_id=user_id)
-                messagebox.showinfo(_t('gui.staff.staff_hr.academic_staff.dialogs.success', default="Success"), _t('gui.staff.staff_hr.academic_staff.dialogs.examiner_saved_successfully', default="Examiner saved successfully"))
+                log_activity('update' if examiner_id else 'create', 'external_examiner', user_id=self.username)
+                messagebox.showinfo(_ok(), _t('gui.staff.staff_hr.academic_staff.dialogs.examiner_saved_successfully', default="Examiner saved successfully"))
                 dialog.destroy()
                 self._load_examiners()
             except Exception as e:
-                messagebox.showerror(_t('gui.staff.staff_hr.academic_staff.dialogs.error', default="Error"), f"Failed to save examiner: {e}")
+                messagebox.showerror(_err(), f"Failed to save examiner: {e}", parent=dialog)
 
         ttk.Button(dialog, text=_t('gui.staff.staff_hr.academic_staff.buttons.save', default="Save"), command=save).pack(pady=15)
 
@@ -841,7 +685,7 @@ class AcademicStaffGUI:
         """View examiner assignments."""
         selection = self.examiners_tree.selection()
         if not selection:
-            messagebox.showwarning(_t('gui.staff.staff_hr.academic_staff.dialogs.warning', default="Warning"), _t('gui.staff.staff_hr.academic_staff.dialogs.please_select_an_examiner', default="Please select an examiner"))
+            messagebox.showwarning(_warn(), _t('gui.staff.staff_hr.academic_staff.dialogs.please_select_an_examiner', default="Please select an examiner"))
             return
 
         item = self.examiners_tree.item(selection[0])
@@ -863,24 +707,14 @@ class AcademicStaffGUI:
         tree.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
         try:
-            with get_connection() as conn:
-                cursor = conn.cursor()
-                cursor.execute('''
-                    SELECT assignment_id, student_name, assignment_type,
-                           academic_year, report_submitted, report_date
-                    FROM examiner_assignments
-                    WHERE examiner_id = ?
-                    ORDER BY academic_year DESC
-                ''', (examiner_id,))
-
-                for row in cursor.fetchall():
-                    tree.insert('', 'end', values=(
-                        row[0], row[1] or 'N/A', row[2] or 'N/A',
-                        row[3] or 'N/A', 'Yes' if row[4] else 'No',
-                        row[5] or 'N/A'
-                    ))
+            for row in self.manager.get_examiner_assignments(examiner_id):
+                tree.insert('', 'end', values=(
+                    row['assignment_id'], row.get('student_name') or 'N/A',
+                    row.get('assignment_type') or 'N/A', row.get('academic_year') or 'N/A',
+                    'Yes' if row.get('report_submitted') else 'No', row.get('report_date') or 'N/A'
+                ))
         except Exception as e:
-            print(f"Error loading assignments: {e}")
+            messagebox.showerror(_err(), f"Failed to load assignments: {e}", parent=dialog)
 
         ttk.Button(dialog, text=_t('gui.staff.staff_hr.academic_staff.buttons.close', default="Close"), command=dialog.destroy).pack(pady=10)
 
@@ -941,50 +775,29 @@ class AcademicStaffGUI:
 
     def _load_observations(self):
         """Load peer observations."""
-        user_id = self.current_user.get('id') or self.current_user.get('username')
         view = self.obs_view_var.get()
 
         self.obs_tree.delete(*self.obs_tree.get_children())
 
         try:
-            with get_connection() as conn:
-                cursor = conn.cursor()
+            if view == "my_observations":
+                rows = self.manager.get_peer_observations(self.username, 'observer', actor=_hr.actor(self))
+            elif view == "observations_of_me":
+                rows = self.manager.get_peer_observations(self.username, 'observee', actor=_hr.actor(self))
+            else:
+                # HR sees every observation; others their own and their reports'.
+                rows = self.manager.list_observations(_hr.actor(self))
 
-                if view == "my_observations":
-                    query = '''
-                        SELECT observation_id, observer_name, observee_name, course_name,
-                               observation_date, observation_type, overall_rating, status
-                        FROM peer_observations WHERE observer_id = ?
-                        ORDER BY observation_date DESC
-                    '''
-                    params = [user_id]
-                elif view == "observations_of_me":
-                    query = '''
-                        SELECT observation_id, observer_name, observee_name, course_name,
-                               observation_date, observation_type, overall_rating, status
-                        FROM peer_observations WHERE observee_id = ?
-                        ORDER BY observation_date DESC
-                    '''
-                    params = [user_id]
-                else:
-                    query = '''
-                        SELECT observation_id, observer_name, observee_name, course_name,
-                               observation_date, observation_type, overall_rating, status
-                        FROM peer_observations
-                        ORDER BY observation_date DESC
-                    '''
-                    params = []
-
-                cursor.execute(query, params)
-
-                for row in cursor.fetchall():
-                    status = row[7] or 'draft'
-                    self.obs_tree.insert('', 'end', values=(
-                        row[0], row[1] or 'N/A', row[2] or 'N/A', row[3] or 'N/A',
-                        row[4] or 'N/A', row[5] or 'N/A', row[6] or 'N/A', status
-                    ), tags=(status,))
+            for row in rows:
+                status = row.get('status') or 'draft'
+                self.obs_tree.insert('', 'end', values=(
+                    row['observation_id'], row.get('observer_name') or 'N/A',
+                    row.get('observee_name') or 'N/A', row.get('course_name') or 'N/A',
+                    row.get('observation_date') or 'N/A', row.get('observation_type') or 'N/A',
+                    row.get('overall_rating') or 'N/A', status
+                ), tags=(status,))
         except Exception as e:
-            print(f"Error loading observations: {e}")
+            messagebox.showerror(_err(), f"Failed to load observations: {e}")
 
     def _add_observation(self):
         """Add new peer observation."""
@@ -994,7 +807,7 @@ class AcademicStaffGUI:
         """Edit selected observation."""
         selection = self.obs_tree.selection()
         if not selection:
-            messagebox.showwarning(_t('gui.staff.staff_hr.academic_staff.dialogs.warning', default="Warning"), _t('gui.staff.staff_hr.academic_staff.dialogs.please_select_an_observation', default="Please select an observation"))
+            messagebox.showwarning(_warn(), _t('gui.staff.staff_hr.academic_staff.dialogs.please_select_an_observation', default="Please select an observation"))
             return
 
         item = self.obs_tree.item(selection[0])
@@ -1027,7 +840,9 @@ class AcademicStaffGUI:
 
         ttk.Label(basic_frame, text=_t('gui.staff.staff_hr.academic_staff.labels.observee_staff_being_observed', default="Observee (Staff being observed):")).pack(anchor=tk.W)
         observee_var = tk.StringVar()
-        ttk.Entry(basic_frame, textvariable=observee_var, width=40).pack(pady=2)
+        observee_entry = ttk.Entry(basic_frame, textvariable=observee_var, width=40)
+        observee_entry.pack(pady=2)
+        ttk.Label(basic_frame, text="(their username or staff number)", font=('Arial', 8)).pack(anchor=tk.W)
 
         ttk.Label(basic_frame, text=_t('gui.staff.staff_hr.academic_staff.labels.course_code_name', default="Course Code/Name:")).pack(anchor=tk.W)
         course_var = tk.StringVar()
@@ -1074,92 +889,73 @@ class AcademicStaffGUI:
         ttk.Label(feedback_frame, text=_t('gui.staff.staff_hr.academic_staff.labels.status', default="Status:")).pack(anchor=tk.W)
         status_var = tk.StringVar(value=_t('gui.staff.staff_hr.academic_staff.values.draft', default="draft"))
         ttk.Combobox(feedback_frame, textvariable=status_var,
-                     values=['draft', 'submitted', 'acknowledged'], width=15).pack(pady=2)
+                     values=['draft', 'submitted'], width=15, state='readonly').pack(pady=2)
 
         # Load existing data
+        record = None
         if obs_id:
             try:
-                with get_connection() as conn:
-                    cursor = conn.cursor()
-                    cursor.execute('''
-                        SELECT observee_name, course_name, observation_date, observation_type,
-                               class_size, duration_minutes, strengths, areas_for_development,
-                               action_points, overall_rating, status
-                        FROM peer_observations WHERE observation_id = ?
-                    ''', (obs_id,))
-                    row = cursor.fetchone()
-                    if row:
-                        observee_var.set(row[0] or '')
-                        course_var.set(row[1] or '')
-                        date_var.set(row[2] or '')
-                        type_var.set(row[3] or 'peer')
-                        size_var.set(str(row[4] or ''))
-                        duration_var.set(str(row[5] or ''))
-                        strengths_text.insert('1.0', row[6] or '')
-                        areas_text.insert('1.0', row[7] or '')
-                        actions_text.insert('1.0', row[8] or '')
-                        rating_var.set(str(row[9] or ''))
-                        status_var.set(row[10] or 'draft')
+                record = self.manager.get_observation(obs_id, actor=_hr.actor(self))
             except Exception as e:
-                print(f"Error loading observation: {e}")
+                messagebox.showerror(_err(), f"Failed to load observation: {e}", parent=dialog)
+                dialog.destroy()
+                return
+            if record:
+                observee_var.set(record.get('observee_name') or record.get('observee_id') or '')
+                observee_entry.config(state='readonly')
+                course_var.set(record.get('course_name') or '')
+                date_var.set(record.get('observation_date') or '')
+                type_var.set(record.get('observation_type') or 'peer')
+                size_var.set(str(record.get('class_size') or ''))
+                duration_var.set(str(record.get('duration_minutes') or ''))
+                strengths_text.insert('1.0', record.get('strengths') or '')
+                areas_text.insert('1.0', record.get('areas_for_development') or '')
+                actions_text.insert('1.0', record.get('action_points') or '')
+                rating_var.set(str(record.get('overall_rating') or ''))
+                status_var.set(record.get('status') or 'draft')
 
         def save():
-            user_id = self.current_user.get('id') or self.current_user.get('username')
-            username = self.current_user.get('username', user_id)
-
-            if not observee_var.get():
-                messagebox.showwarning(_t('gui.staff.staff_hr.academic_staff.dialogs.warning', default="Warning"), _t('gui.staff.staff_hr.academic_staff.dialogs.please_enter_observee_name', default="Please enter observee name"))
+            if not observee_var.get().strip():
+                messagebox.showwarning(_warn(), _t('gui.staff.staff_hr.academic_staff.dialogs.please_enter_observee_name', default="Please enter observee name"))
                 return
 
+            data = dict(course_name=course_var.get().strip(), observation_type=type_var.get(),
+                        class_size=size_var.get().strip(), duration_minutes=duration_var.get().strip(),
+                        strengths=strengths_text.get('1.0', tk.END).strip(),
+                        areas_for_development=areas_text.get('1.0', tk.END).strip(),
+                        action_points=actions_text.get('1.0', tk.END).strip(),
+                        overall_rating=rating_var.get().strip(), status=status_var.get())
             try:
-                with transaction() as conn:
-                    if obs_id:
-                        conn.execute('''
-                            UPDATE peer_observations SET
-                                observee_name = ?, course_name = ?, observation_date = ?,
-                                observation_type = ?, class_size = ?, duration_minutes = ?,
-                                strengths = ?, areas_for_development = ?, action_points = ?,
-                                overall_rating = ?, status = ?
-                            WHERE observation_id = ?
-                        ''', (
-                            observee_var.get(), course_var.get(), date_var.get(),
-                            type_var.get(), int(size_var.get() or 0) if size_var.get() else None,
-                            int(duration_var.get() or 0) if duration_var.get() else None,
-                            strengths_text.get('1.0', tk.END).strip(),
-                            areas_text.get('1.0', tk.END).strip(),
-                            actions_text.get('1.0', tk.END).strip(),
-                            int(rating_var.get()) if rating_var.get() else None,
-                            status_var.get(), obs_id
-                        ))
-                    else:
-                        conn.execute('''
-                            INSERT INTO peer_observations (
-                                observer_id, observer_name, observee_name, course_name,
-                                observation_date, observation_type, class_size,
-                                duration_minutes, strengths, areas_for_development,
-                                action_points, overall_rating, status
-                            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                        ''', (
-                            user_id, username, observee_var.get(), course_var.get(),
-                            date_var.get(), type_var.get(),
-                            int(size_var.get() or 0) if size_var.get() else None,
-                            int(duration_var.get() or 0) if duration_var.get() else None,
-                            strengths_text.get('1.0', tk.END).strip(),
-                            areas_text.get('1.0', tk.END).strip(),
-                            actions_text.get('1.0', tk.END).strip(),
-                            int(rating_var.get()) if rating_var.get() else None,
-                            status_var.get()
-                        ))
-                    conn.commit()
+                if obs_id:
+                    self.manager.update_observation(obs_id, _hr.actor(self),
+                                                    observation_date=date_var.get().strip(), **data)
+                else:
+                    self.manager.create_observation(self.username, observee_var.get().strip(),
+                                                    date_var.get().strip(), actor=_hr.actor(self), **data)
 
-                log_activity('update' if obs_id else 'create', 'peer_observation', user_id=user_id)
-                messagebox.showinfo(_t('gui.staff.staff_hr.academic_staff.dialogs.success', default="Success"), _t('gui.staff.staff_hr.academic_staff.dialogs.observation_saved_successfully', default="Observation saved successfully"))
+                log_activity('update' if obs_id else 'create', 'peer_observation', user_id=self.username)
+                messagebox.showinfo(_ok(), _t('gui.staff.staff_hr.academic_staff.dialogs.observation_saved_successfully', default="Observation saved successfully"))
                 dialog.destroy()
                 self._load_observations()
             except Exception as e:
-                messagebox.showerror(_t('gui.staff.staff_hr.academic_staff.dialogs.error', default="Error"), f"Failed to save observation: {e}")
+                messagebox.showerror(_err(), f"Failed to save observation: {e}", parent=dialog)
+
+        def acknowledge():
+            try:
+                self.manager.acknowledge_observation(obs_id, actor=_hr.actor(self))
+            except Exception as e:
+                messagebox.showerror(_err(), f"Failed to acknowledge: {e}", parent=dialog)
+                return
+            dialog.destroy()
+            self._load_observations()
 
         btn_frame = ttk.Frame(form_frame)
         btn_frame.pack(fill=tk.X, pady=10)
-        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.academic_staff.buttons.save', default="Save"), command=save).pack(side=tk.LEFT, padx=5)
+        save_btn = ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.academic_staff.buttons.save', default="Save"), command=save)
+        save_btn.pack(side=tk.LEFT, padx=5)
+        if record is not None and not record.get('can_edit'):
+            # Only the observer edits, and not once it is acknowledged.
+            save_btn.config(state=tk.DISABLED)
+        if record is not None and record.get('can_acknowledge'):
+            ttk.Button(btn_frame, text="Acknowledge", command=acknowledge).pack(side=tk.LEFT, padx=5)
         ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.academic_staff.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(side=tk.LEFT, padx=5)

@@ -15,12 +15,14 @@ from datetime import datetime, timedelta, date
 from unittest.mock import patch, MagicMock
 
 from education_system.systems.university.infrastructure.database.db import get_connection
-from education_system.systems.university.domains.pastoral.domain.services.early_warning.early_warning_core import (
+from education_system.systems.university.domains.student_support.domain.early_warning.early_warning_core import (
     RiskAssessmentManager,
     IndicatorManager,
     InterventionManager,
     CoachingManager,
     TutoringManager,
+)
+from education_system.systems.university.domains.student_support.interfaces.cli.wellbeing.intervention_hub.early_warning_cli import (
     display_early_warning_menu,
 )
 
@@ -679,7 +681,7 @@ class TestCLIMenu:
 
     def test_display_early_warning_menu_exit(self, setup_database):
         """Test menu display and exit"""
-        with patch('builtins.input', return_value='9'):
+        with patch('builtins.input', return_value='0'):
             with patch('builtins.print'):
                 mock_auth = MagicMock()
                 display_early_warning_menu(mock_auth)

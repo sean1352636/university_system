@@ -281,8 +281,38 @@ def record_completion(enrolment: Enrolment, course: Any = None, *,
 
 # ── Commands ────────────────────────────────────────────────────────────────
 
-def create(student: Student) -> Student:
-    """Register a new learner (an applicant until they are enrolled)."""
+class DuplicateLearner(ValidationError):
+    """The new learner looks like somebody already on record.
+
+    Raised only when the caller asks for the check. ``matches`` holds the
+    existing learners, so a form can show them and let staff save anyway
+    (twins share a surname and a birthday).
+    """
+
+    def __init__(self, matches: list[Student]) -> None:
+        self.matches = matches
+        names = "; ".join(
+            f"{m.display_name}, born {m.date_of_birth or 'unknown'}, {m.status}" for m in matches)
+        super().__init__(f"This looks like a learner already on record: {names}")
+
+
+def find_possible_duplicates(student: Student) -> list[Student]:
+    return repo.find_possible_duplicates(student)
+
+
+def create(student: Student, *, check_duplicate: bool = False) -> Student:
+    """Register a new learner (an applicant until they are enrolled).
+
+    With *check_duplicate*, a learner matching someone already on record
+    (same name and date of birth, or same email) is refused with
+    :class:`DuplicateLearner`; call again without it to save anyway. The
+    forms ask for the check. Handovers from other systems don't come
+    through here; they match on the learner journey.
+    """
+    if check_duplicate:
+        matches = repo.find_possible_duplicates(student)
+        if matches:
+            raise DuplicateLearner(matches)
     created = repo.create(student)
     _register_journey(created)
     _sync_login_links(created)

@@ -647,7 +647,15 @@ _MENU: list[tuple[str, Callable[[], None]]] = [
     ("Delete",              delete_flow),
     ("─" * 6,               lambda: None),
     ("Summary",             summary_flow),
+    ("Emergency contacts & call log ▸", lambda: _contacts()),
 ]
+
+
+def _contacts() -> None:
+    from education_system.systems.sixth_form.interfaces.cli.pastoral.emergency import (
+        contacts_cli,
+    )
+    contacts_cli.run()
 
 
 def run() -> None:

@@ -24,10 +24,9 @@ from education_system.systems.university.shell.cli.auth_manager import (
 
 from education_system.systems.university.shell.cli.menu_router import display_menu
 
-from education_system.systems.university.shell.cli.chatbot_integration import setup_chatbot_permissions
+from education_system.systems.university.shell.cli.ai.chatbot_integration import setup_chatbot_permissions
 
-from education_system.systems.university.shell.cli.ai_tools_integration import (
-    integrate_ai_detector_with_main,
+from education_system.systems.university.shell.cli.ai.tools_integration import (
     integrate_plagiarism_checker_with_main
 )
 
@@ -55,7 +54,6 @@ from education_system.systems.university.shell.cli.imports import (
     init_grocery_db, setup_grocery_permissions, set_grocery_auth,
     init_staff_hr_db, setup_staff_hr_permissions, set_staff_hr_auth,
     add_finance_permissions, student_union_core,
-    MFA_INTEGRATION_AVAILABLE,
 )
 
 
@@ -139,26 +137,13 @@ def initialize_system() -> bool:
         logger.info("Setting up communication integration...")
         ensure_communication_integration_on_startup()
 
-        # Step 10: Initialize AI tools (non-critical)
-        logger.info("Initializing AI tools...")
-        try:
-            integrate_ai_detector_with_main()
-        except Exception as e:
-            logger.warning(f"AI detector initialization failed: {e}")
-
+        # Step 10: Academic integrity (similarity checks and AI-writing
+        # readings; non-critical)
+        logger.info("Initializing academic integrity...")
         try:
             integrate_plagiarism_checker_with_main()
         except Exception as e:
             logger.warning(f"Plagiarism checker initialization failed: {e}")
-
-        # Step 11: MFA integration if available
-        if MFA_INTEGRATION_AVAILABLE:
-            try:
-                from education_system.systems.university.infrastructure.auth.mfa_integration import integrate_mfa_with_auth
-                integrate_mfa_with_auth(auth)
-                logger.info("MFA integration successful")
-            except Exception as e:
-                logger.warning(f"MFA integration failed: {e}")
 
         logger.info("CLI system initialization complete")
         return True

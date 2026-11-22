@@ -324,8 +324,11 @@ def _validate_vacancy(p: dict[str, Any]) -> dict[str, Any]:
             f"{', '.join(VACANCY_STATUSES)}")
     out["status"] = status
 
+    raw_fte = out.get("fte_percent")
+    if raw_fte is None or (isinstance(raw_fte, str) and not raw_fte.strip()):
+        raw_fte = 100   # blank defaults to full time; 0 is refused below
     try:
-        fte = float(out.get("fte_percent") or 100)
+        fte = float(raw_fte)
     except (TypeError, ValueError):
         raise ValidationError(
             "FTE percent must be a number 0-100")

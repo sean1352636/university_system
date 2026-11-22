@@ -158,17 +158,17 @@ def get_available_listings(textbook_id=None):
     with get_connection() as conn:
         if textbook_id is not None:
             return conn.execute(
-                """SELECT tl.*, t.title FROM textbook_listings tl
+                """SELECT tl.*, date(tl.created_at) AS listed_date, t.title FROM textbook_listings tl
                    JOIN textbooks t ON tl.textbook_id = t.textbook_id
                    WHERE tl.textbook_id = ? AND tl.status = 'available'
                    ORDER BY tl.price ASC""",
                 (textbook_id,),
             ).fetchall()
         return conn.execute(
-            """SELECT tl.*, t.title FROM textbook_listings tl
+            """SELECT tl.*, date(tl.created_at) AS listed_date, t.title FROM textbook_listings tl
                JOIN textbooks t ON tl.textbook_id = t.textbook_id
                WHERE tl.status = 'available'
-               ORDER BY tl.listed_date DESC"""
+               ORDER BY tl.created_at DESC"""
         ).fetchall()
 
 

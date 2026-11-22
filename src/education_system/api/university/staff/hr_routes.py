@@ -1,29 +1,30 @@
-"""HR routes: staff, departments, instructors, leave, shifts, timesheets, appraisals."""
+"""HR routes: staff, departments, instructors, leave, shifts, timesheets, appraisals.
+
+Staff HR data (staff records, leave, timesheets, appraisals, shifts, HR
+roles) is reached only through ``_hr_service``, which decides with
+``domain/staff_hr/access.py`` what the caller may see and do. The caller is
+the token's username (``sub``), never an id from the request: a member of
+staff sees their own records, a line manager their reports', HR everyone's.
+Departments and instructors are reference lists.
+"""
 
 from __future__ import annotations
 
 import logging
-from datetime import datetime
 
 from flask import Blueprint, g, jsonify, request
 
-from education_system.platform.delivery.api.university.auth import admin_required, token_required
+from education_system.api.university.staff import _hr_service as hr
+from education_system.platform.delivery.api.university.auth import token_required
 from education_system.platform.delivery.api.university.pagination import get_pagination_params, paginated_response
-from education_system.platform.delivery.api.university.validators import (
-    validate_leave_request_create,
-    validate_shift_create,
-    validate_timesheet_create,
-)
 from education_system.systems.university.infrastructure.exceptions import ValidationError
 from education_system.systems.university.infrastructure.sql_safety import escape_like
-from education_system.systems.university.infrastructure.database.db import get_connection, transaction
+from education_system.systems.university.infrastructure.database.db import get_connection
 from education_system.systems.university.infrastructure.activity_logger import log_activity
 
 logger = logging.getLogger(__name__)
 
 hr_bp = Blueprint("hr", __name__, url_prefix="/api/hr")
-
-SENSITIVE_STAFF_FIELDS = {"password_hash", "salt"}
 
 
 def _row_to_dict(row, exclude: set | None = None) -> dict:
@@ -36,64 +37,73 @@ def _row_to_dict(row, exclude: set | None = None) -> dict:
     return d
 
 
+def _caller() -> dict:
+    """The signed-in caller as Staff HR takes them (username = ``sub``)."""
+    user = g.get("current_user") or {}
+    return {"username": str(user.get("sub") or user.get("username") or "").strip(),
+            "role": str(user.get("role") or "").lower(), "id": user.get("user_id")}
+
+
+def _refused(exc: Exception):
+    """A refusal as a response: PermissionError 403, a missing record 404,
+    any other ValueError 400 (the message is fit to show)."""
+    if isinstance(exc, PermissionError):
+        status, error = 403, "Forbidden"
+    elif "not found" in str(exc).lower():
+        status, error = 404, "Not Found"
+    else:
+        status, error = 400, "Bad Request"
+    return jsonify({"error": error, "message": str(exc), "status": status}), status
+
+
+def _hr_gated(what, fn, *args, status=200, **kwargs):
+    """``fn(caller, *args, **kwargs)`` from ``_hr_service`` as JSON; its
+    access refusals as :func:`_refused`."""
+    actor = _caller()
+    try:
+        result = fn(actor, *args, **kwargs)
+    except (PermissionError, ValueError) as exc:
+        return _refused(exc)
+    log_activity("view" if request.method == "GET" else "update", what, user=actor["username"])
+    if isinstance(result, list):
+        result = {"items": result, "total": len(result)}
+    return jsonify(result), status
+
+
+def _body() -> dict:
+    return request.get_json(silent=True) or {}
+
+
+def _paging() -> dict:
+    page, per_page, _offset = get_pagination_params()
+    return {"page": page, "per_page": per_page}
+
+
 # ---- Staff ----
 
 @hr_bp.route("/staff", methods=["GET"])
 @token_required
-@admin_required
 def list_staff():
-    role = request.args.get("role")
-    status = request.args.get("status")
-    search = request.args.get("search")
-
-    with get_connection() as conn:
-        if search:
-            pattern = f"%{escape_like(search)}%"
-            rows = conn.execute(
-                "SELECT * FROM staff WHERE name LIKE ? OR email LIKE ? OR username LIKE ?",
-                (pattern, pattern, pattern),
-            ).fetchall()
-            items = [_row_to_dict(r, SENSITIVE_STAFF_FIELDS) for r in rows]
-            return jsonify({"items": items, "total": len(items)})
-
-        conditions = []
-        params: list = []
-        if role:
-            conditions.append("role = ?")
-            params.append(role)
-        if status:
-            conditions.append("status = ?")
-            params.append(status)
-
-        where = (" WHERE " + " AND ".join(conditions)) if conditions else ""
-        page, per_page, offset = get_pagination_params()
-        params_count = list(params)
-        params.extend([per_page, offset])
-
-        rows = conn.execute(
-            "SELECT * FROM staff" + where + " ORDER BY name LIMIT ? OFFSET ?",
-            params,
-        ).fetchall()
-        total_row = conn.execute(
-            "SELECT COUNT(*) FROM staff" + where, params_count
-        ).fetchone()
-        total = total_row[0] if total_row else 0
-
-    log_activity("view", "staff", user=g.current_user.get("sub"))
-    return jsonify(paginated_response(
-        [_row_to_dict(r, SENSITIVE_STAFF_FIELDS) for r in rows], total, page, per_page
-    ))
+    return _hr_gated("staff", hr.list_staff, search=request.args.get("search"),
+                     department=request.args.get("department"), **_paging())
 
 
 @hr_bp.route("/staff/<int:staff_id>", methods=["GET"])
 @token_required
 def get_staff(staff_id: int):
-    with get_connection() as conn:
-        row = conn.execute("SELECT * FROM staff WHERE id = ?", (staff_id,)).fetchone()
-    if not row:
-        raise ValidationError(f"Staff {staff_id} not found")
-    log_activity("view", "staff_member", user=g.current_user.get("sub"))
-    return jsonify(_row_to_dict(row, SENSITIVE_STAFF_FIELDS))
+    return _hr_gated("staff_member", hr.get_staff, staff_id)
+
+
+@hr_bp.route("/my-team", methods=["GET"])
+@token_required
+def my_team():
+    return _hr_gated("my_team", hr.my_team, deep=request.args.get("deep") in ("1", "true", "yes"))
+
+
+@hr_bp.route("/roles", methods=["GET"])
+@token_required
+def list_hr_roles():
+    return _hr_gated("hr_roles", hr.role_holders)
 
 
 # ---- Departments ----
@@ -180,112 +190,27 @@ def list_instructors():
 @hr_bp.route("/leave-requests", methods=["GET"])
 @token_required
 def list_leave_requests():
-    user_id = request.args.get("user_id")
-    status = request.args.get("status")
-
-    with get_connection() as conn:
-        conditions = []
-        params: list = []
-        if user_id:
-            conditions.append("user_id = ?")
-            params.append(user_id)
-        if status:
-            conditions.append("status = ?")
-            params.append(status)
-
-        where = (" WHERE " + " AND ".join(conditions)) if conditions else ""
-        page, per_page, offset = get_pagination_params()
-        params_count = list(params)
-        params.extend([per_page, offset])
-
-        rows = conn.execute(
-            "SELECT * FROM leave_requests" + where + " ORDER BY created_at DESC LIMIT ? OFFSET ?",
-            params,
-        ).fetchall()
-        total_row = conn.execute(
-            "SELECT COUNT(*) FROM leave_requests" + where, params_count
-        ).fetchone()
-        total = total_row[0] if total_row else 0
-
-    log_activity("view", "leave_requests", user=g.current_user.get("sub"))
-    return jsonify(paginated_response(
-        [_row_to_dict(r) for r in rows], total, page, per_page
-    ))
+    return _hr_gated("leave_requests", hr.list_leave, person=request.args.get("user_id"),
+                     status=request.args.get("status"), **_paging())
 
 
 @hr_bp.route("/leave-requests", methods=["POST"])
 @token_required
 def create_leave_request():
-    data = request.get_json(silent=True) or {}
-    validate_leave_request_create(data)
-
-    with transaction() as conn:
-        conn.execute(
-            """INSERT INTO leave_requests
-               (user_id, leave_type_id, start_date, end_date, total_days, reason, status)
-               VALUES (?, ?, ?, ?, ?, ?, 'pending')""",
-            (
-                data["user_id"],
-                data["leave_type_id"],
-                data["start_date"],
-                data["end_date"],
-                data["total_days"],
-                data.get("reason", ""),
-            ),
-        )
-        req_id = conn.execute("SELECT last_insert_rowid()").fetchone()[0]
-
-    with get_connection() as conn:
-        row = conn.execute(
-            "SELECT * FROM leave_requests WHERE request_id = ?", (req_id,)
-        ).fetchone()
-
-    log_activity("create", "leave_request", user=g.current_user.get("sub"))
-    return jsonify(_row_to_dict(row)), 201
+    return _hr_gated("leave_request", hr.submit_leave, _body(), status=201)
 
 
 @hr_bp.route("/leave-requests/<int:request_id>", methods=["PUT"])
 @token_required
-@admin_required
 def update_leave_request(request_id: int):
-    with get_connection() as conn:
-        existing = conn.execute(
-            "SELECT 1 FROM leave_requests WHERE request_id = ?", (request_id,)
-        ).fetchone()
-    if not existing:
-        raise ValidationError(f"Leave request {request_id} not found")
+    return _hr_gated("leave_request", hr.decide_leave, request_id, _body())
 
-    data = request.get_json(silent=True) or {}
-    if not data:
-        raise ValidationError("No fields provided for update")
 
-    set_clauses = []
-    values = []
-    allowed = ["status", "approved_by", "approved_date", "rejection_reason"]
-    for field in allowed:
-        if field in data:
-            set_clauses.append(field + " = ?")
-            values.append(data[field])
-
-    if not set_clauses:
-        raise ValidationError("No valid fields to update")
-
-    set_clauses.append("updated_at = datetime('now')")
-    values.append(request_id)
-
-    with transaction() as conn:
-        conn.execute(
-            "UPDATE leave_requests SET " + ", ".join(set_clauses) + " WHERE request_id = ?",
-            values,
-        )
-
-    with get_connection() as conn:
-        row = conn.execute(
-            "SELECT * FROM leave_requests WHERE request_id = ?", (request_id,)
-        ).fetchone()
-
-    log_activity("update", "leave_request", user=g.current_user.get("sub"))
-    return jsonify(_row_to_dict(row))
+@hr_bp.route("/leave-balances", methods=["GET"])
+@token_required
+def leave_balances():
+    return _hr_gated("leave_balances", hr.leave_balances, person=request.args.get("user_id"),
+                     year=request.args.get("year"))
 
 
 # ---- Shifts ----
@@ -293,67 +218,14 @@ def update_leave_request(request_id: int):
 @hr_bp.route("/shifts", methods=["GET"])
 @token_required
 def list_shifts():
-    staff_id = request.args.get("staff_id")
-    status = request.args.get("status")
-
-    with get_connection() as conn:
-        conditions = []
-        params: list = []
-        if staff_id:
-            conditions.append("staff_id = ?")
-            params.append(staff_id)
-        if status:
-            conditions.append("status = ?")
-            params.append(status)
-
-        where = (" WHERE " + " AND ".join(conditions)) if conditions else ""
-        page, per_page, offset = get_pagination_params()
-        params_count = list(params)
-        params.extend([per_page, offset])
-
-        rows = conn.execute(
-            "SELECT * FROM shifts" + where + " ORDER BY shift_date DESC LIMIT ? OFFSET ?",
-            params,
-        ).fetchall()
-        total_row = conn.execute(
-            "SELECT COUNT(*) FROM shifts" + where, params_count
-        ).fetchone()
-        total = total_row[0] if total_row else 0
-
-    log_activity("view", "shifts", user=g.current_user.get("sub"))
-    return jsonify(paginated_response(
-        [_row_to_dict(r) for r in rows], total, page, per_page
-    ))
+    return _hr_gated("shifts", hr.list_shifts, person=request.args.get("staff_id"),
+                     status=request.args.get("status"), **_paging())
 
 
 @hr_bp.route("/shifts", methods=["POST"])
 @token_required
-@admin_required
 def create_shift():
-    data = request.get_json(silent=True) or {}
-    validate_shift_create(data)
-
-    with transaction() as conn:
-        conn.execute(
-            """INSERT INTO shifts
-               (staff_id, shift_date, start_time, end_time, position, notes, status)
-               VALUES (?, ?, ?, ?, ?, ?, 'scheduled')""",
-            (
-                data["staff_id"],
-                data["shift_date"],
-                data["start_time"],
-                data["end_time"],
-                data.get("position", "general"),
-                data.get("notes", ""),
-            ),
-        )
-        shift_id = conn.execute("SELECT last_insert_rowid()").fetchone()[0]
-
-    with get_connection() as conn:
-        row = conn.execute("SELECT * FROM shifts WHERE id = ?", (shift_id,)).fetchone()
-
-    log_activity("create", "shift", user=g.current_user.get("sub"))
-    return jsonify(_row_to_dict(row)), 201
+    return _hr_gated("shift", hr.create_shift, _body(), status=201)
 
 
 # ---- Timesheets ----
@@ -361,115 +233,20 @@ def create_shift():
 @hr_bp.route("/timesheets", methods=["GET"])
 @token_required
 def list_timesheets():
-    user_id = request.args.get("user_id")
-    status = request.args.get("status")
-
-    with get_connection() as conn:
-        conditions = []
-        params: list = []
-        if user_id:
-            conditions.append("user_id = ?")
-            params.append(user_id)
-        if status:
-            conditions.append("status = ?")
-            params.append(status)
-
-        where = (" WHERE " + " AND ".join(conditions)) if conditions else ""
-        page, per_page, offset = get_pagination_params()
-        params_count = list(params)
-        params.extend([per_page, offset])
-
-        rows = conn.execute(
-            "SELECT * FROM timesheets" + where + " ORDER BY week_start DESC LIMIT ? OFFSET ?",
-            params,
-        ).fetchall()
-        total_row = conn.execute(
-            "SELECT COUNT(*) FROM timesheets" + where, params_count
-        ).fetchone()
-        total = total_row[0] if total_row else 0
-
-    log_activity("view", "timesheets", user=g.current_user.get("sub"))
-    return jsonify(paginated_response(
-        [_row_to_dict(r) for r in rows], total, page, per_page
-    ))
+    return _hr_gated("timesheets", hr.list_timesheets, person=request.args.get("user_id"),
+                     status=request.args.get("status"), **_paging())
 
 
 @hr_bp.route("/timesheets", methods=["POST"])
 @token_required
 def create_timesheet():
-    data = request.get_json(silent=True) or {}
-    validate_timesheet_create(data)
-
-    with transaction() as conn:
-        conn.execute(
-            """INSERT INTO timesheets
-               (user_id, week_start, week_end, total_hours, regular_hours, overtime_hours, status, notes)
-               VALUES (?, ?, ?, ?, ?, ?, 'draft', ?)""",
-            (
-                data["user_id"],
-                data["week_start"],
-                data["week_end"],
-                data.get("total_hours", 0),
-                data.get("regular_hours", 0),
-                data.get("overtime_hours", 0),
-                data.get("notes", ""),
-            ),
-        )
-        ts_id = conn.execute("SELECT last_insert_rowid()").fetchone()[0]
-
-    with get_connection() as conn:
-        row = conn.execute(
-            "SELECT * FROM timesheets WHERE timesheet_id = ?", (ts_id,)
-        ).fetchone()
-
-    log_activity("create", "timesheet", user=g.current_user.get("sub"))
-    return jsonify(_row_to_dict(row)), 201
+    return _hr_gated("timesheet", hr.create_timesheet, _body(), status=201)
 
 
 @hr_bp.route("/timesheets/<int:timesheet_id>", methods=["PUT"])
 @token_required
 def update_timesheet(timesheet_id: int):
-    with get_connection() as conn:
-        existing = conn.execute(
-            "SELECT 1 FROM timesheets WHERE timesheet_id = ?", (timesheet_id,)
-        ).fetchone()
-    if not existing:
-        raise ValidationError(f"Timesheet {timesheet_id} not found")
-
-    data = request.get_json(silent=True) or {}
-    if not data:
-        raise ValidationError("No fields provided for update")
-
-    set_clauses = []
-    values = []
-    allowed = [
-        "total_hours", "regular_hours", "overtime_hours", "status",
-        "approved_by", "approved_date", "rejection_reason", "notes",
-    ]
-    for field in allowed:
-        if field in data:
-            set_clauses.append(field + " = ?")
-            values.append(data[field])
-
-    if not set_clauses:
-        raise ValidationError("No valid fields to update")
-
-    set_clauses.append("updated_at = datetime('now')")
-    values.append(timesheet_id)
-
-    with transaction() as conn:
-        conn.execute(
-            "UPDATE timesheets SET " + ", ".join(set_clauses) + " WHERE timesheet_id = ?",
-            values,
-        )
-
-    with get_connection() as conn:
-        row = conn.execute(
-            "SELECT * FROM timesheets WHERE timesheet_id = ?", (timesheet_id,)
-        ).fetchone()
-
-    log_activity("update", "timesheet", user=g.current_user.get("sub"))
-    return jsonify(_row_to_dict(row))
+    return _hr_gated("timesheet", hr.update_timesheet, timesheet_id, _body())
 
 
 # ---- Appraisals ----
@@ -477,34 +254,6 @@ def update_timesheet(timesheet_id: int):
 @hr_bp.route("/appraisals", methods=["GET"])
 @token_required
 def list_appraisals():
-    user_id = request.args.get("user_id")
-    status = request.args.get("status")
-
-    with get_connection() as conn:
-        conditions = []
-        params: list = []
-        if user_id:
-            conditions.append("user_id = ?")
-            params.append(user_id)
-        if status:
-            conditions.append("status = ?")
-            params.append(status)
-
-        where = (" WHERE " + " AND ".join(conditions)) if conditions else ""
-        page, per_page, offset = get_pagination_params()
-        params_count = list(params)
-        params.extend([per_page, offset])
-
-        rows = conn.execute(
-            "SELECT * FROM appraisal_records" + where + " ORDER BY created_at DESC LIMIT ? OFFSET ?",
-            params,
-        ).fetchall()
-        total_row = conn.execute(
-            "SELECT COUNT(*) FROM appraisal_records" + where, params_count
-        ).fetchone()
-        total = total_row[0] if total_row else 0
-
-    log_activity("view", "appraisals", user=g.current_user.get("sub"))
-    return jsonify(paginated_response(
-        [_row_to_dict(r) for r in rows], total, page, per_page
-    ))
+    return _hr_gated("appraisals", hr.list_appraisals, person=request.args.get("user_id"),
+                     status=request.args.get("status"), cycle_id=request.args.get("cycle_id"),
+                     **_paging())

@@ -473,7 +473,21 @@ def cycle_summary(cycle: str) -> CycleSummary:
     )
 
 
+# ── Evidence from data ────────────────────────────────────────────
+
+def pull_evidence(section_id: int, *,
+                  academic_year: str | None = None) -> SEFSection:
+    """Insert today's data (measures, attendance, behaviour, safeguarding
+    training) into the section's evidence as a dated block, keeping the
+    author's text. See :mod:`sef_evidence`."""
+    from education_system.systems.sixth_form.domain.assessment.sef_builder import (
+        sef_evidence,
+    )
+    return sef_evidence.pull_evidence(section_id, academic_year=academic_year)
+
+
 __all__ = [
+    "pull_evidence",
     "AREAS", "DEFAULT_AREA",
     "STATUSES", "DEFAULT_STATUS",
     "JUDGEMENTS", "judgement_label",

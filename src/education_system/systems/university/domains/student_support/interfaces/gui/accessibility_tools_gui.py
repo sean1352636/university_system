@@ -1,0 +1,1987 @@
+"""
+Accessibility & Accommodation Tools GUI
+
+Comprehensive interface for managing accessibility profiles, accommodation requests,
+exam accommodations, and assistive technology.
+"""
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
+import tkinter as tk
+from tkinter import ttk, messagebox, scrolledtext
+from datetime import datetime
+from typing import Optional, List, Dict, Any
+import traceback
+import json
+
+from education_system.systems.university.infrastructure.database.db import get_connection, transaction
+from education_system.systems.university.infrastructure.auth import UserAuth
+from education_system.systems.university.infrastructure.activity_logger import log_activity
+
+# Import i18n for language support
+from education_system.systems.university.infrastructure.i18n import (
+    init_i18n,
+    get_text as _t,
+    get_current_language,
+)
+from education_system.systems.university.infrastructure.utils.gui_language_selector import (
+    show_gui_language_selector,
+    create_language_menu_button,
+)
+from education_system.systems.university.domains.student_support.domain.accessibility_tools import (
+    AccessibilityProfileManager, AccommodationRequestManager,
+    ExamAccommodationManager, AssistiveTechManager
+)
+
+
+class AccessibilityToolsGUI:
+    """Main GUI for Accessibility & Accommodation Tools"""
+
+    def __init__(self, root, auth: Optional[UserAuth] = None, parent_container=None):
+        # Initialize i18n for language support
+        init_i18n()
+
+        self.root = root
+        self.auth = auth
+        self.window = None
+        self.parent_container = parent_container
+        self._is_embedded = parent_container is not None
+        self.current_user = auth.current_user if auth and auth.current_user else None
+
+        # Theme mapping between database values and display values
+        self.theme_db_to_display = {
+            'standard': lambda: _t("accessibility.themes.standard"),
+            'high_contrast': lambda: _t("accessibility.themes.high_contrast"),
+            'dark': lambda: _t("accessibility.themes.dark")
+        }
+        self.theme_display_to_db = {}  # Will be populated dynamically
+
+        # Status mapping between database values and display values
+        self.status_db_to_display = {
+            'pending': lambda: _t("accessibility.status_values.pending"),
+            'approved': lambda: _t("accessibility.status_values.approved"),
+            'denied': lambda: _t("accessibility.status_values.denied"),
+            'active': lambda: _t("accessibility.status_values.active"),
+            'fulfilled': lambda: _t("accessibility.status_values.fulfilled")
+        }
+        self.status_display_to_db = {}  # Will be populated dynamically
+
+        # Permission check
+        if not self.current_user:
+            messagebox.showerror(_t("common.error"), _t("accessibility.error.login_required"))
+            return
+
+        self.create_main_window()
+
+    def create_main_window(self):
+        """Create the main accessibility tools window"""
+        try:
+            if self._is_embedded:
+                self.window = self.parent_container
+            else:
+                self.window = tk.Toplevel(self.root)
+                self.window.title(_t("accessibility.title"))
+                # Size-only geometry() leaves the window in a screen corner;
+                # center() clamps to the display and supplies the offset.
+                try:
+                    from education_system.platform.delivery.gui.window_sizing import center
+                    center(self.window, 1400, 900, minsize=(1200, 700))
+                except Exception:
+                    self.window.geometry("1400x900")
+                    self.window.minsize(1200, 700)
+
+            # Configure style
+            style = ttk.Style()
+            style.configure('Header.TLabel', font=('Arial', 16, 'bold'))
+            style.configure('Section.TLabel', font=('Arial', 12, 'bold'))
+
+            if not self._is_embedded:
+                # Bottom frame with close button - pack FIRST to reserve space
+                bottom_frame = ttk.Frame(self.window)
+                bottom_frame.pack(side=tk.BOTTOM, fill=tk.X, padx=10, pady=5)
+
+                ttk.Button(bottom_frame, text=_t("accessibility.btn.close"),
+                          command=self.window.destroy).pack(side=tk.RIGHT, padx=5)
+
+                # Status bar
+                self.status_bar = ttk.Label(self.window, text=_t("accessibility.status.ready"), relief=tk.SUNKEN, anchor=tk.W)
+                self.status_bar.pack(side=tk.BOTTOM, fill=tk.X)
+            else:
+                self.status_bar = ttk.Label(self.window, text=_t("accessibility.status.ready"), relief=tk.SUNKEN, anchor=tk.W)
+                self.status_bar.pack(side=tk.BOTTOM, fill=tk.X)
+
+            # Main container with tabs
+            self.notebook = ttk.Notebook(self.window)
+            self.notebook.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+
+            # Create tabs
+            self.create_profiles_tab()
+            self.create_requests_tab()
+            self.create_general_accommodations_tab()
+            self.create_exam_accommodations_tab()
+            self.create_assistive_tech_tab()
+            self.create_settings_tab()
+
+            # Log activity
+            username = self.current_user.get('username') or self.current_user.get('id')
+            log_activity("Opened Accessibility Tools GUI", user=username)
+
+        except Exception as e:
+            messagebox.showerror(_t("common.error"), _t("accessibility.error.create_window", error=str(e)))
+            traceback.print_exc()
+
+    def create_profiles_tab(self):
+        """Create accessibility profiles tab"""
+        tab = ttk.Frame(self.notebook)
+        self.notebook.add(tab, text=_t("accessibility.tabs.profiles"))
+
+        # Header
+        header_frame = ttk.Frame(tab)
+        header_frame.pack(fill=tk.X, padx=10, pady=10)
+
+        ttk.Label(header_frame, text=_t("accessibility.header.profiles"),
+                 style='Header.TLabel').pack(side=tk.LEFT, padx=10)
+
+        if self.current_user.get('role') in ['admin', 'staff']:
+            ttk.Button(header_frame, text=_t("accessibility.btn.create_profile"),
+                      command=self.create_profile).pack(side=tk.RIGHT, padx=5)
+            ttk.Button(header_frame, text=_t("accessibility.btn.refresh"),
+                      command=self.load_profiles).pack(side=tk.RIGHT, padx=5)
+
+        # Profiles list
+        tree_frame = ttk.Frame(tab)
+        tree_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+
+        v_scroll = ttk.Scrollbar(tree_frame, orient=tk.VERTICAL)
+
+        self.profiles_tree = ttk.Treeview(tree_frame,
+                                         columns=('ID', 'User ID', 'Disabilities',
+                                                 'Accommodations', 'Assistive Tech', 'Updated'),
+                                         show='tree headings',
+                                         yscrollcommand=v_scroll.set)
+
+        v_scroll.config(command=self.profiles_tree.yview)
+
+        self.profiles_tree.heading('#0', text='')
+        self.profiles_tree.column('#0', width=30)
+
+        columns_config = [
+            ('ID', 60, _t("accessibility.columns.id")),
+            ('User ID', 100, _t("accessibility.columns.user_id")),
+            ('Disabilities', 250, _t("accessibility.columns.disabilities")),
+            ('Accommodations', 250, _t("accessibility.columns.accommodations")),
+            ('Assistive Tech', 200, _t("accessibility.columns.assistive_tech")),
+            ('Updated', 150, _t("accessibility.columns.updated"))
+        ]
+
+        for col, width, header in columns_config:
+            self.profiles_tree.heading(col, text=header)
+            self.profiles_tree.column(col, width=width)
+
+        self.profiles_tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        v_scroll.pack(side=tk.RIGHT, fill=tk.Y)
+
+        self.profiles_tree.bind('<Double-1>', self.view_profile)
+
+        self.load_profiles()
+
+    def create_requests_tab(self):
+        """Create accommodation requests tab"""
+        tab = ttk.Frame(self.notebook)
+        self.notebook.add(tab, text=_t("accessibility.tabs.requests"))
+
+        # Header
+        header_frame = ttk.Frame(tab)
+        header_frame.pack(fill=tk.X, padx=10, pady=10)
+
+        ttk.Label(header_frame, text=_t("accessibility.header.requests"),
+                 style='Header.TLabel').pack(side=tk.LEFT, padx=10)
+
+        # Filter by status
+        ttk.Label(header_frame, text=_t("accessibility.filter.status")).pack(side=tk.LEFT, padx=(20, 5))
+        self.request_status_filter = ttk.Combobox(header_frame,
+                                                  values=[_t("accessibility.filter.all"),
+                                                         _t("accessibility.status_values.pending"),
+                                                         _t("accessibility.status_values.approved"),
+                                                         _t("accessibility.status_values.denied")],
+                                                  width=15, state='readonly')
+        self.request_status_filter.pack(side=tk.LEFT, padx=5)
+        self.request_status_filter.current(0)
+        self.request_status_filter.bind('<<ComboboxSelected>>', lambda e: self.load_requests())
+
+        ttk.Button(header_frame, text=_t("accessibility.btn.submit_request"),
+                  command=self.submit_request).pack(side=tk.RIGHT, padx=5)
+        ttk.Button(header_frame, text=_t("accessibility.btn.refresh"),
+                  command=self.load_requests).pack(side=tk.RIGHT, padx=5)
+
+        # Requests list
+        tree_frame = ttk.Frame(tab)
+        tree_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+
+        v_scroll = ttk.Scrollbar(tree_frame, orient=tk.VERTICAL)
+
+        self.requests_tree = ttk.Treeview(tree_frame,
+                                         columns=('ID', 'Student ID', 'Type', 'Description',
+                                                 'Status', 'Requested', 'Reviewed By'),
+                                         show='tree headings',
+                                         yscrollcommand=v_scroll.set)
+
+        v_scroll.config(command=self.requests_tree.yview)
+
+        self.requests_tree.heading('#0', text='')
+        self.requests_tree.column('#0', width=30)
+
+        columns_config = [
+            ('ID', 60, _t("accessibility.columns.id")),
+            ('Student ID', 100, _t("accessibility.columns.student_id")),
+            ('Type', 200, _t("accessibility.columns.type")),
+            ('Description', 300, _t("accessibility.columns.description")),
+            ('Status', 100, _t("accessibility.columns.status")),
+            ('Requested', 150, _t("accessibility.columns.requested")),
+            ('Reviewed By', 100, _t("accessibility.columns.reviewed_by"))
+        ]
+
+        for col, width, header in columns_config:
+            self.requests_tree.heading(col, text=header)
+            self.requests_tree.column(col, width=width)
+
+        self.requests_tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        v_scroll.pack(side=tk.RIGHT, fill=tk.Y)
+
+        self.requests_tree.bind('<Double-1>', self.review_request)
+
+        # Color code by status
+        self.requests_tree.tag_configure('pending', background='#ffffcc')
+        self.requests_tree.tag_configure('approved', background='#ccffcc')
+        self.requests_tree.tag_configure('denied', background='#ffcccc')
+
+        self.load_requests()
+
+    def create_exam_accommodations_tab(self):
+        """Create exam accommodations tab"""
+        tab = ttk.Frame(self.notebook)
+        self.notebook.add(tab, text=_t("accessibility.tabs.exam_accommodations"))
+
+        # Header
+        header_frame = ttk.Frame(tab)
+        header_frame.pack(fill=tk.X, padx=10, pady=10)
+
+        ttk.Label(header_frame, text=_t("accessibility.header.exam_accommodations"),
+                 style='Header.TLabel').pack(side=tk.LEFT, padx=10)
+
+        ttk.Button(header_frame, text=_t("accessibility.btn.add_accommodation"),
+                  command=self.add_exam_accommodation).pack(side=tk.RIGHT, padx=5)
+        ttk.Button(header_frame, text=_t("accessibility.btn.refresh"),
+                  command=self.load_exam_accommodations).pack(side=tk.RIGHT, padx=5)
+
+        # Accommodations list
+        tree_frame = ttk.Frame(tab)
+        tree_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+
+        v_scroll = ttk.Scrollbar(tree_frame, orient=tk.VERTICAL)
+
+        self.exam_tree = ttk.Treeview(tree_frame,
+                                     columns=('ID', 'Student ID', 'Exam ID', 'Extended Time',
+                                             'Separate Room', 'Assistive Tech', 'Reader/Scribe', 'Status'),
+                                     show='tree headings',
+                                     yscrollcommand=v_scroll.set)
+
+        v_scroll.config(command=self.exam_tree.yview)
+
+        self.exam_tree.heading('#0', text='')
+        self.exam_tree.column('#0', width=30)
+
+        columns_config = [
+            ('ID', 60, _t("accessibility.columns.id")),
+            ('Student ID', 100, _t("accessibility.columns.student_id")),
+            ('Exam ID', 100, _t("accessibility.columns.exam_id")),
+            ('Extended Time', 130, _t("accessibility.columns.extended_time")),
+            ('Separate Room', 120, _t("accessibility.columns.separate_room")),
+            ('Assistive Tech', 200, _t("accessibility.columns.assistive_tech")),
+            ('Reader/Scribe', 120, _t("accessibility.columns.reader_scribe")),
+            ('Status', 80, _t("accessibility.columns.status"))
+        ]
+
+        for col, width, header in columns_config:
+            self.exam_tree.heading(col, text=header)
+            self.exam_tree.column(col, width=width)
+
+        self.exam_tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        v_scroll.pack(side=tk.RIGHT, fill=tk.Y)
+
+        self.exam_tree.bind('<Double-1>', self.view_exam_accommodation)
+
+        self.load_exam_accommodations()
+
+    # ── General accommodations (student_accommodations) ────────────────
+    #
+    # These apply across *all* assessments, unlike the exam tab which is
+    # per-exam. The distinguishing field is ``time_multiplier`` (1.5 =
+    # 50% extra time), which the assessment and exam-scheduling code
+    # reads via exam_management/accommodations.get_active_accommodations.
+    # Managed here so accessibility staff have one place for every kind
+    # of accommodation.
+
+    GENERAL_ACCOMMODATION_TYPES = ['extended_time', 'alt_format',
+                                   'screen_reader', 'large_text', 'other']
+
+    def create_general_accommodations_tab(self):
+        """Create the general (all-assessments) accommodations tab."""
+        tab = ttk.Frame(self.notebook)
+        self.notebook.add(tab, text=_t("accessibility.tabs.general_accommodations",
+                                       default="General Accommodations"))
+
+        header_frame = ttk.Frame(tab)
+        header_frame.pack(fill=tk.X, padx=10, pady=10)
+
+        ttk.Label(header_frame,
+                  text=_t("accessibility.header.general_accommodations",
+                          default="Accommodations applying to all assessments"),
+                  style='Header.TLabel').pack(side=tk.LEFT, padx=10)
+
+        ttk.Button(header_frame, text=_t("accessibility.btn.add_accommodation",
+                                         default="Add Accommodation"),
+                   command=self.add_general_accommodation).pack(side=tk.RIGHT, padx=5)
+        ttk.Button(header_frame, text=_t("accessibility.btn.refresh", default="Refresh"),
+                   command=self.load_general_accommodations).pack(side=tk.RIGHT, padx=5)
+
+        filter_frame = ttk.Frame(tab)
+        filter_frame.pack(fill=tk.X, padx=10)
+        ttk.Label(filter_frame,
+                  text=_t("accessibility.labels.student_id", default="Student ID") + ":"
+                  ).pack(side=tk.LEFT, padx=(10, 5))
+        self.gen_student_var = tk.StringVar()
+        gen_entry = ttk.Entry(filter_frame, textvariable=self.gen_student_var, width=16)
+        gen_entry.pack(side=tk.LEFT, padx=5)
+        ttk.Button(filter_frame,
+                   text=_t('gui.pastoral.accessibility_tools.buttons.lookup', default="🔍 Lookup"),
+                   command=lambda: self.lookup_student(gen_entry), width=10).pack(side=tk.LEFT)
+        self.gen_active_var = tk.BooleanVar(value=True)
+        ttk.Checkbutton(filter_frame,
+                        text=_t("accessibility.labels.active_only", default="Active only"),
+                        variable=self.gen_active_var).pack(side=tk.LEFT, padx=(15, 5))
+        ttk.Button(filter_frame, text=_t("common.search", default="Search"),
+                   command=self.load_general_accommodations).pack(side=tk.LEFT, padx=10)
+
+        tree_frame = ttk.Frame(tab)
+        tree_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+
+        v_scroll = ttk.Scrollbar(tree_frame, orient=tk.VERTICAL)
+        self.general_tree = ttk.Treeview(
+            tree_frame,
+            columns=('ID', 'Student ID', 'Type', 'Details', 'Time Multiplier',
+                     'Active', 'Approved By', 'Expires'),
+            show='tree headings', yscrollcommand=v_scroll.set)
+        v_scroll.config(command=self.general_tree.yview)
+
+        self.general_tree.heading('#0', text='')
+        self.general_tree.column('#0', width=30)
+
+        for col, width, header in [
+            ('ID', 60, _t("accessibility.columns.id", default="ID")),
+            ('Student ID', 100, _t("accessibility.columns.student_id", default="Student ID")),
+            ('Type', 130, _t("accessibility.columns.type", default="Type")),
+            ('Details', 220, _t("accessibility.columns.details", default="Details")),
+            ('Time Multiplier', 120, _t("accessibility.columns.time_multiplier",
+                                        default="Time Multiplier")),
+            ('Active', 70, _t("accessibility.columns.active", default="Active")),
+            ('Approved By', 110, _t("accessibility.columns.approved_by", default="Approved By")),
+            ('Expires', 110, _t("accessibility.columns.expires", default="Expires")),
+        ]:
+            self.general_tree.heading(col, text=header)
+            self.general_tree.column(col, width=width)
+
+        self.general_tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        v_scroll.pack(side=tk.RIGHT, fill=tk.Y)
+
+        btn_frame = ttk.Frame(tab)
+        btn_frame.pack(fill=tk.X, padx=10, pady=(0, 10))
+        ttk.Button(btn_frame,
+                   text=_t("accessibility.btn.deactivate_selected", default="Deactivate Selected"),
+                   command=self.deactivate_general_accommodation).pack(side=tk.LEFT, padx=5)
+
+        self.load_general_accommodations()
+
+    def load_general_accommodations(self):
+        """Load general accommodations into the tree."""
+        try:
+            self.general_tree.delete(*self.general_tree.get_children())
+
+            query = ("""SELECT id, student_id, accommodation_type, details,
+                               time_multiplier, is_active, approved_by, expires_at
+                        FROM student_accommodations WHERE 1=1""")
+            params = []
+            student_filter = self.gen_student_var.get().strip()
+            if student_filter:
+                query += " AND student_id = ?"
+                params.append(student_filter)
+            if self.gen_active_var.get():
+                query += " AND is_active = 1"
+            query += " ORDER BY created_at DESC LIMIT 200"
+
+            with get_connection() as conn:
+                for row in conn.execute(query, params).fetchall():
+                    self.general_tree.insert('', 'end', values=(
+                        row['id'], row['student_id'], row['accommodation_type'],
+                        row['details'] or '',
+                        f"x{row['time_multiplier'] or 1.0:g}",
+                        _t("common.yes", default="Yes") if row['is_active']
+                        else _t("common.no", default="No"),
+                        row['approved_by'] or '',
+                        row['expires_at'] or _t("accessibility.defaults.no_expiry",
+                                                default="No expiry"),
+                    ))
+
+            self.update_status(_t("accessibility.status.loaded_general_accommodations",
+                                  count=len(self.general_tree.get_children()),
+                                  default=f"Loaded {len(self.general_tree.get_children())} general accommodations"))
+        except Exception as e:
+            messagebox.showerror(_t("common.error", default="Error"),
+                                 f"Failed to load general accommodations: {e}")
+            traceback.print_exc()
+
+    def add_general_accommodation(self, student_id=None, accommodation_type=None,
+                                  details=None):
+        """Add a general (all-assessments) accommodation."""
+        dialog = tk.Toplevel(self.window)
+        dialog.title(_t("accessibility.dialogs.add_general_accommodation",
+                        default="Add General Accommodation"))
+        dialog.geometry("520x520")
+        dialog.transient(self.window)
+        dialog.grab_set()
+
+        main_frame = ttk.Frame(dialog, padding="20")
+        main_frame.pack(fill=tk.BOTH, expand=True)
+
+        ttk.Label(main_frame, text=_t("accessibility.titles.add_general_accommodation",
+                                      default="Add General Accommodation"),
+                  font=('Arial', 14, 'bold')).pack(pady=(0, 5))
+        ttk.Label(main_frame,
+                  text=_t("accessibility.help.general_accommodation",
+                          default="Applies to every assessment. For a single exam, "
+                                  "use the Exam Accommodations tab."),
+                  wraplength=460, foreground='#555').pack(pady=(0, 15))
+
+        row1 = ttk.Frame(main_frame)
+        row1.pack(fill=tk.X, pady=5)
+        ttk.Label(row1, text=_t("accessibility.labels.student_id",
+                                default="Student ID") + ":", width=22).pack(side=tk.LEFT)
+        student_var = tk.StringVar(value=student_id or '')
+        student_entry = ttk.Entry(row1, textvariable=student_var, width=20)
+        student_entry.pack(side=tk.LEFT, padx=(0, 5))
+        ttk.Button(row1, text=_t('gui.pastoral.accessibility_tools.buttons.lookup',
+                                 default="🔍 Lookup"),
+                   command=lambda: self.lookup_student(student_entry), width=10).pack(side=tk.LEFT)
+
+        row2 = ttk.Frame(main_frame)
+        row2.pack(fill=tk.X, pady=5)
+        ttk.Label(row2, text=_t("accessibility.labels.accommodation_type",
+                                default="Type") + ":", width=22).pack(side=tk.LEFT)
+        type_var = tk.StringVar(value=accommodation_type
+                                if accommodation_type in self.GENERAL_ACCOMMODATION_TYPES
+                                else 'extended_time')
+        ttk.Combobox(row2, textvariable=type_var,
+                     values=self.GENERAL_ACCOMMODATION_TYPES,
+                     state='readonly', width=25).pack(side=tk.LEFT)
+
+        ttk.Label(main_frame, text=_t("accessibility.labels.details",
+                                      default="Details") + ":").pack(anchor=tk.W, pady=(10, 2))
+        details_text = scrolledtext.ScrolledText(main_frame, height=5, width=50)
+        if details:
+            details_text.insert('1.0', details)
+        details_text.pack(fill=tk.X)
+
+        row3 = ttk.Frame(main_frame)
+        row3.pack(fill=tk.X, pady=(10, 5))
+        ttk.Label(row3, text=_t("accessibility.labels.time_multiplier",
+                                default="Time multiplier (1.5 = 50% extra)") + ":",
+                  width=32).pack(side=tk.LEFT)
+        multiplier_var = tk.StringVar(value='1.0')
+        ttk.Entry(row3, textvariable=multiplier_var, width=10).pack(side=tk.LEFT)
+
+        row4 = ttk.Frame(main_frame)
+        row4.pack(fill=tk.X, pady=5)
+        ttk.Label(row4, text=_t("accessibility.labels.expires_optional",
+                                default="Expires (YYYY-MM-DD, blank = never)") + ":",
+                  width=32).pack(side=tk.LEFT)
+        expires_var = tk.StringVar()
+        ttk.Entry(row4, textvariable=expires_var, width=14).pack(side=tk.LEFT)
+
+        def save():
+            sid = student_var.get().strip()
+            if not sid:
+                messagebox.showerror(_t("common.error", default="Error"),
+                                     _t("accessibility.error.student_id_required",
+                                        default="Student ID is required."),
+                                     parent=dialog)
+                return
+            try:
+                time_mult = float(multiplier_var.get().strip())
+            except ValueError:
+                messagebox.showerror(_t("common.error", default="Error"),
+                                     "Time multiplier must be a number.", parent=dialog)
+                return
+            if time_mult <= 0:
+                messagebox.showerror(_t("common.error", default="Error"),
+                                     "Time multiplier must be greater than 0.", parent=dialog)
+                return
+
+            expires = expires_var.get().strip() or None
+            if expires:
+                try:
+                    datetime.strptime(expires, '%Y-%m-%d')
+                except ValueError:
+                    messagebox.showerror(_t("common.error", default="Error"),
+                                         "Expiry date must be YYYY-MM-DD.", parent=dialog)
+                    return
+            try:
+                self._insert_general_accommodation(
+                    sid, type_var.get(), details_text.get('1.0', tk.END).strip(),
+                    time_mult, expires)
+                messagebox.showinfo(_t("common.success", default="Success"),
+                                    _t("accessibility.messages.general_accommodation_added",
+                                       default="Accommodation added."), parent=dialog)
+                dialog.destroy()
+                self.load_general_accommodations()
+            except Exception as e:
+                messagebox.showerror(_t("common.error", default="Error"),
+                                     f"Failed to add accommodation: {e}", parent=dialog)
+
+        btn_frame = ttk.Frame(main_frame)
+        btn_frame.pack(pady=20)
+        ttk.Button(btn_frame, text=_t("common.save", default="Save"),
+                   command=save).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t("common.cancel", default="Cancel"),
+                   command=dialog.destroy).pack(side=tk.LEFT, padx=5)
+
+    def _insert_general_accommodation(self, student_id, accommodation_type, details,
+                                      time_multiplier, expires_at):
+        """Write one student_accommodations row. Shared by the dialog and
+        by request approval, so both record provenance the same way."""
+        approved_by = self.current_user.get('username') if isinstance(
+            self.current_user, dict) else None
+        with transaction() as conn:
+            conn.execute(
+                """INSERT INTO student_accommodations
+                   (student_id, accommodation_type, details, time_multiplier,
+                    is_active, approved_by, expires_at)
+                   VALUES (?, ?, ?, ?, 1, ?, ?)""",
+                (str(student_id), accommodation_type, details or '',
+                 time_multiplier, approved_by, expires_at))
+        log_activity(f"Added general accommodation for {student_id}",
+                     user=approved_by)
+
+    @staticmethod
+    def _map_request_type(request_type):
+        """Map a free-text accommodation_requests type onto one of the
+        constrained student_accommodations types (the column has a CHECK)."""
+        raw = (request_type or '').strip().lower().replace(' ', '_')
+        aliases = {
+            'extended_time': 'extended_time', 'extra_time': 'extended_time',
+            'additional_time': 'extended_time', 'time_extension': 'extended_time',
+            'alternative_format': 'alt_format', 'alt_format': 'alt_format',
+            'alternate_format': 'alt_format', 'braille': 'alt_format',
+            'screen_reader': 'screen_reader', 'text_to_speech': 'screen_reader',
+            'large_text': 'large_text', 'large_print': 'large_text',
+        }
+        return aliases.get(raw, 'other')
+
+    def deactivate_general_accommodation(self):
+        """Deactivate the selected general accommodation."""
+        selection = self.general_tree.selection()
+        if not selection:
+            messagebox.showwarning(_t("common.warning", default="Warning"),
+                                   _t("accessibility.messages.no_accommodation_selected",
+                                      default="No accommodation selected."))
+            return
+        values = self.general_tree.item(selection[0], 'values')
+        accom_id = values[0]
+        if not messagebox.askyesno(_t("common.confirm", default="Confirm"),
+                                   f"Deactivate accommodation #{accom_id}?"):
+            return
+        try:
+            with transaction() as conn:
+                conn.execute("UPDATE student_accommodations SET is_active = 0 WHERE id = ?",
+                             (accom_id,))
+            log_activity(f"Deactivated general accommodation {accom_id}",
+                         user=self.current_user.get('username'))
+            self.load_general_accommodations()
+        except Exception as e:
+            messagebox.showerror(_t("common.error", default="Error"),
+                                 f"Failed to deactivate: {e}")
+
+    def create_assistive_tech_tab(self):
+        """Create assistive technology requests tab"""
+        tab = ttk.Frame(self.notebook)
+        self.notebook.add(tab, text=_t("accessibility.tabs.assistive_tech"))
+
+        # Header
+        header_frame = ttk.Frame(tab)
+        header_frame.pack(fill=tk.X, padx=10, pady=10)
+
+        ttk.Label(header_frame, text=_t("accessibility.header.assistive_tech"),
+                 style='Header.TLabel').pack(side=tk.LEFT, padx=10)
+
+        ttk.Button(header_frame, text=_t("accessibility.btn.request_tech"),
+                  command=self.request_assistive_tech).pack(side=tk.RIGHT, padx=5)
+        ttk.Button(header_frame, text=_t("accessibility.btn.refresh"),
+                  command=self.load_assistive_tech_requests).pack(side=tk.RIGHT, padx=5)
+
+        # Requests list
+        tree_frame = ttk.Frame(tab)
+        tree_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+
+        v_scroll = ttk.Scrollbar(tree_frame, orient=tk.VERTICAL)
+
+        self.tech_tree = ttk.Treeview(tree_frame,
+                                     columns=('ID', 'Student ID', 'Technology Type',
+                                             'Status', 'Requested', 'Fulfilled'),
+                                     show='tree headings',
+                                     yscrollcommand=v_scroll.set)
+
+        v_scroll.config(command=self.tech_tree.yview)
+
+        self.tech_tree.heading('#0', text='')
+        self.tech_tree.column('#0', width=30)
+
+        columns_config = [
+            ('ID', 60, _t("accessibility.columns.id")),
+            ('Student ID', 150, _t("accessibility.columns.student_id")),
+            ('Technology Type', 300, _t("accessibility.columns.technology_type")),
+            ('Status', 120, _t("accessibility.columns.status")),
+            ('Requested', 200, _t("accessibility.columns.requested")),
+            ('Fulfilled', 200, _t("accessibility.columns.fulfilled"))
+        ]
+
+        for col, width, header in columns_config:
+            self.tech_tree.heading(col, text=header)
+            self.tech_tree.column(col, width=width)
+
+        self.tech_tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        v_scroll.pack(side=tk.RIGHT, fill=tk.Y)
+
+        self.tech_tree.bind('<Double-1>', self.manage_tech_request)
+
+        self.load_assistive_tech_requests()
+
+    def create_settings_tab(self):
+        """Create accessibility settings tab"""
+        tab = ttk.Frame(self.notebook)
+        self.notebook.add(tab, text=_t("accessibility.tabs.settings"))
+
+        ttk.Label(tab, text=_t("accessibility.header.settings"),
+                 style='Header.TLabel').pack(pady=20)
+
+        # Settings form
+        form_frame = ttk.LabelFrame(tab, text=_t("accessibility.settings.preferences"), padding="20")
+        form_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=20)
+
+        # Theme
+        row1 = ttk.Frame(form_frame)
+        row1.pack(fill=tk.X, pady=10)
+        ttk.Label(row1, text=_t("accessibility.settings.theme"), width=20).pack(side=tk.LEFT)
+        self.theme_var = tk.StringVar(value=_t("accessibility.themes.standard"))
+        themes = ttk.Combobox(row1, textvariable=self.theme_var,
+                             values=[_t("accessibility.themes.standard"), _t("accessibility.themes.high_contrast"), _t("accessibility.themes.dark")], state='readonly')
+        themes.pack(side=tk.LEFT, padx=10)
+
+        # Font size
+        row2 = ttk.Frame(form_frame)
+        row2.pack(fill=tk.X, pady=10)
+        ttk.Label(row2, text=_t("accessibility.settings.font_size"), width=20).pack(side=tk.LEFT)
+        self.font_size_var = tk.IntVar(value=16)
+        ttk.Spinbox(row2, from_=12, to=32, textvariable=self.font_size_var, width=10).pack(side=tk.LEFT, padx=10)
+
+        # Screen reader
+        row3 = ttk.Frame(form_frame)
+        row3.pack(fill=tk.X, pady=10)
+        self.screen_reader_var = tk.BooleanVar(value=False)
+        ttk.Checkbutton(row3, text=_t("accessibility.settings.screen_reader"),
+                       variable=self.screen_reader_var).pack(anchor=tk.W)
+
+        # Keyboard navigation
+        row4 = ttk.Frame(form_frame)
+        row4.pack(fill=tk.X, pady=10)
+        self.keyboard_nav_var = tk.BooleanVar(value=False)
+        ttk.Checkbutton(row4, text=_t("accessibility.settings.keyboard_nav"),
+                       variable=self.keyboard_nav_var).pack(anchor=tk.W)
+
+        # Save button
+        ttk.Button(form_frame, text=_t("accessibility.btn.save_settings"),
+                  command=self.save_accessibility_settings).pack(pady=20)
+
+        self.load_accessibility_settings()
+
+    # Data loading methods
+    def load_profiles(self):
+        """Load accessibility profiles"""
+        try:
+            self.profiles_tree.delete(*self.profiles_tree.get_children())
+
+            with get_connection() as conn:
+                cursor = conn.cursor()
+
+                if self.current_user.get('role') in ['admin', 'staff']:
+                    # Show all profiles
+                    cursor.execute('''
+                        SELECT * FROM accessibility_profiles
+                        ORDER BY updated_at DESC
+                    ''')
+                else:
+                    # Show only user's profile
+                    user_id = self.current_user.get('user_id') or self.current_user.get('id')
+                    cursor.execute('''
+                        SELECT * FROM accessibility_profiles
+                        WHERE user_id = ?
+                    ''', (user_id,))
+
+                for row in cursor.fetchall():
+                    disabilities = json.loads(row['disabilities'] or '[]')
+                    accommodations = json.loads(row['accommodations'] or '[]')
+                    assistive_tech = json.loads(row['assistive_technologies'] or '[]')
+
+                    values = (
+                        row['profile_id'],
+                        row['user_id'],
+                        ', '.join(disabilities) if disabilities else _t("common.none"),
+                        ', '.join(accommodations) if accommodations else _t("common.none"),
+                        ', '.join(assistive_tech) if assistive_tech else _t("common.none"),
+                        row['updated_at']
+                    )
+                    self.profiles_tree.insert('', 'end', values=values)
+
+            self.update_status(_t("accessibility.status.loaded_profiles", count=len(self.profiles_tree.get_children())))
+
+        except Exception as e:
+            messagebox.showerror(_t("common.error"), _t("accessibility.error.load_profiles", error=str(e)))
+            traceback.print_exc()
+
+    def load_requests(self):
+        """Load accommodation requests"""
+        try:
+            # Build reverse mapping for status values
+            self.status_display_to_db = {func(): key for key, func in self.status_db_to_display.items()}
+
+            self.requests_tree.delete(*self.requests_tree.get_children())
+
+            status_filter = self.request_status_filter.get()
+
+            with get_connection() as conn:
+                cursor = conn.cursor()
+
+                if status_filter == _t("accessibility.filter.all"):
+                    cursor.execute('''
+                        SELECT * FROM accommodation_requests
+                        ORDER BY requested_date DESC
+                        LIMIT 500
+                    ''')
+                else:
+                    # Convert display value to database value
+                    db_status = self.status_display_to_db.get(status_filter, status_filter)
+                    cursor.execute('''
+                        SELECT * FROM accommodation_requests
+                        WHERE status = ?
+                        ORDER BY requested_date DESC
+                        LIMIT 500
+                    ''', (db_status,))
+
+                for row in cursor.fetchall():
+                    values = (
+                        row['request_id'],
+                        row['student_id'],
+                        row['accommodation_type'],
+                        (row['description'][:50] + '...') if len(row['description'] or '') > 50 else (row['description'] or ''),
+                        row['status'],
+                        row['requested_date'],
+                        row['reviewed_by'] or _t("accessibility.defaults.pending")
+                    )
+                    item = self.requests_tree.insert('', 'end', values=values, tags=(row['status'],))
+
+            self.update_status(_t("accessibility.status.loaded_requests", count=len(self.requests_tree.get_children())))
+
+        except Exception as e:
+            messagebox.showerror(_t("common.error"), _t("accessibility.error.load_requests", error=str(e)))
+            traceback.print_exc()
+
+    def load_exam_accommodations(self):
+        """Load exam accommodations"""
+        try:
+            self.exam_tree.delete(*self.exam_tree.get_children())
+
+            with get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute('''
+                    SELECT * FROM exam_accommodations
+                    WHERE status = 'active'
+                    ORDER BY accommodation_id DESC
+                ''')
+
+                for row in cursor.fetchall():
+                    values = (
+                        row['accommodation_id'],
+                        row['student_id'],
+                        row['exam_id'] or _t("accessibility.defaults.all_exams"),
+                        _t("accessibility.defaults.mins", mins=row['extended_time']) if row['extended_time'] else _t("common.no"),
+                        _t("common.yes") if row['separate_room'] else _t("common.no"),
+                        row['assistive_technology'] or _t("common.none"),
+                        _t("common.yes") if row['reader_scribe'] else _t("common.no"),
+                        row['status']
+                    )
+                    self.exam_tree.insert('', 'end', values=values)
+
+            self.update_status(_t("accessibility.status.loaded_exam_accommodations", count=len(self.exam_tree.get_children())))
+
+        except Exception as e:
+            messagebox.showerror(_t("common.error"), _t("accessibility.error.load_exam_accommodations", error=str(e)))
+            traceback.print_exc()
+
+    def load_assistive_tech_requests(self):
+        """Load assistive technology requests"""
+        try:
+            self.tech_tree.delete(*self.tech_tree.get_children())
+
+            with get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute('''
+                    SELECT * FROM assistive_tech_requests
+                    ORDER BY requested_date DESC
+                    LIMIT 500
+                ''')
+
+                for row in cursor.fetchall():
+                    values = (
+                        row['request_id'],
+                        row['student_id'],
+                        row['technology_type'],
+                        row['status'],
+                        row['requested_date'],
+                        row['fulfilled_date'] or _t("accessibility.defaults.pending")
+                    )
+                    self.tech_tree.insert('', 'end', values=values)
+
+            self.update_status(_t("accessibility.status.loaded_tech_requests", count=len(self.tech_tree.get_children())))
+
+        except Exception as e:
+            messagebox.showerror(_t("common.error"), _t("accessibility.error.load_tech_requests", error=str(e)))
+            traceback.print_exc()
+
+    def load_accessibility_settings(self):
+        """Load user's accessibility settings"""
+        try:
+            # Build reverse mapping for themes
+            self.theme_display_to_db = {func(): key for key, func in self.theme_db_to_display.items()}
+
+            user_id = self.current_user.get('user_id') or self.current_user.get('id')
+            with get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute('''
+                    SELECT * FROM accessibility_settings
+                    WHERE user_id = ?
+                ''', (user_id,))
+                row = cursor.fetchone()
+
+                if row:
+                    # Convert database theme value to display value
+                    db_theme = row['theme']
+                    display_theme = self.theme_db_to_display.get(db_theme, lambda: db_theme)()
+                    self.theme_var.set(display_theme)
+                    self.font_size_var.set(row['font_size'])
+                    self.screen_reader_var.set(bool(row['screen_reader_enabled']))
+                    self.keyboard_nav_var.set(bool(row['keyboard_navigation']))
+
+        except Exception as e:
+            print(f"Error loading settings: {e}")
+
+    def save_accessibility_settings(self):
+        """Save user's accessibility settings"""
+        try:
+            # Build reverse mapping for themes if not already built
+            if not self.theme_display_to_db:
+                self.theme_display_to_db = {func(): key for key, func in self.theme_db_to_display.items()}
+
+            user_id = self.current_user.get('user_id') or self.current_user.get('id')
+
+            # Convert display theme to database theme
+            display_theme = self.theme_var.get()
+            db_theme = self.theme_display_to_db.get(display_theme, display_theme)
+
+            with transaction() as conn:
+                cursor = conn.cursor()
+
+                # Check if settings exist
+                cursor.execute('SELECT setting_id FROM accessibility_settings WHERE user_id = ?',
+                             (user_id,))
+                existing = cursor.fetchone()
+
+                if existing:
+                    cursor.execute('''
+                        UPDATE accessibility_settings
+                        SET theme = ?, font_size = ?, screen_reader_enabled = ?,
+                            keyboard_navigation = ?
+                        WHERE user_id = ?
+                    ''', (db_theme, self.font_size_var.get(),
+                         self.screen_reader_var.get(), self.keyboard_nav_var.get(),
+                         user_id))
+                else:
+                    cursor.execute('''
+                        INSERT INTO accessibility_settings
+                        (user_id, theme, font_size, screen_reader_enabled, keyboard_navigation)
+                        VALUES (?, ?, ?, ?, ?)
+                    ''', (user_id, db_theme,
+                         self.font_size_var.get(), self.screen_reader_var.get(),
+                         self.keyboard_nav_var.get()))
+
+            messagebox.showinfo(_t("common.success"), _t("accessibility.messages.settings_saved"))
+            username = self.current_user.get('username') or str(user_id)
+            log_activity("Updated accessibility settings", user=username)
+
+        except Exception as e:
+            messagebox.showerror(_t("common.error"), _t("accessibility.error.save_settings", error=str(e)))
+
+    # Lookup helper methods
+    def lookup_student(self, entry_widget):
+        """Open student lookup dialog and populate entry widget"""
+        lookup_dialog = tk.Toplevel(self.window)
+        lookup_dialog.title(_t('gui.pastoral.accessibility_tools.windows.student_lookup', default="Student Lookup"))
+        lookup_dialog.geometry("700x500")
+        lookup_dialog.transient(self.window)
+        lookup_dialog.grab_set()
+
+        main_frame = ttk.Frame(lookup_dialog, padding="20")
+        main_frame.pack(fill=tk.BOTH, expand=True)
+
+        ttk.Label(main_frame, text=_t('gui.pastoral.accessibility_tools.labels.student_lookup', default="Student Lookup"), font=('Arial', 14, 'bold')).pack(pady=(0, 20))
+
+        # Search frame
+        search_frame = ttk.Frame(main_frame)
+        search_frame.pack(fill=tk.X, pady=(0, 10))
+
+        ttk.Label(search_frame, text=_t('gui.pastoral.accessibility_tools.labels.search', default="Search:")).pack(side=tk.LEFT, padx=(0, 5))
+        search_var = tk.StringVar()
+        search_entry = ttk.Entry(search_frame, textvariable=search_var, width=40)
+        search_entry.pack(side=tk.LEFT, padx=5)
+
+        # Student list
+        tree_frame = ttk.Frame(main_frame)
+        tree_frame.pack(fill=tk.BOTH, expand=True)
+
+        v_scroll = ttk.Scrollbar(tree_frame)
+        v_scroll.pack(side=tk.RIGHT, fill=tk.Y)
+
+        student_tree = ttk.Treeview(tree_frame, columns=('Student ID', 'Name', 'Email', 'Course'),
+                                    show='headings', yscrollcommand=v_scroll.set)
+        v_scroll.config(command=student_tree.yview)
+
+        student_tree.heading('Student ID', text=_t('gui.pastoral.accessibility_tools.headings.student_id', default='Student ID'))
+        student_tree.heading('Name', text=_t('gui.pastoral.accessibility_tools.headings.name', default='Name'))
+        student_tree.heading('Email', text=_t('gui.pastoral.accessibility_tools.headings.email', default='Email'))
+        student_tree.heading('Course', text=_t('gui.pastoral.accessibility_tools.headings.course', default='Course'))
+
+        student_tree.column('Student ID', width=120)
+        student_tree.column('Name', width=200)
+        student_tree.column('Email', width=250)
+        student_tree.column('Course', width=150)
+
+        student_tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+
+        def load_students(search_term=''):
+            """Load students from database"""
+            student_tree.delete(*student_tree.get_children())
+
+            try:
+                with get_connection() as conn:
+                    cursor = conn.cursor()
+
+                    if search_term:
+                        cursor.execute('''
+                            SELECT student_id, first_name, last_name, email_address, course
+                            FROM students
+                            WHERE student_id LIKE ? OR first_name LIKE ? OR last_name LIKE ? OR email_address LIKE ?
+                            ORDER BY student_id
+                            LIMIT 100
+                        ''', (f'%{search_term}%', f'%{search_term}%', f'%{search_term}%', f'%{search_term}%'))
+                    else:
+                        cursor.execute('''
+                            SELECT student_id, first_name, last_name, email_address, course
+                            FROM students
+                            ORDER BY student_id
+                            LIMIT 100
+                        ''')
+
+                    for row in cursor.fetchall():
+                        student_tree.insert('', 'end', values=(
+                            row['student_id'],
+                            f"{row['first_name']} {row['last_name']}",
+                            row['email_address'] or '',
+                            row['course'] or ''
+                        ))
+
+            except Exception as e:
+                messagebox.showerror(_t('gui.pastoral.accessibility_tools.dialogs.error', default="Error"), f"Failed to load students: {e}")
+
+        def search_students(*args):
+            load_students(search_var.get().strip())
+
+        search_var.trace('w', search_students)
+        load_students()
+
+        def select_student():
+            """Select student and populate entry"""
+            selection = student_tree.selection()
+            if not selection:
+                messagebox.showwarning(_t('gui.pastoral.accessibility_tools.dialogs.no_selection', default="No Selection"), _t('gui.pastoral.accessibility_tools.dialogs.please_select_a_student', default="Please select a student"))
+                return
+
+            item = student_tree.item(selection[0])
+            values = item['values']
+            student_id = values[0]  # Student ID column (now first column)
+
+            entry_widget.delete(0, tk.END)
+            entry_widget.insert(0, student_id)
+            lookup_dialog.destroy()
+
+        # Buttons
+        btn_frame = ttk.Frame(main_frame)
+        btn_frame.pack(pady=10)
+        ttk.Button(btn_frame, text=_t('gui.pastoral.accessibility_tools.buttons.select', default="Select"), command=select_student).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.pastoral.accessibility_tools.buttons.cancel', default="Cancel"), command=lookup_dialog.destroy).pack(side=tk.LEFT, padx=5)
+
+        # Double-click to select
+        student_tree.bind('<Double-1>', lambda e: select_student())
+
+    def lookup_user(self, entry_widget):
+        """Open user lookup dialog and populate entry widget"""
+        lookup_dialog = tk.Toplevel(self.window)
+        lookup_dialog.title(_t('gui.pastoral.accessibility_tools.windows.user_lookup', default="User Lookup"))
+        lookup_dialog.geometry("700x500")
+        lookup_dialog.transient(self.window)
+        lookup_dialog.grab_set()
+
+        main_frame = ttk.Frame(lookup_dialog, padding="20")
+        main_frame.pack(fill=tk.BOTH, expand=True)
+
+        ttk.Label(main_frame, text=_t('gui.pastoral.accessibility_tools.labels.user_lookup', default="User Lookup"), font=('Arial', 14, 'bold')).pack(pady=(0, 20))
+
+        # Search frame
+        search_frame = ttk.Frame(main_frame)
+        search_frame.pack(fill=tk.X, pady=(0, 10))
+
+        ttk.Label(search_frame, text=_t('gui.pastoral.accessibility_tools.labels.search', default="Search:")).pack(side=tk.LEFT, padx=(0, 5))
+        search_var = tk.StringVar()
+        search_entry = ttk.Entry(search_frame, textvariable=search_var, width=40)
+        search_entry.pack(side=tk.LEFT, padx=5)
+
+        # User list
+        tree_frame = ttk.Frame(main_frame)
+        tree_frame.pack(fill=tk.BOTH, expand=True)
+
+        v_scroll = ttk.Scrollbar(tree_frame)
+        v_scroll.pack(side=tk.RIGHT, fill=tk.Y)
+
+        user_tree = ttk.Treeview(tree_frame, columns=('ID', 'Username', 'Name', 'Email', 'Role'),
+                                show='headings', yscrollcommand=v_scroll.set)
+        v_scroll.config(command=user_tree.yview)
+
+        user_tree.heading('ID', text=_t('gui.pastoral.accessibility_tools.headings.id', default='ID'))
+        user_tree.heading('Username', text=_t('gui.pastoral.accessibility_tools.headings.username', default='Username'))
+        user_tree.heading('Name', text=_t('gui.pastoral.accessibility_tools.headings.name', default='Name'))
+        user_tree.heading('Email', text=_t('gui.pastoral.accessibility_tools.headings.email', default='Email'))
+        user_tree.heading('Role', text=_t('gui.pastoral.accessibility_tools.headings.role', default='Role'))
+
+        user_tree.column('ID', width=50)
+        user_tree.column('Username', width=120)
+        user_tree.column('Name', width=180)
+        user_tree.column('Email', width=200)
+        user_tree.column('Role', width=100)
+
+        user_tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+
+        def load_users(search_term=''):
+            """Load users from database"""
+            user_tree.delete(*user_tree.get_children())
+
+            try:
+                with get_connection() as conn:
+                    cursor = conn.cursor()
+
+                    if search_term:
+                        cursor.execute('''
+                            SELECT id, username, first_name, last_name, email, role
+                            FROM users
+                            WHERE username LIKE ? OR first_name LIKE ? OR last_name LIKE ? OR email LIKE ?
+                            ORDER BY username
+                            LIMIT 100
+                        ''', (f'%{search_term}%', f'%{search_term}%', f'%{search_term}%', f'%{search_term}%'))
+                    else:
+                        cursor.execute('''
+                            SELECT id, username, first_name, last_name, email, role
+                            FROM users
+                            ORDER BY username
+                            LIMIT 100
+                        ''')
+
+                    for row in cursor.fetchall():
+                        user_tree.insert('', 'end', values=(
+                            row['id'],
+                            row['username'],
+                            f"{row['first_name']} {row['last_name']}",
+                            row['email'],
+                            row['role']
+                        ))
+
+            except Exception as e:
+                messagebox.showerror(_t('gui.pastoral.accessibility_tools.dialogs.error', default="Error"), f"Failed to load users: {e}")
+
+        def search_users(*args):
+            load_users(search_var.get().strip())
+
+        search_var.trace('w', search_users)
+        load_users()
+
+        def select_user():
+            """Select user and populate entry"""
+            selection = user_tree.selection()
+            if not selection:
+                messagebox.showwarning(_t('gui.pastoral.accessibility_tools.dialogs.no_selection', default="No Selection"), _t('gui.pastoral.accessibility_tools.dialogs.please_select_a_user', default="Please select a user"))
+                return
+
+            item = user_tree.item(selection[0])
+            values = item['values']
+            user_id = values[0]  # User ID column
+
+            entry_widget.delete(0, tk.END)
+            entry_widget.insert(0, user_id)
+            lookup_dialog.destroy()
+
+        # Buttons
+        btn_frame = ttk.Frame(main_frame)
+        btn_frame.pack(pady=10)
+        ttk.Button(btn_frame, text=_t('gui.pastoral.accessibility_tools.buttons.select', default="Select"), command=select_user).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.pastoral.accessibility_tools.buttons.cancel', default="Cancel"), command=lookup_dialog.destroy).pack(side=tk.LEFT, padx=5)
+
+        # Double-click to select
+        user_tree.bind('<Double-1>', lambda e: select_user())
+
+    def lookup_exam(self, student_id_var, exam_entry_widget):
+        """Open exam lookup dialog filtered by student and populate entry widget"""
+        student_id = student_id_var.get().strip()
+        if not student_id:
+            messagebox.showwarning(_t('gui.pastoral.accessibility_tools.dialogs.student_id_required', default="Student ID Required"), _t('gui.pastoral.accessibility_tools.dialogs.please_enter_a_student_id_first', default="Please enter a student ID first"))
+            return
+
+        lookup_dialog = tk.Toplevel(self.window)
+        lookup_dialog.title(_t('gui.pastoral.accessibility_tools.windows.exam_lookup', default="Exam Lookup"))
+        lookup_dialog.geometry("900x600")
+        lookup_dialog.transient(self.window)
+        lookup_dialog.grab_set()
+
+        main_frame = ttk.Frame(lookup_dialog, padding="20")
+        main_frame.pack(fill=tk.BOTH, expand=True)
+
+        ttk.Label(main_frame, text=f"Exams for Student: {student_id}",
+                 font=('Arial', 14, 'bold')).pack(pady=(0, 20))
+
+        # Info label
+        info_frame = ttk.Frame(main_frame)
+        info_frame.pack(fill=tk.X, pady=(0, 10))
+        ttk.Label(info_frame, text=_t('gui.pastoral.accessibility_tools.labels.double_click_an_exam_to_select_it_or_click_open_exam_scheduler_t', default="Double-click an exam to select it, or click 'Open Exam Scheduler' to view all exams"),
+                 foreground='blue').pack()
+
+        # Exam list
+        tree_frame = ttk.Frame(main_frame)
+        tree_frame.pack(fill=tk.BOTH, expand=True)
+
+        v_scroll = ttk.Scrollbar(tree_frame)
+        v_scroll.pack(side=tk.RIGHT, fill=tk.Y)
+
+        exam_tree = ttk.Treeview(tree_frame,
+                                columns=('Exam ID', 'Module', 'Date', 'Time', 'Room', 'Duration'),
+                                show='headings', yscrollcommand=v_scroll.set)
+        v_scroll.config(command=exam_tree.yview)
+
+        exam_tree.heading('Exam ID', text=_t('gui.pastoral.accessibility_tools.headings.exam_id', default='Exam ID'))
+        exam_tree.heading('Module', text=_t('gui.pastoral.accessibility_tools.headings.module', default='Module'))
+        exam_tree.heading('Date', text=_t('gui.pastoral.accessibility_tools.headings.date', default='Date'))
+        exam_tree.heading('Time', text=_t('gui.pastoral.accessibility_tools.headings.time', default='Time'))
+        exam_tree.heading('Room', text=_t('gui.pastoral.accessibility_tools.headings.room', default='Room'))
+        exam_tree.heading('Duration', text=_t('gui.pastoral.accessibility_tools.headings.duration_mins', default='Duration (mins)'))
+
+        exam_tree.column('Exam ID', width=80)
+        exam_tree.column('Module', width=200)
+        exam_tree.column('Date', width=120)
+        exam_tree.column('Time', width=100)
+        exam_tree.column('Room', width=100)
+        exam_tree.column('Duration', width=100)
+
+        exam_tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+
+        def load_exams():
+            """Load exams for the student"""
+            exam_tree.delete(*exam_tree.get_children())
+
+            try:
+                with get_connection() as conn:
+                    cursor = conn.cursor()
+
+                    # Get exams from the exams table where student is enrolled
+                    cursor.execute('''
+                        SELECT id, module_code, module_name, date, start_time, end_time, room
+                        FROM exams
+                        WHERE enrolled_student_ids LIKE ?
+                        ORDER BY date, start_time
+                        LIMIT 100
+                    ''', (f'%"{student_id}"%',))
+
+                    rows = cursor.fetchall()
+
+                    if not rows:
+                        # If no exams found, show message
+                        messagebox.showinfo(_t('gui.pastoral.accessibility_tools.dialogs.no_exams', default="No Exams"),
+                                          f"No scheduled exams found for student {student_id}.\n" +
+                                          "Click 'Open Exam Scheduler' to view all exams.")
+                        return
+
+                    for row in rows:
+                        # Calculate duration from start and end time
+                        try:
+                            from datetime import datetime
+                            start = datetime.strptime(row['start_time'], '%H:%M')
+                            end = datetime.strptime(row['end_time'], '%H:%M')
+                            duration = int((end - start).total_seconds() / 60)
+                        except (ValueError, TypeError):
+                            duration = 'N/A'
+
+                        exam_tree.insert('', 'end', values=(
+                            row['id'],
+                            f"{row['module_code']} - {row['module_name']}",
+                            row['date'],
+                            row['start_time'],
+                            row['room'] or 'TBD',
+                            duration
+                        ))
+
+            except Exception as e:
+                # Table might not exist, show info message
+                messagebox.showinfo(_t('gui.pastoral.accessibility_tools.dialogs.exam_data', default="Exam Data"),
+                                  f"Failed to load exam data: {e}\n" +
+                                  "Click 'Open Exam Scheduler' to manage exams.")
+
+        load_exams()
+
+        def select_exam():
+            """Select exam and populate entry"""
+            selection = exam_tree.selection()
+            if not selection:
+                messagebox.showwarning(_t('gui.pastoral.accessibility_tools.dialogs.no_selection', default="No Selection"), _t('gui.pastoral.accessibility_tools.dialogs.please_select_an_exam', default="Please select an exam"))
+                return
+
+            item = exam_tree.item(selection[0])
+            values = item['values']
+            exam_id = values[0]  # Exam ID column
+
+            exam_entry_widget.delete(0, tk.END)
+            exam_entry_widget.insert(0, exam_id)
+            lookup_dialog.destroy()
+
+        def open_exam_scheduler():
+            """Open exam scheduler GUI"""
+            try:
+                from education_system.systems.university.domains.assessment.interfaces.gui.exam_management import ExamSchedulerApp
+                scheduler_window = tk.Toplevel(self.window)
+                scheduler_window.title(_t('gui.pastoral.accessibility_tools.windows.exam_scheduler', default="Exam Scheduler"))
+                scheduler_window.geometry("1200x800")
+                ExamSchedulerApp(scheduler_window, self.auth)
+            except ImportError as e:
+                messagebox.showerror(_t('gui.pastoral.accessibility_tools.dialogs.import_error', default="Import Error"),
+                                   f"Exam Scheduler GUI not available: {e}")
+            except Exception as e:
+                messagebox.showerror(_t('gui.pastoral.accessibility_tools.dialogs.error', default="Error"),
+                                   f"Failed to open Exam Scheduler: {e}")
+
+        # Buttons
+        btn_frame = ttk.Frame(main_frame)
+        btn_frame.pack(pady=10)
+        ttk.Button(btn_frame, text=_t('gui.pastoral.accessibility_tools.buttons.select_exam', default="Select Exam"), command=select_exam).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.pastoral.accessibility_tools.buttons.open_exam_scheduler', default="Open Exam Scheduler"), command=open_exam_scheduler).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.pastoral.accessibility_tools.buttons.cancel', default="Cancel"), command=lookup_dialog.destroy).pack(side=tk.LEFT, padx=5)
+
+        # Double-click to select
+        exam_tree.bind('<Double-1>', lambda e: select_exam())
+
+    # Action methods - Full implementations
+    def create_profile(self):
+        """Create accessibility profile dialog"""
+        dialog = tk.Toplevel(self.window)
+        dialog.title(_t("accessibility.dialogs.create_profile"))
+        dialog.geometry("500x600")
+        dialog.transient(self.window)
+        dialog.grab_set()
+
+        main_frame = ttk.Frame(dialog, padding="20")
+        main_frame.pack(fill=tk.BOTH, expand=True)
+
+        ttk.Label(main_frame, text=_t("accessibility.dialogs.create_profile"),
+                 font=('Arial', 14, 'bold')).pack(pady=(0, 20))
+
+        # User ID
+        row1 = ttk.Frame(main_frame)
+        row1.pack(fill=tk.X, pady=5)
+        ttk.Label(row1, text=_t("accessibility.labels.user_id"), width=20).pack(side=tk.LEFT)
+        user_id_var = tk.StringVar()
+        user_id_entry = ttk.Entry(row1, textvariable=user_id_var, width=20)
+        user_id_entry.pack(side=tk.LEFT, padx=(0, 5))
+        ttk.Button(row1, text=_t('gui.pastoral.accessibility_tools.buttons.lookup', default="🔍 Lookup"), command=lambda: self.lookup_user(user_id_entry), width=10).pack(side=tk.LEFT)
+
+        # Disabilities
+        ttk.Label(main_frame, text=_t("accessibility.labels.disabilities_one_per_line")).pack(anchor=tk.W, pady=(10, 5))
+        disabilities_text = scrolledtext.ScrolledText(main_frame, height=4, width=50)
+        disabilities_text.pack(fill=tk.X, pady=5)
+
+        # Accommodations needed
+        ttk.Label(main_frame, text=_t("accessibility.labels.accommodations_one_per_line")).pack(anchor=tk.W, pady=(10, 5))
+        accommodations_text = scrolledtext.ScrolledText(main_frame, height=4, width=50)
+        accommodations_text.pack(fill=tk.X, pady=5)
+
+        # Assistive technologies
+        ttk.Label(main_frame, text=_t("accessibility.labels.assistive_tech_one_per_line")).pack(anchor=tk.W, pady=(10, 5))
+        tech_text = scrolledtext.ScrolledText(main_frame, height=4, width=50)
+        tech_text.pack(fill=tk.X, pady=5)
+
+        def save_profile():
+            user_id = user_id_var.get().strip()
+            if not user_id:
+                messagebox.showerror(_t("common.error"), _t("accessibility.error.user_id_required"))
+                return
+
+            disabilities = [d.strip() for d in disabilities_text.get('1.0', tk.END).strip().split('\n') if d.strip()]
+            accommodations = [a.strip() for a in accommodations_text.get('1.0', tk.END).strip().split('\n') if a.strip()]
+            technologies = [t.strip() for t in tech_text.get('1.0', tk.END).strip().split('\n') if t.strip()]
+
+            try:
+                with transaction() as conn:
+                    conn.execute('''
+                        INSERT INTO accessibility_profiles
+                        (user_id, disabilities, accommodations, assistive_technologies, created_at, updated_at)
+                        VALUES (?, ?, ?, ?, ?, ?)
+                    ''', (user_id, json.dumps(disabilities), json.dumps(accommodations),
+                         json.dumps(technologies), datetime.now().isoformat(), datetime.now().isoformat()))
+
+                messagebox.showinfo(_t("common.success"), _t("accessibility.messages.profile_created"))
+                log_activity(f"Created accessibility profile for user {user_id}",
+                           user=self.current_user.get('username'))
+                dialog.destroy()
+                self.load_profiles()
+
+            except Exception as e:
+                messagebox.showerror(_t("common.error"), _t("accessibility.error.create_profile", error=str(e)))
+
+        btn_frame = ttk.Frame(main_frame)
+        btn_frame.pack(pady=20)
+        ttk.Button(btn_frame, text=_t("accessibility.btn.save_profile"), command=save_profile).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t("common.cancel"), command=dialog.destroy).pack(side=tk.LEFT, padx=5)
+
+    def view_profile(self, event=None):
+        """View profile details dialog"""
+        selection = self.profiles_tree.selection()
+        if not selection:
+            return
+
+        item = self.profiles_tree.item(selection[0])
+        values = item['values']
+        profile_id = values[0]
+
+        try:
+            with get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute('SELECT * FROM accessibility_profiles WHERE profile_id = ?', (profile_id,))
+                row = cursor.fetchone()
+
+                if not row:
+                    messagebox.showerror(_t("common.error"), _t("accessibility.error.profile_not_found"))
+                    return
+
+            dialog = tk.Toplevel(self.window)
+            dialog.title(_t("accessibility.dialogs.view_profile"))
+            dialog.geometry("500x500")
+            dialog.transient(self.window)
+
+            main_frame = ttk.Frame(dialog, padding="20")
+            main_frame.pack(fill=tk.BOTH, expand=True)
+
+            ttk.Label(main_frame, text=_t("accessibility.dialogs.profile_details"),
+                     font=('Arial', 14, 'bold')).pack(pady=(0, 20))
+
+            info_frame = ttk.LabelFrame(main_frame, text=_t("accessibility.labels.profile_info"), padding="10")
+            info_frame.pack(fill=tk.BOTH, expand=True)
+
+            ttk.Label(info_frame, text=_t("accessibility.labels.profile_id_value", id=row['profile_id'])).pack(anchor=tk.W, pady=2)
+            ttk.Label(info_frame, text=_t("accessibility.labels.user_id_value", id=row['user_id'])).pack(anchor=tk.W, pady=2)
+
+            disabilities = json.loads(row['disabilities'] or '[]')
+            ttk.Label(info_frame, text=_t("accessibility.labels.disabilities_label"), font=('Arial', 10, 'bold')).pack(anchor=tk.W, pady=(10, 2))
+            for d in disabilities:
+                ttk.Label(info_frame, text=f"  • {d}").pack(anchor=tk.W)
+
+            accommodations = json.loads(row['accommodations'] or '[]')
+            ttk.Label(info_frame, text=_t("accessibility.labels.accommodations_label"), font=('Arial', 10, 'bold')).pack(anchor=tk.W, pady=(10, 2))
+            for a in accommodations:
+                ttk.Label(info_frame, text=f"  • {a}").pack(anchor=tk.W)
+
+            technologies = json.loads(row['assistive_technologies'] or '[]')
+            ttk.Label(info_frame, text=_t("accessibility.labels.assistive_tech_label"), font=('Arial', 10, 'bold')).pack(anchor=tk.W, pady=(10, 2))
+            for t in technologies:
+                ttk.Label(info_frame, text=f"  • {t}").pack(anchor=tk.W)
+
+            ttk.Label(info_frame, text=_t("accessibility.labels.last_updated", date=row['updated_at'])).pack(anchor=tk.W, pady=(10, 2))
+
+            ttk.Button(main_frame, text=_t("common.close"), command=dialog.destroy).pack(pady=10)
+
+        except Exception as e:
+            messagebox.showerror(_t("common.error"), _t("accessibility.error.load_profile", error=str(e)))
+
+    def submit_request(self):
+        """Submit accommodation request dialog"""
+        dialog = tk.Toplevel(self.window)
+        dialog.title(_t("accessibility.dialogs.submit_request"))
+        dialog.geometry("500x450")
+        dialog.transient(self.window)
+        dialog.grab_set()
+
+        main_frame = ttk.Frame(dialog, padding="20")
+        main_frame.pack(fill=tk.BOTH, expand=True)
+
+        ttk.Label(main_frame, text=_t("accessibility.dialogs.submit_request"),
+                 font=('Arial', 14, 'bold')).pack(pady=(0, 20))
+
+        # Student ID (auto-fill for students)
+        row1 = ttk.Frame(main_frame)
+        row1.pack(fill=tk.X, pady=5)
+        ttk.Label(row1, text=_t("accessibility.labels.student_id"), width=20).pack(side=tk.LEFT)
+        student_id_var = tk.StringVar(value=self.current_user.get('student_id') or self.current_user.get('username', ''))
+        student_entry = ttk.Entry(row1, textvariable=student_id_var, width=30)
+        student_entry.pack(side=tk.LEFT)
+        if self.current_user.get('role') == 'student':
+            student_entry.config(state='readonly')
+
+        # Accommodation Type
+        row2 = ttk.Frame(main_frame)
+        row2.pack(fill=tk.X, pady=5)
+        ttk.Label(row2, text=_t("accessibility.labels.accommodation_type"), width=20).pack(side=tk.LEFT)
+        type_var = tk.StringVar()
+        type_combo = ttk.Combobox(row2, textvariable=type_var, width=27, values=[
+            _t("accessibility.acc_types.extended_test_time"), _t("accessibility.acc_types.separate_room"),
+            _t("accessibility.acc_types.note_taking"), _t("accessibility.acc_types.sign_language"),
+            _t("accessibility.acc_types.captioning"), _t("accessibility.acc_types.audio_books"),
+            _t("accessibility.acc_types.screen_reader"), _t("accessibility.acc_types.large_print"),
+            _t("accessibility.acc_types.mobility"), _t("accessibility.acc_types.flexible_attendance"),
+            _t("accessibility.acc_types.recording_lectures"), _t("accessibility.acc_types.priority_seating"),
+            _t("accessibility.acc_types.other")
+        ])
+        type_combo.pack(side=tk.LEFT)
+
+        # Description
+        ttk.Label(main_frame, text=_t("accessibility.labels.description_justification")).pack(anchor=tk.W, pady=(15, 5))
+        desc_text = scrolledtext.ScrolledText(main_frame, height=8, width=50)
+        desc_text.pack(fill=tk.X, pady=5)
+
+        def submit():
+            student_id = student_id_var.get().strip()
+            acc_type = type_var.get().strip()
+            description = desc_text.get('1.0', tk.END).strip()
+
+            if not student_id or not acc_type:
+                messagebox.showerror(_t("common.error"), _t("accessibility.error.required_fields"))
+                return
+
+            try:
+                with transaction() as conn:
+                    conn.execute('''
+                        INSERT INTO accommodation_requests
+                        (student_id, accommodation_type, description, status, requested_date)
+                        VALUES (?, ?, ?, 'pending', ?)
+                    ''', (student_id, acc_type, description, datetime.now().isoformat()))
+
+                messagebox.showinfo(_t("common.success"), _t("accessibility.messages.request_submitted"))
+                log_activity(f"Submitted accommodation request: {acc_type}",
+                           user=self.current_user.get('username'))
+                dialog.destroy()
+                self.load_requests()
+
+            except Exception as e:
+                messagebox.showerror(_t("common.error"), _t("accessibility.error.submit_request", error=str(e)))
+
+        btn_frame = ttk.Frame(main_frame)
+        btn_frame.pack(pady=20)
+        ttk.Button(btn_frame, text=_t("accessibility.btn.submit_request"), command=submit).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t("common.cancel"), command=dialog.destroy).pack(side=tk.LEFT, padx=5)
+
+    def review_request(self, event=None):
+        """Review accommodation request dialog"""
+        selection = self.requests_tree.selection()
+        if not selection:
+            return
+
+        item = self.requests_tree.item(selection[0])
+        values = item['values']
+        request_id = values[0]
+
+        try:
+            with get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute('SELECT * FROM accommodation_requests WHERE request_id = ?', (request_id,))
+                row = cursor.fetchone()
+
+                if not row:
+                    messagebox.showerror(_t("common.error"), _t("accessibility.error.request_not_found"))
+                    return
+
+            dialog = tk.Toplevel(self.window)
+            dialog.title(_t("accessibility.dialogs.review_request"))
+            dialog.geometry("550x550")
+            dialog.transient(self.window)
+
+            main_frame = ttk.Frame(dialog, padding="20")
+            main_frame.pack(fill=tk.BOTH, expand=True)
+
+            ttk.Label(main_frame, text=_t("accessibility.titles.request_details"),
+                     font=('Arial', 14, 'bold')).pack(pady=(0, 20))
+
+            info_frame = ttk.LabelFrame(main_frame, text=_t("accessibility.sections.request_info"), padding="10")
+            info_frame.pack(fill=tk.X, pady=5)
+
+            ttk.Label(info_frame, text=f"{_t('accessibility.labels.request_id')}: {row['request_id']}").pack(anchor=tk.W, pady=2)
+            ttk.Label(info_frame, text=f"{_t('accessibility.labels.student_id')}: {row['student_id']}").pack(anchor=tk.W, pady=2)
+            ttk.Label(info_frame, text=f"{_t('accessibility.labels.type')}: {row['accommodation_type']}").pack(anchor=tk.W, pady=2)
+            ttk.Label(info_frame, text=f"{_t('accessibility.labels.status')}: {row['status']}").pack(anchor=tk.W, pady=2)
+            ttk.Label(info_frame, text=f"{_t('accessibility.labels.requested')}: {row['requested_date']}").pack(anchor=tk.W, pady=2)
+
+            ttk.Label(main_frame, text=_t("accessibility.labels.description") + ":").pack(anchor=tk.W, pady=(10, 5))
+            desc_text = scrolledtext.ScrolledText(main_frame, height=5, width=50)
+            desc_text.insert('1.0', row['description'] or '')
+            desc_text.config(state='disabled')
+            desc_text.pack(fill=tk.X, pady=5)
+
+            # Review section for admin/staff
+            if self.current_user.get('role') in ['admin', 'staff']:
+                review_frame = ttk.LabelFrame(main_frame, text=_t("accessibility.sections.review_decision"), padding="10")
+                review_frame.pack(fill=tk.X, pady=10)
+
+                ttk.Label(review_frame, text=_t("accessibility.labels.review_notes") + ":").pack(anchor=tk.W, pady=2)
+                notes_text = scrolledtext.ScrolledText(review_frame, height=3, width=50)
+                notes_text.insert('1.0', row['review_notes'] or '')
+                notes_text.pack(fill=tk.X, pady=5)
+
+                def approve():
+                    try:
+                        with transaction() as conn:
+                            conn.execute('''
+                                UPDATE accommodation_requests
+                                SET status = 'approved', reviewed_by = ?, review_date = ?, review_notes = ?
+                                WHERE request_id = ?
+                            ''', (self.current_user.get('username'), datetime.now().isoformat(),
+                                 notes_text.get('1.0', tk.END).strip(), request_id))
+                        log_activity(f"Approved accommodation request {request_id}",
+                                   user=self.current_user.get('username'))
+                        dialog.destroy()
+                        self.load_requests()
+
+                        # An approved request used to stop here: the row was
+                        # marked 'approved' but nothing ever provisioned the
+                        # accommodation, so assessments never saw it. Offer to
+                        # create the matching general accommodation now.
+                        if messagebox.askyesno(
+                                _t("common.success"),
+                                _t("accessibility.messages.request_approved")
+                                + "\n\n"
+                                + _t("accessibility.messages.provision_now",
+                                     default="Set up the accommodation for this "
+                                             "student now? It will then apply to "
+                                             "their assessments.")):
+                            self.add_general_accommodation(
+                                student_id=row['student_id'],
+                                accommodation_type=self._map_request_type(
+                                    row['accommodation_type']),
+                                details=row['description'] or '')
+                        else:
+                            messagebox.showinfo(
+                                _t("common.success"),
+                                _t("accessibility.messages.provision_later",
+                                   default="Request approved. It will not affect "
+                                           "assessments until an accommodation is "
+                                           "added on the General Accommodations tab."))
+                    except Exception as e:
+                        messagebox.showerror(_t("common.error"), _t("accessibility.error.approve_failed", error=str(e)))
+
+                def deny():
+                    try:
+                        with transaction() as conn:
+                            conn.execute('''
+                                UPDATE accommodation_requests
+                                SET status = 'denied', reviewed_by = ?, review_date = ?, review_notes = ?
+                                WHERE request_id = ?
+                            ''', (self.current_user.get('username'), datetime.now().isoformat(),
+                                 notes_text.get('1.0', tk.END).strip(), request_id))
+                        messagebox.showinfo(_t("common.success"), _t("accessibility.messages.request_denied"))
+                        log_activity(f"Denied accommodation request {request_id}",
+                                   user=self.current_user.get('username'))
+                        dialog.destroy()
+                        self.load_requests()
+                    except Exception as e:
+                        messagebox.showerror(_t("common.error"), _t("accessibility.error.deny_failed", error=str(e)))
+
+                btn_frame = ttk.Frame(review_frame)
+                btn_frame.pack(pady=10)
+                ttk.Button(btn_frame, text=_t("accessibility.btn.approve"), command=approve).pack(side=tk.LEFT, padx=5)
+                ttk.Button(btn_frame, text=_t("accessibility.btn.deny"), command=deny).pack(side=tk.LEFT, padx=5)
+
+            ttk.Button(main_frame, text=_t("common.close"), command=dialog.destroy).pack(pady=10)
+
+        except Exception as e:
+            messagebox.showerror(_t("common.error"), _t("accessibility.error.load_request", error=str(e)))
+
+    def add_exam_accommodation(self):
+        """Add exam accommodation dialog"""
+        dialog = tk.Toplevel(self.window)
+        dialog.title(_t("accessibility.dialogs.add_exam_accommodation"))
+        dialog.geometry("500x500")
+        dialog.transient(self.window)
+        dialog.grab_set()
+
+        main_frame = ttk.Frame(dialog, padding="20")
+        main_frame.pack(fill=tk.BOTH, expand=True)
+
+        ttk.Label(main_frame, text=_t("accessibility.titles.add_exam_accommodation"),
+                 font=('Arial', 14, 'bold')).pack(pady=(0, 20))
+
+        # Student ID
+        row1 = ttk.Frame(main_frame)
+        row1.pack(fill=tk.X, pady=5)
+        ttk.Label(row1, text=_t("accessibility.labels.student_id") + ":", width=20).pack(side=tk.LEFT)
+        student_id_var = tk.StringVar()
+        student_id_entry = ttk.Entry(row1, textvariable=student_id_var, width=20)
+        student_id_entry.pack(side=tk.LEFT, padx=(0, 5))
+        ttk.Button(row1, text=_t('gui.pastoral.accessibility_tools.buttons.lookup', default="🔍 Lookup"), command=lambda: self.lookup_student(student_id_entry), width=10).pack(side=tk.LEFT)
+
+        # Exam ID (optional)
+        row2 = ttk.Frame(main_frame)
+        row2.pack(fill=tk.X, pady=5)
+        ttk.Label(row2, text=_t("accessibility.labels.exam_id_optional") + ":", width=20).pack(side=tk.LEFT)
+        exam_id_var = tk.StringVar()
+        exam_id_entry = ttk.Entry(row2, textvariable=exam_id_var, width=20)
+        exam_id_entry.pack(side=tk.LEFT, padx=(0, 5))
+        ttk.Button(row2, text=_t('gui.pastoral.accessibility_tools.buttons.lookup', default="🔍 Lookup"), command=lambda: self.lookup_exam(student_id_var, exam_id_entry), width=10).pack(side=tk.LEFT)
+
+        # Extended Time
+        row3 = ttk.Frame(main_frame)
+        row3.pack(fill=tk.X, pady=5)
+        ttk.Label(row3, text=_t("accessibility.labels.extended_time_mins") + ":", width=20).pack(side=tk.LEFT)
+        extended_time_var = tk.IntVar(value=0)
+        ttk.Spinbox(row3, from_=0, to=120, textvariable=extended_time_var, width=10).pack(side=tk.LEFT)
+
+        # Separate Room
+        separate_room_var = tk.BooleanVar()
+        ttk.Checkbutton(main_frame, text=_t("accessibility.labels.separate_room_required"),
+                       variable=separate_room_var).pack(anchor=tk.W, pady=5)
+
+        # Reader/Scribe
+        reader_scribe_var = tk.BooleanVar()
+        ttk.Checkbutton(main_frame, text=_t("accessibility.labels.reader_scribe_required"),
+                       variable=reader_scribe_var).pack(anchor=tk.W, pady=5)
+
+        # Assistive Technology
+        row4 = ttk.Frame(main_frame)
+        row4.pack(fill=tk.X, pady=5)
+        ttk.Label(row4, text=_t("accessibility.labels.assistive_technology") + ":", width=20).pack(side=tk.LEFT)
+        tech_var = tk.StringVar()
+        ttk.Combobox(row4, textvariable=tech_var, width=27, values=[
+            _t("common.none"), _t("accessibility.tech.screen_reader"), _t("accessibility.tech.magnification"),
+            _t("accessibility.tech.speech_to_text"), _t("accessibility.tech.braille_display"),
+            _t("accessibility.tech.calculator"), _t("accessibility.tech.spell_checker"), _t("common.other")
+        ]).pack(side=tk.LEFT)
+
+        # Notes
+        ttk.Label(main_frame, text=_t("accessibility.labels.additional_notes") + ":").pack(anchor=tk.W, pady=(10, 5))
+        notes_text = scrolledtext.ScrolledText(main_frame, height=4, width=50)
+        notes_text.pack(fill=tk.X, pady=5)
+
+        def save():
+            student_id = student_id_var.get().strip()
+            if not student_id:
+                messagebox.showerror(_t("common.error"), _t("accessibility.error.student_id_required"))
+                return
+
+            try:
+                with transaction() as conn:
+                    conn.execute('''
+                        INSERT INTO exam_accommodations
+                        (student_id, exam_id, extended_time, separate_room, reader_scribe,
+                         assistive_technology, notes, status, created_at)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, 'active', ?)
+                    ''', (student_id, exam_id_var.get().strip() or None, extended_time_var.get(),
+                         separate_room_var.get(), reader_scribe_var.get(),
+                         tech_var.get() if tech_var.get() != _t("common.none") else None,
+                         notes_text.get('1.0', tk.END).strip(), datetime.now().isoformat()))
+
+                messagebox.showinfo(_t("common.success"), _t("accessibility.messages.exam_accommodation_added"))
+                log_activity(f"Added exam accommodation for {student_id}",
+                           user=self.current_user.get('username'))
+                dialog.destroy()
+                self.load_exam_accommodations()
+
+            except Exception as e:
+                messagebox.showerror(_t("common.error"), _t("accessibility.error.add_accommodation", error=str(e)))
+
+        btn_frame = ttk.Frame(main_frame)
+        btn_frame.pack(pady=20)
+        ttk.Button(btn_frame, text=_t("common.save"), command=save).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t("common.cancel"), command=dialog.destroy).pack(side=tk.LEFT, padx=5)
+
+    def view_exam_accommodation(self, event=None):
+        """View exam accommodation details dialog"""
+        selection = self.exam_tree.selection()
+        if not selection:
+            return
+
+        item = self.exam_tree.item(selection[0])
+        values = item['values']
+        accommodation_id = values[0]
+
+        try:
+            with get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute('SELECT * FROM exam_accommodations WHERE accommodation_id = ?', (accommodation_id,))
+                row = cursor.fetchone()
+
+                if not row:
+                    messagebox.showerror(_t("common.error"), _t("accessibility.error.accommodation_not_found"))
+                    return
+
+            dialog = tk.Toplevel(self.window)
+            dialog.title(_t("accessibility.dialogs.exam_accommodation_details"))
+            dialog.geometry("450x400")
+            dialog.transient(self.window)
+
+            main_frame = ttk.Frame(dialog, padding="20")
+            main_frame.pack(fill=tk.BOTH, expand=True)
+
+            ttk.Label(main_frame, text=_t("accessibility.titles.exam_accommodation_details"),
+                     font=('Arial', 14, 'bold')).pack(pady=(0, 20))
+
+            info_frame = ttk.LabelFrame(main_frame, text=_t("accessibility.sections.accommodation_info"), padding="10")
+            info_frame.pack(fill=tk.BOTH, expand=True)
+
+            ttk.Label(info_frame, text=f"{_t('accessibility.labels.accommodation_id')}: {row['accommodation_id']}").pack(anchor=tk.W, pady=2)
+            ttk.Label(info_frame, text=f"{_t('accessibility.labels.student_id')}: {row['student_id']}").pack(anchor=tk.W, pady=2)
+            ttk.Label(info_frame, text=f"{_t('accessibility.labels.exam_id')}: {row['exam_id'] or _t('accessibility.defaults.all_exams')}").pack(anchor=tk.W, pady=2)
+            ttk.Label(info_frame, text=f"{_t('accessibility.labels.extended_time')}: {row['extended_time']} {_t('common.minutes')}" if row['extended_time'] else f"{_t('accessibility.labels.extended_time')}: {_t('common.none')}").pack(anchor=tk.W, pady=2)
+            ttk.Label(info_frame, text=f"{_t('accessibility.labels.separate_room')}: {_t('common.yes') if row['separate_room'] else _t('common.no')}").pack(anchor=tk.W, pady=2)
+            ttk.Label(info_frame, text=f"{_t('accessibility.labels.reader_scribe')}: {_t('common.yes') if row['reader_scribe'] else _t('common.no')}").pack(anchor=tk.W, pady=2)
+            ttk.Label(info_frame, text=f"{_t('accessibility.labels.assistive_technology')}: {row['assistive_technology'] or _t('common.none')}").pack(anchor=tk.W, pady=2)
+            ttk.Label(info_frame, text=f"{_t('accessibility.labels.status')}: {row['status']}").pack(anchor=tk.W, pady=2)
+
+            # Check if notes exist and display them
+            try:
+                if row['notes']:
+                    ttk.Label(info_frame, text=f"{_t('accessibility.labels.notes')}: {row['notes']}").pack(anchor=tk.W, pady=2)
+            except (KeyError, IndexError):
+                pass  # notes column doesn't exist or is empty
+
+            ttk.Button(main_frame, text=_t("common.close"), command=dialog.destroy).pack(pady=10)
+
+        except Exception as e:
+            messagebox.showerror(_t("common.error"), _t("accessibility.error.load_accommodation", error=str(e)))
+
+    def request_assistive_tech(self):
+        """Request assistive technology dialog"""
+        dialog = tk.Toplevel(self.window)
+        dialog.title(_t("accessibility.dialogs.request_assistive_tech"))
+        dialog.geometry("500x400")
+        dialog.transient(self.window)
+        dialog.grab_set()
+
+        main_frame = ttk.Frame(dialog, padding="20")
+        main_frame.pack(fill=tk.BOTH, expand=True)
+
+        ttk.Label(main_frame, text=_t("accessibility.titles.request_assistive_tech"),
+                 font=('Arial', 14, 'bold')).pack(pady=(0, 20))
+
+        # Student ID
+        row1 = ttk.Frame(main_frame)
+        row1.pack(fill=tk.X, pady=5)
+        ttk.Label(row1, text=_t("accessibility.labels.student_id") + ":", width=20).pack(side=tk.LEFT)
+        student_id_var = tk.StringVar(value=self.current_user.get('student_id') or self.current_user.get('username', ''))
+        student_entry = ttk.Entry(row1, textvariable=student_id_var, width=30)
+        student_entry.pack(side=tk.LEFT)
+        if self.current_user.get('role') == 'student':
+            student_entry.config(state='readonly')
+
+        # Technology Type
+        row2 = ttk.Frame(main_frame)
+        row2.pack(fill=tk.X, pady=5)
+        ttk.Label(row2, text=_t("accessibility.labels.technology_type") + ":", width=20).pack(side=tk.LEFT)
+        tech_type_var = tk.StringVar()
+        ttk.Combobox(row2, textvariable=tech_type_var, width=27, values=[
+            _t("accessibility.tech_types.screen_reader_jaws"),
+            _t("accessibility.tech_types.screen_reader_nvda"),
+            _t("accessibility.tech_types.screen_magnifier"),
+            _t("accessibility.tech_types.speech_to_text"),
+            _t("accessibility.tech_types.text_to_speech"),
+            _t("accessibility.tech_types.braille_display"),
+            _t("accessibility.tech_types.hearing_loop"),
+            _t("accessibility.tech_types.fm_listening"),
+            _t("accessibility.tech_types.voice_amplifier"),
+            _t("accessibility.tech_types.ergonomic_keyboard"),
+            _t("accessibility.tech_types.alternative_mouse"),
+            _t("accessibility.tech_types.head_pointer"),
+            _t("accessibility.tech_types.eye_tracking"),
+            _t("accessibility.tech_types.switch_access"),
+            _t("common.other")
+        ]).pack(side=tk.LEFT)
+
+        # Justification
+        ttk.Label(main_frame, text=_t("accessibility.labels.justification_reason") + ":").pack(anchor=tk.W, pady=(15, 5))
+        justification_text = scrolledtext.ScrolledText(main_frame, height=6, width=50)
+        justification_text.pack(fill=tk.X, pady=5)
+
+        def submit():
+            student_id = student_id_var.get().strip()
+            tech_type = tech_type_var.get().strip()
+            justification = justification_text.get('1.0', tk.END).strip()
+
+            if not student_id or not tech_type:
+                messagebox.showerror(_t("common.error"), _t("accessibility.error.student_tech_required"))
+                return
+
+            try:
+                with transaction() as conn:
+                    conn.execute('''
+                        INSERT INTO assistive_tech_requests
+                        (student_id, technology_type, justification, status, requested_date)
+                        VALUES (?, ?, ?, 'pending', ?)
+                    ''', (student_id, tech_type, justification, datetime.now().isoformat()))
+
+                messagebox.showinfo(_t("common.success"), _t("accessibility.messages.tech_request_submitted"))
+                log_activity(f"Requested assistive tech: {tech_type}",
+                           user=self.current_user.get('username'))
+                dialog.destroy()
+                self.load_assistive_tech_requests()
+
+            except Exception as e:
+                messagebox.showerror(_t("common.error"), _t("accessibility.error.submit_tech_request", error=str(e)))
+
+        btn_frame = ttk.Frame(main_frame)
+        btn_frame.pack(pady=20)
+        ttk.Button(btn_frame, text=_t("accessibility.btn.submit_request"), command=submit).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t("common.cancel"), command=dialog.destroy).pack(side=tk.LEFT, padx=5)
+
+    def manage_tech_request(self, event=None):
+        """Manage tech request dialog"""
+        selection = self.tech_tree.selection()
+        if not selection:
+            return
+
+        item = self.tech_tree.item(selection[0])
+        values = item['values']
+        request_id = values[0]
+
+        try:
+            with get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute('SELECT * FROM assistive_tech_requests WHERE request_id = ?', (request_id,))
+                row = cursor.fetchone()
+
+                if not row:
+                    messagebox.showerror(_t("common.error"), _t("accessibility.error.request_not_found"))
+                    return
+
+            dialog = tk.Toplevel(self.window)
+            dialog.title(_t("accessibility.dialogs.manage_tech_request"))
+            dialog.geometry("500x450")
+            dialog.transient(self.window)
+
+            main_frame = ttk.Frame(dialog, padding="20")
+            main_frame.pack(fill=tk.BOTH, expand=True)
+
+            ttk.Label(main_frame, text=_t("accessibility.titles.tech_request_details"),
+                     font=('Arial', 14, 'bold')).pack(pady=(0, 20))
+
+            info_frame = ttk.LabelFrame(main_frame, text=_t("accessibility.sections.request_info"), padding="10")
+            info_frame.pack(fill=tk.X, pady=5)
+
+            ttk.Label(info_frame, text=f"{_t('accessibility.labels.request_id')}: {row['request_id']}").pack(anchor=tk.W, pady=2)
+            ttk.Label(info_frame, text=f"{_t('accessibility.labels.student_id')}: {row['student_id']}").pack(anchor=tk.W, pady=2)
+            ttk.Label(info_frame, text=f"{_t('accessibility.labels.technology')}: {row['technology_type']}").pack(anchor=tk.W, pady=2)
+            ttk.Label(info_frame, text=f"{_t('accessibility.labels.status')}: {row['status']}").pack(anchor=tk.W, pady=2)
+            ttk.Label(info_frame, text=f"{_t('accessibility.labels.requested')}: {row['requested_date']}").pack(anchor=tk.W, pady=2)
+            if row['fulfilled_date']:
+                ttk.Label(info_frame, text=f"{_t('accessibility.labels.fulfilled')}: {row['fulfilled_date']}").pack(anchor=tk.W, pady=2)
+
+            if row.get('justification'):
+                ttk.Label(main_frame, text=_t("accessibility.labels.justification") + ":").pack(anchor=tk.W, pady=(10, 5))
+                just_text = scrolledtext.ScrolledText(main_frame, height=4, width=50)
+                just_text.insert('1.0', row['justification'])
+                just_text.config(state='disabled')
+                just_text.pack(fill=tk.X, pady=5)
+
+            # Management section for admin/staff
+            if self.current_user.get('role') in ['admin', 'staff'] and row['status'] == 'pending':
+                manage_frame = ttk.LabelFrame(main_frame, text=_t("accessibility.sections.manage_request"), padding="10")
+                manage_frame.pack(fill=tk.X, pady=10)
+
+                def fulfill():
+                    try:
+                        with transaction() as conn:
+                            conn.execute('''
+                                UPDATE assistive_tech_requests
+                                SET status = 'fulfilled', fulfilled_date = ?
+                                WHERE request_id = ?
+                            ''', (datetime.now().isoformat(), request_id))
+                        messagebox.showinfo(_t("common.success"), _t("accessibility.messages.request_fulfilled"))
+                        log_activity(f"Fulfilled assistive tech request {request_id}",
+                                   user=self.current_user.get('username'))
+                        dialog.destroy()
+                        self.load_assistive_tech_requests()
+                    except Exception as e:
+                        messagebox.showerror(_t("common.error"), _t("accessibility.error.update_failed", error=str(e)))
+
+                def deny():
+                    try:
+                        with transaction() as conn:
+                            conn.execute('''
+                                UPDATE assistive_tech_requests SET status = 'denied' WHERE request_id = ?
+                            ''', (request_id,))
+                        messagebox.showinfo(_t("common.success"), _t("accessibility.messages.request_denied"))
+                        log_activity(f"Denied assistive tech request {request_id}",
+                                   user=self.current_user.get('username'))
+                        dialog.destroy()
+                        self.load_assistive_tech_requests()
+                    except Exception as e:
+                        messagebox.showerror(_t("common.error"), _t("accessibility.error.update_failed", error=str(e)))
+
+                btn_frame = ttk.Frame(manage_frame)
+                btn_frame.pack(pady=10)
+                ttk.Button(btn_frame, text=_t("accessibility.btn.mark_fulfilled"), command=fulfill).pack(side=tk.LEFT, padx=5)
+                ttk.Button(btn_frame, text=_t("accessibility.btn.deny_request"), command=deny).pack(side=tk.LEFT, padx=5)
+
+            ttk.Button(main_frame, text=_t("common.close"), command=dialog.destroy).pack(pady=10)
+
+        except Exception as e:
+            messagebox.showerror(_t("common.error"), _t("accessibility.error.load_tech_request", error=str(e)))
+
+    def update_status(self, message):
+        """Update status bar"""
+        if hasattr(self, 'status_bar') and self.status_bar:
+            self.status_bar.config(text=message)
+
+
+def launch_accessibility_tools_gui(root, auth):
+    """Launch the Accessibility Tools GUI"""
+    try:
+        gui = AccessibilityToolsGUI(root, auth)
+        print("✅ Accessibility & Accommodation Tools GUI opened successfully")
+    except Exception as e:
+        messagebox.showerror(_t("common.error"), _t("accessibility.error.launch_failed", error=str(e)))
+        traceback.print_exc()
+
+
+__all__ = ['AccessibilityToolsGUI', 'launch_accessibility_tools_gui']

@@ -12,7 +12,7 @@ import tkinter as tk
 from datetime import datetime
 from unittest.mock import Mock, patch, MagicMock, call
 
-from education_system.systems.university.services.analytics.predictive_analytics_gui import (
+from education_system.systems.university.shell.gui.analytics.predictive_analytics_gui import (
     PredictiveAnalyticsGUI,
     CreateRetentionPredictionDialog,
     ViewAtRiskStudentsDialog,
@@ -25,7 +25,7 @@ from education_system.systems.university.services.analytics.predictive_analytics
 )
 
 # Common patch prefix for the predictive analytics GUI module
-_PA_MOD = 'education_system.systems.university.services.analytics.predictive_analytics_gui'
+_PA_MOD = 'education_system.systems.university.shell.gui.analytics.predictive_analytics_gui'
 
 
 @pytest.fixture

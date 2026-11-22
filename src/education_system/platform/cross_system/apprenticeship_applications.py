@@ -1,7 +1,9 @@
-"""Progression into an apprenticeship, from a college or the university.
+"""Progression into an apprenticeship, from a college, the university or a
+training provider.
 
-This is the orchestration layer shared by Sixth Form, FE College and the
-University. It uses the platform transition contract and never reads
+This is the orchestration layer shared by Sixth Form, FE College, the
+University and the Training Provider (whose record stays open: short
+courses run alongside). It uses the platform transition contract and never reads
 another system's database: both ends are reached through the adapter
 registry. The destination adapter creates an Applicant; only
 :func:`start_programme` may turn that record into an apprentice who is
@@ -27,11 +29,11 @@ from education_system.platform.cross_system.adapters.base import HandoverRequest
 
 DESTINATION = "apprenticeships"
 #: The systems that send learners into an apprenticeship through this board.
-SOURCE_SYSTEMS = frozenset({"sixth_form", "fe_college", "university"})
+SOURCE_SYSTEMS = frozenset({"sixth_form", "fe_college", "university", "training_provider"})
 #: The old name, kept for callers that imported it.
 COLLEGE_SYSTEMS = SOURCE_SYSTEMS
 #: Sources whose own enrolment stays open when the apprenticeship starts.
-CONCURRENT_BY_DEFAULT = frozenset({"fe_college", "university"})
+CONCURRENT_BY_DEFAULT = frozenset({"fe_college", "university", "training_provider"})
 TERMINAL = frozenset({"completed", "cancelled"})
 
 

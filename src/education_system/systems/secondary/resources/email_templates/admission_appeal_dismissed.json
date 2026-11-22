@@ -1,0 +1,28 @@
+{
+  "name": "admission_appeal_dismissed",
+  "description": "Sent to the parent when the appeal panel dismisses the appeal.",
+  "subject": "Outcome of your appeal for {child_name} ({application_ref})",
+  "body": [
+    "Dear {parent_name},",
+    "",
+    "The independent appeal panel has considered your appeal for a place for {child_first_name} in Year {year_group} for {academic_year}, and has decided not to uphold it.",
+    "",
+    "The panel's decision is binding. If you would like {child_first_name} to be placed on our waiting list, please let us know and quote your reference {application_ref}.",
+    "",
+    "Yours sincerely,",
+    "Admissions, {school_name}"
+  ],
+  "placeholders": {
+    "parent_name": "The parent/carer's name",
+    "child_first_name": "The child's preferred or first name",
+    "child_name": "The child's preferred first name and surname",
+    "application_ref": "The application reference, e.g. APP00012",
+    "year_group": "The year group applied for",
+    "academic_year": "The academic year applied for, e.g. 2026/27",
+    "route": "Year 7 normal round or In-year",
+    "school_name": "The school's name"
+  },
+  "defaults": {
+    "school_name": "Secondary School"
+  }
+}

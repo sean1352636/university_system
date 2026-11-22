@@ -2,39 +2,57 @@
 Admin Menu - HR Administration CLI.
 """
 
+from datetime import datetime
+
+from education_system.systems.university.domains.staff.interfaces.cli.staff_hr.menus import _access as _hr
 from education_system.systems.university.domains.staff.domain.staff_hr.services import (
     AdminToolsManager, RecruitmentManager, OnboardingManager, EmployeeManager
 )
 
 
 def display_admin_menu(user_id: str) -> None:
-    """Display HR administration menu."""
+    """Display HR administration menu (each section shown to whoever may use it)."""
+    can = {cap: _hr.can(cap) for cap in
+           ('recruitment', 'hr', 'operations', 'reports', 'hr_admin')}
+    sections = (
+        ('recruitment', "Recruitment", (
+            ('1', "View Job Postings", _view_job_postings),
+            ('2', "Create Job Posting", lambda: _create_job_posting(user_id)),
+            ('3', "View Applications", _view_applications),
+            ('4', "Schedule Interview", lambda: _schedule_interview(user_id)))),
+        ('hr', "Onboarding", (
+            ('5', "Active Onboardings", _active_onboardings),
+            ('6', "Start New Onboarding", lambda: _start_onboarding(user_id)),
+            ('7', "Onboarding Templates", lambda: _onboarding_templates(user_id)))),
+        ('operations', "Admin Tools", (
+            ('8', "Document Approvals", lambda: _document_approvals(user_id)),
+            ('9', "Access Card Management", lambda: _access_card_management(user_id)),
+            ('10', "Key Management", lambda: _key_management(user_id)),
+            ('11', "Visitor Management", lambda: _visitor_management(user_id)),
+            ('12', "Interdepartmental Requests", lambda: _interdepartmental_requests(user_id)))),
+        ('reports', "Reports", (
+            ('13', "Staff Reports", _staff_reports),
+            ('14', "Department KPIs", _department_kpis))),
+        ('hr_admin', "HR Roles", (
+            ('15', "Who Holds HR Roles", _hr_role_holders),
+            ('16', "Grant / Revoke an HR Role", _hr_grant_revoke),
+            ('17', "HR Audit Trail", _hr_audit_trail))),
+    )
     while True:
         print("\n" + "=" * 60)
         print("HR ADMINISTRATION")
         print("=" * 60)
 
-        print("\n--- Recruitment ---")
-        print("  1. View Job Postings")
-        print("  2. Create Job Posting")
-        print("  3. View Applications")
-        print("  4. Schedule Interview")
-
-        print("\n--- Onboarding ---")
-        print("  5. Active Onboardings")
-        print("  6. Start New Onboarding")
-        print("  7. Onboarding Templates")
-
-        print("\n--- Admin Tools ---")
-        print("  8. Document Approvals")
-        print("  9. Access Card Management")
-        print("  10. Key Management")
-        print("  11. Visitor Management")
-        print("  12. Interdepartmental Requests")
-
-        print("\n--- Reports ---")
-        print("  13. Staff Reports")
-        print("  14. Department KPIs")
+        actions = {}
+        for cap, title, items in sections:
+            if not can[cap]:
+                continue
+            print(f"\n--- {title} ---")
+            for key, label, handler in items:
+                print(f"  {key}. {label}")
+                actions[key] = handler
+        if not actions:
+            print("\n  You have no HR administration access.")
 
         print("\n  0. Return")
 
@@ -42,56 +60,109 @@ def display_admin_menu(user_id: str) -> None:
 
         if choice == '0':
             break
-        elif choice == '1':
-            _view_job_postings()
-        elif choice == '2':
-            _create_job_posting(user_id)
-        elif choice == '3':
-            _view_applications()
-        elif choice == '4':
-            _schedule_interview(user_id)
-        elif choice == '5':
-            _active_onboardings()
-        elif choice == '6':
-            _start_onboarding(user_id)
-        elif choice == '7':
-            _onboarding_templates()
-        elif choice == '8':
-            _document_approvals(user_id)
-        elif choice == '9':
-            _access_card_management()
-        elif choice == '10':
-            _key_management()
-        elif choice == '11':
-            _visitor_management(user_id)
-        elif choice == '12':
-            _interdepartmental_requests(user_id)
-        elif choice == '13':
-            _staff_reports()
-        elif choice == '14':
-            _department_kpis()
+        elif choice in actions:
+            actions[choice]()
         else:
             print("Invalid choice.")
+
+
+# ==================== HR ROLES ====================
+
+def _hr_role_holders() -> None:
+    """Who holds each HR role (administrators hold all of them implicitly)."""
+    from education_system.systems.university.domains.staff.domain.staff_hr import access
+    try:
+        rows = access.list_role_holders(_hr.actor())
+    except PermissionError as e:
+        print(f"\n{e}")
+        return
+    print("\n--- HR Role Holders ---")
+    if not rows:
+        print("No HR roles granted (system administrators hold every role).")
+    for r in rows:
+        print(f"  {access.ROLE_LABELS.get(r['role'], r['role']):<18} {r['username']:<16} "
+              f"{access.display_name(r['username']):<24} by {r.get('granted_by') or '-'} "
+              f"on {(r.get('granted_at') or '')[:16]}")
+    input("\nPress Enter to continue...")
+
+
+def _hr_grant_revoke() -> None:
+    """Grant or revoke one HR role."""
+    from education_system.systems.university.domains.staff.domain.staff_hr import access
+    username = input("Username: ").strip()
+    if not username:
+        return
+    print("Roles:")
+    for i, role in enumerate(access.HR_ROLES, 1):
+        print(f"  {i}. {access.ROLE_LABELS.get(role, role)}")
+    try:
+        role = access.HR_ROLES[int(input("Role number: ").strip()) - 1]
+    except (ValueError, IndexError):
+        print("Invalid role.")
+        return
+    action = input("[G]rant or [R]evoke? ").strip().upper()
+    try:
+        if action == 'G':
+            added = access.grant_role(_hr.actor(), username, role)
+            print(f"\n{username} {'now holds' if added else 'already holds'} "
+                  f"{access.ROLE_LABELS[role]}.")
+        elif action == 'R':
+            if input(f"Revoke {access.ROLE_LABELS[role]} from {username}? (y/n): "
+                     ).strip().lower() != 'y':
+                return
+            removed = access.revoke_role(_hr.actor(), username, role)
+            print(f"\nRevoked {access.ROLE_LABELS[role]} from {username}." if removed
+                  else f"\n{username} did not hold {access.ROLE_LABELS[role]}.")
+        else:
+            print("No action taken.")
+    except (ValueError, PermissionError) as e:
+        print(f"\nError: {e}")
+
+
+def _hr_audit_trail() -> None:
+    """The HR audit trail, optionally for one person."""
+    from education_system.systems.university.domains.staff.domain.staff_hr import access
+    subject = input("Person's username (blank for everyone): ").strip() or None
+    if subject:
+        subject = access.staff_key(subject) or subject
+    try:
+        rows = access.audit_trail(_hr.actor(), subject=subject, limit=200)
+    except PermissionError as e:
+        print(f"\n{e}")
+        return
+    print(f"\n--- HR Audit Trail ({len(rows)} most recent) ---")
+    for r in rows:
+        print(f"  {(r.get('at') or '')[:19]}  {r.get('actor') or '-':<14} "
+              f"{r.get('action') or '':<24} {r.get('subject_username') or '':<14} "
+              f"{r.get('entity') or ''} {r.get('entity_id') or ''}")
+    if not rows:
+        print("  Nothing recorded.")
+    input("\nPress Enter to continue...")
 
 
 # ==================== RECRUITMENT ====================
 
 def _view_job_postings() -> None:
-    """View job postings."""
-    postings = RecruitmentManager.get_job_postings()
+    """View job postings (recruitment and HR also see drafts and closed ones)."""
+    try:
+        postings = RecruitmentManager.get_staff_recruitment_postings(actor=_hr.actor())
+    except PermissionError as e:
+        print(f"\n{e}")
+        input("Press Enter to continue...")
+        return
     print("\n" + "-" * 60)
     print("JOB POSTINGS")
     print("-" * 60)
 
     if postings:
         for p in postings:
-            status = p.get('status', 'open').upper()
-            print(f"\n  [{status}] {p.get('title')}")
-            print(f"    Department: {p.get('department', 'N/A')}")
-            print(f"    Type: {p.get('employment_type', 'N/A')}")
-            print(f"    Posted: {p.get('posted_date', 'N/A')[:10]}")
-            print(f"    Deadline: {p.get('closing_date', 'N/A')}")
-            print(f"    Applications: {p.get('application_count', 0)}")
+            status = (p.get('status') or 'open').upper()
+            print(f"\n  [{status}] #{p.get('posting_id')} {p.get('job_title')}")
+            print(f"    Department: {p.get('department') or 'N/A'}")
+            print(f"    Type: {p.get('job_type') or 'N/A'}")
+            print(f"    Posted: {(p.get('post_date') or 'N/A')[:10]}")
+            print(f"    Deadline: {p.get('closing_date') or 'N/A'}")
+            print(f"    Applications: {p.get('applications_count') or 0}")
     else:
         print("No job postings found.")
 
@@ -100,11 +171,11 @@ def _view_job_postings() -> None:
 
 
 def _create_job_posting(user_id: str) -> None:
-    """Create a new job posting."""
+    """Create a new job posting (as a draft; publish it from Recruitment)."""
     print("\n--- Create Job Posting ---")
     title = input("Job Title: ").strip()
     department = input("Department: ").strip()
-    employment_type = input("Type (full_time/part_time/contract/temporary): ").strip()
+    job_type = input("Type (permanent/fixed_term/part_time/contract): ").strip() or 'permanent'
     description = input("Description:\n").strip()
     requirements = input("Requirements:\n").strip()
     salary_range = input("Salary Range: ").strip()
@@ -112,17 +183,16 @@ def _create_job_posting(user_id: str) -> None:
 
     if title and department:
         try:
-            posting_id = RecruitmentManager.create_job_posting(
-                title=title,
-                department=department,
-                employment_type=employment_type,
-                description=description,
-                requirements=requirements,
-                salary_range=salary_range,
-                closing_date=closing_date,
-                created_by=user_id
+            posting_id = RecruitmentManager.create_posting(
+                user_id, title, department,
+                actor=_hr.actor(),
+                job_type=job_type,
+                description=description or None,
+                requirements=requirements or None,
+                salary_range=salary_range or None,
+                closing_date=closing_date or None,
             )
-            print(f"\nJob posting created. ID: {posting_id}")
+            print(f"\nJob posting created as a draft. ID: {posting_id}")
         except Exception as e:
             print(f"\nError: {e}")
     else:
@@ -132,24 +202,25 @@ def _create_job_posting(user_id: str) -> None:
 
 
 def _view_applications() -> None:
-    """View job applications."""
-    postings = RecruitmentManager.get_job_postings(status='open')
-    if not postings:
-        print("\nNo open job postings.")
-        input("Press Enter to continue...")
-        return
-
-    print("\nSelect Job Posting:")
-    for i, p in enumerate(postings, 1):
-        print(f"  {i}. {p.get('title')} ({p.get('application_count', 0)} applications)")
-
+    """View job applications (recruitment and HR)."""
+    actor = _hr.actor()
     try:
+        postings = RecruitmentManager.get_active_postings(actor=actor)
+        if not postings:
+            print("\nNo open job postings.")
+            input("Press Enter to continue...")
+            return
+
+        print("\nSelect Job Posting:")
+        for i, p in enumerate(postings, 1):
+            print(f"  {i}. {p.get('job_title')} ({p.get('applicant_count', 0)} applications)")
+
         choice = int(input("\nSelect (0 for all): ").strip())
         posting_id = None
         if 1 <= choice <= len(postings):
             posting_id = postings[choice - 1]['posting_id']
 
-        applications = RecruitmentManager.get_applications(posting_id=posting_id)
+        applications = RecruitmentManager.get_applications(posting_id=posting_id, actor=actor)
 
         print("\n" + "-" * 60)
         print("APPLICATIONS")
@@ -157,24 +228,32 @@ def _view_applications() -> None:
 
         if applications:
             for a in applications:
-                status = a.get('status', 'received').upper()
-                print(f"\n  [{status}] {a.get('applicant_name', 'N/A')}")
-                print(f"    Position: {a.get('job_title', 'N/A')}")
-                print(f"    Applied: {a.get('applied_date', 'N/A')[:10]}")
-                print(f"    Email: {a.get('email', 'N/A')}")
+                status = (a.get('status') or 'received').upper()
+                print(f"\n  [{status}] #{a.get('application_id')} {a.get('applicant_name') or 'N/A'}")
+                print(f"    Position: {a.get('job_title') or 'N/A'}")
+                print(f"    Applied: {(a.get('application_date') or 'N/A')[:10]}")
+                print(f"    Email: {a.get('applicant_email') or 'N/A'}")
         else:
             print("No applications found.")
 
         print("-" * 60)
     except ValueError:
         print("Invalid input.")
+    except PermissionError as e:
+        print(f"\n{e}")
 
     input("\nPress Enter to continue...")
 
 
 def _schedule_interview(user_id: str) -> None:
-    """Schedule an interview."""
-    applications = RecruitmentManager.get_applications(status='shortlisted')
+    """Schedule an interview for a shortlisted candidate (recruitment and HR)."""
+    actor = _hr.actor()
+    try:
+        applications = RecruitmentManager.get_applications(status='shortlisted', actor=actor)
+    except PermissionError as e:
+        print(f"\n{e}")
+        input("Press Enter to continue...")
+        return
     if not applications:
         print("\nNo shortlisted applications.")
         input("Press Enter to continue...")
@@ -191,18 +270,18 @@ def _schedule_interview(user_id: str) -> None:
         if 1 <= choice <= len(applications):
             application = applications[choice - 1]
 
-            interview_date = input("Interview Date (YYYY-MM-DD HH:MM): ").strip()
-            interview_type = input("Type (in_person/video/phone): ").strip() or 'in_person'
+            interview_date = input("Interview Date (YYYY-MM-DD): ").strip()
+            interview_time = input("Interview Time (HH:MM): ").strip()
+            interview_type = input("Type (in-person/video/phone): ").strip() or 'in-person'
             location = input("Location/Link: ").strip()
-            panel = input("Panel Members (comma-separated user IDs): ").strip()
+            panel = input("Panel members (comma-separated usernames): ").strip()
 
             interview_id = RecruitmentManager.schedule_interview(
-                application['application_id'],
-                interview_date=interview_date,
+                application['application_id'], interview_date, interview_time,
+                actor=actor,
                 interview_type=interview_type,
-                location=location,
-                panel_members=panel.split(',') if panel else None,
-                scheduled_by=user_id
+                location=location or None,
+                interviewers=panel or None,
             )
             print(f"\nInterview scheduled. ID: {interview_id}")
     except ValueError:
@@ -217,7 +296,7 @@ def _schedule_interview(user_id: str) -> None:
 
 def _active_onboardings() -> None:
     """View active onboardings."""
-    onboardings = OnboardingManager.get_active_onboardings()
+    onboardings = OnboardingManager.get_active_onboardings(actor=_hr.actor())
     print("\n" + "-" * 60)
     print("ACTIVE ONBOARDINGS")
     print("-" * 60)
@@ -265,7 +344,8 @@ def _start_onboarding(user_id: str) -> None:
             template_id=template['template_id'],
             start_date=start_date,
             buddy_id=buddy_id if buddy_id else None,
-            created_by=user_id
+            created_by=user_id,
+            actor=_hr.actor()
         )
         print(f"\nOnboarding started. ID: {onboarding_id}")
     except ValueError:
@@ -276,7 +356,7 @@ def _start_onboarding(user_id: str) -> None:
     input("Press Enter to continue...")
 
 
-def _onboarding_templates() -> None:
+def _onboarding_templates(user_id: str = None) -> None:
     """View onboarding templates."""
     templates = OnboardingManager.get_templates()
     print("\n" + "-" * 60)
@@ -286,9 +366,9 @@ def _onboarding_templates() -> None:
     if templates:
         for t in templates:
             print(f"\n  {t.get('name')}")
-            print(f"    Type: {t.get('employee_type', 'all')}")
+            print(f"    Type: {t.get('role') or 'all'}")
             print(f"    Tasks: {t.get('task_count', 0)}")
-            print(f"    Duration: {t.get('duration_days', 'N/A')} days")
+            print(f"    Duration: {t.get('estimated_days', 'N/A')} days")
     else:
         print("No templates found.")
 
@@ -304,8 +384,9 @@ def _onboarding_templates() -> None:
             try:
                 template_id = OnboardingManager.create_template(
                     name,
-                    employee_type=emp_type or 'all',
-                    duration_days=int(duration) if duration else 30
+                    created_by=user_id,
+                    role=emp_type if emp_type and emp_type != 'all' else None,
+                    estimated_days=int(duration) if duration else 30
                 )
                 print(f"\nTemplate created. ID: {template_id}")
             except Exception as e:
@@ -330,7 +411,7 @@ def _document_approvals(user_id: str) -> None:
 
     for i, d in enumerate(pending, 1):
         print(f"\n  {i}. {d.get('document_name')}")
-        print(f"     Type: {d.get('document_type')} | Submitted: {d.get('submitted_date', 'N/A')[:10]}")
+        print(f"     Type: {d.get('document_type')} | Submitted: {(d.get('submitted_date') or 'N/A')[:10]}")
         print(f"     Submitted by: {d.get('submitter_name', 'N/A')}")
 
     print("-" * 60)
@@ -356,7 +437,7 @@ def _document_approvals(user_id: str) -> None:
     input("Press Enter to continue...")
 
 
-def _access_card_management() -> None:
+def _access_card_management(admin_id: str = None) -> None:
     """Manage access cards."""
     print("\n--- Access Card Management ---")
     print("  1. View All Cards")
@@ -374,7 +455,7 @@ def _access_card_management() -> None:
         print("-" * 50)
         for c in cards[:20]:
             status = c.get('status', 'active').upper()
-            print(f"  [{status}] {c.get('card_number')} - {c.get('holder_name', 'N/A')}")
+            print(f"  [{status}] {c.get('card_number')} - {c.get('user_name') or c.get('user_id') or 'N/A'}")
         print("-" * 50)
 
     elif choice == '2':
@@ -385,7 +466,7 @@ def _access_card_management() -> None:
         if user_id and card_number:
             try:
                 card_id = AdminToolsManager.issue_access_card(
-                    user_id, card_number, access_level=access_level
+                    card_number, user_id, admin_id, access_level=access_level
                 )
                 print(f"\nCard issued. ID: {card_id}")
             except Exception as e:
@@ -394,18 +475,22 @@ def _access_card_management() -> None:
     elif choice == '3':
         card_number = input("Card Number to deactivate: ").strip()
         reason = input("Reason: ").strip()
-        AdminToolsManager.deactivate_access_card(card_number, reason)
-        print("\nCard deactivated.")
+        if AdminToolsManager.deactivate_card_by_number(card_number, reason):
+            print("\nCard deactivated.")
+        else:
+            print("\nNo card with that number.")
 
     elif choice == '4':
         card_number = input("Lost Card Number: ").strip()
-        AdminToolsManager.report_lost_card(card_number)
-        print("\nCard reported as lost and deactivated.")
+        if AdminToolsManager.report_lost_card(card_number, admin_id):
+            print("\nCard reported as lost and deactivated.")
+        else:
+            print("\nNo such card, or it is already reported lost.")
 
     input("Press Enter to continue...")
 
 
-def _key_management() -> None:
+def _key_management(admin_id: str = None) -> None:
     """Manage keys."""
     print("\n--- Key Management ---")
     print("  1. View Issued Keys")
@@ -424,7 +509,7 @@ def _key_management() -> None:
         for k in keys[:20]:
             print(f"  {k.get('key_number')} - {k.get('location', 'N/A')}")
             print(f"    Holder: {k.get('holder_name', 'N/A')}")
-            print(f"    Issued: {k.get('issued_date', 'N/A')[:10]}")
+            print(f"    Issued: {(k.get('issued_date') or 'N/A')[:10]}")
         print("-" * 50)
 
     elif choice == '2':
@@ -434,20 +519,24 @@ def _key_management() -> None:
 
         if user_id and key_number:
             try:
-                key_id = AdminToolsManager.issue_key(user_id, key_number, location)
+                key_id = AdminToolsManager.issue_key(user_id, key_number, location, issued_by=admin_id)
                 print(f"\nKey issued. ID: {key_id}")
             except Exception as e:
                 print(f"\nError: {e}")
 
     elif choice == '3':
         key_number = input("Key Number to return: ").strip()
-        AdminToolsManager.return_key(key_number)
-        print("\nKey returned.")
+        if AdminToolsManager.return_key_by_number(key_number):
+            print("\nKey returned.")
+        else:
+            print("\nThat key is not out with anyone.")
 
     elif choice == '4':
         key_number = input("Lost Key Number: ").strip()
-        AdminToolsManager.report_lost_key(key_number)
-        print("\nKey reported as lost.")
+        if AdminToolsManager.report_lost_key(key_number, admin_id):
+            print("\nKey reported as lost.")
+        else:
+            print("\nThat key is not out with anyone.")
 
     input("Press Enter to continue...")
 
@@ -469,10 +558,10 @@ def _visitor_management(user_id: str) -> None:
         print("TODAY'S VISITORS")
         print("-" * 50)
         for v in visitors:
-            status = 'IN' if v.get('checked_in') and not v.get('checked_out') else 'OUT'
-            print(f"  [{status}] {v.get('visitor_name')}")
-            print(f"    Visiting: {v.get('host_name', 'N/A')}")
-            print(f"    Purpose: {v.get('purpose', 'N/A')}")
+            status = 'IN' if v.get('status') == 'checked_in' else 'OUT'
+            print(f"  [{status}] {v.get('visitor_name')} (ID {v.get('visitor_id')})")
+            print(f"    Visiting: {v.get('host_name') or v.get('host_id') or 'N/A'}")
+            print(f"    Purpose: {v.get('visit_purpose') or 'N/A'}")
             if v.get('check_in_time'):
                 print(f"    Checked In: {v.get('check_in_time')}")
         print("-" * 50)
@@ -487,26 +576,40 @@ def _visitor_management(user_id: str) -> None:
         if name and host_id:
             try:
                 visitor_id = AdminToolsManager.register_visitor(
-                    name, host_id,
-                    company=company,
-                    purpose=purpose,
-                    expected_date=expected_date,
-                    registered_by=user_id
+                    host_id, name,
+                    expected_date or datetime.now().strftime('%Y-%m-%d'),
+                    visitor_company=company or None,
+                    visit_purpose=purpose or None,
+                    notes=f"Registered by {user_id}"
                 )
                 print(f"\nVisitor registered. ID: {visitor_id}")
             except Exception as e:
                 print(f"\nError: {e}")
 
     elif choice == '3':
-        visitor_id = input("Visitor ID or Name: ").strip()
+        reference = input("Visitor ID or Name: ").strip()
         badge_number = input("Badge Number: ").strip()
-        AdminToolsManager.check_in_visitor(visitor_id, badge_number)
-        print("\nVisitor checked in.")
+        try:
+            visitor_id = AdminToolsManager.find_visitor(reference)
+            if visitor_id is None:
+                print("\nNo such visitor.")
+            else:
+                AdminToolsManager.check_in_visitor(visitor_id, badge_number or None)
+                print("\nVisitor checked in.")
+        except ValueError as e:
+            print(f"\n{e}")
 
     elif choice == '4':
-        visitor_id = input("Visitor ID or Name: ").strip()
-        AdminToolsManager.check_out_visitor(visitor_id)
-        print("\nVisitor checked out.")
+        reference = input("Visitor ID or Name: ").strip()
+        try:
+            visitor_id = AdminToolsManager.find_visitor(reference)
+            if visitor_id is None:
+                print("\nNo such visitor.")
+            else:
+                AdminToolsManager.check_out_visitor(visitor_id)
+                print("\nVisitor checked out.")
+        except ValueError as e:
+            print(f"\n{e}")
 
     input("Press Enter to continue...")
 
@@ -530,7 +633,7 @@ def _interdepartmental_requests(user_id: str) -> None:
             status = r.get('status', 'pending').upper()
             print(f"\n  [{status}] {r.get('request_type')}")
             print(f"    To: {r.get('target_department', 'N/A')}")
-            print(f"    Submitted: {r.get('submitted_date', 'N/A')[:10]}")
+            print(f"    Submitted: {(r.get('submitted_date') or 'N/A')[:10]}")
         print("-" * 50)
 
     elif choice == '2':
@@ -568,14 +671,20 @@ def _interdepartmental_requests(user_id: str) -> None:
                     req = pending[idx - 1]
                     action = input("(A)pprove or (R)eject? ").strip().upper()
                     if action == 'A':
-                        AdminToolsManager.approve_request(req['request_id'], user_id)
-                        print("\nRequest approved.")
+                        if AdminToolsManager.approve_request(req['request_id'], user_id):
+                            print("\nRequest approved.")
+                        else:
+                            print("\nThat request is no longer pending.")
                     elif action == 'R':
                         reason = input("Rejection reason: ").strip()
-                        AdminToolsManager.reject_request(req['request_id'], user_id, reason)
-                        print("\nRequest rejected.")
+                        if AdminToolsManager.reject_request(req['request_id'], user_id, reason):
+                            print("\nRequest rejected.")
+                        else:
+                            print("\nThat request is no longer pending.")
             except ValueError:
                 pass
+            except PermissionError as e:
+                print(f"\n{e}")
         else:
             print("No pending requests.")
         print("-" * 50)
@@ -598,7 +707,7 @@ def _staff_reports() -> None:
     choice = input("\nChoice: ").strip()
 
     if choice == '1':
-        report = EmployeeManager.get_headcount_report()
+        report = EmployeeManager.get_department_breakdown()
         print("\n" + "-" * 50)
         print("HEADCOUNT BY DEPARTMENT")
         print("-" * 50)
@@ -663,22 +772,30 @@ def _staff_reports() -> None:
 
 
 def _department_kpis() -> None:
-    """View department KPIs."""
-    kpis = RecruitmentManager.get_department_kpis()
+    """View one department's KPIs against their targets."""
+    department = input("Department: ").strip()
+    if not department:
+        print("A department is required.")
+        input("Press Enter to continue...")
+        return
+    year = input("Academic year (blank for all): ").strip() or None
+    kpis = RecruitmentManager.get_department_kpis(department, year)
     print("\n" + "-" * 60)
-    print("DEPARTMENT KPIs")
+    print(f"DEPARTMENT KPIs - {department}")
     print("-" * 60)
 
     if kpis:
-        for dept, metrics in kpis.items():
-            print(f"\n[{dept}]")
-            print(f"  Headcount: {metrics.get('headcount', 0)}")
-            print(f"  Vacancies: {metrics.get('vacancies', 0)}")
-            print(f"  Turnover Rate: {metrics.get('turnover_rate', 0):.1f}%")
-            print(f"  Avg Tenure: {metrics.get('avg_tenure', 0):.1f} years")
-            print(f"  Training Completion: {metrics.get('training_completion', 0):.1f}%")
+        for k in kpis:
+            unit = k.get('unit') or ''
+            print(f"\n  [{(k.get('status') or 'on_track').upper()}] {k.get('kpi_name')}"
+                  f" ({k.get('kpi_category') or 'general'})")
+            print(f"    Target: {k.get('target_value')}{unit}   Current: {k.get('current_value')}{unit}")
+            if k.get('owner_name') or k.get('owner_id'):
+                print(f"    Owner: {k.get('owner_name') or k.get('owner_id')}")
     else:
-        print("No KPI data available.")
+        print("No KPIs recorded for this department.")
 
     print("-" * 60)
     input("\nPress Enter to continue...")
+
+

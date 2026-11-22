@@ -5,8 +5,8 @@ from __future__ import annotations
 import getpass
 import logging
 from typing import Any, Callable
-from education_system.systems.sixth_form.interfaces import user_accounts as data
-from education_system.systems.sixth_form.interfaces.user_accounts import (
+from education_system.systems.sixth_form.domain.governance.user_management import user_accounts as data
+from education_system.systems.sixth_form.domain.governance.user_management.user_accounts import (
     DEFAULT_ROLE,
     ROLES,
     SYSTEM_KEY,

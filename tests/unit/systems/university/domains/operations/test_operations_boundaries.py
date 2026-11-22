@@ -22,7 +22,6 @@ SLICE = "operations"
 
 _UNI = "education_system.systems.university"
 _FIN = f"{_UNI}.domains.finance"
-_ACAD = f"{_UNI}.domains.academics"
 
 #: Every commercial outlet posts payments through Finance's integration module.
 _FINANCE_INTEGRATION = f"{_FIN}.infrastructure.finance_integration"
@@ -32,9 +31,7 @@ _FINANCE_INTEGRATION_CALLERS = {
     "interfaces/gui/campus/equipment/equipment_gui.py",
     "interfaces/gui/campus/mobility/parking_management/dialogs/payment_dialog.py",
     "interfaces/gui/campus/mobility/parking_management/dialogs/refund_dialog.py",
-    "interfaces/gui/campus/mobility/taxi_booking_gui_parts/taxibookingapp_process_taxi_refund.py",
     "interfaces/gui/campus/mobility/taxi_booking_gui_shared.py",
-    "interfaces/gui/campus/mobility/train_station_gui_parts/trainstationapp_add_train_refund_to_student_acco.py",
     "interfaces/gui/campus/mobility/train_station_gui_shared.py",
     "interfaces/gui/campus/printing/printing_gui.py",
 }
@@ -70,19 +67,15 @@ KNOWN_VIOLATIONS: set[tuple[str, str]] = (
         # The bakery entry is a *dangling* import, not merely a boundary
         # crossing: `university.domain.helpdesk` has never existed — the helpdesk
         # service has always lived under pastoral/services/helpdesk (now
-        # domains/pastoral/domain/services/helpdesk), and it is substantial. The
+        # domains/student_support/domain/helpdesk), and it is substantial. The
         # import sits in a try/except, so the bakery's "raise a helpdesk ticket"
         # path silently does nothing. Repointing the path is not sufficient
         # either: that package exposes create_ticket_enhanced(auth) and
         # create_ticket_from_template(auth, template_id), not the create_ticket()
         # this calls. Wiring it up needs a decision about what the bakery passes
         # for `auth`, so it is recorded here rather than guessed at.
-        ("domain/campus/accessibility/__init__.py",
-         f"{_UNI}.domains.operations.interfaces.cli.campus.accessibility.accessibility_cli"),
         ("domain/campus/campus_navigation/__init__.py",
          f"{_UNI}.domains.operations.interfaces.cli.campus.campus_navigation.navigation_cli"),
-        ("domain/campus/equipment/services/equipment_core.py",
-         f"{_FIN}.domain.ledger"),
         ("domain/campus/facilities/services/facilities_management_core.py",
          f"{_UNI}.domains.operations.interfaces.cli.campus.facilities.facilities_cli"),
         ("domain/campus/facilities/services/facilities_management_core.py",
@@ -99,12 +92,8 @@ KNOWN_VIOLATIONS: set[tuple[str, str]] = (
          f"{_UNI}.domains.operations.interfaces.gui.campus.mobility.parking_management_gui"),
         ("domain/campus/mobility/services/parking_launcher.py",
          "tkinter.ttk"),
-        ("domain/campus/mobility/services/trip_management/_common.py",
-         f"{_ACAD}.domain.services.academic_calendar.calendar_core"),
-        ("domain/campus/mobility/services/trip_management/_common.py",
-         f"{_ACAD}.domain.services.academic_calendar.config"),
         ("domain/reporting/external_qa_kpis.py",
-         f"{_ACAD}.domain.research.external_quality_assurance.services"),
+         f"{_UNI}.domains.quality.domain.external_quality_assurance.services"),
         ("interfaces/gui/campus/housing/housing_accommodation_gui/finance_integration.py",
          f"{_FIN}.domain.ledger"),
         ("interfaces/gui/campus/housing/housing_accommodation_gui/finance_integration.py",
@@ -117,18 +106,10 @@ KNOWN_VIOLATIONS: set[tuple[str, str]] = (
          f"{_FIN}.interfaces.gui.finance.finance_gui"),
         ("interfaces/gui/campus/housing/housing_accommodation_gui/refund_manager.py",
          f"{_FIN}.domain.ledger"),
-        ("interfaces/gui/campus/mobility/parking_management/tabs/payments.py",
-         f"{_FIN}.domain.ledger"),
-        ("interfaces/gui/campus/mobility/taxi_booking_gui_parts/taxibookingapp_process_taxi_refund.py",
-         f"{_FIN}.domain.ledger"),
-        ("interfaces/gui/campus/mobility/train_station_gui_parts/trainstationapp_add_train_refund_to_student_acco.py",
-         f"{_FIN}.domain.ledger"),
-        ("interfaces/gui/campus/mobility/train_station_gui_parts/trainstationapp_show_refunds.py",
-         f"{_FIN}.domain.ledger"),
         ("interfaces/gui/campus/mobility/trip_management_gui/_imports.py",
-         f"{_ACAD}.domain.services.academic_calendar.calendar_core"),
+         f"{_UNI}.domains.teaching.domain.academic_calendar.calendar_core"),
         ("interfaces/gui/campus/mobility/trip_management_gui/_imports.py",
-         f"{_ACAD}.domain.services.academic_calendar.config"),
+         f"{_UNI}.domains.teaching.domain.academic_calendar.config"),
         ("interfaces/gui/communications/mail/mail_post_gui.py",
          f"{_FIN}.domain.core.finance_db_operations"),
     }

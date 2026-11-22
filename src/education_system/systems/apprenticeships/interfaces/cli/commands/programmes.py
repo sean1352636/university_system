@@ -10,8 +10,8 @@ from education_system.systems.apprenticeships import config
 from education_system.systems.apprenticeships.domain.programmes import versions
 from education_system.systems.apprenticeships.domain.programmes.models import Programme
 from education_system.systems.apprenticeships.interfaces.cli import prompts
-from education_system.systems.apprenticeships.services import programme_service
-from education_system.systems.apprenticeships.services.access import Actor
+from education_system.systems.apprenticeships.application.programmes import programme_service
+from education_system.systems.apprenticeships.application.security.access import Actor
 
 logger = logging.getLogger(__name__)
 

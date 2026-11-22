@@ -25,6 +25,14 @@ def _row_to_dict(row) -> dict:
     return {k: row[k] for k in row.keys()}
 
 
+def _order_to_dict(row) -> dict:
+    """Order row for the API: ``status`` reads the unified ``order_status``."""
+    item = _row_to_dict(row)
+    if item:
+        item["status"] = item.get("order_status") or item.get("status")
+    return item
+
+
 # ---- products ----
 
 @butcher_bp.route("/products", methods=["GET"])
@@ -38,14 +46,14 @@ def list_products():
         if search:
             pattern = f"%{escape_like(search)}%"
             rows = conn.execute(
-                "SELECT * FROM butcher_products WHERE name LIKE ? OR description LIKE ?",
+                "SELECT * FROM products WHERE source_type = 'butcher' AND (name LIKE ? OR description LIKE ?)",
                 (pattern, pattern),
             ).fetchall()
             items = [_row_to_dict(r) for r in rows]
             return jsonify({"items": items, "total": len(items)})
 
-        conditions = []
-        params: list = []
+        conditions = ["source_type = ?"]
+        params: list = ["butcher"]
         if category:
             conditions.append("category = ?")
             params.append(category)
@@ -53,17 +61,17 @@ def list_products():
             conditions.append("is_available = ?")
             params.append(is_available)
 
-        where = (" WHERE " + " AND ".join(conditions)) if conditions else ""
+        where = " WHERE " + " AND ".join(conditions)
         page, per_page, offset = get_pagination_params()
         params_count = list(params)
         params.extend([per_page, offset])
 
         rows = conn.execute(
-            "SELECT * FROM butcher_products" + where + " ORDER BY product_id DESC LIMIT ? OFFSET ?",
+            "SELECT * FROM products" + where + " ORDER BY product_id DESC LIMIT ? OFFSET ?",
             params,
         ).fetchall()
         total_row = conn.execute(
-            "SELECT COUNT(*) FROM butcher_products" + where, params_count
+            "SELECT COUNT(*) FROM products" + where, params_count
         ).fetchone()
         total = total_row[0] if total_row else 0
 
@@ -78,7 +86,7 @@ def list_products():
 def get_product(product_id: int):
     with get_connection() as conn:
         row = conn.execute(
-            "SELECT * FROM butcher_products WHERE product_id = ?", (product_id,)
+            "SELECT * FROM products WHERE source_type = 'butcher' AND product_id = ?", (product_id,)
         ).fetchone()
     if not row:
         raise ValidationError(f"products {product_id} not found")
@@ -96,16 +104,21 @@ def create_product():
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     with transaction() as conn:
         conn.execute(
-            """INSERT INTO butcher_products
-               (name, category, price_per_unit, description, unit_type, stock_quantity, origin, storage_temp, shelf_life_days, created_at)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
-            (data["name"], data["category"], data["price_per_unit"], data.get("description", ""), data.get("unit_type", ""), data.get("stock_quantity", ""), data.get("origin", ""), data.get("storage_temp", ""), data.get("shelf_life_days", ""), now,),
+            """INSERT INTO products
+               (source_type, name, category, price_per_unit, description, unit_type, stock_quantity, origin, storage_temp, shelf_life_days, created_at)
+               VALUES ('butcher', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+            (data["name"], data["category"], data["price_per_unit"], data.get("description", ""), data.get("unit_type", "kg"), data.get("stock_quantity", 0), data.get("origin", ""), data.get("storage_temp", ""), data.get("shelf_life_days"), now,),
         )
         new_id = conn.execute("SELECT last_insert_rowid()").fetchone()[0]
+        # The butcher core and screens address products by source_product_id.
+        conn.execute(
+            "UPDATE products SET source_product_id = ? WHERE product_id = ?",
+            (str(new_id), new_id),
+        )
 
     with get_connection() as conn:
         row = conn.execute(
-            "SELECT * FROM butcher_products WHERE product_id = ?", (new_id,)
+            "SELECT * FROM products WHERE source_type = 'butcher' AND product_id = ?", (new_id,)
         ).fetchone()
 
     log_activity("create", "butcher_products", user=g.current_user.get("sub"))
@@ -124,38 +137,38 @@ def list_orders():
         if search:
             pattern = f"%{escape_like(search)}%"
             rows = conn.execute(
-                "SELECT * FROM butcher_orders WHERE customer_name LIKE ? OR order_number LIKE ?",
+                "SELECT * FROM orders WHERE source_type = 'butcher' AND (customer_name LIKE ? OR order_number LIKE ?)",
                 (pattern, pattern),
             ).fetchall()
-            items = [_row_to_dict(r) for r in rows]
+            items = [_order_to_dict(r) for r in rows]
             return jsonify({"items": items, "total": len(items)})
 
-        conditions = []
-        params: list = []
+        conditions = ["source_type = ?"]
+        params: list = ["butcher"]
         if customer_id:
             conditions.append("customer_id = ?")
             params.append(customer_id)
         if status:
-            conditions.append("status = ?")
+            conditions.append("order_status = ?")
             params.append(status)
 
-        where = (" WHERE " + " AND ".join(conditions)) if conditions else ""
+        where = " WHERE " + " AND ".join(conditions)
         page, per_page, offset = get_pagination_params()
         params_count = list(params)
         params.extend([per_page, offset])
 
         rows = conn.execute(
-            "SELECT * FROM butcher_orders" + where + " ORDER BY order_id DESC LIMIT ? OFFSET ?",
+            "SELECT * FROM orders" + where + " ORDER BY order_id DESC LIMIT ? OFFSET ?",
             params,
         ).fetchall()
         total_row = conn.execute(
-            "SELECT COUNT(*) FROM butcher_orders" + where, params_count
+            "SELECT COUNT(*) FROM orders" + where, params_count
         ).fetchone()
         total = total_row[0] if total_row else 0
 
     log_activity("view", "butcher_orders", user=g.current_user.get("sub"))
     return jsonify(paginated_response(
-        [_row_to_dict(r) for r in rows], total, page, per_page
+        [_order_to_dict(r) for r in rows], total, page, per_page
     ))
 
 
@@ -164,12 +177,12 @@ def list_orders():
 def get_order(order_id: int):
     with get_connection() as conn:
         row = conn.execute(
-            "SELECT * FROM butcher_orders WHERE order_id = ?", (order_id,)
+            "SELECT * FROM orders WHERE source_type = 'butcher' AND order_id = ?", (order_id,)
         ).fetchone()
     if not row:
         raise ValidationError(f"orders {order_id} not found")
     log_activity("view", "butcher_orders", user=g.current_user.get("sub"))
-    return jsonify(_row_to_dict(row))
+    return jsonify(_order_to_dict(row))
 
 @butcher_bp.route("/orders", methods=["POST"])
 @token_required
@@ -179,20 +192,23 @@ def create_order():
         if field not in data:
             raise ValidationError(f"Missing required field: {field}")
 
+    from education_system.systems.university.plugins.campus_commerce.domain.butcher.services.butcher_core import OrderManager
+
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    order_number = OrderManager.generate_order_number()
     with transaction() as conn:
         conn.execute(
-            """INSERT INTO butcher_orders
-               (customer_id, customer_name, customer_email, customer_phone, order_type, special_instructions, pickup_date, pickup_time, created_at)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
-            (data["customer_id"], data["customer_name"], data.get("customer_email", ""), data.get("customer_phone", ""), data.get("order_type", ""), data.get("special_instructions", ""), data.get("pickup_date", ""), data.get("pickup_time", ""), now,),
+            """INSERT INTO orders
+               (source_type, order_number, customer_id, customer_name, customer_email, customer_phone, order_type, special_instructions, pickup_date, pickup_time, created_at)
+               VALUES ('butcher', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+            (order_number, data["customer_id"], data["customer_name"], data.get("customer_email", ""), data.get("customer_phone", ""), data.get("order_type", "counter"), data.get("special_instructions", ""), data.get("pickup_date", ""), data.get("pickup_time", ""), now,),
         )
         new_id = conn.execute("SELECT last_insert_rowid()").fetchone()[0]
 
     with get_connection() as conn:
         row = conn.execute(
-            "SELECT * FROM butcher_orders WHERE order_id = ?", (new_id,)
+            "SELECT * FROM orders WHERE source_type = 'butcher' AND order_id = ?", (new_id,)
         ).fetchone()
 
     log_activity("create", "butcher_orders", user=g.current_user.get("sub"))
-    return jsonify(_row_to_dict(row)), 201
+    return jsonify(_order_to_dict(row)), 201

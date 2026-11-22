@@ -372,8 +372,8 @@ recipient logs into.
 | `InterSystemMessagingService.search_messages` | Search inbox + sent by subject, body, or student name |
 
 The CLI counterpart lives in
-`education_system.shared.messaging.cross_system_cli` and the reusable
-GUI panel in `education_system.shared.messaging.cross_system_panel`.
+`education_system.platform.features.messaging.cross_system_cli` and the reusable
+GUI panel in `education_system.platform.features.messaging.cross_system_panel`.
 
 
 ## Idle / inactivity auto-logout
@@ -388,16 +388,14 @@ to reduce the risk of an unattended terminal exposing student data.
 
 When the timeout fires:
 
-- **GUI:** A `Session Expired` dialog appears, then the application calls `auth.logout()`, requests the unified login screen via `request_logout()`, and destroys the window.
-- **CLI:** The terminal prints `⚠ Logged out after 30 minutes of inactivity.`, calls `auth.logout()`, and exits the process cleanly.
+- **GUI:** A warning appears a minute before the cut-off, then the application logs out, shows a notice explaining why, and returns to the unified login screen.
+- **CLI:** The terminal prints a signed-out message and returns to the login.
 
-The default of 30 minutes is set inside `CollegeApp.__init__` (GUI) and
-the College `cli_main.main()` (CLI). To change it, look for the
-`attach_idle_timeout(self, ..., timeout_minutes=30)` call in
-`college_system/modules/shared/gui/main_gui.py` or the
-`enable_idle_timeout(30, ...)` call in
-`college_system/modules/shared/cli/cli_main.py`. The CLI auto-logout
-is a no-op on platforms without `signal.SIGALRM` (e.g. Windows).
+The default of 30 minutes applies to both. To change it, set the
+`EDU_SIXTHFORM_IDLE_TIMEOUT_MINUTES` environment variable; `0` turns the
+timeout off. The code is in
+`src/education_system/systems/sixth_form/interfaces/gui/idle_timeout.py` and
+`src/education_system/systems/sixth_form/interfaces/cli/idle_timeout.py`.
 
 See `docs/sixth_form/security/SESSION_TIMEOUT.md` for the full
 configuration and security rationale.

@@ -394,7 +394,7 @@ class AlertConfigConsole(tk.Toplevel):
                     "SELECT user_id, notification_type, "
                     "CASE WHEN enabled THEN 'Yes' ELSE 'No' END, "
                     "method, advance_time "
-                    "FROM notification_preferences ORDER BY user_id, notification_type"
+                    "FROM calendar_notification_preferences ORDER BY user_id, notification_type"
                 ).fetchall()
                 for r in rows:
                     self.prefs_tree.insert('', tk.END, values=tuple(r))

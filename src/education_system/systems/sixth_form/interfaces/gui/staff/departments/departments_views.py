@@ -6,7 +6,9 @@ from education_system.systems.sixth_form.interfaces.gui._ui import grab_when_vie
 import datetime as _dt
 import logging
 import tkinter as tk
-from tkinter import messagebox, ttk
+from tkinter import ttk
+from education_system.systems.sixth_form.interfaces.gui._sidebar import SidebarBook
+from education_system.platform.delivery.gui.parented_dialogs import messagebox
 from education_system.platform import branding
 from education_system.systems.sixth_form.domain.staff.departments import (
     departments as data,
@@ -48,7 +50,7 @@ def open_departments_window(parent=None) -> None:
     win.geometry(WIN_GEOMETRY)
     win.minsize(*WIN_MINSIZE)
 
-    nb = ttk.Notebook(win)
+    nb = SidebarBook(win)
     nb.pack(fill="both", expand=True, padx=10, pady=10)
 
     DepartmentsTab(nb, scope="active",      label="Active")
@@ -56,6 +58,10 @@ def open_departments_window(parent=None) -> None:
     DepartmentsTab(nb, scope="all",         label="All Departments")
     PerStaffTab(nb)
     SummaryTab(nb)
+    from education_system.systems.sixth_form.interfaces.gui.staff.departments import (
+        department_budgets_views,
+    )
+    department_budgets_views.add_budget_tab(nb)
 
 
 def _staff_options() -> list[tuple[str | None, str]]:
@@ -329,12 +335,46 @@ class DepartmentsTab:
         d = self._selected()
         if not d:
             return
+        try:
+            linked = data.linked_record_counts(d.department_id)
+        except Exception as exc:
+            messagebox.showerror("Departments", str(exc), parent=self.frame)
+            return
+        if linked:
+            from education_system.systems.sixth_form.infrastructure.record_links import (
+                describe,
+            )
+            if d.status in ("Archived", "Disbanded"):
+                messagebox.showinfo(
+                    "Departments",
+                    f"Department #{d.department_id} cannot be deleted — it "
+                    f"has linked records ({describe(linked)}). It is already "
+                    f"{d.status}.", parent=self.frame)
+                return
+            if not messagebox.askyesno(
+                    "Departments",
+                    f"Department #{d.department_id} cannot be deleted — that "
+                    f"would destroy:\n\n{describe(linked)}\n\n"
+                    "Set its status to Archived instead? Its budget history "
+                    "and members are kept.", parent=self.frame):
+                return
+            try:
+                data.set_status(d.department_id, "Archived")
+            except (ValueError, ValidationError) as exc:
+                messagebox.showerror("Departments", str(exc), parent=self.frame)
+                return
+            self.refresh()
+            return
         if not messagebox.askyesno(
                 "Departments",
-                f"Delete department #{d.department_id} "
-                "(and all memberships)?", parent=self.frame):
+                f"Delete department #{d.department_id}? It has no budget "
+                "lines, receipts, members or staff.", parent=self.frame):
             return
-        data.delete_department(d.department_id)
+        try:
+            data.delete_department(d.department_id)
+        except (PermissionError, ValueError, ValidationError) as exc:
+            messagebox.showerror("Departments", str(exc), parent=self.frame)
+            return
         self.refresh()
 
     def _add_member(self) -> None:

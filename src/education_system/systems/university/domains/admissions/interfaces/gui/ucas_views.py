@@ -8,6 +8,10 @@ Single window with two tabs:
   Double-click opens the applicant-detail dialog.
 * **Summary** — counts by decision, application status, course, cycle
   year.
+* **Results Day** — the results-day board, held confirmations and the
+  "Release held confirmations" action (``results_day_views``).
+* **UCAS Files** — import the applicant file downloaded from UCAS and write
+  the decisions file to upload back (``ucas_files_views``).
 
 The applicant-detail dialog shows the student's personal statement,
 their full list of choices (with *our* choice flagged), and a
@@ -62,6 +66,14 @@ def open_directory(parent=None) -> None:
     applicants_tab = ApplicantsTab(nb, win)
     PipelineTab(nb, win, applicants_tab)
     SummaryTab(nb, applicants_tab)
+    from education_system.systems.university.domains.admissions.interfaces.gui.results_day_views import (
+        ResultsDayTab,
+    )
+    ResultsDayTab(nb, win)
+    from education_system.systems.university.domains.admissions.interfaces.gui.ucas_files_views import (
+        UcasFilesTab,
+    )
+    UcasFilesTab(nb, win)
 
 
 # ─────────────────────────────────────────────────────────────────
@@ -446,6 +458,19 @@ class ApplicantDetailDialog(tk.Toplevel):
                             sticky="ew", pady=4, padx=(8, 0))
         if self.applicant.choice_notes:
             self.t_notes.insert("1.0", self.applicant.choice_notes)
+
+        # The conditions behind the grade requirement, row by row, so
+        # results day can check all of "ABB including B in Mathematics".
+        from education_system.systems.university.domains.admissions.interfaces.gui.results_day_views import (
+            ConditionsEditor,
+        )
+        self.conditions_editor = ConditionsEditor(
+            dec_frame,
+            conditions=(issued.conditions if issued else None),
+            text_source=lambda: (self.term_entries["grade_requirement"].get()
+                                 or self.e_terms.get()))
+        self.conditions_editor.grid(row=7, column=0, columnspan=4,
+                                    sticky="ew", pady=(4, 0))
 
         dec_frame.columnconfigure(3, weight=1)
         self._update_terms_hint()
@@ -1075,6 +1100,7 @@ class ApplicantDetailDialog(tk.Toplevel):
                         for key, entry in self.term_entries.items()}
         issued_terms["accommodation_guaranteed"] = self.accom_var.get()
         issued_terms["notes"] = notes
+        issued_terms["conditions"] = self.conditions_editor.get()
         try:
             data.record_decision(
                 self.applicant.choice_id,

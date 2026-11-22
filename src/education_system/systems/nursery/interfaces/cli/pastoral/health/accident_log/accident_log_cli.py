@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import logging
 
-from education_system.systems.nursery.domain.pastoral.health.accident_report import (
+from education_system.systems.nursery.interfaces.cli.pastoral.health.accident_report import (
     accident_report_cli as _impl,
 )
 

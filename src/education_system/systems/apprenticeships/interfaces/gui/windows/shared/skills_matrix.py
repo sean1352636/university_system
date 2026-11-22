@@ -20,10 +20,8 @@ from education_system.systems.apprenticeships.domain.progress.skills_matrix impo
     level_bar,
 )
 from education_system.systems.apprenticeships.interfaces.gui import widgets
-from education_system.systems.apprenticeships.services import (
-    apprentice_service,
-    skills_matrix_service,
-)
+from education_system.systems.apprenticeships.application.apprentices import apprentice_service
+from education_system.systems.apprenticeships.application.learning import skills_matrix_service
 
 logger = logging.getLogger(__name__)
 

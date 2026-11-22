@@ -2,7 +2,7 @@
 
 import pytest
 
-from education_system.systems.university.domains.academics.domain.curriculum_specification.services.curriculum_specification_service import (
+from education_system.systems.university.domains.curriculum.domain.curriculum_specification.services.curriculum_specification_service import (
     CurriculumSpecificationService,
 )
 

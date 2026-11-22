@@ -207,6 +207,41 @@ def list_links(
         conn.close()
 
 
+def placed_by_choice(sf_choice_ids) -> dict[int, str]:
+    """``{sf_choice_id: uni_student_id}`` for choices we have enrolled from.
+
+    A link that is archived *with* a university student attached is our
+    record that the applicant became a student here (written by
+    ``post_admission.clear_after_admission``). It is what keeps a placed
+    applicant out of "Admit from UCAS" straight away, before the sixth
+    form has applied the ``university.student.enrolled`` event.
+    """
+    ids = sorted({int(i) for i in sf_choice_ids if i is not None})
+    if not ids:
+        return {}
+    init_db()
+    out: dict[int, str] = {}
+    conn = get_connection()
+    try:
+        for start in range(0, len(ids), 500):
+            chunk = ids[start:start + 500]
+            marks = ",".join("?" * len(chunk))
+            # db-audit: ignore[DBW001] - placeholder join only
+            rows = conn.execute(
+                f"""SELECT sf_choice_id, uni_student_id
+                      FROM ucas_application_links
+                     WHERE status = 'archived'
+                       AND uni_student_id IS NOT NULL
+                       AND sf_choice_id IN ({marks})""",  # nosec B608
+                chunk,
+            ).fetchall()
+            for r in rows:
+                out[int(r["sf_choice_id"])] = r["uni_student_id"]
+    finally:
+        conn.close()
+    return out
+
+
 def ensure_link_for_choice(
     *,
     sf_application_id: int,

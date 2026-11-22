@@ -1,0 +1,1040 @@
+from education_system.systems.university.shell.gui import report_view as _rv
+
+import logging
+
+logger = logging.getLogger(__name__)
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+import tkinter as tk
+from tkinter import ttk, filedialog, scrolledtext
+
+from ._dialogs import make_toplevel, messagebox, filedialog
+from . import common as _c
+import tkinter.font as tkFont
+from datetime import datetime, timedelta
+import json
+import os
+import threading
+import webbrowser
+from typing import Dict, List, Optional, Any
+from education_system.systems.university.infrastructure.database.db import sqlite3
+from pathlib import Path
+import logging
+from education_system import paths
+
+# Import i18n for language support
+from education_system.systems.university.infrastructure.i18n import (
+    init_i18n,
+    get_text as _t,
+    get_current_language,
+)
+from education_system.systems.university.infrastructure.utils.gui_language_selector import (
+    show_gui_language_selector,
+    create_language_menu_button,
+)
+
+# Import activity logger for audit trail
+try:
+    from education_system.systems.university.infrastructure.activity_logger import log_activity
+    ACTIVITY_LOGGER_AVAILABLE = True
+except ImportError:
+    ACTIVITY_LOGGER_AVAILABLE = False
+    log_activity = lambda *args, **kwargs: None
+
+# Import email service for notifications
+try:
+    from education_system.systems.university.infrastructure.email.email_service import send_email
+    from education_system.systems.university.infrastructure.email.templates import load_template, render_template
+    EMAIL_SERVICE_AVAILABLE = True
+except ImportError:
+    EMAIL_SERVICE_AVAILABLE = False
+    send_email = lambda *args, **kwargs: False
+    load_template = lambda *args, **kwargs: None
+    render_template = lambda *args, **kwargs: (None, None)
+
+# Use centralized path configuration
+DEFAULT_DB_PATH = paths.UNIVERSITY_DEFAULT_DB_PATH
+_CENTRALDEFAULT_DB_PATH = paths.UNIVERSITY_DEFAULT_DB_PATH
+
+
+# Import all functionality from student_support module (it's a single monolithic file)
+try:
+    # Import everything from the single student_support module
+    from education_system.systems.university.domains.student_support.domain.student_support import (
+        # Core constants and enums
+        SUPPORT_CATEGORIES, TICKET_PRIORITIES, TICKET_STATUSES,
+        NotificationType, TicketSentiment, FileType,
+        # Main classes
+        EnhancedStudentSupport, SupportConfig,
+        # Utility functions
+        setup_enhanced_logging, audit_action, set_auth,
+        # Display functions
+        display_support_menu, display_enhanced_faqs, display_enhanced_resources,
+        # Ticket management functions
+        view_my_tickets_enhanced, view_all_tickets_enhanced,
+        create_enhanced_ticket, display_ticket_details_enhanced,
+        # Admin functions
+        manage_templates_menu, manage_knowledge_base_menu, show_template_statistics,
+        # Helper functions
+        format_ticket_status_display, format_priority_display, format_file_size,
+        truncate_text, handle_support_error, validate_ticket_permissions
+    )
+
+    # Auth handling - auth is now managed differently in the new structure
+    auth = None  # Will be set via set_auth_instance()
+
+except ImportError:
+    # Backwards compatibility - if module structure changes or imports fail
+    try:
+        from education_system.systems.university.domains.student_support.domain.student_support import (
+            SUPPORT_CATEGORIES, TICKET_PRIORITIES, TICKET_STATUSES,
+            EnhancedStudentSupport, SupportConfig, display_support_menu, set_auth
+        )
+        auth = None
+    except ImportError:
+        # If even the fallback import fails, define minimal stubs
+        auth = None
+        SUPPORT_CATEGORIES = []
+        TICKET_PRIORITIES = []
+        TICKET_STATUSES = []
+        EnhancedStudentSupport = None
+        SupportConfig = None
+        display_support_menu = None
+
+    # Define fallback functions if not available
+    display_enhanced_faqs = None
+    display_enhanced_resources = None
+    view_my_tickets_enhanced = None
+    view_all_tickets_enhanced = None
+    create_enhanced_ticket = None
+    display_ticket_details_enhanced = None
+    manage_templates_menu = None
+    manage_knowledge_base_menu = None
+    show_template_statistics = None
+
+    # Define fallback enum types
+    from enum import Enum
+    class NotificationType(str, Enum):
+        INFO = 'info'
+        WARNING = 'warning'
+        ERROR = 'error'
+
+    class TicketSentiment(str, Enum):
+        POSITIVE = 'positive'
+        NEUTRAL = 'neutral'
+        NEGATIVE = 'negative'
+
+    class FileType(str, Enum):
+        IMAGE = 'image'
+        DOCUMENT = 'document'
+        OTHER = 'other'
+
+    # Define fallback helper functions
+    setup_enhanced_logging = lambda: None
+    audit_action = lambda *args, **kwargs: None
+    set_auth = lambda x: None  # Fallback if set_auth not available
+    validate_ticket_permissions = lambda *args, **kwargs: True
+    format_ticket_status_display = lambda x: str(x)
+    format_priority_display = lambda x: str(x)
+    format_file_size = lambda x: f"{x} bytes"
+    truncate_text = lambda x, length=100: x[:length] if len(x) > length else x
+    handle_support_error = lambda *args, **kwargs: None
+
+class ReportsExportMixin:
+    # ── data export (File menu and sidebar share one dialog) ─────────────
+
+    _EXPORT_TYPES = (
+        # (label, value, who may export it)
+        ("🎫 Tickets", "tickets", 'support'),
+        ("💬 Responses", "responses", 'admin'),
+        ("📊 Metrics", "metrics", 'support'),
+        ("👤 User Data", "users", 'users'),
+        ("📜 System Logs", "logs", 'admin'),
+    )
+
+    def _may_export(self, who):
+        if who == 'admin':
+            return self.is_admin()
+        if who == 'users':
+            return _c.can_manage_users(self)
+        return _c.is_support_staff(self)
+
+    def show_export_dialog(self):
+        """File → Export Data: the same dialog as the sidebar's Export Data."""
+        self.show_export_data_dialog()
+
+    def show_export_data_dialog(self):
+        """Export support data (support staff; responses and logs are for
+        administrators, user data for those who manage users)."""
+        if not _c.is_support_staff(self):
+            messagebox.showerror(_t('gui.pastoral.student_support.reports_export.dialogs.error', default="Error"), _t('gui.pastoral.student_support.reports_export.dialogs.staff_access_required', default="Staff access required"))
+            return
+
+        export_dialog = _c.dialog(self, _t('gui.pastoral.student_support.reports_export.windows.export_data', default="Export Data"), 760, 720, modal=True)
+        btn_frame = ttk.Frame(export_dialog, padding=10)
+        btn_frame.pack(side="bottom", fill="x")
+        form_frame = ttk.Frame(export_dialog, padding="20")
+        form_frame.pack(fill="both", expand=True)
+        ttk.Label(form_frame, text=_t('gui.pastoral.student_support.reports_export.labels.export_data', default="Export Data"), style='Title.TLabel').pack(pady=(0, 15))
+
+        ttk.Label(form_frame, text=_t('gui.pastoral.student_support.reports_export.labels.export_type', default="Export Type:")).pack(anchor="w")
+        export_type_var = tk.StringVar(value="tickets")
+        for text, value, who in self._EXPORT_TYPES:
+            if self._may_export(who):
+                ttk.Radiobutton(form_frame, text=text, variable=export_type_var, value=value).pack(anchor="w", pady=2)
+
+        filters_frame = ttk.LabelFrame(form_frame, text=_t('gui.pastoral.student_support.reports_export.labels.filters_optional', default="Filters (Optional)"), padding="10")
+        filters_frame.pack(fill="x", pady=(10, 0))
+        ttk.Label(filters_frame, text=_t('gui.pastoral.student_support.reports_export.labels.from', default="From:")).grid(row=0, column=0, sticky="w")
+        from_date = ttk.Entry(filters_frame, width=12)
+        from_date.grid(row=0, column=1, padx=(5, 10), sticky="w")
+        from_date.insert(0, (datetime.now() - timedelta(days=30)).strftime('%Y-%m-%d'))
+        ttk.Label(filters_frame, text=_t('gui.pastoral.student_support.reports_export.labels.to', default="To:")).grid(row=0, column=2, sticky="w")
+        to_date = ttk.Entry(filters_frame, width=12)
+        to_date.grid(row=0, column=3, padx=(5, 0), sticky="w")
+        to_date.insert(0, datetime.now().strftime('%Y-%m-%d'))
+
+        ttk.Label(filters_frame, text=_t('gui.pastoral.student_support.reports_export.labels.status_for_tickets', default="Status (for tickets):")).grid(row=1, column=0, columnspan=2, sticky="w", pady=(8, 0))
+        status_combo = ttk.Combobox(filters_frame, state="readonly", width=24,
+                                    values=['All'] + [label for label, _v in _c.status_choices()])
+        status_combo.set('All')
+        status_combo.grid(row=1, column=2, columnspan=2, sticky="w", pady=(8, 0))
+        ttk.Label(filters_frame, text=_t('gui.pastoral.student_support.reports_export.labels.category_for_tickets', default="Category (for tickets):")).grid(row=2, column=0, columnspan=2, sticky="w", pady=(4, 0))
+        category_combo = ttk.Combobox(filters_frame, state="readonly", width=24, values=['All'] + _c.categories())
+        category_combo.set('All')
+        category_combo.grid(row=2, column=2, columnspan=2, sticky="w", pady=(4, 0))
+        ttk.Label(filters_frame, text=_t('gui.pastoral.student_support.reports_export.labels.priority_for_tickets', default="Priority (for tickets):")).grid(row=3, column=0, columnspan=2, sticky="w", pady=(4, 0))
+        priority_combo = ttk.Combobox(filters_frame, state="readonly", width=24, values=['All'] + _c.priorities())
+        priority_combo.set('All')
+        priority_combo.grid(row=3, column=2, columnspan=2, sticky="w", pady=(4, 0))
+
+        format_frame = ttk.LabelFrame(form_frame, text=_t('gui.pastoral.student_support.reports_export.labels.format', default="Format"), padding="10")
+        format_frame.pack(fill="x", pady=(10, 0))
+        format_var = tk.StringVar(value="csv")
+        ttk.Radiobutton(format_frame, text=_t('gui.pastoral.student_support.reports_export.buttons.csv', default="CSV"), variable=format_var, value="csv").pack(side="left")
+        ttk.Radiobutton(format_frame, text=_t('gui.pastoral.student_support.reports_export.buttons.json', default="JSON"), variable=format_var, value="json").pack(side="left", padx=(10, 0))
+        ttk.Radiobutton(format_frame, text=_t('gui.pastoral.student_support.reports_export.buttons.excel', default="Excel"), variable=format_var, value="xlsx").pack(side="left", padx=(10, 0))
+
+        def start_export():
+            filters = {}
+            if from_date.get().strip():
+                filters['date_from'] = from_date.get().strip()
+            if to_date.get().strip():
+                filters['date_to'] = to_date.get().strip() + " 23:59:59"
+            status = _c.status_value(status_combo.get())
+            if status:
+                filters['status'] = status
+            if category_combo.get() != 'All':
+                filters['category'] = category_combo.get()
+            if priority_combo.get() != 'All':
+                filters['priority'] = priority_combo.get()
+            export_dialog.destroy()
+            self.perform_enhanced_export(export_type_var.get(), filters, format_var.get())
+
+        ttk.Button(btn_frame, text=_t('gui.pastoral.student_support.reports_export.buttons.export', default="Export"), command=start_export, style='Primary.TButton').pack(side="left", padx=(0, 10))
+        ttk.Button(btn_frame, text=_t('gui.pastoral.student_support.reports_export.buttons.cancel', default="Cancel"), command=export_dialog.destroy).pack(side="left")
+
+    def perform_export(self, export_type, format_type, filters=None):
+        """Kept for callers: :meth:`perform_enhanced_export`."""
+        return self.perform_enhanced_export(export_type, filters or {}, format_type)
+
+    def _export_rows(self, export_type, filters):
+        """``(columns, rows)`` for an export. Tickets come from the ticket
+        service (scoped to what this person may see, confidential text
+        replaced by the service's placeholder); the other types from the
+        support export (JSON, parsed back)."""
+        if export_type == 'tickets':
+            service = _c.ss('service')
+            tickets, page = [], 1
+            while True:
+                result = service.list_tickets(_c.actor(self), filters, page=page, per_page=500)
+                tickets += result['tickets']
+                if page >= result['total_pages']:
+                    break
+                page += 1
+            columns = ['ticket_id', 'subject', 'requester_username', 'student_id', 'status',
+                       'priority', 'category', 'team', 'confidentiality', 'assigned_to', 'source',
+                       'channel', 'created_at', 'updated_at', 'first_response_at', 'resolved_at',
+                       'closed_at', 'satisfaction_rating', 'description']
+            rows = []
+            for t in tickets:
+                row = []
+                for col in columns:
+                    value = t.get(col)
+                    if col == 'status':
+                        value = t.get('status_label') or value
+                    elif col == 'category':
+                        value = _c.category_label(value)
+                    elif col == 'team':
+                        value = _c.team_label(value)
+                    row.append(value)
+                rows.append(row)
+            return columns, rows
+        data = json.loads(self.support.export_data(export_type, filters, 'json'))
+        return data['columns'], data['rows']
+
+    def perform_enhanced_export(self, export_type, filters, format_type):
+        """Write the export as CSV, JSON or Excel (.xlsx, via openpyxl)."""
+        who = next((w for _l, v, w in self._EXPORT_TYPES if v == export_type), 'admin')
+        if not self._may_export(who):
+            messagebox.showerror(_t('gui.pastoral.student_support.reports_export.dialogs.error', default="Error"),
+                                 _t('gui.pastoral.student_support.reports_export.dialogs.export_not_allowed', default="You are not allowed to export this data."))
+            return
+        filename = filedialog.asksaveasfilename(
+            title=_t('gui.pastoral.student_support.reports_export.dialogs.save_export', default="Save Export"),
+            defaultextension=f".{format_type}", initialfile=f"support_{export_type}.{format_type}",
+            filetypes=[(f"{format_type.upper()} files", f"*.{format_type}"), ("All files", "*.*")])
+        if not filename:
+            return
+        self.update_status(f"Exporting {export_type} data...")
+        try:
+            columns, rows = self._export_rows(export_type, filters)
+            if format_type == 'xlsx':
+                _c.write_xlsx(filename, columns, rows, sheet=export_type.title())
+            elif format_type == 'json':
+                with open(filename, 'w', encoding='utf-8') as f:
+                    json.dump([dict(zip(columns, r)) for r in rows], f, indent=2, default=str)
+            else:
+                import csv
+                with open(filename, 'w', encoding='utf-8', newline='') as f:
+                    writer = csv.writer(f)
+                    writer.writerow(columns)
+                    writer.writerows(rows)
+        except PermissionError as e:
+            messagebox.showwarning(_t('gui.pastoral.student_support.reports_export.dialogs.export_error', default="Export Error"), str(e))
+            self.update_status("Export failed")
+            return
+        except Exception as e:
+            logger.exception("Support export failed")
+            messagebox.showerror(_t('gui.pastoral.student_support.reports_export.dialogs.export_error', default="Export Error"), f"Failed to export data: {e}")
+            self.update_status("Export failed")
+            return
+        filter_info = f" with {len(filters)} filter(s)" if filters else ""
+        messagebox.showinfo(_t('gui.pastoral.student_support.reports_export.dialogs.export_complete', default="Export Complete"),
+                            f"{len(rows)} rows exported to {filename}{filter_info}")
+        self.update_status("Export completed")
+
+    def refresh_data(self):
+        """Reload the screen that is showing (by its view key, not its tab text)."""
+        try:
+            self.update_status("Refreshing data...")
+            self.load_dashboard()
+            view = getattr(self, '_current_view', None)
+            refreshers = {
+                'dashboard': self.show_dashboard,
+                'my_tickets': getattr(self, 'refresh_my_tickets', None),
+                'all_tickets': getattr(self, 'refresh_all_tickets', None),
+                'faqs': getattr(self, 'load_faqs', None),
+                'knowledge_base': getattr(self, 'load_knowledge_base', None),
+                'notifications': getattr(self, 'load_notifications', None),
+                'caseload': getattr(self, 'refresh_caseload', None),
+                'teams': getattr(self, 'refresh_teams_admin', None),
+                'data_protection': getattr(self, 'refresh_data_protection', None),
+            }
+            refresh = refreshers.get(view)
+            if refresh is not None:
+                refresh()
+            self.update_status("Data refreshed")
+        except Exception as e:
+            logger.warning("Refresh failed", exc_info=True)
+            self.update_status(f"Refresh failed: {e}")
+
+    def show_user_management(self):
+        """Open the system's User Management screen (administrators and
+        anyone the permission system gives ``manage_users``).
+
+        Student Support used to carry its own copy of this — a user list plus
+        reset-password / change-role / activate / deactivate handlers against
+        the same `users` table. That duplicated the canonical screen and its
+        permission rules, so the nav button now opens the real one.
+        """
+        if not _c.can_manage_users(self):
+            messagebox.showwarning(_t('gui.pastoral.student_support.reports_export.dialogs.error', default="Error"),
+                                   _t('gui.pastoral.student_support.reports_export.dialogs.user_management_denied', default="Managing users needs the manage_users permission."))
+            return
+        try:
+            from education_system.systems.university.shell.gui.main.admin.user_management_gui import (
+                open_user_management_window,
+            )
+        except Exception:
+            messagebox.showerror(
+                _t('gui.pastoral.student_support.reports_export.dialogs.error', default="Error"),
+                _t('gui.pastoral.student_support.reports_export.dialogs.user_management_unavailable',
+                   default="The User Management screen is not available."))
+            return
+        open_user_management_window(self.root, self.auth)
+
+    def show_help(self):
+        """Show help dialog"""
+        help_dialog = make_toplevel(self.root)
+        help_dialog.title(_t('gui.pastoral.student_support.reports_export.windows.user_guide', default="📖 User Guide"))
+        help_dialog.geometry("1400x850")
+
+        # Help content
+        help_content = """
+🎓 Enhanced Student Support Portal - User Guide
+
+📊 DASHBOARD
+- View your ticket statistics and recent activity
+- Access quick actions and notifications
+- See system status and important announcements
+
+🎫 TICKETS
+- Create new support tickets with attachments
+- Track your existing tickets and responses
+- Use templates for common issues
+- Receive notifications on updates
+
+🔍 SEARCH
+- Search across tickets, FAQs, resources, and knowledge base
+- Use filters to narrow down results
+- Get AI-powered suggestions
+
+❓ FAQs & 📚 KNOWLEDGE BASE
+- Browse frequently asked questions
+- Access detailed articles and guides
+- Rate content as helpful
+- Search for specific topics
+
+📋 RESOURCES
+- Access support documents and files
+- Browse by category
+- Download helpful materials
+
+⚙️ PREFERENCES
+- Customize notification settings
+- Change display preferences
+- Set your timezone and language
+
+🔔 NOTIFICATIONS
+- View all your notifications
+- Mark as read/unread
+- Filter by type and status
+
+For additional help, contact the support team.
+        """
+
+        text_widget = scrolledtext.ScrolledText(help_dialog, wrap=tk.WORD, state='disabled', padx=10, pady=10)
+        text_widget.pack(fill="both", expand=True, padx=10, pady=10)
+
+        text_widget.config(state='normal')
+        text_widget.insert(1.0, help_content)
+        text_widget.config(state='disabled')
+
+        # Close button
+        ttk.Button(help_dialog, text=_t('gui.pastoral.student_support.reports_export.buttons.close', default="❌ Close"), command=help_dialog.destroy).pack(pady=10)
+
+    def show_about(self):
+        """The portal's name, the university system's version and this year."""
+        try:
+            from education_system.systems.university.services.bus import __version__ as version
+        except Exception:
+            version = ''
+        about_text = _t('gui.pastoral.student_support.reports_export.dialogs.about_text',
+                        default="Student Support Portal\nUniversity System {version}\n\n"
+                                "Support tickets, self-help articles, caseloads and service reports "
+                                "for student services.\n\n© {year}").format(
+                                    version=version, year=datetime.now().year)
+        messagebox.showinfo(_t('gui.pastoral.student_support.reports_export.dialogs.about', default="About"), about_text)
+
+    def show_reports(self):
+        """Show reports interface (staff only)"""
+        self.clear_content()
+
+        reports_frame = ttk.Frame(self.notebook, padding="3")
+        self.notebook.add(reports_frame, text=_t('gui.pastoral.student_support.reports_export.tabs.reports', default="📊 Reports"))
+
+        # Configure frame to expand
+        reports_frame.rowconfigure(0, weight=1)
+        reports_frame.columnconfigure(0, weight=1)
+
+        self.set_view('reports')
+        # The reports are for support staff (features.reports checks again).
+        if not _c.is_support_staff(self):
+            ttk.Label(reports_frame, text=_t('gui.pastoral.student_support.reports_export.labels.staff_access_required', default="❌ Staff access required"),
+                     style='Title.TLabel').pack(pady=20)
+            return
+
+        # Reports interface
+        ttk.Label(reports_frame, text=_t('gui.pastoral.student_support.reports_export.labels.support_reports', default="📊 Support Reports"),
+                 style='Title.TLabel').pack(pady=(0, 20))
+
+        # Report types
+        report_types = [
+            ("📊 Ticket Summary Report", "ticket_summary"),
+            ("📈 Performance Report", "performance"),
+            ("⭐ Satisfaction Report", "satisfaction"),
+            ("📂 Category Analysis", "category_analysis")
+        ]
+
+        for name, report_type in report_types:
+            btn_frame = ttk.Frame(reports_frame)
+            btn_frame.pack(fill="x", pady=5)
+
+            ttk.Button(btn_frame, text=name,
+                      command=lambda rt=report_type: self.generate_report(rt)).pack(side="left")
+
+            # Add description
+            descriptions = {
+                "ticket_summary": "Overview of tickets by status, category, and priority",
+                "performance": "Staff performance metrics and resolution times",
+                "satisfaction": "Customer satisfaction ratings and feedback",
+                "category_analysis": "Analysis of tickets by support category"
+            }
+
+            ttk.Label(btn_frame, text=descriptions.get(report_type, ""),
+                     foreground=self.colors['text_secondary']).pack(side="left", padx=(10, 0))
+
+        btn_frame = ttk.Frame(reports_frame)
+        btn_frame.pack(fill="x", pady=5)
+        ttk.Button(btn_frame, text=_t('gui.pastoral.student_support.reports_export.buttons.service_report', default="📈 Service Report"),
+                   command=self.show_service_report).pack(side="left")
+        ttk.Label(btn_frame, foreground=self.colors['text_secondary'],
+                  text=_t('gui.pastoral.student_support.reports_export.labels.service_report_desc', default="Volumes by team, category and channel; response and resolution against SLA; breaches, backlog, satisfaction, self-help and themes")).pack(side="left", padx=(10, 0))
+
+    def generate_report(self, report_type):
+        """Generate a report"""
+        # Show date range dialog
+        date_dialog = make_toplevel(self.root)
+        date_dialog.title(_t('gui.pastoral.student_support.reports_export.windows.report_date_range', default="📅 Report Date Range"))
+        date_dialog.geometry("900x550")
+        date_dialog.grab_set()
+
+        # Date range form
+        form_frame = ttk.Frame(date_dialog, padding="20")
+        form_frame.pack(fill="both", expand=True)
+
+        ttk.Label(form_frame, text=_t('gui.pastoral.student_support.reports_export.labels.select_report_date_range', default="Select Report Date Range"), style='Heading.TLabel').pack(pady=(0, 20))
+
+        # Start date
+        ttk.Label(form_frame, text=_t('gui.pastoral.student_support.reports_export.labels.start_date_yyyy_mm_dd', default="Start Date (YYYY-MM-DD):")).pack(anchor="w")
+        start_date_var = tk.StringVar(value=(datetime.now() - timedelta(days=30)).strftime('%Y-%m-%d'))
+        start_entry = ttk.Entry(form_frame, textvariable=start_date_var, width=20)
+        start_entry.pack(fill="x", pady=(5, 10))
+
+        # End date
+        ttk.Label(form_frame, text=_t('gui.pastoral.student_support.reports_export.labels.end_date_yyyy_mm_dd', default="End Date (YYYY-MM-DD):")).pack(anchor="w")
+        end_date_var = tk.StringVar(value=datetime.now().strftime('%Y-%m-%d'))
+        end_entry = ttk.Entry(form_frame, textvariable=end_date_var, width=20)
+        end_entry.pack(fill="x", pady=(5, 20))
+
+        # Buttons
+        btn_frame = ttk.Frame(form_frame)
+        btn_frame.pack(fill="x")
+
+        def generate():
+            start_date = start_date_var.get()
+            end_date = end_date_var.get()
+            date_dialog.destroy()
+            self.run_report_generation(report_type, start_date, end_date)
+
+        ttk.Button(btn_frame, text=_t('gui.pastoral.student_support.reports_export.buttons.generate_report', default="📊 Generate Report"), command=generate).pack(side="left", padx=(0, 10))
+        ttk.Button(btn_frame, text=_t('gui.pastoral.student_support.reports_export.buttons.cancel_variant_2', default="❌ Cancel"), command=date_dialog.destroy).pack(side="left")
+
+    def run_report_generation(self, report_type, start_date, end_date):
+        """Build the report on a worker thread; only the Tk main loop touches
+        widgets (it polls for the result with after())."""
+        import queue
+        self.update_status(f"Generating {report_type} report...")
+        date_range = {'start': start_date, 'end': end_date}
+        results = queue.Queue()
+
+        def generate_in_background():
+            try:
+                results.put(('ok', self.support.generate_reports(report_type, date_range)))
+            except Exception as e:  # handed to the main thread to show
+                results.put(('error', e))
+
+        def poll():
+            try:
+                kind, value = results.get_nowait()
+            except queue.Empty:
+                self.root.after(150, poll)
+                return
+            if kind == 'ok':
+                self.show_report_window(report_type, value, date_range)
+            else:
+                messagebox.showerror(_t('gui.pastoral.student_support.reports_export.dialogs.report_error', default="Report Error"), f"Failed to generate report: {value}")
+                self.update_status("Report generation failed")
+
+        threading.Thread(target=generate_in_background, daemon=True).start()
+        self.root.after(150, poll)
+
+    def show_report_window(self, report_type, report_data, date_range):
+        """Show generated report in a new window as plain text"""
+        report_window = make_toplevel(self.root)
+        report_window.title(f"📊 {report_type.replace('_', ' ').title()} Report")
+        report_window.geometry("1200x800")
+
+        # Main frame
+        main_frame = ttk.Frame(report_window, padding="10")
+        main_frame.pack(fill="both", expand=True)
+
+        # Toolbar at top
+        toolbar_frame = ttk.Frame(main_frame)
+        toolbar_frame.pack(fill="x", pady=(0, 10))
+
+        ttk.Label(toolbar_frame, text=f"📄 {report_type.replace('_', ' ').title()} Report",
+                 font=('Segoe UI', 14, 'bold')).pack(side="left")
+
+        # Buttons on the right
+        btn_container = ttk.Frame(toolbar_frame)
+        btn_container.pack(side="right")
+
+        ttk.Button(btn_container, text=_t('gui.pastoral.student_support.reports_export.buttons.save_as_txt', default="💾 Save as TXT"),
+                  command=lambda: self.save_report_as_txt(report_type, report_data, date_range)).pack(side="left", padx=2)
+        ttk.Button(btn_container, text=_t('gui.pastoral.student_support.reports_export.buttons.email_to_admin', default="📧 Email to Admin"),
+                  command=lambda: self.send_report_to_admin(report_type, report_data)).pack(side="left", padx=2)
+        ttk.Button(btn_container, text=_t('gui.pastoral.student_support.reports_export.buttons.close', default="❌ Close"),
+                  command=report_window.destroy).pack(side="left", padx=2)
+
+        # Text display area
+        text_frame = ttk.Frame(main_frame)
+        text_frame.pack(fill="both", expand=True)
+
+        # Create scrolled text widget
+        text_widget = _rv.TextReportView(text_frame, wrap=tk.WORD, font=('Courier New', 10))
+        text_widget.pack(fill="both", expand=True)
+
+        # Format report as plain text
+        report_text = self._format_report_as_txt(report_type, report_data, date_range)
+
+        # Insert text
+        text_widget.insert(1.0, report_text)
+        text_widget.config(state='disabled')  # Make read-only
+
+        self.update_status(f"{report_type} report generated successfully")
+
+    def create_report_summary(self, parent, report_type, report_data, date_range):
+        """Create report summary view"""
+        # Title
+        title_text = f"📊 {report_type.replace('_', ' ').title()} Report"
+        ttk.Label(parent, text=title_text, style='Title.TLabel').pack(pady=(0, 10))
+
+        # Date range
+        date_text = f"📅 Period: {date_range['start']} to {date_range['end']}"
+        ttk.Label(parent, text=date_text, font=('Segoe UI', 10)).pack(pady=(0, 20))
+
+        # Key metrics based on report type
+        if report_type == 'ticket_summary':
+            metrics = [
+                ("📊 Total Tickets", str(report_data.get('total_tickets', 0))),
+                ("🟢 Open", str(report_data.get('status_breakdown', {}).get('Open', 0))),
+                ("⏳ In Progress", str(report_data.get('status_breakdown', {}).get('In Progress', 0))),
+                ("✅ Resolved", str(report_data.get('status_breakdown', {}).get('Resolved', 0))),
+            ]
+        elif report_type == 'performance':
+            stats = report_data.get('resolution_stats', {})
+            metrics = [
+                ("⏱️ Avg Resolution Time", f"{stats.get('avg_hours', 0):.1f} hours"),
+                ("✅ Resolved Tickets", str(stats.get('resolved_count', 0))),
+                ("⚡ Fastest Resolution", f"{stats.get('min_hours', 0):.1f} hours"),
+                ("🐌 Slowest Resolution", f"{stats.get('max_hours', 0):.1f} hours"),
+            ]
+        elif report_type == 'satisfaction':
+            metrics = [
+                ("⭐ Average Rating", f"{report_data.get('avg_rating', 0):.2f}/5"),
+                ("📊 Response Rate", f"{report_data.get('response_rate', 0):.1f}%"),
+                ("📝 Total Responses", str(report_data.get('total_responses', 0))),
+            ]
+        else:
+            metrics = []
+
+        # Display metrics in a grid
+        if metrics:
+            metrics_frame = ttk.LabelFrame(parent, text=_t('gui.pastoral.student_support.reports_export.labels.key_metrics', default="📈 Key Metrics"), padding="15")
+            metrics_frame.pack(fill="x", pady=(0, 20))
+
+            metrics_grid = ttk.Frame(metrics_frame)
+            metrics_grid.pack()
+
+            for i, (label, value) in enumerate(metrics):
+                row, col = i // 2, i % 2
+
+                metric_frame = ttk.Frame(metrics_grid)
+                metric_frame.grid(row=row, column=col, padx=20, pady=10, sticky="w")
+
+                ttk.Label(metric_frame, text=label, font=('Segoe UI', 10)).pack()
+                ttk.Label(metric_frame, text=value, font=('Segoe UI', 14, 'bold'),
+                         foreground=self.colors['primary']).pack()
+
+    def create_report_data_view(self, parent, report_data):
+        """Create detailed data view"""
+        # Create scrollable text area for JSON data
+        data_text = scrolledtext.ScrolledText(parent, wrap=tk.WORD, state='disabled')
+        data_text.pack(fill="both", expand=True)
+
+        # Format and display data
+        data_text.config(state='normal')
+        data_text.insert(1.0, json.dumps(report_data, indent=2, default=str))
+        data_text.config(state='disabled')
+
+    def create_report_export_options(self, parent, report_type, report_data):
+        """Create report export options"""
+        ttk.Label(parent, text=_t('gui.pastoral.student_support.reports_export.labels.export_options', default="📤 Export Options"), style='Heading.TLabel').pack(pady=(0, 20))
+
+        # Export format selection
+        format_frame = ttk.LabelFrame(parent, text=_t('gui.pastoral.student_support.reports_export.labels.format', default="Format"), padding="10")
+        format_frame.pack(fill="x", pady=(0, 10))
+
+        self.export_format_var = tk.StringVar(value=_t('gui.pastoral.student_support.reports_export.values.json', default="JSON"))
+
+        for fmt in ["JSON", "CSV", "TXT"]:
+            ttk.Radiobutton(format_frame, text=fmt, variable=self.export_format_var,
+                           value=fmt).pack(side="left", padx=10)
+
+        # Button frame for export options
+        btn_frame = ttk.Frame(parent)
+        btn_frame.pack(fill="x", pady=20)
+
+        # Export to file button
+        ttk.Button(btn_frame, text=_t('gui.pastoral.student_support.reports_export.buttons.export_report', default="💾 Export Report"),
+                  command=lambda: self.export_report_data(report_type, report_data)).pack(side="left", padx=(0, 10))
+
+        # Send to admin button
+        ttk.Button(btn_frame, text=_t('gui.pastoral.student_support.reports_export.buttons.send_to_admin', default="📧 Send to Admin"),
+                  command=lambda: self.send_report_to_admin(report_type, report_data)).pack(side="left")
+
+    def export_report_data(self, report_type, report_data):
+        """Export report data to file"""
+        format_type = self.export_format_var.get().lower()
+
+        # File dialog
+        filename = filedialog.asksaveasfilename(
+            title=_t('gui.pastoral.student_support.reports_export.dialogs.save_report', default="Save Report"),
+            defaultextension=f".{format_type}",
+            filetypes=[(f"{format_type.upper()} files", f"*.{format_type}"), ("All files", "*.*")]
+        )
+
+        if not filename:
+            return
+
+        try:
+            if format_type == "json":
+                with open(filename, 'w', encoding='utf-8') as f:
+                    json.dump(report_data, f, indent=2, default=str)
+            elif format_type == "csv":
+                # Convert to CSV format (simplified)
+                with open(filename, 'w', encoding='utf-8', newline='') as f:
+                    f.write("Report Type,Data\n")
+                    f.write(f"{report_type},{json.dumps(report_data, default=str)}\n")
+            else:  # TXT
+                with open(filename, 'w', encoding='utf-8') as f:
+                    f.write(f"Report: {report_type}\n")
+                    f.write("=" * 50 + "\n")
+                    f.write(json.dumps(report_data, indent=2, default=str))
+
+            messagebox.showinfo(_t('gui.pastoral.student_support.reports_export.dialogs.export_complete', default="Export Complete"), f"Report exported to {filename}")
+
+        except Exception as e:
+            messagebox.showerror(_t('gui.pastoral.student_support.reports_export.dialogs.export_error', default="Export Error"), f"Failed to export report: {e}")
+
+    def send_report_to_admin(self, report_type, report_data):
+        """Send report to admin via email"""
+        try:
+            from education_system.systems.university.infrastructure.database.db import get_connection
+            from education_system.systems.university.infrastructure.email.email_service import send_email
+
+            # Get admin email from database
+            admin_email = None
+            conn = get_connection()
+            cursor = conn.cursor()
+
+            # First try to find admin user with email
+            cursor.execute('''
+                SELECT u.email, u.username
+                FROM users u
+                WHERE u.role = 'admin' AND u.email IS NOT NULL AND u.email != ''
+                ORDER BY u.id ASC
+                LIMIT 1
+            ''')
+            result = cursor.fetchone()
+
+            if result:
+                admin_email = result[0]
+                admin_username = result[1]
+            else:
+                # Fallback: check user_accounts table
+                cursor.execute('''
+                    SELECT u.email, ua.username
+                    FROM user_accounts ua
+                    JOIN users u ON u.id = ua.user_id
+                    WHERE LOWER(u.role) = 'admin' AND u.email IS NOT NULL AND u.email != ''
+                    ORDER BY ua.id ASC
+                    LIMIT 1
+                ''')
+                result = cursor.fetchone()
+                if result:
+                    admin_email = result[0]
+                    admin_username = result[1]
+
+            conn.close()
+
+            if not admin_email:
+                # Show dialog to manually enter admin email
+                self._show_admin_email_dialog(report_type, report_data)
+                return
+
+            # Confirm sending
+            if not messagebox.askyesno(_t('gui.pastoral.student_support.reports_export.dialogs.send_report', default="Send Report"),
+                                       f"Send {report_type.replace('_', ' ').title()} Report to admin ({admin_username})?\n\nEmail: {admin_email}"):
+                return
+
+            # Format report content
+            report_title = f"{report_type.replace('_', ' ').title()} Report"
+            report_content = self._format_report_for_email(report_type, report_data)
+
+            # Send email using send_email function
+            success = send_email(
+                recipient_email=admin_email,
+                subject=f"[Student Support] {report_title}",
+                body=report_content
+            )
+
+            if success:
+                messagebox.showinfo(_t('gui.pastoral.student_support.reports_export.dialogs.success', default="Success"), f"Report sent to {admin_email}")
+                if ACTIVITY_LOGGER_AVAILABLE:
+                    log_activity('send', 'report_email', details={
+                        'report_type': report_type,
+                        'recipient': admin_email
+                    })
+            else:
+                messagebox.showerror(_t('gui.pastoral.student_support.reports_export.dialogs.error', default="Error"), _t('gui.pastoral.student_support.reports_export.dialogs.failed_to_send_email_please_check_email_configuration', default="Failed to send email. Please check email configuration."))
+
+        except ImportError as e:
+            messagebox.showerror(_t('gui.pastoral.student_support.reports_export.dialogs.error', default="Error"), f"Email service not available: {e}")
+        except Exception as e:
+            messagebox.showerror(_t('gui.pastoral.student_support.reports_export.dialogs.error', default="Error"), f"Failed to send report: {e}")
+            import traceback
+            traceback.print_exc()
+
+    def _show_admin_email_dialog(self, report_type, report_data):
+        """Show dialog to manually enter admin email"""
+        dialog = make_toplevel(self.root)
+        dialog.title(_t('gui.pastoral.student_support.reports_export.windows.enter_admin_email', default="Enter Admin Email"))
+        dialog.geometry("400x200")
+        dialog.grab_set()
+
+        ttk.Label(dialog, text=_t('gui.pastoral.student_support.reports_export.labels.no_admin_email_found_in_database_please_enter_admin_email', default="No admin email found in database.\nPlease enter admin email:"),
+                 font=('Segoe UI', 10)).pack(pady=20)
+
+        email_var = tk.StringVar()
+        email_entry = ttk.Entry(dialog, textvariable=email_var, width=40)
+        email_entry.pack(pady=10)
+        email_entry.focus()
+
+        def send():
+            email = email_var.get().strip()
+            if not email or '@' not in email:
+                messagebox.showerror(_t('gui.pastoral.student_support.reports_export.dialogs.error', default="Error"), _t('gui.pastoral.student_support.reports_export.dialogs.please_enter_a_valid_email_address', default="Please enter a valid email address"))
+                return
+
+            dialog.destroy()
+
+            try:
+                from education_system.systems.university.infrastructure.email.email_service import send_email
+
+                report_title = f"{report_type.replace('_', ' ').title()} Report"
+                report_content = self._format_report_for_email(report_type, report_data)
+
+                success = send_email(
+                    recipient_email=email,
+                    subject=f"[Student Support] {report_title}",
+                    body=report_content
+                )
+
+                if success:
+                    messagebox.showinfo(_t('gui.pastoral.student_support.reports_export.dialogs.success', default="Success"), f"Report sent to {email}")
+                else:
+                    messagebox.showerror(_t('gui.pastoral.student_support.reports_export.dialogs.error', default="Error"), _t('gui.pastoral.student_support.reports_export.dialogs.failed_to_send_email', default="Failed to send email"))
+
+            except Exception as e:
+                messagebox.showerror(_t('gui.pastoral.student_support.reports_export.dialogs.error', default="Error"), f"Failed to send: {e}")
+
+        btn_frame = ttk.Frame(dialog)
+        btn_frame.pack(pady=20)
+        ttk.Button(btn_frame, text=_t('gui.pastoral.student_support.reports_export.buttons.send', default="Send"), command=send).pack(side="left", padx=5)
+        ttk.Button(btn_frame, text=_t('gui.pastoral.student_support.reports_export.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(side="left", padx=5)
+
+    def _format_report_for_email(self, report_type, report_data):
+        """Format report data for email body using template system"""
+        # Build the specific report content based on type
+        content_lines = []
+
+        if report_type == 'ticket_summary':
+            content_lines.append(f"Total Tickets: {report_data.get('total_tickets', 0)}")
+            status_breakdown = report_data.get('status_breakdown', {})
+            content_lines.append("\nStatus Breakdown:")
+            for status, count in status_breakdown.items():
+                content_lines.append(f"  - {status}: {count}")
+
+        elif report_type == 'performance':
+            stats = report_data.get('resolution_stats', {})
+            content_lines.append(f"Average Resolution Time: {stats.get('avg_hours', 0):.1f} hours")
+            content_lines.append(f"Resolved Tickets: {stats.get('resolved_count', 0)}")
+            content_lines.append(f"Fastest Resolution: {stats.get('min_hours', 0):.1f} hours")
+            content_lines.append(f"Slowest Resolution: {stats.get('max_hours', 0):.1f} hours")
+
+        elif report_type == 'satisfaction':
+            content_lines.append(f"Average Rating: {report_data.get('avg_rating', 0):.2f}/5")
+            content_lines.append(f"Response Rate: {report_data.get('response_rate', 0):.1f}%")
+            content_lines.append(f"Total Responses: {report_data.get('total_responses', 0)}")
+
+        else:
+            content_lines.append("Report Data:")
+            content_lines.append(json.dumps(report_data, indent=2, default=str))
+
+        report_content = '\n'.join(content_lines)
+
+        # Use template for the overall structure
+        template_vars = {
+            'report_type': report_type.replace('_', ' ').title(),
+            'report_type_upper': report_type.replace('_', ' ').upper(),
+            'report_date': datetime.now().strftime('%Y-%m-%d'),
+            'generated_datetime': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+            'report_content': report_content
+        }
+
+        # Return just the body portion (subject is handled separately in calling code)
+        _, body = render_template('finance_commerce/reports/student_support_report', template_vars)
+
+        if not body:
+            # Fallback if template fails
+            lines = []
+            lines.append(f"{'='*60}")
+            lines.append(f"  {report_type.replace('_', ' ').upper()} REPORT")
+            lines.append(f"  Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+            lines.append(f"{'='*60}\n")
+            lines.append(report_content)
+            lines.append(f"\n{'='*60}")
+            lines.append("This report was generated automatically by the Student Support System.")
+            body = '\n'.join(lines)
+
+        return body
+
+    def _format_report_as_txt(self, report_type, report_data, date_range):
+        """Format report data as plain text for display"""
+        lines = []
+        lines.append("=" * 80)
+        lines.append(f"  {report_type.replace('_', ' ').upper()} REPORT")
+        lines.append(f"  Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+        lines.append(f"  Period: {date_range.get('start', 'N/A')} to {date_range.get('end', 'N/A')}")
+        lines.append("=" * 80)
+        lines.append("")
+
+        if report_type == 'ticket_summary':
+            lines.append("TICKET SUMMARY")
+            lines.append("-" * 80)
+            lines.append(f"Total Tickets: {report_data.get('total_tickets', 0)}")
+            lines.append("")
+
+            status_breakdown = report_data.get('status_breakdown', {})
+            if status_breakdown:
+                lines.append("Status Breakdown:")
+                for status, count in status_breakdown.items():
+                    lines.append(f"  • {status}: {count}")
+                lines.append("")
+
+            category_breakdown = report_data.get('category_breakdown', {})
+            if category_breakdown:
+                lines.append("Category Breakdown:")
+                for category, count in category_breakdown.items():
+                    lines.append(f"  • {category}: {count}")
+                lines.append("")
+
+            priority_breakdown = report_data.get('priority_breakdown', {})
+            if priority_breakdown:
+                lines.append("Priority Breakdown:")
+                for priority, count in priority_breakdown.items():
+                    lines.append(f"  • {priority}: {count}")
+                lines.append("")
+
+        elif report_type == 'performance':
+            lines.append("PERFORMANCE REPORT")
+            lines.append("-" * 80)
+            stats = report_data.get('resolution_stats', {})
+            lines.append(f"Average Resolution Time: {stats.get('avg_hours', 0):.1f} hours")
+            lines.append(f"Resolved Tickets: {stats.get('resolved_count', 0)}")
+            lines.append(f"Fastest Resolution: {stats.get('min_hours', 0):.1f} hours")
+            lines.append(f"Slowest Resolution: {stats.get('max_hours', 0):.1f} hours")
+            lines.append("")
+
+            staff_performance = report_data.get('staff_performance', {})
+            if staff_performance:
+                lines.append("Staff Performance:")
+                for staff, data in staff_performance.items():
+                    lines.append(f"  • {staff}: {data.get('resolved', 0)} resolved, "
+                               f"Avg: {data.get('avg_time', 0):.1f} hours")
+                lines.append("")
+
+        elif report_type == 'satisfaction':
+            lines.append("SATISFACTION REPORT")
+            lines.append("-" * 80)
+            lines.append(f"Average Rating: {report_data.get('avg_rating', 0):.2f}/5.00 ⭐")
+            lines.append(f"Response Rate: {report_data.get('response_rate', 0):.1f}%")
+            lines.append(f"Total Responses: {report_data.get('total_responses', 0)}")
+            lines.append("")
+
+            rating_distribution = report_data.get('rating_distribution', {})
+            if rating_distribution:
+                lines.append("Rating Distribution:")
+                for rating, count in sorted(rating_distribution.items(), reverse=True):
+                    stars = "⭐" * int(rating)
+                    lines.append(f"  {stars} ({rating}): {count}")
+                lines.append("")
+
+        elif report_type == 'category_analysis':
+            lines.append("CATEGORY ANALYSIS REPORT")
+            lines.append("-" * 80)
+
+            category_data = report_data.get('categories', {})
+            for category, data in category_data.items():
+                lines.append(f"\n{category.upper()}")
+                lines.append(f"  Total Tickets: {data.get('total', 0)}")
+                lines.append(f"  Resolved: {data.get('resolved', 0)}")
+                lines.append(f"  Avg Resolution Time: {data.get('avg_time', 0):.1f} hours")
+                lines.append(f"  Satisfaction Rating: {data.get('satisfaction', 0):.2f}/5.00")
+
+        else:
+            lines.append("DETAILED REPORT DATA")
+            lines.append("-" * 80)
+            lines.append(json.dumps(report_data, indent=2, default=str))
+
+        lines.append("")
+        lines.append("=" * 80)
+        lines.append("Report generated by Student Support System")
+        lines.append("For questions or concerns, contact the support team")
+        lines.append("=" * 80)
+
+        return '\n'.join(lines)
+
+    def save_report_as_txt(self, report_type, report_data, date_range):
+        """Save report as TXT file"""
+        filename = filedialog.asksaveasfilename(
+            title=_t('gui.pastoral.student_support.reports_export.dialogs.save_report_as_txt', default="Save Report as TXT"),
+            defaultextension=".txt",
+            filetypes=[("Text files", "*.txt"), ("All files", "*.*")],
+            initialfile=f"{report_type}_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt"
+        )
+
+        if not filename:
+            return
+
+        try:
+            report_text = self._format_report_as_txt(report_type, report_data, date_range)
+
+            with open(filename, 'w', encoding='utf-8') as f:
+                f.write(report_text)
+
+            messagebox.showinfo(_t('gui.pastoral.student_support.reports_export.dialogs.success', default="Success"), f"Report saved to:\n{filename}")
+
+            if ACTIVITY_LOGGER_AVAILABLE:
+                log_activity('export', 'report', details={
+                    'report_type': report_type,
+                    'format': 'txt',
+                    'filename': os.path.basename(filename)
+                })
+
+        except Exception as e:
+            messagebox.showerror(_t('gui.pastoral.student_support.reports_export.dialogs.error', default="Error"), f"Failed to save report: {e}")
+

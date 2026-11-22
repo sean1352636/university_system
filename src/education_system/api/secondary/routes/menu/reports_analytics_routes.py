@@ -33,60 +33,28 @@ def reports_analytics_attendance_report():
     return feature_pending("Attendance Report", _SYSTEM, category=_CATEGORY)
 
 
-@reports_analytics_menu_bp.route("/grades-report", methods=["GET"])
+@reports_analytics_menu_bp.route("/behaviour-report", methods=["GET"])
 @token_required
 @staff_required
-def reports_analytics_grades_report():
-    """Grades Report"""
-    return feature_pending("Grades Report", _SYSTEM, category=_CATEGORY)
+def reports_analytics_behaviour_report():
+    """Behaviour Report"""
+    return feature_pending("Behaviour Report", _SYSTEM, category=_CATEGORY)
 
 
-@reports_analytics_menu_bp.route("/progress-tracking", methods=["GET"])
+@reports_analytics_menu_bp.route("/results-analysis", methods=["GET"])
 @token_required
 @staff_required
-def reports_analytics_progress_tracking():
-    """Progress Tracking"""
-    return feature_pending("Progress Tracking", _SYSTEM, category=_CATEGORY)
+def reports_analytics_results_analysis():
+    """Results Analysis"""
+    return feature_pending("Results Analysis", _SYSTEM, category=_CATEGORY)
 
 
-@reports_analytics_menu_bp.route("/kpi-dashboard", methods=["GET"])
+@reports_analytics_menu_bp.route("/school-census", methods=["GET"])
 @token_required
 @staff_required
-def reports_analytics_kpi_dashboard():
-    """KPI Dashboard"""
-    return feature_pending("KPI Dashboard", _SYSTEM, category=_CATEGORY)
-
-
-@reports_analytics_menu_bp.route("/data-dashboard", methods=["GET"])
-@token_required
-@staff_required
-def reports_analytics_data_dashboard():
-    """Data Dashboard"""
-    return feature_pending("Data Dashboard", _SYSTEM, category=_CATEGORY)
-
-
-@reports_analytics_menu_bp.route("/progress-dashboard", methods=["GET"])
-@token_required
-@staff_required
-def reports_analytics_progress_dashboard():
-    """Progress Dashboard"""
-    return feature_pending("Progress Dashboard", _SYSTEM, category=_CATEGORY)
-
-
-@reports_analytics_menu_bp.route("/mobile-dashboard", methods=["GET"])
-@token_required
-@staff_required
-def reports_analytics_mobile_dashboard():
-    """Mobile Dashboard"""
-    return feature_pending("Mobile Dashboard", _SYSTEM, category=_CATEGORY)
-
-
-@reports_analytics_menu_bp.route("/audit-reports", methods=["GET"])
-@token_required
-@staff_required
-def reports_analytics_audit_reports():
-    """Audit Reports"""
-    return feature_pending("Audit Reports", _SYSTEM, category=_CATEGORY)
+def reports_analytics_school_census():
+    """School Census"""
+    return feature_pending("School Census", _SYSTEM, category=_CATEGORY)
 
 
 @reports_analytics_menu_bp.route("/data-export", methods=["GET"])
@@ -95,12 +63,4 @@ def reports_analytics_audit_reports():
 def reports_analytics_data_export():
     """Data Export"""
     return feature_pending("Data Export", _SYSTEM, category=_CATEGORY)
-
-
-@reports_analytics_menu_bp.route("/custom-export", methods=["GET"])
-@token_required
-@staff_required
-def reports_analytics_custom_export():
-    """Custom Export"""
-    return feature_pending("Custom Export", _SYSTEM, category=_CATEGORY)
 

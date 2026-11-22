@@ -8,6 +8,7 @@ from datetime import datetime, timedelta
 from decimal import Decimal, InvalidOperation
 from typing import Any, Dict, List, Optional, Tuple
 import uuid
+import logging
 
 from education_system.paths import UNIVERSITY_DEFAULT_DB_PATH
 from education_system.systems.university.infrastructure.utils.activity_logger import (
@@ -34,12 +35,27 @@ except ImportError:
     set_auth_instance = lambda x: None
     get_auth = lambda: None
 
+# Finance hub: the ONLY way this plugin may touch finance tables. Posting
+# lives here in the domain service so the CLI and GUI share it.
 try:
-    from education_system.systems.university.domains.finance.infrastructure.finance_integration import record_payment_to_finance
+    from education_system.systems.university.domains.finance.infrastructure.finance_integration import (
+        process_student_finance_account_payment,
+        record_refund_to_finance,
+        record_revenue_to_finance,
+        top_up_student_finance_account,
+    )
     FINANCE_AVAILABLE = True
 except ImportError:
     FINANCE_AVAILABLE = False
-    record_payment_to_finance = None
+    process_student_finance_account_payment = None
+    record_refund_to_finance = None
+    record_revenue_to_finance = None
+    top_up_student_finance_account = None
+
+logger = logging.getLogger(__name__)
+
+FINANCE_SOURCE = "Takeaway"
+STUDENT_ACCOUNT_METHOD = "student_account"
 
 auth = None
 
@@ -455,16 +471,187 @@ def clear_cart(user_id: int) -> bool:
         return False
 
 
+def resolve_finance_identifier(user_id: int) -> Optional[str]:
+    """Identifier the finance hub keys accounts on: student_id, else username."""
+    try:
+        conn = get_connection()
+        try:
+            row = conn.execute(
+                'SELECT student_id, username FROM users WHERE id = ?', (user_id,)
+            ).fetchone()
+        finally:
+            conn.close()
+    except sqlite3.Error:
+        return None
+    if not row:
+        return None
+    return str(row['student_id'] or row['username'] or user_id)
+
+
+def complete_order(user_id: int, delivery_address: str, delivery_type: str = 'delivery',
+                   payment_method: str = 'card', notes: str = "", *,
+                   finance_user_id: Optional[str] = None,
+                   processed_by: Optional[str] = None) -> Dict[str, Any]:
+    """Place the order and post the sale to Finance.
+
+    Shared by the CLI and GUI. ``student_account`` debits the finance account
+    first (``process_student_finance_account_payment`` records the payment
+    row itself); any other method posts ``record_revenue_to_finance`` after
+    the local write. Posting failures are logged, never rolled back.
+
+    Returns ``{'order_id', 'finance_payment_id', 'account_result', 'error'}``.
+    """
+    result: Dict[str, Any] = {
+        'order_id': None, 'finance_payment_id': None,
+        'account_result': None, 'error': None,
+    }
+    cart_items, subtotal, restaurant_name = view_cart(user_id)
+    if not cart_items:
+        result['error'] = "Cart is empty!"
+        print(result['error'])
+        return result
+
+    delivery_fee = cart_items[0]['delivery_fee'] if delivery_type == 'delivery' else 0
+    total_amount = subtotal + delivery_fee
+    finance_user_id = finance_user_id or resolve_finance_identifier(user_id)
+
+    if payment_method == STUDENT_ACCOUNT_METHOD:
+        if not (FINANCE_AVAILABLE and process_student_finance_account_payment):
+            result['error'] = "Student finance account payments are unavailable."
+            return result
+        account_result = process_student_finance_account_payment(
+            student_id=str(finance_user_id),
+            amount=total_amount,
+            description=f"Takeaway order from {restaurant_name}",
+            transaction_source=FINANCE_SOURCE,
+            transaction_ref=f"TO_{datetime.now().strftime('%Y%m%d%H%M%S')}",
+            processed_by=processed_by or 'System',
+        )
+        result['account_result'] = account_result
+        if not account_result.get('success'):
+            result['error'] = account_result.get('message', 'Payment failed')
+            return result
+
+    order_id = _write_order(user_id, cart_items, subtotal, delivery_address,
+                            delivery_type, payment_method, notes)
+    result['order_id'] = order_id
+    if not order_id:
+        result['error'] = "Failed to place order."
+        return result
+
+    if payment_method != STUDENT_ACCOUNT_METHOD and FINANCE_AVAILABLE and record_revenue_to_finance:
+        try:
+            result['finance_payment_id'] = record_revenue_to_finance(
+                student_id=str(finance_user_id or "EXTERNAL"),
+                amount=total_amount,
+                revenue_category="Takeaway Sales",
+                transaction_source=FINANCE_SOURCE,
+                transaction_ref=order_id,
+                payment_method=payment_method.replace('_', ' ').title(),
+                notes=f"Takeaway order from {restaurant_name}",
+            )
+        except Exception:
+            logger.exception("Finance posting failed for takeaway order %s", order_id)
+    return result
+
+
+def refund_order(order_id: str, amount: float, refund_method: str, *,
+                 student_id: Optional[str] = None,
+                 processed_by: Optional[str] = None,
+                 reason: str = "Customer Request") -> Dict[str, Any]:
+    """Mark a takeaway order refunded and post the refund to Finance.
+
+    ``'Student Account'`` re-credits the finance account through
+    ``top_up_student_finance_account`` (failure aborts). The refund is
+    recorded through ``record_refund_to_finance`` (unified_refunds + ledger).
+    """
+    result: Dict[str, Any] = {'success': False, 'refund_id': None,
+                              'refund_ref': None, 'message': ''}
+    try:
+        conn = get_connection()
+        try:
+            row = conn.execute(
+                "SELECT payment_status, user_id, student_id FROM orders "
+                "WHERE source_type = 'takeaway' AND source_order_id = ?",
+                (order_id,)).fetchone()
+            if not row:
+                result['message'] = "Order not found"
+                return result
+            if (row['payment_status'] or '').lower() == 'refunded':
+                result['message'] = "This order has already been refunded"
+                return result
+            if not student_id:
+                student_id = row['student_id'] or resolve_finance_identifier(row['user_id'])
+        finally:
+            conn.close()
+
+        if refund_method == 'Student Account':
+            if not student_id:
+                result['message'] = "No student/finance account linked to this order"
+                return result
+            if not (FINANCE_AVAILABLE and top_up_student_finance_account):
+                result['message'] = "Student finance account refunds are unavailable."
+                return result
+            topup = top_up_student_finance_account(
+                create_if_missing=True,
+                student_id=str(student_id), amount=float(amount),
+                payment_method='Refund', processed_by=processed_by or 'System',
+                description=f'Takeaway Order Refund - {order_id}')
+            if not topup.get('success'):
+                result['message'] = topup.get('message', 'Failed to credit student account')
+                return result
+            result['account_created'] = bool(topup.get('account_created'))
+
+        conn = get_connection()
+        try:
+            conn.execute(
+                "UPDATE orders SET payment_status = 'refunded' "
+                "WHERE source_type = 'takeaway' AND source_order_id = ?",
+                (order_id,))
+            conn.commit()
+        finally:
+            conn.close()
+
+        refund_ref = f"TAKEAWAY-REFUND-{datetime.now().strftime('%Y%m%d%H%M%S')}"
+        result['refund_ref'] = refund_ref
+        result['success'] = True
+        if FINANCE_AVAILABLE and record_refund_to_finance:
+            try:
+                result['refund_id'] = record_refund_to_finance(
+                    student_id=str(student_id or "EXTERNAL"),
+                    refund_amount=float(amount),
+                    original_payment_id=None,
+                    refund_reason=reason,
+                    refund_type='full',
+                    transaction_source=FINANCE_SOURCE,
+                    transaction_ref=str(order_id),
+                    refund_method=refund_method,
+                    requested_by=processed_by or 'System',
+                    notes=f"Refund reference {refund_ref}",
+                )
+            except Exception:
+                logger.exception("Finance refund posting failed for takeaway %s", order_id)
+        result['message'] = f"Refund of GBP {float(amount):.2f} processed" + (
+            " (a finance account was opened for the student)"
+            if result.get('account_created') else "")
+        return result
+    except sqlite3.Error as e:
+        result['message'] = f"Database error: {e}"
+        return result
+
+
 def place_order(user_id: int, delivery_address: str, delivery_type: str = 'delivery',
                 payment_method: str = 'card', notes: str = "") -> Optional[str]:
-    """Place an order from cart"""
+    """Place an order from cart (posts to Finance). Returns the order id."""
+    return complete_order(user_id, delivery_address, delivery_type,
+                          payment_method, notes)['order_id']
+
+
+def _write_order(user_id: int, cart_items: List[Dict], subtotal: float,
+                 delivery_address: str, delivery_type: str,
+                 payment_method: str, notes: str) -> Optional[str]:
+    """Local write only: order, items, restaurant counter, cart."""
     try:
-        cart_items, subtotal, restaurant_name = view_cart(user_id)
-
-        if not cart_items:
-            print("Cart is empty!")
-            return None
-
         conn = get_connection()
         cursor = conn.cursor()
 
@@ -928,12 +1115,17 @@ def checkout(user_id: int):
     notes = input("\nOrder notes (optional): ").strip()
 
     print("\nPlacing order...")
-    order_id = place_order(user_id, delivery_address, delivery_type, payment_method, notes)
+    outcome = complete_order(user_id, delivery_address, delivery_type, payment_method, notes)
+    order_id = outcome['order_id']
 
     if order_id:
         print(f"\n{'*' * 40}")
         print("Order placed successfully!")
         print(f"Order ID: {order_id}")
+        if outcome.get('account_result'):
+            print(f"Student account balance: £{outcome['account_result'].get('new_balance', 0):.2f}")
+        if outcome.get('finance_payment_id'):
+            print(f"Finance System Payment ID: {outcome['finance_payment_id']}")
         print(f"{'*' * 40}")
 
         order, items = get_order_details(order_id)
@@ -945,7 +1137,7 @@ def checkout(user_id: int):
             print(f"Estimated: {order['estimated_delivery']}")
             print(f"Total: £{order['total_amount']:.2f}")
     else:
-        print("Failed to place order. Please try again.")
+        print(outcome.get('error') or "Failed to place order. Please try again.")
 
 
 def view_order_history(user_id: int):
@@ -1052,14 +1244,41 @@ def view_all_orders():
         print(f"{'=' * 70}")
 
         for order in orders:
-            print(f"\n{order['order_id']} | {order['restaurant_name']}")
+            print(f"\n{order['source_order_id']} | {order['restaurant_name']}")
             print(f"   Date: {order['order_date']} | Total: £{order['total_amount']:.2f}")
             print(f"   Status: {order['order_status']} | Payment: {order['payment_status']}")
 
-        input("\nPress Enter to continue...")
+        refund_cli_prompt(orders)
 
     except sqlite3.Error as e:
         print(f"Error: {e}")
+
+
+def refund_cli_prompt(orders: List[Dict]) -> None:
+    """Offer a refund for one of the listed orders (blank to skip)."""
+    order_id = input("\nOrder ID to refund (blank to continue): ").strip()
+    if not order_id:
+        return
+    match = next((o for o in orders if o['source_order_id'] == order_id), None)
+    if not match:
+        print("Order not found in the list above.")
+        return
+    print("\nRefund method:")
+    print("1. Cash")
+    print("2. Card")
+    print("3. Student Account")
+    method = {'1': 'Cash', '2': 'Card', '3': 'Student Account'}.get(
+        input("Choice: ").strip(), 'Cash')
+    user = get_current_user() if HAS_AUTH else None
+    outcome = refund_order(
+        order_id, float(match['total_amount']), method,
+        student_id=match.get('student_id'),
+        processed_by=(user or {}).get('username') if isinstance(user, dict) else None,
+    )
+    print(outcome['message'])
+    if outcome['success']:
+        print(f"Refund reference: {outcome['refund_ref']}")
+    input("\nPress Enter to continue...")
 
 
 def generate_reports():

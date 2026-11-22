@@ -5,7 +5,7 @@ Tests module definitions and data structures
 """
 
 import pytest
-from education_system.systems.university.domains.academics.domain.services import modules
+from education_system.systems.university.domains.curriculum.domain import modules
 
 
 class TestModuleDefinitions:

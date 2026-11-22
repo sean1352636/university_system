@@ -302,9 +302,9 @@ class DatabaseManager:
         return result
 
     def update_incident_status(self, incident_id, status):
-        # The DB-level trigger ``sync_disc_status_to_misc`` (installed
-        # by _db_init.ensure_disciplinary_schema) handles propagation
-        # to any linked misconduct case, so we don't sync in app code.
+        # An escalated record's academic integrity case is decided in
+        # Academic Integrity, which keeps this record's status in step;
+        # changing the status here does not change the case.
         conn = self.get_connection()
         try:
             conn.execute(
@@ -474,23 +474,47 @@ class DatabaseManager:
         conn.close()
         return stats
 
-    # --- Escalation: disciplinary_records → academic_misconduct_cases ---
+    # --- Escalation: disciplinary_records → integrity_cases ---
+    #
+    # An academic offence on a disciplinary record becomes an academic
+    # integrity case (``integrity_review.open_case``, source
+    # 'disciplinary', source_ref = the record id). The case decision keeps
+    # the record's status in step (``integrity_review._sync_source``).
 
-    # Disciplinary severity is now identical to the misconduct scale
-    # (Minor/Major/Critical), so escalation passes severity through
-    # unchanged. Anything we don't recognise (e.g. legacy lowercase
-    # 'minor') falls back to Title-case 'Minor'.
+    # Disciplinary severity uses the same scale (Minor/Major/Critical);
+    # anything unrecognised becomes 'Minor'.
     _SEVERITY_PASSTHROUGH = {'Minor', 'Major', 'Critical'}
 
+    _CASE_TYPES = {
+        'plagiarism': 'plagiarism', 'cheating': 'cheating', 'collusion': 'collusion',
+        'contract cheating': 'contract_cheating', 'fabrication': 'fabrication',
+    }
+
     def find_misconduct_case_for_record(self, record_id):
-        """Return existing case_id linked to record_id, or None."""
+        """Return the integrity case id linked to record_id, or None.
+        An escalation made before the move to integrity cases is found
+        through the old case it was copied from."""
         try:
             conn = self.get_connection()
             try:
+                from education_system.systems.university.application.integrity import (
+                    access as integrity_access,
+                )
+                integrity_access.ensure(conn)
                 row = conn.execute(
-                    "SELECT case_id FROM academic_misconduct_cases "
-                    "WHERE source_record_id = ? LIMIT 1",
-                    (record_id,)).fetchone()
+                    "SELECT id FROM integrity_cases WHERE source = 'disciplinary' "
+                    "AND source_ref = ? ORDER BY id LIMIT 1",
+                    (str(record_id),)).fetchone()
+                if row:
+                    return row[0]
+                old = {r[1] for r in conn.execute(
+                    "PRAGMA table_info(academic_misconduct_cases)")}
+                if "source_record_id" not in old:
+                    return None
+                row = conn.execute(
+                    "SELECT i.id FROM academic_misconduct_cases m JOIN integrity_cases i "
+                    "ON i.legacy_case_id = CAST(COALESCE(m.case_id, m.id) AS TEXT) "
+                    "WHERE m.source_record_id = ? LIMIT 1", (record_id,)).fetchone()
                 return row[0] if row else None
             finally:
                 conn.close()
@@ -498,29 +522,27 @@ class DatabaseManager:
             return None
 
     def list_misconduct_cases(self, system_key='university'):
-        """Read-only list of academic misconduct cases in this store.
+        """Read-only list of the university's academic integrity cases.
 
         Returns a list of tuples:
-          (case_id, student_name, student_id, violation_type, status,
-           severity, date_filed, source_record_id)
-        Ordered newest-first. Best-effort: returns [] if the table is
-        absent on a fresh DB.
+          (case_id, student_name, student_id, case_type, stage,
+           severity, created_at, source_record_id)
+        Ordered newest-first. ``system_key`` is kept for callers; the
+        integrity cases are the university's own.
         """
         conn = self.get_connection()
         try:
-            cur = conn.cursor()
-            sql = (
-                "SELECT case_id, student_name, student_id, violation_type, "
-                "       status, severity, date_filed, "
-                "       COALESCE(source_record_id,'') "
-                "FROM academic_misconduct_cases ")
-            params = ()
-            if system_key:
-                sql += "WHERE system_key = ? "
-                params = (system_key,)
-            sql += "ORDER BY date_filed DESC, rowid DESC"
-            cur.execute(sql, params)
-            return cur.fetchall()
+            from education_system.systems.university.application.integrity import (
+                access as integrity_access,
+            )
+            integrity_access.ensure(conn)
+            return conn.execute(
+                "SELECT CAST(c.id AS TEXT), TRIM(COALESCE(s.first_name,'') || ' ' || "
+                "       COALESCE(s.last_name,'')), c.student_id, c.case_type, "
+                "       COALESCE(c.stage, c.status), COALESCE(c.severity, ''), c.created_at, "
+                "       CASE WHEN c.source = 'disciplinary' THEN c.source_ref ELSE '' END "
+                "FROM integrity_cases c LEFT JOIN students s ON s.student_id = c.student_id "
+                "ORDER BY c.created_at DESC, c.id DESC").fetchall()
         except sqlite3.Error:
             return []
         finally:
@@ -528,87 +550,65 @@ class DatabaseManager:
 
     def escalate_to_misconduct(self, record_id, imposed_by=None,
                                system_key='university'):
-        """Escalate a disciplinary record into an academic misconduct case.
+        """Escalate a disciplinary record into an academic integrity case.
 
         Idempotent: if a case already references this record_id, returns
-        the existing case_id instead of creating a duplicate. Also flips
+        the existing case id instead of creating a duplicate. Also flips
         the disciplinary record's status to 'Escalated' so it shows up
-        as such in the incidents list.
+        as such in the incidents list. The student and the integrity
+        officers are e-mailed after the commit.
 
-        Returns the case_id (str) on success, or raises sqlite3.Error.
+        Returns the case id (int) on success, or raises sqlite3.Error.
         """
         existing = self.find_misconduct_case_for_record(record_id)
         if existing:
             return existing
 
+        from education_system.systems.university.application.integrity import (
+            review as integrity_review,
+        )
         conn = self.get_connection()
         try:
-            cur = conn.cursor()
-            # Pull the disciplinary record + its student, in one round-trip.
-            row = cur.execute(
-                "SELECT r.user_id, r.offense_type, r.severity, "
-                "       COALESCE(r.description,''), "
-                "       TRIM(COALESCE(s.first_name,'') || ' ' "
-                "            || COALESCE(s.last_name,'')), "
-                "       COALESCE(s.email_address,''), "
-                "       COALESCE(s.course,'') "
-                "FROM disciplinary_records r "
-                "LEFT JOIN students s ON s.student_id = r.user_id "
-                "WHERE r.record_id = ?", (record_id,)).fetchone()
+            row = conn.execute(
+                "SELECT user_id, offense_type, severity, COALESCE(description,''), "
+                "       date_occurred, reported_by "
+                "FROM disciplinary_records WHERE record_id = ?", (record_id,)).fetchone()
             if not row:
-                raise sqlite3.Error(
-                    f"No disciplinary record #{record_id}")
-            (sid, offense_type, severity, description,
-             full_name, email, course) = row
-
-            today = datetime.now().strftime("%Y-%m-%d")
-            # case_id must be UNIQUE — embed record id + timestamp so
-            # repeat escalations would clash (the earlier idempotency
-            # check already prevents that path).
-            stamp = datetime.now().strftime("%Y%m%d%H%M%S")
-            case_id = f"MISC-R{record_id}-{stamp}"
-
-            mapped_severity = (severity if severity in self._SEVERITY_PASSTHROUGH
-                               else 'Minor')
-            student_name = full_name or sid
-
-            cur.execute(
-                "INSERT INTO academic_misconduct_cases "
-                "(case_id, system_key, student_name, student_id, "
-                " student_email, course, violation_type, status, "
-                " date_filed, severity, notes, source_record_id) "
-                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                (case_id, system_key, student_name, sid, email,
-                 course or 'Unknown', offense_type or 'Other',
-                 'Under Review', today, mapped_severity,
-                 (f"Escalated from disciplinary record #{record_id}.\n\n"
-                  + (description or '')).strip(),
-                 record_id))
-
-            cur.execute(
-                "INSERT INTO academic_misconduct_history "
-                "(case_id, event_date, event_description, event_type, "
-                " created_by) "
-                "VALUES (?, ?, ?, 'info', ?)",
-                (case_id,
-                 datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                 f"Case escalated from disciplinary record "
-                 f"#{record_id}.",
-                 imposed_by or ''))
-
-            cur.execute(
+                raise sqlite3.Error(f"No disciplinary record #{record_id}")
+            sid, offense_type, severity, description, occurred, reporter = row
+            case_type = self._CASE_TYPES.get(str(offense_type or '').strip().lower(), 'other')
+            try:
+                out = integrity_review.open_case(
+                    conn, None, student_id=sid, case_type=case_type,
+                    description=(f"Escalated from disciplinary record #{record_id} "
+                                 f"({offense_type or 'Other'}).\n\n{description}").strip(),
+                    source="disciplinary", source_ref=record_id,
+                    severity=severity if severity in self._SEVERITY_PASSTHROUGH else 'Minor',
+                    actor=imposed_by or _current_username(),
+                    evidence_items=[{
+                        "kind": "disciplinary_record", "ref": record_id,
+                        "title": f"Disciplinary record #{record_id}",
+                        "detail": (f"{offense_type or 'Other'} on {occurred or 'unknown date'}, "
+                                   f"reported by {reporter or 'unknown'}: {description}")}])
+            except (ValueError, PermissionError) as exc:
+                raise sqlite3.Error(str(exc)) from None
+            conn.execute(
                 "UPDATE disciplinary_records "
                 "SET status = 'Escalated', "
                 "    updated_at = CURRENT_TIMESTAMP "
                 "WHERE record_id = ?", (record_id,))
-
             conn.commit()
-            return case_id
         except sqlite3.Error:
             conn.rollback()
             raise
         finally:
             conn.close()
+        if out["emails"]:
+            from education_system.systems.university.infrastructure.ui.record_screens import (
+                send_emails,
+            )
+            send_emails(out["emails"])
+        return out["case_id"]
 
 
 # ============================================================
@@ -773,7 +773,7 @@ class DisciplinaryPortal:
             ("⚠️ Incidents", self.show_incidents),
             ("📝 New Report", self.show_new_incident),
             ("📈 Reports", self.show_reports),
-            ("🎓 Academic Misconduct", self.open_academic_misconduct),
+            ("🎓 Academic Integrity", self.open_academic_misconduct),
         ]
 
         for text, command in nav_items:
@@ -821,24 +821,12 @@ class DisciplinaryPortal:
     # ============================================================
     def open_academic_misconduct(self, prefill_student_id=None,
                                  prefill_case_id=None):
-        """Launch the Academic Misconduct Panel in a Toplevel.
+        """Open the Academic Integrity window (cases are integrity cases).
 
-        Forwards the current auth so the panel doesn't reject the
-        user. ``prefill_student_id`` filters the case list to that
-        student; ``prefill_case_id`` selects a specific case. Both are
-        attached to the Toplevel for the panel's __init__ to consume.
+        Runs as the signed-in user from the global auth. ``prefill_case_id``
+        opens that case on the Cases tab; ``prefill_student_id`` is kept
+        for callers (search the Cases tab for the student).
         """
-        try:
-            from education_system.platform.governance.academic_misconduct.academic_misconduct_gui import (  # noqa: E501
-                AcademicMisconductPanel,
-            )
-        except Exception as e:
-            messagebox.showerror(
-                "Academic Misconduct",
-                f"Could not load the Academic Misconduct Panel:\n{e}",
-                parent=self.root)
-            return
-
         auth = None
         try:
             from education_system.systems.university.infrastructure.auth import (
@@ -847,33 +835,24 @@ class DisciplinaryPortal:
             auth = get_global_auth()
         except Exception:
             auth = None
-
-        win = tk.Toplevel(self.root)
-        win.geometry("1400x900")
-        if prefill_student_id:
-            win.prefill_student_id = prefill_student_id
-        if prefill_case_id:
-            win.prefill_case_id = prefill_case_id
         try:
-            AcademicMisconductPanel(win, auth=auth, system_key='university')
+            from education_system.systems.university.infrastructure.ui import windows
+            windows.open_academic_integrity(self.root, auth, case_id=prefill_case_id)
         except Exception as e:
+            logger.exception("Academic Integrity window failed to open")
             messagebox.showerror(
-                "Academic Misconduct",
-                f"Failed to launch Academic Misconduct Panel:\n{e}",
+                "Academic Integrity",
+                f"Could not open Academic Integrity:\n{e}",
                 parent=self.root)
-            try:
-                win.destroy()
-            except Exception:
-                logger.debug("Suppressed exception", exc_info=True)
 
     def _escalate_incident(self, record_id, parent_dialog):
         """Confirm + run escalation, then jump into the new case."""
         if not messagebox.askyesno(
-                "Escalate to Academic Misconduct?",
-                "This will create a new Academic Misconduct case "
-                f"pre-populated from disciplinary record #{record_id}, "
-                "mark the disciplinary record as 'Escalated', and open "
-                "the misconduct panel pointed at the new case.\n\n"
+                "Escalate to Academic Integrity?",
+                "This will open a new academic integrity case "
+                f"from disciplinary record #{record_id} (the student and the "
+                "integrity officers are told), mark the disciplinary record "
+                "as 'Escalated', and open the case.\n\n"
                 "Continue?",
                 parent=parent_dialog):
             return
@@ -1338,12 +1317,12 @@ class DisciplinaryPortal:
             existing_case = self.db.find_misconduct_case_for_record(
                 incident_id)
             if existing_case:
-                btn_label = f"🎓 Open Misconduct Case ({existing_case})"
+                btn_label = f"🎓 Open Integrity Case ({existing_case})"
 
                 def _action(eid=existing_case):
                     self.open_academic_misconduct(prefill_case_id=eid)
             else:
-                btn_label = "🎓 Escalate to Academic Misconduct Case"
+                btn_label = "🎓 Escalate to Academic Integrity Case"
 
                 def _action(rid=incident_id, p=dialog):
                     self._escalate_incident(rid, p)
@@ -1578,7 +1557,7 @@ class DisciplinaryPortal:
             incident_id = self.db.add_incident(data)
 
             # Auto-escalate when the offence is academic in nature, so
-            # the case appears in the Academic Misconduct Panel without
+            # the case appears in Academic Integrity without
             # the admin having to repeat the data entry there.
             academic_types = {
                 'Academic Misconduct', 'Plagiarism', 'Cheating',
@@ -1589,11 +1568,12 @@ class DisciplinaryPortal:
                 try:
                     case_id = self.db.escalate_to_misconduct(
                         incident_id, imposed_by=self.current_user)
-                    extra = (f"\n\nAlso filed as Academic Misconduct "
+                    extra = (f"\n\nAlso opened as academic integrity "
                              f"case {case_id}.")
                 except sqlite3.Error:
-                    extra = ("\n\nNote: failed to auto-file as an "
-                             "Academic Misconduct case (see logs).")
+                    logger.exception("Escalation of incident %s failed", incident_id)
+                    extra = ("\n\nNote: failed to open an academic "
+                             "integrity case (see logs).")
 
             messagebox.showinfo(
                 "Success",

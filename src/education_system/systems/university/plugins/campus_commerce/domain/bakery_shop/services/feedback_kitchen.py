@@ -37,22 +37,22 @@ class FeedbackKitchenMixin:
             return None
 
     def _open_helpdesk_ticket(self, subject, body):
-        """Best-effort: open a helpdesk ticket via the central helpdesk
-        services. Returns the ticket ref or None."""
+        """Best-effort: open a helpdesk ticket for the signed-in person
+        through the support-tickets port (routed, tiered, checked for crisis
+        language). Returns the ticket number as text, or None (a guest, or
+        the ticket could not be raised)."""
+        actor = getattr(self, "_auth_user", None)
+        if not actor or not actor.get("username"):
+            return None
         try:
-            from education_system.systems.university.domains.pastoral.domain.services import (
-                helpdesk as helpdesk_tickets,
-            )
-            ref = helpdesk_tickets.create_ticket(
-                title=f"[Bakery] {subject}",
-                description=body,
-                user=self.current_user or "Guest",
-                category="bakery",
-            )
-            return str(ref) if ref else None
+            from education_system.systems.university.services.bus import support_tickets_bus
+            result = support_tickets_bus.raise_ticket(
+                {"username": actor["username"], "role": actor.get("role")},
+                subject=f"[Bakery] {subject}", description=body,
+                category="General", channel="bakery_feedback")
+            return str(result["ticket_id"])
         except Exception:
-            logger.debug("Helpdesk routing skipped (module unavailable)",
-                         exc_info=True)
+            logger.warning("Helpdesk ticket for bakery feedback not raised", exc_info=True)
             return None
 
     def list_feedback(self, *, status=None):

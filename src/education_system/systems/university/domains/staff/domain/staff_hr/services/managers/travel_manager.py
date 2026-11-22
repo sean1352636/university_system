@@ -14,6 +14,8 @@ from datetime import datetime
 from typing import Any, Dict, List, Optional
 import json
 
+from education_system.systems.university.domains.staff.domain.staff_hr import access
+from education_system.systems.university.domains.staff.domain.staff_hr.services.managers import _people as people
 from education_system.systems.university.infrastructure.database.db import get_connection, transaction
 from education_system.systems.university.infrastructure.activity_logger import log_activity
 from education_system.systems.university.infrastructure.sql_safety import validate_identifier  # nosec B608
@@ -352,9 +354,15 @@ class TravelManager:
 
     @staticmethod
     def approve_request(approval_id: int, approver_id: str,
-                        comments: str = None) -> None:
-        """Approve a travel request at one level."""
+                        comments: str = None, actor: Any = None) -> None:
+        """Approve a travel request at one level.
+
+        The level must still be pending, and the decider — ``actor``, else
+        the person ``approver_id`` names — must be the traveller's line
+        manager or HR, never the traveller (PermissionError otherwise)."""
         with transaction() as conn:
+            request_id, who = _decide(conn, approval_id, approver_id, actor, 'approve')
+            approver_id = who['username']
             # Update this approval level
             conn.execute('''
                 UPDATE travel_approvals
@@ -362,16 +370,6 @@ class TravelManager:
                     reviewed_date = ?
                 WHERE approval_id = ?
             ''', (approver_id, comments, datetime.now().isoformat(), approval_id))
-
-            # Get the request_id for this approval
-            row = conn.execute('''
-                SELECT request_id FROM travel_approvals WHERE approval_id = ?
-            ''', (approval_id,)).fetchone()
-
-            if not row:
-                raise ValueError(f"Travel approval {approval_id} not found")
-
-            request_id = row['request_id']
 
             # Check if all levels are now approved
             pending = conn.execute('''
@@ -394,9 +392,12 @@ class TravelManager:
 
     @staticmethod
     def reject_request(approval_id: int, approver_id: str,
-                       comments: str = None) -> None:
-        """Reject a travel request."""
+                       comments: str = None, actor: Any = None) -> None:
+        """Reject a travel request; who may decide as for
+        :meth:`approve_request`."""
         with transaction() as conn:
+            request_id, who = _decide(conn, approval_id, approver_id, actor, 'reject')
+            approver_id = who['username']
             # Update this approval level
             conn.execute('''
                 UPDATE travel_approvals
@@ -404,16 +405,6 @@ class TravelManager:
                     reviewed_date = ?
                 WHERE approval_id = ?
             ''', (approver_id, comments, datetime.now().isoformat(), approval_id))
-
-            # Get the request_id for this approval
-            row = conn.execute('''
-                SELECT request_id FROM travel_approvals WHERE approval_id = ?
-            ''', (approval_id,)).fetchone()
-
-            if not row:
-                raise ValueError(f"Travel approval {approval_id} not found")
-
-            request_id = row['request_id']
 
             # Reject the entire request
             conn.execute('''
@@ -568,3 +559,23 @@ class TravelManager:
             }
 
             return stats
+
+
+def _decide(conn, approval_id: int, approver_id: Any, actor: Any, verb: str):
+    """The request a pending travel approval belongs to, and the decider
+    (ValueError when the level is not pending, PermissionError when the
+    decider may not approve for the traveller)."""
+    row = conn.execute('''
+        SELECT ta.request_id, ta.status, tr.user_id
+        FROM travel_approvals ta
+        JOIN travel_requests tr ON ta.request_id = tr.request_id
+        WHERE ta.approval_id = ?
+    ''', (approval_id,)).fetchone()
+    if not row:
+        raise ValueError(f"Travel approval {approval_id} not found")
+    if row['status'] != 'pending':
+        raise ValueError("This approval has already been decided")
+    who = people.require_approver(actor, approver_id, row['user_id'], conn,
+                                  f"{verb} this travel request")
+    access.audit(conn, who, f'travel_{verb}', row['user_id'], 'travel_approvals', approval_id)
+    return row['request_id'], who

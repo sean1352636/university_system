@@ -33,6 +33,10 @@ _INTAKE_REGISTRARS: dict[str, list[str]] = {
     ],
     "sixth_form": [
         "education_system.systems.sixth_form.domain.admissions.college_intake:register_intake_consumer",
+        # University UCAS decisions + enrolments -> the sixth form's own rows.
+        "education_system.systems.sixth_form.domain.progression.university.ucas_events:register_consumers",
+        # University enrolled / progressed / withdrawn -> KS5 destinations.
+        "education_system.systems.sixth_form.domain.progression.destinations.university_confirmations:register_consumers",
     ],
     "university": [
         "education_system.systems.university.domains.admissions.domain.sixthform_intake:register_intake_consumer",

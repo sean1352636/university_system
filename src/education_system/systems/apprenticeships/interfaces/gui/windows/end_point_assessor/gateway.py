@@ -18,7 +18,7 @@ from typing import Any
 
 from education_system.systems.apprenticeships import config
 from education_system.systems.apprenticeships.interfaces.gui import widgets
-from education_system.systems.apprenticeships.services import gateway_service
+from education_system.systems.apprenticeships.application.assessments import gateway_service
 
 logger = logging.getLogger(__name__)
 
@@ -210,7 +210,7 @@ def _reject(gui, apprentice_id: int, name: str) -> None:
 
 def _name(gui, apprentice_id: int) -> str:
     """The apprentice's name for the heading, or a bare id."""
-    from education_system.systems.apprenticeships.services import apprentice_service
+    from education_system.systems.apprenticeships.application.apprentices import apprentice_service
 
     try:
         return apprentice_service.get_apprentice(gui.actor, apprentice_id).full_name

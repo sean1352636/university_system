@@ -468,38 +468,16 @@ class NailBarCLI:
         reason = input("Refund reason (optional): ").strip() or None
         processed_by = input("Processed by (Enter for 'System'): ").strip() or "System"
 
-        appointment_id = txn.get("reference_id")
-        refund_ref = f"NAILBAR-REFUND-{datetime.now().strftime('%Y%m%d%H%M%S')}"
-        refund_notes = reason or f"Nail Bar/Salon service refund (transaction_id={txn_id})"
-
-        with get_db_connection() as conn:
-            conn.execute(
-                "UPDATE transactions SET status = 'refunded' "
-                "WHERE transaction_id = ? AND source_type = 'nail_bar'",
-                (txn_id,),
-            )
-            cur = conn.execute(
-                """
-                INSERT INTO unified_refunds
-                (source_type, reference_id, reference_type, refund_date, amount,
-                 refund_method, refund_reference, student_id, processed_by, notes, status)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'processed')
-                """,
-                ('nail_bar',
-                 str(appointment_id) if appointment_id is not None else None,
-                 'appointment',
-                 datetime.now().strftime('%Y-%m-%d %H:%M:%S'), amount, refund_method,
-                 refund_ref, txn["customer_id"], processed_by, refund_notes),
-            )
-            refund_row_id = cur.lastrowid
-            conn.commit()
-
-        # Auto-post to the general ledger (cash has moved). Never fatal.
-        try:
-            from education_system.systems.university.domains.finance.domain.ledger import notify_ledger
-            notify_ledger('refund', refund_row_id, posted_by=processed_by)
-        except Exception as e:
-            print(f"Note: ledger posting skipped ({e}).")
+        # The service marks the transaction refunded and posts the refund
+        # to Finance (crediting the student account when chosen).
+        refund = TransactionManager.process_refund(
+            transaction_id=txn_id, amount=amount, refund_method=refund_method,
+            processed_by=processed_by, reason=reason,
+        )
+        if not refund:
+            print("Refund could not be processed.")
+            return
+        refund_ref = refund['refund_ref']
 
         print(f"\nRefund of £{amount:.2f} processed successfully.")
         print(f"  Refund Reference: {refund_ref}")

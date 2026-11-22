@@ -13,7 +13,9 @@ from education_system.systems.sixth_form.interfaces.gui._ui import grab_when_vie
 
 import logging
 import tkinter as tk
-from tkinter import messagebox, ttk
+from tkinter import ttk
+from education_system.systems.sixth_form.interfaces.gui._sidebar import SidebarBook
+from education_system.platform.delivery.gui.parented_dialogs import messagebox
 from typing import Any, Callable
 from education_system.systems.sixth_form.domain.learners.students import students as student_data
 from education_system.systems.sixth_form.domain.pastoral.tutor_groups import tutor_groups as data
@@ -47,7 +49,7 @@ def open_directory(gui) -> None:
     frame = _clear(gui)
     _heading(frame, "Tutor Groups")
 
-    nb = ttk.Notebook(frame)
+    nb = SidebarBook(frame)
     nb.pack(fill="both", expand=True)
 
     dir_tab = ttk.Frame(nb, padding=8)

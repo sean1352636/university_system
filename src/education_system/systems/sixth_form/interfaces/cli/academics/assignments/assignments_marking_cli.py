@@ -11,8 +11,12 @@ import logging
 from typing import Any, Callable
 
 from education_system.systems.sixth_form.domain.academics.assignments import (
-    assignments as data,
     assignments_marking as marking,
+)
+from education_system.systems.sixth_form.domain.academics.assignments import (
+    crud as assignments_crud,
+    models as assignments_models,
+    store as assignments_store,
 )
 from education_system.systems.sixth_form.interfaces.cli.academics.assignments.assignments_cli import (
     _input,
@@ -289,8 +293,8 @@ def mark_by_criterion_flow() -> None:
     _pause()
 
 
-def _print_mark_outcome(sub: data.Submission,
-                         assignment: data.Assignment) -> None:
+def _print_mark_outcome(sub: assignments_models.Submission,
+                         assignment: assignments_models.Assignment) -> None:
     print(f"\n  ✓ Raw mark   : "
           f"{sub.raw_marks if sub.raw_marks is not None else '—'}")
     if sub.penalty_percent:
@@ -382,10 +386,10 @@ def boundaries_flow() -> None:
     _pause()
 
 
-def _regrade_assignment(assignment: data.Assignment) -> int:
+def _regrade_assignment(assignment: assignments_models.Assignment) -> int:
     """Re-derive letters after a boundary change."""
     n = 0
-    for sub in data.list_submissions(assignment_id=assignment.assignment_id):
+    for sub in assignments_store.list_submissions(assignment_id=assignment.assignment_id):
         if sub.raw_marks is None:
             continue
         marking.apply_marks(sub.submission_id, raw_marks=sub.raw_marks,
@@ -478,7 +482,7 @@ def view_marks_flow() -> None:
                   f"{(m.grade or '—'):<6}  "
                   f"{(m.marked_by or '—')[:16]:<16}  "
                   f"{m.marked_on or '—'}")
-    current = data.get_submission(sub.submission_id)
+    current = assignments_store.get_submission(sub.submission_id)
     print(f"\n  {marking.moderation_state(sub.submission_id).message}")
     if current:
         _print_mark_outcome(current, a)
@@ -498,7 +502,7 @@ def moderation_queue_flow() -> None:
           f"{'First':>6}  {'Second':>7}  {'Gap':>5}  Tolerance")
     print("  " + "-" * 80)
     for m in rows:
-        sub = data.get_submission(m.submission_id)
+        sub = assignments_store.get_submission(m.submission_id)
         sid = sub.student_id if sub else "?"
         print(f"  {m.submission_id:>5}  {sid:<10}  "
               f"{names.get(sid, '?')[:20]:<20}  "
@@ -652,7 +656,7 @@ def penalties_flow() -> None:
               + (f", after {a.late_penalty_grace_days} grace day(s)"
                   if a.late_penalty_grace_days else ""))
     names = _names()
-    rows = data.list_submissions(assignment_id=a.assignment_id)
+    rows = assignments_store.list_submissions(assignment_id=a.assignment_id)
     print()
     print(f"  {'Sub':>5}  {'Student':<10}  {'Name':<18}  "
           f"{'Raw':>6}  {'Pen':>6}  {'Final':>6}  Status")
@@ -938,9 +942,9 @@ def apply_comment_flow() -> None:
                default="y").lower() not in ("y", "yes"):
         _pause()
         return
-    current = data.get_submission(sub.submission_id)
+    current = assignments_store.get_submission(sub.submission_id)
     existing = (current.feedback or "") if current else ""
-    data.update_submission(sub.submission_id, {
+    assignments_crud.update_submission(sub.submission_id, {
         "feedback": (existing + "\n\n" + text).strip()})
     print("  ✓ Appended.")
     _pause()

@@ -1,10 +1,10 @@
 # Permissions
 
-Apprenticeships only — `fe_college` has no permission model yet.
+Apprenticeships only. FE College's access rules are in `systems/fe_college/services/session.py`.
 
 Everything here is defined in
-`education_system/systems/apprenticeships/config.py` and enforced in
-`services/access.py`. No interface module grants or checks a capability
+`education_system/systems/apprenticeships/config/__init__.py` and enforced in
+`application/security/access.py`. No interface module grants or checks a capability
 of its own.
 
 ## Roles
@@ -91,7 +91,7 @@ scoping the query, not by adding another permission.
 
 ## Scope
 
-Permission is only half the check. `services/access.Actor` carries the
+Permission is only half the check. `application/security/access.Actor` carries the
 records the login resolves to:
 
 ```python
@@ -142,5 +142,5 @@ User Accounts**, or with
 
 A role is not enough on its own: an apprentice, employer or staff login
 also has to be **linked** to its record, because every scope check reads
-that link. `services/account_service.LINK_TARGETS` names what each role
+that link. `application/security/account_service.LINK_TARGETS` names what each role
 needs, and the accounts screen flags the ones that are missing.

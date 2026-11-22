@@ -10,7 +10,7 @@ from unittest.mock import Mock, patch, MagicMock
 from io import StringIO
 import sys
 
-from education_system.systems.university.domains.pastoral.domain.health.appointments.appointment_booking import (
+from education_system.systems.university.domains.health.domain.health.appointments.appointment_booking import (
     manage_provider_schedules,
     add_provider_schedule,
     view_provider_schedules,
@@ -367,7 +367,7 @@ class TestAppointmentManagement:
     def test_show_upcoming_appointments(self, test_db, mock_auth, capsys):
         """Test showing upcoming appointments"""
         # Mock get_user_student_id
-        with patch('education_system.systems.university.domains.pastoral.domain.health.appointments.appointment_booking.get_user_student_id', return_value='S001'):
+        with patch('education_system.systems.university.domains.health.domain.health.appointments.appointment_booking.get_user_student_id', return_value='S001'):
             # Add future appointment
             cursor = test_db.cursor()
             future_date = (datetime.now() + timedelta(days=3)).strftime('%Y-%m-%d')

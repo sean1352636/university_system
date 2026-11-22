@@ -41,6 +41,7 @@ __all__ = [
     "Decision",
     "history_for_choice",
     "last_decision",
+    "latest_for_choices",
     "list_decisions",
     "record",
 ]
@@ -223,6 +224,37 @@ def last_decision(sf_choice_id: int) -> Decision | None:
     """The most recent decision on a choice — who currently owns it."""
     history = history_for_choice(sf_choice_id)
     return history[-1] if history else None
+
+
+def latest_for_choices(sf_choice_ids) -> dict[int, Decision]:
+    """``{sf_choice_id: latest Decision}`` for many choices, one query.
+
+    What the admissions screens overlay on the sixth form's copy of each
+    choice, so a decision shows here the moment it is recorded rather than
+    once the sixth form has applied the published event.
+    """
+    ids = sorted({int(i) for i in sf_choice_ids if i is not None})
+    if not ids:
+        return {}
+    init_db()
+    out: dict[int, Decision] = {}
+    conn = get_connection()
+    try:
+        for start in range(0, len(ids), 500):
+            chunk = ids[start:start + 500]
+            marks = ",".join("?" * len(chunk))
+            # db-audit: ignore[DBW001] - placeholder join only
+            rows = conn.execute(
+                f"""SELECT * FROM ucas_decisions
+                     WHERE sf_choice_id IN ({marks})
+                     ORDER BY decided_at, decision_id""",  # nosec B608
+                chunk,
+            ).fetchall()
+            for r in rows:
+                out[r["sf_choice_id"]] = _row(r)
+    finally:
+        conn.close()
+    return out
 
 
 def list_decisions(

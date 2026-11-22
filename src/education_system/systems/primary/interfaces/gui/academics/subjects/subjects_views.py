@@ -5,6 +5,7 @@ from __future__ import annotations
 import functools
 import logging
 import tkinter as tk
+import types
 from tkinter import messagebox, ttk
 from typing import Any, Callable
 
@@ -12,11 +13,13 @@ from education_system.systems.primary.domain.academics.subjects import (
     subjects as data,
 )
 from education_system.systems.primary.domain.academics.subjects.subjects import (
-    KEY_STAGES, QUALIFICATIONS,
+    DEFAULT_KEY_STAGE, DEFAULT_QUALIFICATION, KEY_STAGES, QUALIFICATIONS,
 )
 from education_system.systems.primary.domain.learners.pupils.pupils import (
     ValidationError,
 )
+from education_system.platform.delivery.gui.parented_dialogs import make_toplevel
+from education_system.systems.primary.interfaces.gui import kit
 
 logger = logging.getLogger(__name__)
 
@@ -46,11 +49,20 @@ def _safe_view(func: Callable[..., None]) -> Callable[..., None]:
     return wrapper
 
 
+def _departments() -> list[str]:
+    """Departments already used, to pick from (a new one can be typed)."""
+    try:
+        return sorted({s.department for s in data.list_all() if s.department},
+                      key=str.lower)
+    except Exception:  # noqa: BLE001 - typing still works
+        logger.debug("department list failed", exc_info=True)
+        return []
+
+
 def _form_dialog(host, title: str, initial: dict[str, Any] | None = None
                  ) -> dict[str, Any] | None:
-    dlg = tk.Toplevel(host.root)
+    dlg = make_toplevel(host.root)
     dlg.title(title)
-    dlg.transient(host.root)
     dlg.geometry("460x420")
     dlg.update_idletasks()
     try:
@@ -65,8 +77,8 @@ def _form_dialog(host, title: str, initial: dict[str, Any] | None = None
 
     code_var  = tk.StringVar(value=str(initial.get("code") or ""))
     name_var  = tk.StringVar(value=str(initial.get("name") or ""))
-    ks_var    = tk.StringVar(value=str(initial.get("key_stage") or "Both"))
-    qual_var  = tk.StringVar(value=str(initial.get("qualification") or "GCSE"))
+    ks_var    = tk.StringVar(value=str(initial.get("key_stage") or DEFAULT_KEY_STAGE))
+    qual_var  = tk.StringVar(value=str(initial.get("qualification") or DEFAULT_QUALIFICATION))
     dept_var  = tk.StringVar(value=str(initial.get("department") or ""))
     core_var  = tk.BooleanVar(value=bool(initial.get("is_core")))
     active_var = tk.BooleanVar(
@@ -80,10 +92,11 @@ def _form_dialog(host, title: str, initial: dict[str, Any] | None = None
         ("Key stage:",     ttk.Combobox(frm, textvariable=ks_var,
                                          values=list(KEY_STAGES),
                                          state="readonly", width=10)),
-        ("Qualification:", ttk.Combobox(frm, textvariable=qual_var,
+        ("Curriculum:", ttk.Combobox(frm, textvariable=qual_var,
                                          values=list(QUALIFICATIONS),
                                          state="readonly", width=10)),
-        ("Department:",    ttk.Entry(frm, textvariable=dept_var, width=34)),
+        ("Department:",    kit.ChoiceField(frm, dept_var, choices=_departments(),
+                                            blank=True, editable=True, width=32)),
         ("Core?",          ttk.Checkbutton(frm, variable=core_var)),
         ("Active?",        ttk.Checkbutton(frm, variable=active_var)),
         ("Notes:",         ttk.Entry(frm, textvariable=notes_var, width=34)),
@@ -123,10 +136,17 @@ def _form_dialog(host, title: str, initial: dict[str, Any] | None = None
 @_safe_view
 def open_subjects(host) -> None:
     logger.debug("GUI: open_subjects")
-    host._clear_content()
-    root = host.content_frame
-    ttk.Label(root, text="Subjects (KS3 / GCSE)",
-              font=("", 16, "bold")).pack(anchor="w", pady=(0, 8))
+    kit.show_page(host, "Subjects", lambda parent: _draw_subjects(parent, host))
+
+
+def _draw_subjects(root, main_host) -> None:
+    kit.page_heading(root, "Subjects", "The subjects catalogue by key stage and curriculum.")
+    # The helpers below take a "host" for their pop-up parent and status
+    # line: use this page's window (the main window or a pop-out).
+    host = types.SimpleNamespace(
+        root=root.winfo_toplevel(),
+        status_var=getattr(main_host, "status_var", None) or tk.StringVar(master=root),
+    )
 
     summary_var = tk.StringVar()
     ttk.Label(root, textvariable=summary_var, foreground="#666").pack(
@@ -139,7 +159,7 @@ def open_subjects(host) -> None:
     ttk.Combobox(bar, textvariable=ks_var,
                  values=["", *KEY_STAGES], state="readonly", width=8).pack(
         side="left", padx=(0, 8))
-    ttk.Label(bar, text="Qualification:").pack(side="left", padx=(0, 4))
+    ttk.Label(bar, text="Curriculum:").pack(side="left", padx=(0, 4))
     qual_var = tk.StringVar(value="")
     ttk.Combobox(bar, textvariable=qual_var,
                  values=["", *QUALIFICATIONS], state="readonly", width=8).pack(
@@ -164,16 +184,12 @@ def open_subjects(host) -> None:
                command=lambda: _refresh()).pack(side="left", padx=2)
 
     cols = ("id", "code", "name", "ks", "qual", "dept", "core", "active")
-    tree = ttk.Treeview(root, columns=cols, show="headings", height=18)
-    for c, label, w in [
+    tree = kit.tree(root, [
         ("id", "ID", 50), ("code", "Code", 80),
         ("name", "Name", 220), ("ks", "Key Stage", 80),
-        ("qual", "Qualification", 100), ("dept", "Department", 140),
+        ("qual", "Curriculum", 150), ("dept", "Department", 140),
         ("core", "Core", 60), ("active", "Active", 70),
-    ]:
-        tree.heading(c, text=label)
-        tree.column(c, width=w, anchor="w")
-    tree.pack(fill="both", expand=True)
+    ], height=18, stretch=("name",))
 
     def _refresh() -> None:
         for i in tree.get_children():

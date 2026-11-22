@@ -29,7 +29,7 @@ import datetime as _dt
 import logging
 import os
 import tkinter as tk
-from tkinter import messagebox
+from education_system.platform.delivery.gui.parented_dialogs import messagebox
 from typing import Callable
 
 logger = logging.getLogger(__name__)
@@ -175,12 +175,15 @@ class IdleTimeoutWatcher:
             self._fire_timeout()
             return
 
+        # Schedule first. The warning is modal, so scheduling after it would
+        # stop the checks until someone dismissed it, and an unattended session
+        # would never time out.
+        self._schedule_next_check()
+
         if (self.warning_lead_seconds > 0
                 and remaining <= self.warning_lead_seconds
                 and not self._warning_shown):
             self._show_warning(int(remaining))
-
-        self._schedule_next_check()
 
     def _show_warning(self, seconds_left: int) -> None:
         self._warning_shown = True

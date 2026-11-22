@@ -242,8 +242,7 @@ or University.
 
 | Interface | Location |
 |-----------|----------|
-| GUI | **Communication → Email**, then the **Cross-System** tab |
-| CLI | **Communication → Email → 3) Cross-System Messages** |
+| GUI | **Staff & Communication → Email / Messaging**, where staff in other systems appear as recipients when composing |
 
 ### What it does
 
@@ -266,44 +265,31 @@ table) so the recipient sees them from whichever system they log into.
 | `InterSystemMessagingService.get_staff_list(system)` | List staff in a target system for the recipient picker |
 | `InterSystemMessagingService.search_messages` | Search inbox + sent by subject, body, or pupil name |
 
-The reusable GUI panel lives in
-`education_system.shared.messaging.cross_system_panel` and the CLI in
-`education_system.shared.messaging.cross_system_cli`.
+A reusable GUI panel, which these screens do not import, lives in
+`education_system.platform.features.messaging.cross_system_panel` and the CLI in
+`education_system.platform.features.messaging.cross_system_cli`.
 
 ---
 
 ## Idle / inactivity auto-logout
 
-The Primary School GUI and CLI both auto-log-out after **30 minutes of
-inactivity** to reduce the risk of an unattended terminal exposing pupil
-data — particularly important on shared classroom or staffroom machines.
-
-| Interface | How activity is tracked |
-|-----------|-------------------------|
-| GUI | Mouse motion, key presses, mouse buttons, and scroll-wheel events on the main window reset the idle timer. |
-| CLI | The menu prompt is wrapped in a `SIGALRM` watchdog that fires after 30 minutes of no input. |
-
-When the timeout fires, the GUI shows a `Session Expired` warning then
-returns the user to the universal login screen; the CLI prints
-`⚠ Logged out after 30 minutes of inactivity.` and exits cleanly.
-
-To change the default, edit the `attach_idle_timeout(self, ..., timeout_minutes=30)`
-call in `primary_school/main_gui.py` or the `enable_idle_timeout(30, ...)`
-call in `primary_school/cli/cli_main.py`.
-
-See `docs/primary/security/SESSION_TIMEOUT.md` for the full
-configuration and security rationale.
+The Primary School GUI and CLI log out after 30 minutes of inactivity
+(`EDU_IDLE_TIMEOUT_MINUTES`; `0` turns it off). Still lock shared classroom or
+staffroom machines when you walk away. See
+[SESSION_TIMEOUT.md](../security/SESSION_TIMEOUT.md).
 
 ---
 
 ## Quick Reference
 
+> Student and parent logins cannot open these screens yet; see [SECURITY.md](../security/SECURITY.md#role-based-access-control-rbac). This table describes the intended access.
+
 | Module | Access Path | Key Roles |
 |---|---|---|
-| Email | Sidebar → Communication → Email | admin, teacher |
-| Cross-System Messages | Email → Cross-System tab | admin, teacher |
-| Notifications | Top bar bell icon / Settings | all roles |
-| Announcements | Sidebar → Communication → Announcements | admin |
-| Calendar | Sidebar → Communication → Calendar | admin, teacher |
-| Parents' Evening | Sidebar → Communication → Parents' Evening | admin, teacher, parent |
-| Communication Log | Sidebar → Communication → Log | admin, teacher |
+| Email | Sidebar → Staff & Communication → Email / Messaging | admin, teacher |
+| Cross-System Messages | Email / Messaging → compose | admin, teacher |
+| Notifications | Sidebar → Staff & Communication → Notifications | admin, teacher |
+| Announcements | Sidebar → Staff & Communication → Announcements | admin |
+| Calendar | Sidebar → Academic Management → Calendar | admin, teacher |
+| Parents' Evening | Sidebar → Staff & Communication → Parents' Evenings | admin, teacher, parent |
+| Communication Log | Sidebar → Staff & Communication → Parent Contacts | admin, teacher |

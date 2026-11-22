@@ -6,15 +6,16 @@ import logging
 import tkinter as tk
 from pathlib import Path
 from tkinter import filedialog, messagebox, ttk
-from typing import Callable
+from typing import Any
+
 from education_system.systems.primary.domain.operations.reporting.custom_export import custom_export as data
-from education_system.platform import branding
 from education_system.systems.primary.domain.operations.reporting.custom_export.custom_export import (
     DEFAULT_FORMAT,
     DatasetSpec,
     FORMATS,
     ValidationError,
 )
+from education_system.systems.primary.interfaces.gui import kit
 
 logger = logging.getLogger(__name__)
 
@@ -23,12 +24,48 @@ WIN_MINSIZE = (1200, 800)
 
 
 def open_custom_export_window(parent=None) -> None:
-    master = getattr(parent, "root", parent)
-    win = tk.Toplevel(master) if master is not None else tk.Tk()
-    win.title(f"Custom Export — {branding.SYSTEM_NAME}")
-    win.geometry(WIN_GEOMETRY)
-    win.minsize(*WIN_MINSIZE)
-    ExportBuilder(win)
+    if parent is None:
+        root = tk.Tk()
+        root.title("Custom Export")
+        root.geometry(WIN_GEOMETRY)
+        root.minsize(*WIN_MINSIZE)
+        frame = ttk.Frame(root, padding=10)
+        frame.pack(fill="both", expand=True)
+        _draw_custom_export(frame)
+        return
+    kit.show_page(parent, "Custom Export", _draw_custom_export)
+
+
+def _draw_custom_export(parent: ttk.Frame) -> None:
+    kit.page_heading(parent, "Custom Export",
+                     "Pick a dataset, the columns and filters you want, then preview or "
+                     "export it.")
+    ExportBuilder(parent)
+
+
+# Filters every dataset spells the same way get a proper picker; any other
+# filter offers the values the dataset already holds (and can still be typed).
+_PUPIL_KEYS = {"pupil_id", "student_id"}
+_DATE_KEYS = {"date_from", "date_to", "from_date", "to_date"}
+
+
+def _row_value(row: Any, key: str) -> Any:
+    if isinstance(row, dict):
+        return row.get(key)
+    return getattr(row, key, None)
+
+
+def _distinct_values(spec: DatasetSpec, key: str, cache: dict) -> list[str]:
+    if "rows" not in cache:
+        try:
+            cache["rows"] = list(spec.list_fn())
+        except Exception:  # noqa: BLE001 - suggestions are a nicety
+            logger.debug("custom export: could not list %s for filter values",
+                         spec.key, exc_info=True)
+            cache["rows"] = []
+    values = {str(v) for r in cache["rows"]
+              if (v := _row_value(r, key)) not in (None, "")}
+    return sorted(values, key=str.lower)
 
 
 class ExportBuilder:
@@ -43,7 +80,7 @@ class ExportBuilder:
 
     def _build(self) -> None:
         paned = ttk.Panedwindow(self.root, orient="horizontal")
-        paned.pack(fill="both", expand=True, padx=10, pady=10)
+        paned.pack(fill="both", expand=True)
 
         # ── Left pane: dataset list ──
         left = ttk.LabelFrame(paned, text="Datasets")
@@ -120,12 +157,13 @@ class ExportBuilder:
         opts = ttk.Frame(right)
         opts.pack(fill="x", padx=4, pady=4)
         ttk.Label(opts, text="Format:").pack(side="left")
-        self.fmt_cb = ttk.Combobox(opts, values=FORMATS,
+        self.fmt_cb = ttk.Combobox(opts, values=list(FORMATS),
                                        state="readonly", width=12)
         self.fmt_cb.set(DEFAULT_FORMAT)
         self.fmt_cb.pack(side="left", padx=(2, 10))
         ttk.Label(opts, text="Row limit (blank=all):").pack(side="left")
-        self.limit_e = ttk.Entry(opts, width=8)
+        self.limit_e = kit.NumberField(opts, tk.StringVar(), from_=1, to=1000000,
+                                       width=8)
         self.limit_e.pack(side="left", padx=(2, 10))
         ttk.Label(opts, text="Output file:").pack(side="left")
         self.path_e = ttk.Entry(opts, width=40)
@@ -197,15 +235,15 @@ class ExportBuilder:
                        text="(this dataset takes no filters)",
                        foreground="#888").pack(anchor="w")
         else:
+            cache: dict = {}
             for i, k in enumerate(spec.filter_keys):
                 row = ttk.Frame(self.filt_holder)
                 row.pack(fill="x", pady=2)
                 ttk.Label(row, text=f"{k}:", width=18,
                             anchor="e").pack(side="left")
                 v = tk.StringVar()
-                ttk.Entry(row, textvariable=v,
-                            width=28).pack(side="left", padx=4,
-                                              fill="x", expand=True)
+                self._filter_widget(row, k, v, spec, cache).pack(
+                    side="left", padx=4, fill="x", expand=True)
                 self._filter_entries[k] = v
                 ttk.Label(row,
                             text="(blank = no filter; "
@@ -217,6 +255,22 @@ class ExportBuilder:
         ext = (self.fmt_cb.get() if self.fmt_cb.get() != "markdown"
                else "md")
         self.path_e.insert(0, f"{spec.key}.{ext}")
+
+    def _filter_widget(self, row: ttk.Frame, key: str, var: tk.StringVar,
+                       spec: DatasetSpec, cache: dict) -> tk.Misc:
+        if key in _PUPIL_KEYS:
+            return kit.PupilPicker(row, var, width=36)
+        if key in _DATE_KEYS:
+            return kit.DateField(row, var)
+        if key == "year_group":
+            return kit.YearGroupPicker(row, var, blank=True)
+        if key == "academic_year":
+            return kit.AcademicYearPicker(row, var, blank=True)
+        if key == "active_only":
+            return kit.ChoiceField(row, var, choices=("true", "false"), blank=True,
+                                   width=10)
+        return kit.ChoiceField(row, var, choices=_distinct_values(spec, key, cache),
+                               blank=True, editable=True, width=28)
 
     def _selected_columns(self) -> list[str] | None:
         if not self._current_spec:

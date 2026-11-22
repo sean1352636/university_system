@@ -391,8 +391,8 @@ def init_db():
         CREATE TABLE IF NOT EXISTS restaurant_offer_usage (
             usage_id TEXT PRIMARY KEY,
             offer_id TEXT NOT NULL,
-            customer_id TEXT NOT NULL,
-            order_id TEXT NOT NULL,
+            customer_id INTEGER NOT NULL,
+            order_id INTEGER NOT NULL,
             usage_date TEXT,
             discount_amount REAL,
             FOREIGN KEY (offer_id) REFERENCES restaurant_special_offers (offer_id),
@@ -566,7 +566,7 @@ def init_db():
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS restaurant_mobile_orders (
             mobile_order_id TEXT PRIMARY KEY,
-            order_id TEXT NOT NULL,
+            order_id INTEGER NOT NULL,
             app_type TEXT NOT NULL,
             device_info TEXT,
             location_info TEXT,

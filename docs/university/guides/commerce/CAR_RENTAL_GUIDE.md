@@ -322,5 +322,5 @@ The system tracks:
 ---
 
 **Last Updated**: February 2026
-**Module**: `university_system/modules/domain/carrental/`
+**Module**: `src/education_system/systems/university/plugins/campus_commerce/domain/carrental/`
 **Support**: carrental@university.edu | (555) 123-CARS

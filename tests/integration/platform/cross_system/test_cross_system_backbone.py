@@ -305,7 +305,7 @@ def test_k12_clis_expose_cross_system_menu():
     """Each K-12 CLI surfaces the Student Journey item."""
     from education_system.systems.nursery import menu as nursery_menu
     from education_system.systems.primary import cli_main as primary_cli
-    from education_system.systems.secondary import cli_main as secondary_cli
+    from education_system.systems.secondary.app import cli_main as secondary_cli
     from education_system.systems.sixth_form.interfaces.cli import (
         cli_main as college_cli,
     )

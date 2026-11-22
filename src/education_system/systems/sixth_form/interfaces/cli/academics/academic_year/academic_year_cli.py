@@ -24,7 +24,7 @@ from education_system.systems.sixth_form.domain.academics.academic_year.academic
 )
 # Reuse the pure helpers from the views module.
 from education_system.systems.sixth_form.domain.academics.academic_year import (
-    academic_year_views as _views,
+    planning as academic_year_planning,
 )
 
 logger = logging.getLogger(__name__)
@@ -624,9 +624,9 @@ def duplicate_year_flow() -> None:
         print("\n  Cancelled.")
         return
     try:
-        new_name = _views._bump_year_name(src.name)
-        new_start = _views._shift_iso(src.start_date, 365)
-        new_end = _views._shift_iso(src.end_date, 365)
+        new_name = academic_year_planning._bump_year_name(src.name)
+        new_start = academic_year_planning._shift_iso(src.start_date, 365)
+        new_end = academic_year_planning._shift_iso(src.end_date, 365)
     except Exception as e:
         print(f"\n  ✗ Can't build new year: {e}")
         _pause()
@@ -658,8 +658,8 @@ def duplicate_year_flow() -> None:
             data.create_term({
                 "year_id": new_year.year_id,
                 "name": t.name,
-                "start_date": _views._shift_iso(t.start_date, 365),
-                "end_date": _views._shift_iso(t.end_date, 365),
+                "start_date": academic_year_planning._shift_iso(t.start_date, 365),
+                "end_date": academic_year_planning._shift_iso(t.end_date, 365),
                 "notes": t.notes,
             })
         except ValidationError as e:
@@ -670,8 +670,8 @@ def duplicate_year_flow() -> None:
             data.create_break({
                 "year_id": new_year.year_id,
                 "name": b.name, "type": b.type,
-                "start_date": _views._shift_iso(b.start_date, 365),
-                "end_date": _views._shift_iso(b.end_date, 365),
+                "start_date": academic_year_planning._shift_iso(b.start_date, 365),
+                "end_date": academic_year_planning._shift_iso(b.end_date, 365),
                 "notes": b.notes,
             })
         except ValidationError as e:
@@ -770,7 +770,7 @@ def autofill_terms_flow() -> None:
     except _UserAbort:
         print("\n  Cancelled.")
         return
-    plan = _views._split_even_three(y)
+    plan = academic_year_planning._split_even_three(y)
     existing = {t.name for t in data.list_terms(year_id=y.year_id)}
     print(f"\n  Year #{y.year_id} {y.name}")
     for name, s, e in plan:
@@ -803,7 +803,7 @@ def suggest_halfterms_flow() -> None:
         print("\n  Cancelled.")
         return
     terms = data.list_terms(year_id=y.year_id)
-    sugg = _views._suggest_halfterms(y.year_id, terms)
+    sugg = academic_year_planning._suggest_halfterms(y.year_id, terms)
     if not sugg:
         print("\n  No Autumn/Spring/Summer terms to base "
               "suggestions on.")
@@ -884,8 +884,8 @@ def copy_terms_flow() -> None:
             data.create_term({
                 "year_id": dest.year_id,
                 "name": t.name,
-                "start_date": _views._shift_iso(t.start_date, shift),
-                "end_date": _views._shift_iso(t.end_date, shift),
+                "start_date": academic_year_planning._shift_iso(t.start_date, shift),
+                "end_date": academic_year_planning._shift_iso(t.end_date, shift),
                 "notes": t.notes,
             })
             added += 1
@@ -1020,7 +1020,7 @@ def terms_check_flow() -> None:
         print("\n  No terms.")
         _pause()
         return
-    status = _views._classify_terms(y, terms)
+    status = academic_year_planning._classify_terms(y, terms)
     print(f"\n  Year #{y.year_id} {y.name}")
     print(f"  {'#':>4}  {'Name':<14}  {'Start':<10}  "
           f"{'End':<10}  {'Teach':>5}  Status")
@@ -1038,7 +1038,7 @@ def terms_check_flow() -> None:
             issues += 1
         print(f"  {t.term_id:>4}  {t.name:<14}  "
               f"{t.start_date:<10}  {t.end_date:<10}  "
-              f"{td:>5}  {_views._STATUS_BADGES.get(s, s)}")
+              f"{td:>5}  {academic_year_planning._STATUS_BADGES.get(s, s)}")
     print(f"\n  {len(terms)} term(s) — {issues} with warnings.")
     _pause()
 
@@ -1090,7 +1090,7 @@ def import_bank_holidays_flow() -> None:
         print(f"\n  ✗ {e}")
         _pause()
         return
-    candidates = _views._uk_bank_holidays(ys, ye)
+    candidates = academic_year_planning._uk_bank_holidays(ys, ye)
     if not candidates:
         print(f"\n  No bank holidays in 2024-2027 table fall within "
               f"{y.name}.")
@@ -1206,7 +1206,7 @@ def import_ics_flow() -> None:
         print(f"\n  ✗ {e}")
         _pause()
         return
-    events = _views._parse_ics(text)
+    events = academic_year_planning._parse_ics(text)
     in_range = [(n, s, e) for (n, s, e) in events
                   if not (e < y.start_date or s > y.end_date)]
     if not in_range:
@@ -1428,7 +1428,7 @@ def _calendar_submenu() -> None:
     module scope: the calendar package is heavy and most trips
     through this menu never touch it.
     """
-    from education_system.systems.sixth_form.domain.academics.calendar import (  # noqa: E501
+    from education_system.systems.sixth_form.interfaces.cli.academics.calendar import (  # noqa: E501
         calendar_cli,
     )
     calendar_cli.run()

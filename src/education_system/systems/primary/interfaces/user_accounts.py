@@ -3,7 +3,7 @@
 A thin admin layer on top of the **shared** auth tables
 (``users``, ``user_systems``, ``password_history``). Designed for
 the local "User Accounts" menu — i.e. an admin signed into the
-sixth-form system managing its users.
+primary school system managing its users.
 
 Doesn't own any of those tables — every read/write goes through the
 shared auth DB. ``create_user`` and password strength reuse the
@@ -11,7 +11,7 @@ shared auth helpers; admin-side password reset, lock/unlock, and
 active-flag toggling fill in functionality the shared facade doesn't
 expose.
 
-System key for the sixth form is ``"sixth_form"`` (matches the
+System key for the primary school is ``"primary"`` (matches the
 launcher / role-manager nomenclature).
 """
 
@@ -32,7 +32,7 @@ from education_system.platform.identity.auth.role_manager import ROLE_HIERARCHY
 
 logger = logging.getLogger(__name__)
 
-SYSTEM_KEY: str = "sixth_form"
+SYSTEM_KEY: str = "primary"
 
 ROLES: tuple[str, ...] = tuple(sorted(ROLE_HIERARCHY.keys(),
                                           key=lambda r: -ROLE_HIERARCHY[r]))
@@ -167,9 +167,11 @@ def list_users(
     if active_only:
         clauses.append("u.is_active = 1")
     if locked_only:
+        # locked_until is a UTC ISO string with a 'T' (platform auth core);
+        # compare as instants, not as text against SQLite's space format.
         clauses.append(
             "u.locked_until IS NOT NULL "
-            "AND u.locked_until > datetime('now')")
+            "AND julianday(u.locked_until) > julianday('now')")
     where = ("WHERE " + " AND ".join(clauses)) if clauses else ""
     sql = (f"SELECT u.* FROM users u {where} "
            "ORDER BY u.username")
@@ -477,8 +479,8 @@ class Summary:
     active: int
     inactive: int
     locked: int
-    sixth_form_users: int
-    by_role_in_sixthform: dict[str, int]
+    primary_users: int
+    by_role_in_primary: dict[str, int]
     recent_logins_7d: int
 
 
@@ -488,9 +490,9 @@ def summary(auth: Any) -> Summary:
     active = sum(1 for u in users if u.is_active)
     inactive = total - active
     locked = sum(1 for u in users if u.is_locked)
-    sixth = [u for u in users if u.role_for(SYSTEM_KEY)]
+    own = [u for u in users if u.role_for(SYSTEM_KEY)]
     by_role = {r: 0 for r in ROLE_HIERARCHY}
-    for u in sixth:
+    for u in own:
         r = u.role_for(SYSTEM_KEY)
         if r:
             by_role[r] = by_role.get(r, 0) + 1
@@ -501,7 +503,7 @@ def summary(auth: Any) -> Summary:
     return Summary(
         total=total, active=active, inactive=inactive,
         locked=locked,
-        sixth_form_users=len(sixth),
-        by_role_in_sixthform=by_role,
+        primary_users=len(own),
+        by_role_in_primary=by_role,
         recent_logins_7d=recent,
     )

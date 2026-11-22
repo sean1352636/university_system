@@ -1,0 +1,8 @@
+{
+  "subject": "Your apprenticeship login, {{first_name}}",
+  "body": "Hi {{first_name}},\n\nAn account has been set up for you on the {{provider_name}} apprenticeship system. You can use it to log your off-the-job hours, add portfolio evidence, see your progress reviews and message your tutor.\n\n  Username: {{username}}\n  Temporary password: {{password}}\n\nPlease sign in and change your password straight away (Account security > Change password). Nobody from {{provider_name}} will ever ask you for it.\n\nIf you weren't expecting this email, reply and let us know.\n\n{{provider_name}}",
+  "from_name": "{{provider_name}}",
+  "from_address": "training@provider.ac.uk",
+  "category": "General",
+  "priority": "Normal"
+}

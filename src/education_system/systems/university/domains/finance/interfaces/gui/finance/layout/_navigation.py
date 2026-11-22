@@ -184,8 +184,8 @@ class NavigationMixin:
             (_("finance_gui.nav.audit_log"), "audit_log", "admin"),  # Admin only — opens dialog
             (_("finance_gui.nav.statements"), "statements", "admin_staff"),  # Admin and Staff
             (_("finance_gui.nav.research_grants"), "research_grants", "admin_staff"),  # Admin and Staff only
-            ("Bursary Management", "bursary", "admin_staff"),  # Admin and Staff only — launches standalone Tk app
-            (_("finance_gui.nav.bank_app"), "bank_app", "all"),  # All can access bank app
+            ("Bursary Management", "bursary", "admin_staff_student"),  # Staff manage funds; students apply and see their own
+            (_t("finance_gui.nav.my_finance_account", default="My Finance Account"), "bank_app", "all"),  # The account screen (Student Bank merged into it)
             (_("finance_gui.nav.club_payments"), "club_payments", "admin_staff"),  # Admin and Staff only
             (_("finance_gui.nav.currency"), "currency", "admin"),  # Admin only
             (_("finance_gui.nav.admin"), "admin", "admin"),  # Admin only
@@ -202,6 +202,8 @@ class NavigationMixin:
             elif access_level == "admin_staff" and (is_admin or is_staff):
                 nav_buttons.append((text, tab_id))
             elif access_level == "student" and is_student:
+                nav_buttons.append((text, tab_id))
+            elif access_level == "admin_staff_student" and (is_admin or is_staff or is_student):
                 nav_buttons.append((text, tab_id))
 
         # Create buttons
@@ -386,10 +388,27 @@ class NavigationMixin:
             log.exception("Bursary import failed")
             messagebox.showerror(_t('gui.finance.finance.layout.navigation.dialogs.bursary_management', default="Bursary Management"), f"Failed to load module: {e}")
             return
+        # Students get the applicant view (open funds, apply, their own
+        # applications), filed under their student number; staff and admins
+        # get the full management tool.
+        student_id = None
+        if self.gui.is_student() and not (self.gui.is_admin() or self.gui.is_staff()):
+            user = getattr(self.gui.auth, 'current_user', None) or {}
+            try:
+                from education_system.systems.university.infrastructure.auth.session_user import (
+                    resolve_local_identity,
+                )
+                student_id = resolve_local_identity(user.get('username') or '')[1]
+            except Exception:
+                log.exception("Bursary student lookup failed")
+            if not student_id:
+                messagebox.showerror(_t('gui.finance.finance.layout.navigation.dialogs.bursary_management', default="Bursary Management"),
+                                     "Your student record could not be found, so bursaries can't be shown.")
+                return
         frame = tk.Frame(self.content_frame, bg='white')
         self.tab_frames['bursary'] = frame
         try:
-            BursaryFrame(frame).pack(fill='both', expand=True)
+            BursaryFrame(frame, student_id=student_id).pack(fill='both', expand=True)
             log.info("Bursary tab embedded in Finance GUI content area")
         except Exception as e:
             log.exception("Bursary render failed")

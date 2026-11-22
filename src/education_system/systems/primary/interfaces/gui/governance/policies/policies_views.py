@@ -32,23 +32,27 @@ from education_system.systems.primary.domain.governance.policies.policies import
     ValidationError,
 )
 
+from education_system.systems.primary.interfaces.gui import kit
+
 logger = logging.getLogger(__name__)
 
 
-def _clear(gui) -> ttk.Frame:
-    for w in gui.content_frame.winfo_children():
-        w.destroy()
-    return gui.content_frame
-
-
-def _heading(parent, text: str) -> None:
-    ttk.Label(parent, text=text, font=("", 16, "bold")).pack(
-        anchor="w", pady=(0, 8))
-
-
 def open_policies_window(gui) -> None:
-    frame = _clear(gui)
-    _heading(frame, "Policies")
+    kit.show_page(gui, "Policies", lambda parent: _draw_policies(parent, gui))
+
+
+def _owner_choices() -> list[str]:
+    """Owners already on the register, for the Owner filter."""
+    try:
+        return sorted({v.policy.owner for v in data.list_views() if v.policy.owner})
+    except Exception:  # noqa: BLE001 - an empty filter beats a broken page
+        logger.exception("policy owners for filter failed")
+        return []
+
+
+def _draw_policies(frame, gui) -> None:
+    kit.page_heading(frame, "Policies",
+                     "Policy register with review dates, revisions and a summary.")
 
     nb = ttk.Notebook(frame)
     nb.pack(fill="both", expand=True)
@@ -96,8 +100,9 @@ def _build_register_tab(gui, parent: ttk.Frame, state: dict,
                   values=["", *STATUSES], state="readonly", width=14
                   ).pack(side="left", padx=(4, 10))
     ttk.Label(filt, text="Owner:").pack(side="left")
-    ttk.Entry(filt, textvariable=owner_var, width=14
-              ).pack(side="left", padx=(4, 10))
+    owner_box = kit.ChoiceField(filt, owner_var, choices=_owner_choices(), blank=True,
+                                width=18)
+    owner_box.pack(side="left", padx=(4, 10))
     ttk.Label(filt, text="Search:").pack(side="left")
     ttk.Entry(filt, textvariable=query_var, width=18
               ).pack(side="left", padx=(4, 4))
@@ -116,6 +121,7 @@ def _build_register_tab(gui, parent: ttk.Frame, state: dict,
             w.destroy()
         for w in actions.winfo_children():
             w.destroy()
+        owner_box.set_choices(_owner_choices())
         try:
             views = data.list_views(
                 category=cat_var.get() or None,
@@ -180,23 +186,23 @@ def _build_register_tab(gui, parent: ttk.Frame, state: dict,
             pid = _sel()
             if pid is None:
                 messagebox.showinfo("No selection", "Pick a policy first.",
-                                      parent=gui.root)
+                                      parent=parent.winfo_toplevel())
                 return
-            _edit_dialog(gui, pid, refresh_all)
+            _edit_dialog(parent, pid, refresh_all)
 
         def _revisions() -> None:
             pid = _sel()
             if pid is None:
                 messagebox.showinfo("No selection", "Pick a policy first.",
-                                      parent=gui.root)
+                                      parent=parent.winfo_toplevel())
                 return
-            _revisions_dialog(gui, pid, refresh_all)
+            _revisions_dialog(parent, pid, refresh_all)
 
         def _delete() -> None:
             pid = _sel()
             if pid is None:
                 messagebox.showinfo("No selection", "Pick a policy first.",
-                                      parent=gui.root)
+                                      parent=parent.winfo_toplevel())
                 return
             existing = data.get_policy(pid)
             if existing is None:
@@ -205,13 +211,13 @@ def _build_register_tab(gui, parent: ttk.Frame, state: dict,
             if not messagebox.askyesno(
                     "Delete policy",
                     f"Delete '#{pid} — {existing.title}' "
-                    f"and all its revisions?", parent=gui.root):
+                    f"and all its revisions?", parent=parent.winfo_toplevel()):
                 return
             try:
                 data.delete_policy(pid)
             except Exception as e:
                 logger.exception("delete_policy crashed")
-                messagebox.showerror("Error", str(e), parent=gui.root)
+                messagebox.showerror("Error", str(e), parent=parent.winfo_toplevel())
                 return
             refresh_all()
 
@@ -238,13 +244,14 @@ def _build_register_tab(gui, parent: ttk.Frame, state: dict,
 
 # ── Edit dialog ────────────────────────────────────────────────────
 
-def _edit_dialog(gui, policy_id: int, refresh_all) -> None:
+def _edit_dialog(owner_w, policy_id: int, refresh_all) -> None:
     existing = data.get_policy(policy_id)
     if existing is None:
         return
-    win = tk.Toplevel(gui.root)
+    top = owner_w.winfo_toplevel()
+    win = tk.Toplevel(top)
     win.title(f"Edit policy #{policy_id}")
-    win.transient(gui.root)
+    win.transient(top)
     win.after_idle(win.grab_set)
     frm = ttk.Frame(win, padding=12)
     frm.grid()
@@ -263,8 +270,8 @@ def _edit_dialog(gui, policy_id: int, refresh_all) -> None:
     rows = [
         ("Title:", title, "entry", None),
         ("Category:", category, "combo", list(CATEGORIES)),
-        ("Version:", version, "date", None),
-        ("Owner:", owner, "entry", None),
+        ("Version:", version, "short", None),
+        ("Owner:", owner, "staff", None),
         ("Status:", status, "combo", list(STATUSES)),
         ("Review cycle:", cycle, "combo", list(REVIEW_CYCLES)),
         ("Approved on:", approved, "date", None),
@@ -280,8 +287,14 @@ def _edit_dialog(gui, policy_id: int, refresh_all) -> None:
                           state="readonly", width=22
                           ).grid(row=i, column=1, sticky="w", pady=2)
         elif kind == "date":
-            ttk.Entry(frm, textvariable=var, width=18
+            kit.DateField(frm, var, years=kit.recent_years(ahead=5, back=15)
+                          ).grid(row=i, column=1, sticky="w", pady=2)
+        elif kind == "short":
+            ttk.Entry(frm, textvariable=var, width=10
                       ).grid(row=i, column=1, sticky="w", pady=2)
+        elif kind == "staff":
+            kit.StaffPicker(frm, var, by="name"
+                            ).grid(row=i, column=1, sticky="w", pady=2)
         else:
             ttk.Entry(frm, textvariable=var, width=46
                       ).grid(row=i, column=1, sticky="w", pady=2)
@@ -315,15 +328,16 @@ def _edit_dialog(gui, policy_id: int, refresh_all) -> None:
 
 # ── Revisions dialog ───────────────────────────────────────────────
 
-def _revisions_dialog(gui, policy_id: int, refresh_all) -> None:
+def _revisions_dialog(owner_w, policy_id: int, refresh_all) -> None:
     existing = data.get_policy(policy_id)
     if existing is None:
         return
-    win = tk.Toplevel(gui.root)
+    top = owner_w.winfo_toplevel()
+    win = tk.Toplevel(top)
     win.title(f"Revisions — policy #{policy_id}")
-    win.transient(gui.root)
+    win.transient(top)
     win.after_idle(win.grab_set)
-    win.geometry("780x520")
+    win.geometry("900x560")
 
     frm = ttk.Frame(win, padding=10)
     frm.pack(fill="both", expand=True)
@@ -349,14 +363,13 @@ def _revisions_dialog(gui, policy_id: int, refresh_all) -> None:
     ttk.Entry(row, textvariable=n_version, width=10
               ).pack(side="left", padx=(4, 12))
     ttk.Label(row, text="Revised on:").pack(side="left")
-    ttk.Entry(row, textvariable=n_when, width=14
-              ).pack(side="left", padx=(4, 12))
+    kit.DateField(row, n_when).pack(side="left", padx=(4, 12))
     ttk.Label(row, text="Revised by:").pack(side="left")
-    ttk.Entry(row, textvariable=n_by, width=18
-              ).pack(side="left", padx=(4, 12))
-    ttk.Label(row, text="Approved by:").pack(side="left")
-    ttk.Entry(row, textvariable=n_approved, width=18
-              ).pack(side="left", padx=(4, 0))
+    kit.StaffPicker(row, n_by, by="name", width=24).pack(side="left", padx=(4, 12))
+    row1b = ttk.Frame(new_frame)
+    row1b.pack(fill="x", pady=2)
+    ttk.Label(row1b, text="Approved by:").pack(side="left")
+    kit.StaffPicker(row1b, n_approved, by="name", width=24).pack(side="left", padx=(4, 0))
 
     row2 = ttk.Frame(new_frame)
     row2.pack(fill="x", pady=2)
@@ -476,8 +489,8 @@ def _build_new_tab(gui, parent: ttk.Frame, refresh_all) -> None:
     rows = [
         ("Title:", title, "entry", None),
         ("Category:", category, "combo", list(CATEGORIES)),
-        ("Version:", version, "date", None),
-        ("Owner:", owner, "entry", None),
+        ("Version:", version, "short", None),
+        ("Owner:", owner, "staff", None),
         ("Status:", status, "combo", list(STATUSES)),
         ("Review cycle:", cycle, "combo", list(REVIEW_CYCLES)),
         ("Approved on:", approved, "date", None),
@@ -493,8 +506,14 @@ def _build_new_tab(gui, parent: ttk.Frame, refresh_all) -> None:
                           state="readonly", width=24
                           ).grid(row=i, column=1, sticky="w", pady=2)
         elif kind == "date":
-            ttk.Entry(form, textvariable=var, width=18
+            kit.DateField(form, var, years=kit.recent_years(ahead=5, back=15)
+                          ).grid(row=i, column=1, sticky="w", pady=2)
+        elif kind == "short":
+            ttk.Entry(form, textvariable=var, width=10
                       ).grid(row=i, column=1, sticky="w", pady=2)
+        elif kind == "staff":
+            kit.StaffPicker(form, var, by="name"
+                            ).grid(row=i, column=1, sticky="w", pady=2)
         else:
             ttk.Entry(form, textvariable=var, width=46
                       ).grid(row=i, column=1, sticky="w", pady=2)
@@ -514,11 +533,11 @@ def _build_new_tab(gui, parent: ttk.Frame, refresh_all) -> None:
                 "document_ref": doc.get() or None,
             })
         except ValidationError as e:
-            messagebox.showerror("Cannot save", str(e), parent=gui.root)
+            messagebox.showerror("Cannot save", str(e), parent=parent.winfo_toplevel())
             return
         except Exception as e:
             logger.exception("create_policy crashed")
-            messagebox.showerror("Error", str(e), parent=gui.root)
+            messagebox.showerror("Error", str(e), parent=parent.winfo_toplevel())
             return
         for v in (title, owner, approved, next_review, summary, doc):
             v.set("")
@@ -591,7 +610,7 @@ def _build_summary_tab(gui, parent: ttk.Frame, state: dict) -> None:
             s = data.summary()
         except Exception as e:
             logger.exception("policies summary failed")
-            messagebox.showerror("Error", str(e), parent=gui.root)
+            messagebox.showerror("Error", str(e), parent=parent.winfo_toplevel())
             return
         total_var.set(str(s.total))
         overdue_var.set(str(s.overdue))

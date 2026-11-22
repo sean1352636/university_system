@@ -13,7 +13,7 @@ from tkinter import filedialog, messagebox, ttk
 
 from education_system.systems.university.infrastructure.database.db import get_connection, transaction
 from education_system.systems.university.infrastructure.utils.activity_logger import log_activity
-from education_system.systems.university.services.dashboard.student_services import StudentDashboardService
+from education_system.systems.university.shared.analytics.dashboard.student_services import StudentDashboardService
 
 logger = logging.getLogger(__name__)
 

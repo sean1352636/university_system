@@ -149,8 +149,7 @@ _STUDENT_MODULE_INDEXES: tuple[str, ...] = (
     "ON student_modules(module_code)",
     "CREATE INDEX IF NOT EXISTS idx_student_modules_status "
     "ON student_modules(status)",
-    "CREATE INDEX IF NOT EXISTS idx_student_modules_student_module "
-    "ON student_modules(student_id, module_code)",
+    # (student_id, module_code) is UNIQUE, so its autoindex already serves it.
 )
 
 

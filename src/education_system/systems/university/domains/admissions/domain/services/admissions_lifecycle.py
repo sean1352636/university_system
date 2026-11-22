@@ -43,6 +43,9 @@ LAPSED = "lapsed"
 
 TERMINAL_STATES = frozenset({ENROLLED, DECLINED, LAPSED})
 
+#: Condition states that no longer hold enrolment back.
+CLOSED_CONDITION_STATES = frozenset({"satisfied", "superseded", "waived"})
+
 ALLOWED_TRANSITIONS: dict[str, frozenset[str]] = {
     SUBMITTED: frozenset({DOCUMENTS_PENDING, UNDER_REVIEW, DECLINED, DEFERRED}),
     DOCUMENTS_PENDING: frozenset({UNDER_REVIEW, DECLINED, DEFERRED}),
@@ -303,8 +306,26 @@ def readiness_issues(application_id: int) -> list[str]:
     if any(r["required"] and r["status"] != "verified"
            for r in app["requirements"]):
         issues.append("required documents/checks remain outstanding")
-    if any(c["status"] != "satisfied" for c in app["conditions"]):
+    # "superseded" marks a condition of an offer the learner no longer
+    # holds — a missed Firm replaced by the Insurance, or a Clearing place —
+    # recorded by sixthform_handover_records rather than deleted. "waived"
+    # is admissions staff setting a condition aside with a recorded reason
+    # (admissions_checklist.waive_condition).
+    if any(c["status"] not in CLOSED_CONDITION_STATES
+           for c in app["conditions"]):
         issues.append("offer, deposit or sponsorship conditions remain outstanding")
+    issues.extend(_postgraduate_issues(application_id, app))
+    try:
+        from education_system.systems.university.domains.admissions.domain import (
+            sixthform_handover_records as _handover_records,
+        )
+        deferred = _handover_records.deferred_entry_issue(application_id)
+    except Exception:
+        logger.exception("Could not check deferred entry for application %s",
+                         application_id)
+        deferred = None
+    if deferred:
+        issues.append(deferred)
     with get_connection() as conn:
         condition_types = {
             row["condition_type"]
@@ -336,6 +357,22 @@ def readiness_issues(application_id: int) -> list[str]:
     return issues
 
 
+def _postgraduate_issues(application_id: int, app: dict) -> list[str]:
+    """References, and for research degrees the proposal, supervisor
+    agreement and interview — gates just like conditions."""
+    from education_system.systems.university.domains.admissions.domain.services import (
+        admissions_postgraduate,
+    )
+    if not admissions_postgraduate.is_postgraduate(app.get("application_type")):
+        return []
+    try:
+        return admissions_postgraduate.requirement_issues(application_id)
+    except Exception as exc:
+        logger.exception("Postgraduate checks failed for application %s",
+                         application_id)
+        return [f"postgraduate requirements could not be checked: {exc}"]
+
+
 def convert_to_student(application_id: int, *, actor_id: str = "") -> str:
     """Atomically create the student, registration, history and outbox event."""
     existing = get_application(application_id).get("converted_student_id")
@@ -360,22 +397,7 @@ def convert_to_student(application_id: int, *, actor_id: str = "") -> str:
         ).fetchone()
         if row is None:
             raise AdmissionsBoundaryError("Applicant or accepted choice is missing")
-        requested_student_id = (
-            str(row["external_reference"] or "").strip()
-            if row["application_type"] == "degree_apprenticeship" else ""
-        )
-        for attempt in range(20):
-            student_id = (
-                requested_student_id if attempt == 0 and requested_student_id
-                else str(secrets.randbelow(9_000_000) + 1_000_000)
-            )
-            exists = conn.execute(
-                "SELECT 1 FROM students WHERE student_id = ?", (student_id,)
-            ).fetchone()
-            if exists is None:
-                break
-        else:
-            raise AdmissionsBoundaryError("Could not allocate a university student ID")
+        student_id = _allocate_student_id(conn, row)
 
         now = datetime.now().isoformat()
         conn.execute(
@@ -398,54 +420,7 @@ def convert_to_student(application_id: int, *, actor_id: str = "") -> str:
                 row["academic_year"],
             ),
         )
-        from education_system.systems.university.domains.learners.domain.student_lifecycle import (
-            _regulation_version,
-        )
-        regulation_version = _regulation_version(
-            conn, row["programme_code"], row["academic_year"]
-        )
-        registration_columns = {
-            column[1] for column in conn.execute(
-                "PRAGMA table_info(student_registrations)"
-            ).fetchall()
-        }
-        if "regulation_version_id" in registration_columns:
-            registration = conn.execute(
-                """INSERT INTO student_registrations
-                     (student_id, academic_year, registration_type,
-                      programme_code, registered_by, declarations_json,
-                      regulation_version_id)
-                   VALUES (?, ?, 'initial', ?, ?, '{}', ?)""",
-                (
-                    student_id, row["academic_year"], row["programme_code"],
-                    actor_id or "admissions", regulation_version,
-                ),
-            )
-        else:
-            registration = conn.execute(
-                """INSERT INTO student_registrations
-                     (student_id, academic_year, registration_type,
-                      programme_code, registered_by, declarations_json)
-                   VALUES (?, ?, 'initial', ?, ?, '{}')""",
-                (
-                    student_id, row["academic_year"], row["programme_code"],
-                    actor_id or "admissions",
-                ),
-            )
-        if regulation_version is not None:
-            programme = conn.execute(
-                "SELECT programme_id FROM programme_versions WHERE version_id=?",
-                (regulation_version,),
-            ).fetchone()
-            conn.execute(
-                """INSERT INTO student_regulation_assignments
-                     (student_id, programme_id, version_id, assigned_by, reason)
-                   VALUES (?, ?, ?, ?, ?)""",
-                (
-                    student_id, programme["programme_id"], regulation_version,
-                    actor_id or "admissions", f"Initial registration {application_id}",
-                ),
-            )
+        registration = _insert_registration(conn, row, student_id, application_id, actor_id)
         programme_registration = conn.execute(
             """INSERT INTO programme_registrations
                  (student_id, programme_code, academic_year, occurrence_code,
@@ -486,6 +461,8 @@ def convert_to_student(application_id: int, *, actor_id: str = "") -> str:
                    VALUES (?, ?, ?, 'initial_registration', ?)""",
                 (int(history.lastrowid), student_id, target, json.dumps(payload)),
             )
+        _stage_pgr_handover(conn, application_id, int(history.lastrowid),
+                            student_id, payload, actor_id)
         conn.execute(
             """UPDATE admission_applications
                   SET converted_student_id = ?, enrollment_confirmed = 1,
@@ -515,57 +492,160 @@ def convert_to_student(application_id: int, *, actor_id: str = "") -> str:
             idempotency_key=f"admissions:{application_id}:converted",
         )
 
-    journey_id = row["journey_id"]
-    if journey_id:
-        try:
-            from education_system.platform.cross_system import identity_service
-            identity_service.link_system(
-                journey_id, "university", student_id=student_id, set_current=True
-            )
-            source_system = (
-                "apprenticeships"
-                if row["application_type"] == "degree_apprenticeship"
-                else "sixth_form"
-            )
-            identity_service.record_transition(
-                journey_id, from_system=source_system, to_system="university",
-                reason="Admissions conversion completed",
-            )
-        except Exception:
-            # The committed outbox event is the retry source for this external
-            # identity projection; conversion itself remains successful.
-            logger.exception(
-                "Identity projection deferred for converted application %s",
-                application_id,
-            )
-        if row["application_type"] != "degree_apprenticeship":
-            _import_sixth_form_medical(journey_id, student_id, application_id,
-                                       actor_id)
-        if row["application_type"] == "degree_apprenticeship":
-            try:
-                from education_system.systems.university.services.bus import (
-                    degree_apprenticeship_events,
-                )
-                with get_connection() as conn:
-                    degree = conn.execute(
-                        """SELECT program_id FROM degree_programs
-                             WHERE program_code=? AND is_active=1
-                             ORDER BY program_id LIMIT 1""",
-                        (row["programme_code"],),
-                    ).fetchone()
-                if degree:
-                    degree_apprenticeship_events.publish_current_snapshot(
-                        journey_id=journey_id,
-                        university_student_id=student_id,
-                        university_degree_program_id=int(degree["program_id"]),
-                        reason="registration",
-                    )
-            except Exception:
-                logger.exception(
-                    "Degree-apprenticeship registration projection deferred "
-                    "for application %s", application_id,
-                )
+    _project_conversion(row, student_id, application_id, actor_id)
     return student_id
+
+
+def _stage_pgr_handover(conn, application_id: int, history_id: int,
+                        student_id: str, payload: dict, actor_id: str) -> None:
+    """For a research applicant, queue the proposal and the supervisors who
+    agreed for the PGR record (``research_pgr`` lifecycle action), in the
+    conversion's own transaction."""
+    import json
+    from education_system.systems.university.domains.admissions.domain.services import (
+        admissions_postgraduate,
+    )
+    handover = admissions_postgraduate.pgr_handover(conn, application_id)
+    if handover is None:
+        return
+    conn.execute(
+        """INSERT INTO student_lifecycle_actions
+             (history_id, student_id, target_system, action, payload_json)
+           VALUES (?, ?, 'research_pgr', 'initial_registration', ?)""",
+        (history_id, student_id,
+         json.dumps({**payload, **handover, "actor_id": actor_id or "admissions"})),
+    )
+
+
+def _allocate_student_id(conn, row) -> str:
+    """A free student ID: a degree apprentice keeps their reference if it is
+    free, everyone else gets a random seven-digit number."""
+    requested_student_id = (
+        str(row["external_reference"] or "").strip()
+        if row["application_type"] == "degree_apprenticeship" else ""
+    )
+    for attempt in range(20):
+        student_id = (
+            requested_student_id if attempt == 0 and requested_student_id
+            else str(secrets.randbelow(9_000_000) + 1_000_000)
+        )
+        exists = conn.execute(
+            "SELECT 1 FROM students WHERE student_id = ?", (student_id,)
+        ).fetchone()
+        if exists is None:
+            return student_id
+    raise AdmissionsBoundaryError("Could not allocate a university student ID")
+
+
+def _insert_registration(conn, row, student_id: str, application_id: int, actor_id: str):
+    """The initial student registration, pinned to the programme's
+    regulation version where there is one. Returns the insert cursor."""
+    from education_system.systems.university.domains.learners.domain.student_lifecycle import (
+        _regulation_version,
+    )
+    regulation_version = _regulation_version(
+        conn, row["programme_code"], row["academic_year"]
+    )
+    registration_columns = {
+        column[1] for column in conn.execute(
+            "PRAGMA table_info(student_registrations)"
+        ).fetchall()
+    }
+    if "regulation_version_id" in registration_columns:
+        registration = conn.execute(
+            """INSERT INTO student_registrations
+                 (student_id, academic_year, registration_type,
+                  programme_code, registered_by, declarations_json,
+                  regulation_version_id)
+               VALUES (?, ?, 'initial', ?, ?, '{}', ?)""",
+            (
+                student_id, row["academic_year"], row["programme_code"],
+                actor_id or "admissions", regulation_version,
+            ),
+        )
+    else:
+        registration = conn.execute(
+            """INSERT INTO student_registrations
+                 (student_id, academic_year, registration_type,
+                  programme_code, registered_by, declarations_json)
+               VALUES (?, ?, 'initial', ?, ?, '{}')""",
+            (
+                student_id, row["academic_year"], row["programme_code"],
+                actor_id or "admissions",
+            ),
+        )
+    if regulation_version is not None:
+        programme = conn.execute(
+            "SELECT programme_id FROM programme_versions WHERE version_id=?",
+            (regulation_version,),
+        ).fetchone()
+        conn.execute(
+            """INSERT INTO student_regulation_assignments
+                 (student_id, programme_id, version_id, assigned_by, reason)
+               VALUES (?, ?, ?, ?, ?)""",
+            (
+                student_id, programme["programme_id"], regulation_version,
+                actor_id or "admissions", f"Initial registration {application_id}",
+            ),
+        )
+    return registration
+
+
+def _project_conversion(row, student_id: str, application_id: int, actor_id: str) -> None:
+    """After the commit: the linked-learner identity, sixth-form medical
+    import and degree-apprenticeship snapshot. A failure here is logged and
+    never undoes the conversion."""
+    journey_id = row["journey_id"]
+    if not journey_id:
+        return
+    try:
+        from education_system.platform.cross_system import identity_service
+        identity_service.link_system(
+            journey_id, "university", student_id=student_id, set_current=True
+        )
+        source_system = (
+            "apprenticeships"
+            if row["application_type"] == "degree_apprenticeship"
+            else "sixth_form"
+        )
+        identity_service.record_transition(
+            journey_id, from_system=source_system, to_system="university",
+            reason="Admissions conversion completed",
+        )
+    except Exception:
+        # The committed outbox event is the retry source for this external
+        # identity projection; conversion itself remains successful.
+        logger.exception(
+            "Identity projection deferred for converted application %s",
+            application_id,
+        )
+    if row["application_type"] != "degree_apprenticeship":
+        _import_sixth_form_medical(journey_id, student_id, application_id,
+                                   actor_id)
+    if row["application_type"] == "degree_apprenticeship":
+        try:
+            from education_system.systems.university.services.bus import (
+                degree_apprenticeship_events,
+            )
+            with get_connection() as conn:
+                degree = conn.execute(
+                    """SELECT program_id FROM degree_programs
+                         WHERE program_code=? AND is_active=1
+                         ORDER BY program_id LIMIT 1""",
+                    (row["programme_code"],),
+                ).fetchone()
+            if degree:
+                degree_apprenticeship_events.publish_current_snapshot(
+                    journey_id=journey_id,
+                    university_student_id=student_id,
+                    university_degree_program_id=int(degree["program_id"]),
+                    reason="registration",
+                )
+        except Exception:
+            logger.exception(
+                "Degree-apprenticeship registration projection deferred "
+                "for application %s", application_id,
+            )
 
 
 def attach_direct_enrolment(application_id: int, student_id: str, *,
@@ -667,7 +747,7 @@ def _import_sixth_form_medical(journey_id: str, student_id: str,
         # Admissions reaching into Pastoral. Allow-listed, and the target
         # design is still a port Pastoral owns — see the admissions slice
         # boundary ratchet.
-        from education_system.systems.university.domains.pastoral.domain.health.records import (
+        from education_system.systems.university.domains.health.domain.health.records import (
             sixth_form_import,
         )
         try:

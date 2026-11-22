@@ -647,6 +647,9 @@ def subject_access_export(student_id: str) -> dict[str, Any]:
     add("punctuality_triggers",
         lambda: [vars(t) for t in _mod("attendance_punctuality")
                  .list_triggers(student_id=student_id, limit=200)])
+    add("signout_requests",
+        lambda: [vars(r) for r in _mod("attendance_signout_requests")
+                 .list_requests(student_id=student_id, limit=200)])
     add("safeguarding_alerts",
         lambda: [vars(a) for a in _mod("attendance_safeguarding")
                  .list_alerts(student_id=student_id, limit=200)])
@@ -692,6 +695,11 @@ def erase_student(student_id: str, *, confirm: str,
         "attendance_bursary_exemptions", "attendance_awards",
         "attendance_kiosk_tokens", "attendance_kiosk_events",
         "attendance_placement_days", "attendance_exam_candidates",
+        "attendance_signout_requests", "attendance_signouts",
+        # The pre-unification stores. Their rows were copied into
+        # attendance_leave_requests / attendance_cases and are re-copied
+        # on start-up unless they go too, so an erasure must reach them.
+        "absence_requests", "attendance_concerns",
     )
     removed: dict[str, int] = {}
     with _connect() as conn:
@@ -705,6 +713,16 @@ def erase_student(student_id: str, *, confirm: str,
             except sqlite3.OperationalError:
                 continue        # table not present in this installation
         conn.commit()
+    # Attendance-linked bursary decisions now live in the bursary store;
+    # the legacy attendance_bursary_* tables above must still go, or the
+    # store's start-up migration would copy their rows back.
+    from education_system.systems.sixth_form.domains.finance.domain.bursaries import (
+        bursary_payments as _bursary_store,
+    )
+    stripped = _bursary_store.erase_attendance_details(student_id,
+                                                       db_path=DB_PATH)
+    if stripped:
+        removed["bursary_schedule (attendance detail)"] = stripped
     logger.warning("Erased attendance data for %s (%d table(s)) by %s",
                    student_id, len(removed), actor)
     return removed

@@ -739,10 +739,12 @@ class ReportsManager:
                         report.append("\n\nRECENT NOTIFICATIONS")
                         report.append("-" * 80)
                         cursor.execute('''
-                        SELECT title, message, created_at, is_read
-                        FROM notifications
-                        WHERE user_id = ?
-                        ORDER BY created_at DESC
+                        SELECT m.subject, COALESCE(m.message, m.content), m.sent_at, m.is_read
+                        FROM messages m
+                        JOIN users u ON u.id = m.recipient_id
+                        WHERE u.student_id = ? AND m.subject LIKE '[Documents] %'
+                          AND COALESCE(m.is_deleted_by_recipient, 0) = 0
+                        ORDER BY m.sent_at DESC
                         LIMIT 10
                         ''', (student_id,))
                         notifications = cursor.fetchall()
@@ -1247,7 +1249,11 @@ DOCUMENT LIST
                         SUM(file_size) as total_size
                     FROM documents
                 """)
-                stats = cursor.fetchone()
+                stats = [v or 0 for v in cursor.fetchone()]
+                total_docs = stats[0]
+
+                def pct(n):
+                    return f"{n / total_docs * 100:.1f}%" if total_docs else "0.0%"
 
                 stats_text = tk.Text(overall_frame, width=80, height=25, wrap='word')
                 stats_text.pack(fill='both', expand=True)
@@ -1262,10 +1268,10 @@ Unique Document Types:        {stats[2]:,}
 
 STATUS BREAKDOWN
 --------------------------------------------------------------------------------
-Pending Approval:             {stats[3]:,} ({stats[3]/stats[0]*100:.1f}%)
-Approved:                     {stats[4]:,} ({stats[4]/stats[0]*100:.1f}%)
-Rejected:                     {stats[5]:,} ({stats[5]/stats[0]*100:.1f}%)
-Expired:                      {stats[6]:,} ({stats[6]/stats[0]*100:.1f}%)
+Pending Approval:             {stats[3]:,} ({pct(stats[3])})
+Approved:                     {stats[4]:,} ({pct(stats[4])})
+Rejected:                     {stats[5]:,} ({pct(stats[5])})
+Expired:                      {stats[6]:,} ({pct(stats[6])})
 
 STORAGE STATISTICS
 --------------------------------------------------------------------------------
@@ -1285,7 +1291,7 @@ Total Storage Used:           {stats[8]/1024/1024/1024:.2f} GB
                 report_content += "\nDOCUMENT TYPE BREAKDOWN\n"
                 report_content += "-" * 80 + "\n"
                 for doc_type, count in type_stats:
-                    report_content += f"{doc_type:30} {count:10,} ({count/stats[0]*100:6.1f}%)\n"
+                    report_content += f"{str(doc_type or '(none)'):30} {count:10,} ({pct(count):>6})\n"
 
                 # Get monthly upload trends
                 cursor.execute("""
@@ -1299,24 +1305,27 @@ Total Storage Used:           {stats[8]/1024/1024/1024:.2f} GB
 
                 report_content += "\nMONTHLY UPLOAD TRENDS (Last 12 Months)\n"
                 report_content += "-" * 80 + "\n"
+                peak = max((count for _m, count in monthly_stats), default=0)
                 for month, count in monthly_stats:
-                    bar_char = '\u2588'
-                    bar = bar_char * int(count/10)
-                    padding = ' ' * (50 - int(count/10))
-                    report_content += f"{month}:  {bar}{padding} {count:,} documents\n"
+                    width = int(count / peak * 50) if peak else 0
+                    bar = '\u2588' * width
+                    padding = ' ' * (50 - width)
+                    report_content += f"{month or '(no date)'}:  {bar}{padding} {count:,} documents\n"
+                if total_docs == 0:
+                    report_content += "\nNo documents have been uploaded yet.\n"
 
                 stats_text.insert('1.0', report_content)
                 stats_text.config(state='disabled')
 
         except Exception as e:
-            ttk.Label(overall_frame, text=f"Error loading statistics: {e}").pack()
+            report_content = f"Error loading statistics: {e}"
+            type_stats, monthly_stats = [], []
+            ttk.Label(overall_frame, text=report_content).pack()
 
-        # Tab 2: Charts (Placeholder)
+        # Tab 2: Charts, drawn from the same live figures as Overall Stats
         charts_frame = ttk.Frame(notebook, padding=10)
         notebook.add(charts_frame, text=_t('gui.shell.document_manager.reports.tabs.visual_charts', default="Visual Charts"))
-
-        ttk.Label(charts_frame, text=_t('gui.shell.document_manager.reports.labels.visual_charts_would_be_displayed_here_using_matplotlib', default="Visual charts would be displayed here using matplotlib"),
-                 font=("Arial", 11)).pack(pady=20)
+        self._draw_statistics_charts(charts_frame, type_stats, list(reversed(monthly_stats)))
 
         # Export button
         def export_stats():
@@ -1336,6 +1345,36 @@ Total Storage Used:           {stats[8]/1024/1024/1024:.2f} GB
                   command=stats_window.destroy).pack(pady=5)
 
         self.gui.log_event('generate', 'statistics_report', details='Generated document statistics report')
+
+    def _draw_statistics_charts(self, parent, type_stats, monthly_stats):
+        """Bar charts of documents by type and uploads per month (live data)."""
+        if not type_stats and not monthly_stats:
+            ttk.Label(parent, text=_t('gui.shell.document_manager.reports.labels.no_documents_to_chart',
+                                      default="No documents have been uploaded yet, so there is nothing to chart."),
+                      font=("Arial", 11)).pack(pady=20)
+            return
+        try:
+            from matplotlib.figure import Figure
+            from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+        except ImportError:
+            ttk.Label(parent, text=_t('gui.shell.document_manager.reports.labels.matplotlib_not_installed',
+                                      default="Charts need matplotlib, which is not installed. "
+                                              "The figures are on the Overall Stats tab."),
+                      font=("Arial", 11)).pack(pady=20)
+            return
+        fig = Figure(figsize=(9, 5), dpi=90)
+        ax1 = fig.add_subplot(1, 2, 1)
+        top = type_stats[:10]
+        ax1.barh([str(t or '(none)') for t, _c in top][::-1], [c for _t, c in top][::-1], color='#3498db')
+        ax1.set_title("Documents by type")
+        ax2 = fig.add_subplot(1, 2, 2)
+        ax2.bar([str(m or '?') for m, _c in monthly_stats], [c for _m, c in monthly_stats], color='#27ae60')
+        ax2.set_title("Uploads per month")
+        ax2.tick_params(axis='x', rotation=45)
+        fig.tight_layout()
+        canvas = FigureCanvasTkAgg(fig, master=parent)
+        canvas.draw()
+        canvas.get_tk_widget().pack(fill='both', expand=True)
 
     def scheduled_reports(self):
         """Manage scheduled reports"""
@@ -1379,50 +1418,187 @@ Total Storage Used:           {stats[8]/1024/1024/1024:.2f} GB
         tree.pack(side='left', fill='both', expand=True)
         scrollbar.pack(side='right', fill='y')
 
-        # Sample scheduled reports
-        sample_reports = [
-            ('Weekly Compliance Report', 'Compliance', 'Every Monday 9:00 AM', 'admin@university.edu', '2024-11-04', 'Active'),
-            ('Monthly Statistics', 'Statistics', 'First day of month', 'management@university.edu', '2024-11-01', 'Active'),
-            ('Daily Pending Documents', 'Pending Summary', 'Daily 8:00 AM', 'staff@university.edu', '2024-11-07', 'Active'),
-        ]
+        from education_system.systems.university.infrastructure.utils.document_manager import (
+            report_schedules as schedules,
+        )
 
-        for report in sample_reports:
-            tree.insert('', 'end', values=report)
+        def load_schedules():
+            tree.delete(*tree.get_children())
+            try:
+                with get_connection() as conn:
+                    rows = schedules.list_schedules(conn)
+                    conn.commit()
+            except Exception as exc:
+                messagebox.showerror(_t('gui.shell.document_manager.reports.dialogs.error', default="Error"),
+                                     f"Could not read scheduled reports: {exc}", parent=reports_window)
+                return
+            for row in rows:
+                status = 'Active' if row['active'] else 'Paused'
+                if row['last_result'] and row['last_result'].startswith('failed'):
+                    status += ' (last run failed)'
+                tree.insert('', 'end', iid=str(row['schedule_id']), values=(
+                    row['name'],
+                    schedules.REPORTS.get(row['report_type'], row['report_type']),
+                    f"{schedules.describe_frequency(row['frequency'])} (next {schedules.next_run(row)})",
+                    row['recipients'],
+                    (row['last_run_at'] or 'Never').replace('T', ' ')[:16],
+                    status,
+                ))
+            empty_label.config(text="" if rows else _t(
+                'gui.shell.document_manager.reports.labels.no_scheduled_reports',
+                default="No scheduled reports yet. Use Add Schedule to create one."))
+
+        empty_label = ttk.Label(reports_window, text="", foreground='gray')
+        empty_label.pack(pady=(0, 5))
 
         # Button frame
         button_frame = ttk.Frame(reports_window)
         button_frame.pack(fill='x', padx=10, pady=10)
 
+        def current_user():
+            user = getattr(self.gui, 'current_user', None)
+            if isinstance(user, dict):
+                return user.get('username')
+            return getattr(user, 'username', None)
+
+        def schedule_dialog(existing=None):
+            """Create or edit a schedule; ``existing`` is the stored row."""
+            dlg = tk.Toplevel(reports_window)
+            dlg.title(_t('gui.shell.document_manager.reports.dialogs.edit_schedule', default="Edit Schedule")
+                      if existing else
+                      _t('gui.shell.document_manager.reports.dialogs.add_schedule', default="Add Schedule"))
+            dlg.geometry("520x330")
+            dlg.transient(reports_window)
+            dlg.grab_set()
+            form = ttk.Frame(dlg, padding=15)
+            form.pack(fill='both', expand=True)
+
+            labels_to_keys = {label: key for key, label in schedules.REPORTS.items()}
+            name_var = tk.StringVar(value=existing['name'] if existing else '')
+            type_var = tk.StringVar(value=schedules.REPORTS.get(existing['report_type'], '') if existing
+                                    else next(iter(schedules.REPORTS.values())))
+            freq_var = tk.StringVar(value=existing['frequency'] if existing else 'weekly')
+            recip_var = tk.StringVar(value=existing['recipients'] if existing else '')
+            active_var = tk.BooleanVar(value=bool(existing['active']) if existing else True)
+
+            ttk.Label(form, text=_t('gui.shell.document_manager.reports.headings.report_name', default='Report Name') + ":").grid(row=0, column=0, sticky='w', pady=5)
+            ttk.Entry(form, textvariable=name_var, width=40).grid(row=0, column=1, sticky='ew', pady=5)
+            ttk.Label(form, text=_t('gui.shell.document_manager.reports.headings.report_type', default='Report Type') + ":").grid(row=1, column=0, sticky='w', pady=5)
+            ttk.Combobox(form, textvariable=type_var, values=list(schedules.REPORTS.values()),
+                         state='readonly', width=37).grid(row=1, column=1, sticky='ew', pady=5)
+            ttk.Label(form, text=_t('gui.shell.document_manager.reports.headings.schedule', default='Schedule') + ":").grid(row=2, column=0, sticky='w', pady=5)
+            ttk.Combobox(form, textvariable=freq_var, values=list(schedules.FREQUENCIES),
+                         state='readonly', width=37).grid(row=2, column=1, sticky='ew', pady=5)
+            ttk.Label(form, text=_t('gui.shell.document_manager.reports.headings.recipients', default='Recipients') + ":").grid(row=3, column=0, sticky='w', pady=5)
+            ttk.Entry(form, textvariable=recip_var, width=40).grid(row=3, column=1, sticky='ew', pady=5)
+            ttk.Label(form, text=_t('gui.shell.document_manager.reports.labels.recipients_hint',
+                                    default="E-mail addresses, separated by commas"),
+                      foreground='gray').grid(row=4, column=1, sticky='w')
+            ttk.Checkbutton(form, text=_t('gui.shell.document_manager.reports.buttons.schedule_active', default="Active"),
+                            variable=active_var).grid(row=5, column=1, sticky='w', pady=5)
+            ttk.Label(form, text=_t('gui.shell.document_manager.reports.labels.schedule_delivery_note',
+                                    default="Sent by the university batch scheduler through the e-mail outbox."),
+                      foreground='gray', wraplength=460).grid(row=6, column=0, columnspan=2, sticky='w', pady=(10, 0))
+            form.columnconfigure(1, weight=1)
+
+            def save():
+                try:
+                    with get_connection() as conn:
+                        args = (name_var.get(), labels_to_keys.get(type_var.get()), freq_var.get(),
+                                recip_var.get(), active_var.get())
+                        if existing:
+                            schedules.update_schedule(conn, existing['schedule_id'], *args)
+                        else:
+                            schedules.add_schedule(conn, current_user(), *args[:4], active=args[4])
+                        conn.commit()
+                except ValueError as exc:
+                    messagebox.showerror(_t('gui.shell.document_manager.reports.dialogs.error', default="Error"),
+                                         str(exc), parent=dlg)
+                    return
+                except Exception as exc:
+                    messagebox.showerror(_t('gui.shell.document_manager.reports.dialogs.error', default="Error"),
+                                         f"Could not save the schedule: {exc}", parent=dlg)
+                    return
+                self.gui.log_event('update' if existing else 'create', 'scheduled_report',
+                                   details=f"{'Updated' if existing else 'Created'} scheduled report: {name_var.get()}")
+                dlg.destroy()
+                load_schedules()
+
+            buttons = ttk.Frame(dlg, padding=(15, 0, 15, 15))
+            buttons.pack(fill='x')
+            ttk.Button(buttons, text=_t('gui.shell.document_manager.reports.buttons.save', default="Save"),
+                       command=save).pack(side='left')
+            ttk.Button(buttons, text=_t('gui.shell.document_manager.reports.buttons.cancel', default="Cancel"),
+                       command=dlg.destroy).pack(side='right')
+
+        def selected_schedule():
+            selected = tree.selection()
+            if not selected:
+                messagebox.showwarning(_t('gui.shell.document_manager.reports.dialogs.no_selection', default="No Selection"), _t('gui.shell.document_manager.reports.dialogs.please_select_a_scheduled_report', default="Please select a scheduled report"),
+                                       parent=reports_window)
+                return None
+            try:
+                with get_connection() as conn:
+                    return schedules.get_schedule(conn, int(selected[0]))
+            except Exception as exc:
+                messagebox.showerror(_t('gui.shell.document_manager.reports.dialogs.error', default="Error"),
+                                     str(exc), parent=reports_window)
+                load_schedules()
+                return None
+
         def add_schedule():
-            messagebox.showinfo(_t('gui.shell.document_manager.reports.dialogs.add_schedule', default="Add Schedule"),
-                              _t('gui.shell.document_manager.reports.dialogs.feature_to_add_new_scheduled_report_would_configure_report_type', default="Feature to add new scheduled report.\n\n"
-                              "Would configure:\n"
-                              "- Report type\n"
-                              "- Schedule (daily/weekly/monthly)\n"
-                              "- Recipients\n"
-                              "- Delivery method"))
+            schedule_dialog()
 
         def edit_schedule():
-            selected = tree.selection()
-            if not selected:
-                messagebox.showwarning(_t('gui.shell.document_manager.reports.dialogs.no_selection', default="No Selection"), _t('gui.shell.document_manager.reports.dialogs.please_select_a_scheduled_report', default="Please select a scheduled report"))
-                return
-            messagebox.showinfo(_t('gui.shell.document_manager.reports.dialogs.edit_schedule', default="Edit Schedule"), _t('gui.shell.document_manager.reports.dialogs.edit_selected_scheduled_report_configuration', default="Edit selected scheduled report configuration"))
+            row = selected_schedule()
+            if row:
+                schedule_dialog(row)
 
         def delete_schedule():
-            selected = tree.selection()
-            if not selected:
-                messagebox.showwarning(_t('gui.shell.document_manager.reports.dialogs.no_selection', default="No Selection"), _t('gui.shell.document_manager.reports.dialogs.please_select_a_scheduled_report', default="Please select a scheduled report"))
+            row = selected_schedule()
+            if not row:
                 return
-            if messagebox.askyesno(_t('gui.shell.document_manager.reports.dialogs.confirm_delete', default="Confirm Delete"), _t('gui.shell.document_manager.reports.dialogs.delete_selected_scheduled_report', default="Delete selected scheduled report?")):
-                tree.delete(selected)
+            if messagebox.askyesno(_t('gui.shell.document_manager.reports.dialogs.confirm_delete', default="Confirm Delete"), _t('gui.shell.document_manager.reports.dialogs.delete_selected_scheduled_report', default="Delete selected scheduled report?"),
+                                   parent=reports_window):
+                try:
+                    with get_connection() as conn:
+                        schedules.delete_schedule(conn, row['schedule_id'])
+                        conn.commit()
+                except Exception as exc:
+                    messagebox.showerror(_t('gui.shell.document_manager.reports.dialogs.error', default="Error"),
+                                         f"Could not delete the schedule: {exc}", parent=reports_window)
+                    return
+                self.gui.log_event('delete', 'scheduled_report', details=f"Deleted scheduled report: {row['name']}")
+                load_schedules()
 
         def run_now():
-            selected = tree.selection()
-            if not selected:
-                messagebox.showwarning(_t('gui.shell.document_manager.reports.dialogs.no_selection', default="No Selection"), _t('gui.shell.document_manager.reports.dialogs.please_select_a_scheduled_report', default="Please select a scheduled report"))
+            row = selected_schedule()
+            if not row:
                 return
-            messagebox.showinfo(_t('gui.shell.document_manager.reports.dialogs.run_now', default="Run Now"), _t('gui.shell.document_manager.reports.dialogs.report_generation_started_you_will_receive_it_via_email_shortly', default="Report generation started. You will receive it via email shortly."))
+            try:
+                with get_connection() as conn:
+                    emails = schedules.run_schedule(conn, row)
+                    conn.commit()
+            except Exception as exc:
+                messagebox.showerror(_t('gui.shell.document_manager.reports.dialogs.error', default="Error"),
+                                     f"Could not run the report: {exc}", parent=reports_window)
+                return
+            from education_system.systems.university.infrastructure.ui.record_screens import send_emails
+            sent = send_emails(emails)
+            self.gui.log_event('run', 'scheduled_report',
+                               details=f"Ran scheduled report {row['name']}: {sent}/{len(emails)} e-mails queued")
+            load_schedules()
+            if sent == len(emails):
+                messagebox.showinfo(_t('gui.shell.document_manager.reports.dialogs.run_now', default="Run Now"),
+                                    f"Report built and handed to the e-mail outbox for {sent} recipient(s).",
+                                    parent=reports_window)
+            else:
+                messagebox.showwarning(_t('gui.shell.document_manager.reports.dialogs.run_now', default="Run Now"),
+                                       f"Report built, but only {sent} of {len(emails)} e-mail(s) could be queued. "
+                                       "Check the e-mail system settings.", parent=reports_window)
+
+        tree.bind('<Double-1>', lambda _e: edit_schedule())
+        load_schedules()
 
         ttk.Button(button_frame, text=_t('gui.shell.document_manager.reports.buttons.add_schedule', default="Add Schedule"),
                   command=add_schedule).pack(side='left', padx=5)

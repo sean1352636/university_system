@@ -48,6 +48,7 @@ _ACTION_LABELS = {
     "defer": "Defer",
     "suspend": "Suspend",
     "resume": "Resume studies",
+    "reinstate": "Reinstate (undo withdrawal)",
     "complete": "Complete",
     "close": "Close record",
 }
@@ -128,6 +129,15 @@ def _load_student(student_id: str) -> dict | None:
                 "mode_of_study", "campus_code", "academic_year",
                 "expected_return_date", "is_active")
         return dict(zip(keys, row))
+
+
+def _sync_sign_in(student_id, status):
+    """Withdrawn or closed students lose their sign-in; reinstated or
+    resumed students get it back. Completed students keep theirs."""
+    from education_system.systems.university.services.student_provisioning import (
+        sync_sign_in_for_status,
+    )
+    sync_sign_in_for_status(student_id, status)
 
 
 def manage_student_lifecycle(self, student_id, first_name=None, last_name=None):
@@ -479,6 +489,7 @@ def manage_student_lifecycle(self, student_id, first_name=None, last_name=None):
                 "Status change failed",
                 f"Could not {action} this student:\n\n{exc}", parent=dialog)
             return
+        _sync_sign_in(student_id, target)
         _finish(f"{name} is now '{target}'.")
 
     def _apply_study():
@@ -517,8 +528,17 @@ def manage_student_lifecycle(self, student_id, first_name=None, last_name=None):
                 parent=dialog):
             return
         try:
-            student_lifecycle.change_study(
-                student_id, actor_id=_actor_id(self), reason=reason, **kwargs)
+            if kind == "programme_code":
+                # A programme change is a transfer: the curriculum moves too.
+                from education_system.systems.university.application.students.lifecycle import (
+                    StudentLifecycleService,
+                )
+                StudentLifecycleService().transfer_course(
+                    student_id, raw, actor_id=_actor_id(self), reason=reason,
+                    idempotency_key=f"gui:transfer:{student_id}:{datetime.now().isoformat()}")
+            else:
+                student_lifecycle.change_study(
+                    student_id, actor_id=_actor_id(self), reason=reason, **kwargs)
         except Exception as exc:
             logger.exception("Study change failed for %s", student_id)
             messagebox.showerror(

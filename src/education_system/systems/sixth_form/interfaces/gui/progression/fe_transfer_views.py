@@ -2,11 +2,15 @@
 
 from __future__ import annotations
 
+import logging
 import tkinter as tk
 from datetime import date
-from tkinter import messagebox, simpledialog, ttk
+from tkinter import ttk
+from education_system.platform.delivery.gui.parented_dialogs import messagebox, simpledialog
 
-from education_system.systems.fe_college.services import sixth_form_transfer
+from education_system.platform.cross_system import sixth_form_transfers as sixth_form_transfer
+
+logger = logging.getLogger(__name__)
 
 
 def open_window(parent) -> None:
@@ -31,7 +35,16 @@ def open_window(parent) -> None:
 
     def refresh():
         table.delete(*table.get_children())
-        for row in sixth_form_transfer.incoming():
+        try:
+            rows = sixth_form_transfer.incoming()
+        except Exception as exc:
+            logger.exception("Incoming FE applications could not be loaded")
+            messagebox.showwarning(
+                "Incoming FE Applications",
+                f"Could not load incoming applications: {exc}\n\n"
+                "The error has been logged.", parent=win)
+            return
+        for row in rows:
             table.insert("", "end", iid=row["transition_id"], values=(
                 row["journey_id"], row["status"], row.get("reason") or ""))
 

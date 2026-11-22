@@ -11,21 +11,22 @@ import logging
 from datetime import date as _date, timedelta as _timedelta
 from typing import Callable
 
-from education_system.systems.sixth_form.domain.academics.attendance import (
-    attendance_absence_reports as reports,
-    attendance_appeals as appeals,
-    attendance_evidence as evidence,
-    attendance_leave as leave,
-)
 from education_system.systems.sixth_form.domain.academics.attendance.attendance import (
     ValidationError,
 )
 from education_system.systems.sixth_form.interfaces.cli.academics.attendance.attendance_cli import (
+    lazy_domain,
     _input,
     _pause,
     _pick_from,
     _UserAbort,
 )
+
+# Domain modules load on first use (see attendance_cli.lazy_domain).
+reports = lazy_domain("attendance_absence_reports")
+appeals = lazy_domain("attendance_appeals")
+evidence = lazy_domain("attendance_evidence")
+leave = lazy_domain("attendance_leave")
 
 logger = logging.getLogger(__name__)
 
@@ -295,10 +296,132 @@ def _int_default(prompt: str, default: int) -> int:
         return default
 
 
+def leave_study() -> None:
+    print("\n═══ Study Leave for a Group ═══")
+    print("\n  Each learner gets leave approved at once and coded S.")
+    print("  Learners with leave already covering the dates are skipped.")
+    try:
+        group = _input("Class group ID (blank to list student IDs)")
+        student_ids: list[str] = []
+        group_id = None
+        if group:
+            group_id = int(group)
+        else:
+            raw = _input("Student IDs (comma-separated)", allow_empty=False)
+            student_ids = [s.strip() for s in raw.split(",") if s.strip()]
+        date_from = _input("From (YYYY-MM-DD)", allow_empty=False)
+        date_to = _input("To (YYYY-MM-DD)", allow_empty=False)
+        detail = _input("Detail", default="Exam-season study leave")
+        who = _input("Granted by", allow_empty=False)
+        result = leave.grant_study_leave(
+            date_from, date_to, decided_by=who, student_ids=student_ids,
+            group_id=group_id, detail=detail)
+        print(f"\n  ✓ {result.summary}")
+        for sid, why in list(result.skipped.items())[:20]:
+            print(f"    skipped {sid}: {why}")
+    except ValueError:
+        print("\n  ✗ Group ID must be a number.")
+    except ValidationError as e:
+        print(f"\n  ✗ {e}")
+    except _UserAbort:
+        print("\n  Cancelled.")
+    _pause()
+
+
+def leave_awaiting_marks() -> None:
+    print("\n═══ Approved, Not Yet on the Register ═══")
+    print("\n  Requests approved in the pastoral absence log record the")
+    print("  decision only. Writing marks codes every lesson in the span.")
+    rows = leave.awaiting_marks()
+    if not rows:
+        print("\n  ✓ Nothing waiting.")
+        _pause()
+        return
+    for request in rows:
+        print(f"    #{request.request_id:<5}{request.span:<24}"
+              f"{request.student_id:<12}{request.kind}")
+    try:
+        if not _yes("\n  Write marks for one? (y/N)"):
+            return
+        request_id = _int("Request #")
+        who = _input("Written by", allow_empty=False)
+        try:
+            result = leave.apply_marks(request_id, actor=who)
+        except ValidationError as e:
+            print(f"\n  ⚠ {e}")
+            if not _yes("  Write them anyway? (y/N)"):
+                return
+            result = leave.apply_marks(request_id, actor=who,
+                                       ignore_clashes=True)
+        print(f"\n  ✓ {result.marks_written} mark(s) written.")
+    except ValueError:
+        print("\n  ✗ Request # must be a number.")
+    except ValidationError as e:
+        print(f"\n  ✗ {e}")
+    except _UserAbort:
+        print("\n  Cancelled.")
+    _pause()
+
+
+_ORIGIN_LABEL = {"leave": "Leave", "pastoral": "Pastoral request",
+                 "report": "Report"}
+
+
+def leave_all_absence() -> None:
+    print("\n═══ All Absence (leave, pastoral requests, reports) ═══")
+    try:
+        student_id = _input("Student ID (blank = everyone)") or None
+        date_from = _input("From (YYYY-MM-DD)", default=_month_ago())
+        date_to = _input("To (YYYY-MM-DD)", default=_today())
+        origin = _pick_from("Source", ["All", "leave", "pastoral", "report"],
+                            default="All")
+        rows = leave.all_absence(
+            student_id=student_id, date_from=date_from, date_to=date_to,
+            origin=None if origin == "All" else origin)
+    except ValidationError as e:
+        print(f"\n  ✗ {e}")
+        _pause()
+        return
+    except _UserAbort:
+        print("\n  Cancelled.")
+        return
+    if not rows:
+        print("\n  Nothing in that window.")
+    else:
+        print(f"\n    {'#':>5}  {'Source':<18}{'Dates':<24}"
+              f"{'Learner':<22}{'Kind':<20}State")
+        for r in rows:
+            print(f"    {r.request_id:>5}  "
+                  f"{_ORIGIN_LABEL.get(r.origin, r.origin):<18}{r.span:<24}"
+                  f"{(r.student_name or r.student_id)[:21]:<22}"
+                  f"{r.kind[:19]:<20}{r.state}"
+                  + (f" ({r.code}, {r.marks_written} mark(s))"
+                     if r.code else ""))
+    _pause()
+
+
+def leave_store_status() -> None:
+    print("\n═══ The Absence Store ═══")
+    print("\n  Leave, pastoral absence requests and absence reports share")
+    print("  one table. Rows from the old tables are copied in once.")
+    try:
+        result = leave.migrate_legacy_stores()
+        print(f"\n  Migration check: {result.summary}")
+        for origin, n in sorted(leave.origin_counts().items()):
+            print(f"    {_ORIGIN_LABEL.get(origin, origin):<20}{n:>6}")
+    except ValidationError as e:
+        print(f"\n  ✗ {e}")
+    _pause()
+
+
 _LEAVE_MENU: list[tuple[str, Callable[[], None]]] = [
     ("Request leave",   leave_request),
     ("Awaiting decision", leave_pending),
     ("Upcoming leave",  leave_upcoming),
+    ("Study leave for a group", leave_study),
+    ("Approved, not yet on the register", leave_awaiting_marks),
+    ("All absence (one list)", leave_all_absence),
+    ("Absence store & migration", leave_store_status),
 ]
 
 

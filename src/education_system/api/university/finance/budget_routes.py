@@ -9,6 +9,7 @@ from flask import Blueprint, g, jsonify, request
 
 from education_system.platform.delivery.api.university.auth import (
     current_subject_id,
+    deny_unless_owner_or_staff,
     is_staff,
     token_required,
 )
@@ -29,18 +30,9 @@ def _row_to_dict(row) -> dict:
     return {k: row[k] for k in row.keys()}
 
 
-def _deny_unless_owner_or_staff(owner_student_id):
-    """Object-level scope for personal-finance records.
-
-    Staff see all; every other user may act only on their own budget data.
-    Returns a 403 response tuple to short-circuit, or None to proceed.
-    """
-    if is_staff():
-        return None
-    me = current_subject_id()
-    if me is None or str(owner_student_id or "") != me:
-        return jsonify({"error": "Forbidden", "status": 403}), 403
-    return None
+# Object-level scope for personal-finance records: staff see all; every other
+# user may act only on their own budget data (student_id is TEXT, so it keys
+# on the JWT ``sub`` via deny_unless_owner_or_staff / current_subject_id).
 
 
 def _owner_of_expense(conn, expense_id):
@@ -69,6 +61,11 @@ def _owner_of_goal(conn, goal_id):
 def list_budgets():
     student_id = request.args.get("student_id")
     semester = request.args.get("semester")
+    if not is_staff():
+        # Pinned to the caller, whatever student_id they sent.
+        student_id = current_subject_id()
+        if not student_id:
+            return jsonify({"error": "Forbidden", "status": 403}), 403
 
     with get_connection() as conn:
         conditions = []
@@ -109,7 +106,7 @@ def get_budget(budget_id: int):
         ).fetchone()
     if not row:
         raise ValidationError(f"budgets {budget_id} not found")
-    denial = _deny_unless_owner_or_staff(_row_to_dict(row).get("student_id"))
+    denial = deny_unless_owner_or_staff(_row_to_dict(row).get("student_id"))
     if denial:
         return denial
     log_activity("view", "student_budgets", user=g.current_user.get("sub"))
@@ -122,6 +119,9 @@ def create_budget():
     for field in ["student_id", "semester", "total_budget"]:
         if field not in data:
             raise ValidationError(f"Missing required field: {field}")
+    denial = deny_unless_owner_or_staff(data["student_id"])
+    if denial:
+        return denial
 
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     with transaction() as conn:
@@ -150,18 +150,29 @@ def list_expenses():
     budget_id = request.args.get("budget_id")
     category_id = request.args.get("category_id")
 
+    # Non-staff are pinned to expenses under their own budgets before any
+    # caller-supplied filter is applied.
+    owner_clause = ""
+    owner_params: list = []
+    if not is_staff():
+        me = current_subject_id()
+        if not me:
+            return jsonify({"error": "Forbidden", "status": 403}), 403
+        owner_clause = "budget_id IN (SELECT budget_id FROM student_budgets WHERE student_id = ?)"
+        owner_params = [me]
+
     with get_connection() as conn:
         if search:
             pattern = f"%{escape_like(search)}%"
-            rows = conn.execute(
-                "SELECT * FROM budget_expenses WHERE expense_name LIKE ?",
-                (pattern),
-            ).fetchall()
+            sql = "SELECT * FROM budget_expenses WHERE expense_name LIKE ?"
+            if owner_clause:
+                sql += " AND " + owner_clause
+            rows = conn.execute(sql, [pattern, *owner_params]).fetchall()
             items = [_row_to_dict(r) for r in rows]
             return jsonify({"items": items, "total": len(items)})
 
-        conditions = []
-        params: list = []
+        conditions = [owner_clause] if owner_clause else []
+        params: list = list(owner_params)
         if budget_id:
             conditions.append("budget_id = ?")
             params.append(budget_id)
@@ -197,7 +208,7 @@ def get_expense(expense_id: int):
             "SELECT * FROM budget_expenses WHERE expense_id = ?", (expense_id,)
         ).fetchone()
         if row is not None:
-            denial = _deny_unless_owner_or_staff(_owner_of_expense(conn, expense_id))
+            denial = deny_unless_owner_or_staff(_owner_of_expense(conn, expense_id))
             if denial:
                 return denial
     if not row:
@@ -212,6 +223,13 @@ def create_expense():
     for field in ["budget_id", "expense_name", "amount"]:
         if field not in data:
             raise ValidationError(f"Missing required field: {field}")
+    with get_connection() as conn:
+        owner = conn.execute(
+            "SELECT student_id FROM student_budgets WHERE budget_id = ?", (data["budget_id"],)
+        ).fetchone()
+    denial = deny_unless_owner_or_staff(owner[0] if owner else None)
+    if denial:
+        return denial
 
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     with transaction() as conn:
@@ -239,14 +257,21 @@ def list_savings_goals():
     search = request.args.get("search")
     student_id = request.args.get("student_id")
     status = request.args.get("status")
+    if not is_staff():
+        # Pinned to the caller, whatever student_id they sent.
+        student_id = current_subject_id()
+        if not student_id:
+            return jsonify({"error": "Forbidden", "status": 403}), 403
 
     with get_connection() as conn:
         if search:
             pattern = f"%{escape_like(search)}%"
-            rows = conn.execute(
-                "SELECT * FROM savings_goals WHERE goal_name LIKE ?",
-                (pattern),
-            ).fetchall()
+            sql = "SELECT * FROM savings_goals WHERE goal_name LIKE ?"
+            sql_params: list = [pattern]
+            if student_id:
+                sql += " AND student_id = ?"
+                sql_params.append(student_id)
+            rows = conn.execute(sql, sql_params).fetchall()
             items = [_row_to_dict(r) for r in rows]
             return jsonify({"items": items, "total": len(items)})
 
@@ -288,7 +313,7 @@ def get_savings_goal(goal_id: int):
         ).fetchone()
     if not row:
         raise ValidationError(f"savings-goals {goal_id} not found")
-    denial = _deny_unless_owner_or_staff(_row_to_dict(row).get("student_id"))
+    denial = deny_unless_owner_or_staff(_row_to_dict(row).get("student_id"))
     if denial:
         return denial
     log_activity("view", "savings_goals", user=g.current_user.get("sub"))
@@ -301,6 +326,9 @@ def create_savings_goal():
     for field in ["student_id", "goal_name", "target_amount"]:
         if field not in data:
             raise ValidationError(f"Missing required field: {field}")
+    denial = deny_unless_owner_or_staff(data["student_id"])
+    if denial:
+        return denial
 
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     with transaction() as conn:
@@ -327,7 +355,7 @@ def create_savings_goal():
 @token_required
 def update_expense(expense_id: int):
     with get_connection() as conn:
-        denial = _deny_unless_owner_or_staff(_owner_of_expense(conn, expense_id))
+        denial = deny_unless_owner_or_staff(_owner_of_expense(conn, expense_id))
     if denial:
         return denial
     data = request.get_json(silent=True) or {}
@@ -371,7 +399,7 @@ def delete_expense(expense_id: int):
             "SELECT * FROM budget_expenses WHERE expense_id = ?", (expense_id,)
         ).fetchone()
         if row is not None:
-            denial = _deny_unless_owner_or_staff(_owner_of_expense(conn, expense_id))
+            denial = deny_unless_owner_or_staff(_owner_of_expense(conn, expense_id))
             if denial:
                 return denial
     if not row:
@@ -395,6 +423,9 @@ def get_spending_by_category():
 
     if not student_id or not start_date or not end_date:
         raise ValidationError("student_id, start_date, and end_date are required")
+    denial = deny_unless_owner_or_staff(student_id)
+    if denial:
+        return denial
 
     with get_connection() as conn:
         rows = conn.execute(
@@ -428,6 +459,9 @@ def get_spending_trends():
 
     if not student_id:
         raise ValidationError("student_id is required")
+    denial = deny_unless_owner_or_staff(student_id)
+    if denial:
+        return denial
 
     from datetime import timedelta
 
@@ -483,7 +517,7 @@ def update_goal_progress(goal_id: int):
         raise ValidationError("amount is required")
 
     with get_connection() as conn:
-        denial = _deny_unless_owner_or_staff(_owner_of_goal(conn, goal_id))
+        denial = deny_unless_owner_or_staff(_owner_of_goal(conn, goal_id))
         if denial:
             return denial
         row = conn.execute(
@@ -520,6 +554,11 @@ def update_goal_progress(goal_id: int):
 def list_meal_plans():
     student_id = request.args.get("student_id")
     active_only = request.args.get("active_only", "true").lower() == "true"
+    if not is_staff():
+        # Pinned to the caller, whatever student_id they sent.
+        student_id = current_subject_id()
+        if not student_id:
+            return jsonify({"error": "Forbidden", "status": 403}), 403
 
     conditions = []
     params: list = []
@@ -548,6 +587,9 @@ def create_meal_plan():
     for field in ["student_id", "plan_name", "plan_type", "academic_term", "start_date", "end_date"]:
         if field not in data:
             raise ValidationError(f"Missing required field: {field}")
+    denial = deny_unless_owner_or_staff(data["student_id"])
+    if denial:
+        return denial
 
     with transaction() as conn:
         conn.execute(
@@ -581,7 +623,7 @@ def get_meal_plan_status(tracking_id: int):
         raise ValidationError(f"meal plan {tracking_id} not found")
 
     plan = _row_to_dict(row)
-    denial = _deny_unless_owner_or_staff(plan.get("student_id"))
+    denial = deny_unless_owner_or_staff(plan.get("student_id"))
     if denial:
         return denial
     plan["remaining_meals"] = (plan.get("total_meals") or 0) - (plan.get("used_meals") or 0)
@@ -609,10 +651,12 @@ def log_meal_transaction(tracking_id: int):
         owner_row = conn.execute(
             "SELECT student_id FROM meal_plan_tracking WHERE tracking_id = ?", (tracking_id,)
         ).fetchone()
-    denial = _deny_unless_owner_or_staff(owner_row[0] if owner_row else None)
+    denial = deny_unless_owner_or_staff(owner_row[0] if owner_row else None)
     if denial:
         return denial
 
+    # The transaction belongs to the plan's owner, never a body-supplied id.
+    owner_student_id = owner_row[0] if owner_row else data["student_id"]
     meals_used = data.get("meals_used", 0)
     dollars_used = data.get("dollars_used", 0.0)
 
@@ -621,7 +665,7 @@ def log_meal_transaction(tracking_id: int):
             """INSERT INTO transactions
                (source_type, reference_id, student_id, created_at, transaction_time, location, transaction_type, quantity_change, amount, description)
                VALUES ('meal_plan', ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
-            (tracking_id, data["student_id"], data["transaction_date"],
+            (tracking_id, owner_student_id, data["transaction_date"],
              data.get("transaction_time", ""), data["location"], data["meal_type"],
              meals_used, dollars_used, data.get("description", "")),
         )

@@ -219,7 +219,10 @@ class TestRoutePrefixScoping:
     shared/api/unified_server.py.
     """
 
-    MOUNTED_PREFIXES = ("nursery", "primary", "secondary", "sixthform", "university")
+    MOUNTED_PREFIXES = (
+        "nursery", "primary", "secondary", "school", "sixthform",
+        "fecollege", "apprentice", "university",
+    )
 
     def test_every_mounted_prefix_is_scoped(self):
         from education_system.platform.delivery.api.auth import (

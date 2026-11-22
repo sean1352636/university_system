@@ -18,6 +18,7 @@ from contextlib import contextmanager
 from dataclasses import dataclass, field
 from typing import Any, Iterator
 from education_system import paths as _paths
+from education_system.systems.primary.infrastructure.schema_repair import repair_links
 
 logger = logging.getLogger(__name__)
 
@@ -26,8 +27,9 @@ ROLES: tuple[str, ...] = (
     "Vice Chair",
     "Secretary",
     "Treasurer",
-    "Year 12 Rep",
-    "Year 13 Rep",
+    "Class Rep",
+    "KS1 Rep",
+    "KS2 Rep",
     "Wellbeing Rep",
     "Eco Rep",
     "Charities Rep",
@@ -186,6 +188,9 @@ def _connect() -> Iterator[sqlite3.Connection]:
 
 
 def init_db() -> None:
+    from education_system.systems.primary.domain import _pupils_bridge as _students
+    _students.init_db()  # the pupils table the links point at
+    repair_links(_paths.PRIMARY_SCHOOL_COUNCIL_DB)
     with _connect() as conn:
         conn.execute("""
             CREATE TABLE IF NOT EXISTS school_council_members (
@@ -200,7 +205,7 @@ def init_db() -> None:
                 notes TEXT,
                 created_on TEXT NOT NULL,
                 updated_on TEXT NOT NULL,
-                FOREIGN KEY(student_id) REFERENCES students(student_id)
+                FOREIGN KEY(student_id) REFERENCES pupils(pupil_id)
                   ON DELETE CASCADE
             )
         """)
@@ -272,7 +277,7 @@ def _student_exists(student_id: str) -> bool:
     with _connect() as conn:
         try:
             row = conn.execute(
-                "SELECT 1 FROM students WHERE student_id=?",
+                "SELECT 1 FROM pupils WHERE pupil_id=?",
                 (student_id,)).fetchone()
         except sqlite3.OperationalError:
             return False

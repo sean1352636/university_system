@@ -1,0 +1,33 @@
+{
+  "name": "trip_payment_reminder",
+  "description": "A reminder to a family who is behind with a trip's payment plan. A voluntary contribution is worded as a request, never a debt (DfE charging policy).",
+  "subject": "{trip_title} - payment reminder for {pupil_name}",
+  "body": [
+    "Dear {recipient_name},",
+    "",
+    "{intro}",
+    "",
+    "{details}",
+    "",
+    "{policy}",
+    "",
+    "You can pay at the school office or online. If you have already paid, thank you - please ignore this reminder.",
+    "",
+    "Yours sincerely,",
+    "{sender_name}",
+    "{school_name}"
+  ],
+  "placeholders": {
+    "recipient_name": "The contact's name",
+    "pupil_name": "The pupil's first name",
+    "trip_title": "The trip",
+    "intro": "What the letter is about (voluntary contribution or charge)",
+    "details": "Due so far, received, outstanding, total and the next instalment",
+    "policy": "The charging / remissions wording",
+    "sender_name": "The member of staff sending it",
+    "school_name": "The school's name"
+  },
+  "defaults": {
+    "school_name": "Secondary School"
+  }
+}

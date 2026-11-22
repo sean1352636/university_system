@@ -12,6 +12,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 import hashlib
+import hmac
 import json
 import os
 import random
@@ -58,6 +59,158 @@ def _get_connection(db_file: str = None) -> sqlite3.Connection:
 def _generate_booking_ref() -> str:
     """Generate a unique 8-character booking reference."""
     return "".join(random.choices(string.ascii_uppercase + string.digits, k=8))
+
+
+# ---------------------------------------------------------------------------
+# Finance posting (shared by the cinema GUI and both CLIs)
+# ---------------------------------------------------------------------------
+
+FINANCE_SOURCE = "Cinema"
+_STUDENT_ACCOUNT_METHODS = {"student account", "student_account", "finance_account", "student finance account"}
+
+
+def is_student_account_method(payment_method: Optional[str]) -> bool:
+    """True when a payment/refund method means the student's finance account."""
+    return (payment_method or "").strip().lower() in _STUDENT_ACCOUNT_METHODS
+
+
+def post_booking_payment_to_finance(
+    booking_ref: str,
+    amount: float,
+    payment_method: str,
+    *,
+    student_id: Optional[str] = None,
+    description: Optional[str] = None,
+    processed_by: Optional[str] = None,
+) -> Dict[str, Any]:
+    """Post a cinema booking payment to Finance. Never raises.
+
+    Student-account bookings are debited from the finance account (which
+    records its own payments row) — call this *before* writing the booking
+    so an insufficient balance blocks the sale. Every other method is
+    recorded as a completed payment after the booking is written. Returns
+    ``{'success', 'payment_id', 'message'}``; a failed cash/card posting is
+    logged and reported but must not roll back the booking.
+    """
+    description = description or f"Cinema booking {booking_ref}"
+    try:
+        from education_system.systems.university.domains.finance.infrastructure.finance_integration import (
+            process_student_finance_account_payment,
+            record_payment_to_finance,
+        )
+
+        if is_student_account_method(payment_method):
+            if not student_id:
+                return {"success": False, "payment_id": None,
+                        "message": "Student ID required for student account payment"}
+            result = process_student_finance_account_payment(
+                student_id=student_id,
+                amount=amount,
+                description=description,
+                transaction_source=FINANCE_SOURCE,
+                transaction_ref=booking_ref,
+                processed_by=processed_by or "System",
+            )
+            if not result.get("success"):
+                logger.warning("Cinema booking %s: student account payment not posted: %s",
+                               booking_ref, result.get("message"))
+            return {"success": bool(result.get("success")),
+                    "payment_id": result.get("payment_id"),
+                    "message": result.get("message", "")}
+
+        payment_id = record_payment_to_finance(
+            student_id=student_id or "GUEST",
+            amount=amount,
+            payment_method=payment_method,
+            transaction_source=FINANCE_SOURCE,
+            transaction_ref=booking_ref,
+            currency="GBP",
+            status="completed",
+            notes=description,
+            created_by=processed_by,
+        )
+        if payment_id is None:
+            logger.warning("Cinema booking %s: payment not posted to finance", booking_ref)
+            return {"success": False, "payment_id": None, "message": "Finance posting failed"}
+        return {"success": True, "payment_id": payment_id, "message": ""}
+    except Exception as e:
+        logger.exception("Cinema booking %s: finance posting failed", booking_ref)
+        return {"success": False, "payment_id": None, "message": str(e)}
+
+
+def post_booking_refund_to_finance(
+    booking_ref: str,
+    amount: float,
+    refund_method: str,
+    *,
+    student_id: Optional[str] = None,
+    customer_email: Optional[str] = None,
+    reason: str = "Cinema booking refund",
+    processed_by: Optional[str] = None,
+) -> Dict[str, Any]:
+    """Post a cinema refund to Finance. Never raises.
+
+    Writes the ``unified_refunds`` row (and GL journal) through
+    ``record_refund_to_finance``; a ``student_account`` refund also credits
+    the student's finance account. Returns ``{'success', 'refund_id',
+    'refund_ref', 'new_balance', 'message'}``.
+    """
+    refund_ref = f"REFUND-{datetime.now().strftime('%Y%m%d%H%M%S')}"
+    out: Dict[str, Any] = {"success": False, "refund_id": None,
+                           "refund_ref": f"{FINANCE_SOURCE.upper()}-{refund_ref}",
+                           "new_balance": None, "message": ""}
+    try:
+        from education_system.systems.university.domains.finance.infrastructure.finance_integration import (
+            ensure_student_finance_account_exists,
+            record_refund_to_finance,
+            top_up_student_finance_account,
+        )
+
+        to_student_account = is_student_account_method(refund_method)
+        if to_student_account and not student_id:
+            out["message"] = "Student ID required for student account refund"
+            return out
+
+        refund_id = record_refund_to_finance(
+            student_id=student_id,
+            refund_amount=amount,
+            original_payment_id=None,
+            refund_reason=reason,
+            refund_type="full",
+            transaction_source=FINANCE_SOURCE,
+            transaction_ref=refund_ref,
+            refund_method="student_account" if to_student_account else refund_method,
+            requested_by=processed_by,
+            notes=f"Booking {booking_ref}" + (f"; customer {customer_email}" if customer_email else ""),
+        )
+        if refund_id is None:
+            logger.warning("Cinema booking %s: refund not posted to finance", booking_ref)
+            out["message"] = "Finance refund posting failed"
+            return out
+        out["refund_id"] = refund_id
+
+        if to_student_account:
+            ensure_student_finance_account_exists(student_id)
+            topup = top_up_student_finance_account(
+                student_id=student_id,
+                amount=amount,
+                payment_method="cinema_refund",
+                processed_by=processed_by or "System",
+                description=f"Cinema refund - {out['refund_ref']}",
+            )
+            if not topup.get("success"):
+                logger.error("Cinema refund %s recorded but student account %s not credited: %s",
+                             out["refund_ref"], student_id, topup.get("message"))
+                out["message"] = topup.get("message", "Student account credit failed")
+                return out
+            out["new_balance"] = topup.get("new_balance")
+
+        out["success"] = True
+        return out
+    except Exception as e:
+        logger.exception("Cinema booking %s: refund posting failed", booking_ref)
+        out["message"] = str(e)
+        return out
 
 
 # ---------------------------------------------------------------------------
@@ -468,8 +621,9 @@ class CinemaService:
         promo_code: str = None,
         snacks: Dict[str, int] = None,
         student_id: str = None,
+        processed_by: str = None,
     ) -> Dict[str, Any]:
-        """Create a complete booking.
+        """Create a complete booking and post the payment to Finance.
 
         *ticket_types* maps ``seat_id -> (type_name, price)``.
         *snacks* maps ``item_name -> quantity``.
@@ -537,6 +691,23 @@ class CinemaService:
                     logger.debug("Suppressed exception", exc_info=True)
 
             booking_ref = _generate_booking_ref()
+
+            # Student-account bookings are debited before the booking is
+            # written so an insufficient balance blocks the sale.
+            payment_id = None
+            charged_to_account = False
+            if is_student_account_method(payment_method) and total_amount > 0:
+                charge = post_booking_payment_to_finance(
+                    booking_ref, total_amount, payment_method,
+                    student_id=student_id, processed_by=processed_by,
+                )
+                if not charge["success"]:
+                    raise ValueError(
+                        f"Student account payment failed: {charge['message']}"
+                    )
+                payment_id = charge["payment_id"]
+                charged_to_account = True
+
             ticket_types_json = json.dumps(
                 {str(k): v for k, v in ticket_types.items()}
             )
@@ -624,6 +795,13 @@ class CinemaService:
                 except Exception:
                     logger.debug("Suppressed exception", exc_info=True)
 
+            # Cash/card: record the completed payment now the booking exists.
+            if not charged_to_account and total_amount > 0:
+                payment_id = post_booking_payment_to_finance(
+                    booking_ref, total_amount, payment_method,
+                    student_id=student_id, processed_by=processed_by,
+                )["payment_id"]
+
             return {
                 "booking_ref": booking_ref,
                 "booking_id": booking_id,
@@ -631,6 +809,7 @@ class CinemaService:
                 "discount_amount": discount_amount,
                 "seats": seat_list,
                 "loyalty": sale_meta,
+                "payment_id": payment_id,
             }
         except Exception:
             conn.rollback()
@@ -1253,9 +1432,11 @@ class CinemaService:
             conn.close()
 
     def list_staff(self) -> List[Tuple]:
-        """Return all staff accounts ordered by name."""
+        """Return all staff accounts ordered by name (rows read by position
+        or by column name — the column order differs between databases)."""
         conn = self._conn()
         try:
+            conn.row_factory = sqlite3.Row
             cursor = conn.cursor()
             cursor.execute("SELECT * FROM staff ORDER BY name")
             return cursor.fetchall()
@@ -1265,55 +1446,63 @@ class CinemaService:
     def verify_staff_password(
         self, username: str, password: str
     ) -> Optional[Tuple]:
-        """Verify a staff login.  Returns the staff row on success or
-        *None*."""
+        """Verify a staff login.  Returns the staff row (by position or by
+        column name) on success or *None*.
+
+        Columns are read by name: ``staff`` is the shared university table,
+        whose ``salt`` column was added last, so its position is not fixed.
+        A salted row holds a PBKDF2 hash made by :meth:`create_staff`; an
+        unsalted one holds bcrypt (``$2b$``/``$2a$``/``$2y$``) or the legacy
+        unsalted PBKDF2, which is upgraded to bcrypt on success. ``'!'`` (or
+        anything else) means no cinema password."""
+        if not username or not password:
+            return None
         conn = self._conn()
         try:
+            conn.row_factory = sqlite3.Row
             cursor = conn.cursor()
             cursor.execute(
                 "SELECT * FROM staff WHERE username = ? AND status = 'active'",
                 (username,),
             )
-            staff = cursor.fetchone()
-            if not staff:
+            row = cursor.fetchone()
+            if not row:
                 return None
-            stored_hash = staff[2]
-            salt = staff[3]
-            if not salt:
-                # Legacy account: try bcrypt first (already migrated), then
-                # PBKDF2 for password hashes that haven't been migrated yet.
-                if stored_hash.startswith("£2b$"):
-                    try:
-                        if bcrypt.checkpw(password.encode(), stored_hash.encode()):
-                            return staff
-                    except (ValueError, AttributeError):
-                        pass
-                    return None
-                # Legacy PBKDF2 fallback — rehash to bcrypt on success.
+            staff = row
+            fields = row.keys()
+            stored_hash = str(row["password_hash"] or "")
+            salt = row["salt"] if "salt" in fields else None
+            ok = False
+            if salt:
+                key = hashlib.pbkdf2_hmac(
+                    "sha256", password.encode(), str(salt).encode(), 1_000_000, dklen=64
+                )
+                ok = hmac.compare_digest(key.hex(), stored_hash)
+            elif stored_hash.startswith(("$2b$", "$2a$", "$2y$")):
+                try:
+                    ok = bcrypt.checkpw(password.encode(), stored_hash.encode())
+                except (ValueError, AttributeError):
+                    ok = False
+            elif len(stored_hash) == 64:
+                # Legacy unsalted PBKDF2 — rehash to bcrypt on success.
                 legacy_hash = hashlib.pbkdf2_hmac(
                     "sha256", password.encode(), b"legacy-cinema-salt", 100_000
                 ).hex()
-                if legacy_hash == stored_hash:
-                    # Migrate to bcrypt
-                    new_hash = bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
+                if hmac.compare_digest(legacy_hash, stored_hash):
+                    ok = True
                     cursor.execute(
                         "UPDATE staff SET password_hash = ? WHERE id = ?",
-                        (new_hash, staff[0]),
+                        (bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode(),
+                         row["id"]),
                     )
-                    conn.commit()
-                    return staff
+            if not ok:
                 return None
-            key = hashlib.pbkdf2_hmac(
-                "sha256", password.encode(), salt.encode(), 1_000_000, dklen=64
+            cursor.execute(
+                "UPDATE staff SET last_login = ? WHERE id = ?",
+                (datetime.now().strftime("%Y-%m-%d %H:%M:%S"), row["id"]),
             )
-            if key.hex() == stored_hash:
-                cursor.execute(
-                    "UPDATE staff SET last_login = ? WHERE id = ?",
-                    (datetime.now().strftime("%Y-%m-%d %H:%M:%S"), staff[0]),
-                )
-                conn.commit()
-                return staff
-            return None
+            conn.commit()
+            return staff
         finally:
             conn.close()
 
@@ -1340,22 +1529,31 @@ class CinemaService:
         finally:
             conn.close()
 
-    def refund_booking(self, booking_id: int) -> float:
+    def refund_booking(
+        self,
+        booking_id: int,
+        refund_method: str = "original_payment_method",
+        student_id: str = None,
+        processed_by: str = None,
+    ) -> float:
         """Refund a booking: set payment_status to 'refunded' and cancel.
 
+        The refund is posted to Finance via
+        :func:`post_booking_refund_to_finance` once the local update commits
+        (a ``student_account`` refund also credits the finance account).
         Returns the refunded amount.
         """
         conn = self._conn()
         try:
             cursor = conn.cursor()
             cursor.execute(
-                "SELECT total_amount FROM bookings WHERE id = ?",
+                "SELECT total_amount, booking_ref, customer_email FROM bookings WHERE id = ?",
                 (booking_id,),
             )
             row = cursor.fetchone()
             if not row:
                 raise ValueError(f"Booking {booking_id} not found")
-            amount = row[0]
+            amount, booking_ref, customer_email = row
 
             cursor.execute(
                 "UPDATE bookings SET payment_status = 'refunded', "
@@ -1375,12 +1573,19 @@ class CinemaService:
                 )
 
             conn.commit()
-            return amount
         except Exception:
             conn.rollback()
             raise
         finally:
             conn.close()
+
+        if amount and amount > 0:
+            post_booking_refund_to_finance(
+                booking_ref, amount, refund_method,
+                student_id=student_id, customer_email=customer_email,
+                processed_by=processed_by,
+            )
+        return amount
 
     # ==================================================================
     # Report data queries (no GUI rendering)
@@ -1674,7 +1879,7 @@ class CinemaService:
                 """
                 INSERT INTO audit_log
                     (user_type, user_id, user_name, action,
-                     entity_type, entity_id, old_value, new_value)
+                     entity_type, record_id, old_value, new_value)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (

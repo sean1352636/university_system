@@ -22,6 +22,7 @@ from education_system.systems.primary.domain import _pupils_bridge as _students
 from education_system.systems.primary.domain.staff import (
     staff as _staff,
 )
+from education_system.systems.primary.infrastructure.schema_repair import repair_links
 
 logger = logging.getLogger(__name__)
 
@@ -222,6 +223,7 @@ def init_db() -> None:
         _students.init_db()
     except Exception:
         logger.debug("students.init_db() failed", exc_info=True)
+    repair_links(_paths.PRIMARY_HEALTH_SAFETY_DB)
     try:
         _staff.init_db()
     except Exception:
@@ -257,7 +259,7 @@ def init_db() -> None:
                 created_at TEXT NOT NULL DEFAULT (datetime('now')),
                 updated_at TEXT NOT NULL DEFAULT (datetime('now')),
                 FOREIGN KEY(affected_student_id)
-                    REFERENCES students(student_id) ON DELETE SET NULL,
+                    REFERENCES pupils(pupil_id) ON DELETE SET NULL,
                 FOREIGN KEY(affected_staff_id)
                     REFERENCES staff(staff_id) ON DELETE SET NULL,
                 FOREIGN KEY(reported_by)

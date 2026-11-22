@@ -211,24 +211,29 @@ class PollsMixin:
             date_iso = (date_part + ' ' + time_part) if time_part else date_part
             event_id = f"poll-{message_id}-{opt_id}"
             try:
-                cursor.execute('SELECT 1 FROM events WHERE id = ?', (event_id,))
+                # Calendar events live only in unified_events.
+                cursor.execute('SELECT 1 FROM unified_events WHERE source_event_id = ?',
+                               (event_id,))
                 if cursor.fetchone():
                     continue
+                name = f"[Tentative] {question}"[:120]
                 cursor.execute(
-                    '''INSERT INTO events
-                       (id, name, description, event_type, date,
-                        date_start, all_day, location, created_by,
-                        date_added, status, priority)
-                       VALUES (?, ?, ?, 'Chat poll', ?, ?, 0, ?, ?, ?, 'tentative', 1)''',
-                    (event_id,
-                     f"[Tentative] {question}"[:120],
+                    '''INSERT INTO unified_events
+                       (source_type, source_event_id, id, title, event_name, description,
+                        event_type, event_date, start_time, start_datetime, location,
+                        created_by, created_at, status)
+                       VALUES ('academic_calendar', ?, ?, ?, ?, ?, 'Chat poll', ?, ?, ?, ?,
+                               ?, ?, 'tentative')''',
+                    (event_id, event_id, name, name,
                      f"Proposed via chat poll in '{room_name}'.\n"
                      f"Option: {label}",
-                     date_iso, date_iso, location or '', username, now),
+                     date_part, time_part or None,
+                     f"{date_part}T{time_part}" if time_part else date_part,
+                     location or '', username, now),
                 )
                 proposed.append({'option': label, 'date': date_iso})
             except Exception:
-                # events table may not exist or have a different schema
+                logger.warning("Could not propose poll date to the calendar", exc_info=True)
                 return proposed
         if proposed:
             try:

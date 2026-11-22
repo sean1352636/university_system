@@ -103,7 +103,7 @@ CREATE TABLE IF NOT EXISTS accessibility_profiles (
 -- Accommodation Requests
 CREATE TABLE IF NOT EXISTS accommodation_requests (
     request_id INTEGER PRIMARY KEY AUTOINCREMENT,
-    student_id INTEGER NOT NULL,
+    student_id TEXT NOT NULL,
     accommodation_type TEXT NOT NULL,  -- extended_time, alternative_format, etc.
     description TEXT,
     status TEXT DEFAULT 'pending',  -- pending, approved, denied
@@ -117,7 +117,7 @@ CREATE TABLE IF NOT EXISTS accommodation_requests (
 -- Disability Documentation
 CREATE TABLE IF NOT EXISTS disability_documentation (
     doc_id INTEGER PRIMARY KEY AUTOINCREMENT,
-    student_id INTEGER NOT NULL,
+    student_id TEXT NOT NULL,
     disability_type TEXT NOT NULL,
     file_url TEXT,
     uploaded_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -130,7 +130,7 @@ CREATE TABLE IF NOT EXISTS disability_documentation (
 -- Exam Accommodations
 CREATE TABLE IF NOT EXISTS exam_accommodations (
     accommodation_id INTEGER PRIMARY KEY AUTOINCREMENT,
-    student_id INTEGER NOT NULL,
+    student_id TEXT NOT NULL,
     exam_id INTEGER,
     extended_time INTEGER,  -- minutes
     separate_room BOOLEAN DEFAULT 0,
@@ -154,7 +154,7 @@ CREATE TABLE IF NOT EXISTS alternative_materials (
 -- Assistive Tech Requests
 CREATE TABLE IF NOT EXISTS assistive_tech_requests (
     request_id INTEGER PRIMARY KEY AUTOINCREMENT,
-    student_id INTEGER NOT NULL,
+    student_id TEXT NOT NULL,
     technology_type TEXT NOT NULL,  -- screen_reader, magnifier, etc.
     status TEXT DEFAULT 'pending',
     requested_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -212,8 +212,8 @@ CREATE TABLE IF NOT EXISTS parent_accounts (
 -- Parent Student Links
 CREATE TABLE IF NOT EXISTS parent_student_links (
     link_id INTEGER PRIMARY KEY AUTOINCREMENT,
-    parent_id INTEGER NOT NULL,
-    student_id INTEGER NOT NULL,
+    parent_id TEXT NOT NULL,
+    student_id TEXT NOT NULL,
     relationship TEXT NOT NULL,  -- parent, guardian, other
     permissions TEXT,  -- JSON
     is_primary BOOLEAN DEFAULT 0,
@@ -237,9 +237,9 @@ CREATE TABLE IF NOT EXISTS parent_permissions (
 -- Parent Communications
 CREATE TABLE IF NOT EXISTS parent_communications (
     comm_id INTEGER PRIMARY KEY AUTOINCREMENT,
-    parent_id INTEGER NOT NULL,
+    parent_id TEXT NOT NULL,
     staff_id INTEGER,
-    student_id INTEGER,
+    student_id TEXT,
     subject TEXT,
     message TEXT NOT NULL,
     timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -250,9 +250,9 @@ CREATE TABLE IF NOT EXISTS parent_communications (
 -- Parent Conference Requests
 CREATE TABLE IF NOT EXISTS parent_conference_requests (
     request_id INTEGER PRIMARY KEY AUTOINCREMENT,
-    parent_id INTEGER NOT NULL,
+    parent_id TEXT NOT NULL,
     teacher_id INTEGER NOT NULL,
-    student_id INTEGER NOT NULL,
+    student_id TEXT NOT NULL,
     preferred_times TEXT,  -- JSON array
     reason TEXT,
     status TEXT DEFAULT 'pending',
@@ -263,9 +263,9 @@ CREATE TABLE IF NOT EXISTS parent_conference_requests (
 -- Parent Conferences
 CREATE TABLE IF NOT EXISTS parent_conferences (
     conference_id INTEGER PRIMARY KEY AUTOINCREMENT,
-    parent_id INTEGER NOT NULL,
+    parent_id TEXT NOT NULL,
     teacher_id INTEGER NOT NULL,
-    student_id INTEGER,
+    student_id TEXT,
     datetime TIMESTAMP NOT NULL,
     location TEXT,
     meeting_type TEXT DEFAULT 'in_person',  -- in_person, virtual, phone
@@ -290,8 +290,8 @@ CREATE TABLE IF NOT EXISTS parent_notifications (
 -- Parent Document Access
 CREATE TABLE IF NOT EXISTS parent_document_access (
     access_id INTEGER PRIMARY KEY AUTOINCREMENT,
-    parent_id INTEGER NOT NULL,
-    student_id INTEGER NOT NULL,
+    parent_id TEXT NOT NULL,
+    student_id TEXT NOT NULL,
     document_id INTEGER,
     document_type TEXT,
     accessed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -302,7 +302,7 @@ CREATE TABLE IF NOT EXISTS parent_document_access (
 -- Parent Portal Activity
 CREATE TABLE IF NOT EXISTS parent_portal_activity (
     activity_id INTEGER PRIMARY KEY AUTOINCREMENT,
-    parent_id INTEGER NOT NULL,
+    parent_id TEXT NOT NULL,
     action_type TEXT NOT NULL,
     details TEXT,
     timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -384,7 +384,7 @@ CREATE TABLE IF NOT EXISTS parking_violations (
 -- Violation Appeals
 CREATE TABLE IF NOT EXISTS violation_appeals (
     appeal_id INTEGER PRIMARY KEY AUTOINCREMENT,
-    violation_id INTEGER NOT NULL,
+    violation_id TEXT NOT NULL,
     reason TEXT NOT NULL,
     supporting_documents TEXT,  -- JSON array
     status TEXT DEFAULT 'pending',
@@ -467,7 +467,7 @@ CREATE TABLE IF NOT EXISTS visitor_parking (
 -- Parking Occupancy
 CREATE TABLE IF NOT EXISTS parking_occupancy (
     occupancy_id INTEGER PRIMARY KEY AUTOINCREMENT,
-    lot_id INTEGER NOT NULL,
+    lot_id TEXT NOT NULL,
     timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     available_spaces INTEGER NOT NULL,
     total_spaces INTEGER NOT NULL,
@@ -480,7 +480,7 @@ BLOCKCHAIN_SCHEMA = """
 -- Blockchain Credentials
 CREATE TABLE IF NOT EXISTS blockchain_credentials (
     credential_id INTEGER PRIMARY KEY AUTOINCREMENT,
-    student_id INTEGER NOT NULL,
+    student_id TEXT NOT NULL,
     credential_type TEXT NOT NULL,  -- degree, certificate, diploma, transcript
     credential_name TEXT NOT NULL,
     issue_date DATE NOT NULL,
@@ -510,7 +510,7 @@ CREATE TABLE IF NOT EXISTS digital_badges (
 CREATE TABLE IF NOT EXISTS badge_issuances (
     issuance_id INTEGER PRIMARY KEY AUTOINCREMENT,
     badge_id INTEGER NOT NULL,
-    student_id INTEGER NOT NULL,
+    student_id TEXT NOT NULL,
     issued_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     blockchain_hash TEXT,
     evidence_url TEXT,

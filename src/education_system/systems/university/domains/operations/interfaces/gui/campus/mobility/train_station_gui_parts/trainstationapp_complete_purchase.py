@@ -63,28 +63,18 @@ class TrainStationApp:
             f"{_t('train.purchase.total_price')}: £{final_price:.2f}")
 
         if confirm:
-            # Process student account payment
-            if payment_method == "Student Account" and FINANCE_AVAILABLE:
-                student_id = self._get_current_user_student_id()
-                payment_result = process_student_finance_account_payment(
-                    student_id=student_id,
-                    amount=final_price,
-                    description=f"Train ticket: {service[2]} to {service[3]}",
-                    transaction_source="TrainStation",
-                    transaction_ref=f"TRAIN-{datetime.now().strftime('%Y%m%d%H%M%S')}",
-                    processed_by=self.current_user.get('username', 'System') if self.current_user else 'System'
+            # The domain service takes the payment (student account draw-down
+            # or cash/card posting) and writes the ticket.
+            try:
+                ticket_num, receipt_num = self.db.purchase_ticket(
+                    service[0], name, payment_method, final_price,
+                    student_id=self._get_current_user_student_id(),
+                    processed_by=self.current_user.get('username', 'System') if self.current_user else 'System',
                 )
-
-                if not payment_result.get('success'):
-                    messagebox.showerror(
-                        _t("train.error.payment_error"),
-                        payment_result.get('message', _t("train.error.payment_failed"))
-                    )
-                    return
-
-            ticket_num, receipt_num = self.db.purchase_ticket(
-                service[0], name, payment_method, final_price
-            )
+            except Exception as exc:
+                messagebox.showerror(_t("train.error.payment_error"),
+                                     _t("train.error.payment_failed", default=str(exc)))
+                return
 
             # Send confirmation email
             ticket_data = {

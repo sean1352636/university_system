@@ -1,6 +1,6 @@
 """Year-group configuration data layer for the Primary School System.
 
-One row per UK secondary year (7–11). Captures the head of year, an
+One row per primary year group (Reception, Years 1–6). Captures the head of year, an
 intended cohort capacity, and free-form notes. Live pupil counts are
 derived on demand from the ``pupils`` table.
 """
@@ -57,7 +57,7 @@ def init_db() -> None:
     except sqlite3.Error:
         logger.exception("Failed to initialise year_groups table")
         raise
-    logger.info("Secondary year_groups table ready")
+    logger.info("Primary year_groups table ready")
     _DB_READY = True
 
 
@@ -175,6 +175,8 @@ def list_all() -> list[YearGroup]:
 
 def pupil_counts() -> dict[str, int]:
     init_db()
+    from education_system.systems.primary.domain.learners.pupils import pupils as _pupils
+    _pupils.init_db()  # a fresh database has no pupils table yet
     try:
         with _connect() as conn:
             rows = conn.execute(

@@ -7,11 +7,11 @@ Complete command-line interface reference for the Education System.
 ```bash
 python -m education_system                          # Interactive mode selector
 python -m education_system --cli --university       # University CLI directly
-python -m education_system --gui --college          # College GUI directly
+python -m education_system --gui --college          # Sixth Form College GUI directly
 python -m education_system --api                    # REST API server (all systems)
 python -m education_system --test --university      # Run university tests
 python -m education_system --test-all              # Run all system tests
-python -m education_system --seed 50 --college      # Seed college DB with 50 demo students
+python -m education_system --seed 50 --college      # Seed the sixth form DB with 50 demo students
 ```
 
 ### Command-Line Arguments
@@ -21,19 +21,23 @@ python -m education_system --seed 50 --college      # Seed college DB with 50 de
 | `--cli` | Launch command-line interface |
 | `--gui` | Launch graphical interface |
 | `--api` | Run unified REST API server |
+| `--web` | Open the static HTML web UI in a browser (`--web-port`, `--web-no-browser`) |
 | `--test` | Run test suite (requires system flag) |
 | `--test-all` | Run tests for all systems |
 | `--university` | Select University system |
-| `--college` | Select Sixth Form College system |
-| `--school` | Select Secondary School system |
+| `--college` | Select Sixth Form College system (`--sixthform` alias) |
+| `--secondary` | Select Secondary School system (`--school` alias) |
 | `--primary` | Select Primary School system |
+| `--nursery` | Select Nursery / Early Years system |
+| `--fecollege` | Select FE College system (`--fe-college` alias) |
+| `--apprenticeships` | Select Apprenticeships system (`--apprenticeship` alias) |
 | `--seed N` | Seed database with N demo students |
 
 If no flags are provided, an interactive menu is shown.
 
 ## Authentication
 
-All CLI and GUI sessions go through shared authentication (`shared/auth/`).
+All CLI and GUI sessions go through shared authentication (`src/education_system/platform/identity/auth/`).
 
 ### Login Flow
 
@@ -45,21 +49,32 @@ All CLI and GUI sessions go through shared authentication (`shared/auth/`).
 
 ### Default Accounts
 
+Seeded only when `EDU_DEV_SEED=true`. [DEFAULT_ACCOUNTS.md](DEFAULT_ACCOUNTS.md) has the full list.
+
 | Username | Password | Systems | Role |
 |----------|----------|---------|------|
-| `superadmin` | `SuperAdmin@123` | All 4 | Admin |
+| `superadmin` | `SuperAdmin@123` | All 7 | Admin |
 | `admin` | `admin123` | University | Admin |
 | `staff` | `staff123` | University | Staff |
 | `S12345` | `student123` | University | Student |
-| `admin1` | `admin1234` | College | Admin |
-| `staff1` | `staff1234` | College | Staff |
-| `student1` | `student1234` | College | Student |
+| `admin1` | `admin1234` | Sixth Form | Admin |
+| `staff1` | `staff1234` | Sixth Form | Teacher |
+| `student1` | `student1234` | Sixth Form | Student |
 | `admin2` | `admin1234` | Secondary | Admin |
-| `staff2` | `staff1234` | Secondary | Staff |
+| `staff2` | `staff1234` | Secondary | Teacher |
 | `student2` | `student1234` | Secondary | Student |
 | `admin3` | `admin1234` | Primary | Admin |
-| `staff3` | `staff1234` | Primary | Staff |
+| `staff3` | `staff1234` | Primary | Teacher |
 | `student3` | `student1234` | Primary | Student |
+| `admin4` | `admin1234` | Nursery | Admin |
+| `admin5` | `admin1234` | Apprenticeships | Admin |
+| `tutor1` | `tutor1234` | Apprenticeships | Staff (tutor) |
+| `apprentice1` | `apprentice1234` | Apprenticeships | Apprentice |
+| `employer1` | `employer1234` | Apprenticeships | Employer |
+| `assessor1` | `assessor1234` | Apprenticeships | End-point assessor |
+| `admin6` | `admin1234` | FE College | Admin |
+| `lecturer1` | `lecturer1234` | FE College | Teacher |
+| `learner1` | `learner1234` | FE College | Student |
 
 Parent accounts follow the same pattern (`parent`, `parent1`-`parent3`).
 
@@ -133,12 +148,14 @@ After login the university CLI presents a categorised menu. Options vary by role
 | Option | Description |
 |--------|-------------|
 | Analytics Dashboard | Cross-system analytics |
-| Outcome Tracking | Student outcome monitoring |
-| Bulk Transfer | Transfer students between systems |
-| Transfer Documents | Document sharing across systems |
-| GDPR Compliance | Data retention, erasure requests |
+| Cross-System Calendar | Calendar across systems |
+| Inter-System Messaging | Messages between systems |
 | Central Admin Portal | Cross-system administration |
+| GDPR Compliance | Data retention, erasure requests |
+| Shared Documents | Document sharing across systems |
 | Student Self-Service | Unified student portal |
+| Digital Transcript | Cross-system transcript |
+| Apprenticeship Progression | Progression into apprenticeships |
 
 ### System
 
@@ -148,27 +165,39 @@ After login the university CLI presents a categorised menu. Options vary by role
 | Switch to GUI | Launch the graphical interface |
 | Language | Change interface language |
 | System Monitoring | Health checks, metrics (admin) |
-| Switch System | Jump to College/School/Primary |
+| Switch System | Jump to any other system the account can access |
 
-## College CLI Menu
+## Sixth Form College Menu
 
-The college CLI organises menus by role:
+Categories (`systems/sixth_form/interfaces/gui/gui_main.py`, mirrored by the CLI): Student Management, Academic Management, Assessment & Grades, UCAS & Careers, Pastoral & Wellbeing, Staff & Communication, Finance & Bursaries, Operations, Reports & Analytics, Cross-System, System
 
-**Admin/Staff sections:** Teaching & Learning, Students & Pastoral, Attendance & Timetable, Exams & Assessment, Staff & HR, Administration, Finance & Funding, Communication, Facilities, Analytics, Parent & Careers, Student Self-Service, System & Settings, Cross-System Tools
+## Secondary School Menu
 
-**Student sections:** My Academics, Self-Service & Activities, Communication, Tools & Settings
+Adapted for secondary education (Years 7-11):
+Pupil Management, Academic Management, Assessment & Grades, Pastoral & Wellbeing, Staff & Communication, Finance, Reports & Analytics, Cross-System, System
 
-**Parent sections:** Parent Portal, Messages, Calendar, Parents Evening, Announcements, Feedback
-
-## Secondary School CLI Menu
-
-Similar hierarchical structure adapted for secondary education (Years 7-11):
-Academics, Pastoral Care, Attendance, Exams, Staff, Administration, Communication, Facilities, Student Life
-
-## Primary School CLI Menu
+## Primary School Menu
 
 Adapted for primary education (Reception-Year 6):
-Academics, Safeguarding & Pastoral, Attendance, Assessments, Staff, Administration, Communication, Facilities, Pupil Activities
+Pupil Management, Academic Management, Assessment & Progress, Pastoral & Wellbeing, Staff & Communication, Finance, Reports & Analytics, Cross-System, System
+
+## Nursery Menu
+
+Children & Admissions, EYFS Learning & Development, Daily Care & Routines, Safeguarding & Welfare, Parents & Communication, Staff & Ratios, Finance, Compliance & Reports, Cross-System, System
+
+## FE College Menu
+
+The menu follows the signed-in user's view:
+
+**Admin:** Overview, People, Curriculum, Money, Communication
+
+**Staff:** Overview, Teaching, Assessment, Learners, Communication
+
+**Student:** Overview, My learning, Me
+
+## Apprenticeships Menu
+
+Each of the five roles has its own menu. See [the Apprenticeships CLI reference](college_and_apprenticeships/cli.md).
 
 ## Shared CLI Modules
 
@@ -194,5 +223,5 @@ make lint-fix            # Ruff auto-fix
 make format              # Ruff format
 make type-check          # Mypy
 make security-scan       # Bandit
-make ci                  # clean + lint + test-cov + security-scan
+make ci                  # clean + lint + test-cov + security-scan + supply-chain-check
 ```

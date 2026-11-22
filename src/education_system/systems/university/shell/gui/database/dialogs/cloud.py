@@ -14,6 +14,8 @@ import time
 import datetime
 import threading
 
+from education_system.platform.delivery.gui.tk_threads import start_thread, ui
+
 from education_system.systems.university.shell.gui.database.config import config
 from education_system.systems.university.shell.gui.database.metadata import metadata_manager
 from education_system.systems.university.shell.gui.database.operations.backup_ops import list_available_backups, upload_to_aws_s3, download_from_aws_s3
@@ -37,15 +39,14 @@ class UploadDialog:
         The upload runs on a worker thread so the dialog stays responsive,
         but Tk is single-threaded: setting a progress variable, configuring
         a label, opening a messagebox or destroying this dialog from that
-        thread is undefined behaviour. Widget work comes back through
-        after(); dropped if the dialog has already closed.
+        thread is undefined behaviour. Widget work is queued for the main
+        thread via ui(); dropped if the dialog has already closed.
         """
-        try:
+        def _run():
             if self.dialog.winfo_exists():
-                self.dialog.after(0, callback)
-        except (tk.TclError, RuntimeError):
-            # Dialog gone, or the main loop already exited: nothing to update.
-            pass
+                callback()
+
+        ui(self.dialog, _run)
 
     def create_widgets(self):
         """Create dialog widgets"""
@@ -190,9 +191,7 @@ class UploadDialog:
                     self._post(lambda err=e: finish(f"Upload failed: {err}", error=True))
 
             # Start upload thread
-            upload_thread = threading.Thread(target=upload_worker)
-            upload_thread.daemon = True
-            upload_thread.start()
+            start_thread(self.dialog, upload_worker)
 
         except Exception as e:
             messagebox.showerror(_t('gui.shell.database.dialogs.cloud.dialogs.error', default="Error"), f"Failed to start upload: {e}")
@@ -354,10 +353,10 @@ class DownloadDialog:
 
         def worker():
             try:
-                self.dialog.after(0, update_ui, 10, f"Downloading {backup['filename']}...")
+                ui(self.dialog, update_ui, 10, f"Downloading {backup['filename']}...")
                 success = download_from_aws_s3(bucket, key, destination_path)
                 if success:
-                    self.dialog.after(0, update_ui, 100, "Download complete.")
+                    ui(self.dialog, update_ui, 100, "Download complete.")
 
                     for record in metadata_manager.metadata["backups"]:
                         if record["path"] == backup["path"]:
@@ -365,10 +364,10 @@ class DownloadDialog:
                             break
                     metadata_manager.save_metadata()
 
-                    self.dialog.after(0, finish, True, f"Backup downloaded to {destination_path}")
+                    ui(self.dialog, finish, True, f"Backup downloaded to {destination_path}")
                 else:
-                    self.dialog.after(0, finish, False, "Cloud service reported a failure.")
+                    ui(self.dialog, finish, False, "Cloud service reported a failure.")
             except Exception as exc:
-                self.dialog.after(0, finish, False, f"Download failed: {exc}")
+                ui(self.dialog, finish, False, f"Download failed: {exc}")
 
-        threading.Thread(target=worker, daemon=True).start()
+        start_thread(self.dialog, worker)

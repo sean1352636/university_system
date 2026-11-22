@@ -14,7 +14,9 @@ from __future__ import annotations
 import datetime as _dt
 import logging
 import tkinter as tk
-from tkinter import messagebox, simpledialog, ttk
+from tkinter import ttk
+from education_system.systems.sixth_form.interfaces.gui._sidebar import SidebarBook
+from education_system.platform.delivery.gui.parented_dialogs import messagebox, simpledialog
 from typing import Any
 
 from education_system.platform import branding
@@ -63,13 +65,20 @@ def open_directory(parent=None) -> None:
     win.geometry(WIN_GEOMETRY)
     win.minsize(*WIN_MINSIZE)
 
-    nb = ttk.Notebook(win)
+    nb = SidebarBook(win)
     nb.pack(fill="both", expand=True, padx=10, pady=10)
 
     employers_tab = EmployersTab(nb, win)
     placements_tab = PlacementsTab(nb, win, employers_tab)
     employers_tab.set_refresh_callback(placements_tab.refresh)
     SummaryTab(nb, placements_tab, employers_tab)
+
+    # H&S vetting, visits and the T Level placement gate, after the
+    # original three tabs.
+    from education_system.systems.sixth_form.interfaces.gui.progression.work_experience import (
+        vetting_views as _vetting_views,
+    )
+    _vetting_views.add_tabs(nb)
 
 
 def _student_options() -> list[tuple[str, str]]:
@@ -326,12 +335,6 @@ class PlacementDialog(tk.Toplevel):
         # queues the grab for the next idle slice of the event loop.
         self.after_idle(self._safe_grab)
 
-    def _safe_grab(self) -> None:
-        try:
-            self.grab_set()
-        except Exception:
-            pass
-
         frm = ttk.Frame(self, padding=12)
         frm.pack(fill="both", expand=True)
         frm.columnconfigure(1, weight=1)
@@ -462,6 +465,12 @@ class PlacementDialog(tk.Toplevel):
                     command=self.destroy).pack(side="right", padx=4)
         ttk.Button(btns, text="Save",
                     command=self._save).pack(side="right", padx=4)
+
+    def _safe_grab(self) -> None:
+        try:
+            self.grab_set()
+        except Exception:
+            pass
 
     def _payload(self) -> dict[str, Any]:
         if self.placement is not None:
@@ -670,12 +679,6 @@ class EmployerDialog(tk.Toplevel):
         # queues the grab for the next idle slice of the event loop.
         self.after_idle(self._safe_grab)
 
-    def _safe_grab(self) -> None:
-        try:
-            self.grab_set()
-        except Exception:
-            pass
-
         frm = ttk.Frame(self, padding=12)
         frm.pack(fill="both", expand=True)
         frm.columnconfigure(1, weight=1)
@@ -745,6 +748,12 @@ class EmployerDialog(tk.Toplevel):
                     command=self.destroy).pack(side="right", padx=4)
         ttk.Button(btns, text="Save",
                     command=self._save).pack(side="right", padx=4)
+
+    def _safe_grab(self) -> None:
+        try:
+            self.grab_set()
+        except Exception:
+            pass
 
     def _payload(self) -> dict[str, Any]:
         return {

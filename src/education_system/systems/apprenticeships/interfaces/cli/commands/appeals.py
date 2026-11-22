@@ -19,8 +19,8 @@ from education_system.systems.apprenticeships import config
 from education_system.systems.apprenticeships.domain.quality import appeals as rules
 from education_system.systems.apprenticeships.domain.quality.appeals import Appeal
 from education_system.systems.apprenticeships.interfaces.cli import prompts
-from education_system.systems.apprenticeships.services import appeal_service
-from education_system.systems.apprenticeships.services.access import Actor
+from education_system.systems.apprenticeships.application.quality import appeal_service
+from education_system.systems.apprenticeships.application.security.access import Actor
 
 logger = logging.getLogger(__name__)
 

@@ -19,7 +19,9 @@ from __future__ import annotations
 import datetime as _dt
 import logging
 import tkinter as tk
-from tkinter import messagebox, ttk
+from tkinter import ttk
+from education_system.systems.sixth_form.interfaces.gui._sidebar import SidebarBook
+from education_system.platform.delivery.gui.parented_dialogs import messagebox
 from typing import Any
 
 from education_system.platform import branding
@@ -109,12 +111,26 @@ def open_directory(parent=None) -> None:
     win.geometry(WIN_GEOMETRY)
     win.minsize(*WIN_MINSIZE)
 
-    nb = ttk.Notebook(win)
+    nb = SidebarBook(win)
     nb.pack(fill="both", expand=True, padx=10, pady=10)
 
     records_tab = RecordsTab(nb, win)
     MissingTab(nb, win, records_tab)
     SummaryTab(nb, win, records_tab)
+
+    # Month-by-month activity, the sustained measure and the NCCIS-style
+    # export, after the original three tabs.
+    from education_system.systems.sixth_form.interfaces.gui.progression.destinations import (
+        sustained_views as _sustained_views,
+    )
+    _sustained_views.add_tabs(nb)
+
+    # Destinations confirmed by the university (enrolled / progressed /
+    # withdrawn reports from the cross-system link), after those.
+    from education_system.systems.sixth_form.interfaces.gui.progression.destinations import (
+        university_confirmations_views as _uni_views,
+    )
+    _uni_views.add_tabs(nb)
 
     _OPEN_WINDOW = win
 
@@ -330,7 +346,7 @@ class RecordsTab:
                                     f"{step.detail}\n\nOpen the FE referral "
                                     f"form for {rec.student_id}?",
                                     parent=self.root):
-                from education_system.systems.sixth_form.domain.progression import (
+                from education_system.systems.sixth_form.interfaces.gui.progression import (
                     post16_pathway_views,
                 )
                 post16_pathway_views.open_window(self.root)
@@ -927,6 +943,12 @@ class SummaryTab:
                    font=("", 15, "bold")).pack(side="left")
         ttk.Button(bar, text="Refresh",
                     command=self.refresh).pack(side="right")
+        from education_system.systems.sixth_form.interfaces.gui import popout
+        if not isinstance(self.frame.master, popout.FrameBook):
+            popout.add_page_button(
+                bar, "Destinations summary",
+                lambda book: SummaryTab(book, book.winfo_toplevel(),
+                                        self.records_tab), padx=(0, 6))
 
         outer = ttk.Frame(self.frame)
         outer.pack(fill="both", expand=True, padx=12, pady=12)

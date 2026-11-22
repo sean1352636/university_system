@@ -57,36 +57,51 @@ def student_management_advanced_search():
     return feature_pending("Advanced Search", _SYSTEM, category=_CATEGORY)
 
 
-@student_management_menu_bp.route("/student-profile", methods=["GET"])
+@student_management_menu_bp.route("/admissions", methods=["GET"])
 @token_required
 @staff_required
-def student_management_student_profile():
-    """Student Profile"""
-    return feature_pending("Student Profile", _SYSTEM, category=_CATEGORY)
+def student_management_admissions():
+    """Admissions"""
+    return feature_pending("Admissions", _SYSTEM, category=_CATEGORY)
 
 
-@student_management_menu_bp.route("/open-admissions", methods=["GET"])
+@student_management_menu_bp.route("/enrolment", methods=["GET"])
 @token_required
 @staff_required
-def student_management_open_admissions():
-    """open_admissions"""
-    return feature_pending("open_admissions", _SYSTEM, category=_CATEGORY)
+def student_management_enrolment():
+    """Enrolment"""
+    return feature_pending("Enrolment", _SYSTEM, category=_CATEGORY)
 
 
-@student_management_menu_bp.route("/open-enrolment", methods=["GET"])
+@student_management_menu_bp.route("/onboarding", methods=["GET"])
 @token_required
 @staff_required
-def student_management_open_enrolment():
-    """open_enrolment"""
-    return feature_pending("open_enrolment", _SYSTEM, category=_CATEGORY)
+def student_management_onboarding():
+    """Onboarding: the checklist summary and where the onboarding API is.
 
+    Implemented (not generated): the full onboarding API is
+    ``/api/onboarding/...`` (``routes/onboarding_routes.py``)."""
+    import dataclasses
 
-@student_management_menu_bp.route("/open-onboarding", methods=["GET"])
-@token_required
-@staff_required
-def student_management_open_onboarding():
-    """open_onboarding"""
-    return feature_pending("open_onboarding", _SYSTEM, category=_CATEGORY)
+    from flask import jsonify
+
+    from education_system.systems.sixth_form.domain.admissions.onboarding import (
+        onboarding as _ob,
+    )
+    s = _ob.summary()
+    return jsonify({
+        "feature": "Onboarding", "system": _SYSTEM, "category": _CATEGORY,
+        "summary": dataclasses.asdict(s),
+        "endpoints": {
+            "checklists": "/api/onboarding/checklists",
+            "checklist": "/api/onboarding/checklists/<id>",
+            "history": "/api/onboarding/checklists/<id>/history",
+            "consents": "/api/onboarding/checklists/<id>/consents",
+            "item_status": "/api/onboarding/items/<id>/status",
+            "reports": "/api/onboarding/reports/<outstanding|tutor_group|"
+                       "course|year_group>",
+            "sessions": "/api/onboarding/sessions",
+        }})
 
 
 @student_management_menu_bp.route("/bulk-operations", methods=["GET"])
@@ -97,12 +112,20 @@ def student_management_bulk_operations():
     return feature_pending("Bulk Operations", _SYSTEM, category=_CATEGORY)
 
 
-@student_management_menu_bp.route("/open-alumni", methods=["GET"])
+@student_management_menu_bp.route("/alumni", methods=["GET"])
 @token_required
 @staff_required
-def student_management_open_alumni():
-    """open_alumni"""
-    return feature_pending("open_alumni", _SYSTEM, category=_CATEGORY)
+def student_management_alumni():
+    """Alumni"""
+    return feature_pending("Alumni", _SYSTEM, category=_CATEGORY)
+
+
+@student_management_menu_bp.route("/student-exit-interviews", methods=["GET"])
+@token_required
+@staff_required
+def student_management_student_exit_interviews():
+    """Student Exit Interviews"""
+    return feature_pending("Student Exit Interviews", _SYSTEM, category=_CATEGORY)
 
 
 @student_management_menu_bp.route("/parent-portal", methods=["GET"])

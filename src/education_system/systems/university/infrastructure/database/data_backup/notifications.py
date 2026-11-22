@@ -18,28 +18,22 @@ def send_email_notification(subject: str, message: str, recipients: list):
         if not config["email_notifications"] or not recipients:
             return
 
-        from education_system.systems.university.infrastructure.email.smtp import send_email_via_smtp
-        from datetime import datetime as dt
+        from education_system.systems.university.infrastructure.email import outbox_delivery
 
-        # Send to first recipient with others as CC
-        recipient_email = recipients[0]
-        cc = recipients[1:] if len(recipients) > 1 else None
-
-        current_time = dt.now().isoformat()
-        success = send_email_via_smtp(
-            recipient_email=recipient_email,
-            subject=subject,
-            body=message,
-            cc=cc,
-            bcc=None,
-            attachments=None,
-            current_time=current_time
-        )
-
-        if success:
-            logger.info(f"Email notification sent to {recipients}")
+        # One message each, through the outbox (retries; nobody sees the
+        # other recipients' addresses).
+        accepted = 0
+        for address in recipients:
+            try:
+                result = outbox_delivery.enqueue(address, subject, message,
+                                                 category="backup_alert", created_by="backup")
+                accepted += result["status"] in ("queued", "stored")
+            except ValueError as exc:
+                logger.error(f"Backup notification not sent to {address}: {exc}")
+        if accepted:
+            logger.info(f"Backup notification sent to {accepted} of {len(recipients)} recipients")
         else:
-            logger.error(f"Failed to send email notification to {recipients}")
+            logger.error(f"Failed to send backup notification to {recipients}")
     except smtplib.SMTPException as e:
         logger.error(f"SMTP error sending email notification: {e}")
     except (OSError, IOError) as e:

@@ -2,168 +2,115 @@
 """
 Password Reset Utility
 
-This script allows administrators to reset user passwords in the system.
-Useful for:
-- Resetting forgotten passwords
-- Setting up development/test accounts
-- Emergency access recovery
+Resets a login in the shared auth database (auth.db), which every system signs
+in against. A reset therefore applies to all the systems that login can reach.
 
 Usage:
-    python reset_password.py                    # Interactive mode
-    python reset_password.py --user admin       # Reset specific user
-    python reset_password.py --reset-defaults   # Reset all default accounts
+    python tools/university/reset_password.py                    # Interactive mode
+    python tools/university/reset_password.py --user admin       # Reset one user
+    python tools/university/reset_password.py --list-users       # List logins
+    EDU_DEV_SEED=true python tools/university/reset_password.py --reset-defaults
+
+A reset unlocks the account, ends its sessions and sets the new password as
+temporary: the user replaces it at next sign-in if forced password change is
+switched on. It doesn't reactivate a deactivated account.
+
+--reset-defaults puts the University's seeded development accounts back to the
+passwords in docs/reference/DEFAULT_ACCOUNTS.md. Those passwords are public, so
+it only runs when EDU_DEV_SEED is on.
 """
 
-import hashlib
-import os
-import secrets
-from education_system.systems.university.infrastructure.database.db import sqlite3
-import sys
 import argparse
-from datetime import datetime
-from pathlib import Path
 import getpass
-import logging
+import sqlite3
+import sys
+from pathlib import Path
 
 # Add the package root to path: tools/university/<this> -> tools -> <repo root> -> src
 project_root = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(project_root / "src"))
 
-# Use standard imports instead of dynamic code execution
-# This avoids security risks from exec_module() which could execute arbitrary code
-try:
-    from education_system import paths
-    from education_system.systems.university.infrastructure.i18n import get_text as _t, init_i18n
-    init_i18n()
-    I18N_AVAILABLE = True
-except ImportError:
-    I18N_AVAILABLE = False
-    def _t(key, **kwargs):
-        """Fallback translation function"""
-        # Map keys to default English text
-        translations = {
-            "reset_password.title": "University System - Password Reset Utility",
-            "reset_password.username_prompt": "Enter username:",
-            "reset_password.username_empty": "Username cannot be empty",
-            "reset_password.password_prompt": "Enter new password:",
-            "reset_password.password_empty": "Password cannot be empty",
-            "reset_password.confirm_prompt": "Confirm new password:",
-            "reset_password.passwords_no_match": "Passwords do not match. Try again.",
-            "reset_password.user_not_found": "Error: User '{username}' not found in database",
-            "reset_password.success": "Password reset successful for user: {username}",
-            "reset_password.db_error": "Database error: {error}",
-            "reset_password.unexpected_error": "Unexpected error: {error}",
-            "reset_password.resetting_defaults": "Resetting default passwords for development accounts...",
-            "reset_password.warning_default_passwords": "WARNING: Using default development passwords for: {accounts}",
-            "reset_password.set_env_vars": "Set environment variables for production use.",
-            "reset_password.reset_complete": "Reset complete! Updated {count} account(s).",
-            "reset_password.users_in_db": "Users in database:",
-            "reset_password.username": "Username",
-            "reset_password.role": "Role",
-            "reset_password.active": "Active",
-            "reset_password.yes": "Yes",
-            "reset_password.no": "No",
-            "reset_password.na": "N/A",
-            "reset_password.total": "Total: {count} users",
-            "reset_password.error_listing_users": "Error listing users: {error}",
-            "reset_password.resetting_for_user": "Resetting password for user: {username}",
-            "reset_password.warning_insecure_cli": "WARNING: Providing passwords via command line is insecure!",
-        }
-        text = translations.get(key, key)
-        for k, v in kwargs.items():
-            text = text.replace('{' + k + '}', str(v))
-        return text
+from education_system.platform.identity.auth.core import UserAuth  # noqa: E402
+from education_system.platform.identity.auth.db import connect  # noqa: E402
+from education_system.platform.identity.auth.exceptions import AuthError  # noqa: E402
+from education_system.platform.identity.auth.password_manager import (  # noqa: E402
+    hash_password,
+)
+from education_system.platform.identity.auth.schema import (  # noqa: E402
+    _DEFAULT_ACCOUNTS,
+    _is_dev_mode,
+)
 
-    # Fallback: construct paths safely without dynamic code execution
-    # This is secure because we only use static path construction
-    class _SafePathsClass:
-        """Minimal paths configuration for standalone execution.
+_MESSAGES = {
+    "reset_password.title": "University System - Password Reset Utility",
+    "reset_password.username_prompt": "Enter username:",
+    "reset_password.username_empty": "Username cannot be empty",
+    "reset_password.password_prompt": "Enter new password:",
+    "reset_password.password_empty": "Password cannot be empty",
+    "reset_password.confirm_prompt": "Confirm new password:",
+    "reset_password.passwords_no_match": "Passwords do not match. Try again.",
+    "reset_password.user_not_found": "Error: User '{username}' not found in database",
+    "reset_password.success": "Password reset successful for user: {username}",
+    "reset_password.db_error": "Database error: {error}",
+    "reset_password.unexpected_error": "Unexpected error: {error}",
+    "reset_password.resetting_defaults": "Resetting default passwords for development accounts...",
+    "reset_password.reset_complete": "Reset complete! Updated {count} account(s).",
+    "reset_password.users_in_db": "Users in database:",
+    "reset_password.username": "Username",
+    "reset_password.role": "Role",
+    "reset_password.active": "Active",
+    "reset_password.yes": "Yes",
+    "reset_password.no": "No",
+    "reset_password.na": "N/A",
+    "reset_password.total": "Total: {count} users",
+    "reset_password.error_listing_users": "Error listing users: {error}",
+    "reset_password.resetting_for_user": "Resetting password for user: {username}",
+    "reset_password.warning_insecure_cli": "WARNING: Providing passwords via command line is insecure!",
+}
 
-        This fallback avoids dynamic code execution (exec_module) which
-        could be exploited if the module source is compromised.
-        """
-        def __init__(self):
-            self._project_root = project_root
-            # Construct paths statically - no dynamic code execution
-            self.DEFAULT_DB_PATH = self._project_root / 'data' / 'db_files' / 'student_records.db'
-            self.DATA_DIR = self._project_root / 'data'
-            self.LOG_DIR = self._project_root / 'logs'
 
-    paths = _SafePathsClass()
 
-def hash_password(password, salt=None):
-    """
-    Hash a password with PBKDF2-SHA256 (1,000,000 iterations).
+def _t(key, **kwargs):
+    """The English text for *key*, with its {placeholders} filled in."""
+    text = _MESSAGES.get(key, key)
+    for k, v in kwargs.items():
+        text = text.replace('{' + k + '}', str(v))
+    return text
 
-    Args:
-        password: Plain text password
-        salt: Optional salt (generates new one if not provided)
 
-    Returns:
-        tuple: (salt, password_hash)
-    """
-    if salt is None:
-        salt = secrets.token_hex(16)
+def _db_missing(db_path):
+    """True if an explicit path doesn't exist, so a typo can't create an empty database."""
+    if db_path and not Path(db_path).is_file():
+        print(f"❌ {_t('reset_password.db_error', error=f'no such database: {db_path}')}")
+        return True
+    return False
 
-    key = hashlib.pbkdf2_hmac(
-        'sha256',
-        password.encode(),
-        salt.encode(),
-        1_000_000,  # OWASP recommended for PBKDF2-SHA256
-        dklen=64
-    )
-
-    return salt, key.hex()
 
 def reset_user_password(username, new_password, db_path=None):
     """
-    Reset a user's password in the database.
+    Reset a user's password in auth.db through the shared auth service.
+
+    The password must meet the normal strength rules.
 
     Args:
         username: Username to reset
         new_password: New password
-        db_path: Optional database path
+        db_path: Optional auth database path (default: the live auth.db)
 
     Returns:
         bool: True if successful, False otherwise
     """
-    if db_path is None:
-        db_path = paths.UNIVERSITY_DEFAULT_DB_PATH
+    if _db_missing(db_path):
+        return False
 
     try:
-        conn = sqlite3.connect(db_path)
-        cursor = conn.cursor()
-
-        # Check if user exists
-        cursor.execute("SELECT id FROM user_accounts WHERE username=?", (username,))
-        result = cursor.fetchone()
-
-        if not result:
+        result = UserAuth(db_path).unlock_and_reset_password(username, new_password)
+    except AuthError as e:
+        if str(e) == "User not found.":
             print(f"❌ {_t('reset_password.user_not_found', username=username)}")
-            conn.close()
-            return False
-
-        # Generate new password hash
-        salt, password_hash = hash_password(new_password)
-        timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-
-        # Update password
-        cursor.execute('''
-            UPDATE user_accounts
-            SET password_hash = ?,
-                salt = ?,
-                updated_at = ?,
-                password_reset_required = 0,
-                is_active = 1
-            WHERE username = ?
-        ''', (password_hash, salt, timestamp, username))
-
-        conn.commit()
-        conn.close()
-
-        print(f"✅ {_t('reset_password.success', username=username)}")
-        return True
-
+        else:
+            print(f"❌ {e}")
+        return False
     except sqlite3.Error as e:
         print(f"❌ {_t('reset_password.db_error', error=str(e))}")
         return False
@@ -171,52 +118,111 @@ def reset_user_password(username, new_password, db_path=None):
         print(f"❌ {_t('reset_password.unexpected_error', error=str(e))}")
         return False
 
+    print(f"✅ {_t('reset_password.success', username=username)}")
+    if not _is_active(username, db_path):
+        print(f"⚠️  '{username}' is deactivated, so it still can't sign in.")
+    if result.get("email_sent"):
+        print(f"   The new password was e-mailed to {result.get('email')}.")
+    return True
+
+
+def _is_active(username, db_path=None):
+    conn = connect(db_path)
+    try:
+        row = conn.execute(
+            "SELECT is_active FROM users WHERE username = ?", (username,)
+        ).fetchone()
+    finally:
+        conn.close()
+    return bool(row and row[0])
+
+
+def _university_default_accounts():
+    """Seeded accounts whose access includes the University (superadmin too)."""
+    return [
+        account for account in _DEFAULT_ACCOUNTS
+        if any(system == "university" for system, _role in account["systems"])
+    ]
+
+
 def reset_default_passwords(db_path=None):
     """
-    Reset passwords for default development/test accounts.
-
-    Passwords are read from environment variables with fallback to development defaults.
-    SECURITY: In production, ALWAYS set environment variables:
-      - DEFAULT_ADMIN_PASSWORD
-      - DEFAULT_STAFF_PASSWORD
-      - DEFAULT_STUDENT_PASSWORD
-      - DEFAULT_INSTRUCTOR_PASSWORD
-      - DEFAULT_TEACHER_PASSWORD
+    Put the University's seeded development accounts back to their documented
+    passwords. Those passwords are too weak for the strength rules and are
+    public, so this only runs when EDU_DEV_SEED is on.
 
     Args:
-        db_path: Optional database path
+        db_path: Optional auth database path (default: the live auth.db)
 
     Returns:
         int: Number of accounts updated
     """
-    # Get passwords from centralized defaults (no hardcoded fallbacks).
-    # If env vars are missing, core.defaults generates secure random passwords.
-    from education_system.systems.university.infrastructure.defaults import (
-        DEFAULT_ADMIN_PASSWORD, DEFAULT_STAFF_PASSWORD, DEFAULT_STUDENT_PASSWORD,
-    )
-    default_passwords = {
-        'admin': DEFAULT_ADMIN_PASSWORD,
-        'staff': DEFAULT_STAFF_PASSWORD,
-        'student': DEFAULT_STUDENT_PASSWORD,
-        'instructor': os.environ.get('DEFAULT_INSTRUCTOR_PASSWORD', DEFAULT_STAFF_PASSWORD),
-        'teacher': os.environ.get('DEFAULT_TEACHER_PASSWORD', DEFAULT_STAFF_PASSWORD),
-    }
-
-    if db_path is None:
-        db_path = paths.UNIVERSITY_DEFAULT_DB_PATH
+    if not _is_dev_mode():
+        print("❌ --reset-defaults sets publicly documented passwords, so it needs "
+              "EDU_DEV_SEED=true. Nothing was changed.")
+        return 0
+    if _db_missing(db_path):
+        return 0
 
     print(f"🔄 {_t('reset_password.resetting_defaults')}\n")
 
-    updated_count = 0
-    for username, password in default_passwords.items():
-        if reset_user_password(username, password, db_path):
-            # Don't print actual passwords in logs for security
-            masked_pwd = password[:2] + '*' * (len(password) - 2) if len(password) > 2 else '***'
-            print(f"   Username: {username:15} Password: {masked_pwd}")
-            updated_count += 1
+    updated = []
+    conn = connect(db_path)
+    try:
+        for account in _university_default_accounts():
+            cursor = conn.execute(
+                "UPDATE users SET password_hash = ?, legacy_salt = NULL, "
+                "must_change_password = 0, failed_login_attempts = 0, "
+                "locked_until = NULL, updated_at = datetime('now') WHERE username = ?",
+                (hash_password(account["password"]), account["username"]),
+            )
+            if cursor.rowcount:
+                updated.append(account["username"])
+        conn.execute(
+            "UPDATE sessions SET is_active = 0 WHERE user_id IN "
+            f"(SELECT id FROM users WHERE username IN ({','.join('?' * len(updated))}))",
+            updated,
+        )
+        conn.commit()
+    finally:
+        conn.close()
 
-    print(f"\n✅ {_t('reset_password.reset_complete', count=updated_count)}")
-    return updated_count
+    for username in updated:
+        print(f"   Username: {username}")
+    print(f"\n✅ {_t('reset_password.reset_complete', count=len(updated))}")
+    return len(updated)
+
+
+def list_users(db_path=None):
+    """Print every login with its role in each system. Never prints a hash."""
+    if _db_missing(db_path):
+        return
+    try:
+        conn = connect(db_path)
+        try:
+            users = conn.execute(
+                "SELECT u.username, u.is_active, "
+                "group_concat(s.system_key || ':' || s.role, ', ') "
+                "FROM users u LEFT JOIN user_systems s ON s.user_id = u.id "
+                "GROUP BY u.id ORDER BY u.id"
+            ).fetchall()
+        finally:
+            conn.close()
+    except Exception as e:
+        print(f"❌ {_t('reset_password.error_listing_users', error=str(e))}")
+        return
+
+    print(f"\n{_t('reset_password.users_in_db')}")
+    print("-" * 60)
+    print(f"{_t('reset_password.username'):<20} {_t('reset_password.active'):<8} "
+          f"{_t('reset_password.role')}")
+    print("-" * 60)
+    for username, is_active, roles in users:
+        status = _t('reset_password.yes') if is_active else _t('reset_password.no')
+        print(f"{username:<20} {status:<8} {roles or _t('reset_password.na')}")
+    print("-" * 60)
+    print(_t('reset_password.total', count=len(users)))
+
 
 def interactive_mode(db_path=None):
     """Run in interactive mode"""
@@ -246,17 +252,18 @@ def interactive_mode(db_path=None):
 
     return reset_user_password(username, password, db_path)
 
+
 def main():
     """Main entry point"""
     parser = argparse.ArgumentParser(
-        description='Reset user passwords in the University System',
+        description='Reset login passwords in the shared auth database',
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
   %(prog)s                          # Interactive mode
   %(prog)s --user admin             # Reset specific user (interactive)
-  %(prog)s --reset-defaults         # Reset all default accounts
-  %(prog)s --list-users             # List all users in database
+  %(prog)s --reset-defaults         # Reset default dev accounts (needs EDU_DEV_SEED=true)
+  %(prog)s --list-users             # List all logins
         """
     )
 
@@ -265,49 +272,23 @@ Examples:
     parser.add_argument('--password', '-p', metavar='PASSWORD',
                         help='New password (WARNING: visible in command history)')
     parser.add_argument('--reset-defaults', action='store_true',
-                        help='Reset all default development accounts')
+                        help='Reset the default development accounts (needs EDU_DEV_SEED=true)')
     parser.add_argument('--list-users', action='store_true',
-                        help='List all users in the database')
+                        help='List all logins')
     parser.add_argument('--db-path', metavar='PATH',
-                        help='Database path (default: from config)')
+                        help='Auth database path (default: the live auth.db)')
 
     args = parser.parse_args()
+    db_path = args.db_path
 
-    db_path = args.db_path if args.db_path else paths.UNIVERSITY_DEFAULT_DB_PATH
-
-    # List users
     if args.list_users:
-        try:
-            conn = sqlite3.connect(db_path)
-            cursor = conn.cursor()
-            cursor.execute("""
-                SELECT ua.username, u.role, ua.is_active
-                FROM user_accounts ua
-                LEFT JOIN users u ON ua.user_id = u.id
-                ORDER BY ua.id
-            """)
-            users = cursor.fetchall()
-            conn.close()
-
-            print(f"\n{_t('reset_password.users_in_db')}")
-            print("-" * 60)
-            print(f"{_t('reset_password.username'):<20} {_t('reset_password.role'):<15} {_t('reset_password.active'):<10}")
-            print("-" * 60)
-            for username, role, is_active in users:
-                status = f"✅ {_t('reset_password.yes')}" if is_active else f"❌ {_t('reset_password.no')}"
-                print(f"{username:<20} {role or _t('reset_password.na'):<15} {status:<10}")
-            print("-" * 60)
-            print(_t('reset_password.total', count=len(users)))
-        except Exception as e:
-            print(f"❌ {_t('reset_password.error_listing_users', error=str(e))}")
+        list_users(db_path)
         return
 
-    # Reset defaults
     if args.reset_defaults:
         reset_default_passwords(db_path)
         return
 
-    # Reset specific user
     if args.user:
         if args.password:
             # Password provided via command line (not recommended)
@@ -328,6 +309,7 @@ Examples:
 
     # Interactive mode (default)
     interactive_mode(db_path)
+
 
 if __name__ == '__main__':
     main()

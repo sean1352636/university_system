@@ -17,6 +17,7 @@ from education_system.systems.primary.domain.pastoral.emergency.emergency import
 from education_system.systems.primary.domain.learners.pupils.pupils import (
     ValidationError,
 )
+from education_system.systems.primary.interfaces.gui import kit
 
 logger = logging.getLogger(__name__)
 
@@ -47,13 +48,20 @@ def _safe_view(func: Callable[..., None]) -> Callable[..., None]:
     return wrapper
 
 
+def _owner(host, owner=None):
+    """The window a pop-up belongs to: the page's own window when the page
+    was popped out, else the main window."""
+    return owner if owner is not None else host.root
+
+
 def _event_dialog(host, title: str,
-                    initial: dict[str, Any] | None = None
-                    ) -> dict[str, Any] | None:
-    dlg = tk.Toplevel(host.root)
+                    initial: dict[str, Any] | None = None, *,
+                    owner=None) -> dict[str, Any] | None:
+    master = _owner(host, owner)
+    dlg = tk.Toplevel(master)
     dlg.title(title)
-    dlg.transient(host.root)
-    dlg.geometry("580x780")
+    dlg.transient(master)
+    dlg.geometry("620x680")
     dlg.update_idletasks()
     try:
         dlg.wait_visibility()
@@ -62,8 +70,7 @@ def _event_dialog(host, title: str,
         logger.debug("grab_set skipped", exc_info=True)
 
     initial = initial or {}
-    frm = ttk.Frame(dlg, padding=12)
-    frm.pack(fill="both", expand=True)
+    frm, footer = kit.scrolled_form(dlg)
 
     kind_var    = tk.StringVar(value=str(initial.get("kind") or "Drill"))
     type_var    = tk.StringVar(value=str(initial.get("event_type") or "Fire"))
@@ -90,33 +97,32 @@ def _event_dialog(host, title: str,
     status_var  = tk.StringVar(value=str(initial.get("status") or "Logged"))
 
     rows: list[tuple[str, tk.Widget]] = [
-        ("Kind:",        ttk.Combobox(frm, textvariable=kind_var,
-                                         values=list(EVENT_KINDS),
-                                         state="readonly", width=14)),
-        ("Type:",        ttk.Combobox(frm, textvariable=type_var,
-                                         values=list(EMERGENCY_TYPES),
-                                         state="readonly", width=18)),
-        ("Date:",        ttk.Entry(frm, textvariable=date_var, width=14)),
-        ("Start time:",  ttk.Entry(frm, textvariable=start_var, width=8)),
-        ("End time:",    ttk.Entry(frm, textvariable=end_var, width=8)),
-        ("Duration (min):", ttk.Entry(frm, textvariable=dur_var, width=6)),
+        ("Kind:",        kit.ChoiceField(frm, kind_var, choices=EVENT_KINDS,
+                                         width=14)),
+        ("Type:",        kit.ChoiceField(frm, type_var,
+                                         choices=EMERGENCY_TYPES, width=18)),
+        ("Date:",        kit.DateField(frm, date_var)),
+        ("Start time:",  kit.TimeField(frm, start_var, hours=range(24),
+                                       step=1)),
+        ("End time:",    kit.TimeField(frm, end_var, hours=range(24),
+                                       step=1)),
+        ("Duration (min):", kit.NumberField(frm, dur_var, to=1440,
+                                            width=6)),
         ("Location:",    ttk.Entry(frm, textvariable=loc_var, width=28)),
         ("Trigger:",     ttk.Entry(frm, textvariable=trigger_var, width=28)),
-        ("Reported by:", ttk.Entry(frm, textvariable=reported_var, width=22)),
-        ("Commander:",   ttk.Entry(frm, textvariable=cmdr_var, width=22)),
-        ("Pupils evac:", ttk.Entry(frm, textvariable=pe_var, width=6)),
-        ("Staff evac:",  ttk.Entry(frm, textvariable=se_var, width=6)),
-        ("Missing:",     ttk.Entry(frm, textvariable=miss_var, width=6)),
-        ("Injuries:",    ttk.Entry(frm, textvariable=inj_var, width=6)),
+        ("Reported by:", kit.StaffPicker(frm, reported_var, by="name")),
+        ("Commander:",   kit.StaffPicker(frm, cmdr_var, by="name")),
+        ("Pupils evac:", kit.NumberField(frm, pe_var, width=6)),
+        ("Staff evac:",  kit.NumberField(frm, se_var, width=6)),
+        ("Missing:",     kit.NumberField(frm, miss_var, width=6)),
+        ("Injuries:",    kit.NumberField(frm, inj_var, width=6)),
         ("Services called:", ttk.Checkbutton(frm, variable=es_var)),
         ("Services attended:", ttk.Entry(frm, textvariable=svc_var,
                                             width=22)),
-        ("Outcome:",     ttk.Combobox(frm, textvariable=outcome_var,
-                                         values=list(OUTCOMES),
-                                         state="readonly", width=18)),
-        ("Status:",      ttk.Combobox(frm, textvariable=status_var,
-                                         values=list(STATUSES),
-                                         state="readonly", width=18)),
+        ("Outcome:",     kit.ChoiceField(frm, outcome_var, choices=OUTCOMES,
+                                         width=18)),
+        ("Status:",      kit.ChoiceField(frm, status_var, choices=STATUSES,
+                                         width=18)),
     ]
     for i, (label, widget) in enumerate(rows):
         ttk.Label(frm, text=label).grid(row=i, column=0, sticky="w",
@@ -165,12 +171,9 @@ def _event_dialog(host, title: str,
             result[k] = w.get("1.0", "end").strip()
         dlg.destroy()
 
-    btns = ttk.Frame(frm)
-    btns.grid(row=len(rows) + len(text_fields), column=0,
-                columnspan=2, sticky="e", pady=(12, 0))
-    ttk.Button(btns, text="Cancel",
+    ttk.Button(footer, text="Cancel",
                  command=dlg.destroy).pack(side="right", padx=4)
-    ttk.Button(btns, text="Save", command=_save).pack(side="right")
+    ttk.Button(footer, text="Save", command=_save).pack(side="right")
     dlg.wait_window()
     return result
 
@@ -178,10 +181,16 @@ def _event_dialog(host, title: str,
 @_safe_view
 def open_emergency(host) -> None:
     logger.debug("GUI: open_emergency")
-    host._clear_content()
-    root = host.content_frame
-    ttk.Label(root, text="Emergency & Drills",
-                font=("", 16, "bold")).pack(anchor="w", pady=(0, 8))
+    kit.show_page(host, "Emergency & Drills",
+                  lambda parent: _draw_emergency(parent, host))
+
+
+def _draw_emergency(parent, host) -> None:
+    root = parent
+    win = parent.winfo_toplevel()
+    kit.page_heading(root, "Emergency & Drills",
+                     "Fire drills, lockdowns and real emergencies: "
+                     "evacuation, outcomes and follow-up.")
 
     summary_var = tk.StringVar()
     ttk.Label(root, textvariable=summary_var,
@@ -191,57 +200,52 @@ def open_emergency(host) -> None:
     bar.pack(fill="x", pady=(0, 6))
     ttk.Label(bar, text="Kind:").pack(side="left", padx=(0, 4))
     kind_var = tk.StringVar(value="")
-    ttk.Combobox(bar, textvariable=kind_var,
-                   values=["", *EVENT_KINDS], state="readonly",
-                   width=10).pack(side="left", padx=(0, 6))
+    kit.ChoiceField(bar, kind_var, choices=EVENT_KINDS, blank=True,
+                    width=10).pack(side="left", padx=(0, 6))
     ttk.Label(bar, text="Type:").pack(side="left", padx=(0, 4))
     type_var = tk.StringVar(value="")
-    ttk.Combobox(bar, textvariable=type_var,
-                   values=["", *EMERGENCY_TYPES], state="readonly",
-                   width=16).pack(side="left", padx=(0, 6))
+    kit.ChoiceField(bar, type_var, choices=EMERGENCY_TYPES, blank=True,
+                    width=16).pack(side="left", padx=(0, 6))
     ttk.Label(bar, text="Status:").pack(side="left", padx=(0, 4))
     status_var = tk.StringVar(value="")
-    ttk.Combobox(bar, textvariable=status_var,
-                   values=["", *STATUSES], state="readonly",
-                   width=16).pack(side="left", padx=(0, 6))
+    kit.ChoiceField(bar, status_var, choices=STATUSES, blank=True,
+                    width=16).pack(side="left", padx=(0, 6))
     out_var = tk.BooleanVar(value=False)
     ttk.Checkbutton(bar, text="Outstanding only",
                       variable=out_var).pack(side="left", padx=4)
     ttk.Button(bar, text="Apply",
                  command=lambda: _refresh()).pack(side="left", padx=2)
     ttk.Button(bar, text="New",
-                 command=lambda: _new(host, on_done=_refresh)
+                 command=lambda: _new(host, on_done=_refresh,
+                                owner=win)
                  ).pack(side="left", padx=2)
     ttk.Button(bar, text="Edit",
-                 command=lambda: _edit(host, tree, on_done=_refresh)
+                 command=lambda: _edit(host, tree, on_done=_refresh,
+                                owner=win)
                  ).pack(side="left", padx=2)
     ttk.Button(bar, text="Close",
-                 command=lambda: _close(host, tree, on_done=_refresh)
+                 command=lambda: _close(host, tree, on_done=_refresh,
+                                owner=win)
                  ).pack(side="left", padx=2)
     ttk.Button(bar, text="Delete",
-                 command=lambda: _delete(host, tree, on_done=_refresh)
+                 command=lambda: _delete(host, tree, on_done=_refresh,
+                                owner=win)
                  ).pack(side="left", padx=2)
     ttk.Button(bar, text="Refresh",
                  command=lambda: _refresh()).pack(side="left", padx=2)
 
-    cols = ("id", "date", "kind", "type", "dur", "pups",
-             "miss", "inj", "outcome", "status")
-    tree = ttk.Treeview(root, columns=cols, show="headings", height=18)
-    for c, label, w in [
+    tree = kit.tree(root, [
         ("id", "ID", 50), ("date", "Date", 90),
         ("kind", "Kind", 80), ("type", "Type", 140),
         ("dur", "Min", 50), ("pups", "Pups", 50),
         ("miss", "Miss", 50), ("inj", "Inj", 50),
         ("outcome", "Outcome", 160), ("status", "Status", 160),
-    ]:
-        tree.heading(c, text=label)
-        tree.column(c, width=w, anchor="w")
-    tree.pack(fill="both", expand=True)
-    tree.tag_configure("real",        background="#fde7e7")
-    tree.tag_configure("outstanding", background="#fff7d6")
-    tree.tag_configure("closed",      foreground="#888")
+    ], height=18, tags={"real": "#fde7e7", "outstanding": "#fff7d6",
+                        "closed": {"foreground": "#888"}})
 
     def _refresh() -> None:
+        if not tree.winfo_exists():
+            return
         for i in tree.get_children():
             tree.delete(i)
         try:
@@ -253,13 +257,13 @@ def open_emergency(host) -> None:
             )
         except ValidationError as e:
             messagebox.showerror("Emergency", str(e),
-                                  parent=host.root)
+                                  parent=win)
             return
         except Exception as e:
             logger.exception("emergency refresh failed")
             messagebox.showerror("Emergency",
                                   f"Could not load:\n\n{e}",
-                                  parent=host.root)
+                                  parent=win)
             return
         for r in rows:
             tags = []
@@ -288,11 +292,12 @@ def open_emergency(host) -> None:
                 f"{f'{avg:.1f}' if avg is not None else '-'} min")
         except Exception:
             summary_var.set(f"{len(rows)} event(s)")
-        host.status_var.set(
-            f"Emergency: {len(rows)} record(s)")
+        status_bar = getattr(host, "status_var", None)
+        if status_bar is not None:
+            status_bar.set(f"Emergency: {len(rows)} record(s)")
 
     tree.bind("<Double-1>",
-                lambda _e: _edit(host, tree, on_done=_refresh))
+                lambda _e: _edit(host, tree, on_done=_refresh, owner=win))
     kind_var.trace_add("write", lambda *_: _refresh())
     type_var.trace_add("write", lambda *_: _refresh())
     status_var.trace_add("write", lambda *_: _refresh())
@@ -300,12 +305,12 @@ def open_emergency(host) -> None:
     _refresh()
 
 
-def _selected_id(tree: ttk.Treeview, host) -> int | None:
+def _selected_id(tree: ttk.Treeview, host, owner=None) -> int | None:
     sel = tree.focus()
     if not sel:
         messagebox.showinfo("Emergency",
                              "Select an event first.",
-                             parent=host.root)
+                             parent=_owner(host, owner))
         return None
     try:
         return int(sel)
@@ -314,8 +319,8 @@ def _selected_id(tree: ttk.Treeview, host) -> int | None:
 
 
 @_safe_view
-def _new(host, *, on_done=None) -> None:
-    fields = _event_dialog(host, "New emergency / drill")
+def _new(host, *, on_done=None, owner=None) -> None:
+    fields = _event_dialog(host, "New emergency / drill", owner=owner)
     if not fields:
         return
     r = data.create(fields)
@@ -323,15 +328,15 @@ def _new(host, *, on_done=None) -> None:
         "Emergency",
         f"Created event #{r.event_id}: {r.kind} {r.event_type} "
         f"on {r.event_date} ({r.outcome})",
-        parent=host.root,
+        parent=_owner(host, owner),
     )
     if on_done:
         on_done()
 
 
 @_safe_view
-def _edit(host, tree: ttk.Treeview, *, on_done=None) -> None:
-    eid = _selected_id(tree, host)
+def _edit(host, tree: ttk.Treeview, *, on_done=None, owner=None) -> None:
+    eid = _selected_id(tree, host, owner)
     if eid is None:
         return
     existing = data.get(eid)
@@ -346,7 +351,7 @@ def _edit(host, tree: ttk.Treeview, *, on_done=None) -> None:
         "outcome", "status", "lessons_learned",
         "follow_up_actions", "notes")}
     fields = _event_dialog(host, f"Edit event #{eid}",
-                              initial=initial)
+                              initial=initial, owner=owner)
     if not fields:
         return
     data.update(eid, fields)
@@ -355,8 +360,8 @@ def _edit(host, tree: ttk.Treeview, *, on_done=None) -> None:
 
 
 @_safe_view
-def _close(host, tree: ttk.Treeview, *, on_done=None) -> None:
-    eid = _selected_id(tree, host)
+def _close(host, tree: ttk.Treeview, *, on_done=None, owner=None) -> None:
+    eid = _selected_id(tree, host, owner)
     if eid is None:
         return
     data.close_event(eid)
@@ -365,8 +370,8 @@ def _close(host, tree: ttk.Treeview, *, on_done=None) -> None:
 
 
 @_safe_view
-def _delete(host, tree: ttk.Treeview, *, on_done=None) -> None:
-    eid = _selected_id(tree, host)
+def _delete(host, tree: ttk.Treeview, *, on_done=None, owner=None) -> None:
+    eid = _selected_id(tree, host, owner)
     if eid is None:
         return
     existing = data.get(eid)
@@ -377,7 +382,7 @@ def _delete(host, tree: ttk.Treeview, *, on_done=None) -> None:
             f"Delete event #{eid} "
             f"({existing.kind} {existing.event_type}, "
             f"{existing.event_date})?",
-            parent=host.root):
+            parent=_owner(host, owner)):
         return
     data.delete(eid)
     if on_done:

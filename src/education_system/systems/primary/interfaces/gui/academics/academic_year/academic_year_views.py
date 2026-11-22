@@ -1,4 +1,4 @@
-"""Tkinter views for Sixth Form Academic Year.
+"""Tkinter views for Primary School Academic Year.
 
 Notebook with 4 tabs:
 * Years     — table of academic years, set-current, CRUD.
@@ -12,9 +12,11 @@ from __future__ import annotations
 import datetime as _dt
 import logging
 import tkinter as tk
-from tkinter import messagebox, ttk
+from tkinter import ttk
 from typing import Callable
 from education_system.platform import branding
+from education_system.platform.delivery.gui.parented_dialogs import make_toplevel, messagebox
+from education_system.systems.primary.interfaces.gui import kit
 from education_system.systems.primary.domain.academics.academic_year import (
     academic_year as data,
 )
@@ -39,14 +41,25 @@ WIN_MINSIZE = (1200, 800)
 
 def open_academic_year_window(parent=None) -> None:
     data.init_db()
-    master = getattr(parent, "root", parent)
-    win = tk.Toplevel(master) if master is not None else tk.Tk()
-    win.title(f"Academic Year — {branding.SYSTEM_NAME}")
-    win.geometry(WIN_GEOMETRY)
-    win.minsize(*WIN_MINSIZE)
+    if parent is None:
+        # Stand-alone use (no main window): a root of its own.
+        root = tk.Tk()
+        root.title(f"Academic Year — {branding.SYSTEM_NAME}")
+        root.geometry(WIN_GEOMETRY)
+        root.minsize(*WIN_MINSIZE)
+        frame = ttk.Frame(root, padding=10)
+        frame.pack(fill="both", expand=True)
+        _draw_academic_year(frame, root)
+        return
+    kit.show_page(parent, "Academic Year",
+                  lambda page: _draw_academic_year(page, parent))
 
-    nb = ttk.Notebook(win)
-    nb.pack(fill="both", expand=True, padx=10, pady=10)
+
+def _draw_academic_year(parent, host) -> None:
+    kit.page_heading(parent, "Academic Year",
+                     "Academic years, their terms and breaks, and a date look-up.")
+    nb = ttk.Notebook(parent)
+    nb.pack(fill="both", expand=True)
 
     state: dict = {"selected_year_id": None}
 
@@ -546,8 +559,8 @@ class CalendarTab:
         self.year_cb.bind("<<ComboboxSelected>>",
                            lambda _e: self._on_year_change())
         ttk.Label(bar, text="Date:").pack(side="left")
-        self.date_e = ttk.Entry(bar, width=14)
-        self.date_e.insert(0, _today())
+        self.date_var = tk.StringVar(value=_today())
+        self.date_e = kit.DateField(bar, self.date_var)
         self.date_e.pack(side="left", padx=(2, 10))
         ttk.Button(bar, text="Look up",
                     command=self._lookup).pack(side="left")
@@ -593,7 +606,7 @@ class CalendarTab:
         if yid is None:
             messagebox.showinfo("Lookup", "Pick a year first.")
             return
-        s = self.date_e.get().strip()
+        s = self.date_var.get().strip()
         try:
             term = data.find_term_on(yid, s)
             brk = data.is_break(yid, s)
@@ -667,7 +680,7 @@ class YearDialog:
                  on_save: Callable[[], None]) -> None:
         self.existing = existing
         self.on_save = on_save
-        self.win = tk.Toplevel(parent)
+        self.win = make_toplevel(parent.winfo_toplevel())
         self.win.title("Edit Year" if existing else "New Year")
         self.win.transient(parent)
         self.win.after_idle(self.win.grab_set)
@@ -688,17 +701,15 @@ class YearDialog:
         r += 1
         ttk.Label(form, text="Start date:").grid(row=r, column=0,
                                                     sticky="e", pady=4)
-        self.start_e = ttk.Entry(form, width=14)
-        if self.existing:
-            self.start_e.insert(0, self.existing.start_date)
+        self.start_e = kit.DateField(form, tk.StringVar(
+            value=self.existing.start_date if self.existing else ""))
         self.start_e.grid(row=r, column=1, sticky="w", padx=6)
 
         r += 1
         ttk.Label(form, text="End date:").grid(row=r, column=0,
                                                   sticky="e", pady=4)
-        self.end_e = ttk.Entry(form, width=14)
-        if self.existing:
-            self.end_e.insert(0, self.existing.end_date)
+        self.end_e = kit.DateField(form, tk.StringVar(
+            value=self.existing.end_date if self.existing else ""))
         self.end_e.grid(row=r, column=1, sticky="w", padx=6)
 
         r += 1
@@ -761,7 +772,7 @@ class TermDialog:
         self.year = year
         self.existing = existing
         self.on_save = on_save
-        self.win = tk.Toplevel(parent)
+        self.win = make_toplevel(parent.winfo_toplevel())
         self.win.title("Edit Term" if existing else "New Term")
         self.win.transient(parent)
         self.win.after_idle(self.win.grab_set)
@@ -781,7 +792,8 @@ class TermDialog:
         r += 1
         ttk.Label(form, text="Name:").grid(row=r, column=0,
                                               sticky="e", pady=4)
-        self.name_cb = ttk.Combobox(form, values=TERM_NAMES, width=20)
+        self.name_cb = ttk.Combobox(form, values=TERM_NAMES, width=20,
+                                    state="readonly")
         self.name_cb.set(self.existing.name if self.existing
                             else DEFAULT_TERM_NAME)
         self.name_cb.grid(row=r, column=1, sticky="w", padx=6)
@@ -789,19 +801,17 @@ class TermDialog:
         r += 1
         ttk.Label(form, text="Start date:").grid(row=r, column=0,
                                                     sticky="e", pady=4)
-        self.start_e = ttk.Entry(form, width=14)
-        self.start_e.insert(0, (self.existing.start_date
-                                  if self.existing
-                                  else self.year.start_date))
+        self.start_e = kit.DateField(form, tk.StringVar(
+            value=(self.existing.start_date if self.existing
+                   else self.year.start_date)))
         self.start_e.grid(row=r, column=1, sticky="w", padx=6)
 
         r += 1
         ttk.Label(form, text="End date:").grid(row=r, column=0,
                                                   sticky="e", pady=4)
-        self.end_e = ttk.Entry(form, width=14)
-        self.end_e.insert(0, (self.existing.end_date
-                                if self.existing
-                                else self.year.end_date))
+        self.end_e = kit.DateField(form, tk.StringVar(
+            value=(self.existing.end_date if self.existing
+                   else self.year.end_date)))
         self.end_e.grid(row=r, column=1, sticky="w", padx=6)
 
         r += 1
@@ -847,7 +857,7 @@ class BreakDialog:
         self.year = year
         self.existing = existing
         self.on_save = on_save
-        self.win = tk.Toplevel(parent)
+        self.win = make_toplevel(parent.winfo_toplevel())
         self.win.title("Edit Break" if existing else "New Break")
         self.win.transient(parent)
         self.win.after_idle(self.win.grab_set)
@@ -884,19 +894,17 @@ class BreakDialog:
         r += 1
         ttk.Label(form, text="Start date:").grid(row=r, column=0,
                                                     sticky="e", pady=4)
-        self.start_e = ttk.Entry(form, width=14)
-        self.start_e.insert(0, (self.existing.start_date
-                                  if self.existing
-                                  else self.year.start_date))
+        self.start_e = kit.DateField(form, tk.StringVar(
+            value=(self.existing.start_date if self.existing
+                   else self.year.start_date)))
         self.start_e.grid(row=r, column=1, sticky="w", padx=6)
 
         r += 1
         ttk.Label(form, text="End date:").grid(row=r, column=0,
                                                   sticky="e", pady=4)
-        self.end_e = ttk.Entry(form, width=14)
-        self.end_e.insert(0, (self.existing.end_date
-                                if self.existing
-                                else self.year.start_date))
+        self.end_e = kit.DateField(form, tk.StringVar(
+            value=(self.existing.end_date if self.existing
+                   else self.year.start_date)))
         self.end_e.grid(row=r, column=1, sticky="w", padx=6)
 
         r += 1

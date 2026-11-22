@@ -28,8 +28,8 @@ This guide covers the student budgeting tools, expense tracking, meal plan manag
 The system provides two complementary tools: a comprehensive Budgeting Tool for managing student finances, and a Portfolio/ePortfolio system for building and showcasing academic and professional accomplishments.
 
 **Key files:**
-- Budget Service: `modules/domain/budget/services/budget_service.py`
-- Portfolio Service: `modules/domain/portfolio/services/portfolio_service.py`
+- Budget Service: `src/education_system/systems/university/domains/finance/domain/budget/services/budget_service.py`
+- Portfolio Service: `src/education_system/systems/university/domains/progression/domain/portfolio/services/portfolio_service.py`
 
 ---
 
@@ -40,7 +40,7 @@ The system provides two complementary tools: a comprehensive Budgeting Tool for 
 Create and manage budgets by period:
 
 ```python
-from university_system.modules.domain.budget.services.budget_service import BudgetManager
+from education_system.systems.university.domains.finance.domain.budget.services.budget_service import BudgetManager
 
 manager = BudgetManager()
 
@@ -77,7 +77,7 @@ summary = manager.get_budget_summary(student_id='S-12345', budget_id='bud_001')
 Log and categorize daily expenses:
 
 ```python
-from university_system.modules.domain.budget.services.budget_service import ExpenseManager
+from education_system.systems.university.domains.finance.domain.budget.services.budget_service import ExpenseManager
 
 expenses = ExpenseManager()
 
@@ -138,7 +138,7 @@ expenses.delete_expense(expense_id='exp_001')
 ### Income Tracking
 
 ```python
-from university_system.modules.domain.budget.services.budget_service import IncomeManager
+from education_system.systems.university.domains.finance.domain.budget.services.budget_service import IncomeManager
 
 income = IncomeManager()
 
@@ -173,7 +173,7 @@ records = income.get_student_income(student_id='S-12345')
 Track meal plan usage and project remaining balance:
 
 ```python
-from university_system.modules.domain.budget.services.budget_service import MealPlanManager
+from education_system.systems.university.domains.finance.domain.budget.services.budget_service import MealPlanManager
 
 meals = MealPlanManager()
 
@@ -217,7 +217,7 @@ history = meals.get_meal_history(student_id='S-12345')
 Compare textbook prices across vendors:
 
 ```python
-from university_system.modules.domain.budget.services.budget_service import (
+from education_system.systems.university.domains.finance.domain.budget.services.budget_service import (
     TextbookComparisonManager
 )
 
@@ -266,7 +266,7 @@ textbooks.record_textbook_purchase(
 Set and track financial goals:
 
 ```python
-from university_system.modules.domain.budget.services.budget_service import SavingsGoalManager
+from education_system.systems.university.domains.finance.domain.budget.services.budget_service import SavingsGoalManager
 
 savings = SavingsGoalManager()
 
@@ -307,7 +307,7 @@ The system generates alerts for financial events:
 ### Creating a Portfolio
 
 ```python
-from university_system.modules.domain.portfolio.services.portfolio_service import (
+from education_system.systems.university.domains.progression.domain.portfolio.services.portfolio_service import (
     PortfolioService
 )
 

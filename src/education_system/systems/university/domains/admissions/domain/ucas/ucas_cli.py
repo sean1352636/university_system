@@ -292,6 +292,9 @@ def record_decision_flow() -> None:
                 ).strip().lower() in ("y", "yes"),
                 "notes": notes,
             }
+            terms["conditions"] = _conditions_flow(
+                existing.conditions if existing else [],
+                terms["grade_requirement"] or offer_terms)
 
         issued_by = _current_officer()
         out = data.record_decision(
@@ -651,6 +654,216 @@ def internal_admin_submenu() -> None:
             _pause()
 
 
+# ── Structured offer conditions ─────────────────────────────────
+
+def _conditions_flow(existing: list[dict], requirement_text: str | None) -> list[dict]:
+    """Keep, read, or edit the structured conditions behind an offer."""
+    from education_system.platform.delivery.cli.offer_conditions_prompt import (
+        conditions_flow,
+    )
+    return conditions_flow(existing, requirement_text, _input)
+
+
+def edit_conditions_flow() -> None:
+    print("\n═══ Offer Conditions ═══")
+    try:
+        a = _pick_applicant()
+        existing = _existing_terms(a.choice_id)
+        rows = _conditions_flow(
+            existing.conditions if existing else [],
+            (existing.grade_requirement if existing else None) or a.offer_terms)
+        out = terms_data.set_conditions(a.choice_id, rows,
+                                        issued_by=_current_officer())
+        print(f"\n  ✓ {len(out.conditions)} condition(s) saved.")
+        _pause()
+    except _UserAbort:
+        print("\n  (cancelled)")
+    except terms_data.OfferTermsError as e:
+        print(f"\n  ✗ {e}")
+        _pause()
+
+
+# ── Results day ──────────────────────────────────────────────────
+
+def _rd():
+    from education_system.systems.university.domains.admissions.domain.ucas import (
+        results_day,
+    )
+    return results_day
+
+
+def results_day_board() -> None:
+    print("\n═══ Results Day ═══")
+    rd = _rd()
+    rows = rd.board(acting_user=_current_officer())
+    if not rows:
+        print("    No firm or insurance applicants hold a conditional offer.")
+        _pause()
+        return
+    for i, c in enumerate(rows, 1):
+        print(f"\n  {i:>3}) {c.student_name} ({c.student_id}) — {c.course_name} "
+              f"[{c.final_decision}]")
+        print(f"       Conditions: {c.conditions_label}")
+        print(f"       Results:    {c.achieved_label}")
+        print(f"       Verdict:    {c.verdict} — {c.reason}")
+        if c.status_label:
+            print(f"       Status:     {c.status_label}")
+    print("\n    c) confirm   d) decline   a) auto-confirm met   "
+          "r) release held confirmations   h) holds   0) back")
+    cmd = _input("Choice", default="0").lower()
+    try:
+        if cmd in ("c", "d"):
+            raw = _input("Applicant #", allow_empty=False)
+            if not raw.isdigit() or not 1 <= int(raw) <= len(rows):
+                print("    Out of range.")
+                return
+            c = rows[int(raw) - 1]
+            if cmd == "c":
+                if c.verdict != rd.MET and _input(
+                        f"Verdict is {c.verdict}. Confirm anyway? (y/n)",
+                        default="n").lower() not in ("y", "yes"):
+                    return
+                out = rd.confirm_place(c.choice_id, decided_by=_current_officer(),
+                                       note=c.reason)
+            else:
+                reason = _input("Reason (sent to the applicant)",
+                                default="Conditions of the offer were not met.")
+                out = rd.decline_place(c.choice_id, decided_by=_current_officer(),
+                                       reason=reason)
+            if isinstance(out, rd.Hold):
+                print(f"\n  ⏸ {rd.HELD_LABEL}"
+                      + (f" ({out.release_at})" if out.release_at else "")
+                      + " — nothing sent yet.")
+            else:
+                print("\n  ✓ Recorded.")
+        elif cmd == "a":
+            would = rd.auto_confirm(dry_run=True)
+            print(f"\n    {len(would)} met firm place(s); "
+                  f"{sum(1 for c in would if c.is_embargoed)} would be held "
+                  "until results publication.")
+            if would and _input("Confirm them now? (y/n)",
+                                default="n").lower() in ("y", "yes"):
+                done = rd.auto_confirm(dry_run=False,
+                                       decided_by=_current_officer())
+                print(f"  ✓ {len(done)} confirmed or held.")
+        elif cmd == "r":
+            release_held_flow()
+            return
+        elif cmd == "h":
+            list_holds_flow()
+            return
+    except UcasError as e:
+        print(f"\n  ✗ {e}")
+    _pause()
+
+
+def release_held_flow() -> None:
+    counts = _rd().release_held(released_by=_current_officer())
+    print(f"\n  Applied {counts['Applied']}, lapsed {counts['Lapsed']}, "
+          f"failed {counts['Failed']}; still embargoed (left held): "
+          f"{counts['waiting']}.")
+    _pause()
+
+
+def list_holds_flow() -> None:
+    print("\n═══ Results-day holds ═══")
+    holds = _rd().list_holds()
+    if not holds:
+        print("    None.")
+    for h in holds[:100]:
+        print(f"  #{h.hold_id:<4} choice {h.sf_choice_id:<6} {h.action:<8}"
+              f"{'(auto) ' if h.automatic else ''}{h.status:<9} "
+              f"held {h.held_by or '—'} {h.held_at}"
+              + (f"  released {h.released_by} {h.released_at}"
+                 if h.released_at else "")
+              + (f"  — {h.outcome}" if h.outcome else ""))
+    if any(h.status == "Held" for h in holds):
+        raw = _input("Cancel a held action? (hold # or blank)")
+        if raw.isdigit():
+            ok = _rd().cancel_hold(int(raw), cancelled_by=_current_officer())
+            print("  ✓ Cancelled." if ok else "  That hold is no longer held.")
+    _pause()
+
+
+# ── UCAS files (applicants not from our sixth form) ──────────────
+
+def _statutory_user():
+    try:
+        from education_system.systems.university.infrastructure.auth.core_utils.global_auth import (
+            get_current_user,
+        )
+        return get_current_user()
+    except Exception:
+        logger.debug("Could not resolve the current user", exc_info=True)
+        return None
+
+
+def import_ucas_file_flow() -> None:
+    from education_system.systems.university.application.statutory import ucas_files
+
+    print("\n  Required columns: Personal ID, Course code, Entry year (CSV header or XML).")
+    path = _input("File path", allow_empty=False)
+    try:
+        with open(path, encoding="utf-8-sig", newline="") as src:
+            text = src.read()
+    except (OSError, UnicodeDecodeError) as exc:
+        print(f"  ✗ Could not read the file: {exc}")
+        _pause()
+        return
+    fmt = "xml" if path.lower().endswith(".xml") or text.lstrip().startswith("<") else "csv"
+    try:
+        result = ucas_files.import_file(_statutory_user(), text, path.rsplit("/", 1)[-1], fmt)
+    except (PermissionError, ValueError) as exc:
+        print(f"  ✗ {exc}")
+        _pause()
+        return
+    print(f"\n  Batch {result['batch_id']}: {result['rows']} row(s); {result['created']} new, "
+          f"{result['updated']} updated, {result['linked']} linked, "
+          f"{len(result['errors'])} refused.")
+    for err in result["errors"][:20]:
+        print(f"    Line {err['line']}: {err['error']}")
+    _pause()
+
+
+def list_ucas_batches_flow() -> None:
+    from education_system.systems.university.application.statutory import ucas_files
+
+    try:
+        rows = ucas_files.batches(_statutory_user())
+    except PermissionError as exc:
+        print(f"  ✗ {exc}")
+        _pause()
+        return
+    if not rows:
+        print("    No UCAS files imported yet.")
+    for b in rows:
+        print(f"  #{b['batch_id']:<5} {str(b['imported_at'])[:16]}  {b['filename'][:40]:<40} "
+              f"rows {b['rows_total']}, new {b['created']}, updated {b['updated']}, "
+              f"linked {b['linked']}")
+    _pause()
+
+
+def export_ucas_decisions_flow() -> None:
+    from education_system.systems.university.application.statutory import ucas_files
+
+    user = _statutory_user()
+    try:
+        pending = ucas_files.pending_decisions(user)
+    except PermissionError as exc:
+        print(f"  ✗ {exc}")
+        _pause()
+        return
+    print(f"\n  {len(pending['ready'])} ready to send, {len(pending['unclear'])} need an offer "
+          "type (conditional / unconditional) first.")
+    for d in pending["unclear"]:
+        print(f"    {d['personal_id']} {d['course_code']}: decision {d['decision']!r}")
+    if pending["ready"] and _input("Write the decisions file now? (y/n)", default="y").lower() == "y":
+        result = ucas_files.export_decisions(user)
+        print(f"  ✓ {result['count']} decision(s) in batch {result['batch_id']}.")
+        print(f"    Upload to UCAS: {result['path']}")
+    _pause()
+
+
 # ── Menu ─────────────────────────────────────────────────────────
 
 _MENU: list[tuple[str, Callable[[], None]]] = [
@@ -663,6 +876,13 @@ _MENU: list[tuple[str, Callable[[], None]]] = [
     ("Record admissions decision",    record_decision_flow),
     ("Internal admin (links/notes)",  internal_admin_submenu),
     ("Summary report",                show_summary),
+    ("Offer conditions (structured)", edit_conditions_flow),
+    ("Results day board",             results_day_board),
+    ("Release held confirmations",    release_held_flow),
+    ("Results-day holds",             list_holds_flow),
+    ("Import UCAS applicant file",    import_ucas_file_flow),
+    ("UCAS file imports",             list_ucas_batches_flow),
+    ("Write UCAS decisions file",     export_ucas_decisions_flow),
 ]
 
 

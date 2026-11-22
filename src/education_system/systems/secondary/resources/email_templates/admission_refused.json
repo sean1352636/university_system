@@ -1,0 +1,33 @@
+{
+  "name": "admission_refused",
+  "description": "Sent to the parent when a place is refused. Must include the right of appeal.",
+  "subject": "Your application for {child_name} ({application_ref})",
+  "body": [
+    "Dear {parent_name},",
+    "",
+    "We are sorry to tell you that we are unable to offer {child_first_name} a place in Year {year_group} for {academic_year}.",
+    "",
+    "The reason is: {reason}",
+    "",
+    "You have the right to appeal against this decision to an independent appeal panel. If you wish to appeal, please contact us and quote your reference {application_ref}; we will send you the appeal form and tell you the deadline for lodging it.",
+    "",
+    "You can also ask for {child_first_name} to be placed on the waiting list.",
+    "",
+    "Yours sincerely,",
+    "Admissions, {school_name}"
+  ],
+  "placeholders": {
+    "parent_name": "The parent/carer's name",
+    "child_first_name": "The child's preferred or first name",
+    "child_name": "The child's preferred first name and surname",
+    "application_ref": "The application reference, e.g. APP00012",
+    "year_group": "The year group applied for",
+    "academic_year": "The academic year applied for, e.g. 2026/27",
+    "route": "Year 7 normal round or In-year",
+    "school_name": "The school's name",
+    "reason": "Why the place was refused"
+  },
+  "defaults": {
+    "school_name": "Secondary School"
+  }
+}

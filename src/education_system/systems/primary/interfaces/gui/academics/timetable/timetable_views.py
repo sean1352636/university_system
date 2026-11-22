@@ -5,6 +5,7 @@ from __future__ import annotations
 import functools
 import logging
 import tkinter as tk
+import types
 from tkinter import messagebox, ttk
 from typing import Any, Callable
 
@@ -20,6 +21,8 @@ from education_system.systems.primary.domain.academics.subjects import (
 from education_system.systems.primary.domain.learners.pupils.pupils import (
     ValidationError, YEAR_GROUPS,
 )
+from education_system.platform.delivery.gui.parented_dialogs import make_toplevel
+from education_system.systems.primary.interfaces.gui import kit
 
 logger = logging.getLogger(__name__)
 
@@ -51,10 +54,9 @@ def _safe_view(func: Callable[..., None]) -> Callable[..., None]:
 
 def _form_dialog(host, title: str, initial: dict[str, Any] | None = None
                  ) -> dict[str, Any] | None:
-    dlg = tk.Toplevel(host.root)
+    dlg = make_toplevel(host.root)
     dlg.title(title)
-    dlg.transient(host.root)
-    dlg.geometry("480x500")
+    dlg.geometry("560x520")
     dlg.update_idletasks()
     try:
         dlg.wait_visibility()
@@ -63,10 +65,10 @@ def _form_dialog(host, title: str, initial: dict[str, Any] | None = None
         logger.debug("grab_set skipped — dialog not viewable", exc_info=True)
 
     initial = initial or {}
-    frm = ttk.Frame(dlg, padding=12)
-    frm.pack(fill="both", expand=True)
+    frm, footer = kit.scrolled_form(dlg)
 
-    year_var    = tk.StringVar(value=str(initial.get("year_group") or "7"))
+    default_year = "7" if "7" in YEAR_GROUPS else ""
+    year_var    = tk.StringVar(value=str(initial.get("year_group") or default_year))
     form_var    = tk.StringVar(value=str(initial.get("form_group") or ""))
     day_var     = tk.StringVar(value=str(initial.get("day_of_week") or "Mon"))
     period_var  = tk.StringVar(value=str(initial.get("period") or MIN_PERIOD))
@@ -91,10 +93,10 @@ def _form_dialog(host, title: str, initial: dict[str, Any] | None = None
                 break
 
     rows: list[tuple[str, tk.Widget]] = [
-        ("Year:",     ttk.Combobox(frm, textvariable=year_var,
-                                    values=list(YEAR_GROUPS),
-                                    state="readonly", width=8)),
-        ("Form:",     ttk.Entry(frm, textvariable=form_var, width=12)),
+        ("Year:",     kit.ChoiceField(frm, year_var, width=12,
+                                      choices=[(y, kit.YEAR_GROUP_LABELS.get(y, y))
+                                               for y in YEAR_GROUPS])),
+        ("Form:",     kit.ClassPicker(frm, form_var)),
         ("Subject:",  ttk.Combobox(frm, textvariable=subject_var,
                                     values=subject_labels,
                                     state="readonly", width=36)),
@@ -103,15 +105,15 @@ def _form_dialog(host, title: str, initial: dict[str, Any] | None = None
                                     state="readonly", width=8)),
         ("Period:",   ttk.Spinbox(frm, from_=MIN_PERIOD, to=MAX_PERIOD,
                                    textvariable=period_var, width=6)),
-        ("Start time:", ttk.Entry(frm, textvariable=start_var, width=10)),
-        ("End time:",   ttk.Entry(frm, textvariable=end_var, width=10)),
+        ("Start time:", kit.TimeField(frm, start_var)),
+        ("End time:",   kit.TimeField(frm, end_var)),
         ("Room:",     ttk.Entry(frm, textvariable=room_var, width=14)),
-        ("Teacher:",  ttk.Entry(frm, textvariable=teacher_var, width=24)),
+        ("Teacher:",  kit.StaffPicker(frm, teacher_var, by="name")),
         ("Notes:",    ttk.Entry(frm, textvariable=notes_var, width=36)),
     ]
     for i, (label, widget) in enumerate(rows):
         ttk.Label(frm, text=label).grid(row=i, column=0, sticky="w", pady=2)
-        widget.grid(row=i, column=1, sticky="ew", pady=2)
+        widget.grid(row=i, column=1, sticky="w", pady=2)
     frm.columnconfigure(1, weight=1)
 
     result: dict[str, Any] | None = None
@@ -138,24 +140,44 @@ def _form_dialog(host, title: str, initial: dict[str, Any] | None = None
         }
         dlg.destroy()
 
-    btns = ttk.Frame(frm)
-    btns.grid(row=len(rows), column=0, columnspan=2, sticky="e",
-              pady=(12, 0))
-    ttk.Button(btns, text="Cancel", command=dlg.destroy).pack(side="right",
-                                                               padx=4)
-    ttk.Button(btns, text="Save", command=_save).pack(side="right")
+    ttk.Button(footer, text="Cancel", command=dlg.destroy).pack(side="right",
+                                                                 padx=4)
+    ttk.Button(footer, text="Save", command=_save).pack(side="right")
 
     dlg.wait_window()
     return result
 
 
+def _teacher_choices() -> list[str]:
+    """Staff names plus any teacher already on a slot (so the filter still
+    finds slots recorded under a name that is not on the staff list)."""
+    names: set[str] = set()
+    try:
+        from education_system.systems.primary.domain.staff import staff
+        names.update(s.full_name for s in staff.list_staff(active_only=False))
+    except Exception:  # noqa: BLE001 - the filter still accepts typing
+        logger.debug("staff list failed", exc_info=True)
+    try:
+        names.update(s.teacher for s in data.list_slots() if s.teacher)
+    except Exception:  # noqa: BLE001
+        logger.debug("slot teacher list failed", exc_info=True)
+    return sorted(names, key=str.lower)
+
+
 @_safe_view
 def open_timetable(host) -> None:
     logger.debug("GUI: open_timetable")
-    host._clear_content()
-    root = host.content_frame
-    ttk.Label(root, text="Timetable",
-              font=("", 16, "bold")).pack(anchor="w", pady=(0, 8))
+    kit.show_page(host, "Timetable", lambda parent: _draw_timetable(parent, host))
+
+
+def _draw_timetable(root, main_host) -> None:
+    kit.page_heading(root, "Timetable", "Weekly lesson slots as a list and as a grid.")
+    # The helpers below take a "host" for their pop-up parent, status line
+    # and the slot table: use this page's window (main window or a pop-out).
+    host = types.SimpleNamespace(
+        root=root.winfo_toplevel(),
+        status_var=getattr(main_host, "status_var", None) or tk.StringVar(master=root),
+    )
 
     summary_var = tk.StringVar()
     ttk.Label(root, textvariable=summary_var, foreground="#666").pack(
@@ -165,17 +187,17 @@ def open_timetable(host) -> None:
     bar.pack(fill="x", pady=(0, 6))
     ttk.Label(bar, text="Year:").pack(side="left", padx=(0, 4))
     year_var = tk.StringVar(value="")
-    ttk.Combobox(bar, textvariable=year_var,
-                 values=["", *YEAR_GROUPS], state="readonly", width=6).pack(
-        side="left", padx=(0, 8))
+    kit.ChoiceField(bar, year_var, blank=True, width=10,
+                    choices=[(y, kit.YEAR_GROUP_LABELS.get(y, y)) for y in YEAR_GROUPS]
+                    ).pack(side="left", padx=(0, 8))
     ttk.Label(bar, text="Form:").pack(side="left", padx=(0, 4))
     form_var = tk.StringVar(value="")
-    ttk.Entry(bar, textvariable=form_var, width=10).pack(side="left",
-                                                         padx=(0, 8))
+    kit.ClassPicker(bar, form_var, on_change=lambda _v: _refresh()).pack(
+        side="left", padx=(0, 8))
     ttk.Label(bar, text="Teacher:").pack(side="left", padx=(0, 4))
     teacher_var = tk.StringVar(value="")
-    ttk.Entry(bar, textvariable=teacher_var, width=16).pack(side="left",
-                                                            padx=(0, 8))
+    kit.ChoiceField(bar, teacher_var, choices=_teacher_choices(), blank=True,
+                    editable=True, width=20).pack(side="left", padx=(0, 8))
     ttk.Button(bar, text="Apply",
                command=lambda: _refresh()).pack(side="left", padx=2)
     ttk.Button(bar, text="New",
@@ -201,16 +223,12 @@ def open_timetable(host) -> None:
 
     cols = ("id", "day", "period", "year", "form", "subject", "room",
             "teacher", "time")
-    tree = ttk.Treeview(list_frm, columns=cols, show="headings", height=22)
-    for c, label, w in [
+    tree = kit.tree(list_frm, [
         ("id", "ID", 50), ("day", "Day", 50), ("period", "P", 40),
         ("year", "Yr", 50), ("form", "Form", 60),
         ("subject", "Subject", 90), ("room", "Room", 70),
         ("teacher", "Teacher", 140), ("time", "Time", 110),
-    ]:
-        tree.heading(c, text=label)
-        tree.column(c, width=w, anchor="w")
-    tree.pack(fill="both", expand=True)
+    ], height=22)
     host._tt_tree = tree  # used by edit/delete helpers
 
     grid_cells: dict[tuple[str, int], tk.Widget] = {}

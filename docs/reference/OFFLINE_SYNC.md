@@ -4,8 +4,8 @@ The Education System includes an offline-first data synchronisation service for 
 
 ## Overview
 
-- **Database:** `shared/data/db_files/offline_sync.db` (SQLite)
-- **Service:** `education_system.shared.offline.OfflineSyncService`
+- **Database:** `var/data/platform/db_files/offline_sync.db` (SQLite)
+- **Service:** `education_system.platform.features.offline.OfflineSyncService`
 - **Cache TTL:** Configurable per entry (default 1 hour)
 - **Conflict resolution:** Automatic for simple cases, manual review for conflicts
 
@@ -28,7 +28,7 @@ RECONNECT:  Queue --> Server       (replay pending mutations)
 ### Store Data Locally
 
 ```python
-from education_system.shared.offline import OfflineSyncService
+from education_system.platform.features.offline import OfflineSyncService
 
 svc = OfflineSyncService()
 

@@ -28,6 +28,7 @@ from datetime import datetime
 from typing import Tuple, Optional
 
 from education_system.systems.university.infrastructure.auth.core_utils.utils import validate_password
+from education_system.systems.university.infrastructure.exceptions import AuthenticationError
 
 __all__ = [
     'hash_password',
@@ -195,6 +196,15 @@ def change_user_password(
     - Clears password_reset_required flag
     - Logs activity and creates immutable audit trail
     """
+    # Passwords are kept only in the shared auth (auth.db); use
+    # UserAuth.change_password / reset_password, which go there. Writing a
+    # hash into user_accounts would recreate the duplicate credential store
+    # removed by migration 2b4d6f8a0c3e.
+    raise AuthenticationError(
+        "Passwords are managed by the shared sign-in service.",
+        code="LEGACY_PASSWORD_STORE_RETIRED",
+    )
+
     if not validate_password(new_password):
         print("Invalid new password. Password must be at least 8 characters long and contain a mix of letters, numbers, and special characters.")
         return False
@@ -296,6 +306,15 @@ def reset_user_password(
     - Attempts to send email notification
     - Logs activity and creates immutable audit trail
     """
+    # Passwords are kept only in the shared auth (auth.db); use
+    # UserAuth.change_password / reset_password, which go there. Writing a
+    # hash into user_accounts would recreate the duplicate credential store
+    # removed by migration 2b4d6f8a0c3e.
+    raise AuthenticationError(
+        "Passwords are managed by the shared sign-in service.",
+        code="LEGACY_PASSWORD_STORE_RETIRED",
+    )
+
     # Check permissions
     if admin_user:
         if 'manage_users' not in admin_user.get('permissions', []):

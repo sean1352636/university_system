@@ -156,85 +156,112 @@ For detailed documentation and examples, visit:
                 f.write("Refer to console output for full documentation.\n")
             print(f"✅ Documentation saved to {filename}")
 
+    DOCUMENT_KEY_PREFIX = "documents: "
+
+    def _key_manager(self):
+        """The platform API key store (shared auth DB, PBKDF2-hashed, shown
+        once) — the same one the admin API Management window uses."""
+        from education_system import paths
+        from education_system.platform.delivery.api.security.api_keys import APIKeyManager
+        return APIKeyManager(str(paths.PLATFORM_AUTH_DB))
+
+    def _retire_plaintext_keys(self):
+        """Older builds stored raw keys in student_records ``api_keys.api_key``.
+        Overwrite any such value and deactivate the row so it can never be
+        read back or used. Runs whenever keys are managed; a no-op once clean."""
+        conn = get_connection()
+        try:
+            exists = conn.execute("SELECT 1 FROM sqlite_master WHERE type = 'table' "
+                                  "AND name = 'api_keys'").fetchone()
+            if not exists:
+                return 0
+            cols = {r[1] for r in conn.execute("PRAGMA table_info(api_keys)")}
+            if 'api_key' not in cols or 'key_id' not in cols:
+                return 0   # the platform-shaped table: hashes only
+            active = ", is_active = 0" if 'is_active' in cols else ""
+            # key_id keeps the value unique where the column is UNIQUE.
+            # db-audit: ignore[DBW001] - fragment is a literal chosen from PRAGMA output
+            n = conn.execute(f"UPDATE api_keys SET api_key = 'retired:' || key_id{active} "
+                             "WHERE api_key IS NOT NULL AND api_key NOT LIKE 'retired:%'").rowcount
+            conn.commit()
+            return n
+        finally:
+            conn.close()
+
     def api_keys_management(self):
-        """Manage API keys for external access"""
+        """Manage Document Manager API keys (hashed at rest, shown once)."""
         print("\n🔑 API KEYS MANAGEMENT")
 
         try:
-            conn = get_connection()
-            cursor = conn.cursor()
+            retired = self._retire_plaintext_keys()
+            if retired:
+                print(f"\n⚠️  {retired} old plain-text API key(s) were retired and can no longer be used.")
+            manager = self._key_manager()
+        except Exception as e:
+            print(f"The API key store could not be opened: {e}")
+            return
 
-            # Create api_keys table if it doesn't exist
-            cursor.execute('''
-            CREATE TABLE IF NOT EXISTS api_keys (
-                key_id INTEGER PRIMARY KEY AUTOINCREMENT,
-                api_key TEXT UNIQUE,
-                key_name TEXT,
-                created_by TEXT,
-                created_date TEXT,
-                expiry_date TEXT,
-                is_active BOOLEAN DEFAULT 1,
-                permissions TEXT
-            )
-            ''')
+        def document_keys():
+            return [k for k in manager.list_keys()
+                    if str(k["label"]).startswith(self.DOCUMENT_KEY_PREFIX)]
 
-            print("\n1. List API Keys")
-            print("2. Generate New API Key")
-            print("3. Revoke API Key")
-            print("4. Return to Main Menu")
+        print("\n1. List API Keys")
+        print("2. Generate New API Key")
+        print("3. Revoke API Key")
+        print("4. Return to Main Menu")
 
-            choice = input("\nChoose option (1-4): ").strip()
+        choice = input("\nChoose option (1-4): ").strip()
 
+        try:
             if choice == '1':
-                cursor.execute('SELECT key_id, key_name, api_key, created_date, is_active FROM api_keys')
-                keys = cursor.fetchall()
-
+                keys = document_keys()
                 if not keys:
                     print("\nNo API keys found.")
                 else:
                     print("\nAPI Keys:")
-                    for key_id, name, key, created, active in keys:
-                        status = "Active" if active else "Revoked"
-                        masked_key = key[:8] + "..." + key[-4:]
-                        print(f"  {key_id}. {name}: {masked_key} ({status}) - Created: {created}")
+                    for key in keys:
+                        status = "Active" if key["active"] else "Revoked"
+                        name = key["label"][len(self.DOCUMENT_KEY_PREFIX):]
+                        print(f"  {key['id']}. {name}: {key['prefix']}... ({status}) - "
+                              f"Created: {(key['created_at'] or '')[:10]}")
 
             elif choice == '2':
                 key_name = input("API key name/description: ").strip()
-
-                # Generate random API key
-                import secrets
-                api_key = secrets.token_urlsafe(32)
-
+                if not key_name:
+                    print("A name is required.")
+                    return
                 expiry_days = input("Valid for how many days? (default 365): ").strip()
-                expiry_days = int(expiry_days) if expiry_days else 365
+                try:
+                    expiry_days = int(expiry_days) if expiry_days else 365
+                except ValueError:
+                    print("Enter a whole number of days.")
+                    return
+                if expiry_days <= 0:
+                    print("Enter a positive number of days.")
+                    return
+
+                raw_key = manager.create_key(self.DOCUMENT_KEY_PREFIX + key_name,
+                                             systems=["university"], expires_in_days=expiry_days)
                 expiry_date = (datetime.now() + timedelta(days=expiry_days)).strftime('%Y-%m-%d')
-
-                permissions = input("Permissions (read/write/admin): ").strip() or "read"
-
-                cursor.execute('''
-                INSERT INTO api_keys (api_key, key_name, created_by, created_date, expiry_date, permissions)
-                VALUES (?, ?, ?, ?, ?, ?)
-                ''', (api_key, key_name, self.current_user, datetime.now().strftime('%Y-%m-%d'),
-                      expiry_date, permissions))
-
-                conn.commit()
 
                 print("\n✅ API Key Generated:")
                 print(f"Name: {key_name}")
-                print(f"Key: {api_key}")
+                print(f"Key: {raw_key}")
                 print(f"Expires: {expiry_date}")
-                print("\n⚠️  Save this key securely - it won't be shown again!")
+                print("\n⚠️  Save this key securely - only its hash is stored, it won't be shown again!")
+                print("Note: no Document Manager endpoint accepts API keys yet.")
 
             elif choice == '3':
                 key_id = input("Enter API key ID to revoke: ").strip()
-                cursor.execute('UPDATE api_keys SET is_active = 0 WHERE key_id = ?', (key_id,))
-                conn.commit()
-                print("✅ API key revoked.")
-
-            conn.close()
-
-        except sqlite3.Error as e:
-            print(f"Database error: {e}")
+                ids = {str(k["id"]) for k in document_keys()}
+                if key_id not in ids:
+                    print("No Document Manager API key with that ID.")
+                elif manager.revoke_key(int(key_id)):
+                    print("✅ API key revoked.")
+                else:
+                    print("That key was already revoked.")
+        except Exception as e:
+            print(f"API key operation failed: {e}")
 
     def api_usage_statistics(self):
         """View API usage statistics"""

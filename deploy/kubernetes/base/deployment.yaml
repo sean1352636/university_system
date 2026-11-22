@@ -41,6 +41,25 @@ spec:
             capabilities: {drop: [ALL]}
           volumeMounts:
             - {name: data, mountPath: /app/var}
+        # University background jobs (event outbox and connector feeds, e-mail
+        # outbox, timed e-mails, retention, daily sweeps). A second container
+        # in the same pod so it shares the API's data volume; the Deployment
+        # stays at one replica so the jobs never run twice.
+        - name: worker
+          image: education-system:latest
+          imagePullPolicy: IfNotPresent
+          command: [python, -m, education_system.launcher.university_worker]
+          envFrom:
+            - configMapRef: {name: education-config}
+            - secretRef: {name: education-secrets}
+          resources:
+            requests: {cpu: 100m, memory: 128Mi}
+            limits: {cpu: 500m, memory: 512Mi}
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities: {drop: [ALL]}
+          volumeMounts:
+            - {name: data, mountPath: /app/var}
       volumes:
         - name: data
           persistentVolumeClaim: {claimName: education-data}

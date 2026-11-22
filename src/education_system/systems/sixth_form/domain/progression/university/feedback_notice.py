@@ -115,7 +115,7 @@ def send_feedback_email(statement, *, reviewer: str | None = None):
     }
 
     try:
-        from education_system.systems.sixth_form.domain.operations.communications.messages import (
+        from education_system.systems.sixth_form.domains.communications.domain.messages import (
             email_templates as _tpl,
         )
         msg = _tpl.send_from_template(

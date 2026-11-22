@@ -22,6 +22,7 @@ from education_system.paths import (
     PLATFORM_CONFIG_DIR as SHARED_CONFIG_DIR,
     PLATFORM_DATA_DIR as SHARED_DATA_DIR,
     PLATFORM_EMAIL_CONFIG_PATH as SHARED_EMAIL_CONFIG_PATH,
+    PLATFORM_SMTP_PASSWORD_FILE,
     UNIVERSITY_CONFIG_DIR,
 )
 
@@ -42,8 +43,27 @@ except ImportError:
 _KEYRING_SERVICE = "education_system_email"
 
 
+def read_secret_file() -> str:
+    """The SMTP password from the owner-only secrets file, or ``""``."""
+    try:
+        return PLATFORM_SMTP_PASSWORD_FILE.read_text(encoding="utf-8").strip()
+    except OSError:
+        return ""
+
+
+def write_secret_file(password: str) -> Path:
+    """Write the SMTP password to the secrets file, readable by its owner only."""
+    PLATFORM_SMTP_PASSWORD_FILE.parent.mkdir(parents=True, exist_ok=True)
+    fd = os.open(PLATFORM_SMTP_PASSWORD_FILE, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+    with os.fdopen(fd, "w", encoding="utf-8") as fh:
+        fh.write(password)
+    os.chmod(PLATFORM_SMTP_PASSWORD_FILE, 0o600)
+    return PLATFORM_SMTP_PASSWORD_FILE
+
+
 def get_smtp_password(username: str | None = None) -> str:
-    """Retrieve the SMTP password from env var or keyring (never from file)."""
+    """The SMTP password from the SMTP_PASSWORD env var, the keyring or the
+    owner-only secrets file — never from the config file."""
     env_pw = os.environ.get("SMTP_PASSWORD", "")
     if env_pw:
         return env_pw
@@ -54,7 +74,7 @@ def get_smtp_password(username: str | None = None) -> str:
                 return pw
         except Exception:
             pass
-    return ""
+    return read_secret_file()
 
 
 def set_smtp_password(username: str, password: str) -> bool:
@@ -66,6 +86,43 @@ def set_smtp_password(username: str, password: str) -> bool:
         return True
     except Exception:
         return False
+
+
+def password_in_config_file(path: str | Path | None = None) -> bool:
+    """Whether a plain-text ``smtp_password`` is still in the config file."""
+    target = Path(path) if path else SHARED_EMAIL_CONFIG_PATH
+    try:
+        return bool(json.loads(target.read_text(encoding="utf-8")).get("smtp_password"))
+    except (OSError, ValueError):
+        return False
+
+
+def move_password_out_of_config(path: str | Path | None = None) -> str:
+    """Move a plain-text ``smtp_password`` from the config file into the
+    keyring (when installed) or the owner-only secrets file, then remove it
+    from the config file. Every other key is kept as it was. Returns where
+    the password went, or ``""`` when there was nothing to move."""
+    target = Path(path) if path else SHARED_EMAIL_CONFIG_PATH
+    data = json.loads(target.read_text(encoding="utf-8"))
+    password = data.get("smtp_password") or ""
+    if not password:
+        return ""
+    username = data.get("smtp_username") or data.get("username") or ""
+    where = ""
+    if _KEYRING_AVAILABLE and username:
+        try:
+            keyring.set_password(_KEYRING_SERVICE, username, password)
+            where = "keyring"
+        except Exception:
+            where = ""
+    if not where:
+        where = str(write_secret_file(password))
+    data.pop("smtp_password", None)
+    tmp = target.with_suffix(".json.tmp")
+    tmp.write_text(json.dumps(data, indent=2), encoding="utf-8")
+    os.replace(tmp, target)
+    logger.info("SMTP password moved out of %s", target)
+    return where
 
 
 def load_email_config(path: str | Path | None = None) -> Dict[str, Any]:
@@ -90,7 +147,11 @@ def load_email_config(path: str | Path | None = None) -> Dict[str, Any]:
                     data = json.load(fh)
                 # Resolve password: file value → env var / keyring → legacy file
                 username = data.get("smtp_username", "")
-                pw = data.get("smtp_password", "") or get_smtp_password(username)
+                pw = get_smtp_password(username)
+                if not pw and data.get("smtp_password"):
+                    logger.warning("SMTP password is stored in plain text in %s; move it "
+                                   "out with move_password_out_of_config()", p)
+                    pw = data["smtp_password"]
                 if not pw:
                     # Check other config files for the password
                     for fallback in candidates:

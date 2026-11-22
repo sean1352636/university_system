@@ -109,6 +109,18 @@ def _name_search_expr(columns):
 
 
 
+class AmbiguousSubjectError(ValueError):
+    """An exact name matched more than one distinct person.
+
+    ``candidates`` maps system -> list of ``{rowid, id, name,
+    date_of_birth}`` so a caller can re-run with the right student id.
+    """
+
+    def __init__(self, message, candidates):
+        super().__init__(message)
+        self.candidates = candidates
+
+
 class GDPRService:
     """GDPR compliance service operating across all education system databases."""
 
@@ -200,15 +212,26 @@ class GDPRService:
     # Full Data Export
     # ------------------------------------------------------------------
 
-    def get_full_data_export(self, student_name):
+    def get_full_data_export(self, student_name, *, student_ids=None):
         """Collect ALL data about a student from all systems.
 
         Returns a dict keyed by system, each containing personal_info,
         grades, attendance, transfers, notifications.
+
+        The data subject is matched exactly — never by substring, so a
+        request for 'Ann' cannot disclose Joanne's records. In each
+        system the learner is found by ``student_ids[system]`` when
+        given, otherwise by exact full-name equality. If a name matches
+        more than one distinct person in any system the whole request
+        is refused with :class:`AmbiguousSubjectError` (its
+        ``candidates`` list them per system); re-run with
+        ``student_ids={system: id}`` for those systems.
         """
         export = {}
-        if not student_name or not student_name.strip():
+        student_ids = dict(student_ids or {})
+        if (not student_name or not student_name.strip()) and not student_ids:
             return export
+        ambiguous = {}
 
         for system, db_path in self._db_paths.items():
             conn = _connect(db_path)
@@ -221,15 +244,24 @@ class GDPRService:
                 table = _learner_table(system)
                 if not _table_exists(conn, table):
                     continue
-                cols = _get_columns(conn, table)
-                name_expr = _name_search_expr(cols)
-                if not name_expr:
+                sid_given = student_ids.get(system)
+                if sid_given in (None, "") and not (student_name or "").strip():
+                    continue
+                try:
+                    table, _idc, _cols, matched, _kind = self._resolve_subject(
+                        conn, system, student_name, sid_given)
+                except AmbiguousSubjectError as amb:
+                    ambiguous.update(amb.candidates)
+                    continue
+                except ValueError:
+                    continue  # no name columns / id mismatch: nothing to disclose
+                if not matched:
                     continue
 
-                # Personal info
+                # Personal info — exactly the matched learner row
                 row = conn.execute(
-                    f"SELECT * FROM {table} WHERE {name_expr} LIKE ? LIMIT 1",
-                    (f"%{student_name.strip()}%",),
+                    f"SELECT * FROM {table} WHERE rowid = ?",  # nosec B608 - validated
+                    (matched[0]["rowid"],),
                 ).fetchone()
                 if not row:
                     continue
@@ -283,28 +315,48 @@ class GDPRService:
             finally:
                 conn.close()
 
-        # Add cross-system data from auth DB
-        auth_conn = _connect(self._auth_db)
+        if ambiguous:
+            n = sum(len({r["id"] for r in rows}) for rows in ambiguous.values())
+            raise AmbiguousSubjectError(
+                f"'{student_name}' matches more than one person "
+                f"({n} candidates in {', '.join(sorted(ambiguous))}) — "
+                "request refused so nobody else's data is disclosed. "
+                "Give the student id for those systems.",
+                ambiguous)
+
+        # Add cross-system data from auth DB — exact display-name match
+        # on one user only; a shared name is withheld, not merged.
+        wanted = self._norm_name(student_name)
+        auth_conn = _connect(self._auth_db) if wanted else None
         if auth_conn:
             try:
                 export["cross_system"] = {"notifications": [], "transfers": []}
                 if _table_exists(auth_conn, "cross_system_notifications"):
-                    rows = auth_conn.execute(
-                        """SELECT n.* FROM cross_system_notifications n
-                           JOIN users u ON u.id = n.recipient_user_id
-                           WHERE u.display_name LIKE ?
-                           ORDER BY n.created_at DESC LIMIT 100""",
-                        (f"%{student_name.strip()}%",),
-                    ).fetchall()
-                    export["cross_system"]["notifications"] = [dict(r) for r in rows]
+                    first = wanted.split()[0]
+                    users = [u["id"] for u in auth_conn.execute(
+                        "SELECT id, display_name FROM users WHERE display_name LIKE ?",
+                        (f"%{first}%",)).fetchall()
+                        if self._norm_name(u["display_name"]) == wanted]
+                    if len(users) == 1:
+                        rows = auth_conn.execute(
+                            """SELECT * FROM cross_system_notifications
+                               WHERE recipient_user_id = ?
+                               ORDER BY created_at DESC LIMIT 100""",
+                            (users[0],),
+                        ).fetchall()
+                        export["cross_system"]["notifications"] = [dict(r) for r in rows]
+                    elif len(users) > 1:
+                        export["cross_system"]["notifications_withheld"] = (
+                            f"{len(users)} platform accounts share this name")
 
                 if _table_exists(auth_conn, "cross_system_transfers"):
-                    rows = auth_conn.execute(
+                    rows = [r for r in auth_conn.execute(
                         """SELECT * FROM cross_system_transfers
                            WHERE student_name LIKE ?
-                           ORDER BY rowid DESC LIMIT 50""",
-                        (f"%{student_name.strip()}%",),
+                           ORDER BY rowid DESC LIMIT 200""",
+                        (f"%{wanted.split()[0]}%",),
                     ).fetchall()
+                        if self._norm_name(r["student_name"]) == wanted][:50]
                     export["cross_system"]["transfers"] = [dict(r) for r in rows]
             except Exception:
                 pass
@@ -317,9 +369,12 @@ class GDPRService:
     # Subject Access Request Report
     # ------------------------------------------------------------------
 
-    def generate_sar_report(self, student_name):
-        """Generate a Subject Access Request report as formatted text."""
-        data = self.get_full_data_export(student_name)
+    def generate_sar_report(self, student_name, *, student_ids=None):
+        """Generate a Subject Access Request report as formatted text.
+
+        Exact matching; raises :class:`AmbiguousSubjectError` for a name
+        shared by more than one person (see get_full_data_export)."""
+        data = self.get_full_data_export(student_name, student_ids=student_ids)
         if not data:
             return f"No data found for '{student_name}' across any system."
 
@@ -409,16 +464,179 @@ class GDPRService:
     # Anonymisation
     # ------------------------------------------------------------------
 
-    def anonymise_student(self, student_name, system):
+    @staticmethod
+    def _norm_name(value):
+        return " ".join(str(value or "").split()).casefold()
+
+    def _match_learner_rows(self, conn, system, student_name, student_id):
+        """Rows of ``system``'s learner table that an erasure would touch.
+
+        Matching is exact, never a substring: by the learner id column
+        when ``student_id`` is given, otherwise by full-name equality
+        (case and surrounding/inner whitespace ignored). Returns
+        ``(table, id_col_or_None, cols, rows, match_kind)`` where each row
+        is a dict with ``rowid``, ``id``, ``name`` and ``date_of_birth``.
+        """
+        table = _learner_table(system)
+        if not _table_exists(conn, table):
+            raise ValueError(f"Table '{table}' not found in {system} database")
+        validate_identifier(table)
+        cols = _get_columns(conn, table)
+        name_expr = _name_search_expr(cols)
+        id_col = _learner_id_col(system, cols)
+        if id_col not in cols:
+            id_col = None
+        else:
+            validate_identifier(id_col)
+        dob_col = next((c for c in ("date_of_birth", "dob") if c in cols), None)
+        sel = ["rowid AS _rid",
+               f"{id_col} AS _id" if id_col else "rowid AS _id",
+               f"{name_expr} AS _name" if name_expr else "NULL AS _name",
+               f"{dob_col} AS _dob" if dob_col else "NULL AS _dob"]
+        select = f"SELECT {', '.join(sel)} FROM {table}"  # nosec B608 - identifiers validated
+
+        if student_id not in (None, ""):
+            if not id_col:
+                raise ValueError(
+                    f"{system} learner table has no id column; "
+                    "match by exact full name instead")
+            raw = conn.execute(
+                f"{select} WHERE CAST({id_col} AS TEXT) = ?",
+                (str(student_id).strip(),)).fetchall()
+            match_kind = "id"
+            if raw and student_name and str(student_name).strip():
+                wanted = self._norm_name(student_name)
+                for r in raw:
+                    if self._norm_name(r["_name"]) != wanted:
+                        raise ValueError(
+                            f"{id_col} {student_id} in {system} belongs to "
+                            f"{r['_name']!r}, not {student_name!r}")
+        else:
+            if not name_expr:
+                raise ValueError("Cannot determine name columns")
+            wanted = self._norm_name(student_name)
+            if not wanted:
+                raise ValueError("A student name or id is required")
+            # Coarse case-insensitive pre-filter, then exact equality in
+            # Python so 'Ann' never matches 'Joanne' or 'Hannah'.
+            first = wanted.split()[0]
+            raw = [r for r in conn.execute(
+                       f"{select} WHERE {name_expr} LIKE ?",
+                       (f"%{first}%",)).fetchall()
+                   if self._norm_name(r["_name"]) == wanted]
+            match_kind = "name"
+        rows = [{"rowid": r["_rid"], "id": r["_id"], "name": r["_name"],
+                 "date_of_birth": r["_dob"]} for r in raw]
+        return table, id_col, cols, rows, match_kind
+
+    def _resolve_subject(self, conn, system, student_name, student_id):
+        """:meth:`_match_learner_rows`, refusing an ambiguous name.
+
+        Raises :class:`AmbiguousSubjectError` when an exact-name match
+        finds more than one distinct person (by learner id).
+        """
+        table, id_col, cols, rows, kind = self._match_learner_rows(
+            conn, system, student_name, student_id)
+        people = {r["id"] for r in rows}
+        if kind == "name" and len(people) > 1:
+            listing = "; ".join(
+                f"{id_col or 'rowid'} {r['id']}: {r['name']}"
+                + (f" (born {r['date_of_birth']})" if r["date_of_birth"] else "")
+                for r in rows)
+            raise AmbiguousSubjectError(
+                f"'{student_name}' matches {len(people)} different people "
+                f"in {system} — refused. Give the student id. "
+                f"Candidates: {listing}",
+                {system: rows})
+        return table, id_col, cols, rows, kind
+
+    def preview_match(self, student_name, system, *, student_id=None):
+        """Read-only: exactly which learner rows a rectify / restrict /
+        unrestrict / erasure call with these arguments would touch.
+
+        Same dict as :meth:`preview_anonymisation` (``rows``,
+        ``ambiguous``, ``id_column`` …); ``columns`` lists the PII
+        columns an erasure would redact.
+        """
+        return self.preview_anonymisation(
+            student_name, system, student_id=student_id)
+
+    def _open_system(self, system):
+        db_path = self._db_paths.get(system)
+        if not db_path:
+            raise ValueError(f"Unknown system: {system}")
+        conn = _connect(db_path)
+        if not conn:
+            raise ValueError(f"Database not found for system: {system}")
+        return conn
+
+    @staticmethod
+    def _pii_updates(cols):
+        updates = []
+        for col, value in (
+            ("first_name", "'REDACTED'"), ("forename", "'REDACTED'"),
+            ("last_name", "'REDACTED'"), ("surname", "'REDACTED'"),
+            ("full_name", "'REDACTED REDACTED'"),
+            ("name", "'REDACTED REDACTED'"),
+            ("email", "'redacted@removed.local'"),
+            ("date_of_birth", "'1900-01-01'"), ("dob", "'1900-01-01'"),
+            ("phone", "'REDACTED'"), ("address", "'REDACTED'"),
+            ("postcode", "'REDACTED'"),
+        ):
+            if col in cols:
+                updates.append(f"{col} = {value}")
+        return updates
+
+    def preview_anonymisation(self, student_name, system, *, student_id=None):
+        """Dry run of :meth:`anonymise_student` — changes nothing.
+
+        Returns ``{"system", "table", "id_column", "match" ("id"|"name"),
+        "rows": [{rowid, id, name, date_of_birth}], "ambiguous": bool,
+        "columns": [columns that would be redacted]}``. ``ambiguous`` is
+        True when an exact-name match found more than one distinct
+        person; erasure is refused in that case until an id is given.
+        """
+        db_path = self._db_paths.get(system)
+        if not db_path:
+            raise ValueError(f"Unknown system: {system}")
+        conn = _connect(db_path)
+        if not conn:
+            raise ValueError(f"Database not found for system: {system}")
+        try:
+            table, id_col, cols, rows, kind = self._match_learner_rows(
+                conn, system, student_name, student_id)
+        finally:
+            conn.close()
+        people = {r["id"] for r in rows}
+        return {
+            "system": system, "table": table, "id_column": id_col,
+            "match": kind, "rows": rows,
+            "ambiguous": kind == "name" and len(people) > 1,
+            "columns": [u.split(" = ")[0] for u in self._pii_updates(cols)],
+        }
+
+    def anonymise_student(self, student_name, system, *, student_id=None,
+                          dry_run=False):
         """Replace PII with anonymised values in the specified system.
 
         Replaces first_name/forename with 'REDACTED', last_name/surname
         with 'REDACTED', email with 'redacted@removed.local', dob with
         '1900-01-01'.
 
+        Rows are matched exactly: by ``student_id`` (the system's learner
+        id column) when given, otherwise by exact full-name equality —
+        never by substring. A name that matches more than one distinct
+        person is refused (ValueError listing the candidates' ids) so the
+        caller can retry with ``student_id``. ``dry_run=True`` changes
+        nothing and returns :meth:`preview_anonymisation`'s dict.
+
         Returns the number of records updated, or raises ValueError on
         failure.
         """
+        if dry_run:
+            return self.preview_anonymisation(
+                student_name, system, student_id=student_id)
+
         db_path = self._db_paths.get(system)
         if not db_path:
             raise ValueError(f"Unknown system: {system}")
@@ -428,52 +646,20 @@ class GDPRService:
             raise ValueError(f"Database not found for system: {system}")
 
         try:
-            table = _learner_table(system)
-            if not _table_exists(conn, table):
-                raise ValueError(f"Table '{table}' not found in {system} database")
-
-            cols = _get_columns(conn, table)
-            name_expr = _name_search_expr(cols)
-            if not name_expr:
-                raise ValueError("Cannot determine name columns")
-
-            # Find matching records
-            rows = conn.execute(
-                f"SELECT rowid FROM {table} WHERE {name_expr} LIKE ?",
-                (f"%{student_name.strip()}%",),
-            ).fetchall()
+            table, id_col, cols, rows, kind = self._resolve_subject(
+                conn, system, student_name, student_id)
 
             if not rows:
-                raise ValueError(f"No records found for '{student_name}' in {system}")
+                who = (f"id {student_id}" if kind == "id"
+                       else f"'{student_name}'")
+                raise ValueError(f"No records found for {who} in {system}")
 
-            rowids = [r[0] for r in rows]
+            people = {r["id"] for r in rows}
+
+            rowids = [r["rowid"] for r in rows]
 
             # Build UPDATE with available columns
-            updates = []
-            if "first_name" in cols:
-                updates.append("first_name = 'REDACTED'")
-            if "forename" in cols:
-                updates.append("forename = 'REDACTED'")
-            if "last_name" in cols:
-                updates.append("last_name = 'REDACTED'")
-            if "surname" in cols:
-                updates.append("surname = 'REDACTED'")
-            if "full_name" in cols:
-                updates.append("full_name = 'REDACTED REDACTED'")
-            if "name" in cols:
-                updates.append("name = 'REDACTED REDACTED'")
-            if "email" in cols:
-                updates.append("email = 'redacted@removed.local'")
-            if "date_of_birth" in cols:
-                updates.append("date_of_birth = '1900-01-01'")
-            if "dob" in cols:
-                updates.append("dob = '1900-01-01'")
-            if "phone" in cols:
-                updates.append("phone = 'REDACTED'")
-            if "address" in cols:
-                updates.append("address = 'REDACTED'")
-            if "postcode" in cols:
-                updates.append("postcode = 'REDACTED'")
+            updates = self._pii_updates(cols)
 
             if not updates:
                 raise ValueError("No PII columns found to anonymise")
@@ -487,13 +673,15 @@ class GDPRService:
             # when, how many records). The redaction has committed, so a failed
             # audit is alerted rather than rolled back — but never silently
             # dropped.
-            self._audit_erasure(student_name, system, len(rowids))
+            self._audit_erasure(student_name, system, len(rowids),
+                                student_ids=sorted(str(p) for p in people))
             return len(rowids)
         finally:
             conn.close()
 
     @staticmethod
-    def _audit_erasure(student_name: str, system: str, record_count: int) -> None:
+    def _audit_erasure(student_name: str, system: str, record_count: int,
+                       student_ids=None) -> None:
         try:
             from education_system.platform.governance.audit.audit_service import AuditService
 
@@ -504,6 +692,7 @@ class GDPRService:
                 details={
                     "student_name": student_name,
                     "records_anonymised": record_count,
+                    "student_ids": list(student_ids or []),
                 },
                 severity="warning",
             )
@@ -602,33 +791,27 @@ class GDPRService:
     # Right to Rectification
     # ------------------------------------------------------------------
 
-    def rectify_student_data(self, student_name: str, system: str, field_updates: dict) -> int:
+    def rectify_student_data(self, student_name: str, system: str,
+                             field_updates: dict, *, student_id=None,
+                             dry_run=False):
         """Update/correct student personal data (Right to Rectification).
 
         Args:
-            student_name: Name to search for
+            student_name: Exact full name of the data subject
             system: System to update in
             field_updates: Dict of {column_name: new_value} to update
+            student_id: The learner id — matched exactly; preferred
+            dry_run: change nothing, return :meth:`preview_match`'s dict
 
-        Returns the number of records updated.
+        Matching is exact (id, else full-name equality — never a
+        substring) and an ambiguous name is refused with
+        :class:`AmbiguousSubjectError`. Returns the number of records
+        updated.
         """
-        db_path = self._db_paths.get(system)
-        if not db_path:
-            raise ValueError(f"Unknown system: {system}")
-
-        conn = _connect(db_path)
-        if not conn:
-            raise ValueError(f"Database not found for system: {system}")
-
+        conn = self._open_system(system)
         try:
-            table = _learner_table(system)
-            if not _table_exists(conn, table):
-                raise ValueError(f"Table '{table}' not found in {system}")
-
-            cols = _get_columns(conn, table)
-            name_expr = _name_search_expr(cols)
-            if not name_expr:
-                raise ValueError("Cannot determine name columns")
+            table, _id_col, cols, rows, _kind = self._resolve_subject(
+                conn, system, student_name, student_id)
 
             # Validate field names exist
             safe_updates = {}
@@ -640,14 +823,21 @@ class GDPRService:
 
             if not safe_updates:
                 raise ValueError("No valid fields to update")
+            if dry_run:
+                preview = self.preview_match(
+                    student_name, system, student_id=student_id)
+                preview["field_updates"] = dict(safe_updates)
+                return preview
+            if not rows:
+                return 0
 
             # Build parameterised UPDATE
             set_parts = ", ".join(f"{k} = ?" for k in safe_updates)
-            params = list(safe_updates.values()) + [f"%{student_name.strip()}%"]
-
-            validate_identifier(table)
+            rowids = [r["rowid"] for r in rows]
+            marks = ",".join("?" for _ in rowids)
+            params = list(safe_updates.values()) + rowids
             cursor = conn.execute(
-                f"UPDATE {table} SET {set_parts} WHERE {name_expr} LIKE ?",
+                f"UPDATE {table} SET {set_parts} WHERE rowid IN ({marks})",  # nosec B608 - identifiers validated
                 params,
             )
             conn.commit()
@@ -659,36 +849,31 @@ class GDPRService:
     # Right to Restrict Processing
     # ------------------------------------------------------------------
 
-    def restrict_processing(self, student_name: str, system: str) -> int:
+    def restrict_processing(self, student_name: str, system: str, *,
+                            student_id=None, dry_run=False):
         """Mark a student's data as restricted (Right to Restrict Processing).
 
         Sets a 'processing_restricted' flag if the column exists,
-        otherwise sets status to 'restricted'.
+        otherwise sets status to 'restricted'. Exact matching and the
+        ambiguity rule as :meth:`rectify_student_data`; ``dry_run``
+        returns the preview dict without changing anything.
 
         Returns the number of records updated.
         """
-        db_path = self._db_paths.get(system)
-        if not db_path:
-            raise ValueError(f"Unknown system: {system}")
-
-        conn = _connect(db_path)
-        if not conn:
-            raise ValueError(f"Database not found for system: {system}")
-
+        if dry_run:
+            return self.preview_match(student_name, system, student_id=student_id)
+        conn = self._open_system(system)
         try:
-            table = _learner_table(system)
-            if not _table_exists(conn, table):
-                raise ValueError(f"Table '{table}' not found in {system}")
-
-            cols = _get_columns(conn, table)
-            name_expr = _name_search_expr(cols)
-            if not name_expr:
-                raise ValueError("Cannot determine name columns")
+            table, _id_col, cols, rows, _kind = self._resolve_subject(
+                conn, system, student_name, student_id)
+            if not rows:
+                return 0
+            rowids = [r["rowid"] for r in rows]
+            marks = ",".join("?" for _ in rowids)
 
             # Try to add processing_restricted column if it doesn't exist
             if "processing_restricted" not in cols:
                 try:
-                    validate_identifier(table)
                     conn.execute(f"ALTER TABLE {table} ADD COLUMN processing_restricted INTEGER DEFAULT 0")
                     conn.commit()
                 except Exception:
@@ -696,13 +881,13 @@ class GDPRService:
 
             if "processing_restricted" in _get_columns(conn, table):
                 cursor = conn.execute(
-                    f"UPDATE {table} SET processing_restricted = 1 WHERE {name_expr} LIKE ?",
-                    (f"%{student_name.strip()}%",),
+                    f"UPDATE {table} SET processing_restricted = 1 WHERE rowid IN ({marks})",  # nosec B608
+                    rowids,
                 )
             elif "status" in cols:
                 cursor = conn.execute(
-                    f"UPDATE {table} SET status = 'restricted' WHERE {name_expr} LIKE ?",
-                    (f"%{student_name.strip()}%",),
+                    f"UPDATE {table} SET status = 'restricted' WHERE rowid IN ({marks})",  # nosec B608
+                    rowids,
                 )
             else:
                 raise ValueError("Cannot restrict processing: no suitable column")
@@ -712,27 +897,22 @@ class GDPRService:
         finally:
             conn.close()
 
-    def unrestrict_processing(self, student_name: str, system: str) -> int:
-        """Remove processing restriction from a student's data."""
-        db_path = self._db_paths.get(system)
-        if not db_path:
-            raise ValueError(f"Unknown system: {system}")
-
-        conn = _connect(db_path)
-        if not conn:
-            raise ValueError(f"Database not found for system: {system}")
-
+    def unrestrict_processing(self, student_name: str, system: str, *,
+                              student_id=None, dry_run=False):
+        """Remove processing restriction from a student's data (exact
+        matching, ambiguity refused; ``dry_run`` previews)."""
+        if dry_run:
+            return self.preview_match(student_name, system, student_id=student_id)
+        conn = self._open_system(system)
         try:
-            table = _learner_table(system)
-            cols = _get_columns(conn, table)
-            name_expr = _name_search_expr(cols)
-            if not name_expr:
-                raise ValueError("Cannot determine name columns")
-
-            if "processing_restricted" in cols:
+            table, _id_col, cols, rows, _kind = self._resolve_subject(
+                conn, system, student_name, student_id)
+            if "processing_restricted" in cols and rows:
+                rowids = [r["rowid"] for r in rows]
+                marks = ",".join("?" for _ in rowids)
                 cursor = conn.execute(
-                    f"UPDATE {table} SET processing_restricted = 0 WHERE {name_expr} LIKE ?",
-                    (f"%{student_name.strip()}%",),
+                    f"UPDATE {table} SET processing_restricted = 0 WHERE rowid IN ({marks})",  # nosec B608
+                    rowids,
                 )
                 conn.commit()
                 return cursor.rowcount
@@ -744,13 +924,14 @@ class GDPRService:
     # Right to Data Portability
     # ------------------------------------------------------------------
 
-    def export_portable_data(self, student_name: str, format: str = "json") -> dict | str:
+    def export_portable_data(self, student_name: str, format: str = "json", *,
+                             student_ids=None) -> dict | str:
         """Export student data in a standard portable format.
 
         Supports 'json' and 'csv' formats. Returns structured data
         suitable for transferring to another education provider.
         """
-        data = self.get_full_data_export(student_name)
+        data = self.get_full_data_export(student_name, student_ids=student_ids)
         if not data:
             raise ValueError(f"No data found for '{student_name}'")
 
@@ -845,7 +1026,8 @@ class GDPRService:
             return False
 
     def transfer_with_consent(self, user_id: int, student_name: str,
-                              source_system: str, target_system: str) -> dict:
+                              source_system: str, target_system: str, *,
+                              student_id=None) -> dict:
         """Transfer student data between systems with consent verification.
 
         Raises ValueError if consent has not been granted.
@@ -856,8 +1038,15 @@ class GDPRService:
                 "or 'data_sharing_authorities' consent before transferring data."
             )
 
-        # Get data from source system
-        data = self.get_full_data_export(student_name)
+        # Get data from source system (exact match; ambiguity refused)
+        # Only the source system is read, so a namesake elsewhere cannot
+        # block (or leak into) the transfer.
+        scoped = GDPRService(
+            db_paths={source_system: self._db_paths.get(source_system)},
+            auth_db=self._auth_db)
+        data = scoped.get_full_data_export(
+            student_name,
+            student_ids={source_system: student_id} if student_id else None)
         source_data = data.get(source_system, {})
 
         if not source_data:

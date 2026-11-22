@@ -1,4 +1,10 @@
-"""Emergency routes: alerts, contacts, incidents."""
+"""Emergency routes: alerts, contacts, incidents.
+
+Alerts are for everyone signed in (raised and closed by admins). A
+student's emergency contacts are theirs and the health team's (see
+``_health_access``). Incidents are reported by anyone, and read and
+updated by staff.
+"""
 
 from __future__ import annotations
 
@@ -7,7 +13,17 @@ from datetime import datetime
 
 from flask import Blueprint, g, jsonify, request
 
-from education_system.platform.delivery.api.university.auth import admin_required, token_required
+from education_system.api.university.pastoral._health_access import (
+    deny_unless_may_view_health,
+    health_caller,
+    is_health_team,
+    own_student_id,
+)
+from education_system.platform.delivery.api.university.auth import (
+    admin_required,
+    staff_required,
+    token_required,
+)
 from education_system.platform.delivery.api.university.pagination import get_pagination_params, paginated_response
 from education_system.platform.delivery.api.university.validators import (
     validate_emergency_alert_create,
@@ -110,66 +126,137 @@ def deactivate_alert(alert_id: int):
 
 
 # ---- Emergency Contacts ----
+#
+# One store and one set of rules shared with the GUI and CLI:
+# ``domains/health/domain/health/services/contacts`` (list_contacts /
+# save_contact / delete_contact / set_primary). It checks access, writes the
+# audit entries and keeps exactly one primary contact per student.
+
+
+def _contacts():
+    from education_system.systems.university.domains.health.domain.health.services import (
+        contacts,
+    )
+    return contacts
+
+
+def _contact_owner(contact_id: int):
+    with get_connection() as conn:
+        row = conn.execute(
+            "SELECT student_id FROM emergency_contacts WHERE id = ?", (contact_id,)
+        ).fetchone()
+    if not row:
+        raise ValidationError(f"Emergency contact {contact_id} not found")
+    return row[0]
+
+
+def _contact_call(fn, *args):
+    """Run a contacts-service call, mapping its refusals to API errors."""
+    try:
+        return fn(*args), None
+    except PermissionError as exc:
+        return None, (jsonify({"error": "Forbidden", "message": str(exc), "status": 403}), 403)
+    except ValueError as exc:
+        raise ValidationError(str(exc)) from None
+
 
 @emergency_bp.route("/contacts", methods=["GET"])
 @token_required
 def list_contacts():
-    student_id = request.args.get("student_id")
+    student_id = request.args.get("student_id") or own_student_id()
     if not student_id:
         raise ValidationError("student_id query parameter is required")
-
-    with get_connection() as conn:
-        rows = conn.execute(
-            "SELECT * FROM emergency_contacts WHERE student_id = ? ORDER BY priority_order",
-            (student_id,),
-        ).fetchall()
+    # The service checks access and writes the (fail-closed) audit entry.
+    items, denial = _contact_call(_contacts().list_contacts, health_caller(), student_id)
+    if denial is not None:
+        return denial
 
     log_activity("view", "emergency_contacts", user=g.current_user.get("sub"))
-    return jsonify({"items": [_row_to_dict(r) for r in rows], "total": len(rows)})
+    return jsonify({"items": items, "total": len(items)})
 
 
 @emergency_bp.route("/contacts", methods=["POST"])
 @token_required
 def create_contact():
     data = request.get_json(silent=True) or {}
+    if not is_health_team():
+        own = own_student_id()
+        if own is None or str(data.get("student_id") or own) != own:
+            return jsonify({"error": "Forbidden", "status": 403,
+                            "message": "You can only add your own emergency contacts"}), 403
+        data["student_id"] = own
     validate_emergency_contact_create(data)
 
-    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    with transaction() as conn:
-        conn.execute(
-            """INSERT INTO emergency_contacts
-               (student_id, contact_name, relationship, phone_primary,
-                phone_secondary, email, address, priority_order,
-                medical_decision_maker, created_at)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
-            (
-                data["student_id"],
-                data["contact_name"],
-                data["relationship"],
-                data["phone_primary"],
-                data.get("phone_secondary"),
-                data.get("email"),
-                data.get("address"),
-                data.get("priority_order", 1),
-                data.get("medical_decision_maker", 0),
-                now,
-            ),
-        )
-        cid = conn.execute("SELECT last_insert_rowid()").fetchone()[0]
+    contact_id, denial = _contact_call(_contacts().save_contact, health_caller(),
+                                       data["student_id"], data)
+    if denial is not None:
+        return denial
 
     with get_connection() as conn:
         row = conn.execute(
-            "SELECT * FROM emergency_contacts WHERE id = ?", (cid,)
+            "SELECT * FROM emergency_contacts WHERE id = ?", (contact_id,)
         ).fetchone()
 
     log_activity("create", "emergency_contact", user=g.current_user.get("sub"))
     return jsonify(_row_to_dict(row)), 201
 
 
+@emergency_bp.route("/contacts/<int:contact_id>", methods=["PUT"])
+@token_required
+def update_contact(contact_id: int):
+    """Change one contact (all fields are sent, as on the GUI form)."""
+    student_id = _contact_owner(contact_id)
+    denial = deny_unless_may_view_health(student_id, "emergency_contacts", record_id=contact_id)
+    if denial is not None:
+        return denial
+    data = request.get_json(silent=True) or {}
+    _saved, denial = _contact_call(_contacts().save_contact, health_caller(), student_id, data,
+                                   contact_id)
+    if denial is not None:
+        return denial
+    with get_connection() as conn:
+        row = conn.execute(
+            "SELECT * FROM emergency_contacts WHERE id = ?", (contact_id,)
+        ).fetchone()
+    log_activity("update", "emergency_contact", user=g.current_user.get("sub"))
+    return jsonify(_row_to_dict(row))
+
+
+@emergency_bp.route("/contacts/<int:contact_id>", methods=["DELETE"])
+@token_required
+def delete_contact(contact_id: int):
+    student_id = _contact_owner(contact_id)
+    denial = deny_unless_may_view_health(student_id, "emergency_contacts", record_id=contact_id)
+    if denial is not None:
+        return denial
+    _done, denial = _contact_call(_contacts().delete_contact, health_caller(), student_id,
+                                  contact_id)
+    if denial is not None:
+        return denial
+    log_activity("delete", "emergency_contact", user=g.current_user.get("sub"))
+    return jsonify({"message": "Emergency contact deleted", "id": contact_id})
+
+
+@emergency_bp.route("/contacts/<int:contact_id>/primary", methods=["PUT"])
+@token_required
+def make_primary_contact(contact_id: int):
+    student_id = _contact_owner(contact_id)
+    denial = deny_unless_may_view_health(student_id, "emergency_contacts", record_id=contact_id)
+    if denial is not None:
+        return denial
+    _done, denial = _contact_call(_contacts().set_primary, health_caller(), student_id,
+                                  contact_id)
+    if denial is not None:
+        return denial
+    log_activity("update", "emergency_contact_primary", user=g.current_user.get("sub"))
+    return jsonify({"message": "Primary emergency contact set", "id": contact_id})
+
+
 # ---- Incidents ----
 
 @emergency_bp.route("/incidents", methods=["GET"])
 @token_required
+@staff_required
 def list_incidents():
     status = request.args.get("status")
     severity = request.args.get("severity")
@@ -245,6 +332,7 @@ def create_incident():
 
 @emergency_bp.route("/incidents/<int:incident_id>", methods=["PUT"])
 @token_required
+@staff_required
 def update_incident(incident_id: int):
     with get_connection() as conn:
         existing = conn.execute(

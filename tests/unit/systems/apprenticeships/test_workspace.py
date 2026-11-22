@@ -26,16 +26,18 @@ from education_system.systems.apprenticeships.domain.workspace.items import (
     to_ics,
     within,
 )
-from education_system.systems.apprenticeships.services import (
-    calendar_service,
+from education_system.systems.apprenticeships.application.learning import (
     learning_plan_service,
+    training_service,
+)
+from education_system.systems.apprenticeships.application.workspace import (
+    calendar_service,
     reporting_service,
     search_service,
     task_service,
-    training_service,
     workload_service,
 )
-from education_system.systems.apprenticeships.services.access import PermissionDenied
+from education_system.systems.apprenticeships.application.security.access import PermissionDenied
 
 TODAY = date(2026, 9, 10)
 

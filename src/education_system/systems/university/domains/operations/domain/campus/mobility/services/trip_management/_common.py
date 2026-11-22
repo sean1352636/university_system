@@ -39,13 +39,21 @@ except ImportError:
     logging.warning(get_text("mobility.trip_management.warnings.reportlab_unavailable", "ReportLab not available. PDF generation will be disabled."))
 
 # Academic calendar is optional - may not be available if dependencies missing
+# Only the flag is needed here (menu.py shows the calendar options when it is
+# set); importing calendar_core at load pulled in seaborn/scipy/matplotlib and
+# made every import of this package take ~12s. Calendar sync itself goes
+# through trip_bus.
+# (find_spec on the submodule would import the academic_calendar package,
+# whose __init__ loads the charts — so look for the file instead.)
+import importlib.util as _importlib_util
 try:
-    from education_system.systems.university.domains.academics.domain.services.academic_calendar.calendar_core import AcademicCalendarManager
-    from education_system.systems.university.domains.academics.domain.services.academic_calendar.config import CalendarConfig
-    CALENDAR_AVAILABLE = True
+    _calendar_pkg = _importlib_util.find_spec(
+        "education_system.systems.university.domains.teaching.domain.academic_calendar")
+    CALENDAR_AVAILABLE = bool(_calendar_pkg and any(
+        os.path.exists(os.path.join(p, "calendar_core.py"))
+        for p in (_calendar_pkg.submodule_search_locations or ())))
 except ImportError as e:
     CALENDAR_AVAILABLE = False
-    # Use debug level since this is expected when optional dependencies (numpy) are missing
     logging.debug(f"Academic calendar module not available (optional): {e}")
 
 # Import auth instance management from user_authentication
@@ -59,33 +67,15 @@ except ImportError:
 
 auth = None
 
-# Test helper to ensure auth is set when running under pytest.
-def get_auth():
-    global auth
-    try:
-        import sys
-    except Exception:
-        sys = None
 
-    if auth is None and (os.environ.get("PYTEST_CURRENT_TEST") or (sys and 'pytest' in sys.modules)):
-        class _TestAuthStub:
-            current_user = {'id': 0, 'username': 'test', 'role': 'student'}
-            def check_permission(self, *_args, **_kwargs):
-                return True
-        auth = _TestAuthStub()
+def get_auth():
+    """The auth instance set by :func:`set_auth` (``None`` when nobody is signed in).
+
+    There is deliberately no test fallback: an unauthenticated caller gets
+    ``None`` and is refused. Tests set a fake auth with :func:`set_auth`.
+    """
     return auth
 
-# Provide a permissive auth stub during tests so modules can be exercised
-# without wiring the full authentication stack.
-try:  # pragma: no cover - test-only fallback
-    if auth is None and os.environ.get("PYTEST_CURRENT_TEST"):
-        class _TestAuthStub:
-            current_user = {'id': 0, 'username': 'test', 'role': 'student'}
-            def check_permission(self, *_args, **_kwargs):
-                return True
-        auth = _TestAuthStub()
-except Exception:
-    logger.debug("Suppressed exception", exc_info=True)
 
 def set_auth(auth_instance):
     global auth

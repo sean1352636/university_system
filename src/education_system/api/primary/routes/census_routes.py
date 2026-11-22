@@ -1,4 +1,4 @@
-"""REST API for Primary Census / ILR."""
+"""REST API for the Primary School Census (returns + summary)."""
 
 from __future__ import annotations
 
@@ -95,61 +95,6 @@ def delete_return(return_id):
     if not data.delete_return(return_id):
         return jsonify({"error": "Not found"}), 404
     return jsonify({"deleted": return_id})
-
-
-# ── Learner aims ──────────────────────────────────────────
-
-@census_bp.route("/aims", methods=["GET"])
-@_token_required
-def list_aims():
-    from education_system.systems.primary.domain.governance.compliance.census import census as data
-    rows = data.list_aims()
-    return jsonify({"items": _dump(rows), "count": len(rows)})
-
-
-@census_bp.route("/aims/<int:aim_id>", methods=["GET"])
-@_token_required
-def get_aim(aim_id):
-    from education_system.systems.primary.domain.governance.compliance.census import census as data
-    obj = data.get_aim(aim_id)
-    if obj is None:
-        return jsonify({"error": "Not found"}), 404
-    return jsonify(_dump(obj))
-
-
-@census_bp.route("/aims", methods=["POST"])
-@_token_required
-def create_aim():
-    from education_system.systems.primary.domain.governance.compliance.census import census as data
-    payload = request.get_json(silent=True) or {}
-    try:
-        obj = data.create_aim(payload)
-    except data.ValidationError as exc:
-        return jsonify({"error": str(exc)}), 400
-    return jsonify(_dump(obj)), 201
-
-
-@census_bp.route("/aims/<int:aim_id>", methods=["PUT"])
-@_token_required
-def update_aim(aim_id):
-    from education_system.systems.primary.domain.governance.compliance.census import census as data
-    if data.get_aim(aim_id) is None:
-        return jsonify({"error": "Not found"}), 404
-    payload = request.get_json(silent=True) or {}
-    try:
-        obj = data.update_aim(aim_id, payload)
-    except data.ValidationError as exc:
-        return jsonify({"error": str(exc)}), 400
-    return jsonify(_dump(obj))
-
-
-@census_bp.route("/aims/<int:aim_id>", methods=["DELETE"])
-@_token_required
-def delete_aim(aim_id):
-    from education_system.systems.primary.domain.governance.compliance.census import census as data
-    if not data.delete_aim(aim_id):
-        return jsonify({"error": "Not found"}), 404
-    return jsonify({"deleted": aim_id})
 
 
 # ── Summary ───────────────────────────────────────────────

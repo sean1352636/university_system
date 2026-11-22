@@ -3,32 +3,28 @@ applications that name *this* university and record admissions
 decisions against them.
 
 The university doesn't own UCAS data; the sixth-form system does. This
-module is a thin read+write adapter on top of the sixth-form Python
-API:
+module reads it through the sixth form's adapter and records our side:
 
-* ``list_applicants(...)`` returns one row per sixth-form
-  ``ucas_choices`` entry whose ``university`` matches the configured
-  university name, joined with the parent application and the
-  student record.
+* ``list_applicants(...)`` returns one row per sixth-form UCAS choice
+  whose ``university`` matches the configured university name, joined
+  with the parent application and the student record. Choices already
+  placed (enrolled here) are left out unless ``include_placed=True``.
 * ``get_full_application(application_id)`` returns the parent
   application plus all of the student's choices (so an admissions
   officer can see what other universities they applied to and which
   of those replied first).
-* ``record_decision(choice_id, decision_status, ...)`` writes the
+* ``record_decision(choice_id, decision_status, ...)`` records the
   decision (``Conditional Offer`` / ``Unconditional Offer`` /
-  ``Rejected``, plus offer terms) back to the sixth-form
-  ``ucas_choices`` row by calling the sf API, and records everything
-  about that decision that is ours: the structured offer terms
-  (:mod:`.offer_terms`), who decided and when (:mod:`.decision_log`,
-  which also writes the platform audit entry), the link to our own
-  admissions application (:mod:`.ucas_links`), and the applicant's
-  email.
+  ``Rejected``, plus offer terms) in our own tables — the structured
+  offer terms (:mod:`.offer_terms`), who decided and when
+  (:mod:`.decision_log`, which also writes the platform audit entry), the
+  link to our own admissions application (:mod:`.ucas_links`) — e-mails
+  the applicant, and publishes ``ucas.decision.recorded``. The sixth form
+  applies that event to its own choice row and tells the learner and
+  their tutor; we never write its row.
 
-  The sixth form owns *validation* of the choice row. It does not own
-  audit logging and never did — this docstring used to say it did, while
-  the sixth form's ``update_choice`` logged one INFO line and nothing
-  reached the platform audit log at all. An offer is now audited on our
-  side, which is where it is actually decided.
+The sixth form is reached only through its registered adapter
+(``platform.cross_system.adapters.registry``); nothing here imports it.
 
 The name matched against ``ucas_choices.university`` is the institution
 name this university publishes (``application.prospectus``), falling back
@@ -48,18 +44,277 @@ from education_system.systems.university.infrastructure.defaults import (
 logger = logging.getLogger(__name__)
 
 
-# ── Re-export sf vocab so callers don't reach across the boundary ──
+# ── The sixth form, reached through its adapter ───────────────────
+#
+# The university does not import the sixth form. Reads go through the
+# sixth form's registered adapter; our decisions go on the cross-system bus
+# (``ucas.decision.recorded``) and the sixth form applies them to its own
+# row. ``_sf()`` keeps the shape the older callers in this package (results
+# day, clearing) were written against, backed by the adapter.
 
-def _sf():
-    from education_system.systems.sixth_form.domain.progression.university import ucas as _ucas
-    return _ucas
-
-
-def _sf_students():
-    from education_system.systems.sixth_form.domain.learners.students import (
-        students as _s,
+def _sf_adapter():
+    from education_system.platform.cross_system.adapters import registry
+    from education_system.platform.cross_system.adapters.base import (
+        AdapterError,
     )
-    return _s
+    try:
+        return registry.require("sixth_form")
+    except AdapterError as e:
+        raise UcasError(
+            f"The sixth form's UCAS records are unavailable: {e}") from e
+
+
+@dataclass
+class ChoiceView:
+    """A sixth-form UCAS choice as this university sees it.
+
+    Same attribute names as the sixth form's own ``Choice`` so existing
+    callers keep working. ``decision_status`` / ``offer_terms`` show *our*
+    recorded decision for a choice at this university, which the sixth
+    form's copy only reflects once it has applied the published event.
+    """
+    choice_id: int
+    application_id: int
+    choice_order: int
+    university: str
+    course_code: str | None
+    course_name: str
+    entry_year: int | None
+    decision_status: str
+    offer_terms: str | None
+    final_decision: str | None
+    notes: str | None
+    choice_status: str = "Open"
+    placed_at: str | None = None
+    university_student_id: str | None = None
+    reply_by: str | None = None
+    decided_by: str | None = None
+    decided_at: str | None = None
+    student_id: str | None = None
+    journey_id: str | None = None
+    #: The sixth form's own copy of the decision, for a "pending" marker.
+    sf_decision_status: str | None = None
+
+    @property
+    def is_placed(self) -> bool:
+        return self.choice_status == "Placed"
+
+    @property
+    def decision_pending_at_sixth_form(self) -> bool:
+        return (self.sf_decision_status is not None
+                and self.sf_decision_status != self.decision_status)
+
+
+@dataclass
+class ApplicationView:
+    """A sixth-form UCAS application, read through the adapter."""
+    application_id: int
+    student_id: str
+    cycle_year: int
+    ucas_id: str | None
+    status: str
+    personal_statement: str | None
+    submitted_at: str | None
+    notes: str | None
+
+
+def _choice_view(d: dict) -> ChoiceView:
+    return ChoiceView(
+        choice_id=d["choice_id"], application_id=d["application_id"],
+        choice_order=d.get("choice_order") or 0,
+        university=d.get("university") or "",
+        course_code=d.get("course_code"),
+        course_name=d.get("course_name") or "",
+        entry_year=d.get("entry_year"),
+        decision_status=d.get("decision_status") or "Awaiting",
+        offer_terms=d.get("offer_terms"),
+        final_decision=d.get("final_decision"),
+        notes=d.get("choice_notes"),
+        choice_status=d.get("choice_status") or "Open",
+        placed_at=d.get("placed_at"),
+        university_student_id=d.get("university_student_id"),
+        reply_by=d.get("reply_by"),
+        decided_by=d.get("decided_by"),
+        decided_at=d.get("decided_at"),
+        student_id=d.get("student_id"),
+        journey_id=d.get("journey_id"),
+        sf_decision_status=d.get("decision_status"),
+    )
+
+
+def _app_view(d: dict) -> ApplicationView:
+    return ApplicationView(
+        application_id=d["application_id"], student_id=d["student_id"],
+        cycle_year=d.get("cycle_year"), ucas_id=d.get("ucas_personal_id"),
+        status=d.get("application_status") or "Draft",
+        personal_statement=d.get("personal_statement"),
+        submitted_at=d.get("submitted_at"), notes=d.get("app_notes"),
+    )
+
+
+def _our_decisions(choice_ids) -> dict:
+    """``{choice_id: latest Decision}`` from our own decision log."""
+    ids = [int(c) for c in choice_ids if c is not None]
+    if not ids:
+        return {}
+    try:
+        from education_system.systems.university.domains.admissions.domain.ucas import (
+            decision_log as _log,
+        )
+        return _log.latest_for_choices(ids)
+    except Exception:
+        logger.exception("Could not read the UCAS decision log")
+        return {}
+
+
+def _overlay(target, decision, *, ours: bool) -> None:
+    """Show our recorded decision on *target* (a choice view or applicant)."""
+    if decision is None or not ours:
+        return
+    target.decision_status = decision.decision_status
+    if decision.offer_terms is not None:
+        target.offer_terms = decision.offer_terms
+    if hasattr(target, "decided_by"):
+        target.decided_by = decision.decided_by
+        target.decided_at = decision.decided_at
+
+
+def _placed_here(choice_ids) -> dict:
+    """``{choice_id: uni_student_id}`` for choices we have enrolled from."""
+    ids = [int(c) for c in choice_ids if c is not None]
+    if not ids:
+        return {}
+    try:
+        from education_system.systems.university.domains.admissions.domain.ucas import (
+            ucas_links as _links,
+        )
+        return _links.placed_by_choice(ids)
+    except Exception:
+        logger.exception("Could not read the UCAS link records")
+        return {}
+
+
+def _is_ours(university: str | None, our_name: str | None = None) -> bool:
+    name = (our_name if our_name is not None else _resolve_uni_name(None))
+    return (university or "").strip().lower() == (name or "").strip().lower()
+
+
+def _get_choice(choice_id: int) -> ChoiceView | None:
+    """One choice, with our recorded decision overlaid."""
+    d = _sf_adapter().ucas_choice(int(choice_id))
+    if d is None:
+        return None
+    view = _choice_view(d)
+    _overlay(view, _our_decisions([view.choice_id]).get(view.choice_id),
+             ours=_is_ours(view.university))
+    placed = _placed_here([view.choice_id]).get(view.choice_id)
+    if placed:
+        view.choice_status = "Placed"
+        view.university_student_id = view.university_student_id or placed
+    return view
+
+
+class _SixthFormUcas:
+    """The handful of sixth-form UCAS calls this package used to import,
+    now answered by the sixth form's adapter. Writes are limited to the
+    ones the university owns synchronously (reply, application status)."""
+
+    def init_db(self) -> None:
+        return None
+
+    def get_choice(self, choice_id: int) -> ChoiceView | None:
+        return _get_choice(choice_id)
+
+    def get_application(self, application_id: int) -> ApplicationView | None:
+        d = _sf_adapter().ucas_application(int(application_id))
+        return _app_view(d) if d else None
+
+    def list_choices(self, application_id: int) -> list[ChoiceView]:
+        d = _sf_adapter().ucas_application(int(application_id))
+        if not d:
+            return []
+        views = [_choice_view(c) for c in d.get("choices") or []]
+        ours = _our_decisions([v.choice_id for v in views])
+        name = _resolve_uni_name(None)
+        for v in views:
+            _overlay(v, ours.get(v.choice_id), ours=_is_ours(v.university, name))
+        return views
+
+    def update_application(self, application_id: int,
+                           data: dict) -> ApplicationView:
+        unsupported = set(data) - {"status"}
+        if unsupported:
+            raise UcasError(
+                "Only the application status is the university's to set "
+                f"(not {', '.join(sorted(unsupported))}).")
+        try:
+            d = _sf_adapter().ucas_set_application_status(
+                int(application_id), data["status"])
+        except UcasError:
+            raise
+        except Exception as e:
+            raise UcasError(str(e)) from e
+        return _app_view(d)
+
+    def update_choice(self, choice_id: int, data: dict, *,
+                      issued_by_university: bool = True) -> ChoiceView:
+        """Only the applicant's reply. Decisions go through
+        :func:`record_decision`, which publishes them."""
+        unsupported = set(data) - {"final_decision"}
+        if unsupported:
+            raise UcasError(
+                "Decisions are recorded with record_decision(); this call "
+                f"cannot set {', '.join(sorted(unsupported))}.")
+        try:
+            _sf_adapter().ucas_record_reply(int(choice_id),
+                                            data.get("final_decision"))
+        except UcasError:
+            raise
+        except Exception as e:
+            raise UcasError(str(e)) from e
+        out = _get_choice(choice_id)
+        if out is None:
+            raise UcasError(f"No UCAS choice with id {choice_id}")
+        return out
+
+
+_SF_UCAS = _SixthFormUcas()
+
+
+def _sf() -> _SixthFormUcas:
+    return _SF_UCAS
+
+
+@dataclass
+class _Learner:
+    """The few learner fields an e-mail needs, from the adapter summary."""
+    student_id: str
+    first_name: str
+    full_name: str
+    email: str | None
+
+    @classmethod
+    def of(cls, student_id: str | None) -> "_Learner | None":
+        d = _learner(student_id)
+        if not d:
+            return None
+        return cls(student_id=d.get("student_id") or d.get("id"),
+                   first_name=d.get("first_name") or "",
+                   full_name=d.get("full_name") or "",
+                   email=d.get("email"))
+
+
+def _learner(student_id: str | None) -> dict | None:
+    """The sixth form's summary of a learner (names, email, dob …)."""
+    if not student_id:
+        return None
+    try:
+        return _sf_adapter().learner_summary(str(student_id))
+    except UcasError:
+        raise
+    except Exception:
+        logger.exception("Could not read sixth-form learner %s", student_id)
+        return None
 
 
 # Mirror the sf vocab here for callers and as a single import surface.
@@ -104,6 +359,21 @@ class Applicant:
     student_email: str
     student_dob: str | None
     student_status: str        # 'Active' / 'Left' etc.
+    # The link's own state.
+    choice_status: str = "Open"          # 'Placed' once enrolled here
+    placed_at: str | None = None
+    university_student_id: str | None = None
+    reply_by: str | None = None
+    decided_by: str | None = None
+    decided_at: str | None = None
+    journey_id: str | None = None
+    #: The sixth form's copy of the decision (may lag ours until it has
+    #: applied the published ``ucas.decision.recorded`` event).
+    sf_decision_status: str | None = None
+
+    @property
+    def is_placed(self) -> bool:
+        return self.choice_status == "Placed"
 
     @property
     def display_subjects(self) -> str:
@@ -150,7 +420,7 @@ def _resolve_uni_name(name: str | None) -> str:
         return name.strip()
     published = None
     try:
-        from education_system.systems.university.application import prospectus
+        from education_system.systems.university.application.programmes import prospectus
         published = prospectus.institution_name()
     except Exception:
         logger.debug("Could not read the published institution name",
@@ -167,19 +437,22 @@ def list_applicants(
     app_status: str | None = None,
     cycle_year: int | None = None,
     search: str | None = None,
+    include_placed: bool = False,
 ) -> list[Applicant]:
-    """Return one ``Applicant`` per ``ucas_choices`` row pointing at
-    this university. Filter by decision status, parent application
-    status, cycle year, and a free-text search across student name /
-    student id / course name.
+    """Return one ``Applicant`` per sixth-form UCAS choice naming this
+    university. Filter by decision status, parent application status,
+    cycle year, and a free-text search across student name / student id /
+    course name.
+
+    Choices already *Placed* — the learner was enrolled here — are history
+    rather than applicants, and are left out unless ``include_placed``.
+    The decision shown is ours (from the decision log), so a decision just
+    recorded appears at once, before the sixth form has applied it.
     """
     name = _resolve_uni_name(university_name)
     if not name:
         raise UcasError("University name is empty — set "
                          "UNIVERSITY_NAME or pass university_name=")
-    sf = _sf()
-    sf.init_db()
-
     if decision_status and decision_status not in DECISION_STATUSES:
         raise UcasError(
             f"decision_status must be one of: {', '.join(DECISION_STATUSES)}")
@@ -187,75 +460,71 @@ def list_applicants(
         raise UcasError(
             f"app_status must be one of: {', '.join(APP_STATUSES)}")
 
-    # Single SQL roundtrip across the sf DB.
-    conn = sf._connect()
     try:
-        clauses = ["LOWER(c.university) = LOWER(?)"]
-        args: list = [name]
-        if decision_status:
-            clauses.append("c.decision_status = ?")
-            args.append(decision_status)
-        if app_status:
-            clauses.append("a.status = ?")
-            args.append(app_status)
-        if cycle_year is not None:
-            clauses.append("a.cycle_year = ?")
-            args.append(cycle_year)
-        if search:
-            q = f"%{search.strip()}%"
-            clauses.append(
-                "(s.student_id LIKE ? OR s.first_name LIKE ? "
-                "OR s.last_name LIKE ? OR c.course_name LIKE ?)")
-            args.extend([q, q, q, q])
-        where = " AND ".join(clauses)
-        # db-audit: ignore[DBW001] - join over a code-controlled list
-        rows = conn.execute(
-            f"""SELECT c.*, a.cycle_year, a.status AS app_status,
-                       a.ucas_id, a.submitted_at,
-                       a.notes AS app_notes, a.personal_statement,
-                       s.student_id, s.first_name, s.middle_name,
-                       s.last_name, s.email, s.date_of_birth,
-                       s.status AS student_status
-                  FROM ucas_choices AS c
-                  JOIN ucas_applications AS a
-                       ON a.application_id = c.application_id
-                  JOIN students AS s
-                       ON s.student_id = a.student_id
-                 WHERE {where}
-                 ORDER BY a.submitted_at DESC NULLS LAST,
-                          s.last_name, s.first_name""",
-            args,
-        ).fetchall()
-    finally:
-        conn.close()
+        rows = _sf_adapter().ucas_choices_for_institution(
+            {name}, include_placed=include_placed)
+    except UcasError:
+        raise
+    except Exception as e:
+        raise UcasError(f"Could not read the sixth form's UCAS choices: {e}") from e
+    ours = _our_decisions([r["choice_id"] for r in rows])
+    # Enrolled here, per our own link record — the sixth form marks the
+    # choice Placed only once it has applied the enrolment event.
+    placed_here = _placed_here([r["choice_id"] for r in rows])
 
+    needle = (search or "").strip().lower()
     out: list[Applicant] = []
     for r in rows:
-        full = " ".join(p for p in (
-            r["first_name"], r["middle_name"], r["last_name"]) if p)
-        out.append(Applicant(
+        if app_status and r.get("application_status") != app_status:
+            continue
+        if cycle_year is not None and r.get("cycle_year") != cycle_year:
+            continue
+        if needle and not any(
+                needle in str(r.get(k) or "").lower()
+                for k in ("student_id", "student_name", "course_name")):
+            continue
+        applicant = Applicant(
             choice_id=r["choice_id"],
             application_id=r["application_id"],
-            choice_order=r["choice_order"],
-            course_code=r["course_code"],
-            course_name=r["course_name"],
-            entry_year=r["entry_year"],
-            decision_status=r["decision_status"],
-            offer_terms=r["offer_terms"],
-            final_decision=r["final_decision"],
-            choice_notes=r["notes"],
-            cycle_year=r["cycle_year"],
-            app_status=r["app_status"],
-            ucas_id=r["ucas_id"],
-            submitted_at=r["submitted_at"],
-            app_notes=r["app_notes"],
-            personal_statement=r["personal_statement"],
+            choice_order=r.get("choice_order") or 0,
+            course_code=r.get("course_code"),
+            course_name=r.get("course_name") or "",
+            entry_year=r.get("entry_year"),
+            decision_status=r.get("decision_status") or "Awaiting",
+            offer_terms=r.get("offer_terms"),
+            final_decision=r.get("final_decision"),
+            choice_notes=r.get("choice_notes"),
+            cycle_year=r.get("cycle_year"),
+            app_status=r.get("application_status") or "Draft",
+            ucas_id=r.get("ucas_personal_id"),
+            submitted_at=r.get("submitted_at"),
+            app_notes=r.get("app_notes"),
+            personal_statement=r.get("personal_statement"),
             student_id=r["student_id"],
-            student_name=full.strip(),
-            student_email=r["email"],
-            student_dob=r["date_of_birth"],
-            student_status=r["student_status"] or "Active",
-        ))
+            student_name=(r.get("student_name") or "").strip(),
+            student_email=r.get("student_email"),
+            student_dob=r.get("student_dob"),
+            student_status=r.get("student_status") or "Active",
+            choice_status=r.get("choice_status") or "Open",
+            placed_at=r.get("placed_at"),
+            university_student_id=r.get("university_student_id"),
+            reply_by=r.get("reply_by"),
+            decided_by=r.get("decided_by"),
+            decided_at=r.get("decided_at"),
+            journey_id=r.get("journey_id"),
+            sf_decision_status=r.get("decision_status"),
+        )
+        _overlay(applicant, ours.get(applicant.choice_id), ours=True)
+        if applicant.choice_id in placed_here:
+            if not include_placed:
+                continue
+            applicant.choice_status = "Placed"
+            applicant.university_student_id = (
+                applicant.university_student_id
+                or placed_here[applicant.choice_id])
+        if decision_status and applicant.decision_status != decision_status:
+            continue
+        out.append(applicant)
     logger.debug(
         "list_applicants(name=%r, dec=%r, app=%r, cy=%r) -> %d",
         name, decision_status, app_status, cycle_year, len(out))
@@ -263,38 +532,38 @@ def list_applicants(
 
 
 def get_full_application(application_id: int) -> FullApplication | None:
-    sf = _sf()
-    sfs = _sf_students()
-    app = sf.get_application(application_id)
-    if app is None:
+    try:
+        d = _sf_adapter().ucas_application(int(application_id))
+    except UcasError:
+        raise
+    except Exception as e:
+        raise UcasError(str(e)) from e
+    if d is None:
         return None
-    choices = sf.list_choices(application_id)
-    student = sfs.get_student(app.student_id)
-    if student is None:
+    if not d.get("student_known"):
         raise UcasError(
             f"Application {application_id} references unknown "
-            f"student {app.student_id}")
+            f"student {d.get('student_id')}")
+    choices = _sf().list_choices(int(application_id))
     uni_name = _resolve_uni_name(None)
-    our = next((c for c in choices
-                 if (c.university or "").strip().lower()
-                    == uni_name.lower()), None)
-    subjects = [s for s in (student.subject_1, student.subject_2,
-                              student.subject_3) if s]
+    our = next((c for c in choices if _is_ours(c.university, uni_name)
+                and not c.is_placed), None) or next(
+        (c for c in choices if _is_ours(c.university, uni_name)), None)
     return FullApplication(
-        application_id=app.application_id,
-        student_id=student.student_id,
-        student_name=student.full_name,
-        student_email=student.email,
-        student_dob=student.date_of_birth,
-        cycle_year=app.cycle_year,
-        ucas_id=app.ucas_id,
-        app_status=app.status,
-        submitted_at=app.submitted_at,
-        personal_statement=app.personal_statement,
-        app_notes=app.notes,
+        application_id=d["application_id"],
+        student_id=d["student_id"],
+        student_name=d.get("student_name") or "",
+        student_email=d.get("student_email"),
+        student_dob=d.get("student_dob"),
+        cycle_year=d.get("cycle_year"),
+        ucas_id=d.get("ucas_personal_id"),
+        app_status=d.get("application_status") or "Draft",
+        submitted_at=d.get("submitted_at"),
+        personal_statement=d.get("personal_statement"),
+        app_notes=d.get("app_notes"),
         choices=choices,
         our_choice_id=(our.choice_id if our is not None else None),
-        subjects=subjects,
+        subjects=list(d.get("subjects") or []),
     )
 
 
@@ -311,11 +580,14 @@ def record_decision(
 ) -> object:
     """Record a uni admissions decision on a sixth-form UCAS choice.
 
-    Wraps the sf ``update_choice`` API: only the decision-related
-    fields are touched, the rest of the row (university, course, etc.)
-    is left alone. Raises :class:`UcasError` for invalid input or any
-    underlying validation error from the sf side. Returns the
-    refreshed sf ``Choice`` row.
+    The decision is recorded in *our* tables (:mod:`.decision_log`, plus
+    the structured :mod:`.offer_terms`) and published on the cross-system
+    bus as ``ucas.decision.recorded``. The sixth form applies it to its own
+    ``ucas_choices`` row, idempotently — the university no longer writes
+    that row. Returns a :class:`ChoiceView` showing the decision as
+    recorded here, so a screen re-reading it sees it at once. Raises
+    :class:`UcasError` for invalid input, an unknown or already-placed
+    choice, or a decision that could not be recorded.
 
     ``terms`` carries the rest of what an offer actually says — reply
     deadline, expiry, scholarship, guaranteed accommodation, an
@@ -352,73 +624,74 @@ def record_decision(
         except _terms.OfferTermsError as e:
             raise UcasError(str(e)) from e
 
-    sf = _sf()
-    update = {"decision_status": decision_status}
-    if offer_terms is not None:
-        update["offer_terms"] = offer_terms
-    if notes is not None:
-        update["notes"] = notes
+    current = None
     try:
-        # ``issued_by_university`` is what makes this write legal: the sf
-        # data layer refuses decision fields on a choice naming us from
-        # every other caller, so this is the only door into them.
-        out = sf.update_choice(choice_id, update, issued_by_university=True)
+        current = _get_choice(choice_id)
+    except UcasError:
+        raise
     except Exception as e:
-        # The sf ValidationError extends ValueError; everything else
-        # is unexpected. Wrap both as UcasError so callers don't have
-        # to cross the boundary again to catch.
         raise UcasError(str(e)) from e
-    logger.info(
-        "Recorded UCAS decision: choice #%d -> %s (offer_terms=%s)",
-        choice_id, decision_status, bool(offer_terms))
+    if current is None:
+        raise UcasError(f"No UCAS choice with id {choice_id}")
+    if current.is_placed:
+        raise UcasError(
+            "This applicant has already been enrolled from this choice; "
+            "its decision is closed.")
+    sf_student_id: str | None = current.student_id
 
-    # The structured terms behind the one-line summary, already validated
-    # above. Best-effort like the link below — the decision itself is
-    # written, and a failure storing the scholarship flag must not undo it.
-    if issue_terms is not None:
-        try:
-            from education_system.systems.university.domains.admissions.domain.ucas import (
-                offer_terms as _terms,
-            )
-            _terms.save_terms(out.choice_id, issue_terms, issued_by=issued_by)
-        except Exception:
-            logger.exception(
-                "Could not store offer terms for choice #%d "
-                "(decision write succeeded)", choice_id)
-
-    # The applicant behind the choice, resolved once — the steps below
-    # all want it and each used to fetch it again.
-    sf_student_id: str | None = None
+    # Our record of the decision — the decision itself now. The sixth form
+    # no longer has its row written by us: it receives the event below and
+    # applies it to its own copy. If this fails, nothing was decided.
+    from education_system.systems.university.domains.admissions.domain.ucas import (
+        decision_log as _log,
+    )
     try:
-        parent = _sf().get_application(out.application_id)
-        sf_student_id = parent.student_id if parent else None
-    except Exception:
-        logger.exception(
-            "Could not resolve the student behind choice #%d", choice_id)
-
-    # Who decided, and when. Logged loudly on failure rather than
-    # silently: everything after the sf write is best-effort so a failing
-    # database cannot appear to the officer as a decision that did not
-    # happen, but a decision nobody can be held to is the exact problem
-    # this record exists to solve.
-    try:
-        from education_system.systems.university.domains.admissions.domain.ucas import (
-            decision_log as _log,
-        )
-        _log.record(
-            sf_choice_id=out.choice_id,
-            sf_application_id=out.application_id,
+        logged = _log.record(
+            sf_choice_id=current.choice_id,
+            sf_application_id=current.application_id,
             sf_student_id=sf_student_id,
             decision_status=decision_status,
             offer_terms=offer_terms,
             notes=notes,
             decided_by=issued_by,
         )
-    except Exception:
-        logger.exception(
-            "UNATTRIBUTED DECISION: could not log choice #%d -> %s by %s "
-            "(decision write succeeded)",
-            choice_id, decision_status, issued_by or "unknown")
+    except Exception as e:
+        logger.exception("Could not record UCAS decision on choice #%d",
+                         choice_id)
+        raise UcasError(f"The decision could not be recorded: {e}") from e
+    logger.info(
+        "Recorded UCAS decision #%d: choice #%d -> %s (offer_terms=%s)",
+        logged.decision_id, choice_id, decision_status, bool(offer_terms))
+
+    # The structured terms behind the one-line summary, already validated
+    # above. Best-effort — a failure storing the scholarship flag must not
+    # undo the decision.
+    if issue_terms is not None:
+        try:
+            from education_system.systems.university.domains.admissions.domain.ucas import (
+                offer_terms as _terms,
+            )
+            _terms.save_terms(current.choice_id, issue_terms,
+                              issued_by=issued_by)
+        except Exception:
+            logger.exception(
+                "Could not store offer terms for choice #%d "
+                "(decision recorded)", choice_id)
+
+    # Tell the sixth form. Durable: it applies the decision to its own row
+    # the next time its drainer runs, idempotently on the decision id.
+    _publish_decision(current, logged, issue_terms)
+
+    # What this call returns, and what every step below works from: the
+    # choice as it now stands *here*.
+    out = current
+    out.decision_status = decision_status
+    if offer_terms is not None:
+        out.offer_terms = offer_terms
+    if notes is not None:
+        out.notes = notes
+    out.decided_by = logged.decided_by
+    out.decided_at = logged.decided_at
 
     # Auto-create the uni-side link the first time a decision is
     # recorded against a choice. Best-effort: failure here should not
@@ -470,17 +743,9 @@ def record_decision(
                 "Could not reconcile choice #%d with clearing "
                 "(decision write succeeded)", choice_id)
 
-    # Every choice decided? Then the application is Replied. The status
-    # existed in APP_STATUSES and nothing could reach it — the sixth form
-    # never set it and no university call did either, so a cycle went
-    # straight from Submitted to Confirmed and the one status describing
-    # "all the universities have answered" was decorative.
-    try:
-        _promote_to_replied(out.application_id)
-    except Exception:
-        logger.exception(
-            "Could not re-evaluate the application status for choice #%d "
-            "(the decision itself was recorded)", choice_id)
+    # "Every choice decided -> Replied" is now worked out by the sixth form
+    # when it applies this decision (``ucas.promote_to_replied``), because
+    # it is the one holding every university's answers.
 
     # Notify the student by email when the decision is one they need
     # to act on: offers (either flavour) get the `student_offer`
@@ -506,16 +771,103 @@ def record_decision(
 
 
 
+def _conditions_for(terms: dict | None) -> list | None:
+    """Structured offer conditions for the event, from the issued terms."""
+    if not terms:
+        return None
+    given = terms.get("conditions")
+    if isinstance(given, list):
+        return given or None
+    # Same shape as structured rows (platform.cross_system.offer_conditions),
+    # so the sixth form receives one condition format whichever way the
+    # offer was entered; unreadable prose arrives as ``other_text``.
+    from education_system.platform.cross_system import (
+        offer_conditions as _oc,
+    )
+    out: list = []
+    for key in ("grade_requirement", "grade_alternative"):
+        text = (terms.get(key) or "").strip()
+        if text:
+            rows = _oc.conditions_from_text(text)
+            if key == "grade_alternative":
+                for r in rows:
+                    r["alternative"] = True
+            out.extend(rows)
+    return out or None
+
+
+def _publish_decision(choice: ChoiceView, logged, terms: dict | None) -> None:
+    """Publish ``ucas.decision.recorded`` for the sixth form to apply."""
+    journey_id = choice.journey_id
+    if not journey_id and choice.student_id:
+        try:
+            summary = _learner(choice.student_id)
+            journey_id = (summary or {}).get("journey_id")
+        except Exception:
+            journey_id = None
+    try:
+        from education_system.platform.integrations.external import (
+            cross_system_bus as _bus,
+        )
+        _bus.publish_cross_system(
+            "ucas.decision.recorded",
+            source_system="university",
+            source_module=__name__,
+            target_system="sixth_form",
+            journey_id=journey_id,
+            idempotency_key=f"ucas.decision.recorded:{logged.decision_id}",
+            choice_id=choice.choice_id,
+            application_id=choice.application_id,
+            sf_student_id=choice.student_id,
+            decision_id=logged.decision_id,
+            decision_status=logged.decision_status,
+            offer_summary=logged.offer_terms,
+            conditions=_conditions_for(terms),
+            reply_by=(terms or {}).get("reply_deadline"),
+            notes=logged.notes,
+            decided_by=logged.decided_by,
+            decided_at=logged.decided_at,
+            university=choice.university,
+        )
+    except Exception:
+        # Our decision stands and is logged; the sixth form's copy will
+        # stay behind until this is re-published (``republish_decision``).
+        logger.exception(
+            "UNDELIVERED DECISION: could not publish decision #%s on "
+            "choice #%d to the sixth form", logged.decision_id,
+            choice.choice_id)
+
+
+def republish_decision(choice_id: int) -> bool:
+    """Publish our latest decision on *choice_id* again.
+
+    For a decision whose publish failed. The sixth form ignores one it has
+    already applied, so this is always safe.
+    """
+    from education_system.systems.university.domains.admissions.domain.ucas import (
+        decision_log as _log,
+        offer_terms as _terms,
+    )
+    logged = _log.last_decision(int(choice_id))
+    choice = _get_choice(int(choice_id))
+    if logged is None or choice is None:
+        return False
+    issued = None
+    try:
+        t = _terms.get_terms(int(choice_id))
+        issued = t.as_dict() if t is not None else None
+    except Exception:
+        issued = None
+    _publish_decision(choice, logged, issued)
+    return True
+
+
 def _promote_to_replied(application_id: int) -> bool:
     """Move a Submitted application to Replied once nothing is awaited.
 
-    Only from Submitted, and only when no choice is still ``Awaiting``.
-    A withdrawn or rejected choice counts as answered — the question is
-    whether the applicant is still waiting to hear, not whether the news
-    was good.
-
-    Never moves a settled application: Confirmed and Clearing are further
-    along, and walking one back to Replied would undo the outcome.
+    The sixth form now does this itself when it applies a decision; this
+    remains for callers that want to re-evaluate on demand, judged on the
+    decisions as *we* have recorded them.
     """
     sf = _sf()
     application = sf.get_application(application_id)
@@ -535,6 +887,8 @@ def _promote_to_replied(application_id: int) -> bool:
 #: an answer to an offer; against a rejection or a still-awaited choice
 #: there is nothing to answer.
 _REPLYABLE = ("Conditional Offer", "Unconditional Offer")
+#: A firm choice in one of these states frees the insurance place.
+_FIRM_LOST = ("Rejected", "Withdrawn")
 
 
 def record_final_decision(
@@ -673,8 +1027,8 @@ def confirm_place(choice_id: int, *, issued_by: str | None = None) -> object:
     value, so this call is what makes a learner transferable.
 
     Refuses unless the choice is *ours* and is the applicant's Firm
-    reply. A place is confirmed by the institution holding it, and the
-    Firm choice is the one being held.
+    reply — or their Insurance reply once the Firm has been declined or
+    withdrawn. A place is confirmed by the institution holding it.
     """
     choice, _application = _application_for_choice(choice_id)
     university = _resolve_uni_name(None)
@@ -682,10 +1036,22 @@ def confirm_place(choice_id: int, *, issued_by: str | None = None) -> object:
         raise UcasError(
             f"This choice is at {choice.university}, not {university}. "
             "A place is confirmed by the university holding it.")
-    if choice.final_decision != "Firm":
+    if choice.final_decision == "Insurance":
+        # The insurance place is the one held for a missed firm: it can be
+        # confirmed once the firm offer has been turned down on results,
+        # never alongside a firm that may still come good.
+        firm = next((c for c in _sf().list_choices(choice.application_id)
+                     if c.final_decision == "Firm"), None)
+        if firm is not None and firm.decision_status not in _FIRM_LOST:
+            raise UcasError(
+                "This is the applicant's Insurance choice. It can be "
+                f"confirmed once their Firm choice ({firm.university}) "
+                "has been declined — it is currently "
+                f"'{firm.decision_status}'.")
+    elif choice.final_decision != "Firm":
         raise UcasError(
-            "Only a Firm choice can be confirmed — this one is "
-            f"{choice.final_decision or 'not replied to'}. Record the "
+            "Only a Firm or Insurance choice can be confirmed — this one "
+            f"is {choice.final_decision or 'not replied to'}. Record the "
             "applicant's reply first.")
     if choice.decision_status not in _REPLYABLE:
         raise UcasError(
@@ -709,12 +1075,10 @@ def confirm_place(choice_id: int, *, issued_by: str | None = None) -> object:
     # is confirmed whatever an auth database says.
     student_id = _application_for_choice(choice_id)[1].student_id
     try:
-        students = _sf_students()
-        students.disable_leaver_login(student_id)
         # And any parent login that existed only to follow this learner.
         # One covering a sibling still at the college is left alone — the
         # sixth form makes that call, not us.
-        students.disable_orphaned_parent_logins(student_id)
+        _sf_adapter().close_leaver_logins(student_id)
     except Exception:
         logger.exception(
             "Could not close the sixth-form logins after confirming "
@@ -752,7 +1116,7 @@ def _send_outcome_email(choice, app, status: str) -> None:
     needs the deadline pressure said out loud. Best-effort; the caller
     catches.
     """
-    student = _sf_students().get_student(app.student_id) if app else None
+    student = _Learner.of(app.student_id) if app else None
     if student is None:
         logger.warning(
             "Cycle-outcome email skipped: no student behind choice #%d",
@@ -808,17 +1172,12 @@ def _send_outcome_email(choice, app, status: str) -> None:
         "ucas_id":            app.ucas_id or "—",
         "contact_email":      "admissions@teesside.ac.uk",
     }
-    from education_system.systems.sixth_form.domain.operations.communications.messages import (
-        email_templates as _tpl,
-    )
-    msg = _tpl.send_from_template(
-        "ucas_cycle_outcome", context,
-        to_name=student.full_name, to_address=student.email,
-        student_id=student.student_id)
+    message_id = _sf_adapter().send_learner_template(
+        student.student_id, "ucas_cycle_outcome", context)
     logger.info(
         "Sent %s cycle-outcome email to %s for application #%d as "
-        "message #%d", status, student.student_id,
-        choice.application_id, msg.message_id)
+        "message #%s", status, student.student_id,
+        choice.application_id, message_id)
 
 
 def _send_final_decision_email(choice, final_decision: str) -> None:
@@ -829,9 +1188,8 @@ def _send_final_decision_email(choice, final_decision: str) -> None:
     the caller catches.
     """
     sf = _sf()
-    sfs = _sf_students()
     app = sf.get_application(choice.application_id)
-    student = sfs.get_student(app.student_id) if app else None
+    student = _Learner.of(app.student_id) if app else None
     if student is None:
         logger.warning(
             "Final-decision email skipped: could not find student for "
@@ -888,21 +1246,13 @@ def _send_final_decision_email(choice, final_decision: str) -> None:
         "contact_email":       "admissions@teesside.ac.uk",
     }
 
-    from education_system.systems.sixth_form.domain.operations.communications.messages import (
-        email_templates as _tpl,
-    )
-    msg = _tpl.send_from_template(
-        "ucas_final_decision",
-        context,
-        to_name=student.full_name,
-        to_address=student.email,
-        student_id=student.student_id,
-    )
+    message_id = _sf_adapter().send_learner_template(
+        student.student_id, "ucas_final_decision", context)
     logger.info(
         "Sent %s final-decision email to %s (%s) for choice #%d "
-        "as message #%d",
+        "as message #%s",
         final_decision, student.student_id, student.email,
-        choice.choice_id, msg.message_id)
+        choice.choice_id, message_id)
 
 
 def _send_decision_email(choice, decision_status: str,
@@ -913,9 +1263,8 @@ def _send_decision_email(choice, decision_status: str,
     student. Reads the parent application + student via the sf API.
     Best-effort — caller is expected to catch."""
     sf = _sf()
-    sfs = _sf_students()
     app = sf.get_application(choice.application_id)
-    student = sfs.get_student(app.student_id) if app else None
+    student = _Learner.of(app.student_id) if app else None
     if student is None:
         logger.warning(
             "Offer email skipped: could not find student for "
@@ -968,20 +1317,12 @@ def _send_decision_email(choice, decision_status: str,
         "contact_email":         "admissions@teesside.ac.uk",
     }
 
-    from education_system.systems.sixth_form.domain.operations.communications.messages import (
-        email_templates as _tpl,
-    )
-    msg = _tpl.send_from_template(
-        template,
-        context,
-        to_name=student.full_name,
-        to_address=student.email,
-        student_id=student.student_id,
-    )
+    message_id = _sf_adapter().send_learner_template(
+        student.student_id, template, context)
     logger.info(
-        "Sent %s (%s) email to %s (%s) for choice #%d as message #%d",
+        "Sent %s (%s) email to %s (%s) for choice #%d as message #%s",
         decision_status, template, student.student_id, student.email,
-        choice.choice_id, msg.message_id,
+        choice.choice_id, message_id,
     )
 
 

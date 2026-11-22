@@ -17,7 +17,7 @@ from typing import Any
 
 from education_system.systems.apprenticeships import config
 from education_system.systems.apprenticeships.interfaces.gui import widgets
-from education_system.systems.apprenticeships.services import (
+from education_system.systems.apprenticeships.application.communications import (
     email_service,
     email_templates,
 )

@@ -10,7 +10,7 @@ import pytest
 import tkinter as tk
 from unittest.mock import Mock, patch, MagicMock, call
 from datetime import datetime, timedelta
-from education_system.systems.university.domains.academics.interfaces.gui.virtual_classroom_gui import (
+from education_system.systems.university.domains.teaching.interfaces.gui.virtual_classroom_gui import (
     VirtualClassroomGUI,
     launch_virtual_classroom_gui
 )
@@ -173,7 +173,7 @@ def setup_test_db():
 class TestVirtualClassroomGUIInitialization:
     """Test GUI initialization"""
 
-    @patch('education_system.systems.university.domains.academics.interfaces.gui.virtual_classroom_gui.messagebox')
+    @patch('education_system.systems.university.domains.teaching.interfaces.gui.virtual_classroom_gui.messagebox')
     def test_init_without_auth(self, mock_messagebox):
         """Test initialization without authentication"""
         root = tk.Tk()
@@ -187,7 +187,7 @@ class TestVirtualClassroomGUIInitialization:
         finally:
             root.destroy()
 
-    @patch('education_system.systems.university.domains.academics.interfaces.gui.virtual_classroom_gui.messagebox')
+    @patch('education_system.systems.university.domains.teaching.interfaces.gui.virtual_classroom_gui.messagebox')
     def test_init_with_no_logged_in_user(self, mock_messagebox, mock_auth):
         """Test initialization with auth but no logged in user"""
         root = tk.Tk()
@@ -201,10 +201,10 @@ class TestVirtualClassroomGUIInitialization:
         finally:
             root.destroy()
 
-    @patch('education_system.systems.university.domains.academics.interfaces.gui.virtual_classroom_gui.VirtualClassroomManager')
-    @patch('education_system.systems.university.domains.academics.interfaces.gui.virtual_classroom_gui.SessionManager')
-    @patch('education_system.systems.university.domains.academics.interfaces.gui.virtual_classroom_gui.ParticipantManager')
-    @patch('education_system.systems.university.domains.academics.interfaces.gui.virtual_classroom_gui.RecordingManager')
+    @patch('education_system.systems.university.domains.teaching.interfaces.gui.virtual_classroom_gui.VirtualClassroomManager')
+    @patch('education_system.systems.university.domains.teaching.interfaces.gui.virtual_classroom_gui.SessionManager')
+    @patch('education_system.systems.university.domains.teaching.interfaces.gui.virtual_classroom_gui.ParticipantManager')
+    @patch('education_system.systems.university.domains.teaching.interfaces.gui.virtual_classroom_gui.RecordingManager')
     def test_successful_init(self, mock_rec_mgr, mock_part_mgr, mock_sess_mgr, mock_class_mgr, mock_auth, setup_test_db):
         """Test successful initialization with proper auth"""
         root = tk.Tk()
@@ -248,8 +248,8 @@ class TestVirtualClassroomGUIInitialization:
 class TestClassroomManagement:
     """Test classroom management functionality"""
 
-    @patch('education_system.systems.university.domains.academics.interfaces.gui.virtual_classroom_gui.VirtualClassroomManager')
-    @patch('education_system.systems.university.domains.academics.interfaces.gui.virtual_classroom_gui.messagebox')
+    @patch('education_system.systems.university.domains.teaching.interfaces.gui.virtual_classroom_gui.VirtualClassroomManager')
+    @patch('education_system.systems.university.domains.teaching.interfaces.gui.virtual_classroom_gui.messagebox')
     def test_refresh_classrooms(self, mock_msgbox, mock_mgr, mock_auth, setup_test_db):
         """Test refreshing classrooms list"""
         root = tk.Tk()
@@ -283,8 +283,8 @@ class TestClassroomManagement:
         finally:
             root.destroy()
 
-    @patch('education_system.systems.university.domains.academics.interfaces.gui.virtual_classroom_gui.VirtualClassroomManager')
-    @patch('education_system.systems.university.domains.academics.interfaces.gui.virtual_classroom_gui.messagebox')
+    @patch('education_system.systems.university.domains.teaching.interfaces.gui.virtual_classroom_gui.VirtualClassroomManager')
+    @patch('education_system.systems.university.domains.teaching.interfaces.gui.virtual_classroom_gui.messagebox')
     def test_delete_classroom_confirmation(self, mock_msgbox, mock_mgr, mock_auth, setup_test_db):
         """Test classroom deletion with confirmation"""
         root = tk.Tk()
@@ -322,8 +322,8 @@ class TestClassroomManagement:
 class TestSessionManagement:
     """Test session management functionality"""
 
-    @patch('education_system.systems.university.domains.academics.interfaces.gui.virtual_classroom_gui.SessionManager')
-    @patch('education_system.systems.university.domains.academics.interfaces.gui.virtual_classroom_gui.messagebox')
+    @patch('education_system.systems.university.domains.teaching.interfaces.gui.virtual_classroom_gui.SessionManager')
+    @patch('education_system.systems.university.domains.teaching.interfaces.gui.virtual_classroom_gui.messagebox')
     def test_refresh_sessions(self, mock_msgbox, mock_sess_mgr, mock_auth, setup_test_db):
         """Test refreshing sessions list"""
         root = tk.Tk()
@@ -355,8 +355,8 @@ class TestSessionManagement:
         finally:
             root.destroy()
 
-    @patch('education_system.systems.university.domains.academics.interfaces.gui.virtual_classroom_gui.SessionManager')
-    @patch('education_system.systems.university.domains.academics.interfaces.gui.virtual_classroom_gui.messagebox')
+    @patch('education_system.systems.university.domains.teaching.interfaces.gui.virtual_classroom_gui.SessionManager')
+    @patch('education_system.systems.university.domains.teaching.interfaces.gui.virtual_classroom_gui.messagebox')
     def test_start_session(self, mock_msgbox, mock_sess_mgr, mock_auth, setup_test_db):
         """Test starting a session"""
         root = tk.Tk()
@@ -391,8 +391,8 @@ class TestSessionManagement:
 class TestParticipantManagement:
     """Test participant management functionality"""
 
-    @patch('education_system.systems.university.domains.academics.interfaces.gui.virtual_classroom_gui.ParticipantManager')
-    @patch('education_system.systems.university.domains.academics.interfaces.gui.virtual_classroom_gui.messagebox')
+    @patch('education_system.systems.university.domains.teaching.interfaces.gui.virtual_classroom_gui.ParticipantManager')
+    @patch('education_system.systems.university.domains.teaching.interfaces.gui.virtual_classroom_gui.messagebox')
     def test_refresh_participants(self, mock_msgbox, mock_part_mgr, mock_auth, setup_test_db):
         """Test refreshing participants list"""
         root = tk.Tk()
@@ -429,8 +429,8 @@ class TestParticipantManagement:
         finally:
             root.destroy()
 
-    @patch('education_system.systems.university.domains.academics.interfaces.gui.virtual_classroom_gui.ParticipantManager')
-    @patch('education_system.systems.university.domains.academics.interfaces.gui.virtual_classroom_gui.filedialog')
+    @patch('education_system.systems.university.domains.teaching.interfaces.gui.virtual_classroom_gui.ParticipantManager')
+    @patch('education_system.systems.university.domains.teaching.interfaces.gui.virtual_classroom_gui.filedialog')
     def test_export_attendance(self, mock_filedialog, mock_part_mgr, mock_auth, setup_test_db):
         """Test exporting attendance to CSV"""
         root = tk.Tk()
@@ -479,8 +479,8 @@ class TestParticipantManagement:
 class TestRecordingManagement:
     """Test recording management functionality"""
 
-    @patch('education_system.systems.university.domains.academics.interfaces.gui.virtual_classroom_gui.RecordingManager')
-    @patch('education_system.systems.university.domains.academics.interfaces.gui.virtual_classroom_gui.messagebox')
+    @patch('education_system.systems.university.domains.teaching.interfaces.gui.virtual_classroom_gui.RecordingManager')
+    @patch('education_system.systems.university.domains.teaching.interfaces.gui.virtual_classroom_gui.messagebox')
     def test_refresh_recordings(self, mock_msgbox, mock_rec_mgr, mock_auth, setup_test_db):
         """Test refreshing recordings list"""
         root = tk.Tk()
@@ -517,7 +517,7 @@ class TestRecordingManagement:
 class TestAnalytics:
     """Test analytics functionality"""
 
-    @patch('education_system.systems.university.domains.academics.interfaces.gui.virtual_classroom_gui.messagebox')
+    @patch('education_system.systems.university.domains.teaching.interfaces.gui.virtual_classroom_gui.messagebox')
     def test_refresh_analytics(self, mock_msgbox, mock_auth, setup_test_db):
         """Test refreshing analytics"""
         root = tk.Tk()
@@ -592,7 +592,7 @@ class TestUtilityMethods:
 class TestLauncherFunction:
     """Test GUI launcher function"""
 
-    @patch('education_system.systems.university.domains.academics.interfaces.gui.virtual_classroom_gui.VirtualClassroomGUI')
+    @patch('education_system.systems.university.domains.teaching.interfaces.gui.virtual_classroom_gui.VirtualClassroomGUI')
     def test_launch_with_parent(self, mock_gui_class, mock_auth):
         """Test launching with parent window"""
         root = tk.Tk()
@@ -609,7 +609,7 @@ class TestLauncherFunction:
 class TestIntegrationScenarios:
     """Integration tests for complete workflows"""
 
-    @patch('education_system.systems.university.domains.academics.interfaces.gui.virtual_classroom_gui.messagebox')
+    @patch('education_system.systems.university.domains.teaching.interfaces.gui.virtual_classroom_gui.messagebox')
     def test_complete_classroom_workflow(self, mock_msgbox, mock_auth, setup_test_db):
         """Test complete classroom management workflow"""
         root = tk.Tk()

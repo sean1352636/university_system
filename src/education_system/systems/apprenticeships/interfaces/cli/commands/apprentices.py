@@ -21,12 +21,11 @@ from education_system.systems.apprenticeships.infrastructure.persistence.reposit
     staff_repository,
 )
 from education_system.systems.apprenticeships.interfaces.cli import prompts
-from education_system.systems.apprenticeships.services import (
-    apprentice_service,
-    employer_service,
-    programme_service,
-)
-from education_system.systems.apprenticeships.services.access import Actor
+from education_system.systems.apprenticeships.application.apprentices import apprentice_service
+from education_system.systems.apprenticeships.application.employers import employer_service
+from education_system.systems.apprenticeships.application.programmes import programme_service
+from education_system.systems.apprenticeships.application.security import account_service
+from education_system.systems.apprenticeships.application.security.access import Actor
 
 logger = logging.getLogger(__name__)
 
@@ -78,8 +77,17 @@ def show(actor: Actor, summary: ApprenticeSummary) -> None:
     record = summary.apprentice
     prompts.title(summary.full_name)
     prompts.details([
+        ("Legal name", record.legal_name),
+        ("Preferred name", record.preferred_name),
+        ("Gender", record.gender),
         ("ULN", record.uln),
         ("Date of birth", record.date_of_birth),
+        ("Address", record.address),
+        ("Emergency contact", " · ".join(p for p in (
+            record.emergency_contact_name, record.emergency_contact_relationship,
+            record.emergency_contact_phone) if p) or None),
+        ("Learning difficulty / disability", "Yes" if record.has_lldd else "No"),
+        ("EHC plan", "Yes" if record.has_ehcp else "No"),
         ("Email", record.email),
         ("Phone", record.phone),
         ("Login", record.username),
@@ -98,6 +106,7 @@ def show(actor: Actor, summary: ApprenticeSummary) -> None:
         ("Open reviews", summary.open_reviews),
         ("Prior learning", record.prior_learning),
         ("Support needs", record.support_needs),
+        ("Medical notes", record.medical_notes),
         ("Notes", record.notes),
     ])
     print()
@@ -149,6 +158,7 @@ def menu(actor: Actor) -> None:
             ("Change status", partial(_change_status, actor)),
             ("Start programme", partial(_start_programme, actor)),
             ("Assign a tutor", partial(_assign_tutor, actor)),
+            ("Create a login", partial(_create_login_menu, actor)),
         ]
     if actor.is_admin:
         entries.append(("Delete an apprentice", partial(_delete, actor)))
@@ -210,22 +220,66 @@ def _view(actor: Actor) -> None:
     prompts.pause()
 
 
+def _ask_personal(record=None) -> dict[str, object]:
+    """Identity, address, emergency contact and needs: the same details the
+    GUI form and the other systems' add-learner forms collect."""
+    def d(attr: str) -> str:
+        return (getattr(record, attr, None) or "") if record is not None else ""
+
+    print("\n  Identity")
+    payload: dict[str, object] = {
+        "given_name": prompts.ask("Legal first name", default=d("given_name"), required=True),
+        "middle_name": prompts.ask("Middle name(s)", default=d("middle_name")),
+        "family_name": prompts.ask("Legal last name", default=d("family_name"), required=True),
+        "preferred_name": prompts.ask("Preferred name", default=d("preferred_name")),
+        "date_of_birth": prompts.ask("Date of birth (YYYY-MM-DD)", default=d("date_of_birth")),
+    }
+    gender = prompts.choose("Gender", config.GENDERS, allow_blank=True)
+    payload["gender"] = gender if gender is not None else (d("gender") or None)
+    payload["uln"] = prompts.ask("ULN (10 digits, optional)", default=d("uln"))
+    print("\n  Contact")
+    payload["email"] = prompts.ask("Email", default=d("email"))
+    payload["phone"] = prompts.ask("Phone", default=d("phone"))
+    print("\n  Home address")
+    payload["address_line1"] = prompts.ask("Address line 1", default=d("address_line1"))
+    payload["address_line2"] = prompts.ask("Address line 2", default=d("address_line2"))
+    payload["town"] = prompts.ask("Town / city", default=d("town"))
+    payload["postcode"] = prompts.ask("Postcode", default=d("postcode"))
+    print("\n  Emergency contact")
+    payload["emergency_contact_name"] = prompts.ask(
+        "Name", default=d("emergency_contact_name"))
+    if payload["emergency_contact_name"]:
+        relation = prompts.choose("Relationship", config.EMERGENCY_RELATIONSHIPS,
+                                  allow_blank=True)
+        payload["emergency_contact_relationship"] = (
+            relation if relation is not None else (d("emergency_contact_relationship") or None))
+        payload["emergency_contact_phone"] = prompts.ask(
+            "Phone", default=d("emergency_contact_phone"), required=True)
+    else:
+        payload["emergency_contact_relationship"] = ""
+        payload["emergency_contact_phone"] = ""
+    print("\n  Needs and medical")
+    payload["has_lldd"] = prompts.ask_yes_no(
+        "Learning difficulty or disability?", default=bool(getattr(record, "has_lldd", False)))
+    payload["has_ehcp"] = prompts.ask_yes_no(
+        "Has an EHC plan?", default=bool(getattr(record, "has_ehcp", False)))
+    payload["support_needs"] = prompts.ask("Support needs", default=d("support_needs"))
+    payload["medical_notes"] = prompts.ask("Medical notes", default=d("medical_notes"))
+    return payload
+
+
 def _create(actor: Actor) -> None:
     prompts.title("Enrol an apprentice")
-    payload: dict[str, object] = {
-        "given_name": prompts.ask("First name", required=True),
-        "family_name": prompts.ask("Last name", required=True),
-        "uln": prompts.ask("ULN (10 digits, optional)"),
-        "date_of_birth": prompts.ask("Date of birth (YYYY-MM-DD)"),
-        "email": prompts.ask("Email"),
-        "phone": prompts.ask("Phone"),
-        "username": prompts.ask("Login username (for their portal)"),
+    payload = _ask_personal()
+    print("\n  Apprenticeship")
+    payload.update({
+        "username": prompts.ask("Login username (blank to make one)"),
         "weekly_hours": prompts.ask_float(
             "Contracted weekly hours", default=config.OTJ_STANDARD_WEEKLY_HOURS
         ),
-        "support_needs": prompts.ask("Support needs"),
         "prior_learning": prompts.ask("Recognised prior learning"),
-    }
+        "notes": prompts.ask("Notes"),
+    })
     programme = _pick_programme(actor)
     if programme is not None:
         payload["programme_id"] = programme.programme_id
@@ -234,29 +288,58 @@ def _create(actor: Actor) -> None:
     if tutor is not None:
         payload["tutor_id"] = tutor.staff_id
 
-    created = apprentice_service.create_apprentice(actor, payload)
+    try:
+        created = apprentice_service.create_apprentice(actor, payload, check_duplicate=True)
+    except apprentice_service.DuplicateApprentice as dup:
+        prompts.fail(str(dup))
+        if not prompts.ask_yes_no("Twins and common names can match. Save as a new apprentice anyway?"):
+            prompts.note("Not saved. Open the existing record from 'View an apprentice'.")
+            prompts.pause()
+            return
+        created = apprentice_service.create_apprentice(actor, payload)
     prompts.ok(f"Enrolled {created.full_name} as an applicant (id {created.apprentice_id}).")
     prompts.note("Take them onto programme with 'Start programme' once the paperwork is signed.")
+    if prompts.ask_yes_no("Create their login and e-mail them a temporary password?", default=True):
+        _create_login(actor, created.apprentice_id, created.full_name)
     prompts.pause()
+
+
+def _create_login_menu(actor: Actor) -> None:
+    summary = pick(actor)
+    if not prompts.ask_yes_no(
+        f"Create a login for {summary.full_name} and e-mail them a temporary password?"
+    ):
+        return
+    _create_login(actor, summary.apprentice.apprentice_id, summary.full_name)
+    prompts.pause()
+
+
+def _create_login(actor: Actor, apprentice_id: int, name: str) -> None:
+    """Create the login and print the sign-in details once."""
+    try:
+        new = account_service.create_apprentice_login(actor, apprentice_id)
+    except Exception as exc:  # ValidationError / AccountError: show and carry on
+        prompts.fail(f"The login could not be created: {exc}")
+        prompts.note("Use 'Create a login' from the menu to try again.")
+        return
+    prompts.ok(f"Login created for {name}.")
+    prompts.details([("Username", new.username), ("Password", new.password)])
+    prompts.note("Note the password now. It won't be shown again.")
+    prompts.note(new.welcome_detail)
 
 
 def _edit(actor: Actor) -> None:
     summary = pick(actor)
     record = summary.apprentice
     prompts.title(f"Edit {record.full_name}")
-    payload: dict[str, object] = {
-        "given_name": prompts.ask("First name", default=record.given_name, required=True),
-        "family_name": prompts.ask("Last name", default=record.family_name, required=True),
-        "uln": prompts.ask("ULN", default=record.uln or ""),
-        "date_of_birth": prompts.ask("Date of birth", default=record.date_of_birth or ""),
-        "email": prompts.ask("Email", default=record.email or ""),
-        "phone": prompts.ask("Phone", default=record.phone or ""),
+    payload = _ask_personal(record)
+    print("\n  Apprenticeship")
+    payload.update({
         "username": prompts.ask("Login username", default=record.username or ""),
         "weekly_hours": prompts.ask_float("Weekly hours", default=record.weekly_hours),
         "prior_learning": prompts.ask("Prior learning", default=record.prior_learning or ""),
-        "support_needs": prompts.ask("Support needs", default=record.support_needs or ""),
         "notes": prompts.ask("Notes", default=record.notes or ""),
-    }
+    })
     if prompts.ask_yes_no("Change the employer or workplace?"):
         payload.update(_ask_employer(actor))
 

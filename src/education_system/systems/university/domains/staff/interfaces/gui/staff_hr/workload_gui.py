@@ -12,6 +12,7 @@ from __future__ import annotations
 
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 
+from education_system.systems.university.domains.staff.interfaces.gui.staff_hr import _access as _hr
 import tkinter as tk
 from tkinter import ttk, messagebox
 from datetime import datetime
@@ -45,7 +46,7 @@ class WorkloadGUI:
             self.create_main_window()
 
     def _get_user_id(self):
-        return self.current_user.get('id') or self.current_user.get('username')
+        return _hr.user_key(self)
 
     def create_as_tab(self, notebook: ttk.Notebook):
         self.tab_frame = ttk.Frame(notebook)
@@ -55,7 +56,8 @@ class WorkloadGUI:
     def create_main_window(self):
         self.window = tk.Toplevel(self.root)
         self.window.title(_t('gui.staff.staff_hr.workload.windows.workload_dashboard', default="Workload Dashboard"))
-        self.window.geometry("1200x700")
+        self.window.geometry("1400x900")
+        self.window.minsize(1200, 800)
         self.window.minsize(1000, 600)
         bottom_frame = ttk.Frame(self.window)
         bottom_frame.pack(side=tk.BOTTOM, fill=tk.X, padx=10, pady=5)
@@ -73,8 +75,9 @@ class WorkloadGUI:
         self._create_my_workload_tab()
         self._create_department_tab()
 
-        if self.current_user.get('role') in ['admin', 'Admin', 'administrator', 'staff']:
+        if _hr.can(self, 'manager'):
             self._create_allocations_tab()
+        if _hr.can(self, 'hr'):
             self._create_norms_tab()
 
     # ==================== TAB 1: MY WORKLOAD ====================

@@ -18,13 +18,11 @@ from education_system.systems.apprenticeships.domain.progress.skills_matrix impo
     CohortRow,
     SkillsMatrix,
 )
-from education_system.systems.apprenticeships.services import (
-    apprentice_service,
-    portfolio_service,
-    programme_service,
-    skills_matrix_service,
-)
-from education_system.systems.apprenticeships.services.access import Actor, PermissionDenied
+from education_system.systems.apprenticeships.application.apprentices import apprentice_service
+from education_system.systems.apprenticeships.application.assessments import portfolio_service
+from education_system.systems.apprenticeships.application.learning import skills_matrix_service
+from education_system.systems.apprenticeships.application.programmes import programme_service
+from education_system.systems.apprenticeships.application.security.access import Actor, PermissionDenied
 
 
 def _cov(code: str, level: str, ksb_id: int = 0) -> KSBCoverage:

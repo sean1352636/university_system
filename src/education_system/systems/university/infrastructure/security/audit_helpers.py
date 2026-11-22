@@ -153,11 +153,29 @@ def _alert_audit_failure(
         )
 
 
-def get_gui_context() -> Tuple[Optional[str], Optional[str]]:
+def _user_from_auth(auth) -> Optional[dict]:
+    if isinstance(auth, dict):
+        return auth if auth.get('username') or auth.get('id') else None
+    user = getattr(auth, 'current_user', None) if auth is not None else None
+    if callable(user):
+        try:
+            user = user()
+        except Exception:
+            user = None
+    if not user and hasattr(auth, 'get_current_user'):
+        try:
+            user = auth.get_current_user()
+        except Exception:
+            user = None
+    return user if isinstance(user, dict) and (user.get('username') or user.get('id')) else None
+
+
+def get_gui_context(auth=None) -> Tuple[Optional[str], Optional[str]]:
     """
     Extract user context from the GUI authentication system.
 
-    Retrieves the current user ID and session information from the
+    Uses ``auth`` (the window's own sign-in) when given — the shared
+    context's auth is not always a live session — and otherwise the
     global authentication context used by the GUI.
 
     Returns:
@@ -174,6 +192,10 @@ def get_gui_context() -> Tuple[Optional[str], Optional[str]]:
         ...         resource_type='student_records'
         ...     )
     """
+    current_user = _user_from_auth(auth)
+    if current_user:
+        return str(current_user.get('id', '') or current_user.get('username', '')), \
+            current_user.get('session_id')
     try:
         from education_system.systems.university.infrastructure.shared_context import get_auth
 
