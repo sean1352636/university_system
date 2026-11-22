@@ -126,7 +126,7 @@ jobs:
         run: cyclonedx-py environment /tmp/profile/bin/python -o "${{ matrix.profile }}-sbom.json"
       - name: Scan installed profile
         run: pip-audit --python /tmp/profile/bin/python --strict
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: university-${{ matrix.profile }}-sbom
@@ -224,7 +224,7 @@ jobs:
         run: |
           python -m pip install cyclonedx-bom
           cyclonedx-py environment /tmp/locked/bin/python -o runtime-sbom.json
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: runtime-sbom
@@ -370,7 +370,7 @@ jobs:
           --cov-branch
           --cov-report=xml:coverage-university-gui.xml
           --cov-fail-under=0.1
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: university-gui-coverage
@@ -398,7 +398,7 @@ jobs:
           python -m pip install -e . --no-deps
       - name: Enforce whole-university coverage floor
         run: make coverage-university
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: university-coverage
